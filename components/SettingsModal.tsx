@@ -37,7 +37,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <section className="space-y-3">
             <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Account</h3>
             <div className="flex items-center gap-3 mb-3 px-1">
-                <span className="text-sm text-zinc-300 font-medium">pzillas@gmail.com</span>
+                <span className="text-sm text-zinc-300 font-medium">hello@expose.ae</span>
                 <span className="px-1.5 py-0.5 bg-red-500/10 text-red-400 text-[9px] font-bold rounded uppercase tracking-wider border border-red-500/20">Admin</span>
             </div>
             <div className="space-y-2">
