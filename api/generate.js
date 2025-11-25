@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default async function handler(request, response) {
     if (request.method !== 'POST') {
@@ -18,8 +18,8 @@ export default async function handler(request, response) {
             return response.status(400).json({ error: 'Missing image or prompt' });
         }
 
-        const ai = new GoogleGenAI({ apiKey });
-        const MODEL_NAME = 'gemini-3-pro-image-preview';
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
         const parts = [];
 
@@ -57,14 +57,13 @@ export default async function handler(request, response) {
 
         parts.push({ text: promptText });
 
-        const aiResponse = await ai.models.generateContent({
-            model: MODEL_NAME,
-            contents: {
-                parts: parts,
-            },
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: parts }],
         });
 
-        const candidates = aiResponse.candidates;
+        const response_data = await result.response;
+        const candidates = response_data.candidates;
+
         if (candidates && candidates.length > 0) {
             const parts = candidates[0].content.parts;
             for (const part of parts) {
