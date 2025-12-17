@@ -1,0 +1,220 @@
+
+import React, { memo, useEffect, useState } from 'react';
+import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
+import { Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { EditorCanvas } from './EditorCanvas';
+import { Tooltip, Typo, Theme } from './ui/DesignSystem';
+
+interface ImageItemProps {
+  image: CanvasImage;
+  isSelected: boolean;
+  zoom: number;
+  onMouseDown: (e: React.MouseEvent, id: string) => void;
+  onRetry?: (id: string) => void;
+  onChangePrompt?: (id: string) => void;
+  editorState?: {
+      mode: 'prompt' | 'brush' | 'objects';
+      brushSize: number;
+  };
+  onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
+  onEditStart?: (mode: 'brush' | 'objects') => void;
+  
+  // Navigation Props
+  onNavigate?: (direction: -1 | 1) => void;
+  hasLeft?: boolean;
+  hasRight?: boolean;
+
+  t: TranslationFunction;
+}
+
+const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
+    const [progress, setProgress] = useState(0);
+    
+    useEffect(() => {
+        const start = startTime || Date.now();
+        const update = () => {
+            const now = Date.now();
+            const elapsed = now - start;
+            let p = (elapsed / duration) * 100;
+            // Easing at the end
+            if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
+            setProgress(Math.min(p, 99.9));
+        };
+        const interval = setInterval(update, 30);
+        update();
+        return () => clearInterval(interval);
+    }, [startTime, duration]);
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50 overflow-hidden bg-white/90 dark:bg-black/50 backdrop-blur-sm">
+            <div className="w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500 relative z-10">
+                <div className={`flex items-end justify-between ${Typo.Label}`}>
+                    <span className={`${Theme.Colors.TextPrimary}`}>{t('processing')}</span>
+                </div>
+                <div className="h-0.5 w-full bg-zinc-200 dark:bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-zinc-900 dark:bg-white transition-all duration-75 ease-linear" style={{ width: `${progress}%` }} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const getDurationForQuality = (quality?: GenerationQuality): number => {
+    switch (quality) {
+        case 'fast':
+            return 12000; // 12s
+        case 'pro-2k':
+            return 36000; // 36s
+        case 'pro-4k':
+            return 60000; // 60s
+        case 'pro-1k':
+        default:
+            return 23000; // 23s
+    }
+};
+
+export const ImageItem: React.FC<ImageItemProps> = memo(({ 
+    image, 
+    isSelected, 
+    zoom, 
+    onMouseDown, 
+    onRetry, 
+    editorState,
+    onUpdateAnnotations,
+    onEditStart,
+    onNavigate,
+    hasLeft,
+    hasRight,
+    t
+}) => {
+  const handleDownload = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const link = document.createElement('a');
+      link.href = image.src;
+      link.download = `${image.title}.png`;
+      link.click();
+  };
+
+  // Unified Base styles for consistency
+  const baseGlass = `${Theme.Effects.Glass} border ${Theme.Colors.Border} rounded-lg shadow-sm`;
+  const hoverStyle = "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors";
+  
+  // Navigation Button specific: Square, Fixed Height 36px (h-9)
+  const navBtnClass = `${baseGlass} ${hoverStyle} h-9 w-9 flex items-center justify-center`;
+  
+  // Action Button specific: Inside container, Height 100% of container, No Radius (handled by parent overflow)
+  const actionBtnClass = `flex items-center gap-2 px-4 h-full ${hoverStyle} shrink-0 rounded-none`;
+
+  return (
+    <div
+      data-image-id={image.id}
+      className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${
+        isSelected 
+          ? 'z-20 ring-1 ring-black dark:ring-white opacity-100' 
+          : 'z-0 opacity-70 hover:opacity-100'
+      }`}
+      style={{
+        width: image.width * zoom,
+        height: image.height * zoom,
+        scrollSnapStop: 'always',
+      }}
+      onMouseDown={(e) => onMouseDown(e, image.id)}
+    >
+      <div className={`w-full h-full relative ${Theme.Colors.PanelBg} overflow-hidden`}>
+        <img
+          src={image.maskSrc || image.src}
+          alt={image.title}
+          className="w-full h-full object-cover pointer-events-none block"
+        />
+        
+        {/* Editor Overlay - Always Visible if not generating */}
+        {!image.isGenerating && onUpdateAnnotations && editorState && (
+            <div className="absolute inset-0 z-10">
+                <EditorCanvas 
+                    width={image.width}
+                    height={image.height}
+                    imageSrc={image.src}
+                    annotations={image.annotations || []}
+                    onChange={(anns) => onUpdateAnnotations(image.id, anns)}
+                    brushSize={editorState.brushSize}
+                    activeTab={editorState.mode} 
+                    isActive={isSelected} 
+                    onEditStart={onEditStart}
+                    t={t}
+                />
+            </div>
+        )}
+        
+        {image.isGenerating && (
+           <ProcessingOverlay 
+                startTime={image.generationStartTime} 
+                duration={getDurationForQuality(image.quality)}
+                t={t} 
+            />
+        )}
+      </div>
+
+      {isSelected && (
+        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex flex-row items-center gap-2 z-50 whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto">
+            
+            {/* Left Nav */}
+            {hasLeft && (
+                <Tooltip text={t('previous')} side="top">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onNavigate?.(-1); }}
+                        className={navBtnClass}
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                </Tooltip>
+            )}
+
+            {/* Central Actions - Only if Parent exists (Generated Image) */}
+            {image.parentId && (
+                <div className={`flex flex-row items-center ${baseGlass} h-9 overflow-hidden`}>
+                    <Tooltip text={t('tt_more')} side="top">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                            className={actionBtnClass}
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className={Typo.Label}>{t('more_btn')}</span>
+                        </button>
+                    </Tooltip>
+
+                    {!image.isGenerating && (
+                        <>
+                            <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+                            
+                            <Tooltip text={t('tt_save')} side="top">
+                                <button 
+                                    onClick={handleDownload}
+                                    className={actionBtnClass}
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span className={Typo.Label}>{t('save_btn')}</span>
+                                </button>
+                            </Tooltip>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {/* Right Nav */}
+            {hasRight && (
+                <Tooltip text={t('next')} side="top">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onNavigate?.(1); }}
+                        className={navBtnClass}
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </Tooltip>
+            )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+ImageItem.displayName = 'ImageItem';
