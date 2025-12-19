@@ -96,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     <form onSubmit={handleEmailAuth} className="space-y-4">
                         <div className="space-y-2">
                             <div className="relative">
-                                <Mail className="absolute left-3 top-3 w-4 h-4 text-zinc-400" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                                 <input
                                     type="email"
                                     value={email}
@@ -110,7 +110,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                         {mode !== 'reset' && (
                             <div className="space-y-2">
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-zinc-400" />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                                     <input
                                         type="password"
                                         value={password}
