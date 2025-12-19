@@ -88,14 +88,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     <div className="flex items-center justify-center mb-6">
                         <Logo className="w-36 h-36" />
                     </div>
-                    {(() => {
-                        const title = mode === 'signin' ? t('auth_welcome_back') : mode === 'signup' ? t('auth_create_account') : t('auth_reset_password');
-                        return title ? <h2 className={Typo.H2}>{title}</h2> : null;
-                    })()}
-                    {(() => {
-                        const description = mode === 'signin' ? t('auth_signin_desc') : mode === 'signup' ? t('auth_signup_desc') : t('auth_reset_desc');
-                        return description ? <p className={`${Typo.Body} text-zinc-400 mt-2`}>{description}</p> : null;
-                    })()}
                 </div>
 
                 {/* Form */}
