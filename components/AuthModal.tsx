@@ -85,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 {/* Header */}
                 <div className="p-8 pb-0 flex flex-col items-center text-center relative z-10">
                     <div className="flex items-center justify-center mb-6">
-                        <Logo className="w-24 h-24" />
+                        <Logo className="w-36 h-36" />
                     </div>
                     <h2 className={Typo.H2}>
                         {mode === 'signin' ? t('auth_welcome_back') : mode === 'signup' ? t('auth_create_account') : t('auth_reset_password')}
@@ -99,7 +99,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 <div className="p-8 space-y-6">
                     {/* Social Auth */}
                     {mode !== 'reset' && (
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                             <button
                                 onClick={handleGoogleLogin}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 ${Theme.Geometry.Radius} border ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors bg-white dark:bg-zinc-900`}
@@ -112,13 +112,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                 </svg>
                                 <span className="text-sm font-medium">{t('auth_google')}</span>
                             </button>
-                            <button
-                                disabled // Placeholder for Passkey until fully implemented
-                                className={`flex items-center justify-center gap-2 py-2.5 px-4 ${Theme.Geometry.Radius} border ${Theme.Colors.Border} opacity-50 cursor-not-allowed bg-white dark:bg-zinc-900`}
-                            >
-                                <Fingerprint className="w-5 h-5 text-zinc-500" />
-                                <span className="text-sm font-medium">{t('auth_passkey')}</span>
-                            </button>
+                            {/* Passkey button hidden until full implementation in Settings */}
                         </div>
                     )}
 
