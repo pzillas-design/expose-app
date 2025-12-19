@@ -81,10 +81,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Decorative Background */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none" />
 
                 {/* Header */}
-                <div className="p-8 pb-0 flex flex-col items-center text-center relative z-10">
+                <div className="p-8 pt-12 pb-0 flex flex-col items-center text-center relative z-10">
                     <div className="flex items-center justify-center mb-6">
                         <Logo className="w-36 h-36" />
                     </div>
@@ -165,7 +165,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                     <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
                                 </div>
                                 <div className="relative flex justify-center text-xs uppercase">
-                                    <span className={`bg-white dark:bg-zinc-950 px-2 text-zinc-500`}>{t('auth_or_continue')}</span>
+                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>{t('auth_or_continue')}</span>
                                 </div>
                             </div>
 
