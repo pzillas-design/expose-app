@@ -90,32 +90,39 @@ export const useNanoController = () => {
     // Sync with Supabase and Listen for Changes
     useEffect(() => {
         const fetchProfile = async (sessionUser: any) => {
+            console.log("Auth: Fetching profile for user:", sessionUser?.email);
             if (sessionUser) {
                 setUser(sessionUser);
-                // Update last_active_at
-                await supabase.from('profiles').update({
-                    last_active_at: new Date().toISOString()
-                }).eq('id', sessionUser.id);
+                try {
+                    // Update last_active_at
+                    await supabase.from('profiles').update({
+                        last_active_at: new Date().toISOString()
+                    }).eq('id', sessionUser.id);
 
-                // Fetch full profile
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', sessionUser.id)
-                    .single();
+                    // Fetch full profile
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', sessionUser.id)
+                        .single();
 
-                if (profile) {
-                    setCredits(profile.credits);
-                    setUserProfile(profile);
+                    if (profile) {
+                        console.log("Auth: Profile fetched successfully, credits:", profile.credits);
+                        setCredits(profile.credits);
+                        setUserProfile(profile);
+                    }
+                } catch (err) {
+                    console.error("Auth: Profile fetch failed:", err);
                 }
             } else {
+                console.log("Auth: No user found, clearing profile.");
                 setUser(null);
                 setUserProfile(null);
             }
         };
 
         const syncGlobal = async () => {
-            // Sync Global Objects
+            // ... (syncGlobal logic)
             try {
                 const [cats, items] = await Promise.all([
                     adminService.getObjectCategories(),
@@ -143,15 +150,29 @@ export const useNanoController = () => {
             }
         };
 
-        // Initial Fetch
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            fetchProfile(user);
+        // Initial Session Check
+        console.log("Auth: Initial session check... Hash present:", !!window.location.hash);
+        if (window.location.hash) {
+            console.log("Auth: URL Hash detected, waiting for Supabase to process...");
+        }
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                console.log("Auth: Session found on mount:", session.user.email);
+                fetchProfile(session.user);
+            } else {
+                console.log("Auth: No session on mount.");
+            }
         });
         syncGlobal();
 
         // Listen for Auth Changes (e.g., OAuth Redirects)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            fetchProfile(session?.user ?? null);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log("Auth: onAuthStateChange event:", event, "User:", session?.user?.email);
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+                fetchProfile(session?.user ?? null);
+            } else if (event === 'SIGNED_OUT') {
+                fetchProfile(null);
+            }
         });
 
         return () => {

@@ -48,6 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 setSuccessMsg(t('auth_check_email_reset'));
             }
         } catch (err: any) {
+            console.error("Email Auth Error:", err);
             setError(err.message);
         } finally {
             setLoading(false);
