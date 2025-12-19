@@ -24,7 +24,7 @@ export const editImageWithGemini = async (
 
     // Clean base64 string if it has the prefix
     const cleanBase64 = imageBase64.split(',')[1] || imageBase64;
-    
+
     const parts: any[] = [];
 
     // 1. Context Instruction
@@ -37,85 +37,85 @@ export const editImageWithGemini = async (
 
     // 2. The Original Image
     parts.push({
-        inlineData: {
-            data: cleanBase64,
-            mimeType: 'image/jpeg', 
-        },
+      inlineData: {
+        data: cleanBase64,
+        mimeType: 'image/jpeg',
+      },
     });
 
     // 3. The Mask/Guide Image (if present)
     if (maskImageBase64) {
-        const cleanMask = maskImageBase64.split(',')[1] || maskImageBase64;
-        parts.push({
-            inlineData: {
-                data: cleanMask,
-                mimeType: 'image/png', // Canvas exports usually as PNG
-            },
-        });
+      const cleanMask = maskImageBase64.split(',')[1] || maskImageBase64;
+      parts.push({
+        inlineData: {
+          data: cleanMask,
+          mimeType: 'image/png', // Canvas exports usually as PNG
+        },
+      });
     }
 
     // 4. Reference Images
     // Iterate through annotations to find reference images
     annotations.forEach((ann) => {
-        if (ann.referenceImage) {
-            const cleanRef = ann.referenceImage.split(',')[1] || ann.referenceImage;
-            
-            // Add the image
-            parts.push({
-                inlineData: {
-                    data: cleanRef,
-                    mimeType: 'image/jpeg', // Assuming upload is jpeg/png, API handles most
-                }
-            });
+      if (ann.referenceImage) {
+        const cleanRef = ann.referenceImage.split(',')[1] || ann.referenceImage;
 
-            // Add Context for this image
-            if (ann.type === 'reference_image') {
-                // Global Reference
-                parts.push({ text: "The image above is a global style reference for the entire generation." });
-            } else if (ann.text) {
-                // Local Reference attached to a specific mask/object
-                parts.push({ text: `The image above is a specific visual reference for the area or object labeled '${ann.text}' in the mask image.` });
-            } else {
-                 parts.push({ text: "The image above is a visual reference." });
-            }
+        // Add the image
+        parts.push({
+          inlineData: {
+            data: cleanRef,
+            mimeType: 'image/jpeg', // Assuming upload is jpeg/png, API handles most
+          }
+        });
+
+        // Add Context for this image
+        if (ann.type === 'reference_image') {
+          // Global Reference
+          parts.push({ text: "The image above is a global style reference for the entire generation." });
+        } else if (ann.text) {
+          // Local Reference attached to a specific mask/object
+          parts.push({ text: `The image above is a specific visual reference for the area or object labeled '${ann.text}' in the mask image.` });
+        } else {
+          parts.push({ text: "The image above is a visual reference." });
         }
+      }
     });
 
     // 5. The User Prompt Logic
     // If mask is present but no prompt, use a generic instruction to follow the mask labels.
     let promptText = prompt.trim();
     if (maskImageBase64) {
-        if (!promptText) {
-             promptText = "Apply the edits to the masked area. If text is engraved on the mask, follow it.";
-        } else {
-             // If user provided prompt, prepend mask context just in case
-             promptText = `Apply the edits to the masked area. If text is engraved on the mask, follow it. ${promptText}`;
-        }
+      if (!promptText) {
+        promptText = "Apply the edits to the masked area. If text is engraved on the mask, follow it.";
+      } else {
+        // If user provided prompt, prepend mask context just in case
+        promptText = `Apply the edits to the masked area. If text is engraved on the mask, follow it. ${promptText}`;
+      }
     }
 
     parts.push({ text: promptText });
-    
+
     // Determine Model and Config based on Quality Mode
     let modelName = 'gemini-3-pro-image-preview'; // Default
     let imageConfig: any = {};
 
     switch (qualityMode) {
-        case 'fast':
-            modelName = 'gemini-2.5-flash-image';
-            // No specific imageSize config for flash-image
-            break;
-        case 'pro-1k':
-            modelName = 'gemini-3-pro-image-preview';
-            imageConfig = { imageSize: '1K' };
-            break;
-        case 'pro-2k':
-            modelName = 'gemini-3-pro-image-preview';
-            imageConfig = { imageSize: '2K' };
-            break;
-        case 'pro-4k':
-            modelName = 'gemini-3-pro-image-preview';
-            imageConfig = { imageSize: '4K' };
-            break;
+      case 'fast':
+        modelName = 'gemini-2.5-flash-image';
+        // No specific imageSize config for flash-image
+        break;
+      case 'pro-1k':
+        modelName = 'gemini-3-pro-image-preview';
+        imageConfig = { imageSize: '1K' };
+        break;
+      case 'pro-2k':
+        modelName = 'gemini-3-pro-image-preview';
+        imageConfig = { imageSize: '2K' };
+        break;
+      case 'pro-4k':
+        modelName = 'gemini-3-pro-image-preview';
+        imageConfig = { imageSize: '4K' };
+        break;
     }
 
     const response = await ai.models.generateContent({
@@ -135,7 +135,7 @@ export const editImageWithGemini = async (
       for (const part of parts) {
         if (part.inlineData) {
           const base64Response = part.inlineData.data;
-          return `data:image/png;base64,${base64Response}`;
+          return `data:image/jpeg;base64,${base64Response}`;
         }
       }
     }

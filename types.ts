@@ -7,7 +7,7 @@ export type TranslationFunction = (key: TranslationKey) => string;
 export interface AnnotationObject {
   id: string;
   type: 'mask_path' | 'stamp' | 'reference_image';
-  points: {x: number, y: number}[];
+  points: { x: number, y: number }[];
   x?: number;
   y?: number;
   strokeWidth: number;
@@ -25,24 +25,24 @@ export interface CanvasImage {
   width: number;
   height: number;
   title: string;
-  
+
   baseName?: string;
   version?: number;
 
   isGenerating: boolean;
   generationStartTime?: number;
   originalSrc?: string;
-  
+
   parentId?: string;
   generationPrompt?: string;
   userDraftPrompt?: string;
-  
+
   maskSrc?: string | null;
   annotations?: AnnotationObject[];
   drawingState?: ImageData;
 
   quality?: GenerationQuality; // Stores the model quality used for generation
-  
+
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep
 }
@@ -55,16 +55,16 @@ export interface ImageRow {
 }
 
 export interface PresetOption {
-    id: string;
-    label: string;
-    value: string;
+  id: string;
+  label: string;
+  value: string;
 }
 
 export interface PresetControl {
-    id: string;
-    label: string;
-    options: PresetOption[];
-    defaultValue?: string; 
+  id: string;
+  label: string;
+  options: PresetOption[];
+  defaultValue?: string;
 }
 
 export interface PromptTemplate {
@@ -84,25 +84,25 @@ export interface PromptTemplate {
 
 // --- PRESET TAGS (Bilingual) ---
 export interface PresetTag {
-    id: string;
-    de: string;
-    en: string;
+  id: string;
+  de: string;
+  en: string;
 }
 
 export interface LibraryItem {
-    id: string;
-    label: string;
-    icon: string;
-    isUserCreated?: boolean; // New
+  id: string;
+  label: string;
+  icon: string;
+  isUserCreated?: boolean; // New
 }
 
 export interface LibraryCategory {
-    id: string;
-    label: string;
-    icon: string;
-    items: LibraryItem[];
-    lang?: 'de' | 'en'; // Localization
-    isUserCreated?: boolean; // New
+  id: string;
+  label: string;
+  icon: string;
+  items: LibraryItem[];
+  lang?: 'de' | 'en'; // Localization
+  isUserCreated?: boolean; // New
 }
 
 export type GenerationQuality = 'fast' | 'pro-1k' | 'pro-2k' | 'pro-4k';
@@ -110,27 +110,26 @@ export type GenerationQuality = 'fast' | 'pro-1k' | 'pro-2k' | 'pro-4k';
 // --- ADMIN TYPES ---
 
 export interface AdminUser {
-    id: string;
-    name: string;
-    email: string;
-    role: 'admin' | 'user' | 'pro';
-    status: 'active' | 'suspended';
-    credits: number;
-    totalSpent: number;
-    joinedAt: number;
-    lastActiveAt: number;
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'user' | 'pro';
+  credits: number;
+  totalSpent: number;
+  joinedAt: number;
+  lastActiveAt: number;
 }
 
 export interface AdminJob {
-    id: string;
-    userId: string;
-    userName: string;
-    type: 'generate' | 'edit' | 'video';
-    model: string;
-    status: 'completed' | 'failed' | 'processing';
-    cost: number;
-    durationMs: number;
-    createdAt: number;
-    thumbnail?: string; // Mock thumbnail url
-    promptPreview: string;
+  id: string;
+  userId: string;
+  userName: string;
+  type: 'generate' | 'edit' | 'video';
+  model: string;
+  status: 'completed' | 'failed' | 'processing';
+  cost: number;
+  durationMs: number;
+  createdAt: number;
+  thumbnail?: string; // Mock thumbnail url
+  promptPreview: string;
 }

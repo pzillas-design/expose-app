@@ -1,5 +1,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import { supabase } from '../services/supabase';
+import { adminService } from '../services/adminService';
 import { CanvasImage, ImageRow, AnnotationObject, GenerationQuality, TranslationKey, LibraryCategory, LibraryItem } from '../types';
 import { editImageWithGemini } from '../services/geminiService';
 import { generateMaskFromAnnotations } from '../utils/maskGenerator';
@@ -26,11 +28,11 @@ export const useNanoController = () => {
         const saved = localStorage.getItem('nano_user_library');
         return saved ? JSON.parse(saved) : [];
     });
+    const [globalLibrary, setGlobalLibrary] = useState<LibraryCategory[]>([]);
 
-    const [credits, setCredits] = useState<number>(() => {
-        const saved = localStorage.getItem('nano_credits');
-        return saved ? parseFloat(saved) : 100.00;
-    });
+    const [credits, setCredits] = useState<number>(10.00);
+    const [user, setUser] = useState<any>(null);
+    const [userProfile, setUserProfile] = useState<any>(null);
 
     // --- Theme & Language ---
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'auto'>(() => {
@@ -66,8 +68,8 @@ export const useNanoController = () => {
     const selectedImage = allImages.find(img => img.id === primarySelectedId) || null;
     const selectedImages = allImages.filter(img => selectedIds.includes(img.id));
 
-    // Combine System + User Library
-    const fullLibrary = [...userLibrary, ...LIBRARY_CATEGORIES];
+    // Combine System + Global + User Library
+    const fullLibrary = [...globalLibrary, ...userLibrary, ...LIBRARY_CATEGORIES];
 
     // --- Navigation Hook Integration ---
     const {
@@ -85,8 +87,64 @@ export const useNanoController = () => {
         primarySelectedId
     });
 
-    // Persist Credits, Quality & Library
-    useEffect(() => { localStorage.setItem('nano_credits', credits.toFixed(2)); }, [credits]);
+    // Sync with Supabase on mount
+    useEffect(() => {
+        const syncProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUser(user);
+                // Update last_active_at
+                await supabase.from('profiles').update({
+                    last_active_at: new Date().toISOString()
+                }).eq('id', user.id);
+
+                // Fetch full profile
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    setCredits(profile.credits);
+                    setUserProfile(profile);
+                }
+            } else {
+                setUser(null);
+                setUserProfile(null);
+            }
+
+            // Sync Global Objects
+            try {
+                const [cats, items] = await Promise.all([
+                    adminService.getObjectCategories(),
+                    adminService.getObjectItems()
+                ]);
+
+                const resolvedLang = lang === 'auto'
+                    ? (navigator.language.split('-')[0] === 'de' ? 'de' : 'en')
+                    : lang;
+
+                const grouped: LibraryCategory[] = cats.map(c => ({
+                    id: c.id,
+                    label: resolvedLang === 'de' ? c.label_de : c.label_en,
+                    icon: '📦',
+                    lang: resolvedLang as 'de' | 'en',
+                    items: items.filter(i => i.category_id === c.id).map(i => ({
+                        id: i.id,
+                        label: resolvedLang === 'de' ? i.label_de : i.label_en,
+                        icon: i.icon || '📦'
+                    }))
+                }));
+                setGlobalLibrary(grouped);
+            } catch (err) {
+                console.error("Failed to fetch global library:", err);
+            }
+        };
+        syncProfile();
+    }, [lang]);
+
+    // Persist Quality & Library
     useEffect(() => { localStorage.setItem('nano_quality', qualityMode); }, [qualityMode]);
     useEffect(() => { localStorage.setItem('nano_user_library', JSON.stringify(userLibrary)); }, [userLibrary]);
 
@@ -121,6 +179,11 @@ export const useNanoController = () => {
     }, [currentLang]);
 
     const handleAddFunds = (amount: number) => setCredits(prev => prev + amount);
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        window.location.reload(); // Hard reload to clear all states
+    };
 
     // --- Library Actions ---
     const addUserCategory = (label: string) => {
@@ -410,6 +473,11 @@ export const useNanoController = () => {
         const row = rows[rowIndex];
         const sourceIndex = row.items.findIndex(item => item.id === sourceImage.id);
 
+        // Update Supabase Credits
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            await supabase.from('profiles').update({ credits: credits - cost }).eq('id', user.id);
+        }
         setCredits(prev => prev - cost);
 
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
@@ -434,6 +502,20 @@ export const useNanoController = () => {
             updatedAt: Date.now()
         };
 
+        // Record Job Start
+        if (user) {
+            await supabase.from('generation_jobs').insert({
+                id: newId,
+                user_id: user.id,
+                user_name: user.email,
+                type: maskDataUrl ? 'Inpaint' : 'Style',
+                model: qualityMode,
+                status: 'processing',
+                cost: cost,
+                prompt: prompt
+            }).select().single();
+        }
+
         setRows(prev => {
             const newRows = [...prev];
             const currentRow = newRows[rowIndex];
@@ -454,6 +536,11 @@ export const useNanoController = () => {
                 sourceImage.annotations || []
             );
 
+            // Update Job Success
+            if (user) {
+                await supabase.from('generation_jobs').update({ status: 'completed' }).eq('id', newId);
+            }
+
             setRows(prev => {
                 const newRows = [...prev];
                 const currentRow = newRows[rowIndex];
@@ -462,12 +549,21 @@ export const useNanoController = () => {
                 return newRows;
             });
         } catch (error) {
+            console.error("Generation failed:", error);
+            // Update Job Failure
+            if (user) {
+                await supabase.from('generation_jobs').update({ status: 'failed' }).eq('id', newId);
+            }
             if (selectedIds.length === 1) alert("Generation failed.");
             setRows(prev => {
                 const newRows = [...prev];
                 newRows[rowIndex] = { ...newRows[rowIndex], items: newRows[rowIndex].items.filter(i => i.id !== newId) };
                 return newRows;
             });
+            // Refund Supabase Credits
+            if (user) {
+                await supabase.from('profiles').update({ credits: credits + cost }).eq('id', user.id);
+            }
             setCredits(prev => prev + cost);
             if (selectedIds.length <= 1) selectAndSnap(sourceImage.id);
         }
@@ -522,7 +618,7 @@ export const useNanoController = () => {
         state: {
             rows, setRows, selectedIds, zoom, credits, sideSheetMode, brushSize,
             isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, qualityMode,
-            themeMode, lang, isAdminOpen, currentLang, fullLibrary
+            themeMode, lang, isAdminOpen, currentLang, fullLibrary, user, userProfile
         },
         actions: {
             setZoom, smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -530,7 +626,7 @@ export const useNanoController = () => {
             handleGenerate, handleGenerateMore, handleNavigateParent, handleUpdateAnnotations,
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
-            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem
+            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut
         },
         refs: { scrollContainerRef },
         t
