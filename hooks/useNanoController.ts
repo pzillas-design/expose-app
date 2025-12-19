@@ -30,9 +30,12 @@ export const useNanoController = () => {
     });
     const [globalLibrary, setGlobalLibrary] = useState<LibraryCategory[]>([]);
 
+    // @ts-ignore
+    const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true';
+
     const [credits, setCredits] = useState<number>(10.00);
-    const [user, setUser] = useState<any>(null);
-    const [userProfile, setUserProfile] = useState<any>(null);
+    const [user, setUser] = useState<any>(isAuthDisabled ? { id: 'guest', email: 'guest@expose.ae' } : null);
+    const [userProfile, setUserProfile] = useState<any>(isAuthDisabled ? { credits: 999.00, full_name: 'Guest User' } : null);
 
     // --- Theme & Language ---
     const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'auto'>(() => {
@@ -89,6 +92,11 @@ export const useNanoController = () => {
 
     // Sync with Supabase and Listen for Changes
     useEffect(() => {
+        if (isAuthDisabled) {
+            setCredits(999.00);
+            return;
+        }
+
         const fetchProfile = async (sessionUser: any) => {
             console.log("Auth: Fetching profile for user:", sessionUser?.email);
             if (sessionUser) {
@@ -122,7 +130,7 @@ export const useNanoController = () => {
         };
 
         const syncGlobal = async () => {
-            // ... (syncGlobal logic)
+            // Sync Global Objects
             try {
                 const [cats, items] = await Promise.all([
                     adminService.getObjectCategories(),
