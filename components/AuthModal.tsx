@@ -81,7 +81,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Decorative Background */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-500/10 to-transparent pointer-events-none" />
 
                 {/* Header */}
                 <div className="p-8 pt-12 pb-0 flex flex-col items-center text-center relative z-10">
