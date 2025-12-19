@@ -32,7 +32,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     password,
                 });
                 if (error) throw error;
-                setSuccessMsg('Check your email for the confirmation link.');
+                setSuccessMsg(t('auth_check_email_conf'));
             } else if (mode === 'signin') {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
@@ -45,7 +45,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     redirectTo: window.location.origin + '?reset=true',
                 });
                 if (error) throw error;
-                setSuccessMsg('Check your email for the password reset link.');
+                setSuccessMsg(t('auth_check_email_reset'));
             }
         } catch (err: any) {
             setError(err.message);
@@ -84,14 +84,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
 
                 {/* Header */}
                 <div className="p-8 pb-0 flex flex-col items-center text-center relative z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 shadow-xl flex items-center justify-center mb-6">
-                        <Logo className="w-10 h-10" />
+                    <div className="flex items-center justify-center mb-6">
+                        <Logo className="w-24 h-24" />
                     </div>
                     <h2 className={Typo.H2}>
-                        {mode === 'signin' ? 'Welcome back' : mode === 'signup' ? 'Create an account' : 'Reset Password'}
+                        {mode === 'signin' ? t('auth_welcome_back') : mode === 'signup' ? t('auth_create_account') : t('auth_reset_password')}
                     </h2>
                     <p className={`${Typo.Body} text-zinc-400 mt-2`}>
-                        {mode === 'signin' ? 'Enter your details to access your workspace.' : mode === 'signup' ? 'Start creating stunning Exposes with AI.' : 'Enter your email to receive a reset link.'}
+                        {mode === 'signin' ? t('auth_signin_desc') : mode === 'signup' ? t('auth_signup_desc') : t('auth_reset_desc')}
                     </p>
                 </div>
 
@@ -110,14 +110,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
                                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                 </svg>
-                                <span className="text-sm font-medium">Google</span>
+                                <span className="text-sm font-medium">{t('auth_google')}</span>
                             </button>
                             <button
                                 disabled // Placeholder for Passkey until fully implemented
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 ${Theme.Geometry.Radius} border ${Theme.Colors.Border} opacity-50 cursor-not-allowed bg-white dark:bg-zinc-900`}
                             >
                                 <Fingerprint className="w-5 h-5 text-zinc-500" />
-                                <span className="text-sm font-medium">Passkey</span>
+                                <span className="text-sm font-medium">{t('auth_passkey')}</span>
                             </button>
                         </div>
                     )}
@@ -128,7 +128,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                 <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
-                                <span className={`bg-white dark:bg-zinc-950 px-2 text-zinc-500`}>Or continue with</span>
+                                <span className={`bg-white dark:bg-zinc-950 px-2 text-zinc-500`}>{t('auth_or_continue')}</span>
                             </div>
                         </div>
                     )}
@@ -141,7 +141,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="name@example.com"
+                                    placeholder={t('auth_email_placeholder')}
                                     className={`w-full pl-10 pr-4 py-2.5 bg-transparent border ${Theme.Colors.Border} ${Theme.Geometry.Radius} ${Theme.Colors.TextPrimary} placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`}
                                     required
                                 />
@@ -155,7 +155,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
+                                        placeholder={t('auth_password_placeholder')}
                                         className={`w-full pl-10 pr-4 py-2.5 bg-transparent border ${Theme.Colors.Border} ${Theme.Geometry.Radius} ${Theme.Colors.TextPrimary} placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`}
                                         required
                                     />
@@ -183,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                 <>
                                     <span>
-                                        {mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+                                        {mode === 'signin' ? t('auth_sign_in_btn') : mode === 'signup' ? t('auth_create_account_btn') : t('auth_send_reset_link')}
                                     </span>
                                     <ArrowRight className="w-4 h-4 ml-2" />
                                 </>
@@ -194,17 +194,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     <div className="flex items-center justify-between text-sm text-zinc-500">
                         {mode === 'signin' ? (
                             <>
-                                <button onClick={() => { setMode('reset'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">Forgot password?</button>
-                                <button onClick={() => { setMode('signup'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">Don't have an account?</button>
+                                <button onClick={() => { setMode('reset'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">{t('auth_forgot_password')}</button>
+                                <button onClick={() => { setMode('signup'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">{t('auth_no_account')}</button>
                             </>
                         ) : mode === 'signup' ? (
                             <div className="w-full text-center">
-                                Already have an account?{' '}
-                                <button onClick={() => { setMode('signin'); setError(null); }} className="font-medium text-black dark:text-white hover:underline">Sign In</button>
+                                {t('auth_already_have')}{' '}
+                                <button onClick={() => { setMode('signin'); setError(null); }} className="font-medium text-black dark:text-white hover:underline">{t('auth_sign_in_btn')}</button>
                             </div>
                         ) : (
                             <button onClick={() => { setMode('signin'); setError(null); }} className="flex items-center gap-2 hover:text-black dark:hover:text-white transition-colors">
-                                <ArrowRight className="w-3 h-3 rotate-180" /> Back to Sign In
+                                <ArrowRight className="w-3 h-3 rotate-180" /> {t('auth_back_to_signin')}
                             </button>
                         )}
                     </div>
