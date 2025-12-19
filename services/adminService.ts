@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from './supabaseClient';
 import { AdminUser } from '../types';
 
 export const adminService = {

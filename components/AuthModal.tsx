@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-react';
-import { supabase } from '../services/supabase';
+import { supabase } from '../services/supabaseClient';
 import { Theme, Typo, Button, IconButton } from './ui/DesignSystem';
 import { Logo } from './ui/Logo';
 import { TranslationFunction } from '../types';

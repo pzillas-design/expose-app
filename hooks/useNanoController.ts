@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase } from '../services/supabaseClient';
 import { adminService } from '../services/adminService';
 import { CanvasImage, ImageRow, AnnotationObject, GenerationQuality, TranslationKey, LibraryCategory, LibraryItem } from '../types';
 import { editImageWithGemini } from '../services/geminiService';
