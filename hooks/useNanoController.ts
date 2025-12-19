@@ -87,22 +87,21 @@ export const useNanoController = () => {
         primarySelectedId
     });
 
-    // Sync with Supabase on mount
+    // Sync with Supabase and Listen for Changes
     useEffect(() => {
-        const syncProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setUser(user);
+        const fetchProfile = async (sessionUser: any) => {
+            if (sessionUser) {
+                setUser(sessionUser);
                 // Update last_active_at
                 await supabase.from('profiles').update({
                     last_active_at: new Date().toISOString()
-                }).eq('id', user.id);
+                }).eq('id', sessionUser.id);
 
                 // Fetch full profile
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('*')
-                    .eq('id', user.id)
+                    .eq('id', sessionUser.id)
                     .single();
 
                 if (profile) {
@@ -113,7 +112,9 @@ export const useNanoController = () => {
                 setUser(null);
                 setUserProfile(null);
             }
+        };
 
+        const syncGlobal = async () => {
             // Sync Global Objects
             try {
                 const [cats, items] = await Promise.all([
@@ -141,7 +142,21 @@ export const useNanoController = () => {
                 console.error("Failed to fetch global library:", err);
             }
         };
-        syncProfile();
+
+        // Initial Fetch
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            fetchProfile(user);
+        });
+        syncGlobal();
+
+        // Listen for Auth Changes (e.g., OAuth Redirects)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            fetchProfile(session?.user ?? null);
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, [lang]);
 
     // Persist Quality & Library
