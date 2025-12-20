@@ -107,49 +107,58 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total Spent</div>
                             <div className="text-xl font-mono text-black dark:text-white">{user.totalSpent.toFixed(2)} €</div>
                         </div>
-                        <div className={`p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 relative group overflow-hidden transition-all text-left`}>
+                        <div className={`p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800`}>
                             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Balance</div>
                             <div className="flex items-center justify-between">
                                 <span className="text-xl font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toFixed(2)} €</span>
-                                {!isAddingBalance && (
-                                    <button
-                                        onClick={() => setIsAddingBalance(true)}
-                                        className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => setIsAddingBalance(true)}
+                                    className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
                             </div>
-
-                            {isAddingBalance && (
-                                <div className="absolute inset-0 bg-white dark:bg-zinc-900 px-2 flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
-                                    <input
-                                        autoFocus
-                                        type="number"
-                                        placeholder="0.00"
-                                        className="flex-1 bg-transparent text-sm border-b border-zinc-200 dark:border-zinc-700 focus:border-emerald-500 outline-none p-1 font-mono"
-                                        value={creditAmount}
-                                        onChange={e => setCreditAmount(e.target.value)}
-                                        onKeyDown={e => e.key === 'Enter' && handleAddCredits()}
-                                        onBlur={() => !creditAmount && setIsAddingBalance(false)}
-                                    />
-                                    <button
-                                        onClick={handleAddCredits}
-                                        disabled={!creditAmount}
-                                        className="bg-emerald-500 hover:bg-emerald-600 text-white rounded p-1"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setIsAddingBalance(false)}
-                                        className="text-zinc-400 hover:text-zinc-600"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </div>
+
+                    {/* Add Balance Modal */}
+                    {isAddingBalance && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-200">
+                            <div className="w-full max-w-[280px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 animate-in zoom-in-95 duration-200">
+                                <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 text-center">Add Funds</h4>
+                                <div className="space-y-4">
+                                    <div className="relative">
+                                        <input
+                                            autoFocus
+                                            type="number"
+                                            placeholder="0.00"
+                                            className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-center text-xl font-mono focus:ring-2 ring-emerald-500 outline-none transition-all"
+                                            value={creditAmount}
+                                            onChange={e => setCreditAmount(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && handleAddCredits()}
+                                        />
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono">€</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="secondary"
+                                            className="flex-1 py-2 text-xs"
+                                            onClick={() => { setIsAddingBalance(false); setCreditAmount(''); }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            className="flex-1 py-2 text-xs"
+                                            onClick={handleAddCredits}
+                                            disabled={!creditAmount || isNaN(parseFloat(creditAmount))}
+                                        >
+                                            Add Funds
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Account Settings */}
