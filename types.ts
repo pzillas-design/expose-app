@@ -128,6 +128,7 @@ export interface AdminJob {
   model: string;
   status: 'completed' | 'failed' | 'processing';
   cost: number;
+  apiCost?: number;
   durationMs: number;
   createdAt: number;
   thumbnail?: string; // Mock thumbnail url

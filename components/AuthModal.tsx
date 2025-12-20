@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-import { Theme, Typo, Button, IconButton } from './ui/DesignSystem';
+import { Theme, Typo, Button, IconButton, Input } from './ui/DesignSystem';
 import { Logo } from './ui/Logo';
 import { TranslationFunction } from '../types';
 
@@ -97,13 +97,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                     <form onSubmit={handleEmailAuth} className="space-y-4">
                         <div className="space-y-2">
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                                <input
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
+                                <Input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder={t('auth_email_placeholder')}
-                                    className={`w-full pl-10 pr-4 py-2.5 bg-transparent border ${Theme.Colors.Border} ${Theme.Geometry.Radius} ${Theme.Colors.TextPrimary} placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`}
+                                    className="pl-10"
                                     required
                                 />
                             </div>
@@ -111,13 +111,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                         {mode !== 'reset' && (
                             <div className="space-y-2">
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                                    <input
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
+                                    <Input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder={t('auth_password_placeholder')}
-                                        className={`w-full pl-10 pr-4 py-2.5 bg-transparent border ${Theme.Colors.Border} ${Theme.Geometry.Radius} ${Theme.Colors.TextPrimary} placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all`}
+                                        className="pl-10"
                                         required
                                     />
                                 </div>
@@ -138,17 +138,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
 
                         <Button
                             type="submit"
-                            className="w-full justify-center py-2.5"
-                            disabled={loading}
+                            variant="primary"
+                            className="w-full justify-center"
+                            isLoading={loading}
                         >
-                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                <>
-                                    <span>
-                                        {mode === 'signin' ? t('auth_sign_in_btn') : mode === 'signup' ? t('auth_create_account_btn') : t('auth_send_reset_link')}
-                                    </span>
-                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                </>
-                            )}
+                            <span>
+                                {mode === 'signin' ? t('auth_sign_in_btn') : mode === 'signup' ? t('auth_create_account_btn') : t('auth_send_reset_link')}
+                            </span>
+                            <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     </form>
 
@@ -164,16 +161,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                                 </div>
                             </div>
 
-                            <button
+                            <Button
                                 type="button"
+                                variant="secondary"
                                 onClick={handleGoogleLogin}
-                                className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 ${Theme.Geometry.Radius} border ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300`}
+                                className="w-full py-2.5"
+                                icon={
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                                    </svg>
+                                }
                             >
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-                                </svg>
-                                <span className="text-sm font-medium">{t('auth_google')}</span>
-                            </button>
+                                <span>{t('auth_google')}</span>
+                            </Button>
                         </>
                     )}
 

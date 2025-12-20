@@ -17,7 +17,7 @@ export const editImageWithGemini = async (
   maskImageBase64?: string,
   qualityMode: GenerationQuality = 'pro-1k',
   annotations: AnnotationObject[] = []
-): Promise<string> => {
+): Promise<{ imageBase64: string; usageMetadata?: any }> => {
   try {
     // Initialize Gemini AI client inside the function to ensure API_KEY is present
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -134,7 +134,10 @@ export const editImageWithGemini = async (
       for (const part of parts) {
         if (part.inlineData) {
           const base64Response = part.inlineData.data;
-          return `data:image/jpeg;base64,${base64Response}`;
+          return {
+            imageBase64: `data:image/jpeg;base64,${base64Response}`,
+            usageMetadata: response.usageMetadata
+          };
         }
       }
     }

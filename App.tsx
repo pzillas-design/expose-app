@@ -6,11 +6,11 @@ import { SettingsModal } from './components/SettingsModal';
 import { SideSheet } from './components/SideSheet';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ContextMenu, ContextMenuState } from './components/ContextMenu';
-import { ConfirmDialog } from './components/ConfirmDialog';
 import { AuthModal } from './components/AuthModal';
 import { useNanoController } from './hooks/useNanoController';
 import { Plus, ImagePlus } from 'lucide-react';
 import { Typo, Theme } from './components/ui/DesignSystem';
+import { useItemDialog } from './components/ui/Dialog';
 
 export function App() {
     const { state, actions, refs, t } = useNanoController();
@@ -190,15 +190,22 @@ export function App() {
     };
 
     // --- Delete Logic with Styled Modal ---
-    const requestDelete = (ids: string | string[]) => {
+    const { confirm } = useItemDialog();
+
+    const requestDelete = async (ids: string | string[]) => {
         const idsArray = Array.isArray(ids) ? ids : [ids];
         if (idsArray.length === 0) return;
-        setDeleteConfirmation({ isOpen: true, ids: idsArray });
-    };
 
-    const executeDelete = () => {
-        handleDeleteImage(deleteConfirmation.ids);
-        setDeleteConfirmation({ isOpen: false, ids: [] });
+        const confirmed = await confirm({
+            title: t('delete'),
+            description: idsArray.length > 1 ? t('delete_confirm_multi') : t('delete_confirm_single'),
+            confirmLabel: t('delete'),
+            variant: 'danger'
+        });
+
+        if (confirmed) {
+            handleDeleteImage(idsArray);
+        }
     };
 
     const handleDeselectAllButOne = () => {
@@ -461,16 +468,7 @@ export function App() {
                 t={t}
             />
 
-            <ConfirmDialog
-                isOpen={deleteConfirmation.isOpen}
-                title={t('delete')}
-                description={deleteConfirmation.ids.length > 1 ? t('delete_confirm_multi') : t('delete_confirm_single')}
-                confirmLabel={t('delete')}
-                cancelLabel={t('cancel')}
-                onConfirm={executeDelete}
-                onCancel={() => setDeleteConfirmation({ isOpen: false, ids: [] })}
-                variant="danger"
-            />
+
         </div>
     );
 }

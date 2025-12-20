@@ -101,6 +101,7 @@ export const adminService = {
             status: job.status || 'completed',
             promptPreview: job.prompt || '',
             cost: job.cost || 0,
+            apiCost: job.api_cost || 0,
             createdAt: new Date(job.created_at).getTime()
         }));
     },

@@ -5,6 +5,9 @@ import { AdminUser, TranslationFunction } from '../../types';
 import { Typo, IconButton, Button, Input, SectionHeader } from '../ui/DesignSystem';
 import { adminService } from '../../services/adminService';
 
+import { useToast } from '../ui/Toast';
+import { useItemDialog } from '../ui/Dialog';
+
 interface AdminUserDetailProps {
     user: AdminUser;
     onClose: () => void;
@@ -18,18 +21,32 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 }) => {
     const [creditAmount, setCreditAmount] = useState('');
     const [isResetting, setIsResetting] = useState(false);
+    const [isAddingBalance, setIsAddingBalance] = useState(false);
+
+    const { showToast } = useToast();
+    const { confirm } = useItemDialog();
 
     const handleAddCredits = () => {
         const amount = parseFloat(creditAmount);
         if (isNaN(amount)) return;
         onUpdateUser(user.id, { credits: user.credits + amount });
         setCreditAmount('');
+        setIsAddingBalance(false);
+        showToast(`Added ${amount.toFixed(2)} credits`, 'success');
     };
 
-    const handleDelete = () => {
-        if (confirm(`Are you sure you want to delete ${user.name}?`)) {
+    const handleDelete = async () => {
+        const confirmed = await confirm({
+            title: `Delete ${user.name}?`,
+            description: "This action cannot be undone.",
+            confirmLabel: "Delete User",
+            variant: "danger"
+        });
+
+        if (confirmed) {
             onDeleteUser(user.id);
             onClose();
+            showToast("User deleted", 'success');
         }
     };
 
@@ -37,9 +54,9 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
         setIsResetting(true);
         try {
             await adminService.resetPassword(user.email);
-            alert(`Password reset link sent to ${user.email}`);
+            showToast(`Password reset link sent to ${user.email}`, 'success');
         } catch (error) {
-            alert('Failed to send reset link');
+            showToast('Failed to send reset link', 'error');
         } finally {
             setIsResetting(false);
         }
@@ -90,20 +107,48 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total Spent</div>
                             <div className="text-xl font-mono text-black dark:text-white">{user.totalSpent.toFixed(2)} €</div>
                         </div>
-                        <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                        <div className={`p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 relative group overflow-hidden transition-all text-left`}>
                             <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Balance</div>
-                            <div className="text-xl font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toFixed(2)} €</div>
-                        </div>
-                    </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-xl font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toFixed(2)} €</span>
+                                {!isAddingBalance && (
+                                    <button
+                                        onClick={() => setIsAddingBalance(true)}
+                                        className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
 
-                    <div className="flex gap-2">
-                        <Input
-                            placeholder="Amount"
-                            value={creditAmount}
-                            onChange={e => setCreditAmount(e.target.value)}
-                            className="flex-1"
-                        />
-                        <Button onClick={handleAddCredits} disabled={!creditAmount} icon={<Plus className="w-4 h-4" />}>Add</Button>
+                            {isAddingBalance && (
+                                <div className="absolute inset-0 bg-white dark:bg-zinc-900 px-2 flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                                    <input
+                                        autoFocus
+                                        type="number"
+                                        placeholder="0.00"
+                                        className="flex-1 bg-transparent text-sm border-b border-zinc-200 dark:border-zinc-700 focus:border-emerald-500 outline-none p-1 font-mono"
+                                        value={creditAmount}
+                                        onChange={e => setCreditAmount(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && handleAddCredits()}
+                                        onBlur={() => !creditAmount && setIsAddingBalance(false)}
+                                    />
+                                    <button
+                                        onClick={handleAddCredits}
+                                        disabled={!creditAmount}
+                                        className="bg-emerald-500 hover:bg-emerald-600 text-white rounded p-1"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setIsAddingBalance(false)}
+                                        className="text-zinc-400 hover:text-zinc-600"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

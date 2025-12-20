@@ -9,6 +9,8 @@ import { generateId } from '../utils/ids';
 import { translations, LocaleKey } from '../data/locales';
 import { useCanvasNavigation } from './useCanvasNavigation';
 import { LIBRARY_CATEGORIES } from '../data/libraryItems';
+import { useToast } from '../components/ui/Toast';
+import { useItemDialog } from '../components/ui/Dialog';
 
 // Cost mapping
 const COSTS: Record<GenerationQuality, number> = {
@@ -19,6 +21,8 @@ const COSTS: Record<GenerationQuality, number> = {
 };
 
 export const useNanoController = () => {
+    const { showToast } = useToast();
+    const { confirm } = useItemDialog();
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -509,7 +513,9 @@ export const useNanoController = () => {
     // --- Core Generation Logic ---
     const performGeneration = async (sourceImage: CanvasImage, prompt: string) => {
         const cost = COSTS[qualityMode];
-        if (credits < cost) { setIsSettingsOpen(true); return; }
+        const isPro = userProfile?.role === 'pro';
+
+        if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
 
         const rowIndex = rows.findIndex(row => row.items.some(item => item.id === sourceImage.id));
         if (rowIndex === -1) return;
@@ -519,10 +525,12 @@ export const useNanoController = () => {
 
         // Update Supabase Credits
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        if (user && !isPro) {
             await supabase.from('profiles').update({ credits: credits - cost }).eq('id', user.id);
         }
-        setCredits(prev => prev - cost);
+        if (!isPro) {
+            setCredits(prev => prev - cost);
+        }
 
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
         const baseName = sourceImage.baseName || sourceImage.title;
@@ -555,7 +563,7 @@ export const useNanoController = () => {
                 type: maskDataUrl ? 'Inpaint' : 'Style',
                 model: qualityMode,
                 status: 'processing',
-                cost: cost,
+                cost: cost, // User credit cost
                 prompt: prompt
             }).select().single();
         }
@@ -572,7 +580,7 @@ export const useNanoController = () => {
         if (selectedIds.length <= 1) selectAndSnap(newId);
 
         try {
-            const newSrc = await editImageWithGemini(
+            const { imageBase64: newSrc, usageMetadata } = await editImageWithGemini(
                 sourceImage.src,
                 prompt,
                 maskDataUrl || undefined,
@@ -580,9 +588,22 @@ export const useNanoController = () => {
                 sourceImage.annotations || []
             );
 
+            // Calculate API Cost
+            let apiCost = 0;
+            if (usageMetadata) {
+                const COST_INPUT_1M = 3.50;
+                const COST_OUTPUT_1M = 10.50;
+                const promptCost = (usageMetadata.promptTokenCount || 0) / 1000000 * COST_INPUT_1M;
+                const candidateCost = (usageMetadata.candidatesTokenCount || 0) / 1000000 * COST_OUTPUT_1M;
+                apiCost = promptCost + candidateCost;
+            }
+
             // Update Job Success
             if (user) {
-                await supabase.from('generation_jobs').update({ status: 'completed' }).eq('id', newId);
+                await supabase.from('generation_jobs').update({
+                    status: 'completed',
+                    api_cost: apiCost
+                }).eq('id', newId);
             }
 
             setRows(prev => {
@@ -598,17 +619,21 @@ export const useNanoController = () => {
             if (user) {
                 await supabase.from('generation_jobs').update({ status: 'failed' }).eq('id', newId);
             }
-            if (selectedIds.length === 1) alert("Generation failed.");
+            if (selectedIds.length === 1) {
+                showToast(t('generation_failed') || "Generation failed", 'error');
+            }
             setRows(prev => {
                 const newRows = [...prev];
                 newRows[rowIndex] = { ...newRows[rowIndex], items: newRows[rowIndex].items.filter(i => i.id !== newId) };
                 return newRows;
             });
             // Refund Supabase Credits
-            if (user) {
+            if (user && !isPro) {
                 await supabase.from('profiles').update({ credits: credits + cost }).eq('id', user.id);
+                setCredits(prev => prev + cost);
+            } else if (!isPro) {
+                setCredits(prev => prev + cost);
             }
-            setCredits(prev => prev + cost);
             if (selectedIds.length <= 1) selectAndSnap(sourceImage.id);
         }
     };
@@ -644,9 +669,14 @@ export const useNanoController = () => {
             if (e.key === '0') { e.preventDefault(); smoothZoomTo(1); }
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (selectedIds.length > 0) {
-                    if (confirm(selectedIds.length > 1 ? t('delete_confirm_multi') : t('delete_confirm_single'))) {
-                        handleDeleteImage(selectedIds);
-                    }
+                    confirm({
+                        title: t('delete'),
+                        description: selectedIds.length > 1 ? t('delete_confirm_multi') : t('delete_confirm_single'),
+                        confirmLabel: t('delete'),
+                        variant: 'danger'
+                    }).then((confirmed) => {
+                        if (confirmed) handleDeleteImage(selectedIds);
+                    });
                 }
             }
             if ((e.metaKey || e.ctrlKey) && e.key === 'a') {

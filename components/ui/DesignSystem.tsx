@@ -12,9 +12,9 @@ export const Theme = {
         CanvasBg: "bg-zinc-50 dark:bg-zinc-950",      // App Background
         PanelBg: "bg-white dark:bg-zinc-900",        // Sidebars, Sheets
         ModalBg: "bg-white dark:bg-zinc-900",        // Modals
-        
+
         // Interactive Surfaces (New Standard)
-        Surface: "bg-white dark:bg-zinc-900", 
+        Surface: "bg-white dark:bg-zinc-900",
         SurfaceSubtle: "bg-zinc-50 dark:bg-zinc-800/50",
         SurfaceHover: "hover:bg-zinc-100 dark:hover:bg-zinc-800",
         SurfaceActive: "bg-zinc-100 dark:bg-zinc-800",
@@ -22,10 +22,10 @@ export const Theme = {
         // Borders
         Border: "border-zinc-200 dark:border-zinc-800",
         BorderSubtle: "border-zinc-100 dark:border-zinc-800/50",
-        
+
         // Grid (Handled via CSS var in index.html)
-        GridDot: "var(--grid-dot)", 
-        
+        GridDot: "var(--grid-dot)",
+
         // Text Colors
         TextPrimary: "text-zinc-900 dark:text-zinc-100",  // Almost Black / Almost White
         TextSecondary: "text-zinc-500",                   // Unified Mid Gray for both modes
@@ -34,8 +34,8 @@ export const Theme = {
 
         // Interactive/Accents
         AccentBg: "bg-black dark:bg-white",
-        AccentFg: "text-white dark:text-black", 
-        
+        AccentFg: "text-white dark:text-black",
+
         // Status
         Danger: "text-red-600 dark:text-red-400",
         DangerBg: "bg-red-50 dark:bg-red-900/20",
@@ -62,32 +62,35 @@ export const Theme = {
 // --- 1. GLOBAL TYPOGRAPHY STYLES ---
 
 export const Typo = {
-  // Big Numbers / Hero Text
-  Display: `text-5xl font-light tracking-tighter ${Theme.Colors.TextHighlight} ${Theme.Fonts.Mono}`,
+    // Big Numbers / Hero Text
+    Display: `text-5xl font-light tracking-tighter ${Theme.Colors.TextHighlight} ${Theme.Fonts.Mono}`,
 
-  // Main Headers (Modals, Large Titles)
-  H1: `text-lg font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
-  
-  // Section Headers / Card Titles
-  H2: `text-base font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
-  
-  // Subtitles / Form Labels
-  H3: `text-sm font-medium ${Theme.Colors.TextPrimary}`,
-  
-  // Section Labels (The "Eyebrow" style)
-  Label: `text-[10px] font-bold uppercase tracking-widest ${Theme.Colors.TextSecondary}`,
-  
-  // Tiny Badges
-  LabelSmall: `text-[9px] font-bold uppercase tracking-widest`,
-  
-  // Standard UI Text
-  Body: `text-xs font-normal ${Theme.Colors.TextPrimary} leading-relaxed`,
-  
-  // Micro Labels
-  Micro: `text-[11px] font-normal ${Theme.Colors.TextSecondary}`,
-  
-  // Technical/Numbers
-  Mono: `${Theme.Fonts.Mono} text-xs ${Theme.Colors.TextSecondary}`
+    // Main Headers (Modals, Large Titles)
+    H1: `text-lg font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
+
+    // Section Headers / Card Titles
+    H2: `text-base font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
+
+    // Subtitles / Form Labels
+    H3: `text-sm font-medium ${Theme.Colors.TextPrimary}`,
+
+    // Section Labels (The "Eyebrow" style)
+    Label: `text-[10px] font-bold uppercase tracking-widest ${Theme.Colors.TextSecondary}`,
+
+    // Button Labels (Standardized for all buttons)
+    ButtonLabel: `text-[10px] font-bold uppercase tracking-widest`,
+
+    // Tiny Badges
+    LabelSmall: `text-[9px] font-bold uppercase tracking-widest`,
+
+    // Standard UI Text
+    Body: `text-xs font-normal ${Theme.Colors.TextPrimary} leading-relaxed`,
+
+    // Micro Labels
+    Micro: `text-[11px] font-normal ${Theme.Colors.TextSecondary}`,
+
+    // Technical/Numbers
+    Mono: `${Theme.Fonts.Mono} text-xs ${Theme.Colors.TextSecondary}`
 };
 
 // --- 2. REUSABLE COMPONENTS ---
@@ -102,7 +105,7 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom' }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
-    
+
     const handleMouseEnter = (e: React.MouseEvent) => {
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
@@ -127,15 +130,15 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         <>
             {childWithRef}
             {isVisible && createPortal(
-                <div 
+                <div
                     className={`
                         fixed z-[100] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
                         bg-white dark:bg-zinc-950
                         text-zinc-900 dark:text-zinc-100
                         border border-zinc-200 dark:border-zinc-800 shadow-md
                     `}
-                    style={{ 
-                        top: coords.top, 
+                    style={{
+                        top: coords.top,
                         left: coords.left,
                         transform: `translate(-50%, ${side === 'bottom' ? '0' : '-100%'})`
                     }}
@@ -173,16 +176,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-    children, variant = 'primary', icon, isLoading, className = '', disabled, tooltip, ...props 
+export const Button: React.FC<ButtonProps> = ({
+    children, variant = 'primary', icon, isLoading, className = '', disabled, tooltip, ...props
 }) => {
     // Structural classes
     const base = `flex items-center justify-center gap-2 ${Theme.Geometry.Radius} ${Theme.Effects.Transition} active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0`;
-    
+
     // Aesthetic classes
     const variants = {
-        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3 ${Typo.Label}`,
-        
+        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3 ${Typo.ButtonLabel}`,
+
         // Secondary: Flat, bordered, clean hover states
         secondary: `
             ${Theme.Colors.Surface} 
@@ -192,10 +195,10 @@ export const Button: React.FC<ButtonProps> = ({
             hover:border-zinc-300 dark:hover:border-zinc-600
             py-2.5 ${Typo.Body} font-medium
         `,
-        
+
         danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-2.5 ${Typo.Body} font-medium`,
-        
-        ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white py-2 px-3 ` + Typo.Label
+
+        ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white py-2 px-3 ${Typo.ButtonLabel}`
     };
 
     const btn = (
@@ -221,15 +224,15 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, className = '', ...props }) => {
     const btn = (
-        <button 
+        <button
             className={`
                 p-2 ${Theme.Geometry.Radius} ${Theme.Effects.Transition} shrink-0 
-                ${active 
-                    ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' 
+                ${active
+                    ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white'
                     : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white'
                 } 
                 ${className}
-            `} 
+            `}
             {...props}
         >
             {icon}
@@ -244,7 +247,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
 
 // -- Inputs --
 export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
-    <input 
+    <input
         ref={ref}
         className={`w-full ${Theme.Colors.Surface} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} px-3 py-2.5 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-600 ${Typo.Body} ${className}`}
         {...props}
@@ -253,7 +256,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
 
 // -- Table Input (Clean inline editing) --
 export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
-    <input 
+    <input
         ref={ref}
         className={`w-full bg-transparent border border-transparent rounded px-2 py-1 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-300 dark:focus:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900 ${Theme.Effects.Transition} ${Typo.Body} ${className}`}
         {...props}
@@ -261,7 +264,7 @@ export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes
 ));
 
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className = '', ...props }, ref) => (
-    <textarea 
+    <textarea
         ref={ref}
         className={`w-full ${Theme.Colors.Surface} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} p-3 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-600 ${Typo.Body} ${className}`}
         {...props}
@@ -270,7 +273,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttrib
 
 // -- Card/Box --
 export const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
-    <div 
+    <div
         onClick={onClick}
         className={`${Theme.Colors.Surface} ${Theme.Colors.Border} border ${Theme.Geometry.RadiusLg} ${className}`}
     >

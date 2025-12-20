@@ -65,7 +65,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     <th className="px-4 py-3 font-medium">Type</th>
                                     <th className="px-4 py-3 font-medium">Status</th>
                                     <th className="px-4 py-3 font-medium">Prompt</th>
-                                    <th className="px-4 py-3 font-medium text-right">Cost</th>
+                                    <th className="px-4 py-3 font-medium text-right">Credits</th>
+                                    <th className="px-4 py-3 font-medium text-right">API ($)</th>
                                     <th className="px-4 py-3 font-medium text-right">Time</th>
                                 </tr>
                             </thead>
@@ -85,6 +86,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         </td>
                                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 max-w-xs truncate" title={j.promptPreview}>{j.promptPreview}</td>
                                         <td className="px-4 py-3 text-right font-mono text-zinc-700 dark:text-zinc-300">{j.cost.toFixed(2)}</td>
+                                        <td className="px-4 py-3 text-right font-mono text-xs text-zinc-500">{j.apiCost ? `$${j.apiCost.toFixed(4)}` : '-'}</td>
                                         <td className="px-4 py-3 text-right text-zinc-500 text-xs">{new Date(j.createdAt).toLocaleString()}</td>
                                     </tr>
                                 ))}
