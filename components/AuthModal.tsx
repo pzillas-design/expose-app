@@ -192,8 +192,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                         )}
 
                         {error && (
-                            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg animate-in fade-in slide-in-from-top-1">
-                                {error}
+                            <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg animate-in fade-in slide-in-from-top-1 flex items-center justify-between">
+                                <span>{error}</span>
+                                {(mode === 'update-password' || mode === 'reset') && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setMode('reset'); setError(null); setSuccessMsg(null); }}
+                                        className="text-xs font-semibold underline hover:opacity-70 transition-opacity ml-2 whitespace-nowrap"
+                                    >
+                                        {t('auth_resend_link')}
+                                    </button>
+                                )}
                             </div>
                         )}
 

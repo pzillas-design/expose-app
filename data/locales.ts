@@ -193,6 +193,7 @@ export const translations = {
     auth_update_password_btn: "Save Password",
     auth_password_updated: "Password updated successfully!",
     auth_error_password_mismatch: "Passwords do not match!",
+    auth_resend_link: "Resend?",
   },
   de: {
     // General
@@ -387,6 +388,7 @@ export const translations = {
     auth_update_password_btn: "Passwort speichern",
     auth_password_updated: "Passwort erfolgreich aktualisiert!",
     auth_error_password_mismatch: "Passwörter stimmen nicht überein!",
+    auth_resend_link: "Erneut senden?",
   }
 };
 
