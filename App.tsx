@@ -42,6 +42,14 @@ export function App() {
     // Delete Confirmation State
     const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean, ids: string[] }>({ isOpen: false, ids: [] });
 
+    // URL Routing Support
+    useEffect(() => {
+        const path = window.location.pathname;
+        if (path === '/admin') {
+            setIsAdminOpen(true);
+        }
+    }, [setIsAdminOpen]);
+
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
             if (e.dataTransfer?.types.includes('Files')) {

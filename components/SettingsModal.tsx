@@ -179,9 +179,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                             {!isTopUpExpanded ? (
                                                 <Button
                                                     onClick={() => setIsTopUpExpanded(true)}
+                                                    variant="primary"
                                                     className="w-full"
                                                 >
-                                                    {t('top_up')}
+                                                    <span className={Theme.Colors.AccentFg}>{t('top_up')}</span>
                                                 </Button>
                                             ) : (
                                                 <div className="animate-in fade-in zoom-in-95 duration-200 w-full space-y-3">
