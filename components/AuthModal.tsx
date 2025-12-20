@@ -114,17 +114,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                         <Logo className="w-36 h-36" />
                     </div>
                     <div className="space-y-1">
-                        <h2 className={Typo.H1}>
-                            {mode === 'signin' ? t('auth_welcome_back') :
-                                mode === 'signup' ? t('auth_create_account') :
+                        {mode !== 'signin' && (
+                            <h2 className={Typo.H1}>
+                                {mode === 'signup' ? t('auth_create_account') :
                                     mode === 'update-password' ? t('auth_update_password_title') :
                                         t('auth_reset_password')}
-                        </h2>
-                        {mode !== 'update-password' && (
+                            </h2>
+                        )}
+                        {mode !== 'update-password' && mode !== 'signin' && (
                             <p className={Typo.Micro}>
-                                {mode === 'signin' ? t('auth_signin_desc') :
-                                    mode === 'signup' ? t('auth_signup_desc') :
-                                        t('auth_reset_desc')}
+                                {mode === 'signup' ? t('auth_signup_desc') :
+                                    t('auth_reset_desc')}
                             </p>
                         )}
                     </div>
