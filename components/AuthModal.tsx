@@ -103,9 +103,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-orange-500/5 to-transparent pointer-events-none" />
 
                 {/* Header */}
-                <div className="p-8 pt-12 pb-0 flex flex-col items-center text-center relative z-10">
+                <div className="p-8 pt-12 pb-2 flex flex-col items-center text-center relative z-10">
                     <div className="flex items-center justify-center mb-6">
                         <Logo className="w-36 h-36" />
+                    </div>
+                    <div className="space-y-1">
+                        <h2 className={Typo.H1}>
+                            {mode === 'signin' ? t('auth_welcome_back') :
+                                mode === 'signup' ? t('auth_create_account') :
+                                    mode === 'update-password' ? t('auth_update_password_title') :
+                                        t('auth_reset_password')}
+                        </h2>
+                        <p className={Typo.Micro}>
+                            {mode === 'signin' ? t('auth_signin_desc') :
+                                mode === 'signup' ? t('auth_signup_desc') :
+                                    mode === 'update-password' ? t('auth_update_password_desc') :
+                                        t('auth_reset_desc')}
+                        </p>
                     </div>
                 </div>
 
@@ -172,7 +186,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                     </form>
 
                     {/* 2. Divider & Social Auth */}
-                    {mode !== 'reset' && (
+                    {mode !== 'reset' && mode !== 'update-password' && (
                         <>
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">

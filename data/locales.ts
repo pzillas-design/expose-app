@@ -186,6 +186,10 @@ export const translations = {
     auth_back_to_signin: "Back to Sign In",
     auth_check_email_conf: "Check your email for the confirmation link.",
     auth_check_email_reset: "Check your email for the password reset link.",
+    auth_update_password_title: "Set New Password",
+    auth_update_password_desc: "Please enter your new password below.",
+    auth_update_password_btn: "Save Password",
+    auth_password_updated: "Password updated successfully!",
   },
   de: {
     // General
@@ -373,6 +377,10 @@ export const translations = {
     auth_back_to_signin: "Zurück zur Anmeldung",
     auth_check_email_conf: "Prüfe deine E-Mails für den Bestätigungslink.",
     auth_check_email_reset: "Prüfe deine E-Mails für den Reset-Link.",
+    auth_update_password_title: "Neues Passwort festlegen",
+    auth_update_password_desc: "Bitte gib unten dein neues Passwort ein.",
+    auth_update_password_btn: "Passwort speichern",
+    auth_password_updated: "Passwort erfolgreich aktualisiert!",
   }
 };
 
