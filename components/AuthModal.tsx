@@ -251,8 +251,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                     <div className="flex items-center justify-between text-sm text-zinc-500">
                         {mode === 'signin' ? (
                             <>
-                                <button onClick={() => { setMode('reset'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">{t('auth_forgot_password')}</button>
                                 <button onClick={() => { setMode('signup'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">{t('auth_no_account')}</button>
+                                <button onClick={() => { setMode('reset'); setError(null); }} className="hover:text-black dark:hover:text-white transition-colors">{t('auth_forgot_password')}</button>
                             </>
                         ) : mode === 'signup' ? (
                             <div className="w-full text-center">
