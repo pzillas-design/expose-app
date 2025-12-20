@@ -3,9 +3,9 @@ DROP TABLE IF EXISTS public.global_objects_items CASCADE;
 DROP TABLE IF EXISTS public.global_objects_categories CASCADE;
 DROP TABLE IF EXISTS public.global_presets CASCADE;
 
--- Create global_presets table
+-- Create global_presets table (Using TEXT for ID to support string IDs like 'sys-staging-pro')
 CREATE TABLE public.global_presets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     prompt TEXT NOT NULL,
     tags TEXT[] DEFAULT '{}',
@@ -34,9 +34,9 @@ CREATE POLICY "Admin Presets All" ON public.global_presets
     WITH CHECK (true);
 
 
--- Create global_objects_categories table
+-- Create global_objects_categories table (Using TEXT for ID to match client-side logic)
 CREATE TABLE public.global_objects_categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY,
     label_de TEXT NOT NULL,
     label_en TEXT NOT NULL,
     icon TEXT,
@@ -57,10 +57,10 @@ CREATE POLICY "Admin Categories All" ON public.global_objects_categories
     USING (true);
 
 
--- Create global_objects_items table
+-- Create global_objects_items table (Using TEXT for ID)
 CREATE TABLE public.global_objects_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    category_id UUID REFERENCES public.global_objects_categories(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY,
+    category_id TEXT REFERENCES public.global_objects_categories(id) ON DELETE CASCADE,
     label_de TEXT NOT NULL,
     label_en TEXT NOT NULL,
     icon TEXT,
@@ -118,142 +118,127 @@ INSERT INTO public.global_presets (id, title, prompt, tags, is_pinned, is_custom
 ('sys-11-en', 'Golden Hour', 'Apply a warm, golden hour lighting effect to the scene, creating a welcoming atmosphere.', ARRAY['Exterior', 'Mood'], false, false, 35, 'en', NOW(), null)
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, prompt = EXCLUDED.prompt, tags = EXCLUDED.tags;
 
--- 2. Object Categories & Items
-DO $$
-DECLARE
-    cat_basics UUID;
-    cat_living UUID;
-    cat_dining UUID;
-    cat_bed UUID;
-    cat_bath UUID;
-    cat_work UUID;
-    cat_lighting UUID;
-    cat_plants UUID;
-    cat_decor UUID;
-    cat_outdoor UUID;
-BEGIN
-    -- BASICS
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('basics', 'Basis', 'Basics', '📦', 10) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_basics;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_basics, 'basics_table', 'Tisch', 'Table', '🍽️'),
-    (cat_basics, 'basics_mirror', 'Spiegel', 'Mirror', '🪞'),
-    (cat_basics, 'basics_lamp', 'Lampe', 'Lamp', '💡'),
-    (cat_basics, 'basics_chair', 'Stuhl', 'Chair', '🪑'),
-    (cat_basics, 'basics_armchair', 'Sessel', 'Armchair', '🪑'),
-    (cat_basics, 'basics_sofa', 'Sofa', 'Sofa', '🛋️'),
-    (cat_basics, 'basics_rug', 'Teppich', 'Rug', '🧶'),
-    (cat_basics, 'basics_plant', 'Pflanze', 'Plant', '🪴'),
-    (cat_basics, 'basics_art', 'Wandbild', 'Wall Art', '🖼️'),
-    (cat_basics, 'basics_kitchen', 'Küche', 'Kitchen', '🍳'),
-    (cat_basics, 'basics_tv', 'TV-Schrank', 'TV Stand', '📺'),
-    (cat_basics, 'basics_shelf', 'Regal', 'Shelf', '📚')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- 2. Object Categories & Items (Using manual SQL insert to avoid DO block variable issues and ensure TEXT ids)
+-- BASICS
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('basics', 'Basis', 'Basics', '📦', 10) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('basics', 'basics_table', 'Tisch', 'Table', '🍽️'),
+('basics', 'basics_mirror', 'Spiegel', 'Mirror', '🪞'),
+('basics', 'basics_lamp', 'Lampe', 'Lamp', '💡'),
+('basics', 'basics_chair', 'Stuhl', 'Chair', '🪑'),
+('basics', 'basics_armchair', 'Sessel', 'Armchair', '🪑'),
+('basics', 'basics_sofa', 'Sofa', 'Sofa', '🛋️'),
+('basics', 'basics_rug', 'Teppich', 'Rug', '🧶'),
+('basics', 'basics_plant', 'Pflanze', 'Plant', '🪴'),
+('basics', 'basics_art', 'Wandbild', 'Wall Art', '🖼️'),
+('basics', 'basics_kitchen', 'Küche', 'Kitchen', '🍳'),
+('basics', 'basics_tv', 'TV-Schrank', 'TV Stand', '📺'),
+('basics', 'basics_shelf', 'Regal', 'Shelf', '📚')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- LIVING ROOM
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('living_room', 'Wohnen', 'Living', '🛋️', 20) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_living;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_living, 'living_landscape', 'Wohnlandschaft', 'Living Landscape', '🛋️'),
-    (cat_living, 'sofa_2seater', '2-Sitzer Sofa', '2-Seater Sofa', '🛋️'),
-    (cat_living, 'sitting_area', 'Sitzgruppe', 'Sitting Group', '🛋️'),
-    (cat_living, 'armchair', 'Sessel', 'Armchair', '🪑'),
-    (cat_living, 'coffee_table_set', 'Couchtisch-Set', 'Coffee Table Set', '🪵'),
-    (cat_living, 'media_wall', 'Medienwand', 'Media Wall', '📺'),
-    (cat_living, 'sideboard', 'Sideboard', 'Sideboard', '🗄️'),
-    (cat_living, 'bookshelf', 'Bücherregal', 'Bookshelf', '📚'),
-    (cat_living, 'reading_nook', 'Leseecke', 'Reading Nook', '📖'),
-    (cat_living, 'fireplace', 'Kaminbereich', 'Fireplace Area', '🔥')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- LIVING ROOM
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('living_room', 'Wohnen', 'Living', '🛋️', 20) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('living_room', 'living_landscape', 'Wohnlandschaft', 'Living Landscape', '🛋️'),
+('living_room', 'sofa_2seater', '2-Sitzer Sofa', '2-Seater Sofa', '🛋️'),
+('living_room', 'sitting_area', 'Sitzgruppe', 'Sitting Group', '🛋️'),
+('living_room', 'armchair', 'Sessel', 'Armchair', '🪑'),
+('living_room', 'coffee_table_set', 'Couchtisch-Set', 'Coffee Table Set', '🪵'),
+('living_room', 'media_wall', 'Medienwand', 'Media Wall', '📺'),
+('living_room', 'sideboard', 'Sideboard', 'Sideboard', '🗄️'),
+('living_room', 'bookshelf', 'Bücherregal', 'Bookshelf', '📚'),
+('living_room', 'reading_nook', 'Leseecke', 'Reading Nook', '📖'),
+('living_room', 'fireplace', 'Kaminbereich', 'Fireplace Area', '🔥')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- DINING & KITCHEN
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('dining_kitchen', 'Essen & Küche', 'Dining & Kitchen', '🍽️', 30) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_dining;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_dining, 'dining_area_large', 'Essbereich Groß', 'Dining Area Large', '🍽️'),
-    (cat_dining, 'dining_round', 'Esstisch Rund', 'Round Dining Table', '🍽️'),
-    (cat_dining, 'kitchen_island_set', 'Kücheninsel-Set', 'Kitchen Island Set', '🔪'),
-    (cat_dining, 'kitchenette', 'Küchenzeile', 'Kitchenette', '🍳'),
-    (cat_dining, 'dining_chair', 'Stuhl', 'Chair', '🪑'),
-    (cat_dining, 'dining_nook', 'Frühstücksecke', 'Breakfast Nook', '☕'),
-    (cat_dining, 'bar_setup', 'Bar-Bereich', 'Bar Area', '🍸'),
-    (cat_dining, 'pantry_shelf', 'Vorratsregal', 'Pantry Shelf', '🥫')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- DINING & KITCHEN
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('dining_kitchen', 'Essen & Küche', 'Dining & Kitchen', '🍽️', 30) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('dining_kitchen', 'dining_area_large', 'Essbereich Groß', 'Dining Area Large', '🍽️'),
+('dining_kitchen', 'dining_round', 'Esstisch Rund', 'Round Dining Table', '🍽️'),
+('dining_kitchen', 'kitchen_island_set', 'Kücheninsel-Set', 'Kitchen Island Set', '🔪'),
+('dining_kitchen', 'kitchenette', 'Küchenzeile', 'Kitchenette', '🍳'),
+('dining_kitchen', 'dining_chair', 'Stuhl', 'Chair', '🪑'),
+('dining_kitchen', 'dining_nook', 'Frühstücksecke', 'Breakfast Nook', '☕'),
+('dining_kitchen', 'bar_setup', 'Bar-Bereich', 'Bar Area', '🍸'),
+('dining_kitchen', 'pantry_shelf', 'Vorratsregal', 'Pantry Shelf', '🥫')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- BEDROOM
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('bedroom', 'Schlafen', 'Bedroom', '🛏️', 40) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_bed;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_bed, 'bed_set_master', 'Doppelbett-Set', 'Double Bed Set', '🛏️'),
-    (cat_bed, 'single_bed_set', 'Einzelbett-Set', 'Single Bed Set', '🛏️'),
-    (cat_bed, 'wardrobe_system', 'Kleiderschrank', 'Wardrobe', '🚪'),
-    (cat_bed, 'nightstand', 'Nachttisch', 'Nightstand', '🌙'),
-    (cat_bed, 'dresser', 'Kommode', 'Dresser', '🗄️'),
-    (cat_bed, 'vanity_area', 'Schminktisch', 'Vanity Table', '🪞'),
-    (cat_bed, 'bench_end', 'Bettbank', 'Bed Bench', '🪑')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- BEDROOM
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('bedroom', 'Schlafen', 'Bedroom', '🛏️', 40) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('bedroom', 'bed_set_master', 'Doppelbett-Set', 'Double Bed Set', '🛏️'),
+('bedroom', 'single_bed_set', 'Einzelbett-Set', 'Single Bed Set', '🛏️'),
+('bedroom', 'wardrobe_system', 'Kleiderschrank', 'Wardrobe', '🚪'),
+('bedroom', 'nightstand', 'Nachttisch', 'Nightstand', '🌙'),
+('bedroom', 'dresser', 'Kommode', 'Dresser', '🗄️'),
+('bedroom', 'vanity_area', 'Schminktisch', 'Vanity Table', '🪞'),
+('bedroom', 'bench_end', 'Bettbank', 'Bed Bench', '🪑')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- BATHROOM
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('bathroom', 'Bad', 'Bathroom', '🛁', 50) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_bath;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_bath, 'bathroom_vanity', 'Waschtisch', 'Vanity', '🚰'),
-    (cat_bath, 'freestanding_tub', 'Freistehende Wanne', 'Freestanding Tub', '🛁'),
-    (cat_bath, 'shower_cabin', 'Duschkabine', 'Shower Cabin', '🚿'),
-    (cat_bath, 'toilet_wall', 'WC-Anlage', 'Toilet', '🚽'),
-    (cat_bath, 'towel_rack', 'Handtuchhalter', 'Towel Rack', '🧖'),
-    (cat_bath, 'mirror_cabinet', 'Spiegelschrank', 'Mirror Cabinet', '🪞')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- BATHROOM
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('bathroom', 'Bad', 'Bathroom', '🛁', 50) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('bathroom', 'bathroom_vanity', 'Waschtisch', 'Vanity', '🚰'),
+('bathroom', 'freestanding_tub', 'Freistehende Wanne', 'Freestanding Tub', '🛁'),
+('bathroom', 'shower_cabin', 'Duschkabine', 'Shower Cabin', '🚿'),
+('bathroom', 'toilet_wall', 'WC-Anlage', 'Toilet', '🚽'),
+('bathroom', 'towel_rack', 'Handtuchhalter', 'Towel Rack', '🧖'),
+('bathroom', 'mirror_cabinet', 'Spiegelschrank', 'Mirror Cabinet', '🪞')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- WORK OFFICE
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('work_office', 'Arbeiten', 'Work', '💻', 60) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_work;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_work, 'home_office_full', 'Büro Komplett', 'Full Home Office', '💻'),
-    (cat_work, 'desk_setup', 'Schreibtisch', 'Desk Setup', '🖥️'),
-    (cat_work, 'office_chair', 'Bürostuhl', 'Office Chair', '🪑'),
-    (cat_work, 'meeting_corner', 'Besprechungsecke', 'Meeting Corner', '🤝'),
-    (cat_work, 'shelving_wall', 'Aktenregal', 'Shelving Wall', '📚')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- WORK OFFICE
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('work_office', 'Arbeiten', 'Work', '💻', 60) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('work_office', 'home_office_full', 'Büro Komplett', 'Full Home Office', '💻'),
+('work_office', 'desk_setup', 'Schreibtisch', 'Desk Setup', '🖥️'),
+('work_office', 'office_chair', 'Bürostuhl', 'Office Chair', '🪑'),
+('work_office', 'meeting_corner', 'Besprechungsecke', 'Meeting Corner', '🤝'),
+('work_office', 'shelving_wall', 'Aktenregal', 'Shelving Wall', '📚')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- LIGHTING
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('lighting', 'Lampen', 'Lighting', '💡', 70) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_lighting;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_lighting, 'ceiling_lamp_group', 'Deckenleuchte', 'Ceiling Light', '💡'),
-    (cat_lighting, 'chandelier', 'Kronleuchter', 'Chandelier', '💎'),
-    (cat_lighting, 'lighting_floor', 'Stehlampe', 'Floor Lamp', '🛋️'),
-    (cat_lighting, 'table_lamp', 'Tischlampe', 'Table Lamp', '🏮'),
-    (cat_lighting, 'wall_sconce', 'Wandleuchte', 'Wall Sconce', '💡'),
-    (cat_lighting, 'pendant_lights', 'Pendelleuchten', 'Pendant Lights', '💡')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- LIGHTING
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('lighting', 'Lampen', 'Lighting', '💡', 70) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('lighting', 'ceiling_lamp_group', 'Deckenleuchte', 'Ceiling Light', '💡'),
+('lighting', 'chandelier', 'Kronleuchter', 'Chandelier', '💎'),
+('lighting', 'lighting_floor', 'Stehlampe', 'Floor Lamp', '🛋️'),
+('lighting', 'table_lamp', 'Tischlampe', 'Table Lamp', '🏮'),
+('lighting', 'wall_sconce', 'Wandleuchte', 'Wall Sconce', '💡'),
+('lighting', 'pendant_lights', 'Pendelleuchten', 'Pendant Lights', '💡')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- PLANTS
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('plants', 'Pflanzen', 'Plants', '🪴', 80) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_plants;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_plants, 'plant_large', 'Große Zimmerpflanze', 'Large Plant', '🪴'),
-    (cat_plants, 'plant_group', 'Pflanzengruppe', 'Plant Group', '🌿'),
-    (cat_plants, 'hanging_plant', 'Hängepflanze', 'Hanging Plant', '🍃'),
-    (cat_plants, 'flower_vase', 'Blumenstrauß', 'Flower Vase', '💐'),
-    (cat_plants, 'succulent_mix', 'Sukkulenten', 'Succulents', '🌵'),
-    (cat_plants, 'olive_tree', 'Olivenbaum', 'Olive Tree', '🌳')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- PLANTS
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('plants', 'Pflanzen', 'Plants', '🪴', 80) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('plants', 'plant_large', 'Große Zimmerpflanze', 'Large Plant', '🪴'),
+('plants', 'plant_group', 'Pflanzengruppe', 'Plant Group', '🌿'),
+('plants', 'hanging_plant', 'Hängepflanze', 'Hanging Plant', '🍃'),
+('plants', 'flower_vase', 'Blumenstrauß', 'Flower Vase', '💐'),
+('plants', 'succulent_mix', 'Sukkulenten', 'Succulents', '🌵'),
+('plants', 'olive_tree', 'Olivenbaum', 'Olive Tree', '🌳')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- DECO
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('decoration', 'Deko', 'Decor', '🖼️', 90) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_decor;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_decor, 'rug_large', 'Teppich Groß', 'Large Rug', '🧶'),
-    (cat_decor, 'wall_art_set', 'Wandbilder', 'Wall Art', '🖼️'),
-    (cat_decor, 'mirror_round', 'Wandspiegel Rund', 'Round Mirror', '🪞'),
-    (cat_decor, 'curtains', 'Vorhänge', 'Curtains', '🪟'),
-    (cat_decor, 'pillows_throw', 'Kissen & Decke', 'Pillows & Throw', '🛋️'),
-    (cat_decor, 'books_decor', 'Deko-Bücher', 'Coffee Table Books', '📚'),
-    (cat_decor, 'sculpture', 'Skulptur', 'Sculpture', '🗿')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+-- DECO
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('decoration', 'Deko', 'Decor', '🖼️', 90) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('decoration', 'rug_large', 'Teppich Groß', 'Large Rug', '🧶'),
+('decoration', 'wall_art_set', 'Wandbilder', 'Wall Art', '🖼️'),
+('decoration', 'mirror_round', 'Wandspiegel Rund', 'Round Mirror', '🪞'),
+('decoration', 'curtains', 'Vorhänge', 'Curtains', '🪟'),
+('decoration', 'pillows_throw', 'Kissen & Decke', 'Pillows & Throw', '🛋️'),
+('decoration', 'books_decor', 'Deko-Bücher', 'Coffee Table Books', '📚'),
+('decoration', 'sculpture', 'Skulptur', 'Sculpture', '🗿')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
 
-    -- OUTDOOR
-    INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('outdoor', 'Außenbereich', 'Outdoor', '☀️', 100) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de RETURNING id INTO cat_outdoor;
-    INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
-    (cat_outdoor, 'lounge_outdoor', 'Lounge-Ecke', 'Lounge Area', '☀️'),
-    (cat_outdoor, 'dining_outdoor', 'Gartentisch-Set', 'Dining Set', '🍽️'),
-    (cat_outdoor, 'sun_loungers', 'Sonnenliegen', 'Sun Loungers', '🏖️'),
-    (cat_outdoor, 'parasol', 'Gartenschirm', 'Parasol', '☂️'),
-    (cat_outdoor, 'bbq_area', 'Grillbereich', 'BBQ Area', '🔥'),
-    (cat_outdoor, 'firepit', 'Feuerschale', 'Firepit', '🔥'),
-    (cat_outdoor, 'planters_outdoor', 'Pflanzkübel', 'Planters', '🪴')
-    ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
-
-END $$;
+-- OUTDOOR
+INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order") VALUES ('outdoor', 'Außenbereich', 'Outdoor', '☀️', 100) ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
+INSERT INTO public.global_objects_items (category_id, id, label_de, label_en, icon) VALUES
+('outdoor', 'lounge_outdoor', 'Lounge-Ecke', 'Lounge Area', '☀️'),
+('outdoor', 'dining_outdoor', 'Gartentisch-Set', 'Dining Set', '🍽️'),
+('outdoor', 'sun_loungers', 'Sonnenliegen', 'Sun Loungers', '🏖️'),
+('outdoor', 'parasol', 'Gartenschirm', 'Parasol', '☂️'),
+('outdoor', 'bbq_area', 'Grillbereich', 'BBQ Area', '🔥'),
+('outdoor', 'firepit', 'Feuerschale', 'Firepit', '🔥'),
+('outdoor', 'planters_outdoor', 'Pflanzkübel', 'Planters', '🪴')
+ON CONFLICT (id) DO UPDATE SET label_de=EXCLUDED.label_de;
