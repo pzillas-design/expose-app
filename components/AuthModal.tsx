@@ -9,10 +9,18 @@ interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
     t: TranslationFunction;
+    initialMode?: 'signin' | 'signup' | 'reset' | 'update-password';
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
-    const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initialMode = 'signin' }) => {
+    const [mode, setMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>(initialMode);
+
+    // Sync mode if initialMode changes while open
+    React.useEffect(() => {
+        if (isOpen && initialMode) {
+            setMode(initialMode);
+        }
+    }, [initialMode, isOpen]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,25 +35,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
 
         try {
             if (mode === 'signup') {
-                const { error } = await supabase.auth.signUp({
-                    email,
-                    password,
-                });
+                const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
                 setSuccessMsg(t('auth_check_email_conf'));
             } else if (mode === 'signin') {
-                const { error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 onClose();
             } else if (mode === 'reset') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin + '?reset=true',
+                    redirectTo: window.location.origin,
                 });
                 if (error) throw error;
                 setSuccessMsg(t('auth_check_email_reset'));
+            } else if (mode === 'update-password') {
+                const { error } = await supabase.auth.updateUser({ password });
+                if (error) throw error;
+                setSuccessMsg(t('auth_password_updated') || "Password updated successfully!");
+                setTimeout(() => {
+                    setMode('signin');
+                    onClose();
+                }, 2000);
             }
         } catch (err: any) {
             console.error("Email Auth Error:", err);
@@ -95,20 +105,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                 <div className="p-8 space-y-6">
                     {/* 1. Email Form */}
                     <form onSubmit={handleEmailAuth} className="space-y-4">
-                        <div className="space-y-2">
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
-                                <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder={t('auth_email_placeholder')}
-                                    className="pl-10"
-                                    required
-                                />
+                        {mode !== 'update-password' && (
+                            <div className="space-y-2">
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
+                                    <Input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder={t('auth_email_placeholder')}
+                                        className="pl-10"
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        {mode !== 'reset' && (
+                        )}    {mode !== 'reset' && (
                             <div className="space-y-2">
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
@@ -143,7 +154,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t }) => {
                             isLoading={loading}
                         >
                             <span>
-                                {mode === 'signin' ? t('auth_sign_in_btn') : mode === 'signup' ? t('auth_create_account_btn') : t('auth_send_reset_link')}
+                                {mode === 'signin' ? t('auth_sign_in_btn') :
+                                    mode === 'signup' ? t('auth_create_account_btn') :
+                                        mode === 'update-password' ? (t('auth_update_password_btn') || "Set New Password") :
+                                            t('auth_send_reset_link')}
                             </span>
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>

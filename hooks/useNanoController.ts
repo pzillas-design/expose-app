@@ -63,6 +63,8 @@ export const useNanoController = () => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAdminOpen, setIsAdminOpen] = useState(false);
+    const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     // Refs
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +186,10 @@ export const useNanoController = () => {
                 fetchProfile(session?.user ?? null);
             } else if (event === 'SIGNED_OUT') {
                 fetchProfile(null);
+            } else if (event === 'PASSWORD_RECOVERY') {
+                console.log("Auth: Password recovery event detected!");
+                setAuthModalMode('update-password');
+                setIsAuthModalOpen(true);
             }
         });
 
@@ -692,7 +698,8 @@ export const useNanoController = () => {
         state: {
             rows, setRows, selectedIds, zoom, credits, sideSheetMode, brushSize,
             isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, qualityMode,
-            themeMode, lang, isAdminOpen, currentLang, fullLibrary, user, userProfile
+            themeMode, lang, isAdminOpen, currentLang, fullLibrary, user, userProfile,
+            authModalMode, isAuthModalOpen
         },
         actions: {
             setZoom, smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -700,7 +707,8 @@ export const useNanoController = () => {
             handleGenerate, handleGenerateMore, handleNavigateParent, handleUpdateAnnotations,
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
-            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut
+            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
+            setAuthModalMode, setIsAuthModalOpen
         },
         refs: { scrollContainerRef },
         t
