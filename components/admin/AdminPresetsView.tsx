@@ -197,10 +197,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 >
                                     <div className="flex items-center gap-2">
                                         <Tag className={`w-3.5 h-3.5 ${isActive ? 'text-black dark:text-white' : 'text-zinc-400'}`} />
-                                        <input
+                                        <TableInput
                                             value={tag.de}
                                             onChange={(e) => handleUpdateTag(tag.id, 'de', e.target.value)}
-                                            className={`bg-transparent text-xs font-medium outline-none w-full ${isActive ? 'text-black dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
+                                            className={`font-medium w-full ${isActive ? 'text-black dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
                                             placeholder={t('name_de')}
                                         />
                                         <IconButton
@@ -209,10 +209,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                             className="opacity-0 group-hover:opacity-100 hover:text-red-500"
                                         />
                                     </div>
-                                    <input
+                                    <TableInput
                                         value={tag.en}
                                         onChange={(e) => handleUpdateTag(tag.id, 'en', e.target.value)}
-                                        className="bg-transparent text-[10px] text-zinc-400 ml-5 outline-none w-full"
+                                        className="text-[10px] text-zinc-400 ml-2 w-full"
                                         placeholder={t('name_en')}
                                     />
                                 </div>

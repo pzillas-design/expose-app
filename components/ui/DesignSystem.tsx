@@ -249,7 +249,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
 export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
     <input
         ref={ref}
-        className={`w-full ${Theme.Colors.Surface} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} px-3 py-2.5 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-600 ${Typo.Body} ${className}`}
+        className={`w-full bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 border ${Theme.Geometry.Radius} px-3 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 focus:border-zinc-400 dark:focus:border-zinc-500 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
         {...props}
     />
 ));
@@ -258,7 +258,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTML
 export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
     <input
         ref={ref}
-        className={`w-full bg-transparent border border-transparent rounded px-2 py-1 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-300 dark:focus:border-zinc-700 focus:bg-white dark:focus:bg-zinc-900 ${Theme.Effects.Transition} ${Typo.Body} ${className}`}
+        className={`w-full bg-transparent border border-transparent rounded px-2 py-1 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-zinc-300 dark:focus:border-zinc-700 focus:bg-white dark:focus:bg-zinc-800 ${Theme.Effects.Transition} ${Typo.Body} ${className}`}
         {...props}
     />
 ));
@@ -266,7 +266,7 @@ export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className = '', ...props }, ref) => (
     <textarea
         ref={ref}
-        className={`w-full ${Theme.Colors.Surface} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} p-3 ${Theme.Colors.TextHighlight} focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-600 ${Typo.Body} ${className}`}
+        className={`w-full bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 border ${Theme.Geometry.Radius} p-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 focus:border-zinc-400 dark:focus:border-zinc-500 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
         {...props}
     />
 ));

@@ -41,6 +41,16 @@
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
       }
+
+      /* Fix Autofill colors in dark mode */
+      .dark input:-webkit-autofill,
+      .dark input:-webkit-autofill:hover, 
+      .dark input:-webkit-autofill:focus, 
+      .dark input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px #27272a inset !important; /* zinc-800 */
+          -webkit-text-fill-color: #f4f4f5 !important; /* zinc-100 */
+          transition: background-color 5000s ease-in-out 0s;
+      }
     </style>
   <script type="importmap">
 {
