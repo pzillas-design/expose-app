@@ -193,6 +193,10 @@ export const translations = {
     auth_update_password_btn: "Save Password",
     auth_password_updated: "Password updated successfully!",
     auth_error_password_mismatch: "Passwords do not match!",
+    auth_error_password_same: "New password should be different from the old password.",
+    auth_error_invalid_link: "Email link is invalid or has expired.",
+    auth_error_invalid_credentials: "Invalid login credentials.",
+    auth_error_user_exists: "User already registered.",
     auth_resend_link: "Resend?",
   },
   de: {
@@ -388,6 +392,10 @@ export const translations = {
     auth_update_password_btn: "Passwort speichern",
     auth_password_updated: "Passwort erfolgreich aktualisiert!",
     auth_error_password_mismatch: "Passwörter stimmen nicht überein!",
+    auth_error_password_same: "Das neue Passwort muss sich vom alten unterscheiden.",
+    auth_error_invalid_link: "Der Link ist ungültig oder abgelaufen.",
+    auth_error_invalid_credentials: "Ungültige Login-Daten.",
+    auth_error_user_exists: "Dieser Benutzer existiert bereits.",
     auth_resend_link: "Erneut senden?",
   }
 };

@@ -65,7 +65,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 }
                 const { error } = await supabase.auth.updateUser({ password });
                 if (error) throw error;
-                setSuccessMsg(t('auth_password_updated') || "Password updated successfully!");
+                setSuccessMsg(t('auth_password_updated'));
                 setTimeout(() => {
                     setMode('signin');
                     onClose();
@@ -95,6 +95,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     };
 
     if (!isOpen) return null;
+
+    const getTranslatedError = (err: string | null) => {
+        if (!err) return null;
+        const e = err.toLowerCase();
+        if (e.includes('different from the old')) return t('auth_error_password_same');
+        if (e.includes('invalid') || e.includes('expired')) {
+            if (e.includes('credentials')) return t('auth_error_invalid_credentials');
+            return t('auth_error_invalid_link');
+        }
+        if (e.includes('already registered') || e.includes('already exists')) return t('auth_error_user_exists');
+        if (e.includes('mismatch')) return t('auth_error_password_mismatch');
+        return err;
+    };
+
+    const isResendableError = (err: string | null) => {
+        if (!err) return false;
+        const e = err.toLowerCase();
+        return e.includes('invalid') || e.includes('expired');
+    };
 
     return (
         <div className="fixed inset-0 z-[70] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -167,7 +186,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder={mode === 'update-password' ? (t('auth_new_password_placeholder') || 'Neues Passwort') : t('auth_password_placeholder')}
+                                        placeholder={mode === 'update-password' ? t('auth_new_password_placeholder') : t('auth_password_placeholder')}
                                         className="pl-10"
                                         required
                                     />
@@ -193,8 +212,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
                         {error && (
                             <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg animate-in fade-in slide-in-from-top-1 flex items-center justify-between">
-                                <span>{error}</span>
-                                {(mode === 'update-password' || mode === 'reset') && (
+                                <span>{getTranslatedError(error)}</span>
+                                {isResendableError(error) && (
                                     <button
                                         type="button"
                                         onClick={() => { setMode('reset'); setError(null); setSuccessMsg(null); }}
