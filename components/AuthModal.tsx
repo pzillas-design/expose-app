@@ -10,19 +10,21 @@ interface AuthModalProps {
     onClose: () => void;
     t: TranslationFunction;
     initialMode?: 'signin' | 'signup' | 'reset' | 'update-password';
+    initialEmail?: string;
     externalError?: string | null;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initialMode = 'signin', externalError }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initialMode = 'signin', initialEmail = '', externalError }) => {
     const [mode, setMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>(initialMode);
+    const [email, setEmail] = useState(initialEmail);
 
-    // Sync mode if initialMode changes while open
+    // Sync mode and email if props change while open
     React.useEffect(() => {
-        if (isOpen && initialMode) {
-            setMode(initialMode);
+        if (isOpen) {
+            if (initialMode) setMode(initialMode);
+            if (initialEmail) setEmail(initialEmail);
         }
-    }, [initialMode, isOpen]);
-    const [email, setEmail] = useState('');
+    }, [initialMode, initialEmail, isOpen]);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -118,12 +120,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     mode === 'update-password' ? t('auth_update_password_title') :
                                         t('auth_reset_password')}
                         </h2>
-                        <p className={Typo.Micro}>
-                            {mode === 'signin' ? t('auth_signin_desc') :
-                                mode === 'signup' ? t('auth_signup_desc') :
-                                    mode === 'update-password' ? t('auth_update_password_desc') :
+                        {mode !== 'update-password' && (
+                            <p className={Typo.Micro}>
+                                {mode === 'signin' ? t('auth_signin_desc') :
+                                    mode === 'signup' ? t('auth_signup_desc') :
                                         t('auth_reset_desc')}
-                        </p>
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -131,7 +134,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 <div className="p-8 space-y-6">
                     {/* 1. Email Form */}
                     <form onSubmit={handleEmailAuth} className="space-y-4">
-                        {mode !== 'update-password' && (
+                        {mode !== 'update-password' ? (
                             <div className="space-y-2">
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
@@ -145,6 +148,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     />
                                 </div>
                             </div>
+                        ) : (
+                            <input
+                                type="email"
+                                name="email"
+                                value={email}
+                                autoComplete="username"
+                                style={{ display: 'none' }}
+                                readOnly
+                            />
                         )}
 
                         {mode !== 'reset' && (

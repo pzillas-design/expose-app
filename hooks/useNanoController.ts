@@ -65,6 +65,7 @@ export const useNanoController = () => {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
 
     // Refs
@@ -195,6 +196,9 @@ export const useNanoController = () => {
                 fetchProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
                 console.log("Auth: Password recovery event detected!");
+                if (session?.user?.email) {
+                    setAuthEmail(session.user.email);
+                }
                 setAuthModalMode('update-password');
                 setIsAuthModalOpen(true);
             }
@@ -706,7 +710,7 @@ export const useNanoController = () => {
             rows, setRows, selectedIds, zoom, credits, sideSheetMode, brushSize,
             isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, qualityMode,
             themeMode, lang, isAdminOpen, currentLang, fullLibrary, user, userProfile,
-            authModalMode, isAuthModalOpen, authError
+            authModalMode, isAuthModalOpen, authError, authEmail
         },
         actions: {
             setZoom, smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -715,7 +719,7 @@ export const useNanoController = () => {
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
             addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-            setAuthModalMode, setIsAuthModalOpen, setAuthError
+            setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail
         },
         refs: { scrollContainerRef },
         t
