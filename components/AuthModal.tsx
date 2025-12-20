@@ -24,6 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     }, [initialMode, isOpen]);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -57,6 +58,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 if (error) throw error;
                 setSuccessMsg(t('auth_check_email_reset'));
             } else if (mode === 'update-password') {
+                if (password !== confirmPassword) {
+                    throw new Error(t('auth_error_password_mismatch'));
+                }
                 const { error } = await supabase.auth.updateUser({ password });
                 if (error) throw error;
                 setSuccessMsg(t('auth_password_updated') || "Password updated successfully!");
@@ -141,7 +145,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     />
                                 </div>
                             </div>
-                        )}    {mode !== 'reset' && (
+                        )}
+
+                        {mode !== 'reset' && (
                             <div className="space-y-2">
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
@@ -149,7 +155,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder={t('auth_password_placeholder')}
+                                        placeholder={mode === 'update-password' ? (t('auth_new_password_placeholder') || 'Neues Passwort') : t('auth_password_placeholder')}
+                                        className="pl-10"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {mode === 'update-password' && (
+                            <div className="space-y-2">
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 z-10" />
+                                    <Input
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder={t('auth_confirm_password_placeholder')}
                                         className="pl-10"
                                         required
                                     />

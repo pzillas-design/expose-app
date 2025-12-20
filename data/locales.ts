@@ -177,6 +177,8 @@ export const translations = {
     auth_or_continue: "Or",
     auth_email_placeholder: "E-Mail",
     auth_password_placeholder: "Password",
+    auth_new_password_placeholder: "New Password",
+    auth_confirm_password_placeholder: "Confirm Password",
     auth_sign_in_btn: "Sign In",
     auth_create_account_btn: "Create Account",
     auth_send_reset_link: "Send Reset Link",
@@ -190,6 +192,7 @@ export const translations = {
     auth_update_password_desc: "Please enter your new password below.",
     auth_update_password_btn: "Save Password",
     auth_password_updated: "Password updated successfully!",
+    auth_error_password_mismatch: "Passwords do not match!",
   },
   de: {
     // General
@@ -368,6 +371,8 @@ export const translations = {
     auth_or_continue: "ODER",
     auth_email_placeholder: "E-Mail",
     auth_password_placeholder: "Passwort",
+    auth_new_password_placeholder: "Neues Passwort",
+    auth_confirm_password_placeholder: "Passwort wiederholen",
     auth_sign_in_btn: "Anmelden",
     auth_create_account_btn: "Account erstellen",
     auth_send_reset_link: "Link senden",
@@ -381,6 +386,7 @@ export const translations = {
     auth_update_password_desc: "Bitte gib unten dein neues Passwort ein.",
     auth_update_password_btn: "Passwort speichern",
     auth_password_updated: "Passwort erfolgreich aktualisiert!",
+    auth_error_password_mismatch: "Passwörter stimmen nicht überein!",
   }
 };
 
