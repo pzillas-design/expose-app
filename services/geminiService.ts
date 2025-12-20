@@ -27,11 +27,10 @@ export const editImageWithGemini = async (
 
     const parts: any[] = [];
 
-    // 1. Context Instruction
-    let systemInstruction = "I am providing an original image";
-    if (maskImageBase64) systemInstruction += ", a mask image with text instructions engraved on it";
-    if (annotations.some(a => a.referenceImage)) systemInstruction += ", and reference images for specific details or global style";
-    systemInstruction += ". Apply the edits based on these inputs.";
+    // 1. Context Instruction - STRICTER
+    let systemInstruction = "I am providing an ORIGINAL image (first), a MASK image (second) indicating areas to edit, and REFERENCE images (subsequent) for style/details.";
+    systemInstruction += " FAILURE MODE AVOIDANCE: Do NOT replace the original image content with the reference image content. Use the reference image ONLY for style/material transfer.";
+    systemInstruction += " INSTRUCTION: Keep the exact structure and composition of the ORIGINAL IMAGE. Apply the edits ONLY to the masked areas (or globally if prompt says so) using the visual style from the reference images.";
 
     parts.push({ text: systemInstruction });
 
@@ -42,6 +41,7 @@ export const editImageWithGemini = async (
         mimeType: 'image/jpeg',
       },
     });
+    parts.push({ text: "This is the ORIGINAL IMAGE to be edited. Keep this composition." });
 
     // 3. The Mask/Guide Image (if present)
     if (maskImageBase64) {
@@ -52,6 +52,7 @@ export const editImageWithGemini = async (
           mimeType: 'image/png', // Canvas exports usually as PNG
         },
       });
+      parts.push({ text: "This is the MASK. White/Colored areas = where to apply changes. Text on mask = specific instructions for that area." });
     }
 
     // 4. Reference Images
@@ -71,12 +72,12 @@ export const editImageWithGemini = async (
         // Add Context for this image
         if (ann.type === 'reference_image') {
           // Global Reference
-          parts.push({ text: "The image above is a global style reference for the entire generation." });
+          parts.push({ text: "REFERENCE IMAGE (Style Only): Use the mood, lighting, and material style from this image. Do NOT copy the objects or layout." });
         } else if (ann.text) {
           // Local Reference attached to a specific mask/object
-          parts.push({ text: `The image above is a specific visual reference for the area or object labeled '${ann.text}' in the mask image.` });
+          parts.push({ text: `REFERENCE IMAGE (Object Detail): Use this image as a visual reference for the object labeled '${ann.text}' in the mask array. Fit it into the mask shape.` });
         } else {
-          parts.push({ text: "The image above is a visual reference." });
+          parts.push({ text: "REFERENCE IMAGE: Visual style reference." });
         }
       }
     });
@@ -86,14 +87,15 @@ export const editImageWithGemini = async (
     let promptText = prompt.trim();
     if (maskImageBase64) {
       if (!promptText) {
-        promptText = "Apply the edits to the masked area. If text is engraved on the mask, follow it.";
+        promptText = "Apply the edits to the masked area based on the references.";
       } else {
         // If user provided prompt, prepend mask context just in case
-        promptText = `Apply the edits to the masked area. If text is engraved on the mask, follow it. ${promptText}`;
+        promptText = `Apply the edits to the masked area. ${promptText}`;
       }
     }
 
-    parts.push({ text: promptText });
+    parts.push({ text: `USER PROMPT: ${promptText}` });
+
 
     // Determine Model and Config based on Quality Mode
     let modelName = 'gemini-3-pro-image-preview'; // Default
