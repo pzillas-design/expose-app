@@ -17,7 +17,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
-        authModalMode, isAuthModalOpen
+        authModalMode, isAuthModalOpen, authError
     } = state;
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -26,7 +26,7 @@ export function App() {
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-        setAuthModalMode, setIsAuthModalOpen
+        setAuthModalMode, setIsAuthModalOpen, setAuthError
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -466,8 +466,12 @@ export function App() {
 
             <AuthModal
                 isOpen={!user || isAuthModalOpen}
-                onClose={() => setIsAuthModalOpen(false)}
+                onClose={() => {
+                    setIsAuthModalOpen(false);
+                    setAuthError(null);
+                }}
                 initialMode={authModalMode}
+                externalError={authError}
                 t={t}
             />
 

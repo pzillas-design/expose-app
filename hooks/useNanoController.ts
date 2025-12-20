@@ -65,6 +65,7 @@ export const useNanoController = () => {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     // Refs
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -168,6 +169,12 @@ export const useNanoController = () => {
         console.log("Auth: Initial session check... Hash present:", !!window.location.hash);
         if (window.location.hash) {
             console.log("Auth: URL Hash detected, waiting for Supabase to process...");
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const errorMsg = params.get('error_description');
+            if (errorMsg) {
+                setAuthError(errorMsg.replace(/\+/g, ' '));
+                setIsAuthModalOpen(true);
+            }
         }
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
@@ -699,7 +706,7 @@ export const useNanoController = () => {
             rows, setRows, selectedIds, zoom, credits, sideSheetMode, brushSize,
             isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, qualityMode,
             themeMode, lang, isAdminOpen, currentLang, fullLibrary, user, userProfile,
-            authModalMode, isAuthModalOpen
+            authModalMode, isAuthModalOpen, authError
         },
         actions: {
             setZoom, smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -708,7 +715,7 @@ export const useNanoController = () => {
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
             addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-            setAuthModalMode, setIsAuthModalOpen
+            setAuthModalMode, setIsAuthModalOpen, setAuthError
         },
         refs: { scrollContainerRef },
         t

@@ -10,9 +10,10 @@ interface AuthModalProps {
     onClose: () => void;
     t: TranslationFunction;
     initialMode?: 'signin' | 'signup' | 'reset' | 'update-password';
+    externalError?: string | null;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initialMode = 'signin' }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initialMode = 'signin', externalError }) => {
     const [mode, setMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>(initialMode);
 
     // Sync mode if initialMode changes while open
@@ -26,6 +27,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+    // Sync external error
+    React.useEffect(() => {
+        if (externalError) {
+            setError(externalError);
+        }
+    }, [externalError]);
 
     const handleEmailAuth = async (e: React.FormEvent) => {
         e.preventDefault();
