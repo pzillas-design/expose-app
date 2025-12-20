@@ -170,7 +170,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             {/* LEFT COLUMN: Categories */}
             <div className="w-full md:w-80 border-b md:border-b-0 md:border-r border-zinc-200 dark:border-zinc-800 flex flex-col bg-white dark:bg-zinc-900 shrink-0">
                 <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
-                    <h3 className={Typo.H2}>Categories</h3>
+                    <h3 className={Typo.H2}>{t('categories')}</h3>
                     <Button variant="ghost" onClick={handleAddTag} icon={<Plus className="w-4 h-4" />} className="h-8 w-8 p-0" />
                 </div>
 
@@ -180,7 +180,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                             onClick={() => setSelectedTagId(null)}
                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors ${selectedTagId === null ? 'bg-zinc-100 dark:bg-zinc-800 font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
                         >
-                            <span>All Presets</span>
+                            <span>{t('all_presets')}</span>
                             <ChevronRight className="w-3.5 h-3.5 opacity-50" />
                         </button>
 
@@ -201,7 +201,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                             value={tag.de}
                                             onChange={(e) => handleUpdateTag(tag.id, 'de', e.target.value)}
                                             className={`bg-transparent text-xs font-medium outline-none w-full ${isActive ? 'text-black dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-                                            placeholder="Name (DE)"
+                                            placeholder={t('name_de')}
                                         />
                                         <IconButton
                                             icon={<Trash2 className="w-3.5 h-3.5" />}
@@ -213,7 +213,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                         value={tag.en}
                                         onChange={(e) => handleUpdateTag(tag.id, 'en', e.target.value)}
                                         className="bg-transparent text-[10px] text-zinc-400 ml-5 outline-none w-full"
-                                        placeholder="Name (EN)"
+                                        placeholder={t('name_en')}
                                     />
                                 </div>
                             );
@@ -278,10 +278,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                     <th className="px-2 py-3 w-10 text-center"><Bookmark className="w-3.5 h-3.5 mx-auto opacity-50" /></th>
                                     <th className="px-4 py-3 font-medium">Title</th>
                                     <th className="px-4 py-3 font-medium">Prompt</th>
-                                    <th className="px-4 py-3 font-medium">Variables</th>
-                                    <th className="px-4 py-3 font-medium">Tags</th>
+                                    <th className="px-4 py-3 font-medium">{t('variables_label')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('tags_label')}</th>
                                     <th className="px-4 py-3 font-medium text-right">Usage</th>
-                                    <th className="px-4 py-3 font-medium w-24 text-right">Actions</th>
+                                    <th className="px-4 py-3 font-medium w-24 text-right">{t('actions_label')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

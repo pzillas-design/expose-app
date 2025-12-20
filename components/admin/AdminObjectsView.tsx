@@ -50,6 +50,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     id: c.id,
                     label: c.label_de || 'Unbekannt',
                     lang: 'de',
+                    icon: '📁',
                     items: items.filter(i => i.category_id === c.id).map(i => ({
                         id: i.id,
                         label: i.label_de || 'Unbekannt',
@@ -60,6 +61,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     id: c.id,
                     label: c.label_en || 'Unknown',
                     lang: 'en',
+                    icon: '📁',
                     items: items.filter(i => i.category_id === c.id).map(i => ({
                         id: i.id,
                         label: i.label_en || 'Unknown',
@@ -318,16 +320,16 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                 <div className={`sticky top-0 z-10 grid ${gridTemplate} bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
                     <div className="p-2 text-center"></div>
                     <div className="p-2 text-center"></div>
-                    <div className="p-2 flex items-center justify-center">Icon</div>
+                    <div className="p-2 flex items-center justify-center">{t('icon_label')}</div>
                     <div className="p-2 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
                         <span className="bg-amber-100 text-amber-800 px-1 rounded text-[9px]">DE</span>
-                        German
+                        {t('german_label')}
                     </div>
                     <div className="p-2 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
                         <span className="bg-blue-100 text-blue-800 px-1 rounded text-[9px]">EN</span>
-                        English
+                        {t('english_label')}
                     </div>
-                    <div className="p-2 text-center">Actions</div>
+                    <div className="p-2 text-center">{t('actions_label')}</div>
                 </div>
 
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -360,7 +362,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                             value={pair.de?.label || ''}
                                             onChange={e => handleUpdateCategoryLabel(pair.id, 'de', e.target.value)}
                                             className="font-bold text-xs"
-                                            placeholder="Name (DE)"
+                                            placeholder={t('name_de')}
                                         />
                                     </div>
                                     <div className="px-2 border-r border-zinc-100 dark:border-zinc-800/50">
@@ -368,7 +370,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                             value={pair.en?.label || ''}
                                             onChange={e => handleUpdateCategoryLabel(pair.id, 'en', e.target.value)}
                                             className="font-bold text-xs"
-                                            placeholder="Name (EN)"
+                                            placeholder={t('name_en')}
                                         />
                                     </div>
                                     <div className="flex items-center justify-center gap-1 opacity-0 group-hover/cat:opacity-100 transition-opacity">

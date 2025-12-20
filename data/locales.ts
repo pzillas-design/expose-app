@@ -116,6 +116,14 @@ export const translations = {
     category_name: "Category Name",
     item_name: "Item Name",
     item_icon: "Emoji Icon",
+    categories: "Categories",
+    all_presets: "All Presets",
+    name_de: "Name (DE)",
+    name_en: "Name (EN)",
+    icon_label: "Icon",
+    actions_label: "Actions",
+    german_label: "German",
+    english_label: "English",
 
     // Languages
     lang_de: "German",
@@ -295,6 +303,14 @@ export const translations = {
     category_name: "Kategorie Name",
     item_name: "Item Name",
     item_icon: "Emoji Icon",
+    categories: "Kategorien",
+    all_presets: "Alle Presets",
+    name_de: "Name (DE)",
+    name_en: "Name (EN)",
+    icon_label: "Icon",
+    actions_label: "Aktionen",
+    german_label: "Deutsch",
+    english_label: "Englisch",
 
     // Languages
     lang_de: "Deutsch",
