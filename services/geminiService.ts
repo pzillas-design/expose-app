@@ -27,10 +27,9 @@ export const editImageWithGemini = async (
 
     const parts: any[] = [];
 
-    // 1. Context Instruction - STRICTER
-    let systemInstruction = "I am providing an ORIGINAL image (first), a MASK image (second) indicating areas to edit, and REFERENCE images (subsequent) for style/details.";
-    systemInstruction += " FAILURE MODE AVOIDANCE: Do NOT replace the original image content with the reference image content. Use the reference image ONLY for style/material transfer.";
-    systemInstruction += " INSTRUCTION: Keep the exact structure and composition of the ORIGINAL IMAGE. Apply the edits ONLY to the masked areas (or globally if prompt says so) using the visual style from the reference images.";
+    // 1. Context Instruction
+    let systemInstruction = "I am providing an ORIGINAL image (to be edited), a MASK image (indicating areas to edit), and REFERENCE images (for inspiration/visual reference).";
+    systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt and using the REFERENCE images as a guide.";
 
     parts.push({ text: systemInstruction });
 
@@ -41,7 +40,7 @@ export const editImageWithGemini = async (
         mimeType: 'image/jpeg',
       },
     });
-    parts.push({ text: "This is the ORIGINAL IMAGE to be edited. Keep this composition." });
+    parts.push({ text: "Image 1: The Original Image (Target for editing)." });
 
     // 3. The Mask/Guide Image (if present)
     if (maskImageBase64) {
@@ -52,7 +51,7 @@ export const editImageWithGemini = async (
           mimeType: 'image/png', // Canvas exports usually as PNG
         },
       });
-      parts.push({ text: "This is the MASK. White/Colored areas = where to apply changes. Text on mask = specific instructions for that area." });
+      parts.push({ text: "Image 2: The Mask. White areas = edit region." });
     }
 
     // 4. Reference Images
@@ -69,32 +68,30 @@ export const editImageWithGemini = async (
           }
         });
 
-        // Add Context for this image
+        // Add Context for this image - GENERIC / UNIVERSAL
         if (ann.type === 'reference_image') {
           // Global Reference
-          parts.push({ text: "REFERENCE IMAGE (Style Only): Use the mood, lighting, and material style from this image. Do NOT copy the objects or layout." });
+          parts.push({ text: "Reference Image: Use this as a visual reference." });
         } else if (ann.text) {
           // Local Reference attached to a specific mask/object
-          parts.push({ text: `REFERENCE IMAGE (Object Detail): Use this image as a visual reference for the object labeled '${ann.text}' in the mask array. Fit it into the mask shape.` });
+          parts.push({ text: `Reference Image for '${ann.text}': Use this as a visual reference for the object/area labeled '${ann.text}'.` });
         } else {
-          parts.push({ text: "REFERENCE IMAGE: Visual style reference." });
+          parts.push({ text: "Reference Image." });
         }
       }
     });
 
     // 5. The User Prompt Logic
-    // If mask is present but no prompt, use a generic instruction to follow the mask labels.
     let promptText = prompt.trim();
     if (maskImageBase64) {
       if (!promptText) {
-        promptText = "Apply the edits to the masked area based on the references.";
+        promptText = "Apply the edits to the masked area.";
       } else {
-        // If user provided prompt, prepend mask context just in case
         promptText = `Apply the edits to the masked area. ${promptText}`;
       }
     }
 
-    parts.push({ text: `USER PROMPT: ${promptText}` });
+    parts.push({ text: `User Prompt: ${promptText}` });
 
 
     // Determine Model and Config based on Quality Mode
