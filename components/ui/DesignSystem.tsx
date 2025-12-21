@@ -43,7 +43,7 @@ export const Theme = {
     },
     Effects: {
         Glass: "bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm", // Slight blur for floating elements
-        Overlay: "bg-black/40 backdrop-blur-[2px]", // Dimming with slight blur
+        Overlay: "bg-black/40", // Dimming without blur
         Transition: "transition-all duration-200 ease-in-out",
         Shadow: "shadow-sm",
     },
@@ -193,10 +193,10 @@ export const Button: React.FC<ButtonProps> = ({
             ${Theme.Colors.TextPrimary}
             ${Theme.Colors.SurfaceHover}
             hover:border-zinc-300 dark:hover:border-zinc-600
-            py-2.5 ${Typo.Body} font-medium
+            py-3 px-6 ${Typo.ButtonLabel}
         `,
 
-        danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-2.5 ${Typo.Body} font-medium`,
+        danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-3 px-6 ${Typo.ButtonLabel}`,
 
         ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white py-2 px-3 ${Typo.ButtonLabel}`
     };

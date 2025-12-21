@@ -57,42 +57,33 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             {isOpen && createPortal(
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
                     <div className={`w-full max-w-[400px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
-                        {/* Status Bar (Optional line at top for danger) */}
-                        {options.variant === 'danger' && <div className="h-1 w-full bg-red-500" />}
-
                         <div className="p-8 flex flex-col items-center text-center">
-                            {options.variant === 'danger' ? (
-                                <div className="mb-6 w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50">
-                                    <AlertTriangle size={24} strokeWidth={1.5} />
-                                </div>
-                            ) : (
-                                <div className="mb-4">
-                                    <span className={Typo.Label}>{options.variant === 'primary' ? 'Aktion erforderlich' : 'System'}</span>
-                                </div>
-                            )}
+                            <div className="mb-4">
+                                <span className={Typo.Label}>{options.variant === 'danger' ? 'Gefahrenzone' : 'Bestätigung'}</span>
+                            </div>
 
-                            <h3 className={`${Typo.H1} mb-3 px-4`}>{options.title || 'Bist du sicher?'}</h3>
+                            <h3 className={`${Typo.H1} mb-2`}>{options.title || 'Bist du sicher?'}</h3>
 
                             {options.description && (
-                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mb-8 max-w-[280px]`}>
+                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mb-8 max-w-[320px]`}>
                                     {options.description}
                                 </p>
                             )}
 
-                            <div className="flex flex-col w-full gap-2">
+                            <div className="flex items-center justify-center gap-3 w-full">
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleClose(false)}
+                                    className="flex-1"
+                                >
+                                    {options.cancelLabel || 'Abbrechen'}
+                                </Button>
                                 <Button
                                     variant={options.variant === 'danger' ? 'danger' : 'primary'}
                                     onClick={() => handleClose(true)}
-                                    className="w-full"
+                                    className="flex-1"
                                 >
                                     {options.confirmLabel || 'Bestätigen'}
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => handleClose(false)}
-                                    className="w-full !text-zinc-400 hover:!text-zinc-600 dark:hover:!text-zinc-200"
-                                >
-                                    {options.cancelLabel || 'Abbrechen'}
                                 </Button>
                             </div>
                         </div>
