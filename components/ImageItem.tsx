@@ -119,7 +119,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             onMouseDown={(e) => onMouseDown(e, image.id)}
         >
             {/* Top Toolbar: Filename + Action Icons */}
-            <div className="flex items-center justify-between w-full h-7 px-0.5 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between w-full h-7 mb-3 px-0.5 animate-in fade-in duration-300">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px]`} title={image.title}>
                         {image.title}
