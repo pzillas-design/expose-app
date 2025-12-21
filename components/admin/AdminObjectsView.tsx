@@ -135,17 +135,17 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             await fetchData();
             setExpandedCats(prev => [...prev, newId]);
         } catch (error) {
-            alert('Failed to add category');
+            alert(t('admin_add_error'));
         }
     };
 
     const handleDeleteCategory = async (id: string) => {
-        if (confirm("Delete category in both languages?")) {
+        if (confirm(t('admin_confirm_delete_category'))) {
             try {
                 await adminService.deleteObjectCategory(id);
                 setCategories(prev => prev.filter(c => c.id !== id));
             } catch (error) {
-                alert('Failed to delete category');
+                alert(t('admin_delete_error'));
             }
         }
     };
@@ -174,7 +174,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             });
             await fetchData();
         } catch (error) {
-            alert('Failed to add item');
+            alert(t('admin_add_error'));
         }
     };
 
@@ -188,7 +188,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                 return c;
             }));
         } catch (error) {
-            alert('Failed to delete item');
+            alert(t('admin_delete_error'));
         }
     };
 
@@ -403,7 +403,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                                         value={itemPair.de?.icon || itemPair.en?.icon || ''}
                                                         onChange={e => handleUpdateItemIcon(pair.id, itemPair.id, e.target.value)}
                                                         className="text-center w-full p-0 text-sm"
-                                                        placeholder="Icon"
+                                                        placeholder={t('admin_object_placeholder_icon')}
                                                     />
                                                 </div>
                                                 <div className="px-2 border-r border-zinc-50 dark:border-zinc-800/50">
@@ -411,7 +411,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                                         value={itemPair.de?.label || ''}
                                                         onChange={e => handleUpdateItem(pair.id, itemPair.id, 'de', { label: e.target.value })}
                                                         className="text-xs text-zinc-600 dark:text-zinc-400"
-                                                        placeholder="Item (DE)"
+                                                        placeholder={t('admin_object_placeholder_item_de')}
                                                     />
                                                 </div>
                                                 <div className="px-2 border-r border-zinc-50 dark:border-zinc-800/50">
@@ -419,7 +419,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                                         value={itemPair.en?.label || ''}
                                                         onChange={e => handleUpdateItem(pair.id, itemPair.id, 'en', { label: e.target.value })}
                                                         className="text-xs text-zinc-600 dark:text-zinc-400"
-                                                        placeholder="Item (EN)"
+                                                        placeholder={t('admin_object_placeholder_item_en')}
                                                     />
                                                 </div>
                                                 <div className="flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
@@ -433,7 +433,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                                         ))}
                                         {pair.items.length === 0 && (
                                             <div className="p-3 text-center text-[10px] text-zinc-400 italic">
-                                                Empty category.
+                                                {t('admin_object_empty_cat')}
                                             </div>
                                         )}
                                     </div>

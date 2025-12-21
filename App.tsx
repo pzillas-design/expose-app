@@ -26,7 +26,7 @@ export function App() {
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-        setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail
+        setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -332,7 +332,7 @@ export function App() {
                             gap: `${6 * zoom}rem`,
                         }}
                     >
-                        {rows.map((row) => (
+                        {rows.map((row, rowIndex) => (
                             <div key={row.id} data-row-id={row.id} className="flex flex-col gap-4 shrink-0">
                                 <input
                                     value={row.title}
@@ -342,10 +342,9 @@ export function App() {
                                     className={`bg-transparent outline-none border-none w-96 ml-1 focus:${Theme.Colors.TextHighlight} ${Theme.Colors.TextSecondary} ${Typo.Label} tracking-[0.2em]`}
                                 />
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
-                                    {row.items.map((img) => {
-                                        const globalIndex = allImages.findIndex(i => i.id === img.id);
-                                        const hasLeft = globalIndex > 0;
-                                        const hasRight = globalIndex < allImages.length - 1;
+                                    {row.items.map((img, imgIndex) => {
+                                        const hasLeft = imgIndex > 0;
+                                        const hasRight = imgIndex < row.items.length - 1;
 
                                         return (
                                             <ImageItem
@@ -363,9 +362,12 @@ export function App() {
                                                 editorState={{ mode: sideSheetMode, brushSize }}
                                                 onUpdateAnnotations={handleUpdateAnnotations}
                                                 onEditStart={handleAnnotationEditStart}
-                                                onNavigate={moveSelection}
+                                                onNavigate={(d) => moveSelection(d as -1 | 1)}
+                                                onNavigateVertical={(d) => moveRowSelection(d as -1 | 1)}
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
+                                                hasUp={rowIndex > 0}
+                                                hasDown={rowIndex < rows.length - 1}
                                                 t={t}
                                             />
                                         );

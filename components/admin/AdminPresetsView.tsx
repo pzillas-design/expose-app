@@ -69,17 +69,17 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             setIsPresetModalOpen(false);
             setEditingPreset(null);
         } catch (error) {
-            alert('Failed to save preset');
+            alert(t('admin_save_error') || 'Failed to save preset');
         }
     };
 
     const handleDeletePreset = async (id: string) => {
-        if (confirm("Delete this preset?")) {
+        if (confirm(t('admin_confirm_delete_preset'))) {
             try {
                 await adminService.deleteGlobalPreset(id);
                 setGlobalPresets(prev => prev.filter(p => p.id !== id));
             } catch (error) {
-                alert('Failed to delete preset');
+                alert(t('admin_delete_error') || 'Failed to delete preset');
             }
         }
     };
@@ -93,7 +93,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             await adminService.updateGlobalPreset(updated);
             setGlobalPresets(prev => prev.map(p => p.id === id ? updated : p));
         } catch (error) {
-            alert('Failed to toggle pin');
+            alert(t('admin_pin_error') || 'Failed to toggle pin');
         }
     };
 
@@ -108,7 +108,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     };
 
     const handleDeleteTag = (id: string) => {
-        if (confirm("Delete this category?")) {
+        if (confirm(t('admin_confirm_delete_category'))) {
             setAvailableTags(prev => prev.filter(t => t.id !== id));
             if (selectedTagId === id) setSelectedTagId(null);
         }
@@ -276,11 +276,11 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 <tr>
                                     <th className="px-2 py-3 w-10 text-center"></th> {/* Grip */}
                                     <th className="px-2 py-3 w-10 text-center"><Bookmark className="w-3.5 h-3.5 mx-auto opacity-50" /></th>
-                                    <th className="px-4 py-3 font-medium">Title</th>
-                                    <th className="px-4 py-3 font-medium">Prompt</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_preset_title')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_preset_prompt')}</th>
                                     <th className="px-4 py-3 font-medium">{t('variables_label')}</th>
                                     <th className="px-4 py-3 font-medium">{t('tags_label')}</th>
-                                    <th className="px-4 py-3 font-medium text-right">Usage</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_preset_usage')}</th>
                                     <th className="px-4 py-3 font-medium w-24 text-right">{t('actions_label')}</th>
                                 </tr>
                             </thead>

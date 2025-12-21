@@ -175,6 +175,8 @@ export const useNanoController = () => {
             if (errorMsg) {
                 setAuthError(errorMsg.replace(/\+/g, ' '));
                 setIsAuthModalOpen(true);
+                // Clear hash so error doesn't hang around on refresh
+                window.history.replaceState(null, '', window.location.pathname);
             }
         }
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -243,7 +245,32 @@ export const useNanoController = () => {
         return translations[currentLang][key] || key;
     }, [currentLang]);
 
-    const handleAddFunds = (amount: number) => setCredits(prev => prev + amount);
+    const handleAddFunds = async (amount: number) => {
+        if (isAuthDisabled) {
+            setCredits(prev => prev + amount);
+            setUserProfile((prev: any) => ({ ...prev, credits: (prev?.credits || 0) + amount }));
+            showToast(`Simulated: Added ${amount}€ to balance.`, "success");
+            return;
+        }
+
+        try {
+            const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+                body: {
+                    amount,
+                    cancel_url: window.location.origin,
+                    success_url: `${window.location.origin}?payment=success`
+                }
+            });
+
+            if (error) throw error;
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (err) {
+            console.error("Stripe Checkout Error:", err);
+            showToast("Payment initialization failed.", "error");
+        }
+    };
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -719,7 +746,7 @@ export const useNanoController = () => {
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
             addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-            setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail
+            setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection
         },
         refs: { scrollContainerRef },
         t

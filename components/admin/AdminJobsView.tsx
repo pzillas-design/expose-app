@@ -60,14 +60,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 font-medium">Job ID</th>
-                                    <th className="px-4 py-3 font-medium">User</th>
-                                    <th className="px-4 py-3 font-medium">Type</th>
-                                    <th className="px-4 py-3 font-medium">Status</th>
-                                    <th className="px-4 py-3 font-medium">Prompt</th>
-                                    <th className="px-4 py-3 font-medium text-right">Credits</th>
-                                    <th className="px-4 py-3 font-medium text-right">API ($)</th>
-                                    <th className="px-4 py-3 font-medium text-right">Time</th>
+                                    <th className="px-4 py-3 font-medium">ID</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_job_user')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_job_type')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_job_status')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_job_prompt')}</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_job_cost')}</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_job_api_cost')}</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_job_date')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -81,7 +81,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             ${j.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
                                                     j.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
                                                         'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
-                                                {j.status}
+                                                {j.status === 'completed' ? t('admin_job_completed') :
+                                                    j.status === 'failed' ? t('admin_job_failed') :
+                                                        t('admin_job_processing')}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 max-w-xs truncate" title={j.promptPreview}>{j.promptPreview}</td>

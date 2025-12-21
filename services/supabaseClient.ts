@@ -7,4 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase credentials missing from environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient(
+    supabaseUrl || '',
+    (supabaseAnonKey || '').trim()
+);

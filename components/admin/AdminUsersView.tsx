@@ -66,10 +66,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         const hours = Math.floor(minutes / 60);
         const days = Math.floor(hours / 24);
 
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        return `${days}d ago`;
+        if (minutes < 1) return t('admin_just_now');
+        if (minutes < 60) return t('admin_mins_ago').replace('{{n}}', minutes.toString());
+        if (hours < 24) return t('admin_hours_ago').replace('{{n}}', hours.toString());
+        return t('admin_days_ago').replace('{{n}}', days.toString());
     };
 
     return (
@@ -99,12 +99,12 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 font-medium">Name</th>
-                                    <th className="px-4 py-3 font-medium">Email</th>
-                                    <th className="px-4 py-3 font-medium">Role</th>
-                                    <th className="px-4 py-3 font-medium">Last Online</th>
-                                    <th className="px-4 py-3 font-medium text-right">Balance</th>
-                                    <th className="px-4 py-3 font-medium text-right">Joined</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_user_name')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_user_email')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_role_label')}</th>
+                                    <th className="px-4 py-3 font-medium">{t('admin_last_online')}</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_balance')}</th>
+                                    <th className="px-4 py-3 font-medium text-right">{t('admin_user_joined')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">

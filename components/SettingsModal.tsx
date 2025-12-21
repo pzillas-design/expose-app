@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     X, Shield, LogOut, Mail, Globe, CreditCard, LayoutDashboard, Trash2, ArrowRight,
-    Moon, Sun, Monitor
+    Moon, Sun, Monitor, Loader2
 } from 'lucide-react';
 import { GenerationQuality, TranslationFunction } from '../types';
 import { Theme, Typo, Button, IconButton } from './ui/DesignSystem';
@@ -48,7 +48,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         }
     }, [isOpen, initialTab]);
 
-    const handleAddFundsConfirm = () => {
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleAddFundsConfirm = async () => {
         const finalAmount = parseFloat(customAmount);
 
         if (!finalAmount || finalAmount < 5) {
@@ -56,10 +58,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             return;
         }
 
-        onAddFunds(finalAmount);
-        setCustomAmount('');
-        setIsTopUpExpanded(false);
-        setShowMinError(false);
+        setIsProcessing(true);
+        try {
+            await onAddFunds(finalAmount);
+        } finally {
+            // No need to set false if redirecting, but good practice
+            setIsProcessing(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -221,20 +226,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     <Button
                                                         onClick={handleAddFundsConfirm}
                                                         className="w-full"
+                                                        disabled={isProcessing}
                                                     >
-                                                        {customAmount ? `Pay ${parseFloat(customAmount).toFixed(2)} €` : 'Checkout'}
+                                                        {isProcessing ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                <span>{t('checkout_processing')}</span>
+                                                            </div>
+                                                        ) : (
+                                                            customAmount ? t('checkout_pay').replace('{{amount}}', parseFloat(customAmount).toFixed(2)) : t('checkout_btn')
+                                                        )}
                                                     </Button>
 
                                                     <div className="flex justify-between items-center px-1 h-4">
                                                         {showMinError ? (
                                                             <span className="text-[10px] text-red-500 animate-in fade-in slide-in-from-left-1">
-                                                                Min. 5.00 €
+                                                                {t('checkout_min_amount')}
                                                             </span>
                                                         ) : <span />}
 
                                                         <div className="flex items-center gap-1.5 text-zinc-400 opacity-60">
                                                             <Shield className="w-3 h-3" />
-                                                            <span className="text-[10px]">Secure by Stripe</span>
+                                                            <span className="text-[10px]">{t('checkout_secure')}</span>
                                                         </div>
                                                     </div>
                                                 </div>

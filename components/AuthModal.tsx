@@ -99,20 +99,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     const getTranslatedError = (err: string | null) => {
         if (!err) return null;
         const e = err.toLowerCase();
+
+        // 1. Password Errors
         if (e.includes('different from the old')) return t('auth_error_password_same');
-        if (e.includes('invalid') || e.includes('expired')) {
-            if (e.includes('credentials')) return t('auth_error_invalid_credentials');
+        if (e.includes('mismatch')) return t('auth_error_password_mismatch');
+
+        // 2. Credential Errors (Wait, check this first before "invalid")
+        if (e.includes('credentials') || e.includes('invalid_grant')) return t('auth_error_invalid_credentials');
+
+        // 3. User Errors
+        if (e.includes('already registered') || e.includes('already exists')) return t('auth_error_user_exists');
+
+        // 4. Link Errors (Specific check)
+        if (e.includes('link') || e.includes('expired')) {
             return t('auth_error_invalid_link');
         }
-        if (e.includes('already registered') || e.includes('already exists')) return t('auth_error_user_exists');
-        if (e.includes('mismatch')) return t('auth_error_password_mismatch');
+
         return err;
     };
 
     const isResendableError = (err: string | null) => {
         if (!err) return false;
         const e = err.toLowerCase();
-        return e.includes('invalid') || e.includes('expired');
+        // Only resend if it's actually about a link or expiration, NOT credentials
+        return (e.includes('link') || e.includes('expired')) && !e.includes('credentials');
     };
 
     return (
@@ -254,7 +264,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                 <div className="absolute inset-0 flex items-center">
                                     <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
                                 </div>
-                                <div className="relative flex justify-center text-xs uppercase">
+                                <div className="relative flex justify-center text-xs">
                                     <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>{t('auth_or_continue')}</span>
                                 </div>
                             </div>

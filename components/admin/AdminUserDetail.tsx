@@ -32,21 +32,21 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
         onUpdateUser(user.id, { credits: user.credits + amount });
         setCreditAmount('');
         setIsAddingBalance(false);
-        showToast(`Added ${amount.toFixed(2)} credits`, 'success');
+        showToast(t('admin_add_credits_success').replace('{{amount}}', amount.toFixed(2)), 'success');
     };
 
     const handleDelete = async () => {
         const confirmed = await confirm({
-            title: `Delete ${user.name}?`,
-            description: "This action cannot be undone.",
-            confirmLabel: "Delete User",
+            title: t('admin_delete_user_confirm').replace('{{name}}', user.name),
+            description: t('admin_delete_user_desc'),
+            confirmLabel: t('admin_delete_user'),
             variant: "danger"
         });
 
         if (confirmed) {
             onDeleteUser(user.id);
             onClose();
-            showToast("User deleted", 'success');
+            showToast(t('admin_user_deleted_success'), 'success');
         }
     };
 
@@ -54,9 +54,9 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
         setIsResetting(true);
         try {
             await adminService.resetPassword(user.email);
-            showToast(`Password reset link sent to ${user.email}`, 'success');
+            showToast(t('admin_pass_reset_success').replace('{{email}}', user.email), 'success');
         } catch (error) {
-            showToast('Failed to send reset link', 'error');
+            showToast(t('admin_pass_reset_error'), 'error');
         } finally {
             setIsResetting(false);
         }
@@ -69,16 +69,16 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
         const hours = Math.floor(minutes / 60);
         const days = Math.floor(hours / 24);
 
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        return `${days}d ago`;
+        if (minutes < 1) return t('admin_just_now');
+        if (minutes < 60) return t('admin_mins_ago').replace('{{n}}', minutes.toString());
+        if (hours < 24) return t('admin_hours_ago').replace('{{n}}', hours.toString());
+        return t('admin_days_ago').replace('{{n}}', days.toString());
     };
 
     return (
         <div className="absolute top-0 bottom-0 right-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-xl z-20 flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                <span className={Typo.H2}>User Details</span>
+                <span className={Typo.H2}>{t('admin_user_details')}</span>
                 <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
             </div>
 
@@ -101,14 +101,14 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
                 {/* Financials */}
                 <div>
-                    <SectionHeader>Financials</SectionHeader>
+                    <SectionHeader>{t('admin_financials')}</SectionHeader>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Total Spent</div>
+                            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{t('admin_total_spent')}</div>
                             <div className="text-xl font-mono text-black dark:text-white">{user.totalSpent.toFixed(2)} €</div>
                         </div>
                         <div className={`p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800`}>
-                            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">Balance</div>
+                            <div className="text-xs text-zinc-500 uppercase tracking-wider mb-1">{t('admin_balance')}</div>
                             <div className="flex items-center justify-between">
                                 <span className="text-xl font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toFixed(2)} €</span>
                                 <button
@@ -125,7 +125,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                     {isAddingBalance && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-200">
                             <div className="w-full max-w-[280px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 animate-in zoom-in-95 duration-200">
-                                <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 text-center">Add Funds</h4>
+                                <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 text-center">{t('admin_add_funds')}</h4>
                                 <div className="space-y-4">
                                     <div className="relative">
                                         <input
@@ -145,14 +145,14 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                                             className="flex-1 py-2 text-xs"
                                             onClick={() => { setIsAddingBalance(false); setCreditAmount(''); }}
                                         >
-                                            Cancel
+                                            {t('cancel')}
                                         </Button>
                                         <Button
                                             className="flex-1 py-2 text-xs"
                                             onClick={handleAddCredits}
                                             disabled={!creditAmount || isNaN(parseFloat(creditAmount))}
                                         >
-                                            Add Funds
+                                            {t('admin_add_funds')}
                                         </Button>
                                     </div>
                                 </div>
@@ -163,12 +163,12 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
                 {/* Account Settings */}
                 <div>
-                    <SectionHeader>Account</SectionHeader>
+                    <SectionHeader>{t('admin_account_section')}</SectionHeader>
                     <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
                             <div className="flex items-center gap-3">
                                 <Shield className="w-4 h-4 text-zinc-500" />
-                                <span className="text-sm">Role</span>
+                                <span className="text-sm">{t('admin_role_label')}</span>
                             </div>
                             <select
                                 value={user.role}
@@ -184,7 +184,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                         <div className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
                             <div className="flex items-center gap-3">
                                 <Clock className="w-4 h-4 text-zinc-500" />
-                                <span className="text-sm">Last Online</span>
+                                <span className="text-sm">{t('admin_last_online')}</span>
                             </div>
                             <span className={`text-sm text-zinc-500`}>{getRelativeTime(user.lastActiveAt)}</span>
                         </div>
@@ -193,7 +193,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
                 {/* Danger Zone */}
                 <div>
-                    <SectionHeader className="text-red-500">Danger Zone</SectionHeader>
+                    <SectionHeader className="text-red-500">{t('admin_danger_zone')}</SectionHeader>
                     <div className="space-y-3">
                         <button
                             onClick={handleResetPassword}
@@ -202,7 +202,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                         >
                             <div className="flex items-center gap-3">
                                 {isResetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4 text-zinc-500" />}
-                                <span className="text-sm">Reset Password</span>
+                                <span className="text-sm">{t('admin_reset_password')}</span>
                             </div>
                             <ArrowRight className="w-4 h-4 text-zinc-400" />
                         </button>
@@ -213,7 +213,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                         >
                             <div className="flex items-center gap-3">
                                 <Trash2 className="w-4 h-4 text-red-500" />
-                                <span className="text-sm text-red-600 dark:text-red-400">Delete User</span>
+                                <span className="text-sm text-red-600 dark:text-red-400">{t('admin_delete_user')}</span>
                             </div>
                         </button>
                     </div>
