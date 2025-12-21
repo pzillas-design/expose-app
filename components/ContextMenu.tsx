@@ -24,13 +24,13 @@ interface ContextMenuProps {
     onSelectAll: () => void;
     onDeselectAll: () => void;
     onResetView: () => void;
-    
+
     // Multi Actions
     selectedIds: string[];
     onDownloadSelected: () => void;
     onDeleteSelected: () => void;
     onGenerateVariations: () => void;
-    
+
     t: TranslationFunction;
 }
 
@@ -54,7 +54,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     const itemClass = `flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group cursor-pointer w-full`;
     const iconClass = `w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0`;
     const textClass = `${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`;
-    
+
     const dangerClass = `flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer w-full`;
     const dangerIconClass = `w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors shrink-0`;
     const dangerTextClass = `${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`;
@@ -65,8 +65,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         <>
             {/* Backdrop to close */}
             <div className="fixed inset-0 z-[100]" onClick={onClose} onContextMenu={(e) => { e.preventDefault(); onClose(); }} />
-            
-            <div 
+
+            <div
                 className={`
                     fixed z-[101] min-w-[200px]
                     bg-white dark:bg-zinc-950
@@ -83,7 +83,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                             <CheckSquare className={iconClass} />
                             <span className={textClass}>{t('ctx_select_all')}</span>
                         </button>
-                        
+
                         {selectedIds.length > 0 && (
                             <button onClick={() => { onDeselectAll(); onClose(); }} className={itemClass}>
                                 <XSquare className={iconClass} />
@@ -109,7 +109,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                                 <span className={textClass}>{t('ctx_create_variations')}</span>
                                             </button>
                                         )}
-                                        
+
                                         <button onClick={() => { onRemoveFromSelection(menu.targetId!); onClose(); }} className={itemClass}>
                                             <Minus className={iconClass} />
                                             <span className={textClass}>{t('ctx_remove_from_selection')}</span>
@@ -131,13 +131,14 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     // Single Selected Image
                                     <>
                                         {isGenerated(menu.targetId) && (
-                                            <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
-                                                <Copy className={iconClass} />
-                                                <span className={textClass}>{t('ctx_create_variations')}</span>
-                                            </button>
+                                            <>
+                                                <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
+                                                    <Copy className={iconClass} />
+                                                    <span className={textClass}>{t('ctx_create_variations')}</span>
+                                                </button>
+                                                <Separator />
+                                            </>
                                         )}
-                                        
-                                        <Separator />
 
                                         <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                             <Download className={iconClass} />
@@ -178,5 +179,5 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 )}
             </div>
         </>
-    , document.body);
+        , document.body);
 };
