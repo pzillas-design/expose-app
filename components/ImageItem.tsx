@@ -130,7 +130,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <Tooltip text={t('tt_save')} side="top">
                         <button
                             onClick={handleDownload}
-                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                            className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                         >
                             <Download className="w-3.5 h-3.5" />
                         </button>
@@ -139,7 +139,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <Tooltip text={t('ctx_delete_image')} side="top">
                         <button
                             onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
-                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
+                            className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -148,7 +148,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <Tooltip text={t('tt_more')} side="top">
                         <button
                             onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                            className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                            className={`flex items-center gap-1.5 p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                         >
                             <Plus className="w-3.5 h-3.5" />
                             <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('more_btn')}</span>
