@@ -55,34 +55,45 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         <DialogContext.Provider value={{ confirm }}>
             {children}
             {isOpen && createPortal(
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className={`w-full max-w-md ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} p-6 animate-in zoom-in-95 slide-in-from-bottom-2 duration-200`}>
-                        <div className="flex items-start gap-4">
-                            {options.variant === 'danger' && (
-                                <div className="p-2 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-                                    <AlertTriangle size={20} />
+                <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
+                    <div className={`w-full max-w-[400px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
+                        {/* Status Bar (Optional line at top for danger) */}
+                        {options.variant === 'danger' && <div className="h-1 w-full bg-red-500" />}
+
+                        <div className="p-8 flex flex-col items-center text-center">
+                            {options.variant === 'danger' ? (
+                                <div className="mb-6 w-12 h-12 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50">
+                                    <AlertTriangle size={24} strokeWidth={1.5} />
+                                </div>
+                            ) : (
+                                <div className="mb-4">
+                                    <span className={Typo.Label}>{options.variant === 'primary' ? 'Aktion erforderlich' : 'System'}</span>
                                 </div>
                             )}
-                            <div className="flex-1">
-                                <h3 className={`${Typo.H2} mb-2`}>{options.title || 'Are you sure?'}</h3>
-                                {options.description && (
-                                    <p className={`${Typo.Body} text-zinc-500 mb-6`}>{options.description}</p>
-                                )}
 
-                                <div className="flex items-center justify-end gap-3">
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => handleClose(false)}
-                                    >
-                                        {options.cancelLabel || 'Cancel'}
-                                    </Button>
-                                    <Button
-                                        variant={options.variant === 'danger' ? 'danger' : 'primary'}
-                                        onClick={() => handleClose(true)}
-                                    >
-                                        {options.confirmLabel || 'Confirm'}
-                                    </Button>
-                                </div>
+                            <h3 className={`${Typo.H1} mb-3 px-4`}>{options.title || 'Bist du sicher?'}</h3>
+
+                            {options.description && (
+                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mb-8 max-w-[280px]`}>
+                                    {options.description}
+                                </p>
+                            )}
+
+                            <div className="flex flex-col w-full gap-2">
+                                <Button
+                                    variant={options.variant === 'danger' ? 'danger' : 'primary'}
+                                    onClick={() => handleClose(true)}
+                                    className="w-full"
+                                >
+                                    {options.confirmLabel || 'Bestätigen'}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => handleClose(false)}
+                                    className="w-full !text-zinc-400 hover:!text-zinc-600 dark:hover:!text-zinc-200"
+                                >
+                                    {options.cancelLabel || 'Abbrechen'}
+                                </Button>
                             </div>
                         </div>
                     </div>
