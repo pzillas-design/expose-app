@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
-import { Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Download, ChevronLeft, ChevronRight, RefreshCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from './ui/DesignSystem';
 
@@ -109,24 +109,57 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         <div
             data-image-id={image.id}
             className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${isSelected
-                ? 'z-20 ring-1 ring-black dark:ring-white opacity-100'
+                ? 'z-20 opacity-100'
                 : 'z-0 opacity-70 hover:opacity-100'
                 }`}
             style={{
                 width: image.width * zoom,
-                height: image.height * zoom,
                 scrollSnapStop: 'always',
             }}
             onMouseDown={(e) => onMouseDown(e, image.id)}
         >
-            <div className={`w-full h-full relative ${Theme.Colors.PanelBg} overflow-hidden`}>
+            {/* Top Toolbar: Filename + Action Icons */}
+            <div className="flex items-center justify-between w-full mb-1.5 px-0.5 animate-in fade-in duration-300">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px]`} title={image.title}>
+                        {image.title}
+                    </span>
+
+                    {isSelected && (
+                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                            <Tooltip text={t('tt_more')} side="top">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                                    className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
+                                >
+                                    <RefreshCcw className="w-3.5 h-3.5" />
+                                </button>
+                            </Tooltip>
+
+                            <Tooltip text={t('tt_save')} side="top">
+                                <button
+                                    onClick={handleDownload}
+                                    className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                </button>
+                            </Tooltip>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div
+                className={`relative ${Theme.Colors.PanelBg} overflow-hidden ${isSelected ? 'ring-1 ring-black dark:ring-white' : ''}`}
+                style={{ height: image.height * zoom }}
+            >
                 <img
                     src={image.maskSrc || image.src}
                     alt={image.title}
                     className="w-full h-full object-cover pointer-events-none block"
                 />
 
-                {/* Editor Overlay - Always Visible if not generating */}
+                {/* Editor Overlay */}
                 {!image.isGenerating && onUpdateAnnotations && editorState && (
                     <div className="absolute inset-0 z-10">
                         <EditorCanvas
@@ -172,39 +205,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             >
                                 <ChevronRight className="w-6 h-6" />
                             </button>
-                        )}
-                    </div>
-
-                    {/* Bottom Actions Bar (Now only for More/Save) */}
-                    <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex flex-row items-center gap-2 z-50 whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto">
-                        {image.parentId && (
-                            <div className={`flex flex-row items-center ${baseGlass} h-9 overflow-hidden`}>
-                                <Tooltip text={t('tt_more')} side="top">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                        className={actionBtnClass}
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        <span className={Typo.Label}>{t('more_btn')}</span>
-                                    </button>
-                                </Tooltip>
-
-                                {!image.isGenerating && (
-                                    <>
-                                        <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
-
-                                        <Tooltip text={t('tt_save')} side="top">
-                                            <button
-                                                onClick={handleDownload}
-                                                className={actionBtnClass}
-                                            >
-                                                <Download className="w-3.5 h-3.5" />
-                                                <span className={Typo.Label}>{t('save_btn')}</span>
-                                            </button>
-                                        </Tooltip>
-                                    </>
-                                )}
-                            </div>
                         )}
                     </div>
                 </>

@@ -333,14 +333,7 @@ export function App() {
                         }}
                     >
                         {rows.map((row, rowIndex) => (
-                            <div key={row.id} data-row-id={row.id} className="flex flex-col gap-2 shrink-0">
-                                <input
-                                    value={row.title}
-                                    onChange={(e) => {
-                                        state.setRows(p => p.map(r => r.id === row.id ? { ...r, title: e.target.value } : r))
-                                    }}
-                                    className={`bg-transparent outline-none border-none w-96 ml-0 focus:${Theme.Colors.TextHighlight} ${Theme.Colors.TextSecondary} ${Typo.Label} tracking-[0.2em]`}
-                                />
+                            <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
                                     {row.items.map((img, imgIndex) => {
                                         const hasLeft = imgIndex > 0;
