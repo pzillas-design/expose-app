@@ -295,6 +295,22 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             case 'prompt':
                 return (
                     <>
+                        <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+                            {isMulti && selectedImages ? (
+                                <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100`}>
+                                    {selectedImages.length} {t('images_selected')}
+                                </span>
+                            ) : (
+                                <span className={`${Typo.Label} truncate max-w-[180px]`}>
+                                    {selectedImage.title}
+                                </span>
+                            )}
+
+                            <div className="flex items-center gap-1">
+                                <IconButton icon={<Download className="w-4 h-4" />} onClick={handleDownload} tooltip={isMulti ? t('download_all') : "Download"} />
+                                <IconButton icon={<Trash2 className="w-4 h-4" />} onClick={handleDelete} className="hover:text-red-400" tooltip={isMulti ? t('delete_all') : t('delete')} />
+                            </div>
+                        </div>
                         <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
                             <PromptTab
                                 prompt={prompt}
