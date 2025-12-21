@@ -120,30 +120,28 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Top Toolbar: Filename + Action Icons */}
             <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px]`} title={image.title}>
-                        {image.title}
-                    </span>
+                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink overflow-hidden`} title={image.title}>
+                    {image.title}
+                </span>
 
-                    <div className={`flex items-center gap-1.5 shrink-0 ml-1 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <Tooltip text={t('tt_more')} side="top">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
-                            >
-                                <RefreshCcw className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
+                <div className={`flex items-center gap-1.5 shrink-0 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <Tooltip text={t('tt_more')} side="top">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <RefreshCcw className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </button>
+                    </Tooltip>
 
-                        <Tooltip text={t('tt_save')} side="top">
-                            <button
-                                onClick={handleDownload}
-                                className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
-                    </div>
+                    <Tooltip text={t('tt_save')} side="top">
+                        <button
+                            onClick={handleDownload}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <Download className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -184,30 +182,32 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
             </div>
 
-            {isSelected && (
-                <>
-                    {/* Edge Navigation Icons */}
-                    <div className="absolute inset-0 pointer-events-none">
-                        {hasLeft && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onNavigate?.(-1); }}
-                                className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
-                        )}
-                        {hasRight && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onNavigate?.(1); }}
-                                className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
-                            >
-                                <ChevronRight className="w-6 h-6" />
-                            </button>
-                        )}
-                    </div>
-                </>
-            )}
-        </div>
+            {
+                isSelected && (
+                    <>
+                        {/* Edge Navigation Icons */}
+                        <div className="absolute inset-0 pointer-events-none">
+                            {hasLeft && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onNavigate?.(-1); }}
+                                    className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                            )}
+                            {hasRight && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onNavigate?.(1); }}
+                                    className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            )}
+                        </div>
+                    </>
+                )
+            }
+        </div >
     );
 });
 
