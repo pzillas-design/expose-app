@@ -58,10 +58,6 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
                     <div className={`w-full max-w-[400px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
                         <div className="p-8 flex flex-col items-center text-center">
-                            <div className="mb-4">
-                                <span className={Typo.Label}>{options.variant === 'danger' ? 'Gefahrenzone' : 'Bestätigung'}</span>
-                            </div>
-
                             <h3 className={`${Typo.H1} mb-2`}>{options.title || 'Bist du sicher?'}</h3>
 
                             {options.description && (
