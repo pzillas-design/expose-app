@@ -119,33 +119,31 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             onMouseDown={(e) => onMouseDown(e, image.id)}
         >
             {/* Top Toolbar: Filename + Action Icons */}
-            <div className="flex items-center justify-between w-full mb-1.5 px-0.5 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between w-full h-7 px-0.5 animate-in fade-in duration-300">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px]`} title={image.title}>
                         {image.title}
                     </span>
 
-                    {isSelected && (
-                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                            <Tooltip text={t('tt_more')} side="top">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                    className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
-                                >
-                                    <RefreshCcw className="w-3.5 h-3.5" />
-                                </button>
-                            </Tooltip>
+                    <div className={`flex items-center gap-1.5 shrink-0 ml-1 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                        <Tooltip text={t('tt_more')} side="top">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                                className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
+                            >
+                                <RefreshCcw className="w-3.5 h-3.5" />
+                            </button>
+                        </Tooltip>
 
-                            <Tooltip text={t('tt_save')} side="top">
-                                <button
-                                    onClick={handleDownload}
-                                    className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
-                                >
-                                    <Download className="w-3.5 h-3.5" />
-                                </button>
-                            </Tooltip>
-                        </div>
-                    )}
+                        <Tooltip text={t('tt_save')} side="top">
+                            <button
+                                onClick={handleDownload}
+                                className="p-1 rounded-md text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                            </button>
+                        </Tooltip>
+                    </div>
                 </div>
             </div>
 
