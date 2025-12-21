@@ -11,6 +11,7 @@ import { useCanvasNavigation } from './useCanvasNavigation';
 import { LIBRARY_CATEGORIES } from '../data/libraryItems';
 import { useToast } from '../components/ui/Toast';
 import { useItemDialog } from '../components/ui/Dialog';
+import { getDemoRows } from '../data/demoState';
 
 // Cost mapping
 const COSTS: Record<GenerationQuality, number> = {
@@ -24,7 +25,7 @@ export const useNanoController = () => {
     const { showToast } = useToast();
     const { confirm } = useItemDialog();
     // --- Data State ---
-    const [rows, setRows] = useState<ImageRow[]>([]);
+    const [rows, setRows] = useState<ImageRow[]>(getDemoRows());
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     // --- User Library State (Persisted) ---
