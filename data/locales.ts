@@ -339,7 +339,7 @@ export const translations = {
     generating: "Generiere",
     more_btn: "Mehr",
     back_btn: "Zurück",
-    save_btn: "Speichern",
+    save_btn: "Laden",
     tt_back: "Zurück zur Quelle",
     tt_more: "Variationen generieren",
     tt_save: "Bild herunterladen",

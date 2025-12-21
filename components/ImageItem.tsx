@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
-import { Plus, Download, ChevronLeft, ChevronRight, RefreshCcw } from 'lucide-react';
+import { Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from './ui/DesignSystem';
 
@@ -125,22 +125,24 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         {image.title}
                     </span>
 
-                    <div className={`flex items-center gap-1.5 shrink-0 ml-1 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <div className={`flex items-center gap-3 shrink-0 ml-4 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                         <Tooltip text={t('tt_more')} side="top">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                className={`p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                             >
-                                <RefreshCcw className="w-3.5 h-3.5" />
+                                <Plus className="w-3.5 h-3.5" />
+                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider`}>{t('more_btn')}</span>
                             </button>
                         </Tooltip>
 
                         <Tooltip text={t('tt_save')} side="top">
                             <button
                                 onClick={handleDownload}
-                                className={`p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                             >
                                 <Download className="w-3.5 h-3.5" />
+                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider`}>{t('save_btn')}</span>
                             </button>
                         </Tooltip>
                     </div>
