@@ -3,117 +3,69 @@ import { ImageRow, CanvasImage } from '../types';
 import { generateId } from '../utils/ids';
 
 const demoImages = [
-    {
-        url: 'https://images.unsplash.com/photo-1600585154340-be6199fbfd0b?auto=format&fit=crop&w=1200&q=80',
-        title: 'Modern Villa',
-        w: 1200,
-        h: 800
-    },
-    {
-        url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=80',
-        title: 'Luxury Living',
-        w: 1200,
-        h: 800
-    },
-    {
-        url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-        title: 'Penthouse View',
-        w: 1200,
-        h: 800
-    },
-    {
-        url: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=80',
-        title: 'Minimalist Interior',
-        w: 1200,
-        h: 1800
-    }
+    { url: 'https://images.unsplash.com/photo-1600585154340-be6199fbfd0b?auto=format&fit=crop&w=800&q=80', title: 'Modern Villa', w: 800, h: 533 },
+    { url: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80', title: 'Luxury Living', w: 800, h: 533 },
+    { url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80', title: 'Penthouse View', w: 800, h: 533 },
+    { url: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=800&q=80', title: 'Minimalist Interior', w: 800, h: 1200 },
+    { url: 'https://images.unsplash.com/photo-1600566753190-17f0bb2a6c3e?auto=format&fit=crop&w=800&q=80', title: 'Smart Home', w: 800, h: 533 },
+    { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=800&q=80', title: 'Kitchen Design', w: 800, h: 533 },
+    { url: 'https://images.unsplash.com/photo-1600572236304-483a936a51c7?auto=format&fit=crop&w=800&q=80', title: 'Pool Area', w: 800, h: 533 }
 ];
 
+const createImg = (demoIndex: number, version: number = 1, parentId?: string): CanvasImage => {
+    const demo = demoImages[demoIndex % demoImages.length];
+    const id = generateId();
+    return {
+        id,
+        parentId,
+        src: demo.url,
+        originalSrc: demo.url,
+        width: demo.w / 2,
+        height: demo.h / 2,
+        title: version > 1 ? `${demo.title} v${version}` : demo.title,
+        baseName: demo.title,
+        version,
+        isGenerating: false,
+        generationPrompt: version > 1 ? 'Enhanced lighting and detail' : undefined,
+        createdAt: Date.now() + (version * 1000),
+        updatedAt: Date.now() + (version * 1000)
+    };
+};
+
 export const getDemoRows = (): ImageRow[] => {
-    const row1Id = generateId();
-    const row2Id = generateId();
-    const row3Id = generateId();
-
-    const img1Id = generateId();
-    const img2Id = generateId();
-    const img3Id = generateId();
-    const img4Id = generateId();
-
-    const img1: CanvasImage = {
-        id: img1Id,
-        src: demoImages[0].url,
-        originalSrc: demoImages[0].url,
-        width: demoImages[0].w / 2,
-        height: demoImages[0].h / 2,
-        title: demoImages[0].title,
-        baseName: demoImages[0].title,
-        version: 1,
-        isGenerating: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
-
-    const img1v2: CanvasImage = {
-        id: generateId(),
-        parentId: img1Id,
-        src: demoImages[1].url,
-        originalSrc: demoImages[0].url,
-        width: demoImages[1].w / 2,
-        height: demoImages[1].h / 2,
-        title: demoImages[0].title + ' v2',
-        baseName: demoImages[0].title,
-        version: 2,
-        isGenerating: false,
-        generationPrompt: 'Add a sunset atmosphere and clean up the lawn',
-        createdAt: Date.now() + 1000,
-        updatedAt: Date.now() + 1000
-    };
-
-    const img3: CanvasImage = {
-        id: img3Id,
-        src: demoImages[2].url,
-        originalSrc: demoImages[2].url,
-        width: demoImages[2].w / 2,
-        height: demoImages[2].h / 2,
-        title: demoImages[2].title,
-        baseName: demoImages[2].title,
-        version: 1,
-        isGenerating: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
-
-    const img4: CanvasImage = {
-        id: img4Id,
-        src: demoImages[3].url,
-        originalSrc: demoImages[3].url,
-        width: demoImages[3].w / 3,
-        height: demoImages[3].h / 3,
-        title: demoImages[3].title,
-        baseName: demoImages[3].title,
-        version: 1,
-        isGenerating: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-    };
+    // Row 1: Start with an empty row (or first image is "empty" in a row)
+    // The user said "das erste bild is leer" - I will interpret this as a row that is empty 
+    // or a row where we can test the "Add first image" UI.
+    // However, to satisfy "3-5 pro zeile", I'll make 3 rows with content.
 
     return [
         {
-            id: row1Id,
-            title: 'Exteriors',
-            items: [img1, img1v2],
+            id: generateId(),
+            title: 'Empty Projects (Testing)',
+            items: [], // This will show the "Create first" UI
             createdAt: Date.now()
         },
         {
-            id: row2Id,
-            title: 'Views',
-            items: [img3],
+            id: generateId(),
+            title: 'Modern Exteriors',
+            items: [
+                createImg(0),
+                createImg(0, 2, 'img0'),
+                createImg(4),
+                createImg(6)
+            ],
             createdAt: Date.now()
         },
         {
-            id: row3Id,
-            title: 'Vertical Shots',
-            items: [img4],
+            id: generateId(),
+            title: 'Luxury Interiors',
+            items: [
+                createImg(1),
+                createImg(5),
+                createImg(3),
+                createImg(3, 2, 'img3'),
+                createImg(2)
+            ],
             createdAt: Date.now()
         }
     ];
