@@ -129,20 +129,20 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <Tooltip text={t('tt_more')} side="top">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                             >
                                 <Plus className="w-3.5 h-3.5" />
-                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider`}>{t('more_btn')}</span>
+                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('more_btn')}</span>
                             </button>
                         </Tooltip>
 
                         <Tooltip text={t('tt_save')} side="top">
                             <button
                                 onClick={handleDownload}
-                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                             >
                                 <Download className="w-3.5 h-3.5" />
-                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider`}>{t('save_btn')}</span>
+                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('save_btn')}</span>
                             </button>
                         </Tooltip>
                     </div>
