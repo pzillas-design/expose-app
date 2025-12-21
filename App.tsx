@@ -333,13 +333,13 @@ export function App() {
                         }}
                     >
                         {rows.map((row, rowIndex) => (
-                            <div key={row.id} data-row-id={row.id} className="flex flex-col gap-4 shrink-0">
+                            <div key={row.id} data-row-id={row.id} className="flex flex-col gap-2 shrink-0">
                                 <input
                                     value={row.title}
                                     onChange={(e) => {
                                         state.setRows(p => p.map(r => r.id === row.id ? { ...r, title: e.target.value } : r))
                                     }}
-                                    className={`bg-transparent outline-none border-none w-96 ml-1 focus:${Theme.Colors.TextHighlight} ${Theme.Colors.TextSecondary} ${Typo.Label} tracking-[0.2em]`}
+                                    className={`bg-transparent outline-none border-none w-96 ml-0 focus:${Theme.Colors.TextHighlight} ${Theme.Colors.TextSecondary} ${Typo.Label} tracking-[0.2em]`}
                                 />
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
                                     {row.items.map((img, imgIndex) => {
@@ -378,7 +378,7 @@ export function App() {
 
                         {rows.length > 0 && (
                             <div className="mt-16 flex items-center gap-2 opacity-60 hover:opacity-100 transition-all">
-                                <label className="flex items-center gap-3 cursor-pointer group p-2">
+                                <label className="flex items-center gap-3 cursor-pointer group py-2 pr-2">
                                     <Plus className={`w-5 h-5 ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white transition-colors`} />
                                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white`}>{t('image_btn')}</span>
                                     <input type="file" accept="image/*" className="hidden" multiple onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }} />
