@@ -358,6 +358,7 @@ export function App() {
                                                 onNavigate={(d) => moveSelection(d as -1 | 1)}
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
+                                                onDelete={requestDelete}
                                                 t={t}
                                             />
                                         );

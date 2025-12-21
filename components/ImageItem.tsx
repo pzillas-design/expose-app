@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
-import { Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from './ui/DesignSystem';
 
@@ -24,6 +24,7 @@ interface ImageItemProps {
     hasLeft?: boolean,
     hasRight?: boolean,
 
+    onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
 
@@ -85,6 +86,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onNavigate,
     hasLeft,
     hasRight,
+    onDelete,
     t
 }) => {
     const handleDownload = (e: React.MouseEvent) => {
@@ -118,35 +120,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             }}
             onMouseDown={(e) => onMouseDown(e, image.id)}
         >
-            {/* Top Toolbar: Filename + Action Icons */}
+            {/* Top Toolbar: Filename ONLY */}
             <div className="flex items-center justify-start w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink-0`} title={image.title}>
-                        {image.title}
-                    </span>
-
-                    <div className={`flex items-center gap-3 shrink-0 ml-4 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                        <Tooltip text={t('tt_more')} side="top">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('more_btn')}</span>
-                            </button>
-                        </Tooltip>
-
-                        <Tooltip text={t('tt_save')} side="top">
-                            <button
-                                onClick={handleDownload}
-                                className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                                <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('save_btn')}</span>
-                            </button>
-                        </Tooltip>
-                    </div>
-                </div>
+                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink-0`} title={image.title}>
+                    {image.title}
+                </span>
             </div>
 
             <div
@@ -184,6 +162,72 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         t={t}
                     />
                 )}
+            </div>
+
+            {/* Bottom Toolbar: Actions (Below Image) */}
+            <div className="h-7 mt-2 flex items-center justify-start px-0.5">
+                <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <Tooltip text={t('tt_more')} side="top">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                            className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('more_btn')}</span>
+                        </button>
+                    </Tooltip>
+
+                    <Tooltip text={t('tt_save')} side="top">
+                        <button
+                            onClick={handleDownload}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                        </button>
+                    </Tooltip>
+
+                    <Tooltip text={t('ctx_delete_image')} side="top">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    </Tooltip>
+                </div>
+            </div>
+
+            {/* Bottom Toolbar: Actions (Below Image) */}
+            <div className="h-7 mt-2 flex items-center justify-start px-0.5">
+                <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    <Tooltip text={t('tt_more')} side="top">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                            className={`flex items-center gap-1.5 p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span className={`${Typo.Label} text-[10px] uppercase tracking-wider !text-inherit`}>{t('more_btn')}</span>
+                        </button>
+                    </Tooltip>
+
+                    <Tooltip text={t('tt_save')} side="top">
+                        <button
+                            onClick={handleDownload}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                        >
+                            <Download className="w-3.5 h-3.5" />
+                        </button>
+                    </Tooltip>
+
+                    <Tooltip text={t('ctx_delete_image')} side="top">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
+                            className={`p-1 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    </Tooltip>
+                </div>
             </div>
 
             {
