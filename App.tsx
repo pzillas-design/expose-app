@@ -363,11 +363,8 @@ export function App() {
                                                 onUpdateAnnotations={handleUpdateAnnotations}
                                                 onEditStart={handleAnnotationEditStart}
                                                 onNavigate={(d) => moveSelection(d as -1 | 1)}
-                                                onNavigateVertical={(d) => moveRowSelection(d as -1 | 1)}
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
-                                                hasUp={rowIndex > 0}
-                                                hasDown={rowIndex < rows.length - 1}
                                                 t={t}
                                             />
                                         );

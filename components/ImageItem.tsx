@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
-import { Plus, Download, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from './ui/DesignSystem';
 
@@ -21,11 +21,8 @@ interface ImageItemProps {
 
     // Navigation Props
     onNavigate?: (direction: -1 | 1) => void,
-    onNavigateVertical?: (direction: -1 | 1) => void,
     hasLeft?: boolean,
     hasRight?: boolean,
-    hasUp?: boolean,
-    hasDown?: boolean,
 
     t: TranslationFunction;
 }
@@ -86,11 +83,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onUpdateAnnotations,
     onEditStart,
     onNavigate,
-    onNavigateVertical,
     hasLeft,
     hasRight,
-    hasUp,
-    hasDown,
     t
 }) => {
     const handleDownload = (e: React.MouseEvent) => {
@@ -177,22 +171,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
                             >
                                 <ChevronRight className="w-6 h-6" />
-                            </button>
-                        )}
-                        {hasUp && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onNavigateVertical?.(-1); }}
-                                className={`${navIconBtnClass} top-0 left-1/2 -translate-x-1/2 -translate-y-14`}
-                            >
-                                <ChevronUp className="w-6 h-6" />
-                            </button>
-                        )}
-                        {hasDown && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onNavigateVertical?.(1); }}
-                                className={`${navIconBtnClass} bottom-0 left-1/2 -translate-x-1/2 translate-y-14`}
-                            >
-                                <ChevronDown className="w-6 h-6" />
                             </button>
                         )}
                     </div>
