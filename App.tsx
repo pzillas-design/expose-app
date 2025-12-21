@@ -11,7 +11,6 @@ import { useNanoController } from './hooks/useNanoController';
 import { Plus, ImagePlus } from 'lucide-react';
 import { Typo, Theme } from './components/ui/DesignSystem';
 import { useItemDialog } from './components/ui/Dialog';
-import { DialogGallery } from './DialogGallery';
 
 export function App() {
     const { state, actions, refs, t } = useNanoController();
@@ -35,7 +34,6 @@ export function App() {
 
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
-    const [showGallery, setShowGallery] = useState(false);
 
     // Marquee Selection State
     const [marqueeBox, setMarqueeBox] = useState<{ startX: number, startY: number, currentX: number, currentY: number } | null>(null);
@@ -52,10 +50,7 @@ export function App() {
         if (path === '/admin') {
             setIsAdminOpen(true);
         }
-        if (path === '/gallery') {
-            setShowGallery(true);
-        }
-    }, [setIsAdminOpen, setShowGallery]);
+    }, [setIsAdminOpen]);
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
@@ -264,8 +259,6 @@ export function App() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIds]);
-
-    if (showGallery) return <DialogGallery />;
 
     return (
         <div

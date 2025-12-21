@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Theme, Button, Typo, Card } from './DesignSystem';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, Trash2 } from 'lucide-react';
 
 // --- Context ---
 
@@ -58,6 +58,12 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
                     <div className={`w-full max-w-[400px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
                         <div className="p-8 flex flex-col items-center text-center">
+                            {options.variant === 'danger' && (
+                                <div className="mb-4 text-red-500">
+                                    <Trash2 size={24} strokeWidth={1.5} />
+                                </div>
+                            )}
+
                             <h3 className={`${Typo.H1} mb-2`}>{options.title || 'Bist du sicher?'}</h3>
 
                             {options.description && (
