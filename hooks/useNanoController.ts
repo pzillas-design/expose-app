@@ -257,13 +257,21 @@ export const useNanoController = () => {
 
         try {
             console.log("Stripe: Invoking stripe-checkout function...");
-            const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+
+            // Add a timeout because invoke can hang on CORS/Network errors
+            const invokePromise = supabase.functions.invoke('stripe-checkout', {
                 body: {
                     amount,
                     cancel_url: window.location.origin,
                     success_url: `${window.location.origin}?payment=success`
                 }
             });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout: The server took too long to respond.")), 15000)
+            );
+
+            const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as any;
 
             console.log("Stripe: Function returned", { data, error });
 
