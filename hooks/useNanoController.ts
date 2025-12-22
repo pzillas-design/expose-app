@@ -247,6 +247,7 @@ export const useNanoController = () => {
     }, [currentLang]);
 
     const handleAddFunds = async (amount: number) => {
+        console.log("Stripe: handleAddFunds triggered", { amount, isAuthDisabled });
         if (isAuthDisabled) {
             setCredits(prev => prev + amount);
             setUserProfile((prev: any) => ({ ...prev, credits: (prev?.credits || 0) + amount }));
@@ -255,6 +256,7 @@ export const useNanoController = () => {
         }
 
         try {
+            console.log("Stripe: Invoking stripe-checkout function...");
             const { data, error } = await supabase.functions.invoke('stripe-checkout', {
                 body: {
                     amount,
@@ -263,13 +265,23 @@ export const useNanoController = () => {
                 }
             });
 
-            if (error) throw error;
-            if (data?.url) {
-                window.location.href = data.url;
+            console.log("Stripe: Function returned", { data, error });
+
+            if (error) {
+                console.error("Stripe: Function error returned", error);
+                throw error;
             }
-        } catch (err) {
+
+            if (data?.url) {
+                console.log("Stripe: Redirecting to", data.url);
+                window.location.href = data.url;
+            } else {
+                console.warn("Stripe: No URL in data", data);
+                throw new Error("No checkout URL received from server.");
+            }
+        } catch (err: any) {
             console.error("Stripe Checkout Error:", err);
-            showToast("Payment initialization failed.", "error");
+            showToast(err.message || "Payment initialization failed.", "error");
         }
     };
 
