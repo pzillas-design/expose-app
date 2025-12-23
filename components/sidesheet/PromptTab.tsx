@@ -166,24 +166,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     <div className="flex flex-col gap-1.5">
                         {/* Generation Prompt History */}
                         {selectedImage.generationPrompt && (
-                            <div className="group relative mb-2">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className={`${Typo.Label} ${Theme.Colors.TextSubtle}`}>{t('used_prompt') || "Used Prompt"}</span>
+                            <div className="group relative mb-4">
+                                <div className="relative group/tooltip flex items-start justify-between gap-2">
+                                    <p
+                                        className={`${Typo.Body} font-mono text-zinc-400 dark:text-zinc-500 text-sm line-clamp-2 select-none`}
+                                    >
+                                        "{selectedImage.generationPrompt}"
+                                    </p>
+
                                     <IconButton
                                         icon={<Copy className="w-3 h-3" />}
                                         onClick={() => navigator.clipboard.writeText(selectedImage.generationPrompt || '')}
                                         tooltip={t('copy')}
-                                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                     />
-                                </div>
-                                <div className="relative group/tooltip">
-                                    <p
-                                        className={`${Typo.Body} text-zinc-400 dark:text-zinc-500 italic text-sm line-clamp-2 cursor-help`}
-                                    >
-                                        "{selectedImage.generationPrompt}"
-                                    </p>
-                                    {/* Tooltip on hover */}
-                                    {selectedImage.generationPrompt.length > 50 && (
+
+                                    {/* Tooltip on hover (simple version) */}
+                                    {selectedImage.generationPrompt.length > 60 && (
                                         <div className="absolute left-0 bottom-full mb-2 w-64 p-3 rounded-lg bg-zinc-900 text-white text-xs z-50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl pointer-events-none">
                                             {selectedImage.generationPrompt}
                                         </div>

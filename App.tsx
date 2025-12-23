@@ -102,58 +102,51 @@ export function App() {
         setIsSettingsOpen(true);
     };
 
-    // --- Marquee Logic ---
+    // --- Pan (Hand Tool) Logic ---
+    const panState = useRef<{ isPanning: boolean, startX: number, startY: number, scrollLeft: number, scrollTop: number } | null>(null);
+
     const handleBackgroundMouseDown = (e: React.MouseEvent) => {
         if (contextMenu) setContextMenu(null);
-        if (e.button !== 0) return;
+        if (e.button !== 0) return; // Only Left Click
         if (e.target !== e.currentTarget && e.target !== refs.scrollContainerRef.current) return;
 
-        const rect = refs.scrollContainerRef.current?.getBoundingClientRect();
-        if (!rect) return;
+        e.preventDefault();
 
-        const startX = e.clientX - rect.left + refs.scrollContainerRef.current!.scrollLeft;
-        const startY = e.clientY - rect.top + refs.scrollContainerRef.current!.scrollTop;
-
-        setMarqueeBox({ startX, startY, currentX: startX, currentY: startY });
-
+        // Deselect & Disable Snap
         if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
             selectMultiple([]);
+            setEnableSnap(false);
+        }
+
+        // Start Panning
+        if (refs.scrollContainerRef.current) {
+            panState.current = {
+                isPanning: true,
+                startX: e.clientX,
+                startY: e.clientY,
+                scrollLeft: refs.scrollContainerRef.current.scrollLeft,
+                scrollTop: refs.scrollContainerRef.current.scrollTop
+            };
+            document.body.style.cursor = 'grabbing';
         }
     };
 
     const handleBackgroundMouseMove = (e: React.MouseEvent) => {
-        if (!marqueeBox || !refs.scrollContainerRef.current) return;
-        const currentX = e.clientX - refs.scrollContainerRef.current.getBoundingClientRect().left + refs.scrollContainerRef.current.scrollLeft;
-        const currentY = e.clientY - refs.scrollContainerRef.current.getBoundingClientRect().top + refs.scrollContainerRef.current.scrollTop;
-        setMarqueeBox(prev => prev ? { ...prev, currentX, currentY } : null);
+        if (!panState.current || !panState.current.isPanning || !refs.scrollContainerRef.current) return;
+
+        e.preventDefault();
+        const deltaX = e.clientX - panState.current.startX;
+        const deltaY = e.clientY - panState.current.startY;
+
+        refs.scrollContainerRef.current.scrollLeft = panState.current.scrollLeft - deltaX;
+        refs.scrollContainerRef.current.scrollTop = panState.current.scrollTop - deltaY;
     };
 
     const handleBackgroundMouseUp = () => {
-        if (!marqueeBox) return;
-        const x = Math.min(marqueeBox.startX, marqueeBox.currentX);
-        const y = Math.min(marqueeBox.startY, marqueeBox.currentY);
-        const w = Math.abs(marqueeBox.currentX - marqueeBox.startX);
-        const h = Math.abs(marqueeBox.currentY - marqueeBox.startY);
-
-        if (w > 5 && h > 5) {
-            const newSelectedIds: string[] = [];
-            allImages.forEach(img => {
-                const el = document.querySelector(`[data-image-id="${img.id}"]`);
-                if (el && refs.scrollContainerRef.current) {
-                    const imgRect = el.getBoundingClientRect();
-                    const containerRect = refs.scrollContainerRef.current!.getBoundingClientRect();
-                    const marqueeClientLeft = containerRect.left + x - refs.scrollContainerRef.current!.scrollLeft;
-                    const marqueeClientTop = containerRect.top + y - refs.scrollContainerRef.current!.scrollTop;
-                    const marqueeClientRight = marqueeClientLeft + w;
-                    const marqueeClientBottom = marqueeClientTop + h;
-
-                    const isIntersecting = !(imgRect.right < marqueeClientLeft || imgRect.left > marqueeClientRight || imgRect.bottom < marqueeClientTop || imgRect.top > marqueeClientBottom);
-                    if (isIntersecting) newSelectedIds.push(img.id);
-                }
-            });
-            if (newSelectedIds.length > 0) selectMultiple(newSelectedIds);
+        if (panState.current) {
+            panState.current = null;
+            document.body.style.cursor = '';
         }
-        setMarqueeBox(null);
     };
 
     // --- Context Menu Handler ---
