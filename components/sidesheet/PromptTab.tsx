@@ -113,7 +113,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     };
 
     const handleReset = () => {
-        setPrompt('');
+        // setPrompt(''); 
         setActiveTemplate(null);
         setControlValues({});
     };
@@ -214,7 +214,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 <div className={`flex flex-col border-t ${Theme.Colors.BorderSubtle} bg-zinc-50 dark:bg-zinc-900/50`}>
                                     {activeTemplate.controls.map((ctrl, idx) => (
                                         <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.BorderSubtle}` : ''}`}>
-                                            <div className="flex items-center justify-between px-3 py-2">
+                                            <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
                                                 <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
                                                     {ctrl.label}
                                                 </span>
@@ -223,8 +223,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     <IconButton
                                                         icon={<X className="w-3.5 h-3.5" />}
                                                         onClick={handleReset}
-                                                        tooltip={t('reset_tooltip')}
-                                                        className="!h-6 !w-6 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                                        tooltip="Variablen entfernen"
+                                                        className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
                                                     />
                                                 )}
                                             </div>

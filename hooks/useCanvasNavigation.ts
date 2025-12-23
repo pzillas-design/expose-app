@@ -225,9 +225,13 @@ export const useCanvasNavigation = ({
                     const scrollLeft = container.scrollLeft;
                     const scrollTop = container.scrollTop;
 
-                    // Content Point under mouse (before zoom)
-                    const contentX = (scrollLeft + mouseX) / zoom;
-                    const contentY = (scrollTop + mouseY) / zoom;
+                    // The canvas has fixed padding of 50vw/50vh that DOES NOT scale with zoom.
+                    const padX = window.innerWidth / 2;
+                    const padY = window.innerHeight / 2;
+
+                    // Content Point under mouse (unscaled, relative to true content origin)
+                    const contentX = (scrollLeft + mouseX - padX) / zoom;
+                    const contentY = (scrollTop + mouseY - padY) / zoom;
 
                     try {
                         // Force synchronous render to ensure DOM size updates before we set scroll
@@ -239,23 +243,30 @@ export const useCanvasNavigation = ({
                         setZoom(targetZoom);
                     }
 
-                    // Adjust scroll to keep content point under mouse
-                    container.scrollLeft = (contentX * targetZoom) - mouseX;
-                    container.scrollTop = (contentY * targetZoom) - mouseY;
+                    // Calculate new scroll position
+                    container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
+                    container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
                 }
+                setZoom(targetZoom);
             }
+
+            // Adjust scroll to keep content point under mouse
+            container.scrollLeft = (contentX * targetZoom) - mouseX;
+            container.scrollTop = (contentY * targetZoom) - mouseY;
+        }
+    }
         };
-        container.addEventListener('wheel', onWheel, { passive: false });
-        return () => container.removeEventListener('wheel', onWheel);
+container.addEventListener('wheel', onWheel, { passive: false });
+return () => container.removeEventListener('wheel', onWheel);
     }, [scrollContainerRef, zoom, selectedIds]); // Re-bind on state change
 
-    return {
-        zoom,
-        setZoom,
-        smoothZoomTo,
-        fitSelectionToView,
-        snapToItem,
-        isZoomingRef,
-        isAutoScrollingRef
-    };
+return {
+    zoom,
+    setZoom,
+    smoothZoomTo,
+    fitSelectionToView,
+    snapToItem,
+    isZoomingRef,
+    isAutoScrollingRef
+};
 };
