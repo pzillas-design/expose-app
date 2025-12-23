@@ -457,6 +457,16 @@ export function App() {
                 />
             )}
 
+            {/* Hidden Input for Context Menu Upload */}
+            <input
+                id="ctx-upload-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                multiple
+                onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }}
+            />
+
             <ContextMenu
                 menu={contextMenu}
                 images={allImages}
@@ -473,6 +483,7 @@ export function App() {
                 onDownloadSelected={handleDownloadSelected}
                 onDeleteSelected={() => requestDelete(selectedIds)}
                 onGenerateVariations={handleGenerateVariations}
+                onUpload={() => document.getElementById('ctx-upload-input')?.click()}
                 t={t}
             />
 
