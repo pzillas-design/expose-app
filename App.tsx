@@ -108,7 +108,11 @@ export function App() {
     const handleBackgroundMouseDown = (e: React.MouseEvent) => {
         if (contextMenu) setContextMenu(null);
         if (e.button !== 0) return; // Only Left Click
-        if (e.target !== e.currentTarget && e.target !== refs.scrollContainerRef.current) return;
+        if (e.button !== 0) return; // Only Left Click
+
+        // Block if clicking on interactive elements or images
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[data-image-id]')) return;
 
         e.preventDefault();
 
