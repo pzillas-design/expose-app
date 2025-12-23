@@ -1,5 +1,5 @@
-
 import React, { useRef, useCallback, useEffect, useState, useLayoutEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { CanvasImage } from '../types';
 
 const MIN_ZOOM = 0.1;
