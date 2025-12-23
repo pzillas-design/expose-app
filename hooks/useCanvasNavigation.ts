@@ -213,33 +213,41 @@ export const useCanvasNavigation = ({
                 const factor = Math.exp(delta * 0.008);
                 const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                // Calculate Focus Point (Mouse Position relative to container viewport)
-                const rect = container.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
+                if (selectedIds.length > 0) {
+                    // Simple Zoom: Just update state.
+                    setZoom(targetZoom);
+                } else {
+                    // Zoom-to-Cursor Logic
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
 
-                // Current scroll offsets
-                const scrollLeft = container.scrollLeft;
-                const scrollTop = container.scrollTop;
+                    const scrollLeft = container.scrollLeft;
+                    const scrollTop = container.scrollTop;
 
-                // Point in content space (unscaled)
-                const contentX = (scrollLeft + mouseX) / zoom;
-                const contentY = (scrollTop + mouseY) / zoom;
+                    // Content Point under mouse (before zoom)
+                    const contentX = (scrollLeft + mouseX) / zoom;
+                    const contentY = (scrollTop + mouseY) / zoom;
 
-                // Apply new zoom
-                setZoom(targetZoom);
+                    try {
+                        // Force synchronous render to ensure DOM size updates before we set scroll
+                        flushSync(() => {
+                            setZoom(targetZoom);
+                        });
+                    } catch (err) {
+                        console.error("Zoom flushSync error:", err);
+                        setZoom(targetZoom);
+                    }
 
-                // Adjust scroll to keep content point under mouse
-                // New content pos in screen pixels = contentX * targetZoom
-                // We want: (newScrollLeft + mouseX) = contentX * targetZoom
-                // So: newScrollLeft = (contentX * targetZoom) - mouseX
-                container.scrollLeft = (contentX * targetZoom) - mouseX;
-                container.scrollTop = (contentY * targetZoom) - mouseY;
+                    // Adjust scroll to keep content point under mouse
+                    container.scrollLeft = (contentX * targetZoom) - mouseX;
+                    container.scrollTop = (contentY * targetZoom) - mouseY;
+                }
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, zoom]);
+    }, [scrollContainerRef, zoom, selectedIds]); // Re-bind on state change
 
     return {
         zoom,
