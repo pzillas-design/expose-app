@@ -247,26 +247,19 @@ export const useCanvasNavigation = ({
                     container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
                     container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
                 }
-                setZoom(targetZoom);
             }
-
-            // Adjust scroll to keep content point under mouse
-            container.scrollLeft = (contentX * targetZoom) - mouseX;
-            container.scrollTop = (contentY * targetZoom) - mouseY;
-        }
-    }
         };
-container.addEventListener('wheel', onWheel, { passive: false });
-return () => container.removeEventListener('wheel', onWheel);
+        container.addEventListener('wheel', onWheel, { passive: false });
+        return () => container.removeEventListener('wheel', onWheel);
     }, [scrollContainerRef, zoom, selectedIds]); // Re-bind on state change
 
-return {
-    zoom,
-    setZoom,
-    smoothZoomTo,
-    fitSelectionToView,
-    snapToItem,
-    isZoomingRef,
-    isAutoScrollingRef
-};
+    return {
+        zoom,
+        setZoom,
+        smoothZoomTo,
+        fitSelectionToView,
+        snapToItem,
+        isZoomingRef,
+        isAutoScrollingRef
+    };
 };
