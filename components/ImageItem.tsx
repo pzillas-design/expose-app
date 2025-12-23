@@ -128,7 +128,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {image.title}
                 </span>
 
-                <div className={`flex items-center gap-3 transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto`}>
+                <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'}`}>
                     <Tooltip text={t('tt_save')} side="top">
                         <button
                             onClick={handleDownload}

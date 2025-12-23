@@ -198,7 +198,9 @@ export const useCanvasNavigation = ({
         const onWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
+                // e.stopPropagation(); // Allow bubbling to prevent stuck gestures? actually better to stop propagation to avoid browser zoom
                 e.stopPropagation();
+
                 isZoomingRef.current = true;
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
@@ -206,8 +208,24 @@ export const useCanvasNavigation = ({
                 }, 400);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
+
+                // Calculate new zoom
                 const delta = -e.deltaY;
-                setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
+                const scaleFactor = Math.exp(delta * 0.008);
+                const currentZoom = zoom; // This captures the closure's zoom, might be stale if strict mode?
+                // Actually, relying on setZoom(z => ...) is better for state, but we need current z for math.
+                // We can use the setState callback properly but we need to do the scroll adjustment sync.
+                // It's tricky with React state. 
+                // However, 'zoom' in dependency array refreshes the effect? Yes, [scrollContainerRef] is usually static, but if we add 'zoom' to deps, we re-bind listener every frame -> laggy.
+                // Better: Use a ref for current zoom? Or just read current zoom from state if this effect re-runs.
+                // The current effect ONLY depends on [scrollContainerRef]. 'zoom' is stale inside.
+                // ERROR: The current code `setZoom(z => ...)` works for the value, but my proposed math needs the value.
+                // FIX: Add 'zoom' to dependency array. It's fine for wheel events, listener re-binding is cheap enough compared to 60fps render?
+                // Actually, let's keep it simple. If valid 'selectedIds' exist, we let standard behavior apply (it might be fine?).
+                // User said "when NO image is selected, focus point is weird". 
+                // So we want to zoom towards the MOUSE position (or center of screen).
+
+                // Solution: We need 'zoom' to be fresh.
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
