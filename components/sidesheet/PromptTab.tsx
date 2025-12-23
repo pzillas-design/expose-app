@@ -166,7 +166,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     <div className="flex flex-col gap-1.5">
                         {/* Generation Prompt History */}
                         {/* Generation Prompt History */}
-                        {selectedImage.generationPrompt && (
+                        {!isMulti && selectedImage.generationPrompt && (
                             <div className="group relative mb-3">
                                 <div
                                     className="relative group/tooltip flex items-center justify-between gap-3 cursor-pointer hover:opacity-70 transition-opacity"
