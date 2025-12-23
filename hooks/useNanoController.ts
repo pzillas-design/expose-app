@@ -465,8 +465,11 @@ export const useNanoController = () => {
     };
 
     // --- Scroll Logic (Focus Tracking) ---
+    // We use a ref to control snap enabling without triggering re-renders of the scroll handler
+    const isSnapEnabledRef = useRef(true);
+
     const handleScroll = useCallback(() => {
-        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1) return;
+        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1 || !isSnapEnabledRef.current) return;
 
         const container = scrollContainerRef.current;
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
@@ -857,10 +860,11 @@ export const useNanoController = () => {
             handleGenerate, handleGenerateMore, handleNavigateParent, handleUpdateAnnotations,
             handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver, setQualityMode,
             setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
-            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-            setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection
+            addUserCategory, deleteUserCategory, addUserItem, deleteUserItem,
+            handleSignOut, setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
+            setSnapEnabled: (bv: boolean) => { isSnapEnabledRef.current = bv; }
         },
-        refs: { scrollContainerRef },
+        refs: { scrollContainerRef, fileInputRef },
         t
     };
 };

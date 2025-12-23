@@ -69,6 +69,7 @@ export function App() {
         } else {
             const timer = setTimeout(() => {
                 setEnableSnap(true);
+                actions.setSnapEnabled(true);
             }, 600);
             return () => clearTimeout(timer);
         }
@@ -120,6 +121,7 @@ export function App() {
         if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
             selectMultiple([]);
             setEnableSnap(false);
+            actions.setSnapEnabled(false);
         }
 
         // Start Panning
@@ -150,6 +152,7 @@ export function App() {
         if (panState.current) {
             panState.current = null;
             document.body.style.cursor = '';
+            // Note: We do NOT re-enable snap here. We wait for next image selection.
         }
     };
 
