@@ -194,25 +194,23 @@ export function App() {
         }
     };
 
-    // --- Context Menu Handler ---
+    // --- Context Menu Handlers ---
+
+    // Background Handler (attached to container)
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
-        // Use e.target instead of elementFromPoint for more reliable hit testing during selection
-        const imageWrapper = (e.target as HTMLElement).closest('[data-image-id]');
-
-        if (imageWrapper) {
-            const id = imageWrapper.getAttribute('data-image-id');
-            if (id) {
-                // If checking right click on unselected image, select it first?
-                // Standard behavior: yes.
-                if (!selectedIds.includes(id)) {
-                    selectAndSnap(id);
-                }
-                setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
-                return;
-            }
-        }
         setContextMenu({ x: e.clientX, y: e.clientY, type: 'background' });
+    };
+
+    // Image Handler (attached to ImageItems)
+    const handleImageContextMenu = (e: React.MouseEvent, id: string) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent bubbling to background
+
+        if (!selectedIds.includes(id)) {
+            selectAndSnap(id);
+        }
+        setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
     };
 
     const handleDownload = (id: string) => {
@@ -401,6 +399,7 @@ export function App() {
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
                                                 onDelete={requestDelete}
+                                                onContextMenu={handleImageContextMenu}
                                                 t={t}
                                             />
                                         );
