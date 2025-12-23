@@ -392,28 +392,30 @@ export function App() {
                 </div>
             </div>
 
-            <SideSheet
-                selectedImage={selectedImage}
-                selectedImages={selectedImages}
-                sideSheetMode={sideSheetMode}
-                onModeChange={setSideSheetMode}
-                brushSize={brushSize}
-                onBrushSizeChange={setBrushSize}
-                onGenerate={handleGenerate}
-                onUpdateAnnotations={handleUpdateAnnotations}
-                onUpdatePrompt={handleUpdatePrompt}
-                onDeleteImage={requestDelete}
-                onDeselectAllButOne={handleDeselectAllButOne}
-                isGlobalDragOver={isDragOver}
-                onGlobalDragLeave={() => setIsDragOver(false)}
-                t={t}
-                lang={currentLang}
-                fullLibrary={fullLibrary}
-                onAddUserCategory={addUserCategory}
-                onDeleteUserCategory={deleteUserCategory}
-                onAddUserItem={addUserItem}
-                onDeleteUserItem={deleteUserItem}
-            />
+            {selectedIds.length > 0 && (
+                <SideSheet
+                    selectedImage={selectedImage}
+                    selectedImages={selectedImages}
+                    sideSheetMode={sideSheetMode}
+                    onModeChange={setSideSheetMode}
+                    brushSize={brushSize}
+                    onBrushSizeChange={setBrushSize}
+                    onGenerate={handleGenerate}
+                    onUpdateAnnotations={handleUpdateAnnotations}
+                    onUpdatePrompt={handleUpdatePrompt}
+                    onDeleteImage={requestDelete}
+                    onDeselectAllButOne={handleDeselectAllButOne}
+                    isGlobalDragOver={isDragOver}
+                    onGlobalDragLeave={() => setIsDragOver(false)}
+                    t={t}
+                    lang={currentLang}
+                    fullLibrary={fullLibrary}
+                    onAddUserCategory={addUserCategory}
+                    onDeleteUserCategory={deleteUserCategory}
+                    onAddUserItem={addUserItem}
+                    onDeleteUserItem={deleteUserItem}
+                />
+            )}
 
             <ContextMenu
                 menu={contextMenu}
