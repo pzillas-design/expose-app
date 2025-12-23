@@ -187,6 +187,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             activeTab={editorState.mode}
                             isActive={isSelected}
                             onEditStart={onEditStart}
+                            onContextMenu={(e) => onContextMenu?.(e, image.id)}
                             t={t}
                         />
                     </div>
