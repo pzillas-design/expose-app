@@ -864,7 +864,7 @@ export const useNanoController = () => {
             handleSignOut, setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
             setSnapEnabled: (bv: boolean) => { isSnapEnabledRef.current = bv; }
         },
-        refs: { scrollContainerRef, fileInputRef },
+        refs: { scrollContainerRef },
         t
     };
 };
