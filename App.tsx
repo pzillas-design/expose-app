@@ -64,14 +64,14 @@ export function App() {
 
     // Manage Snap State
     useEffect(() => {
-        if (selectedIds.length > 1) {
-            setEnableSnap(false);
+        if (selectedIds.length === 1) {
+            // Single selection: Snap enabled (Focus mode)
+            setEnableSnap(true);
+            actions.setSnapEnabled(true);
         } else {
-            const timer = setTimeout(() => {
-                setEnableSnap(true);
-                actions.setSnapEnabled(true);
-            }, 600);
-            return () => clearTimeout(timer);
+            // Multi-selection OR No selection (Pan/Free mode): Snap disabled
+            setEnableSnap(false);
+            actions.setSnapEnabled(false);
         }
     }, [selectedIds.length]);
 
