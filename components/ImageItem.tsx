@@ -78,6 +78,7 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
     isSelected,
+    hasAnySelection,
     zoom,
     onMouseDown,
     onRetry,
@@ -111,7 +112,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     return (
         <div
             data-image-id={image.id}
-            className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${isSelected
+            className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${!hasAnySelection || isSelected
                 ? 'z-20 opacity-100'
                 : 'z-0 opacity-70 hover:opacity-100'
                 }`}
@@ -119,7 +120,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 width: image.width * zoom,
                 scrollSnapStop: 'always',
             }}
-            onMouseDown={(e) => onMouseDown(e, image.id)}
+        // onMouseDown removed to allow bubbling
         >
             {/* Top Toolbar: Filename + Actions */}
             <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
@@ -127,7 +128,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {image.title}
                 </span>
 
-                <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto`}>
                     <Tooltip text={t('tt_save')} side="top">
                         <button
                             onClick={handleDownload}
