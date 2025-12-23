@@ -167,7 +167,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         {/* Generation Prompt History */}
                         {selectedImage.generationPrompt && (
                             <div className="group relative mb-4">
-                                <div className={`relative group/tooltip flex items-start justify-between gap-2 p-3 rounded-lg ${Theme.Colors.PanelBgAlt}`}>
+                                <div className={`relative group/tooltip flex items-start justify-between gap-2 p-3 rounded-lg ${Theme.Colors.SurfaceSubtle}`}>
                                     <p
                                         className={`${Typo.Body} font-mono text-zinc-500 dark:text-zinc-600 text-xs line-clamp-2 select-none`}
                                     >
