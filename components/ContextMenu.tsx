@@ -17,13 +17,14 @@ interface ContextMenuProps {
     images: CanvasImage[];
     onClose: () => void;
     onDownload: (id: string) => void;
-    onDelete: (id: string) => void;
+    onDelete: (id: string | string[]) => void;
     onSelect: (id: string) => void;
     onAddToSelection: (id: string) => void;
     onRemoveFromSelection: (id: string) => void;
     onSelectAll: () => void;
     onDeselectAll: () => void;
     onResetView: () => void;
+    onUpload: () => void; // New prop
 
     // Multi Actions
     selectedIds: string[];
@@ -36,7 +37,7 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
     menu, images, onClose, onDownload, onDelete, onSelect, onAddToSelection, onRemoveFromSelection, onSelectAll, onDeselectAll, onResetView,
-    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, t
+    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, t
 }) => {
     if (!menu) return null;
 
@@ -71,14 +72,21 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     fixed z-[101] min-w-[200px]
                     bg-white dark:bg-zinc-950
                     border border-zinc-200 dark:border-zinc-800
-                    rounded-lg shadow-xl ring-1 ring-black/5
-                    overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col py-1
+                    rounded-lg shadow-lg shadow-black/5 ring-1 ring-black/5
+                    overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
                 `}
                 style={{ top: menu.y, left: menu.x }}
             >
                 {/* --- 1. BACKGROUND CLICK --- */}
                 {menu.type === 'background' && (
                     <>
+                        <button onClick={() => { onUpload(); onClose(); }} className={itemClass}>
+                            <Plus className={iconClass} />
+                            <span className={textClass}>{t('image_btn')}</span>
+                        </button>
+
+                        <Separator />
+
                         <button onClick={() => { onSelectAll(); onClose(); }} className={itemClass}>
                             <CheckSquare className={iconClass} />
                             <span className={textClass}>{t('ctx_select_all')}</span>
