@@ -336,8 +336,10 @@ export function App() {
                             <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
                                     {row.items.map((img, imgIndex) => {
-                                        const hasLeft = imgIndex > 0;
-                                        const hasRight = imgIndex < row.items.length - 1;
+                                        // Hide nav arrows if multiple images are selected
+                                        const isMulti = selectedIds.length > 1;
+                                        const hasLeft = !isMulti && imgIndex > 0;
+                                        const hasRight = !isMulti && imgIndex < row.items.length - 1;
 
                                         return (
                                             <ImageItem

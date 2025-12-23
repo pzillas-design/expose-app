@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl } from '../../types';
 import { PresetLibrary } from '../PresetLibrary';
 import { PresetEditorModal } from '../PresetEditorModal';
-import { Pen, Armchair, Paperclip, X } from 'lucide-react';
+import { Pen, Armchair, Paperclip, X, Copy } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton } from '../ui/DesignSystem';
 
 interface PromptTabProps {
@@ -164,6 +164,34 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <div className="flex-1 flex flex-col gap-6 px-6 pt-10 pb-6">
 
                     <div className="flex flex-col gap-1.5">
+                        {/* Generation Prompt History */}
+                        {selectedImage.generationPrompt && (
+                            <div className="group relative mb-2">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className={`${Typo.Label} ${Theme.Colors.TextSubtle}`}>{t('used_prompt') || "Used Prompt"}</span>
+                                    <IconButton
+                                        icon={<Copy className="w-3 h-3" />}
+                                        onClick={() => navigator.clipboard.writeText(selectedImage.generationPrompt || '')}
+                                        tooltip={t('copy')}
+                                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    />
+                                </div>
+                                <div className="relative group/tooltip">
+                                    <p
+                                        className={`${Typo.Body} text-zinc-400 dark:text-zinc-500 italic text-sm line-clamp-2 cursor-help`}
+                                    >
+                                        "{selectedImage.generationPrompt}"
+                                    </p>
+                                    {/* Tooltip on hover */}
+                                    {selectedImage.generationPrompt.length > 50 && (
+                                        <div className="absolute left-0 bottom-full mb-2 w-64 p-3 rounded-lg bg-zinc-900 text-white text-xs z-50 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all shadow-xl pointer-events-none">
+                                            {selectedImage.generationPrompt}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center min-h-[24px]">
                             <span className={Typo.Label}>{t('prompt_label')}</span>
                         </div>
@@ -173,7 +201,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 ref={textAreaRef}
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
-                                placeholder={isMulti ? t('mixed_prompts') : t('describe_changes')}
+                                placeholder={t('describe_changes')}
                                 className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[120px] overflow-hidden`}
                                 disabled={selectedImage.isGenerating}
                             />
