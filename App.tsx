@@ -104,24 +104,28 @@ export function App() {
     };
 
     // --- Pan (Hand Tool) Logic ---
-    const panState = useRef<{ isPanning: boolean, startX: number, startY: number, scrollLeft: number, scrollTop: number } | null>(null);
+    const panState = useRef<{ isPanning: boolean, startX: number, startY: number, scrollLeft: number, scrollTop: number, hasMoved: boolean } | null>(null);
 
     const handleBackgroundMouseDown = (e: React.MouseEvent) => {
         if (contextMenu) setContextMenu(null);
         if (e.button !== 0) return; // Only Left Click
-        if (e.button !== 0) return; // Only Left Click
 
-        // Block if clicking on interactive elements or images
+        // Block if clicking on interactive elements (buttons/inputs) within images
+        // We DO allow clicking on the image container itself to start panning
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('[data-image-id]')) return;
+        if (target.closest('button') || target.closest('a') || target.closest('input')) return;
 
         e.preventDefault();
 
-        // Deselect & Disable Snap
-        if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
-            selectMultiple([]);
-            setEnableSnap(false);
-            actions.setSnapEnabled(false);
+        // Only Deselect immediately if we are strictly on background
+        // If we are on an image, we wait for mouse up to decide (Click vs Drag)
+        const isOverImage = !!target.closest('[data-image-id]');
+        if (!isOverImage) {
+            // Background Click -> Deselect immediately? 
+            // Actually, we can just treat background as a valid start for pan.
+            // But if we click background and don't move, we deselect on MouseUp?
+            // Existing behavior was: clicking background deselects.
+            // Let's keep logic in MouseUp for consistency.
         }
 
         // Start Panning
@@ -131,9 +135,14 @@ export function App() {
                 startX: e.clientX,
                 startY: e.clientY,
                 scrollLeft: refs.scrollContainerRef.current.scrollLeft,
-                scrollTop: refs.scrollContainerRef.current.scrollTop
+                scrollTop: refs.scrollContainerRef.current.scrollTop,
+                hasMoved: false
             };
             document.body.style.cursor = 'grabbing';
+
+            // Temporary disable snap during interaction
+            setEnableSnap(false);
+            actions.setSnapEnabled(false);
         }
     };
 
@@ -144,15 +153,44 @@ export function App() {
         const deltaX = e.clientX - panState.current.startX;
         const deltaY = e.clientY - panState.current.startY;
 
+        // Threshold for "Movement"
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+            panState.current.hasMoved = true;
+        }
+
         refs.scrollContainerRef.current.scrollLeft = panState.current.scrollLeft - deltaX;
         refs.scrollContainerRef.current.scrollTop = panState.current.scrollTop - deltaY;
     };
 
-    const handleBackgroundMouseUp = () => {
+    const handleBackgroundMouseUp = (e: React.MouseEvent) => {
         if (panState.current) {
+
+            // If we haven't moved significantly, treat it as a CLICK
+            if (!panState.current.hasMoved) {
+                const target = e.target as HTMLElement;
+                const imageWrapper = target.closest('[data-image-id]');
+
+                if (imageWrapper) {
+                    // Clicked on Image -> Select
+                    const id = imageWrapper.getAttribute('data-image-id');
+                    if (id) {
+                        handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
+                        // Note: handleSelection will set snap to true internally if it selects one
+                    }
+                } else {
+                    // Clicked on Background -> Deselect
+                    selectMultiple([]);
+                    setEnableSnap(false);
+                    actions.setSnapEnabled(false);
+                }
+            } else {
+                // We dragged/panned. 
+                // Do not change selection. 
+                // Do not re-enable magnet (?) - User said "keep it disabled"
+            }
+
             panState.current = null;
             document.body.style.cursor = '';
-            // Note: We do NOT re-enable snap here. We wait for next image selection.
         }
     };
 
@@ -165,6 +203,11 @@ export function App() {
         if (imageWrapper) {
             const id = imageWrapper.getAttribute('data-image-id');
             if (id) {
+                // If checking right click on unselected image, select it first?
+                // Standard behavior: yes.
+                if (!selectedIds.includes(id)) {
+                    selectAndSnap(id);
+                }
                 setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
                 return;
             }
@@ -347,11 +390,8 @@ export function App() {
                                                 image={img}
                                                 zoom={zoom}
                                                 isSelected={selectedIds.includes(img.id)}
-                                                onMouseDown={(e, id) => {
-                                                    if (e.button === 2) return;
-                                                    e.stopPropagation();
-                                                    handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
-                                                }}
+                                                hasAnySelection={selectedIds.length > 0}
+                                                // onMouseDown is now handled by parent bubbling
                                                 onRetry={handleGenerateMore}
                                                 onChangePrompt={handleNavigateParent}
                                                 editorState={{ mode: sideSheetMode, brushSize }}

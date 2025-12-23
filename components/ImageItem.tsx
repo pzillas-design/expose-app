@@ -9,7 +9,8 @@ interface ImageItemProps {
     image: CanvasImage;
     isSelected: boolean;
     zoom: number;
-    onMouseDown: (e: React.MouseEvent, id: string) => void;
+    hasAnySelection?: boolean;
+    // onMouseDown: (e: React.MouseEvent, id: string) => void; // Removed per new logic
     onRetry?: (id: string) => void;
     onChangePrompt?: (id: string) => void;
     editorState?: {
