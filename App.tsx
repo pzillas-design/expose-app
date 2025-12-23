@@ -197,8 +197,8 @@ export function App() {
     // --- Context Menu Handler ---
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const imageWrapper = target?.closest('[data-image-id]');
+        // Use e.target instead of elementFromPoint for more reliable hit testing during selection
+        const imageWrapper = (e.target as HTMLElement).closest('[data-image-id]');
 
         if (imageWrapper) {
             const id = imageWrapper.getAttribute('data-image-id');
