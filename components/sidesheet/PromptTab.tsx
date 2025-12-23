@@ -165,9 +165,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                     <div className="flex flex-col gap-1.5">
                         {/* Generation Prompt History */}
+                        {/* Generation Prompt History */}
                         {selectedImage.generationPrompt && (
                             <div className="group relative mb-2">
-                                <div className={`relative group/tooltip flex items-center justify-between gap-3 p-3 rounded-lg ${Theme.Colors.SurfaceSubtle}`}>
+                                <div
+                                    className="relative group/tooltip flex items-center justify-between gap-3 cursor-pointer hover:opacity-70 transition-opacity"
+                                    onClick={() => navigator.clipboard.writeText(selectedImage.generationPrompt || '')}
+                                >
                                     <p
                                         className={`${Typo.Body} font-mono text-zinc-400/80 dark:text-zinc-500/80 text-xs line-clamp-2 select-none`}
                                     >
@@ -176,9 +180,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     <IconButton
                                         icon={<Copy className="w-3 h-3" />}
-                                        onClick={() => navigator.clipboard.writeText(selectedImage.generationPrompt || '')}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigator.clipboard.writeText(selectedImage.generationPrompt || '');
+                                        }}
                                         tooltip={t('copy')}
                                         className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ background: 'transparent' }}
                                     />
 
                                     {/* Tooltip on hover (simple version) */}
