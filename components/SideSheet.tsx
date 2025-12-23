@@ -295,7 +295,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             case 'prompt':
                 return (
                     <>
-                        <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+                        <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} ${Theme.Colors.Border}`}>
                             {isMulti && selectedImages ? (
                                 <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100`}>
                                     {selectedImages.length} {t('images_selected')}

@@ -161,19 +161,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
             <div className="min-h-full flex flex-col">
 
-                <div className="flex-1 flex flex-col gap-6 px-6 pt-10 pb-6">
+                <div className="flex-1 flex flex-col gap-5 px-6 pt-2 pb-6">
 
                     <div className="flex flex-col gap-1.5">
                         {/* Generation Prompt History */}
                         {/* Generation Prompt History */}
                         {selectedImage.generationPrompt && (
-                            <div className="group relative mb-2">
+                            <div className="group relative mb-3">
                                 <div
                                     className="relative group/tooltip flex items-center justify-between gap-3 cursor-pointer hover:opacity-70 transition-opacity"
                                     onClick={() => navigator.clipboard.writeText(selectedImage.generationPrompt || '')}
                                 >
                                     <p
-                                        className={`${Typo.Body} font-mono text-zinc-400/80 dark:text-zinc-500/80 text-xs line-clamp-2 select-none`}
+                                        className={`${Typo.Body} font-mono text-zinc-400/80 dark:text-zinc-500/80 text-xs line-clamp-2 select-none leading-relaxed`}
                                     >
                                         "{selectedImage.generationPrompt}"
                                     </p>
@@ -254,9 +254,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center min-h-[24px]">
-                            <span className={Typo.Label}>{t('context_label')}</span>
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center min-h-[20px]">
+                            <span className={`${Typo.Label} text-zinc-400`}>{t('context_label')}</span>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2">
