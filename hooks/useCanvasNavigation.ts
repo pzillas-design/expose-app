@@ -230,7 +230,7 @@ export const useCanvasNavigation = ({
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef]);
+    }, [scrollContainerRef, zoom]);
 
     return {
         zoom,
