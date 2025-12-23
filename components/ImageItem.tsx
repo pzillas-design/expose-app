@@ -26,6 +26,7 @@ interface ImageItemProps {
     hasRight?: boolean,
 
     onDelete?: (id: string) => void;
+    onContextMenu?: (e: React.MouseEvent, id: string) => void;
     t: TranslationFunction;
 }
 
@@ -89,6 +90,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasLeft,
     hasRight,
     onDelete,
+    onContextMenu,
     t
 }) => {
     const handleDownload = (e: React.MouseEvent) => {
@@ -112,6 +114,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     return (
         <div
             data-image-id={image.id}
+            onContextMenu={(e) => onContextMenu?.(e, image.id)}
             className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${!hasAnySelection || isSelected
                 ? 'z-20 opacity-100'
                 : 'z-0 opacity-70 hover:opacity-100'
