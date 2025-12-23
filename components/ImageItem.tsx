@@ -190,7 +190,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 {image.isGenerating && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
-                        duration={getDurationForQuality(image.quality)}
+                        duration={image.estimatedDuration || getDurationForQuality(image.quality)}
                         t={t}
                     />
                 )}

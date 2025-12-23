@@ -1,10 +1,10 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@11.1.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@14.25.0?target=deno'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-    apiVersion: '2022-11-15',
+    apiVersion: '2023-10-16',
+    httpClient: Stripe.createFetchHttpClient(),
 })
 
 const supabaseAdmin = createClient(
@@ -12,7 +12,7 @@ const supabaseAdmin = createClient(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
 
     try {
@@ -23,10 +23,14 @@ serve(async (req) => {
             Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
         )
 
+        console.log(`Webhook received: ${event.type}`);
+
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object
             const userId = session.metadata.user_id
             const amount = parseFloat(session.metadata.amount)
+
+            console.log(`Processing credits for user ${userId}, amount: ${amount}`);
 
             // 1. Get current balance
             const { data: profile } = await supabaseAdmin
@@ -49,11 +53,16 @@ serve(async (req) => {
                     })
                     .eq('id', userId)
 
-                console.log(`Successfully added ${amount}€ to user ${userId}`)
+                console.log(`Successfully added ${amount}€ to user ${userId}. New balance: ${newCredits}`);
+            } else {
+                console.warn(`Profile not found for user ${userId}`);
             }
         }
 
-        return new Response(JSON.stringify({ received: true }), { status: 200 })
+        return new Response(JSON.stringify({ received: true }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200
+        })
     } catch (err) {
         console.error(`Webhook Error: ${err.message}`)
         return new Response(`Webhook Error: ${err.message}`, { status: 400 })

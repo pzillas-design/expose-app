@@ -2,6 +2,7 @@
 import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { adminService } from '../services/adminService';
+import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject, GenerationQuality, TranslationKey, LibraryCategory, LibraryItem } from '../types';
 import { editImageWithGemini } from '../services/geminiService';
 import { generateMaskFromAnnotations } from '../utils/maskGenerator';
@@ -19,6 +20,14 @@ const COSTS: Record<GenerationQuality, number> = {
     'pro-1k': 0.50,
     'pro-2k': 1.00,
     'pro-4k': 2.00
+};
+
+// Base duration estimates (in ms)
+const ESTIMATED_DURATIONS: Record<GenerationQuality, number> = {
+    'fast': 12000,
+    'pro-1k': 23000,
+    'pro-2k': 36000,
+    'pro-4k': 60000
 };
 
 export const useNanoController = () => {
@@ -99,44 +108,69 @@ export const useNanoController = () => {
         primarySelectedId
     });
 
+    // --- Helper Functions ---
+
+    // Resolve Auto Language
+    const getResolvedLang = useCallback((): LocaleKey => {
+        if (lang === 'auto') {
+            const browserLang = navigator.language.split('-')[0];
+            return (browserLang === 'de') ? 'de' : 'en';
+        }
+        return lang;
+    }, [lang]);
+
+    const currentLang = getResolvedLang();
+
+    // Translation Function
+    const t = useCallback((key: TranslationKey): string => {
+        return translations[currentLang][key] || key;
+    }, [currentLang]);
+
+    // Fetch Profile Helper
+    const fetchProfile = useCallback(async (sessionUser: any) => {
+        console.log("Auth: Fetching profile for user:", sessionUser?.email);
+        if (sessionUser) {
+            setUser(sessionUser);
+            try {
+                // Update last_active_at
+                await supabase.from('profiles').update({
+                    last_active_at: new Date().toISOString()
+                }).eq('id', sessionUser.id);
+
+                // Fetch full profile
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', sessionUser.id)
+                    .single();
+
+                if (profile) {
+                    setCredits(profile.credits);
+                    setUserProfile(profile);
+
+                    // --- DEEP SYNC: Load User Images ---
+                    imageService.loadUserImages(sessionUser.id).then(loadedRows => {
+                        if (loadedRows.length > 0) {
+                            setRows(loadedRows);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Auth: Profile fetch failed:", err);
+            }
+        } else {
+            console.log("Auth: No user found, clearing profile.");
+            setUser(null);
+            setUserProfile(null);
+        }
+    }, [setUser, setCredits, setUserProfile]);
+
     // Sync with Supabase and Listen for Changes
     useEffect(() => {
         if (isAuthDisabled) {
             setCredits(999.00);
             return;
         }
-
-        const fetchProfile = async (sessionUser: any) => {
-            console.log("Auth: Fetching profile for user:", sessionUser?.email);
-            if (sessionUser) {
-                setUser(sessionUser);
-                try {
-                    // Update last_active_at
-                    await supabase.from('profiles').update({
-                        last_active_at: new Date().toISOString()
-                    }).eq('id', sessionUser.id);
-
-                    // Fetch full profile
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', sessionUser.id)
-                        .single();
-
-                    if (profile) {
-                        console.log("Auth: Profile fetched successfully, credits:", profile.credits);
-                        setCredits(profile.credits);
-                        setUserProfile(profile);
-                    }
-                } catch (err) {
-                    console.error("Auth: Profile fetch failed:", err);
-                }
-            } else {
-                console.log("Auth: No user found, clearing profile.");
-                setUser(null);
-                setUserProfile(null);
-            }
-        };
 
         const syncGlobal = async () => {
             // Sync Global Objects
@@ -182,17 +216,13 @@ export const useNanoController = () => {
         }
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-                console.log("Auth: Session found on mount:", session.user.email);
                 fetchProfile(session.user);
-            } else {
-                console.log("Auth: No session on mount.");
             }
         });
         syncGlobal();
 
         // Listen for Auth Changes (e.g., OAuth Redirects)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("Auth: onAuthStateChange event:", event, "User:", session?.user?.email);
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                 fetchProfile(session?.user ?? null);
             } else if (event === 'SIGNED_OUT') {
@@ -210,7 +240,45 @@ export const useNanoController = () => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [lang]);
+    }, [lang, fetchProfile, isAuthDisabled]);
+
+    // Handle Payment Success Redirect
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('payment') === 'success') {
+            showToast(getResolvedLang() === 'de'
+                ? "Zahlung erfolgreich! Dein Guthaben wird in Kürze aktualisiert."
+                : "Payment successful! Your balance will be updated shortly.", "success");
+
+            // Remove the param from URL without refreshing
+            const newURL = window.location.origin + window.location.pathname;
+            window.history.replaceState(null, '', newURL);
+        }
+    }, [showToast, getResolvedLang]);
+
+    // Real-time Credit Updates
+    useEffect(() => {
+        if (!user || isAuthDisabled) return;
+
+        const channel = supabase
+            .channel(`profile-${user.id}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'profiles',
+                filter: `id=eq.${user.id}`
+            }, (payload) => {
+                if (payload.new && typeof payload.new.credits === 'number') {
+                    setCredits(payload.new.credits);
+                    setUserProfile(payload.new);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user, isAuthDisabled]);
 
     // Persist Quality & Library
     useEffect(() => { localStorage.setItem('nano_quality', qualityMode); }, [qualityMode]);
@@ -230,24 +298,9 @@ export const useNanoController = () => {
         localStorage.setItem('app_lang', lang);
     }, [lang]);
 
-    // Resolve Auto Language
-    const getResolvedLang = useCallback((): LocaleKey => {
-        if (lang === 'auto') {
-            const browserLang = navigator.language.split('-')[0];
-            return (browserLang === 'de') ? 'de' : 'en';
-        }
-        return lang;
-    }, [lang]);
-
-    const currentLang = getResolvedLang();
-
-    // Translation Function
-    const t = useCallback((key: TranslationKey): string => {
-        return translations[currentLang][key] || key;
-    }, [currentLang]);
+    // (Moved to top)
 
     const handleAddFunds = async (amount: number) => {
-        console.log("Stripe: handleAddFunds triggered", { amount, isAuthDisabled });
         if (isAuthDisabled) {
             setCredits(prev => prev + amount);
             setUserProfile((prev: any) => ({ ...prev, credits: (prev?.credits || 0) + amount }));
@@ -256,8 +309,6 @@ export const useNanoController = () => {
         }
 
         try {
-            console.log("Stripe: Invoking stripe-checkout function...");
-
             // Add a timeout because invoke can hang on CORS/Network errors
             const invokePromise = supabase.functions.invoke('stripe-checkout', {
                 body: {
@@ -273,15 +324,12 @@ export const useNanoController = () => {
 
             const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as any;
 
-            console.log("Stripe: Function returned", { data, error });
-
             if (error) {
                 console.error("Stripe: Function error returned", error);
                 throw error;
             }
 
             if (data?.url) {
-                console.log("Stripe: Redirecting to", data.url);
                 window.location.href = data.url;
             } else {
                 console.warn("Stripe: No URL in data", data);
@@ -531,6 +579,11 @@ export const useNanoController = () => {
                             lastSelectedIdRef.current = newId;
                             snapToItem(newId);
                         }
+
+                        // --- DEEP SYNC: Persist Upload ---
+                        if (user) {
+                            imageService.persistImage(newImage, user.id);
+                        }
                     };
                 }
             };
@@ -576,7 +629,7 @@ export const useNanoController = () => {
     };
 
     // --- Core Generation Logic ---
-    const performGeneration = async (sourceImage: CanvasImage, prompt: string) => {
+    const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
 
@@ -599,8 +652,21 @@ export const useNanoController = () => {
 
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
         const baseName = sourceImage.baseName || sourceImage.title;
-        const newVersion = (sourceImage.version || 1) + 1;
+
+        // Find correct version number by checking all siblings in the row
+        const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
+        const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
+        const newVersion = maxVersion + 1;
         const newId = generateId();
+
+        const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
+        // In a batch start, 'rows' state doesn't update yet, so we use batchSize to estimate true concurrency
+        // If batchSize is 1, it behaves as before (activeCount + 1)
+        // If batchSize is 3, and activeCount is 0, concurrency is 3.
+        const currentConcurrency = activeCount + batchSize;
+        const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
+        // Add 30% time penalty per concurrent job
+        const estimatedDuration = Math.round(baseDuration * (1 + (currentConcurrency - 1) * 0.3));
 
         const placeholder: CanvasImage = {
             ...sourceImage,
@@ -615,30 +681,42 @@ export const useNanoController = () => {
             generationPrompt: prompt,
             userDraftPrompt: '',
             quality: qualityMode, // Store quality for duration estimation
+            estimatedDuration,
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
 
         // Record Job Start
         if (user) {
-            await supabase.from('generation_jobs').insert({
-                id: newId,
-                user_id: user.id,
-                user_name: user.email,
-                type: maskDataUrl ? 'Inpaint' : 'Style',
-                model: qualityMode,
-                status: 'processing',
-                cost: cost, // User credit cost
-                prompt: prompt
-            }).select().single();
+            try {
+                await supabase.from('generation_jobs').insert({
+                    id: newId,
+                    user_id: user.id,
+                    user_name: user.email,
+                    type: maskDataUrl ? 'Inpaint' : 'Style',
+                    model: qualityMode,
+                    status: 'processing',
+                    cost: cost, // User credit cost
+                    prompt: prompt,
+                    concurrent_jobs: currentConcurrency
+                }).select().single();
+            } catch (dbErr) {
+                console.warn("Failed to log generation job (likely missing concurrent_jobs column):", dbErr);
+                // Continue execution so user still gets their image
+            }
         }
 
         setRows(prev => {
             const newRows = [...prev];
-            const currentRow = newRows[rowIndex];
-            const newItems = [...currentRow.items];
-            newItems.splice(sourceIndex + 1, 0, placeholder);
-            newRows[rowIndex] = { ...currentRow, items: newItems };
+            // Find index again to be safe within callback
+            const correctRowIndex = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
+            if (correctRowIndex === -1) return prev;
+
+            const currentRow = newRows[correctRowIndex];
+            // Append to the END of the list instead of splicing after source
+            const newItems = [...currentRow.items, placeholder];
+
+            newRows[correctRowIndex] = { ...currentRow, items: newItems };
             return newRows;
         });
 
@@ -678,6 +756,18 @@ export const useNanoController = () => {
                 newRows[rowIndex] = { ...currentRow, items: updated };
                 return newRows;
             });
+
+            // --- DEEP SYNC: Persist Generation ---
+            if (user) {
+                // We need to construct the full image object with the new src
+                const completedImage: CanvasImage = {
+                    ...placeholder,
+                    src: newSrc,
+                    isGenerating: false,
+                    updatedAt: Date.now()
+                };
+                imageService.persistImage(completedImage, user.id);
+            }
         } catch (error) {
             console.error("Generation failed:", error);
             // Update Job Failure
@@ -704,8 +794,9 @@ export const useNanoController = () => {
     };
 
     const handleGenerate = (prompt: string) => {
+        const batchSize = selectedImages.length;
         selectedImages.forEach((img) => {
-            performGeneration(img, prompt);
+            performGeneration(img, prompt, batchSize);
         });
     };
 

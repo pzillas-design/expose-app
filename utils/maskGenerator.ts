@@ -2,13 +2,13 @@ import { CanvasImage, AnnotationObject } from '../types';
 
 export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<string> => {
     if (!img.annotations || img.annotations.length === 0) return '';
-    
+
     const canvas = document.createElement('canvas');
     canvas.width = img.width;
     canvas.height = img.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
-    
+
     // 1. Draw Original (background)
     const baseImg = new Image();
     baseImg.src = img.src;
@@ -44,13 +44,13 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     img.annotations.forEach(ann => {
-        const text = ann.text; 
+        const text = ann.text;
         if (!text) return;
         let x = 0, y = 0;
-        if (ann.type === 'stamp') { x = ann.x!; y = ann.y!; } 
+        if (ann.type === 'stamp') { x = ann.x!; y = ann.y!; }
         else if (ann.type === 'mask_path') { x = ann.points[0].x; y = ann.points[0].y; } // Approx center
-        
-        const fontSize = Math.max(24, img.width * 0.03); 
+
+        const fontSize = Math.max(24, img.width * 0.03);
         ctx.font = `900 ${fontSize}px monospace`;
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = fontSize / 4;

@@ -164,15 +164,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <div className="flex-1 flex flex-col gap-6 px-6 pt-10 pb-6">
 
                     <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between min-h-[24px]">
+                        <div className="flex items-center min-h-[24px]">
                             <span className={Typo.Label}>{t('prompt_label')}</span>
-                            {activeTemplate && (
-                                <IconButton
-                                    icon={<X className="w-4 h-4" />}
-                                    onClick={handleReset}
-                                    tooltip={t('reset_tooltip')}
-                                />
-                            )}
                         </div>
 
                         <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} focus-within:border-zinc-400 dark:focus-within:border-zinc-500 transition-colors overflow-hidden`}>
@@ -185,32 +178,48 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 disabled={selectedImage.isGenerating}
                             />
 
-                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.map((ctrl) => (
-                                <div key={ctrl.id} className={`bg-zinc-50 dark:bg-zinc-900/50 border-t ${Theme.Colors.BorderSubtle}`}>
-                                    <div className="px-4 py-2">
-                                        <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>{ctrl.label}</span>
-                                    </div>
-                                    <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-                                        {ctrl.options.map((opt) => {
-                                            const isSelected = controlValues[ctrl.id] === opt.value;
-                                            return (
-                                                <button
-                                                    key={opt.id}
-                                                    onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                    className={`
-                                                      px-2.5 py-1 rounded-md text-[10px] font-medium transition-all font-mono
-                                                      ${isSelected
-                                                            ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white shadow-sm'
-                                                            : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
-                                                  `}
-                                                >
-                                                    {opt.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                            {/* Active Variables Section */}
+                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
+                                <div className={`flex flex-col border-t ${Theme.Colors.BorderSubtle} bg-zinc-50 dark:bg-zinc-900/50`}>
+                                    {activeTemplate.controls.map((ctrl, idx) => (
+                                        <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.BorderSubtle}` : ''}`}>
+                                            <div className="flex items-center justify-between px-3 py-2">
+                                                <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
+                                                    {ctrl.label}
+                                                </span>
+                                                {/* Only show Reset/Close button in the first row */}
+                                                {idx === 0 && (
+                                                    <IconButton
+                                                        icon={<X className="w-3.5 h-3.5" />}
+                                                        onClick={handleReset}
+                                                        tooltip={t('reset_tooltip')}
+                                                        className="!h-6 !w-6 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+                                                {ctrl.options.map((opt) => {
+                                                    const isSelected = controlValues[ctrl.id] === opt.value;
+                                                    return (
+                                                        <button
+                                                            key={opt.id}
+                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                            className={`
+                                                                px-2.5 py-1 rounded-md text-[10px] font-medium transition-all font-mono shadow-sm
+                                                                ${isSelected
+                                                                    ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white'
+                                                                    : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
+                                                            `}
+                                                        >
+                                                            {opt.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
 

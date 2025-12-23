@@ -42,6 +42,7 @@ export interface CanvasImage {
   drawingState?: ImageData;
 
   quality?: GenerationQuality; // Stores the model quality used for generation
+  estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep

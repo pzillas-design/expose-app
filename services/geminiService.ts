@@ -95,7 +95,7 @@ export const editImageWithGemini = async (
 
 
     // Determine Model and Config based on Quality Mode
-    let modelName = 'gemini-3-pro-image-preview'; // Default
+    let modelName = 'gemini-3-pro-image-preview'; // Default to cutting-edge preview
     let imageConfig: any = {};
 
     switch (qualityMode) {
