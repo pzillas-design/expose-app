@@ -124,11 +124,11 @@ export const useNanoController = () => {
     }, [selectedIds.length, fitSelectionToView]);
 
     useLayoutEffect(() => {
-        if (selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current) {
+        if (selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current && !isZooming && !isAutoScrolling) {
             const el = scrollContainerRef.current.querySelector(`[data-image-id="${primarySelectedId}"]`);
             if (el) el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
         }
-    }, [zoom]);
+    }, [zoom, isZooming, isAutoScrolling]);
 
     // --- Mode Change ---
     const handleModeChange = (newMode: 'prompt' | 'brush' | 'objects') => {
@@ -266,7 +266,7 @@ export const useNanoController = () => {
             supabase.from('generation_jobs').insert({
                 id: newId, user_id: user.id, user_name: user.email, type: maskSrc ? 'Inpaint' : 'Style',
                 model: qualityMode, status: 'processing', cost, prompt, concurrent_jobs: currentConcurrency
-            }).catch(() => { });
+            }).then(() => { }).catch(() => { });
         }
 
         setRows(prev => prev.map((r, i) => i === rowIndex ? { ...r, items: [...r.items, placeholder] } : r));
@@ -276,7 +276,7 @@ export const useNanoController = () => {
             const { imageBase64: newSrc, usageMetadata, modelVersion } = await editImageWithGemini(source.src, prompt, maskSrc || undefined, qualityMode, source.annotations || []);
             let apiCost = 0;
             if (usageMetadata) apiCost = (usageMetadata.promptTokenCount || 0) / 1000000 * 3.50 + (usageMetadata.candidatesTokenCount || 0) / 1000000 * 10.50;
-            if (user && !isAuthDisabled) supabase.from('generation_jobs').update({ status: 'completed', api_cost: apiCost }).eq('id', newId).catch(() => { });
+            if (user && !isAuthDisabled) supabase.from('generation_jobs').update({ status: 'completed', api_cost: apiCost }).eq('id', newId).then(() => { }).catch(() => { });
 
             const mImg = new Image(); mImg.src = newSrc; await new Promise(res => mImg.onload = res);
             const thumbSrc = await generateThumbnail(newSrc);
@@ -372,7 +372,7 @@ export const useNanoController = () => {
                 };
                 reader.readAsDataURL(file);
             },
-            handleFileDrop: (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')); if (files.length) processFiles(files); },
+            handleFileDrop: (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/')); if (files.length) processFiles(files); },
             processFile: (file: File) => processFiles([file]),
             setSnapEnabled: (bv: boolean) => { isSnapEnabledRef.current = bv; },
             ...auth, ...config, ...library
