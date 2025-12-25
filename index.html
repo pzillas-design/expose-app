@@ -1,57 +1,81 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Exposé</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-      }
-    </script>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background-color: #1e1e1e;
-        color: #e5e5e5;
-        font-family: 'Inter', sans-serif;
-        touch-action: none; /* Disable browser handling of gestures */
-      }
-      
-      :root {
-          --grid-dot: #333333;
-      }
-      .dark {
-          --grid-dot: #333333;
-      }
-      html:not(.dark) {
-          --grid-dot: #e5e5e5;
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Exposé</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #1e1e1e;
+      color: #e5e5e5;
+      font-family: 'Inter', sans-serif;
+      touch-action: none;
+      /* Disable browser handling of gestures */
+    }
+
+    :root {
+      --grid-dot: #52525b;
+      /* Visible Zinc-600 */
+    }
+
+    .dark {
+      --grid-dot: #71717a;
+      /* Lighter Zinc-500 for Dark Mode contrast */
+    }
+
+    html:not(.dark) {
+      --grid-dot: #52525b;
+      /* Darker Zinc-600 for Light Mode visibility */
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+    }
+
+    /* Fix Autofill colors in dark mode */
+    .dark input:-webkit-autofill,
+    .dark input:-webkit-autofill:hover,
+    .dark input:-webkit-autofill:focus,
+    .dark input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #27272a inset !important;
+      /* zinc-800 */
+      -webkit-text-fill-color: #f4f4f5 !important;
+      /* zinc-100 */
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    @keyframes loading {
+      0% {
+        transform: translateX(-100%);
       }
 
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      .no-scrollbar::-webkit-scrollbar {
-          display: none;
+      50% {
+        transform: translateX(0);
       }
 
-      /* Hide scrollbar for IE, Edge and Firefox */
-      .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+      100% {
+        transform: translateX(100%);
       }
-
-      /* Fix Autofill colors in dark mode */
-      .dark input:-webkit-autofill,
-      .dark input:-webkit-autofill:hover, 
-      .dark input:-webkit-autofill:focus, 
-      .dark input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 30px #27272a inset !important; /* zinc-800 */
-          -webkit-text-fill-color: #f4f4f5 !important; /* zinc-100 */
-          transition: background-color 5000s ease-in-out 0s;
-      }
-    </style>
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -65,8 +89,10 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
 </html>
