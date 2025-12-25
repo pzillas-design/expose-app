@@ -4,10 +4,10 @@ import {
     X, Shield, LogOut, Mail, Globe, CreditCard, LayoutDashboard, Trash2, ArrowRight,
     Moon, Sun, Monitor, Loader2
 } from 'lucide-react';
-import { GenerationQuality, TranslationFunction } from '../types';
+import { GenerationQuality, TranslationFunction } from '../../types';
 import { Theme, Typo, Button, IconButton } from './ui/DesignSystem';
 import { Logo } from './ui/Logo';
-import { LocaleKey } from '../data/locales';
+import { LocaleKey } from '../../data/locales';
 
 interface SettingsModalProps {
     isOpen: boolean;

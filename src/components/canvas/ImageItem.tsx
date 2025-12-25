@@ -1,6 +1,6 @@
 
-import React, { memo, useEffect, useState, useRef } from 'react';
-import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../types';
+import React, { memo, useEffect, useState } from 'react';
+import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../../types';
 import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from './ui/DesignSystem';
@@ -10,6 +10,7 @@ interface ImageItemProps {
     isSelected: boolean;
     zoom: number;
     hasAnySelection?: boolean;
+    // onMouseDown: (e: React.MouseEvent, id: string) => void; // Removed per new logic
     onRetry?: (id: string) => void;
     onChangePrompt?: (id: string) => void;
     editorState?: {
@@ -23,6 +24,7 @@ interface ImageItemProps {
     onNavigate?: (direction: -1 | 1, fromId?: string) => void,
     hasLeft?: boolean,
     hasRight?: boolean,
+    index?: number; // For staggered animation
 
     onDelete?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
@@ -34,8 +36,6 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
 
     useEffect(() => {
         const start = startTime || Date.now();
-        let rafId: number;
-
         const update = () => {
             const now = Date.now();
             const elapsed = now - start;
@@ -43,14 +43,10 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
             // Easing at the end
             if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
             setProgress(Math.min(p, 99.9));
-
-            if (p < 99.9) {
-                rafId = requestAnimationFrame(update);
-            }
         };
-
-        rafId = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(rafId);
+        const interval = setInterval(update, 30);
+        update();
+        return () => clearInterval(interval);
     }, [startTime, duration]);
 
     return (
@@ -86,6 +82,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     isSelected,
     hasAnySelection,
     zoom,
+    onMouseDown,
     onRetry,
     editorState,
     onUpdateAnnotations,
@@ -93,25 +90,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onNavigate,
     hasLeft,
     hasRight,
+    index = 0,
     onDelete,
     onContextMenu,
     t
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                setIsVisible(true);
-                observer.disconnect();
-            }
-        }, { threshold: 0.1 });
-
-        if (containerRef.current) observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, []);
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -133,7 +117,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
     return (
         <div
-            ref={containerRef}
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
             className={`relative shrink-0 select-none group transition-opacity duration-500 ease-out snap-center will-change-transform ${!hasAnySelection || isSelected
@@ -199,19 +182,17 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {isVisible && (
-                    <img
-                        src={image.maskSrc || (zoom < 0.45 && image.thumbSrc ? image.thumbSrc : image.src)}
-                        alt={image.title}
-                        onLoad={() => setIsLoaded(true)}
-                        loading="lazy"
-                        decoding="async"
-                        className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    />
-                )}
+                <img
+                    src={image.maskSrc || (zoom < 0.45 && image.thumbSrc ? image.thumbSrc : image.src)}
+                    alt={image.title}
+                    onLoad={() => setIsLoaded(true)}
+                    loading="lazy"
+                    decoding="async"
+                    className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                />
 
-                {/* Editor Overlay - Only render if visible AND selected OR has existing annotations */}
-                {isVisible && !image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
+                {/* Editor Overlay - Only render if selected OR has existing annotations to show */}
+                {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
                     <div className="absolute inset-0 z-10">
                         <EditorCanvas
                             width={image.width}

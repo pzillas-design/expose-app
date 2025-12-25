@@ -1,9 +1,9 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { AnnotationObject, TranslationFunction } from '../types';
+import { AnnotationObject, TranslationFunction } from '../../types';
 import { X, Check, Pen } from 'lucide-react';
 import { Typo, Tooltip, Theme } from './ui/DesignSystem';
-import { generateId } from '../utils/ids';
+import { generateId } from '../../utils/ids';
 
 interface EditorCanvasProps {
     width: number;

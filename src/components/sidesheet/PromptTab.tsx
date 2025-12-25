@@ -183,7 +183,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setIsPresetModalOpen(false);
     };
 
-
     return (
         <div className="h-full relative flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-2 duration-300">
             {/* Tab Header - Only show if not multiple selection (Info tab only makes sense for single image) */}
@@ -548,6 +547,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 </div>
             </div>
 
+
+
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
                 onClose={() => setIsPresetModalOpen(false)}
@@ -560,6 +561,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 onDelete={onDeleteTemplate}
                 t={t}
             />
-        </div>
+        </div >
     );
 };

@@ -59,10 +59,10 @@ export const useCanvasNavigation = ({
         const animate = (time: number) => {
             const elapsed = time - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            // Ease In Out Quart
+            // Ease In Out Cubic
             const ease = progress < 0.5
-                ? 8 * progress * progress * progress * progress
-                : 1 - Math.pow(-2 * progress + 2, 4) / 2;
+                ? 4 * progress * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
             // Interpolate Zoom
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;

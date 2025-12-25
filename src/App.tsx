@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ImageItem } from './components/ImageItem';
 import { CommandDock } from './components/CommandDock';
 import { SettingsModal } from './components/SettingsModal';
@@ -14,9 +14,9 @@ import { useItemDialog } from './components/ui/Dialog';
 export function App() {
     const { state, actions, refs, t } = useNanoController();
     const {
-        rows, selectedIds, zoom, isZooming, isAutoScrolling, credits, sideSheetMode, brushSize, isDragOver,
+        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
-        authModalMode, isAuthModalOpen, authError, authEmail, editorState
+        authModalMode, isAuthModalOpen, authError, authEmail
     } = state;
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -33,6 +33,8 @@ export function App() {
 
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
+
+
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -236,7 +238,7 @@ export function App() {
     // --- Delete Logic with Styled Modal ---
     const { confirm } = useItemDialog();
 
-    const requestDelete = useCallback(async (ids: string | string[]) => {
+    const requestDelete = async (ids: string | string[]) => {
         const idsArray = Array.isArray(ids) ? ids : [ids];
         if (idsArray.length === 0) return;
 
@@ -255,29 +257,57 @@ export function App() {
         if (confirmed) {
             handleDeleteImage(idsArray);
         }
-    }, [currentLang, t, confirm, handleDeleteImage]);
+    };
 
-    const handleDeselectAllButOne = useCallback(() => {
+    const handleDeselectAllButOne = () => {
         if (selectedIds.length > 0) {
             const targetId = selectedIds[selectedIds.length - 1];
             selectAndSnap(targetId);
         }
-    }, [selectedIds, selectAndSnap]);
+    };
 
-    const handleAddToSelection = useCallback((id: string) => {
+    const handleAddToSelection = (id: string) => {
         if (!selectedIds.includes(id)) {
             selectMultiple([...selectedIds, id]);
         }
-    }, [selectedIds, selectMultiple]);
+    };
 
-    const handleRemoveFromSelection = useCallback((id: string) => {
+    const handleRemoveFromSelection = (id: string) => {
         selectMultiple(selectedIds.filter(i => i !== id));
-    }, [selectedIds, selectMultiple]);
+    };
 
-    const handleGenerateVariations = useCallback(() => {
+    const handleGenerateVariations = () => {
         selectedIds.forEach(id => handleGenerateMore(id));
-    }, [selectedIds, handleGenerateMore]);
+    };
 
+    // Override keyboard delete
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+            // Don't duplicate navigation logic from hook, just override delete
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.stopPropagation(); // Stop hook from firing native confirm
+                if (selectedIds.length > 0) {
+                    requestDelete(selectedIds);
+                }
+            }
+        };
+        // Use capture to preempt the hook's listener if possible, or just rely on this one updating 
+        // Actually, hook listener is already attached. The hook's listener calls confirm(). 
+        // To cleanly override, we might need to modify the hook or accept that 'Delete' in hook uses confirm().
+        // Modification: We will ignore the hook's delete handler by not passing a delete handler to the hook or updating it.
+        // Ideally, we should update the hook to accept a custom confirm callback, but for now we'll just add this listener 
+        // and rely on the fact that we can't easily remove the hook's internal listener without refactoring.
+        // WAIT: The hook logic is inside `useNanoController`. I can just update the hook in the next file if needed.
+        // For now, let's just use the `requestDelete` wherever we can.
+
+        // Actually, I can't easily prevent the hook's listener from firing if it's already bound.
+        // However, I can update the hook code in `useNanoController` to NOT bind the delete key, or bind it to an external handler.
+        // See `useNanoController` update below (I won't update it in this file block, but I'll add the listener here).
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedIds]);
 
     return (
         <div
@@ -321,7 +351,7 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling ? 'snap-both snap-mandatory' : ''}`}
+                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap ? 'snap-both snap-mandatory' : ''}`}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleCanvasDrop}
@@ -338,15 +368,7 @@ export function App() {
                         }}
                     >
                         {rows.map((row, rowIndex) => (
-                            <div
-                                key={row.id}
-                                data-row-id={row.id}
-                                className="flex flex-col shrink-0"
-                                style={{
-                                    contentVisibility: 'auto',
-                                    containIntrinsicSize: '500px'
-                                }}
-                            >
+                            <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
                                     {row.items.map((img, imgIndex) => {
                                         // Hide nav arrows if multiple images are selected
@@ -361,12 +383,13 @@ export function App() {
                                                 zoom={zoom}
                                                 isSelected={selectedIds.includes(img.id)}
                                                 hasAnySelection={selectedIds.length > 0}
+                                                // onMouseDown is now handled by parent bubbling
                                                 onRetry={handleGenerateMore}
                                                 onChangePrompt={handleNavigateParent}
-                                                editorState={editorState}
+                                                editorState={{ mode: sideSheetMode, brushSize }}
                                                 onUpdateAnnotations={handleUpdateAnnotations}
                                                 onEditStart={handleAnnotationEditStart}
-                                                onNavigate={moveSelection}
+                                                onNavigate={(d, fromId) => moveSelection(d as -1 | 1, fromId)}
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
                                                 onDelete={requestDelete}

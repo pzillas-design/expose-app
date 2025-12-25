@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { PromptTemplate, PresetControl, TranslationFunction } from '../types';
+import { PromptTemplate, PresetControl, TranslationFunction } from '../../types';
 import { ModalHeader, Button, Input, TextArea, SectionHeader, Theme } from './ui/DesignSystem';
 import { Plus, Trash2, Check, X, ArrowLeftRight } from 'lucide-react';
-import { generateId } from '../utils/ids';
+import { generateId } from '../../utils/ids';
 
 interface PresetEditorModalProps {
   isOpen: boolean;

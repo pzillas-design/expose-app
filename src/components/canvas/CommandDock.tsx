@@ -2,7 +2,7 @@
 import React, { useRef } from 'react';
 import { ZoomOut, ZoomIn, Menu, Upload } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from './ui/DesignSystem';
-import { TranslationFunction } from '../types';
+import { TranslationFunction } from '../../types';
 
 interface CommandDockProps {
   zoom: number;

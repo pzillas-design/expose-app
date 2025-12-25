@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Search, Bookmark, Plus, Pen, X } from 'lucide-react';
-import { PromptTemplate, TranslationFunction } from '../types';
+import { PromptTemplate, TranslationFunction } from '../../types';
 import { Tooltip, Theme, Typo, Button, IconButton } from './ui/DesignSystem';
 
 interface PresetLibraryProps {

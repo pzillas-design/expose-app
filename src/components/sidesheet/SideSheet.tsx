@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '../types';
+import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '../../types';
 import { Trash2, Download, ArrowLeft, Check, Layers } from 'lucide-react';
-import { DEFAULT_TEMPLATES } from '../data/promptTemplates';
+import { DEFAULT_TEMPLATES } from '../../data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from './ui/DesignSystem';
-import { useResizable } from '../hooks/useResizable';
-
-import { generateId } from '../utils/ids';
+import { useResizable } from '../../hooks/useResizable';
+import { CropModal } from './CropModal';
+import { generateId } from '../../utils/ids';
 
 // Sub Components
 import { PromptTab } from './sidesheet/PromptTab';
@@ -142,8 +142,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         onUpdateAnnotations(selectedImage.id, newAnns);
     };
 
-
-
     const handleAddReferenceImage = (file: File) => {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -171,9 +169,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         }
     };
 
-
-
-
     const handleCropComplete = (croppedBase64: string) => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
@@ -196,7 +191,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         setPendingFile(null);
         setPendingFileName('');
     };
-
 
     const handleAddObjectCenter = (label: string, itemId: string) => {
         if (!selectedImage) return;
@@ -334,7 +328,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddBrush={() => onModeChange('brush')}
                                 onAddObject={() => onModeChange('objects')}
                                 onAddReference={handleAddReferenceImage}
-
                                 annotations={selectedImage.annotations || []}
                                 onDeleteAnnotation={deleteAnnotation}
                                 onUpdateAnnotation={updateAnnotation}
@@ -421,14 +414,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 {renderContent()}
             </div>
 
-
             <CropModal
                 isOpen={isCropOpen}
                 onClose={() => setIsCropOpen(false)}
                 imageSrc={pendingFile}
                 onCropComplete={handleCropComplete}
             />
-
         </>
     );
 };
