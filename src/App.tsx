@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { ImageItem } from './components/ImageItem';
 import { CommandDock } from './components/CommandDock';
 import { SettingsModal } from './components/SettingsModal';
@@ -16,7 +16,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, isZooming, isAutoScrolling, credits, sideSheetMode, brushSize, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
-        authModalMode, isAuthModalOpen, authError, authEmail
+        authModalMode, isAuthModalOpen, authError, authEmail, editorState
     } = state;
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -236,7 +236,7 @@ export function App() {
     // --- Delete Logic with Styled Modal ---
     const { confirm } = useItemDialog();
 
-    const requestDelete = async (ids: string | string[]) => {
+    const requestDelete = useCallback(async (ids: string | string[]) => {
         const idsArray = Array.isArray(ids) ? ids : [ids];
         if (idsArray.length === 0) return;
 
@@ -255,28 +255,28 @@ export function App() {
         if (confirmed) {
             handleDeleteImage(idsArray);
         }
-    };
+    }, [currentLang, t, confirm, handleDeleteImage]);
 
-    const handleDeselectAllButOne = () => {
+    const handleDeselectAllButOne = useCallback(() => {
         if (selectedIds.length > 0) {
             const targetId = selectedIds[selectedIds.length - 1];
             selectAndSnap(targetId);
         }
-    };
+    }, [selectedIds, selectAndSnap]);
 
-    const handleAddToSelection = (id: string) => {
+    const handleAddToSelection = useCallback((id: string) => {
         if (!selectedIds.includes(id)) {
             selectMultiple([...selectedIds, id]);
         }
-    };
+    }, [selectedIds, selectMultiple]);
 
-    const handleRemoveFromSelection = (id: string) => {
+    const handleRemoveFromSelection = useCallback((id: string) => {
         selectMultiple(selectedIds.filter(i => i !== id));
-    };
+    }, [selectedIds, selectMultiple]);
 
-    const handleGenerateVariations = () => {
+    const handleGenerateVariations = useCallback(() => {
         selectedIds.forEach(id => handleGenerateMore(id));
-    };
+    }, [selectedIds, handleGenerateMore]);
 
 
     return (
@@ -338,7 +338,15 @@ export function App() {
                         }}
                     >
                         {rows.map((row, rowIndex) => (
-                            <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
+                            <div
+                                key={row.id}
+                                data-row-id={row.id}
+                                className="flex flex-col shrink-0"
+                                style={{
+                                    contentVisibility: 'auto',
+                                    containIntrinsicSize: '500px'
+                                }}
+                            >
                                 <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
                                     {row.items.map((img, imgIndex) => {
                                         // Hide nav arrows if multiple images are selected
@@ -353,13 +361,12 @@ export function App() {
                                                 zoom={zoom}
                                                 isSelected={selectedIds.includes(img.id)}
                                                 hasAnySelection={selectedIds.length > 0}
-                                                // onMouseDown is now handled by parent bubbling
                                                 onRetry={handleGenerateMore}
                                                 onChangePrompt={handleNavigateParent}
-                                                editorState={{ mode: sideSheetMode, brushSize }}
+                                                editorState={editorState}
                                                 onUpdateAnnotations={handleUpdateAnnotations}
                                                 onEditStart={handleAnnotationEditStart}
-                                                onNavigate={(d, fromId) => moveSelection(d as -1 | 1, fromId)}
+                                                onNavigate={moveSelection}
                                                 hasLeft={hasLeft}
                                                 hasRight={hasRight}
                                                 onDelete={requestDelete}

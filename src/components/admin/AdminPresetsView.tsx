@@ -5,6 +5,7 @@ import { TranslationFunction, PromptTemplate, PresetControl, PresetTag } from '.
 import { Typo, Button, Input, IconButton, Tooltip, TableInput } from '../ui/DesignSystem';
 import { adminService } from '../../services/adminService';
 import { PresetEditorModal } from '../PresetEditorModal';
+
 import { generateId } from '../../utils/ids';
 
 interface AdminPresetsViewProps {
@@ -258,7 +259,9 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                             </div>
 
                             <Button
-                                onClick={() => { setEditingPreset(null); setIsPresetModalOpen(true); }}
+                                onClick={() => {
+                                    setEditingPreset(null); setIsPresetModalOpen(true);
+                                }}
                                 icon={<Plus className="w-4 h-4" />}
                                 className="shrink-0 whitespace-nowrap px-4"
                             >
@@ -335,7 +338,9 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                                 <Tooltip text={t('edit')}>
                                                     <IconButton
                                                         icon={<Pen className="w-3.5 h-3.5" />}
-                                                        onClick={() => { setEditingPreset(preset); setIsPresetModalOpen(true); }}
+                                                        onClick={() => {
+                                                            setEditingPreset(preset); setIsPresetModalOpen(true);
+                                                        }}
                                                     />
                                                 </Tooltip>
                                                 <Tooltip text={t('delete')}>

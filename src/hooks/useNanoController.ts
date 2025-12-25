@@ -73,6 +73,11 @@ export const useNanoController = () => {
     const selectedImage = allImages.find(img => img.id === primarySelectedId) || null;
     const selectedImages = allImages.filter(img => selectedIds.includes(img.id));
 
+    const editorState = React.useMemo(() => ({
+        mode: sideSheetMode,
+        brushSize
+    }), [sideSheetMode, brushSize]);
+
     // --- Navigation ---
     const {
         zoom, isZooming, isAutoScrolling, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
@@ -342,7 +347,7 @@ export const useNanoController = () => {
     return {
         state: {
             rows, setRows, selectedIds, primarySelectedId, zoom, isZooming, isAutoScrolling, sideSheetMode, brushSize,
-            isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, isAdminOpen, currentLang, ...auth, ...config, ...library
+            isDragOver, isSettingsOpen, selectedImage, selectedImages, allImages, isAdminOpen, currentLang, editorState, ...auth, ...config, ...library
         },
         actions: {
             setZoom, smoothZoomTo, handleScroll, selectAndSnap, handleSelection, selectMultiple, setBrushSize, setSideSheetMode: handleModeChange,
@@ -374,7 +379,7 @@ export const useNanoController = () => {
             },
             handleFileDrop: (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/')); if (files.length) processFiles(files); },
             processFile: (file: File) => processFiles([file]),
-            setSnapEnabled: (bv: boolean) => { isSnapEnabledRef.current = bv; },
+            setSnapEnabled: useCallback((bv: boolean) => { isSnapEnabledRef.current = bv; }, []),
             ...auth, ...config, ...library
         },
         refs: { scrollContainerRef },
