@@ -263,10 +263,10 @@ export const useNanoController = () => {
         };
 
         if (user && !isAuthDisabled) {
-            supabase.from('generation_jobs').insert({
+            void supabase.from('generation_jobs').insert({
                 id: newId, user_id: user.id, user_name: user.email, type: maskSrc ? 'Inpaint' : 'Style',
                 model: qualityMode, status: 'processing', cost, prompt, concurrent_jobs: currentConcurrency
-            }).then(() => { }).catch(() => { });
+            });
         }
 
         setRows(prev => prev.map((r, i) => i === rowIndex ? { ...r, items: [...r.items, placeholder] } : r));
@@ -276,7 +276,7 @@ export const useNanoController = () => {
             const { imageBase64: newSrc, usageMetadata, modelVersion } = await editImageWithGemini(source.src, prompt, maskSrc || undefined, qualityMode, source.annotations || []);
             let apiCost = 0;
             if (usageMetadata) apiCost = (usageMetadata.promptTokenCount || 0) / 1000000 * 3.50 + (usageMetadata.candidatesTokenCount || 0) / 1000000 * 10.50;
-            if (user && !isAuthDisabled) supabase.from('generation_jobs').update({ status: 'completed', api_cost: apiCost }).eq('id', newId).then(() => { }).catch(() => { });
+            if (user && !isAuthDisabled) void supabase.from('generation_jobs').update({ status: 'completed', api_cost: apiCost }).eq('id', newId);
 
             const mImg = new Image(); mImg.src = newSrc; await new Promise(res => mImg.onload = res);
             const thumbSrc = await generateThumbnail(newSrc);
