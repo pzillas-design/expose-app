@@ -91,13 +91,13 @@ export const useSelection = ({
 
     // --- Anchor Selection on Zoom (Single Item) ---
     useLayoutEffect(() => {
-        if (selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current) {
+        if (!isAutoScrollingRef.current && !isZoomingRef.current && selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current) {
             const el = scrollContainerRef.current.querySelector(`[data-image-id="${primarySelectedId}"]`);
             if (el) {
                 el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
             }
         }
-    }, [zoom, selectedIds.length, primarySelectedId, scrollContainerRef]);
+    }, [zoom, selectedIds.length, primarySelectedId, scrollContainerRef, isAutoScrollingRef, isZoomingRef]);
 
     // --- Scroll Logic (Focus Tracking) ---
     const handleScroll = useCallback(() => {
@@ -141,8 +141,8 @@ export const useSelection = ({
     const moveSelection = useCallback((direction: -1 | 1, fromId?: string) => {
         if (allImages.length === 0) return;
 
-        // Smart Navigation: Use fromId, or lastSelected, or the most visible item in viewport if panned away
-        const currentId = fromId || lastSelectedIdRef.current || getMostVisibleItem();
+        // Smart Navigation: Use fromId, or the most visible item in viewport, or lastSelected
+        const currentId = fromId || getMostVisibleItem() || lastSelectedIdRef.current;
 
         let nextIndex = 0;
         if (currentId) {

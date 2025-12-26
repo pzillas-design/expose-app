@@ -17,7 +17,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
-        authModalMode, isAuthModalOpen, authError, authEmail
+        authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling
     } = state;
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -287,10 +287,25 @@ export function App() {
             if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
             // Don't duplicate navigation logic from hook, just override delete
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                e.stopPropagation(); // Stop hook from firing native confirm
+                e.stopPropagation();
                 if (selectedIds.length > 0) {
                     requestDelete(selectedIds);
                 }
+            }
+
+            // Canvas Navigation
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                moveSelection(-1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                moveSelection(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveRowSelection(-1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveRowSelection(1);
             }
         };
         // Use capture to preempt the hook's listener if possible, or just rely on this one updating 
@@ -359,7 +374,7 @@ export function App() {
 
                         <div
                             ref={refs.scrollContainerRef}
-                            className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap ? 'snap-both snap-mandatory' : ''}`}
+                            className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isAutoScrolling ? 'snap-both snap-mandatory' : ''}`}
                             onScroll={handleScroll}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={handleCanvasDrop}

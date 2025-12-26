@@ -191,7 +191,7 @@ export const useCanvasNavigation = ({
         autoScrollTimeoutRef.current = window.setTimeout(() => {
             isAutoScrollingRef.current = false;
             setIsAutoScrolling(false);
-        }, 1200);
+        }, 600); // Tightened from 1200ms
 
         const el = document.querySelector(`[data-image-id="${id}"]`);
         if (el && scrollContainerRef.current) {
@@ -203,7 +203,7 @@ export const useCanvasNavigation = ({
             const targetScrollLeft = container.scrollLeft + (elRect.left + elRect.width / 2) - (containerRect.left + containerRect.width / 2);
             const targetScrollTop = container.scrollTop + (elRect.top + elRect.height / 2) - (containerRect.top + containerRect.height / 2);
 
-            smoothZoomTo(zoom, { x: targetScrollLeft, y: targetScrollTop }, 400);
+            smoothZoomTo(zoom, { x: targetScrollLeft, y: targetScrollTop }, 300); // Snappier 300ms
         }
     }, [zoom, smoothZoomTo, scrollContainerRef]);
 
