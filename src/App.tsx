@@ -16,7 +16,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
-        authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling
+        authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming
     } = state;
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
@@ -272,7 +272,7 @@ export function App() {
 
                         <div
                             ref={refs.scrollContainerRef}
-                            className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isAutoScrolling ? 'snap-both snap-mandatory' : ''}`}
+                            className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isAutoScrolling && !isZooming ? 'snap-both snap-mandatory' : ''}`}
                             onScroll={handleScroll}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={handleCanvasDrop}

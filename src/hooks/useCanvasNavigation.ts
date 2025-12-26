@@ -218,9 +218,11 @@ export const useCanvasNavigation = ({
                 e.stopPropagation();
 
                 isZoomingRef.current = true;
+                setIsZooming(true);
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
+                    setIsZooming(false);
                 }, 400);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
@@ -230,37 +232,40 @@ export const useCanvasNavigation = ({
                 const factor = Math.exp(delta * 0.008);
                 const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                if (selectedIds.length > 0) {
-                    // Simple Zoom: Just update state.
-                    setZoom(targetZoom);
+                if (selectedIds.length === 1 && primarySelectedId) {
+                    const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
+                    if (el) {
+                        const rect = el.getBoundingClientRect();
+                        const containerRect = container.getBoundingClientRect();
+                        const anchorX = rect.left + rect.width / 2 - containerRect.left;
+                        const anchorY = rect.top + rect.height / 2 - containerRect.top;
+                        const scrollLeft = container.scrollLeft;
+                        const scrollTop = container.scrollTop;
+                        const padX = window.innerWidth / 2;
+                        const padY = window.innerHeight / 2;
+                        const contentX = (scrollLeft + anchorX - padX) / zoom;
+                        const contentY = (scrollTop + anchorY - padY) / zoom;
+                        try {
+                            flushSync(() => { setZoom(targetZoom); });
+                        } catch (err) { setZoom(targetZoom); }
+                        container.scrollLeft = (padX + (contentX * targetZoom)) - anchorX;
+                        container.scrollTop = (padY + (contentY * targetZoom)) - anchorY;
+                    } else {
+                        setZoom(targetZoom);
+                    }
                 } else {
-                    // Zoom-to-Cursor Logic
                     const rect = container.getBoundingClientRect();
                     const mouseX = e.clientX - rect.left;
                     const mouseY = e.clientY - rect.top;
-
                     const scrollLeft = container.scrollLeft;
                     const scrollTop = container.scrollTop;
-
-                    // The canvas has fixed padding of 50vw/50vh that DOES NOT scale with zoom.
                     const padX = window.innerWidth / 2;
                     const padY = window.innerHeight / 2;
-
-                    // Content Point under mouse (unscaled, relative to true content origin)
                     const contentX = (scrollLeft + mouseX - padX) / zoom;
                     const contentY = (scrollTop + mouseY - padY) / zoom;
-
                     try {
-                        // Force synchronous render to ensure DOM size updates before we set scroll
-                        flushSync(() => {
-                            setZoom(targetZoom);
-                        });
-                    } catch (err) {
-                        console.error("Zoom flushSync error:", err);
-                        setZoom(targetZoom);
-                    }
-
-                    // Calculate new scroll position
+                        flushSync(() => { setZoom(targetZoom); });
+                    } catch (err) { setZoom(targetZoom); }
                     container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
                     container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
                 }
