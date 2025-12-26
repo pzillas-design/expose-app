@@ -218,7 +218,13 @@ export const useCanvasNavigation = ({
                 e.stopPropagation();
 
                 isZoomingRef.current = true;
-                setIsZooming(true);
+                try {
+                    flushSync(() => {
+                        setIsZooming(true);
+                    });
+                } catch (e) {
+                    setIsZooming(true);
+                }
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;

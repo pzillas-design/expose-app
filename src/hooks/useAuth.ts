@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
-import { ImageRow, LocaleKey } from '../types';
+import { ImageRow } from '../types';
+import { LocaleKey } from '../data/locales';
 import { useToast } from '../components/ui/Toast';
 
 interface UseAuthProps {
@@ -18,7 +19,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
     const [credits, setCredits] = useState<number>(10.00);
 
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(!isAuthDisabled);
     const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
 

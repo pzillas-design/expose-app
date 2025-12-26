@@ -46,6 +46,9 @@ export function App() {
         if (path === '/admin') {
             setIsAdminOpen(true);
         }
+        // Log version for debugging
+        // @ts-ignore
+        console.log("Exposé v5.1.0-fix-zoom-v2 - Environment:", import.meta.env.MODE);
     }, [setIsAdminOpen]);
 
     useEffect(() => {
