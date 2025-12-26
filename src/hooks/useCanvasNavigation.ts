@@ -230,91 +230,33 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                const currentZoom = internalZoomRef.current;
                 isZoomingRef.current = true;
-                lastZoomSourceRef.current = 'wheel';
+                setIsZooming(true);
 
-                try {
-                    flushSync(() => {
-                        setIsZooming(true);
-                    });
-                } catch (e) {
-                    setIsZooming(true);
-                }
-
-                // Force disable snap on DOM to avoid browser interference during fast wheeling
-                container.style.scrollSnapType = 'none';
-                container.style.overflowAnchor = 'none';
-
-                if (zoomTimeoutRef.current) window.clearTimeout(zoomTimeoutRef.current);
+                if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
                     setIsZooming(false);
-                    // Re-sync internal zoom to final state
-                    internalZoomRef.current = zoomRef.current;
-                    container.style.scrollSnapType = '';
-                }, 800); // Increased to 800ms for extra safety
+                }, 400);
 
                 if (zoomAnimFrameRef.current) {
                     cancelAnimationFrame(zoomAnimFrameRef.current);
                     zoomAnimFrameRef.current = null;
                 }
 
-                // Calculate new zoom synchronously using the internal accumulator
+                // Simple Zoom (Like Main Branch) - No Cursor Pivot Calculation
                 const delta = -e.deltaY;
                 const factor = Math.exp(delta * 0.008);
-                const targetZoom = Math.min(Math.max(currentZoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                // Update accumulator immediately for the next wheel tick
-                internalZoomRef.current = targetZoom;
-
-                if (selectedIds.length === 1 && primarySelectedId) {
-                    const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
-                    if (el) {
-                        const rect = el.getBoundingClientRect();
-                        const containerRect = container.getBoundingClientRect();
-                        const anchorX = rect.left + rect.width / 2 - containerRect.left;
-                        const anchorY = rect.top + rect.height / 2 - containerRect.top;
-
-                        const scrollLeft = container.scrollLeft;
-                        const scrollTop = container.scrollTop;
-                        const padX = window.innerWidth / 2;
-                        const padY = window.innerHeight / 2;
-
-                        // Reference point in un-scaled space
-                        const contentX = (scrollLeft + anchorX - padX) / currentZoom;
-                        const contentY = (scrollTop + anchorY - padY) / currentZoom;
-
-                        setZoom(targetZoom);
-
-                        // Immediate scroll update to match the new zoom pivot
-                        container.scrollLeft = (padX + (contentX * targetZoom)) - anchorX;
-                        container.scrollTop = (padY + (contentY * targetZoom)) - anchorY;
-                    } else {
-                        setZoom(targetZoom);
-                    }
-                } else {
-                    const rect = container.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-                    const scrollLeft = container.scrollLeft;
-                    const scrollTop = container.scrollTop;
-                    const padX = window.innerWidth / 2;
-                    const padY = window.innerHeight / 2;
-
-                    const contentX = (scrollLeft + mouseX - padX) / currentZoom;
-                    const contentY = (scrollTop + mouseY - padY) / currentZoom;
-
-                    setZoom(targetZoom);
-
-                    container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
-                    container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
-                }
+                setZoom(prevZoom => {
+                    const newZoom = Math.min(Math.max(prevZoom * factor, MIN_ZOOM), MAX_ZOOM);
+                    return newZoom;
+                });
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, selectedIds, primarySelectedId]);
+    }, [scrollContainerRef]);
 
     // Logic to find the most centered item in the viewport
     const getMostVisibleItem = useCallback(() => {
