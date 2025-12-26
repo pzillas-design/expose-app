@@ -85,19 +85,25 @@ export const useCanvasNavigation = ({
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
-        // If no scroll target, calculate to keep center fixed? 
-        // Or just zoom in place at center.
+        // If no scroll target is provided (e.g. +/- buttons), zoom towards the CENTER of the viewport
         if (!targetScroll) {
             const rect = container.getBoundingClientRect();
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+            const viewportWidth = rect.width;
+            const viewportHeight = rect.height;
 
-            // Calculate scroll to keep center fixed
-            const worldX = (startScrollX + centerX) / startZoom;
-            const worldY = (startScrollY + centerY) / startZoom;
+            const currentScrollLeft = container.scrollLeft;
+            const currentScrollTop = container.scrollTop;
 
-            const destScrollX = (worldX * targetZoom) - centerX;
-            const destScrollY = (worldY * targetZoom) - centerY;
+            // Center of the viewport in content space (unscaled relative to current zoom)
+            // (Scroll + HalfViewport) / Zoom = WorldCenter
+            const worldCenterX = (currentScrollLeft + viewportWidth / 2) / startZoom;
+            const worldCenterY = (currentScrollTop + viewportHeight / 2) / startZoom;
+
+            // New scroll to put WorldCenter back at viewport center
+            // (WorldCenter * TargetZoom) - HalfViewport = NewScroll
+            const destScrollX = (worldCenterX * targetZoom) - (viewportWidth / 2);
+            const destScrollY = (worldCenterY * targetZoom) - (viewportHeight / 2);
+
             targetScroll = { x: destScrollX, y: destScrollY };
         }
 
