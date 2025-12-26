@@ -67,7 +67,7 @@ export const useNanoController = () => {
     const {
         zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
         isZoomingRef, isAutoScrollingRef, getMostVisibleItem,
-        isZooming, isAutoScrolling
+        isZooming = false, isAutoScrolling = false
     } = canvasNav;
 
     // --- Selection ---

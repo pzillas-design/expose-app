@@ -159,7 +159,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         {/* Profile Info */}
                                         <div className="flex flex-col items-center gap-3">
                                             <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-400 dark:text-zinc-600 shadow-inner overflow-hidden">
-                                                {userProfile?.full_name ? userProfile.full_name.charAt(0) : user?.email?.charAt(0).toUpperCase()}
+                                                {userProfile?.full_name ? userProfile.full_name.charAt(0) : user?.email?.charAt(0)?.toUpperCase()}
                                             </div>
                                             <div className="text-center">
                                                 <h2 className={`${Typo.H2} text-base`}>{userProfile?.full_name || 'Guest'}</h2>
