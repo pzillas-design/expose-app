@@ -25,7 +25,15 @@ export const useCanvasNavigation = ({
 
     const zoomAnimFrameRef = useRef<number | null>(null);
     const zoomRef = useRef(zoom);
-    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+    const internalZoomRef = useRef(zoom);
+    useEffect(() => {
+        zoomRef.current = zoom;
+        // Only sync internal zoom if we are NOT currently zooming
+        // to avoid fighting the wheel accumulator
+        if (!isZoomingRef.current) {
+            internalZoomRef.current = zoom;
+        }
+    }, [zoom]);
 
     const isZoomingRef = useRef(false);
     const isAutoScrollingRef = useRef(false);
@@ -222,7 +230,7 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                const currentZoom = zoomRef.current;
+                const currentZoom = internalZoomRef.current;
                 isZoomingRef.current = true;
                 lastZoomSourceRef.current = 'wheel';
 
@@ -236,27 +244,30 @@ export const useCanvasNavigation = ({
 
                 // Force disable snap on DOM to avoid browser interference during fast wheeling
                 container.style.scrollSnapType = 'none';
+                container.style.overflowAnchor = 'none';
 
                 if (zoomTimeoutRef.current) window.clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
                     setIsZooming(false);
-                    // Re-enable snap after things settle - Note: the state-driven class will also handle this, 
-                    // but this direct style reset is an extra safety layer against some browsers.
+                    // Re-sync internal zoom to final state
+                    internalZoomRef.current = zoomRef.current;
                     container.style.scrollSnapType = '';
-                }, 600); // Increased to 600ms for safety
+                }, 800); // Increased to 800ms for extra safety
 
                 if (zoomAnimFrameRef.current) {
                     cancelAnimationFrame(zoomAnimFrameRef.current);
                     zoomAnimFrameRef.current = null;
                 }
 
-                // Calculate new zoom
+                // Calculate new zoom synchronously using the internal accumulator
                 const delta = -e.deltaY;
                 const factor = Math.exp(delta * 0.008);
                 const targetZoom = Math.min(Math.max(currentZoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                // We want to update the state but use the new value immediately for scroll calculation
+                // Update accumulator immediately for the next wheel tick
+                internalZoomRef.current = targetZoom;
+
                 if (selectedIds.length === 1 && primarySelectedId) {
                     const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
                     if (el) {
