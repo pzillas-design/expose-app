@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Pen, Trash2, Tag, ChevronRight, Bookmark, GripVertical, Loader2 } from 'lucide-react';
-import { TranslationFunction, PromptTemplate, PresetControl, PresetTag } from '../../types';
-import { Typo, Button, Input, IconButton, Tooltip, TableInput } from '../ui/DesignSystem';
-import { adminService } from '../../services/adminService';
-import { PresetEditorModal } from '../PresetEditorModal';
-import { generateId } from '../../utils/ids';
+import { TranslationFunction, PromptTemplate, PresetControl, PresetTag } from '@/types';
+import { Typo, Button, Input, IconButton, Tooltip, TableInput } from '@/components/ui/DesignSystem';
+import { adminService } from '@/services/adminService';
+import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
+import { generateId } from '@/utils/ids';
 
 interface AdminPresetsViewProps {
     t: TranslationFunction;

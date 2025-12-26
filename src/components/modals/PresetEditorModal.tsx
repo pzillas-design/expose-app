@@ -1,21 +1,20 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { PromptTemplate, PresetControl, TranslationFunction } from '../../types';
-import { ModalHeader, Button, Input, TextArea, SectionHeader, Theme } from './ui/DesignSystem';
+import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
+import { ModalHeader, Button, Input, TextArea, SectionHeader, Theme } from '@/components/ui/DesignSystem';
 import { Plus, Trash2, Check, X, ArrowLeftRight } from 'lucide-react';
-import { generateId } from '../../utils/ids';
+import { generateId } from '@/utils/ids';
 
 interface PresetEditorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  mode: 'create' | 'edit';
-  scope: 'admin' | 'user'; // New prop to determine layout
-  currentLang?: 'de' | 'en'; // Required if scope is user
-  initialTemplate?: PromptTemplate | null;
-  existingTemplates: PromptTemplate[];
-  onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de'|'en' }[]) => void;
-  onDelete?: (id: string) => void;
-  t: TranslationFunction;
+    isOpen: boolean;
+    onClose: () => void;
+    mode: 'create' | 'edit';
+    scope: 'admin' | 'user'; // New prop to determine layout
+    currentLang?: 'de' | 'en'; // Required if scope is user
+    initialTemplate?: PromptTemplate | null;
+    existingTemplates: PromptTemplate[];
+    onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
+    onDelete?: (id: string) => void;
+    t: TranslationFunction;
 }
 
 const DEFAULT_TAGS = ['Außen', 'Innen', 'Retusche', 'Staging', 'Mood'];
@@ -142,8 +141,8 @@ const LanguageForm = ({
                                 {tag}
                             </button>
                         ))}
-                         {isAddingTag ? (
-                            <input 
+                        {isAddingTag ? (
+                            <input
                                 autoFocus
                                 value={newTagInput}
                                 onChange={(e) => setNewTagInput(e.target.value)}
@@ -166,185 +165,185 @@ const LanguageForm = ({
 
 
 export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
-  isOpen,
-  onClose,
-  mode,
-  scope,
-  currentLang = 'en',
-  initialTemplate,
-  existingTemplates,
-  onSave,
-  onDelete,
-  t
+    isOpen,
+    onClose,
+    mode,
+    scope,
+    currentLang = 'en',
+    initialTemplate,
+    existingTemplates,
+    onSave,
+    onDelete,
+    t
 }) => {
-  // DE State
-  const [titleDe, setTitleDe] = useState('');
-  const [promptDe, setPromptDe] = useState('');
-  const [tagsDe, setTagsDe] = useState<string[]>([]);
-  const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
+    // DE State
+    const [titleDe, setTitleDe] = useState('');
+    const [promptDe, setPromptDe] = useState('');
+    const [tagsDe, setTagsDe] = useState<string[]>([]);
+    const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
 
-  // EN State
-  const [titleEn, setTitleEn] = useState('');
-  const [promptEn, setPromptEn] = useState('');
-  const [tagsEn, setTagsEn] = useState<string[]>([]);
-  const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
+    // EN State
+    const [titleEn, setTitleEn] = useState('');
+    const [promptEn, setPromptEn] = useState('');
+    const [tagsEn, setTagsEn] = useState<string[]>([]);
+    const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
 
-  useEffect(() => {
-    if (isOpen) {
-        // Reset
-        setTitleDe(''); setPromptDe(''); setTagsDe([]); setControlsDe([]);
-        setTitleEn(''); setPromptEn(''); setTagsEn([]); setControlsEn([]);
+    useEffect(() => {
+        if (isOpen) {
+            // Reset
+            setTitleDe(''); setPromptDe(''); setTagsDe([]); setControlsDe([]);
+            setTitleEn(''); setPromptEn(''); setTagsEn([]); setControlsEn([]);
 
-        if (mode === 'edit' && initialTemplate) {
-            // Load initial template into corresponding side
-            const isEn = initialTemplate.lang === 'en';
-            
-            // In User mode, we simply populate the matching state for the current language
-            // In Admin mode, we might be editing one specific lang instance, or potentially link them (out of scope, assuming single edit)
-            if (isEn) {
-                setTitleEn(initialTemplate.title);
-                setPromptEn(initialTemplate.prompt);
-                setTagsEn(initialTemplate.tags || []);
-                setControlsEn(initialTemplate.controls || []);
-            } else {
-                setTitleDe(initialTemplate.title);
-                setPromptDe(initialTemplate.prompt);
-                setTagsDe(initialTemplate.tags || []);
-                setControlsDe(initialTemplate.controls || []);
+            if (mode === 'edit' && initialTemplate) {
+                // Load initial template into corresponding side
+                const isEn = initialTemplate.lang === 'en';
+
+                // In User mode, we simply populate the matching state for the current language
+                // In Admin mode, we might be editing one specific lang instance, or potentially link them (out of scope, assuming single edit)
+                if (isEn) {
+                    setTitleEn(initialTemplate.title);
+                    setPromptEn(initialTemplate.prompt);
+                    setTagsEn(initialTemplate.tags || []);
+                    setControlsEn(initialTemplate.controls || []);
+                } else {
+                    setTitleDe(initialTemplate.title);
+                    setPromptDe(initialTemplate.prompt);
+                    setTagsDe(initialTemplate.tags || []);
+                    setControlsDe(initialTemplate.controls || []);
+                }
             }
         }
-    }
-  }, [isOpen, mode, initialTemplate]);
+    }, [isOpen, mode, initialTemplate]);
 
-  const availableTags = useMemo(() => {
-      const set = new Set(DEFAULT_TAGS);
-      existingTemplates.forEach(t => t.tags.forEach(tag => set.add(tag)));
-      return Array.from(set).sort();
-  }, [existingTemplates]);
+    const availableTags = useMemo(() => {
+        const set = new Set(DEFAULT_TAGS);
+        existingTemplates.forEach(t => t.tags.forEach(tag => set.add(tag)));
+        return Array.from(set).sort();
+    }, [existingTemplates]);
 
-  const handleSave = () => {
-      const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de'|'en' }[] = [];
+    const handleSave = () => {
+        const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
-      // Check scope to determine what to save
-      if (scope === 'user') {
-          // Only save the current language form
-          if (currentLang === 'de') {
-              if (promptDe.trim()) {
-                  results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: tagsDe, controls: controlsDe, lang: 'de' });
-              }
-          } else {
-              if (promptEn.trim()) {
-                  results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: tagsEn, controls: controlsEn, lang: 'en' });
-              }
-          }
-      } else {
-          // Admin Scope: Check both
-          if (promptDe.trim()) {
-              results.push({
-                  title: titleDe.trim() || 'Untitled',
-                  prompt: promptDe,
-                  tags: tagsDe,
-                  controls: controlsDe,
-                  lang: 'de'
-              });
-          }
-    
-          if (promptEn.trim()) {
-              results.push({
-                  title: titleEn.trim() || 'Untitled',
-                  prompt: promptEn,
-                  tags: tagsEn,
-                  controls: controlsEn,
-                  lang: 'en'
-              });
-          }
-      }
+        // Check scope to determine what to save
+        if (scope === 'user') {
+            // Only save the current language form
+            if (currentLang === 'de') {
+                if (promptDe.trim()) {
+                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: tagsDe, controls: controlsDe, lang: 'de' });
+                }
+            } else {
+                if (promptEn.trim()) {
+                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: tagsEn, controls: controlsEn, lang: 'en' });
+                }
+            }
+        } else {
+            // Admin Scope: Check both
+            if (promptDe.trim()) {
+                results.push({
+                    title: titleDe.trim() || 'Untitled',
+                    prompt: promptDe,
+                    tags: tagsDe,
+                    controls: controlsDe,
+                    lang: 'de'
+                });
+            }
 
-      onSave(results);
-  };
+            if (promptEn.trim()) {
+                results.push({
+                    title: titleEn.trim() || 'Untitled',
+                    prompt: promptEn,
+                    tags: tagsEn,
+                    controls: controlsEn,
+                    lang: 'en'
+                });
+            }
+        }
 
-  const isSaveDisabled = () => {
-      if (scope === 'user') {
-          return currentLang === 'de' ? !promptDe.trim() : !promptEn.trim();
-      }
-      // Admin: Disabled if BOTH are empty
-      return !promptDe.trim() && !promptEn.trim();
-  };
+        onSave(results);
+    };
 
-  if (!isOpen) return null;
+    const isSaveDisabled = () => {
+        if (scope === 'user') {
+            return currentLang === 'de' ? !promptDe.trim() : !promptEn.trim();
+        }
+        // Admin: Disabled if BOTH are empty
+        return !promptDe.trim() && !promptEn.trim();
+    };
 
-  return (
-    <div 
-        className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center animate-in fade-in duration-200 p-4"
-        onClick={onClose}
-    >
-      <div 
-        className={`w-full ${scope === 'admin' ? 'max-w-7xl' : 'max-w-2xl'} h-[85vh] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <ModalHeader 
-            title={mode === 'create' ? t('new_preset_title') : t('edit_preset_title')} 
-            onClose={onClose} 
-        />
+    if (!isOpen) return null;
 
-        <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x' : 'flex flex-col'} ${Theme.Colors.Border}`}>
-            
-            {/* German Form - Show if Admin OR if User+DE */}
-            {(scope === 'admin' || currentLang === 'de') && (
-                <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? '' : 'w-full'}`}>
-                    <LanguageForm 
-                        lang="de" 
-                        title={titleDe} setTitle={setTitleDe}
-                        prompt={promptDe} setPrompt={setPromptDe}
-                        controls={controlsDe} setControls={setControlsDe}
-                        tags={tagsDe} setTags={setTagsDe}
-                        availableTags={availableTags}
-                        showHeader={scope === 'admin'}
-                        t={t}
-                    />
-                </div>
-            )}
-
-            {/* English Form - Show if Admin OR if User+EN */}
-            {(scope === 'admin' || currentLang === 'en') && (
-                <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? Theme.Colors.SurfaceSubtle : 'w-full'}`}>
-                    <LanguageForm 
-                        lang="en" 
-                        title={titleEn} setTitle={setTitleEn}
-                        prompt={promptEn} setPrompt={setPromptEn}
-                        controls={controlsEn} setControls={setControlsEn}
-                        tags={tagsEn} setTags={setTagsEn}
-                        availableTags={availableTags}
-                        showHeader={scope === 'admin'}
-                        t={t}
-                    />
-                </div>
-            )}
-        </div>
-
-        {/* Footer */}
-        <div className={`p-6 pt-4 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} flex justify-between items-center`}>
-             {mode === 'edit' && onDelete && initialTemplate ? (
-                <Button 
-                    variant="danger" 
-                    onClick={() => { onDelete(initialTemplate.id); onClose(); }}
-                    className="w-auto px-4"
-                    icon={<Trash2 className="w-4 h-4" />}
-                >
-                    {t('delete')}
-                </Button>
-            ) : <div />}
-            
-            <Button 
-                onClick={handleSave}
-                disabled={isSaveDisabled()}
-                className="w-48"
-                icon={<Check className="w-4 h-4" />}
+    return (
+        <div
+            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center animate-in fade-in duration-200 p-4"
+            onClick={onClose}
+        >
+            <div
+                className={`w-full ${scope === 'admin' ? 'max-w-7xl' : 'max-w-2xl'} h-[85vh] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col`}
+                onClick={(e) => e.stopPropagation()}
             >
-                {t('save')}
-            </Button>
+                <ModalHeader
+                    title={mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
+                    onClose={onClose}
+                />
+
+                <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x' : 'flex flex-col'} ${Theme.Colors.Border}`}>
+
+                    {/* German Form - Show if Admin OR if User+DE */}
+                    {(scope === 'admin' || currentLang === 'de') && (
+                        <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? '' : 'w-full'}`}>
+                            <LanguageForm
+                                lang="de"
+                                title={titleDe} setTitle={setTitleDe}
+                                prompt={promptDe} setPrompt={setPromptDe}
+                                controls={controlsDe} setControls={setControlsDe}
+                                tags={tagsDe} setTags={setTagsDe}
+                                availableTags={availableTags}
+                                showHeader={scope === 'admin'}
+                                t={t}
+                            />
+                        </div>
+                    )}
+
+                    {/* English Form - Show if Admin OR if User+EN */}
+                    {(scope === 'admin' || currentLang === 'en') && (
+                        <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? Theme.Colors.SurfaceSubtle : 'w-full'}`}>
+                            <LanguageForm
+                                lang="en"
+                                title={titleEn} setTitle={setTitleEn}
+                                prompt={promptEn} setPrompt={setPromptEn}
+                                controls={controlsEn} setControls={setControlsEn}
+                                tags={tagsEn} setTags={setTagsEn}
+                                availableTags={availableTags}
+                                showHeader={scope === 'admin'}
+                                t={t}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className={`p-6 pt-4 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} flex justify-between items-center`}>
+                    {mode === 'edit' && onDelete && initialTemplate ? (
+                        <Button
+                            variant="danger"
+                            onClick={() => { onDelete(initialTemplate.id); onClose(); }}
+                            className="w-auto px-4"
+                            icon={<Trash2 className="w-4 h-4" />}
+                        >
+                            {t('delete')}
+                        </Button>
+                    ) : <div />}
+
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSaveDisabled()}
+                        className="w-48"
+                        icon={<Check className="w-4 h-4" />}
+                    >
+                        {t('save')}
+                    </Button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };

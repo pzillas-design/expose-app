@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Loader2 } from 'lucide-react';
-import { TranslationFunction } from '../../types';
-import { Typo, Input } from '../ui/DesignSystem';
-import { adminService } from '../../services/adminService';
+import { TranslationFunction } from '@/types';
+import { Typo, Input } from '@/components/ui/DesignSystem';
+import { adminService } from '@/services/adminService';
 import { AdminJobDetail } from './AdminJobDetail';
 
 interface AdminJobsViewProps {

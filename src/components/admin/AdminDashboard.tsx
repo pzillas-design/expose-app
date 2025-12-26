@@ -1,14 +1,13 @@
-
 import React, { useState } from 'react';
-import { TranslationFunction } from '../../types';
-import { Theme } from './ui/DesignSystem';
+import { TranslationFunction } from '@/types';
+import { Theme } from '@/components/ui/DesignSystem';
 
 // Modular Views
-import { AdminSidebar, AdminTab } from './admin/AdminSidebar';
-import { AdminUsersView } from './admin/AdminUsersView';
-import { AdminJobsView } from './admin/AdminJobsView';
-import { AdminPresetsView } from './admin/AdminPresetsView';
-import { AdminObjectsView } from './admin/AdminObjectsView';
+import { AdminSidebar, AdminTab } from './AdminSidebar';
+import { AdminUsersView } from './AdminUsersView';
+import { AdminJobsView } from './AdminJobsView';
+import { AdminPresetsView } from './AdminPresetsView';
+import { AdminObjectsView } from './AdminObjectsView';
 
 interface AdminDashboardProps {
   isOpen: boolean;

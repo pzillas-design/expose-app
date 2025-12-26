@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import {
-    X, Shield, LogOut, Mail, Globe, CreditCard, LayoutDashboard, Trash2, ArrowRight,
+    X, Shield, LogOut, Mail, Globe, LayoutDashboard, Trash2, ArrowRight,
     Moon, Sun, Monitor, Loader2
 } from 'lucide-react';
-import { GenerationQuality, TranslationFunction } from '../../types';
-import { Theme, Typo, Button, IconButton } from './ui/DesignSystem';
-import { Logo } from './ui/Logo';
+import { TranslationFunction, GenerationQuality } from '@/types';
+import { Button, IconButton, Theme, Typo } from '@/components/ui/DesignSystem';
+import { Logo } from '@/components/ui/Logo';
 import { LocaleKey } from '../../data/locales';
 
 interface SettingsModalProps {
@@ -62,7 +61,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         try {
             await onAddFunds(finalAmount);
         } finally {
-            // No need to set false if redirecting, but good practice
             setIsProcessing(false);
         }
     };
@@ -84,20 +82,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     return (
         <div
-            className={`fixed inset-0 z-[60] bg-zinc-950/60 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200`}
+            className="fixed inset-0 z-[60] bg-zinc-950/60 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
                 className={`
-            w-full max-w-4xl h-full max-h-[800px] sm:h-[90vh]
-            ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-            overflow-hidden flex flex-col md:flex-row shadow-2xl animate-in fade-in duration-200
-        `}
+                    w-full max-w-4xl h-full max-h-[800px] sm:h-[90vh]
+                    ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
+                    overflow-hidden flex flex-col md:flex-row shadow-2xl animate-in fade-in duration-200
+                `}
                 onClick={(e) => e.stopPropagation()}
             >
 
                 {/* --- SIDEBAR (Desktop) / HEADER (Mobile) --- */}
-                {/* Changed background from SurfaceSubtle to PanelBg to match right side */}
                 <div className={`md:w-64 ${Theme.Colors.PanelBg} border-b md:border-b-0 md:border-r ${Theme.Colors.Border} shrink-0 flex flex-col`}>
                     <div className="p-6 pb-8 flex items-center justify-between md:justify-start gap-3">
                         <h1 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{t('settings_title')}</h1>
@@ -112,13 +109,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`
-                            whitespace-nowrap px-4 py-3 ${Theme.Geometry.Radius} text-sm font-medium transition-all text-left flex items-center gap-3 shrink-0
-                            ${activeTab === tab.id
-                                        // Active state: Border visible
+                                    whitespace-nowrap px-4 py-3 ${Theme.Geometry.Radius} text-sm font-medium transition-all text-left flex items-center gap-3 shrink-0
+                                    ${activeTab === tab.id
                                         ? `${Theme.Colors.SurfaceSubtle} ${Theme.Colors.TextHighlight} shadow-sm border border-zinc-200 dark:border-zinc-800`
-                                        // Inactive state: Border transparent (prevents layout shift/jump)
-                                        : `${Theme.Colors.TextSecondary} hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white border border-transparent`}
-                        `}
+                                        : `${Theme.Colors.TextSecondary} hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-black dark:hover:text-white border border-transparent`
+                                    }
+                                `}
                             >
                                 {tab.label}
                             </button>
@@ -174,7 +170,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         {/* Balance Hero */}
                                         <div className="text-center space-y-2">
                                             <span className={Typo.Label}>{t('balance')}</span>
-                                            <div className={`text-5xl font-light tracking-tight ${Theme.Colors.TextHighlight} font-mono`}>
+                                            <div className="text-5xl font-light tracking-tight text-zinc-900 dark:text-zinc-100 font-mono">
                                                 {currentBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-1">€</span>
                                             </div>
                                         </div>
@@ -193,11 +189,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                 <div className="animate-in fade-in zoom-in-95 duration-200 w-full space-y-3">
                                                     <div className="relative group">
                                                         <div className={`
-                                                    flex items-center justify-center border ${Theme.Colors.Border} ${Theme.Geometry.Radius} p-4 
-                                                    ${Theme.Colors.Surface} 
-                                                    group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-500 
-                                                    transition-colors
-                                                `}>
+                                                            flex items-center justify-center border ${Theme.Colors.Border} ${Theme.Geometry.Radius} p-4 
+                                                            ${Theme.Colors.Surface}
+                                                            group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-500
+                                                            transition-colors
+                                                        `}>
                                                             <input
                                                                 type="number"
                                                                 value={customAmount}
@@ -210,7 +206,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                                 }}
                                                                 placeholder="0.00"
                                                                 autoFocus
-                                                                className={`w-full bg-transparent text-center text-3xl font-medium outline-none ${Theme.Colors.TextHighlight} placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono`}
+                                                                className="w-full bg-transparent text-center text-3xl font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono"
                                                             />
                                                             <span className="text-zinc-400 ml-1 text-xl font-light">€</span>
                                                         </div>
@@ -275,11 +271,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                         key={mode.id}
                                                         onClick={() => onQualityModeChange(mode.id)}
                                                         className={`
-                                                    w-full flex flex-col items-start gap-1 p-4 ${Theme.Geometry.Radius} border text-left transition-all
-                                                    ${isSelected
+                                                            w-full flex flex-col items-start gap-1 p-4 ${Theme.Geometry.Radius} border text-left transition-all
+                                                            ${isSelected
                                                                 ? `${Theme.Colors.SurfaceSubtle} border-zinc-900 dark:border-zinc-100 ring-1 ring-zinc-900 dark:ring-zinc-100`
-                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.SurfaceHover}`}
-                                                `}
+                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.SurfaceHover}`
+                                                            }
+                                                        `}
                                                     >
                                                         <div className="flex items-center justify-between w-full mb-0.5">
                                                             <span className={`font-medium ${isSelected ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
@@ -314,11 +311,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                         key={m.id}
                                                         onClick={() => onThemeChange(m.id as any)}
                                                         className={`
-                                                    flex-1 flex items-center justify-center gap-2 py-3 px-4 ${Theme.Geometry.Radius} border text-sm font-medium transition-all
-                                                    ${isSelected
+                                                            flex-1 flex items-center justify-center gap-2 py-3 px-4 ${Theme.Geometry.Radius} border text-sm font-medium transition-all
+                                                            ${isSelected
                                                                 ? `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} border-transparent`
-                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.TextSecondary} ${Theme.Colors.SurfaceHover}`}
-                                                `}
+                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.TextSecondary} ${Theme.Colors.SurfaceHover}`
+                                                            }
+                                                        `}
                                                     >
                                                         <Icon className="w-4 h-4" />
                                                         {m.label}
@@ -343,11 +341,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                         key={l.id}
                                                         onClick={() => onLangChange(l.id as any)}
                                                         className={`
-                                                    flex-1 flex items-center justify-center gap-2 py-3 px-4 ${Theme.Geometry.Radius} border text-sm font-medium transition-all
-                                                    ${isSelected
+                                                            flex-1 flex items-center justify-center gap-2 py-3 px-4 ${Theme.Geometry.Radius} border text-sm font-medium transition-all
+                                                            ${isSelected
                                                                 ? `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} border-transparent`
-                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.TextSecondary} ${Theme.Colors.SurfaceHover}`}
-                                                `}
+                                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.TextSecondary} ${Theme.Colors.SurfaceHover}`
+                                                            }
+                                                        `}
                                                     >
                                                         {l.label}
                                                     </button>

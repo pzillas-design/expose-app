@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw } from 'lucide-react';
-import { Theme, Typo } from './ui/DesignSystem';
-import { TranslationFunction, CanvasImage } from '../../types';
+import { Theme, Typo } from '@/components/ui/DesignSystem';
+import { TranslationFunction, CanvasImage } from '@/types';
 
 export interface ContextMenuState {
     x: number;

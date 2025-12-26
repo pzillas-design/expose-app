@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Loader2 } from 'lucide-react';
-import { AdminUser, TranslationFunction } from '../../types';
-import { Typo, Input } from '../ui/DesignSystem';
-import { adminService } from '../../services/adminService';
+import { AdminUser, TranslationFunction } from '@/types';
+import { Typo, Input } from '@/components/ui/DesignSystem';
+import { adminService } from '@/services/adminService';
 import { AdminUserDetail } from './AdminUserDetail';
 
 interface AdminUsersViewProps {

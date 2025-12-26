@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Users, Activity, Layers, Box, ChevronLeft } from 'lucide-react';
-import { TranslationFunction } from '../../types';
-import { Typo } from '../ui/DesignSystem';
+import { TranslationFunction } from '@/types';
+import { Typo } from '@/components/ui/DesignSystem';
 
 export type AdminTab = 'users' | 'jobs' | 'presets' | 'objects';
 

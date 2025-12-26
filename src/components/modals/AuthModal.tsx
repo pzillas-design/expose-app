@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-react';
-import { supabase } from '../../services/supabaseClient';
-import { Theme, Typo, Button, IconButton, Input } from './ui/DesignSystem';
-import { Logo } from './ui/Logo';
-import { TranslationFunction } from '../../types';
+import { supabase } from '@/services/supabaseClient';
+import { Button, Theme, Typo, IconButton, Input } from '@/components/ui/DesignSystem';
+import { Logo } from '@/components/ui/Logo';
+import { TranslationFunction } from '@/types';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -25,6 +25,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             if (initialEmail) setEmail(initialEmail);
         }
     }, [initialMode, initialEmail, isOpen]);
+
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);

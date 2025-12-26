@@ -65,20 +65,18 @@ export const useNanoController = () => {
     } = useLibrary({ lang, currentLang });
 
     // --- Navigation ---
-    const {
-        zoom,
-        setZoom,
-        smoothZoomTo,
-        fitSelectionToView,
-        snapToItem,
-        isZoomingRef,
-        isAutoScrollingRef
-    } = useCanvasNavigation({
+    const canvasNav = useCanvasNavigation({
         scrollContainerRef,
         selectedIds,
         allImages,
         primarySelectedId: selectedIds[selectedIds.length - 1] || null
     });
+
+    const {
+        zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
+        isZoomingRef, isAutoScrollingRef, getMostVisibleItem,
+        isZooming, isAutoScrolling
+    } = canvasNav;
 
     // --- Selection ---
     const {
@@ -90,7 +88,8 @@ export const useNanoController = () => {
         handleSelection,
         moveSelection,
         moveRowSelection,
-        handleScroll
+        handleScroll,
+        setSnapEnabled
     } = useSelection({
         rows,
         snapToItem,
@@ -100,7 +99,8 @@ export const useNanoController = () => {
         isAutoScrollingRef,
         isZoomingRef,
         selectedIds,
-        setSelectedIds
+        setSelectedIds,
+        getMostVisibleItem
     });
 
     // --- Auth ---
@@ -307,9 +307,9 @@ export const useNanoController = () => {
         const row = rows[rowIndex];
 
         // Debit Credits
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && !isPro) {
-            await supabase.from('profiles').update({ credits: credits - cost }).eq('id', user.id);
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser && !isPro) {
+            await supabase.from('profiles').update({ credits: credits - cost }).eq('id', currentUser.id);
         }
         if (!isPro) {
             setCredits(prev => prev - cost);
@@ -346,12 +346,12 @@ export const useNanoController = () => {
             updatedAt: Date.now()
         };
 
-        if (user && !isAuthDisabled) {
+        if (currentUser && !isAuthDisabled) {
             try {
                 await supabase.from('generation_jobs').insert({
                     id: newId,
-                    user_id: user.id,
-                    user_name: user.email,
+                    user_id: currentUser.id,
+                    user_name: currentUser.email,
                     type: maskDataUrl ? 'Inpaint' : 'Style',
                     model: qualityMode,
                     status: 'processing',
@@ -399,8 +399,8 @@ export const useNanoController = () => {
                     return newRows;
                 });
 
-                if (user && !isAuthDisabled) {
-                    await imageService.persistImage(finalImage, user.id);
+                if (currentUser && !isAuthDisabled) {
+                    await imageService.persistImage(finalImage, currentUser.id);
                 }
             } else {
                 throw new Error("Generation returned no image");
@@ -422,61 +422,106 @@ export const useNanoController = () => {
             if (!isPro) {
                 setCredits(prev => prev + cost);
                 try {
-                    const { data: { user: currentUser } } = await supabase.auth.getUser();
-                    if (currentUser) {
-                        await supabase.from('profiles').update({ credits: credits }).eq('id', currentUser.id);
+                    const { data: { user: refundUser } } = await supabase.auth.getUser();
+                    if (refundUser) {
+                        await supabase.from('profiles').update({ credits: credits }).eq('id', refundUser.id);
                     }
                 } catch (e) { console.error("Refund failed", e); }
             }
         }
     };
 
+    const handleGenerate = () => {
+        if (selectedImage) performGeneration(selectedImage, selectedImage.userDraftPrompt || '');
+    };
+
+    const handleGenerateMore = (img: CanvasImage) => {
+        performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
+    };
+
+    const handleNavigateParent = (parentId: string) => {
+        const parent = allImages.find(i => i.id === parentId);
+        if (parent) selectAndSnap(parentId);
+    };
+
     return {
-        // Data
-        rows, setRows,
-        selectedIds, primarySelectedId, selectedImage,
-        allImages,
-
-        // Navigation (Passthrough)
-        zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll,
-
-        // Config
-        qualityMode, setQualityMode,
-        themeMode, setThemeMode,
-        lang, setLang, currentLang, t,
-        sideSheetMode, handleModeChange,
-        brushSize, setBrushSize,
-
-        // Library
-        userLibrary, globalLibrary, fullLibrary,
-        addUserCategory, deleteUserCategory,
-        addUserItem, deleteUserItem,
-
-        // Selection
-        selectAndSnap, selectMultiple, handleSelection, moveSelection, moveRowSelection,
-
-        // Auth
-        user, userProfile, credits,
-        authModalMode, setAuthModalMode,
-        isAuthModalOpen, setIsAuthModalOpen,
-        authEmail, setAuthEmail,
-        authError, setAuthError,
-        handleAddFunds, handleSignOut,
-
-        // UI
-        isDragOver, setIsDragOver, handleFileDrop,
-        isSettingsOpen, setIsSettingsOpen,
-        isAdminOpen, setIsAdminOpen,
-
-        // Actions
-        processFile,
-        handleDeleteImage,
-        handleUpdateAnnotations,
-        handleUpdatePrompt,
-        onAddReference,
-        performGeneration,
-
-        // Refs (Expose if needed)
-        scrollContainerRef
+        state: {
+            rows,
+            selectedIds,
+            primarySelectedId,
+            selectedImage,
+            selectedImages,
+            allImages,
+            zoom,
+            isZooming,
+            isAutoScrolling,
+            qualityMode,
+            themeMode,
+            lang,
+            currentLang,
+            sideSheetMode,
+            brushSize,
+            userLibrary,
+            globalLibrary,
+            fullLibrary,
+            user,
+            userProfile,
+            credits,
+            authModalMode,
+            isAuthModalOpen,
+            authEmail,
+            authError,
+            isDragOver,
+            isSettingsOpen,
+            isAdminOpen
+        },
+        actions: {
+            setRows,
+            setZoom,
+            smoothZoomTo,
+            fitSelectionToView,
+            snapToItem,
+            handleScroll,
+            getMostVisibleItem,
+            setQualityMode,
+            setThemeMode,
+            setLang,
+            handleModeChange,
+            setSideSheetMode,
+            setBrushSize,
+            addUserCategory,
+            deleteUserCategory,
+            addUserItem,
+            deleteUserItem,
+            selectAndSnap,
+            selectMultiple,
+            handleSelection,
+            moveSelection,
+            moveRowSelection,
+            setAuthModalMode,
+            setIsAuthModalOpen,
+            setAuthEmail,
+            setAuthError,
+            handleAddFunds,
+            handleSignOut,
+            setIsDragOver,
+            handleFileDrop,
+            setIsSettingsOpen,
+            setIsAdminOpen,
+            processFile,
+            handleDeleteImage,
+            handleUpdateAnnotations,
+            handleUpdatePrompt,
+            onAddReference,
+            performGeneration,
+            handleGenerate,
+            handleGenerateMore,
+            handleNavigateParent,
+            setSnapEnabled
+        },
+        refs: {
+            scrollContainerRef
+        },
+        t
     };
 };

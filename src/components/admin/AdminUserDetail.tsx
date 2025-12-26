@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { X, Shield, Clock, Lock, ArrowRight, Trash2, Plus, Loader2 } from 'lucide-react';
-import { AdminUser, TranslationFunction } from '../../types';
-import { Typo, IconButton, Button, Input, SectionHeader } from '../ui/DesignSystem';
-import { adminService } from '../../services/adminService';
+import { AdminUser, TranslationFunction } from '@/types';
+import { Typo, IconButton, Button, Input, SectionHeader } from '@/components/ui/DesignSystem';
+import { adminService } from '@/services/adminService';
 
-import { useToast } from '../ui/Toast';
-import { useItemDialog } from '../ui/Dialog';
+import { useToast } from '@/components/ui/Toast';
+import { useItemDialog } from '@/components/ui/Dialog';
 
 interface AdminUserDetailProps {
     user: AdminUser;

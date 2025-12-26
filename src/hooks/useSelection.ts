@@ -1,5 +1,4 @@
-
-import { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { ImageRow } from '../types';
 
 interface UseSelectionProps {
@@ -14,6 +13,7 @@ interface UseSelectionProps {
     // External State
     selectedIds: string[];
     setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
+    getMostVisibleItem: () => string | null;
 }
 
 export const useSelection = ({
@@ -25,7 +25,8 @@ export const useSelection = ({
     isAutoScrollingRef,
     isZoomingRef,
     selectedIds,
-    setSelectedIds
+    setSelectedIds,
+    getMostVisibleItem
 }: UseSelectionProps) => {
 
     // Refs
@@ -139,16 +140,28 @@ export const useSelection = ({
     // Keyboard Navigation
     const moveSelection = useCallback((direction: -1 | 1, fromId?: string) => {
         if (allImages.length === 0) return;
-        const currentId = fromId || lastSelectedIdRef.current || primarySelectedId;
+
+        // Smart Navigation: Use fromId, or lastSelected, or the most visible item in viewport if panned away
+        const currentId = fromId || lastSelectedIdRef.current || getMostVisibleItem();
+
         let nextIndex = 0;
         if (currentId) {
             const currentIndex = allImages.findIndex(img => img.id === currentId);
-            if (currentIndex !== -1) nextIndex = currentIndex + direction;
+            if (currentIndex !== -1) {
+                nextIndex = currentIndex + direction;
+            } else {
+                // If the "anchor" isn't found in current state (e.g. deleted), find nearest visible
+                const visibleId = getMostVisibleItem();
+                const visibleIdx = visibleId ? allImages.findIndex(i => i.id === visibleId) : 0;
+                nextIndex = visibleIdx !== -1 ? visibleIdx : 0;
+            }
         }
+
         if (nextIndex < 0) nextIndex = 0;
         if (nextIndex >= allImages.length) nextIndex = allImages.length - 1;
+
         selectAndSnap(allImages[nextIndex].id);
-    }, [allImages, primarySelectedId, selectAndSnap]);
+    }, [allImages, selectAndSnap, getMostVisibleItem]);
 
     const moveRowSelection = useCallback((direction: -1 | 1) => {
         const currentId = lastSelectedIdRef.current || primarySelectedId;
@@ -168,6 +181,10 @@ export const useSelection = ({
         }
     }, [rows, primarySelectedId, selectAndSnap]);
 
+    const setSnapEnabled = useCallback((enabled: boolean) => {
+        isSnapEnabledRef.current = enabled;
+    }, []);
+
     return {
         // Return derived state, logic, and refs
         primarySelectedId,
@@ -179,6 +196,7 @@ export const useSelection = ({
         moveSelection,
         moveRowSelection,
         handleScroll,
+        setSnapEnabled,
         isSnapEnabledRef,
         focusCheckRafRef,
         lastSelectedIdRef

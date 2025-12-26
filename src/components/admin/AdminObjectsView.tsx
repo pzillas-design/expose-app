@@ -1,10 +1,9 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical, CornerDownRight, Loader2 } from 'lucide-react';
-import { TranslationFunction, LibraryCategory, LibraryItem } from '../../types';
-import { Typo, Button, TableInput, IconButton } from '../ui/DesignSystem';
-import { adminService } from '../../services/adminService';
-import { generateId } from '../../utils/ids';
+import { TranslationFunction, LibraryCategory, LibraryItem } from '@/types';
+import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
+import { adminService } from '@/services/adminService';
+import { generateId } from '@/utils/ids';
 
 interface AdminObjectsViewProps {
     t: TranslationFunction;
@@ -83,7 +82,6 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
     const pairedCategories: PairedCategory[] = useMemo(() => {
         const map = new Map<string, PairedCategory>();
 
-        // ... (rest of pairing logic remains same)
         const orderedIds: string[] = [];
         categories.forEach(c => {
             if (!orderedIds.includes(c.id)) orderedIds.push(c.id);

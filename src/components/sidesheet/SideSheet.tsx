@@ -1,17 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
-import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '../../types';
+import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '@/types';
 import { Trash2, Download, ArrowLeft, Check, Layers } from 'lucide-react';
-import { DEFAULT_TEMPLATES } from '../../data/promptTemplates';
-import { IconButton, Button, Typo, Theme } from './ui/DesignSystem';
-import { useResizable } from '../../hooks/useResizable';
-import { CropModal } from './CropModal';
-import { generateId } from '../../utils/ids';
+import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
+import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
+import { useResizable } from '@/hooks/useResizable';
+import { CropModal } from '@/components/modals/CropModal';
+import { generateId } from '@/utils/ids';
 
 // Sub Components
-import { PromptTab } from './sidesheet/PromptTab';
-import { BrushTab } from './sidesheet/BrushTab';
-import { ObjectsTab } from './sidesheet/ObjectsTab';
+import { PromptTab } from './PromptTab';
+import { BrushTab } from './BrushTab';
+import { ObjectsTab } from './ObjectsTab';
 
 interface SideSheetProps {
     selectedImage: CanvasImage | null;

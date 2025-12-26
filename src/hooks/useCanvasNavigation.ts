@@ -270,6 +270,33 @@ export const useCanvasNavigation = ({
         return () => container.removeEventListener('wheel', onWheel);
     }, [scrollContainerRef, zoom, selectedIds]); // Re-bind on state change
 
+    // Logic to find the most centered item in the viewport
+    const getMostVisibleItem = useCallback(() => {
+        if (!scrollContainerRef.current) return null;
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const viewportCenterX = containerRect.left + (containerRect.width / 2);
+        const viewportCenterY = containerRect.top + (containerRect.height / 2);
+
+        const images = container.querySelectorAll('[data-image-id]');
+        let closestId: string | null = null;
+        let minDistance = Infinity;
+
+        images.forEach((img) => {
+            const rect = img.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.sqrt(Math.pow(centerX - viewportCenterX, 2) + Math.pow(centerY - viewportCenterY, 2));
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestId = img.getAttribute('data-image-id');
+            }
+        });
+
+        return closestId;
+    }, [scrollContainerRef]);
+
     return {
         zoom,
         isZooming,
@@ -279,6 +306,7 @@ export const useCanvasNavigation = ({
         fitSelectionToView,
         snapToItem,
         isZoomingRef,
-        isAutoScrollingRef
+        isAutoScrollingRef,
+        getMostVisibleItem
     };
 };

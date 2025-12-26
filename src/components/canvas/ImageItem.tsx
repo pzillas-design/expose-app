@@ -1,9 +1,9 @@
 
 import React, { memo, useEffect, useState } from 'react';
-import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '../../types';
+import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
 import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
-import { Tooltip, Typo, Theme } from './ui/DesignSystem';
+import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 
 interface ImageItemProps {
     image: CanvasImage;

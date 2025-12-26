@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { X, Cpu, Clock, DollarSign, FileText, User } from 'lucide-react';
-import { TranslationFunction } from '../../types';
-import { Typo, IconButton, SectionHeader } from '../ui/DesignSystem';
+import { TranslationFunction } from '@/types';
+import { Typo, IconButton, SectionHeader } from '@/components/ui/DesignSystem';
 
 interface AdminJobDetailProps {
     job: any; // Using any for now matching AdminJobsView state

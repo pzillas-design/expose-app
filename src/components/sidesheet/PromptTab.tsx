@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl } from '../../types';
-import { PresetLibrary } from '../PresetLibrary';
-import { PresetEditorModal } from '../PresetEditorModal';
+import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl } from '@/types';
+import { PresetLibrary } from '@/components/library/PresetLibrary';
+import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw } from 'lucide-react';
-import { Button, SectionHeader, Theme, Typo, IconButton } from '../ui/DesignSystem';
-import { useToast } from '../ui/Toast';
+import { Button, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
+import { useToast } from '@/components/ui/Toast';
 
 interface PromptTabProps {
     prompt: string;
