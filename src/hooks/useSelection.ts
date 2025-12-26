@@ -93,20 +93,12 @@ export const useSelection = ({
     // Note: We only re-center when the zoom level changes, not when selection changes,
     // to prevent fighting the user during manual scrolling.
     // --- Anchor Selection on Zoom (Single Item) ---
-    // Note: We used to re-center here, but useCanvasNavigation now handles the
-    // scroll anchoring during zoom (both for mouse wheel and smooth zoom).
-    // Keeping this effect would cause a conflict/race condition ("jitter")
-    // where the canvas jumps back and forth between "mouse anchor" and "item center".
-    // Therefore, this effect is removed to let useCanvasNavigation control the viewport.
+    // [REMOVED] This Logic caused the "Zappeln" (jitter).
+    // The new useCanvasNavigation handles pivot-zooming correctly internally.
     /*
     useLayoutEffect(() => {
-        if (!isAutoScrollingRef.current && !isZoomingRef.current && selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current) {
-            const el = scrollContainerRef.current.querySelector(`[data-image-id="${primarySelectedId}"]`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
-            }
-        }
-    }, [zoom, scrollContainerRef, isAutoScrollingRef, isZoomingRef]);
+        // ... Code Removed ...
+    }, []);
     */
 
     // --- Scroll Logic (Focus Tracking) ---
