@@ -150,12 +150,15 @@ export const useSelection = ({
             }
 
             // Only update selection if the image is truly "focused" (near center)
-            // and it's different from the current one. This prevents jitter.
-            if (closestImageId && primarySelectedId !== closestImageId && minImgDist < 200) {
+            // Adjust threshold based on zoom - when zoomed out, we need to be tighter
+            const threshold = Math.max(50, 150 * zoom);
+
+            if (closestImageId && primarySelectedId !== closestImageId && minImgDist < threshold) {
+                // If we are very close to the center, update selection
                 setSelectedIds([closestImageId]);
             }
         });
-    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds]);
+    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds, zoom]);
 
     // Keyboard Navigation
     const moveSelection = useCallback((direction: -1 | 1, fromId?: string) => {

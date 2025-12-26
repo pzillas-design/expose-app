@@ -24,15 +24,20 @@ export const useCanvasNavigation = ({
     const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
     const zoomAnimFrameRef = useRef<number | null>(null);
+    const zoomRef = useRef(zoom);
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+
     const isZoomingRef = useRef(false);
     const isAutoScrollingRef = useRef(false);
     const zoomTimeoutRef = useRef<number | null>(null);
     const autoScrollTimeoutRef = useRef<number | null>(null);
+    const lastZoomSourceRef = useRef<'wheel' | 'button' | null>(null);
 
     // --- Zoom Logic (Synchronized) ---
-    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration: number = 400) => {
+    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration: number = 400, source: 'wheel' | 'button' = 'button') => {
         isZoomingRef.current = true;
         setIsZooming(true);
+        lastZoomSourceRef.current = source;
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
         const startZoom = zoom;
 
@@ -203,7 +208,7 @@ export const useCanvasNavigation = ({
             const targetScrollLeft = container.scrollLeft + (elRect.left + elRect.width / 2) - (containerRect.left + containerRect.width / 2);
             const targetScrollTop = container.scrollTop + (elRect.top + elRect.height / 2) - (containerRect.top + containerRect.height / 2);
 
-            smoothZoomTo(zoom, { x: targetScrollLeft, y: targetScrollTop }, 300); // Snappier 300ms
+            smoothZoomTo(zoom, { x: targetScrollLeft, y: targetScrollTop }, 300, 'button'); // Snappier 300ms
         }
     }, [zoom, smoothZoomTo, scrollContainerRef]);
 
@@ -217,7 +222,10 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
+                const currentZoom = zoomRef.current;
                 isZoomingRef.current = true;
+                lastZoomSourceRef.current = 'wheel';
+
                 try {
                     flushSync(() => {
                         setIsZooming(true);
@@ -225,19 +233,24 @@ export const useCanvasNavigation = ({
                 } catch (e) {
                     setIsZooming(true);
                 }
-                if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
+
+                if (zoomTimeoutRef.current) window.clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
                     setIsZooming(false);
-                }, 400);
+                }, 500); // Increased from 400ms to allow settling
 
-                if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
+                if (zoomAnimFrameRef.current) {
+                    cancelAnimationFrame(zoomAnimFrameRef.current);
+                    zoomAnimFrameRef.current = null;
+                }
 
                 // Calculate new zoom
                 const delta = -e.deltaY;
                 const factor = Math.exp(delta * 0.008);
-                const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
+                const targetZoom = Math.min(Math.max(currentZoom * factor, MIN_ZOOM), MAX_ZOOM);
 
+                // We want to update the state but use the new value immediately for scroll calculation
                 if (selectedIds.length === 1 && primarySelectedId) {
                     const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
                     if (el) {
@@ -245,15 +258,19 @@ export const useCanvasNavigation = ({
                         const containerRect = container.getBoundingClientRect();
                         const anchorX = rect.left + rect.width / 2 - containerRect.left;
                         const anchorY = rect.top + rect.height / 2 - containerRect.top;
+
                         const scrollLeft = container.scrollLeft;
                         const scrollTop = container.scrollTop;
                         const padX = window.innerWidth / 2;
                         const padY = window.innerHeight / 2;
-                        const contentX = (scrollLeft + anchorX - padX) / zoom;
-                        const contentY = (scrollTop + anchorY - padY) / zoom;
-                        try {
-                            flushSync(() => { setZoom(targetZoom); });
-                        } catch (err) { setZoom(targetZoom); }
+
+                        // Reference point in un-scaled space
+                        const contentX = (scrollLeft + anchorX - padX) / currentZoom;
+                        const contentY = (scrollTop + anchorY - padY) / currentZoom;
+
+                        setZoom(targetZoom);
+
+                        // Immediate scroll update to match the new zoom pivot
                         container.scrollLeft = (padX + (contentX * targetZoom)) - anchorX;
                         container.scrollTop = (padY + (contentY * targetZoom)) - anchorY;
                     } else {
@@ -267,11 +284,12 @@ export const useCanvasNavigation = ({
                     const scrollTop = container.scrollTop;
                     const padX = window.innerWidth / 2;
                     const padY = window.innerHeight / 2;
-                    const contentX = (scrollLeft + mouseX - padX) / zoom;
-                    const contentY = (scrollTop + mouseY - padY) / zoom;
-                    try {
-                        flushSync(() => { setZoom(targetZoom); });
-                    } catch (err) { setZoom(targetZoom); }
+
+                    const contentX = (scrollLeft + mouseX - padX) / currentZoom;
+                    const contentY = (scrollTop + mouseY - padY) / currentZoom;
+
+                    setZoom(targetZoom);
+
                     container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
                     container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
                 }
@@ -279,7 +297,7 @@ export const useCanvasNavigation = ({
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, zoom, selectedIds]); // Re-bind on state change
+    }, [scrollContainerRef, selectedIds, primarySelectedId]);
 
     // Logic to find the most centered item in the viewport
     const getMostVisibleItem = useCallback(() => {
