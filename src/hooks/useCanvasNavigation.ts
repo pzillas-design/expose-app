@@ -139,6 +139,10 @@ export const useCanvasNavigation = ({
 
     // Redefine setZoomWithPivot to use smoothZoomTo correctly
     const handleWheelZoom = useCallback((e: WheelEvent) => {
+        // Essential: Prevent browser 'pinch-to-zoom' on the whole page
+        e.preventDefault();
+        e.stopPropagation();
+
         const container = scrollContainerRef.current;
         if (!container) return;
 
@@ -190,7 +194,9 @@ export const useCanvasNavigation = ({
         if (!container) return;
 
         const onWheel = (e: WheelEvent) => {
+            // Check for pinch-to-zoom (Ctrl+Wheel) or explicit Meta+Wheel
             if (e.ctrlKey || e.metaKey) {
+                // Prevent browser UI zoom immediately
                 e.preventDefault();
                 e.stopPropagation();
                 handleWheelZoom(e);
