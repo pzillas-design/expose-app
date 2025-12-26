@@ -90,6 +90,8 @@ export const useSelection = ({
     }, [selectedIds.length, fitSelectionToView]);
 
     // --- Anchor Selection on Zoom (Single Item) ---
+    // Note: We only re-center when the zoom level changes, not when selection changes,
+    // to prevent fighting the user during manual scrolling.
     useLayoutEffect(() => {
         if (!isAutoScrollingRef.current && !isZoomingRef.current && selectedIds.length === 1 && primarySelectedId && scrollContainerRef.current) {
             const el = scrollContainerRef.current.querySelector(`[data-image-id="${primarySelectedId}"]`);
@@ -97,7 +99,7 @@ export const useSelection = ({
                 el.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
             }
         }
-    }, [zoom, selectedIds.length, primarySelectedId, scrollContainerRef, isAutoScrollingRef, isZoomingRef]);
+    }, [zoom, scrollContainerRef, isAutoScrollingRef, isZoomingRef]);
 
     // --- Scroll Logic (Focus Tracking) ---
     const handleScroll = useCallback(() => {
@@ -112,26 +114,44 @@ export const useSelection = ({
             const containerRect = container.getBoundingClientRect();
             const viewportCenterX = containerRect.left + (containerRect.width / 2);
             const viewportCenterY = containerRect.top + (containerRect.height / 2);
-            const rowElements = container.querySelectorAll('[data-row-id]');
-            let closestRow: Element | null = null;
+
+            // Optimization: Only query rows that are likely in view
+            const rowElements = Array.from(container.querySelectorAll('[data-row-id]')) as HTMLElement[];
+            let closestRow: HTMLElement | null = null;
             let minRowDist = Infinity;
-            rowElements.forEach((rowEl) => {
+
+            for (const rowEl of rowElements) {
                 const rect = rowEl.getBoundingClientRect();
                 const dist = Math.abs((rect.top + rect.height / 2) - viewportCenterY);
-                if (dist < minRowDist) { minRowDist = dist; closestRow = rowEl; }
-            });
+                if (dist < minRowDist) {
+                    minRowDist = dist;
+                    closestRow = rowEl;
+                }
+                // If we've found a row and the distance starts increasing, we can stop
+                if (minRowDist < 100 && dist > minRowDist) break;
+            }
+
             if (!closestRow) return;
-            const imagesInRow = closestRow.querySelectorAll('[data-image-id]');
+
+            const imagesInRow = Array.from(closestRow.querySelectorAll('[data-image-id]')) as HTMLElement[];
             let closestImageId: string | null = null;
             let minImgDist = Infinity;
-            imagesInRow.forEach((img) => {
+
+            for (const img of imagesInRow) {
                 const rect = img.getBoundingClientRect();
                 const dist = Math.abs((rect.left + rect.width / 2) - viewportCenterX);
-                if (dist < minImgDist) { minImgDist = dist; closestImageId = img.getAttribute('data-image-id'); }
-            });
 
-            if (closestImageId && primarySelectedId !== closestImageId) {
-                // Important: Only update selection, do NOT snap/scroll (the user is already scrolling)
+                if (dist < minImgDist) {
+                    minImgDist = dist;
+                    closestImageId = img.getAttribute('data-image-id');
+                }
+                // Break early if we are moving away from center
+                if (minImgDist < 50 && dist > minImgDist) break;
+            }
+
+            // Only update selection if the image is truly "focused" (near center)
+            // and it's different from the current one. This prevents jitter.
+            if (closestImageId && primarySelectedId !== closestImageId && minImgDist < 200) {
                 setSelectedIds([closestImageId]);
             }
         });

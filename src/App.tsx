@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SettingsModal } from '@/components/modals/SettingsModal';
@@ -35,13 +34,11 @@ export function App() {
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
 
-
-
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
-    // Delete Confirmation State
-    const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean, ids: string[] }>({ isOpen: false, ids: [] });
+    // Stable Editor State Object to preserve ImageItem memoization during scroll
+    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize }), [sideSheetMode, brushSize]);
 
     // URL Routing Support
     useEffect(() => {
@@ -64,15 +61,13 @@ export function App() {
     // Manage Snap State (Restore on selection change)
     useEffect(() => {
         if (selectedIds.length === 1) {
-            // Single selection: Snap enabled (Focus mode)
             setEnableSnap(true);
             actions.setSnapEnabled(true);
         } else {
-            // Multi-selection OR No selection (Pan/Free mode): Snap disabled
             setEnableSnap(false);
             actions.setSnapEnabled(false);
         }
-    }, [selectedIds.length, state.primarySelectedId]); // Trigger on length OR item change
+    }, [selectedIds.length, state.primarySelectedId, actions]);
 
     const handleDragLeave = (e: React.DragEvent) => {
         if (!e.relatedTarget) {
@@ -89,9 +84,9 @@ export function App() {
         handleFileDrop(e);
     };
 
-    const handleAnnotationEditStart = (mode: 'brush' | 'objects') => {
+    const handleAnnotationEditStart = useCallback((mode: 'brush' | 'objects') => {
         setSideSheetMode(mode);
-    };
+    }, [setSideSheetMode]);
 
     const handleDockUpload = (files: FileList) => {
         Array.from(files).forEach((f) => processFile(f));
@@ -107,27 +102,11 @@ export function App() {
 
     const handleBackgroundMouseDown = (e: React.MouseEvent) => {
         if (contextMenu) setContextMenu(null);
-        if (e.button !== 0) return; // Only Left Click
-
-        // Block if clicking on interactive elements (buttons/inputs) within images
-        // We DO allow clicking on the image container itself to start panning
+        if (e.button !== 0) return;
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a') || target.closest('input')) return;
-
         e.preventDefault();
 
-        // Only Deselect immediately if we are strictly on background
-        // If we are on an image, we wait for mouse up to decide (Click vs Drag)
-        const isOverImage = !!target.closest('[data-image-id]');
-        if (!isOverImage) {
-            // Background Click -> Deselect immediately? 
-            // Actually, we can just treat background as a valid start for pan.
-            // But if we click background and don't move, we deselect on MouseUp?
-            // Existing behavior was: clicking background deselects.
-            // Let's keep logic in MouseUp for consistency.
-        }
-
-        // Start Panning
         if (refs.scrollContainerRef.current) {
             panState.current = {
                 isPanning: true,
@@ -138,8 +117,6 @@ export function App() {
                 hasMoved: false
             };
             document.body.style.cursor = 'grabbing';
-
-            // Temporary disable snap during interaction
             setEnableSnap(false);
             actions.setSnapEnabled(false);
         }
@@ -147,75 +124,50 @@ export function App() {
 
     const handleBackgroundMouseMove = (e: React.MouseEvent) => {
         if (!panState.current || !panState.current.isPanning || !refs.scrollContainerRef.current) return;
-
         e.preventDefault();
         const deltaX = e.clientX - panState.current.startX;
         const deltaY = e.clientY - panState.current.startY;
-
-        // Threshold for "Movement"
-        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-            panState.current.hasMoved = true;
-        }
-
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) panState.current.hasMoved = true;
         refs.scrollContainerRef.current.scrollLeft = panState.current.scrollLeft - deltaX;
         refs.scrollContainerRef.current.scrollTop = panState.current.scrollTop - deltaY;
     };
 
     const handleBackgroundMouseUp = (e: React.MouseEvent) => {
         if (panState.current) {
-
-            // If we haven't moved significantly, treat it as a CLICK
             if (!panState.current.hasMoved) {
                 const target = e.target as HTMLElement;
                 const imageWrapper = target.closest('[data-image-id]');
-
                 if (imageWrapper) {
-                    // Clicked on Image -> Select
                     const id = imageWrapper.getAttribute('data-image-id');
                     if (id) {
                         handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
-
-                        // Re-enable snap on single selection click
                         if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
                             setEnableSnap(true);
                             actions.setSnapEnabled(true);
                         }
                     }
                 } else {
-                    // Clicked on Background -> Deselect
                     selectMultiple([]);
                     setEnableSnap(false);
                     actions.setSnapEnabled(false);
                 }
-            } else {
-                // We dragged/panned. 
-                // Do not change selection. 
-                // Do not re-enable magnet (?) - User said "keep it disabled"
             }
-
             panState.current = null;
             document.body.style.cursor = '';
         }
     };
 
-    // --- Context Menu Handlers ---
-
-    // Background Handler (attached to container)
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY, type: 'background' });
     };
 
-    // Image Handler (attached to ImageItems)
-    const handleImageContextMenu = (e: React.MouseEvent, id: string) => {
+    const handleImageContextMenu = useCallback((e: React.MouseEvent, id: string) => {
         e.preventDefault();
-        e.stopPropagation(); // Prevent bubbling to background
-
-        if (!selectedIds.includes(id)) {
-            selectAndSnap(id);
-        }
+        e.stopPropagation();
+        if (!selectedIds.includes(id)) selectAndSnap(id);
         setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
-    };
+    }, [selectedIds, selectAndSnap]);
 
     const handleDownload = (id: string) => {
         const img = allImages.find(i => i.id === id);
@@ -227,38 +179,23 @@ export function App() {
         }
     };
 
-    const handleDownloadSelected = () => {
-        selectedImages.forEach(img => {
-            const link = document.createElement('a');
-            link.href = img.src;
-            link.download = `${img.title}.png`;
-            link.click();
-        });
-    };
-
-    // --- Delete Logic with Styled Modal ---
     const { confirm } = useItemDialog();
 
-    const requestDelete = async (ids: string | string[]) => {
+    const requestDelete = useCallback(async (ids: string | string[]) => {
         const idsArray = Array.isArray(ids) ? ids : [ids];
         if (idsArray.length === 0) return;
-
         const count = idsArray.length;
         const finalDesc = count > 1
             ? (currentLang === 'de' ? `Möchtest du wirklich ${count} Bilder löschen?` : `Do you really want to delete ${count} images?`)
             : t('delete_confirm_single');
-
         const confirmed = await confirm({
             title: t('delete'),
             description: finalDesc,
             confirmLabel: t('delete'),
             variant: 'danger'
         });
-
-        if (confirmed) {
-            handleDeleteImage(idsArray);
-        }
-    };
+        if (confirmed) handleDeleteImage(idsArray);
+    }, [currentLang, t, confirm, handleDeleteImage]);
 
     const handleDeselectAllButOne = () => {
         if (selectedIds.length > 0) {
@@ -268,62 +205,28 @@ export function App() {
     };
 
     const handleAddToSelection = (id: string) => {
-        if (!selectedIds.includes(id)) {
-            selectMultiple([...selectedIds, id]);
-        }
+        if (!selectedIds.includes(id)) selectMultiple([...selectedIds, id]);
     };
 
     const handleRemoveFromSelection = (id: string) => {
         selectMultiple(selectedIds.filter(i => i !== id));
     };
 
-    const handleGenerateVariations = () => {
-        selectedIds.forEach(id => handleGenerateMore(id));
-    };
-
-    // Override keyboard delete
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
-            // Don't duplicate navigation logic from hook, just override delete
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 e.stopPropagation();
-                if (selectedIds.length > 0) {
-                    requestDelete(selectedIds);
-                }
+                if (selectedIds.length > 0) requestDelete(selectedIds);
             }
-
-            // Canvas Navigation
-            if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                moveSelection(-1);
-            } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                moveSelection(1);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                moveRowSelection(-1);
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                moveRowSelection(1);
-            }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); moveSelection(-1); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); moveSelection(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); moveRowSelection(-1); }
+            else if (e.key === 'ArrowDown') { e.preventDefault(); moveRowSelection(1); }
         };
-        // Use capture to preempt the hook's listener if possible, or just rely on this one updating 
-        // Actually, hook listener is already attached. The hook's listener calls confirm(). 
-        // To cleanly override, we might need to modify the hook or accept that 'Delete' in hook uses confirm().
-        // Modification: We will ignore the hook's delete handler by not passing a delete handler to the hook or updating it.
-        // Ideally, we should update the hook to accept a custom confirm callback, but for now we'll just add this listener 
-        // and rely on the fact that we can't easily remove the hook's internal listener without refactoring.
-        // WAIT: The hook logic is inside `useNanoController`. I can just update the hook in the next file if needed.
-        // For now, let's just use the `requestDelete` wherever we can.
-
-        // Actually, I can't easily prevent the hook's listener from firing if it's already bound.
-        // However, I can update the hook code in `useNanoController` to NOT bind the delete key, or bind it to an external handler.
-        // See `useNanoController` update below (I won't update it in this file block, but I'll add the listener here).
-
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedIds]);
+    }, [selectedIds, moveSelection, moveRowSelection, requestDelete]);
 
     return (
         <div
@@ -333,11 +236,6 @@ export function App() {
             onMouseUp={handleBackgroundMouseUp}
             onContextMenu={handleContextMenu}
         >
-            {/* 
-                HARD GATE: Only render the application UI if a user session exists.
-                This prevents metadata/UI shell leakage and ensures data-fetching 
-                components (like AdminDashboard) don't mount prematurely.
-            */}
             {user ? (
                 <>
                     <div className="fixed top-6 left-6 z-50">
@@ -360,10 +258,10 @@ export function App() {
                                 onDragEnter={() => setIsCanvasZoneActive(true)}
                                 onDragLeave={() => setIsCanvasZoneActive(false)}
                                 className={`
-                            absolute inset-4 z-[100] ${Theme.Geometry.RadiusLg} flex items-center justify-center transition-all duration-200 pointer-events-auto
-                            ${isCanvasZoneActive ? 'bg-zinc-800/90 border-zinc-600 scale-[1.01]' : 'bg-white/80 dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800 scale-100'}
-                            border backdrop-blur-sm
-                        `}
+                                    absolute inset-4 z-[100] ${Theme.Geometry.RadiusLg} flex items-center justify-center transition-all duration-200 pointer-events-auto
+                                    ${isCanvasZoneActive ? 'bg-zinc-800/90 border-zinc-600 scale-[1.01]' : 'bg-white/80 dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800 scale-100'}
+                                    border backdrop-blur-sm
+                                `}
                             >
                                 <div className="flex flex-col items-center gap-3 pointer-events-none">
                                     <ImagePlus className={`w-8 h-8 ${isCanvasZoneActive ? 'text-white' : 'text-zinc-500'}`} strokeWidth={1.5} />
@@ -381,8 +279,6 @@ export function App() {
                             onMouseDown={handleBackgroundMouseDown}
                             onMouseMove={handleBackgroundMouseMove}
                         >
-
-
                             <div
                                 className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                                 style={{
@@ -390,37 +286,29 @@ export function App() {
                                     gap: `${6 * zoom}rem`,
                                 }}
                             >
-                                {rows.map((row, rowIndex) => (
+                                {rows.map((row) => (
                                     <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                         <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
-                                            {row.items.map((img, imgIndex) => {
-                                                // Hide nav arrows if multiple images are selected
-                                                const isMulti = selectedIds.length > 1;
-                                                const hasLeft = !isMulti && imgIndex > 0;
-                                                const hasRight = !isMulti && imgIndex < row.items.length - 1;
-
-                                                return (
-                                                    <ImageItem
-                                                        key={img.id}
-                                                        image={img}
-                                                        zoom={zoom}
-                                                        isSelected={selectedIds.includes(img.id)}
-                                                        hasAnySelection={selectedIds.length > 0}
-                                                        // onMouseDown is now handled by parent bubbling
-                                                        onRetry={handleGenerateMore}
-                                                        onChangePrompt={handleNavigateParent}
-                                                        editorState={{ mode: sideSheetMode, brushSize }}
-                                                        onUpdateAnnotations={handleUpdateAnnotations}
-                                                        onEditStart={handleAnnotationEditStart}
-                                                        onNavigate={(d, fromId) => moveSelection(d as -1 | 1, fromId)}
-                                                        hasLeft={hasLeft}
-                                                        hasRight={hasRight}
-                                                        onDelete={requestDelete}
-                                                        onContextMenu={handleImageContextMenu}
-                                                        t={t}
-                                                    />
-                                                );
-                                            })}
+                                            {row.items.map((img, imgIndex) => (
+                                                <ImageItem
+                                                    key={img.id}
+                                                    image={img}
+                                                    zoom={zoom}
+                                                    isSelected={selectedIds.includes(img.id)}
+                                                    hasAnySelection={selectedIds.length > 0}
+                                                    onRetry={handleGenerateMore}
+                                                    onChangePrompt={handleNavigateParent}
+                                                    editorState={editorState}
+                                                    onUpdateAnnotations={handleUpdateAnnotations}
+                                                    onEditStart={handleAnnotationEditStart}
+                                                    onNavigate={moveSelection}
+                                                    hasLeft={!selectedIds.length && imgIndex > 0}
+                                                    hasRight={!selectedIds.length && imgIndex < row.items.length - 1}
+                                                    onDelete={requestDelete}
+                                                    onContextMenu={handleImageContextMenu}
+                                                    t={t}
+                                                />
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
@@ -475,7 +363,6 @@ export function App() {
                         />
                     )}
 
-                    {/* Hidden Input for Context Menu Upload */}
                     <input
                         id="ctx-upload-input"
                         type="file"
@@ -498,61 +385,40 @@ export function App() {
                         onDeselectAll={() => selectMultiple([])}
                         onResetView={() => smoothZoomTo(1.0)}
                         selectedIds={selectedIds}
-                        onDownloadSelected={handleDownloadSelected}
-                        onDeleteSelected={() => requestDelete(selectedIds)}
-                        onGenerateVariations={handleGenerateVariations}
-                        onUpload={() => document.getElementById('ctx-upload-input')?.click()}
-                        t={t}
                     />
-
-                    <SettingsModal
-                        isOpen={isSettingsOpen}
-                        onClose={() => setIsSettingsOpen(false)}
-                        qualityMode={qualityMode}
-                        onQualityModeChange={setQualityMode}
-                        currentBalance={credits}
-                        onAddFunds={handleAddFunds}
-                        initialTab={settingsTab}
-                        themeMode={themeMode}
-                        onThemeChange={setThemeMode}
-                        lang={lang}
-                        onLangChange={setLang}
-                        onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
-                        onSignOut={handleSignOut}
-                        user={user}
-                        userProfile={userProfile}
-                        t={t}
-                    />
-
-                    {userProfile?.role === 'admin' && (
-                        <AdminDashboard
-                            isOpen={isAdminOpen}
-                            onClose={() => setIsAdminOpen(false)}
-                            t={t}
-                        />
-                    )}
                 </>
             ) : (
-                /* Unauthenticated view Placeholder / Logo / Background */
-                <div className="absolute inset-0 flex items-center justify-center bg-zinc-950">
-                    {/* Add a subtle logo or loading animation if needed */}
-                </div>
+                <AuthModal
+                    isOpen={isAuthModalOpen}
+                    onClose={() => setIsAuthModalOpen(false)}
+                    error={authError}
+                    onClearError={() => setAuthError(null)}
+                    email={authEmail}
+                    onEmailChange={setAuthEmail}
+                    mode={authModalMode}
+                    onModeChange={setAuthModalMode}
+                    t={t}
+                />
             )}
 
-            <AuthModal
-                isOpen={!user || isAuthModalOpen}
-                onClose={() => {
-                    setIsAuthModalOpen(false);
-                    setAuthError(null);
-                    setAuthEmail('');
-                }}
-                initialMode={authModalMode}
-                initialEmail={authEmail}
-                externalError={authError}
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                activeTab={settingsTab}
+                onTabChange={setSettingsTab}
+                quality={qualityMode}
+                onQualityChange={setQualityMode}
+                theme={themeMode}
+                onThemeChange={setThemeMode}
+                lang={lang}
+                onLangChange={setLang}
+                userProfile={userProfile}
+                onSignOut={handleSignOut}
+                onAddFunds={handleAddFunds}
                 t={t}
             />
 
-
+            {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
         </div>
     );
 }

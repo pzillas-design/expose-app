@@ -109,6 +109,57 @@ export const imageService = {
     },
 
     /**
+     * Handles the complex step of generating an image and returning the final CanvasImage object.
+     */
+    async processGeneration({
+        sourceImage,
+        prompt,
+        qualityMode,
+        maskDataUrl,
+        newId,
+        modelName
+    }: {
+        sourceImage: CanvasImage;
+        prompt: string;
+        qualityMode: any;
+        maskDataUrl?: string;
+        newId: string;
+        modelName: string;
+    }): Promise<CanvasImage> {
+        const { editImageWithGemini } = await import('./geminiService');
+        const { generateThumbnail } = await import('../utils/imageUtils');
+
+        const result = await editImageWithGemini(
+            sourceImage.src,
+            prompt,
+            maskDataUrl,
+            qualityMode,
+            sourceImage.annotations || []
+        );
+
+        const thumbSrc = await generateThumbnail(result.imageBase64);
+
+        return {
+            ...sourceImage,
+            id: newId,
+            src: result.imageBase64,
+            thumbSrc: thumbSrc,
+            originalSrc: sourceImage.src,
+            isGenerating: false,
+            generationStartTime: undefined,
+            generationPrompt: prompt,
+            userDraftPrompt: '',
+            version: (sourceImage.version || 1) + 1,
+            title: sourceImage.title.includes('_v')
+                ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
+                : `${sourceImage.title}_v2`,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            modelVersion: result.modelVersion
+        };
+    },
+
+    /**
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */

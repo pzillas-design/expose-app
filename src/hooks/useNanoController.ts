@@ -1,35 +1,19 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject } from '../types';
-import { generateMaskFromAnnotations } from '../utils/maskGenerator';
 import { generateId } from '../utils/ids';
 import { useCanvasNavigation } from './useCanvasNavigation';
 import { useToast } from '../components/ui/Toast';
 import { useItemDialog } from '../components/ui/Dialog';
-import { generateThumbnail } from '../utils/imageUtils';
 
 import { useAuth } from './useAuth';
 import { useLibrary } from './useLibrary';
 import { useConfig } from './useConfig';
 import { useSelection } from './useSelection';
-
-// Cost mapping
-const COSTS: Record<string, number> = {
-    'fast': 0.00,
-    'pro-1k': 0.50,
-    'pro-2k': 1.00,
-    'pro-4k': 2.00
-};
-
-// Base duration estimates (in ms)
-const ESTIMATED_DURATIONS: Record<string, number> = {
-    'fast': 12000,
-    'pro-1k': 23000,
-    'pro-2k': 36000,
-    'pro-4k': 60000
-};
+import { useUIState } from './useUIState';
+import { useFileHandler } from './useFileHandler';
+import { useGeneration } from './useGeneration';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -63,6 +47,14 @@ export const useNanoController = () => {
         addUserCategory, deleteUserCategory,
         addUserItem, deleteUserItem
     } = useLibrary({ lang, currentLang });
+
+    const {
+        sideSheetMode, setSideSheetMode,
+        brushSize, setBrushSize,
+        isDragOver, setIsDragOver,
+        isSettingsOpen, setIsSettingsOpen,
+        isAdminOpen, setIsAdminOpen
+    } = useUIState();
 
     // --- Navigation ---
     const canvasNav = useCanvasNavigation({
@@ -118,17 +110,46 @@ export const useNanoController = () => {
         selectAndSnap
     });
 
-    // --- UI State ---
-    const [sideSheetMode, setSideSheetMode] = useState<'prompt' | 'brush' | 'objects'>('prompt');
-    const [brushSize, setBrushSize] = useState(150);
-    const [isDragOver, setIsDragOver] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isAdminOpen, setIsAdminOpen] = useState(false);
+    // --- File & Generation Hooks ---
+    const { processFiles, processFile } = useFileHandler({
+        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast
+    });
 
-    // --- Helpers & Actions ---
+    const { performGeneration } = useGeneration({
+        rows, setRows, user, userProfile, credits, setCredits,
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast
+    });
 
-    // Helper for Files
-    const onAddReference = (file: File, annotationId?: string) => {
+    // --- Actions ---
+
+    const handleUpdateAnnotations = useCallback((id: string, newAnnotations: AnnotationObject[]) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, annotations: newAnnotations, updatedAt: Date.now() } : item)
+        })));
+
+        if (user && !isAuthDisabled) {
+            imageService.updateImage(id, { annotations: newAnnotations }, user.id)
+                .catch(err => console.error("Failed to save annotations", err));
+        }
+    }, [user, isAuthDisabled]);
+
+    const handleUpdatePrompt = useCallback((id: string, text: string) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, userDraftPrompt: text, updatedAt: Date.now() } : item)
+        })));
+
+        if (promptSaveTimeoutRef.current) clearTimeout(promptSaveTimeoutRef.current);
+        promptSaveTimeoutRef.current = setTimeout(() => {
+            if (user && !isAuthDisabled) {
+                imageService.updateImage(id, { userDraftPrompt: text }, user.id)
+                    .catch(err => console.error("Failed to save prompt", err));
+            }
+        }, 1000);
+    }, [user, isAuthDisabled]);
+
+    const onAddReference = useCallback((file: File, annotationId?: string) => {
         if (!selectedImage) return;
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -157,76 +178,15 @@ export const useNanoController = () => {
             }
         };
         reader.readAsDataURL(file);
-    };
+    }, [selectedImage, handleUpdateAnnotations, showToast, t]);
 
-    const processFiles = (files: File[]) => {
-        const newImageIds: string[] = [];
-        let processedCount = 0;
-
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                if (typeof event.target?.result === 'string') {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        let w = img.width, h = img.height;
-                        const maxDim = 500;
-                        if (w > maxDim || h > maxDim) { const ratio = w / h; if (w > h) { w = maxDim; h = maxDim / ratio; } else { h = maxDim; w = maxDim * ratio; } }
-                        const baseName = file.name.replace(/\.[^/.]+$/, "");
-                        const newId = generateId();
-
-                        // Generate thumbnail
-                        generateThumbnail(event.target!.result as string).then(thumbSrc => {
-                            const newImage: CanvasImage = {
-                                id: newId,
-                                src: event.target!.result as string,
-                                thumbSrc: thumbSrc,
-                                width: w, height: h,
-                                realWidth: img.width, realHeight: img.height,
-                                title: baseName, baseName: baseName,
-                                version: 1, isGenerating: false, originalSrc: event.target!.result as string,
-                                userDraftPrompt: '',
-                                createdAt: Date.now(),
-                                updatedAt: Date.now()
-                            };
-
-                            setRows(prev => [...prev, {
-                                id: generateId(),
-                                title: baseName,
-                                items: [newImage],
-                                createdAt: Date.now()
-                            }]);
-
-                            newImageIds.push(newId);
-                            processedCount++;
-
-                            if (processedCount === files.length) {
-                                selectMultiple(newImageIds);
-                                snapToItem(newId);
-                            }
-
-                            if (user && !isAuthDisabled) {
-                                imageService.persistImage(newImage, user.id).then(result => {
-                                    if (!result.success) showToast(`Save Failed: ${result.error}`, "error");
-                                });
-                            }
-                        });
-                    };
-                }
-            };
-            reader.readAsDataURL(file);
-        });
-    };
-
-    const processFile = (file: File) => processFiles([file]);
-
-    const handleFileDrop = async (e: React.DragEvent) => {
-        e.preventDefault(); setIsDragOver(false);
+    const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
         const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
         if (files.length === 0) return;
         processFiles(files);
-    };
+    }, [processFiles, setIsDragOver]);
 
     const handleDeleteImage = useCallback((idOrIds: string | string[]) => {
         const idsToDelete = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
@@ -245,47 +205,14 @@ export const useNanoController = () => {
                 showToast(`Delete failed: ${err.message}`, "error");
             });
         }
-    }, [user, isAuthDisabled, t]);
+    }, [user, isAuthDisabled, showToast]);
 
-    const handleUpdateAnnotations = (id: string, newAnnotations: AnnotationObject[]) => {
-        setRows(prev => prev.map(row => ({
-            ...row,
-            items: row.items.map(item => item.id === id ? { ...item, annotations: newAnnotations, updatedAt: Date.now() } : item)
-        })));
-
-        if (user && !isAuthDisabled) {
-            imageService.updateImage(id, { annotations: newAnnotations }, user.id)
-                .catch(err => console.error("Failed to save annotations", err));
-        }
-    };
-
-    const handleUpdatePrompt = (id: string, text: string) => {
-        setRows(prev => prev.map(row => ({
-            ...row,
-            items: row.items.map(item => item.id === id ? { ...item, userDraftPrompt: text, updatedAt: Date.now() } : item)
-        })));
-
-        if (promptSaveTimeoutRef.current) clearTimeout(promptSaveTimeoutRef.current);
-        promptSaveTimeoutRef.current = setTimeout(() => {
-            if (user && !isAuthDisabled) {
-                imageService.updateImage(id, { userDraftPrompt: text }, user.id)
-                    .catch(err => console.error("Failed to save prompt", err));
-            }
-        }, 1000);
-    };
-
-    // --- Mode Change ---
-    const handleModeChange = (newMode: 'prompt' | 'brush' | 'objects') => {
+    const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {
         setSideSheetMode(newMode);
-
         if (newMode === 'brush' || newMode === 'objects') {
             if (selectedImage) {
                 const sidebarWidth = 360;
-                const availableWidth = Math.max(window.innerWidth - sidebarWidth, 100);
-                const availableHeight = Math.max(window.innerHeight, 100);
-                const scaleX = availableWidth / selectedImage.width;
-                const scaleY = availableHeight / selectedImage.height;
-                const fitZoom = Math.min(scaleX, scaleY) * 0.9;
+                const fitZoom = Math.min((window.innerWidth - sidebarWidth) / selectedImage.width, window.innerHeight / selectedImage.height) * 0.9;
                 smoothZoomTo(fitZoom);
             } else {
                 smoothZoomTo(1.0);
@@ -293,156 +220,20 @@ export const useNanoController = () => {
         } else if (newMode === 'prompt') {
             smoothZoomTo(1.0);
         }
-    };
+    }, [selectedImage, smoothZoomTo, setSideSheetMode]);
 
-    // --- Generation ---
-    const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
-        const cost = COSTS[qualityMode];
-        const isPro = userProfile?.role === 'pro';
-
-        if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
-
-        const rowIndex = rows.findIndex(row => row.items.some(item => item.id === sourceImage.id));
-        if (rowIndex === -1) return;
-        const row = rows[rowIndex];
-
-        // Debit Credits
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && !isPro) {
-            await supabase.from('profiles').update({ credits: credits - cost }).eq('id', currentUser.id);
-        }
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
-
-        const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
-        const baseName = sourceImage.baseName || sourceImage.title;
-
-        const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
-        const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
-        const newVersion = maxVersion + 1;
-        const newId = generateId();
-
-        const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
-        const currentConcurrency = activeCount + batchSize;
-        const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
-        const estimatedDuration = Math.round(baseDuration * (1 + (currentConcurrency - 1) * 0.3));
-
-        const placeholder: CanvasImage = {
-            ...sourceImage,
-            id: newId,
-            title: `${baseName}_v${newVersion}`,
-            version: newVersion,
-            isGenerating: true,
-            generationStartTime: Date.now(),
-            maskSrc: undefined,
-            annotations: [],
-            parentId: sourceImage.id,
-            generationPrompt: prompt,
-            userDraftPrompt: '',
-            quality: qualityMode,
-            estimatedDuration,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        };
-
-        if (currentUser && !isAuthDisabled) {
-            try {
-                await supabase.from('generation_jobs').insert({
-                    id: newId,
-                    user_id: currentUser.id,
-                    user_name: currentUser.email,
-                    type: maskDataUrl ? 'Inpaint' : 'Style',
-                    model: qualityMode,
-                    status: 'processing',
-                    cost: cost,
-                    prompt: prompt,
-                    concurrent_jobs: currentConcurrency
-                }).select().single();
-            } catch (dbErr) {
-                console.warn("Failed to log generation job:", dbErr);
-            }
-        }
-
-        setRows(prev => {
-            const newRows = [...prev];
-            const correctRowIndex = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
-            if (correctRowIndex === -1) return prev;
-            const currentRow = newRows[correctRowIndex];
-            const newItems = [...currentRow.items, placeholder];
-            newRows[correctRowIndex] = { ...currentRow, items: newItems };
-            return newRows;
-        });
-
-        // Snap to new placeholder immediately
-        setTimeout(() => selectAndSnap(newId), 50);
-
-        try {
-            const finalImage = await imageService.processGeneration({
-                sourceImage,
-                prompt,
-                qualityMode,
-                maskDataUrl: maskDataUrl || undefined,
-                newId,
-                modelName: qualityMode
-            });
-
-            if (finalImage) {
-                setRows(prev => {
-                    const newRows = [...prev];
-                    const rIdx = newRows.findIndex(r => r.items.some(i => i.id === newId));
-                    if (rIdx !== -1) {
-                        const r = newRows[rIdx];
-                        const updatedItems = r.items.map(i => i.id === newId ? finalImage : i);
-                        newRows[rIdx] = { ...r, items: updatedItems };
-                    }
-                    return newRows;
-                });
-
-                if (currentUser && !isAuthDisabled) {
-                    await imageService.persistImage(finalImage, currentUser.id);
-                }
-            } else {
-                throw new Error("Generation returned no image");
-            }
-        } catch (error: any) {
-            console.error("Generation failed:", error);
-            showToast(`Generation failed: ${error.message}`, "error");
-
-            // Remove placeholder
-            setRows(prev => {
-                const newRows = prev.map(r => ({
-                    ...r,
-                    items: r.items.filter(i => i.id !== newId)
-                })).filter(r => r.items.length > 0);
-                return newRows;
-            });
-
-            // Refund
-            if (!isPro) {
-                setCredits(prev => prev + cost);
-                try {
-                    const { data: { user: refundUser } } = await supabase.auth.getUser();
-                    if (refundUser) {
-                        await supabase.from('profiles').update({ credits: credits }).eq('id', refundUser.id);
-                    }
-                } catch (e) { console.error("Refund failed", e); }
-            }
-        }
-    };
-
-    const handleGenerate = () => {
+    const handleGenerate = useCallback(() => {
         if (selectedImage) performGeneration(selectedImage, selectedImage.userDraftPrompt || '');
-    };
+    }, [selectedImage, performGeneration]);
 
-    const handleGenerateMore = (img: CanvasImage) => {
+    const handleGenerateMore = useCallback((img: CanvasImage) => {
         performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
-    };
+    }, [performGeneration]);
 
-    const handleNavigateParent = (parentId: string) => {
+    const handleNavigateParent = useCallback((parentId: string) => {
         const parent = allImages.find(i => i.id === parentId);
         if (parent) selectAndSnap(parentId);
-    };
+    }, [allImages, selectAndSnap]);
 
     return {
         state: {
