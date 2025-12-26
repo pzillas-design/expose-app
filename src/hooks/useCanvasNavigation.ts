@@ -234,11 +234,17 @@ export const useCanvasNavigation = ({
                     setIsZooming(true);
                 }
 
+                // Force disable snap on DOM to avoid browser interference during fast wheeling
+                container.style.scrollSnapType = 'none';
+
                 if (zoomTimeoutRef.current) window.clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
                     setIsZooming(false);
-                }, 500); // Increased from 400ms to allow settling
+                    // Re-enable snap after things settle - Note: the state-driven class will also handle this, 
+                    // but this direct style reset is an extra safety layer against some browsers.
+                    container.style.scrollSnapType = '';
+                }, 600); // Increased to 600ms for safety
 
                 if (zoomAnimFrameRef.current) {
                     cancelAnimationFrame(zoomAnimFrameRef.current);

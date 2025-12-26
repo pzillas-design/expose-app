@@ -200,6 +200,14 @@ export function App() {
         if (confirmed) handleDeleteImage(idsArray);
     }, [currentLang, t, confirm, handleDeleteImage]);
 
+    const handleDownloadSelected = useCallback(() => {
+        selectedIds.forEach(id => handleDownload(id));
+    }, [selectedIds, allImages]);
+
+    const handleGenerateVariations = useCallback(() => {
+        selectedImages.forEach(img => handleGenerateMore(img));
+    }, [selectedImages, handleGenerateMore]);
+
     const handleDeselectAllButOne = () => {
         if (selectedIds.length > 0) {
             const targetId = selectedIds[selectedIds.length - 1];
@@ -276,6 +284,7 @@ export function App() {
                         <div
                             ref={refs.scrollContainerRef}
                             className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isAutoScrolling && !isZooming ? 'snap-both snap-mandatory' : ''}`}
+                            style={{ overflowAnchor: 'none' }}
                             onScroll={handleScroll}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={handleCanvasDrop}
@@ -387,7 +396,12 @@ export function App() {
                         onSelectAll={() => selectMultiple(allImages.map(i => i.id))}
                         onDeselectAll={() => selectMultiple([])}
                         onResetView={() => smoothZoomTo(1.0)}
+                        onUpload={() => document.getElementById('ctx-upload-input')?.click()}
                         selectedIds={selectedIds}
+                        onDownloadSelected={handleDownloadSelected}
+                        onDeleteSelected={() => requestDelete(selectedIds)}
+                        onGenerateVariations={handleGenerateVariations}
+                        t={t}
                     />
                 </>
             ) : (
