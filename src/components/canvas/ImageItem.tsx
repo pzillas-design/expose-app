@@ -183,12 +183,13 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
 
                 <img
-                    src={image.maskSrc || (zoom < 0.45 && image.thumbSrc ? image.thumbSrc : image.src)}
+                    src={image.maskSrc || (zoom < 0.3 && image.thumbSrc ? image.thumbSrc : image.src)}
                     alt={image.title}
                     onLoad={() => setIsLoaded(true)}
                     loading="lazy"
                     decoding="async"
                     className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    style={{ imageRendering: 'auto' }}
                 />
 
                 {/* Editor Overlay - Only render if selected OR has existing annotations to show */}

@@ -169,9 +169,10 @@ export const imageService = {
             modelVersion: result.modelVersion,
             annotations: [],
             maskSrc: undefined,
-            // Update dimensions to actual result dimensions
-            width: genWidth, // Canvas width (usually matches real for full res)
-            height: genHeight,
+            // Keep canvas dimensions consistent with the row height to prevent "huge" images
+            // while storing the actual high-res pixels in realWidth/Height
+            width: (genWidth / genHeight) * sourceImage.height,
+            height: sourceImage.height,
             realWidth: genWidth,
             realHeight: genHeight
         };
