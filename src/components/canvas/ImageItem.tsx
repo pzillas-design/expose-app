@@ -106,14 +106,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
                 setIsVisible(true);
-                // Once visible, we can stop observing if we want to keep it in memory,
-                // or keep observing to unload it (more aggressive memory saving)
-                // Let's keep observing for maximum performance with many images.
-            } else {
-                setIsVisible(false);
+                // Once visible, keep it in DOM to avoid flickering on scroll-back
+                observer.unobserve(entries[0].target);
             }
         }, {
-            rootMargin: '100% 100%', // Load images when they are within 1 viewport distance
+            rootMargin: '200% 200%', // More generous margin
             threshold: 0.01
         });
 
@@ -207,17 +204,29 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
 
                 {(isVisible || image.isGenerating) ? (
-                    <img
-                        src={currentSrc}
-                        alt={image.title}
-                        onLoad={() => setIsLoaded(true)}
-                        loading="lazy"
-                        decoding="async"
-                        // @ts-ignore - fetchpriority is a newer attribute
-                        fetchpriority={showHighRes ? "high" : "low"}
-                        className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
-                    />
+                    <>
+                        {/* 1. Base Layer: Thumb (Immediate) */}
+                        {image.thumbSrc && !isLoaded && (
+                            <img
+                                src={image.thumbSrc}
+                                className="absolute inset-0 w-full h-full object-cover blur-sm opacity-50 transition-opacity duration-300"
+                                alt=""
+                            />
+                        )}
+
+                        {/* 2. Content Layer: High-Res or Current */}
+                        <img
+                            src={currentSrc}
+                            alt={image.title}
+                            onLoad={() => setIsLoaded(true)}
+                            loading="lazy"
+                            decoding="async"
+                            // @ts-ignore
+                            fetchpriority={showHighRes ? "high" : "low"}
+                            className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                            style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
+                        />
+                    </>
                 ) : (
                     <div className="w-full h-full bg-zinc-100 dark:bg-zinc-900/50" />
                 )}

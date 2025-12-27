@@ -57,13 +57,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
                     // Load User Images
                     imageService.loadUserImages(sessionUser.id).then(loadedRows => {
                         setRows(loadedRows);
-                        if (loadedRows.length > 0 && loadedRows[0].items.length > 0) {
-                            const newestRow = loadedRows[0];
-                            const newestItem = newestRow.items[newestRow.items.length - 1];
-                            setTimeout(() => {
-                                selectAndSnap(newestItem.id);
-                            }, 100);
-                        }
+                        // Removed automatic selectAndSnap to prevent jumping on tab focus
                     });
                 }
             } catch (err) {
