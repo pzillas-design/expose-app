@@ -179,15 +179,43 @@ export const useCanvasNavigation = ({
         }, 50);
     }, []);
 
-    // Wheel Zoom Listener
+    // Wheel Zoom & Gesture Listener
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
 
+        // --- Gesture Handling (Safari Trackpad) ---
+        // Helps prevent native browser zoom and handle smooth pinch
+        const onGestureStart = (e: any) => {
+            e.preventDefault();
+            isZoomingRef.current = true;
+        };
+
+        const onGestureChange = (e: any) => {
+            e.preventDefault();
+            // Safari provides e.scale (1 = neutral). >1 = zoom in, <1 = zoom out.
+            // This is a "step" scale for the event, but often cumulative for the gesture.
+            // However, a simple relative adjustment works well for smooth feel:
+            const scaleChange = e.scale;
+            // We dampen it slightly or use it directly depending on feel. 
+            // e.scale is cumulative in 'gesturechange' from the start? 
+            // Actually, in many implementations, simple fractional application works best:
+            // But to be safe and stateless:
+            const delta = scaleChange - 1;
+            setZoom(z => Math.min(Math.max(z * (1 + delta * 0.5), MIN_ZOOM), MAX_ZOOM));
+        };
+
+        const onGestureEnd = (e: any) => {
+            e.preventDefault();
+            isZoomingRef.current = false;
+        };
+
+        // --- Wheel Handling (Chrome/Edge/Firefox) ---
         const onWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
                 e.stopPropagation();
+
                 isZoomingRef.current = true;
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
@@ -195,13 +223,69 @@ export const useCanvasNavigation = ({
                 }, 400);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
+
+                // Calculate new zoom
+                // Trackpads often send very small deltas (e.g. -1, -5). Mice send -100.
+                // We clamp the delta impact for smoother trackpad feel.
                 const delta = -e.deltaY;
-                setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
+
+                // Adaptive factor: smaller for trackpads (small delta), larger for ratchet wheels
+                // Small delta (< 50) -> Trackpad likely.
+                const isTrackpad = Math.abs(delta) < 50;
+                const factor = isTrackpad
+                    ? Math.exp(delta * 0.01)  // More sensitive for trackpad small movements
+                    : Math.exp(delta * 0.002); // Less sensitive for mouse wheel big jumps
+
+                const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
+
+                // For trackpad pinch, we usually want simpler center-zoom or cursor-zoom.
+                // The current logic forces cursor-zoom if nothing selected, which is good.
+
+                if (selectedIds.length > 0) {
+                    setZoom(targetZoom);
+                } else {
+                    // Zoom-to-Cursor Logic
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const currentScrollLeft = container.scrollLeft;
+                    const currentScrollTop = container.scrollTop;
+
+                    // Calculate content coordinates under the mouse before zoom
+                    const contentMouseX = (currentScrollLeft + mouseX) / zoom;
+                    const contentMouseY = (currentScrollTop + mouseY) / zoom;
+
+                    try {
+                        flushSync(() => setZoom(targetZoom));
+                    } catch (err) {
+                        setZoom(targetZoom);
+                    }
+
+                    // Calculate new scroll position to keep content under mouse
+                    container.scrollLeft = (contentMouseX * targetZoom) - mouseX;
+                    container.scrollTop = (contentMouseY * targetZoom) - mouseY;
+                }
             }
         };
+
         container.addEventListener('wheel', onWheel, { passive: false });
-        return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef]);
+        // @ts-ignore
+        container.addEventListener('gesturestart', onGestureStart, { passive: false });
+        // @ts-ignore
+        container.addEventListener('gesturechange', onGestureChange, { passive: false });
+        // @ts-ignore
+        container.addEventListener('gestureend', onGestureEnd, { passive: false });
+
+        return () => {
+            container.removeEventListener('wheel', onWheel);
+            // @ts-ignore
+            container.removeEventListener('gesturestart', onGestureStart);
+            // @ts-ignore
+            container.removeEventListener('gesturechange', onGestureChange);
+            // @ts-ignore
+            container.removeEventListener('gestureend', onGestureEnd);
+        };
+    }, [scrollContainerRef, zoom, selectedIds]);
 
     // Logic to find the most centered item in the viewport (Added for Staging Compatibility)
     const getMostVisibleItem = useCallback(() => {
