@@ -230,8 +230,8 @@ export const imageService = {
         });
 
         groups.forEach((items, key) => {
-            // Sort by version
-            items.sort((a, b) => (a.version || 0) - (b.version || 0));
+            // Sort by createdAt to ensure new images are always on the right
+            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
             rows.push({
                 id: items[0].id + '_row', // reliable row id
