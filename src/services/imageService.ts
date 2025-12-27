@@ -125,7 +125,7 @@ export const imageService = {
         qualityMode: any;
         maskDataUrl?: string;
         newId: string;
-        modelName: string;
+        modelName?: string;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 

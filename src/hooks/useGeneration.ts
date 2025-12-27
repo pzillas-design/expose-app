@@ -123,7 +123,7 @@ export const useGeneration = ({
                 qualityMode,
                 maskDataUrl: maskDataUrl || undefined,
                 newId,
-                modelName: qualityMode
+                // modelName removed as server handles mapping
             });
 
             if (finalImage) {

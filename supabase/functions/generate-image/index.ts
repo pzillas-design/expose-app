@@ -74,8 +74,22 @@ Deno.serve(async (req) => {
             finalSourceBase64 = sourceImage.src.split(',')[1] || sourceImage.src;
         }
 
+        // --- MODEL MAPPING ---
+        let finalModelName = 'gemini-3-pro-image-preview';
+        switch (qualityMode) {
+            case 'fast':
+                finalModelName = 'gemini-2.5-flash-image';
+                break;
+            case 'pro-1k':
+            case 'pro-2k':
+            case 'pro-4k':
+            default:
+                finalModelName = 'gemini-3-pro-image-preview';
+                break;
+        }
+
         const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName || 'gemini-1.5-pro'}:generateContent?key=${GEMINI_API_KEY}`
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${GEMINI_API_KEY}`
 
         const parts: any[] = []
 
