@@ -523,13 +523,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {selectedImage.parentId && (
                                     <Button
                                         variant="secondary"
-                                        onClick={() => onNavigateParent(selectedImage.parentId!)}
+                                        onClick={() => selectedImage.parentId && onNavigateParent(selectedImage.parentId)}
                                         disabled={selectedImage.isGenerating}
                                         className="justify-start px-4 h-11 gap-2"
                                     >
                                         <ArrowLeft className="w-4 h-4 text-zinc-400" />
                                         <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                            {currentLang === 'de' ? 'Zum Original' : 'To original'}
+                                            {currentLang === 'de' ? 'Zum Original' : 'Top Parent'}
                                         </span>
                                     </Button>
                                 )}
