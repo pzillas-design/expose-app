@@ -421,17 +421,19 @@ export function App() {
             <SettingsModal
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                activeTab={settingsTab}
-                onTabChange={setSettingsTab}
-                quality={qualityMode}
-                onQualityChange={setQualityMode}
-                theme={themeMode}
+                initialTab={settingsTab}
+                qualityMode={qualityMode}
+                onQualityModeChange={setQualityMode}
+                themeMode={themeMode}
                 onThemeChange={setThemeMode}
+                currentBalance={credits}
                 lang={lang}
                 onLangChange={setLang}
+                user={user}
                 userProfile={userProfile}
                 onSignOut={handleSignOut}
                 onAddFunds={handleAddFunds}
+                onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
                 t={t}
             />
 
