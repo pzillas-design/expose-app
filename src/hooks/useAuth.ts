@@ -29,6 +29,12 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
     const [authError, setAuthError] = useState<string | null>(null);
 
     const fetchProfile = useCallback(async (sessionUser: any) => {
+        // Prevent redundant loads if the user is already the same
+        if (sessionUser?.id === userRef.current?.id && userProfile) {
+            console.log("Auth: Session validated, skipping redundant profile/image reload.");
+            return;
+        }
+
         if (sessionUser) {
             setUser(sessionUser);
             try {
@@ -67,7 +73,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
             setUser(null);
             setUserProfile(null);
         }
-    }, [setRows, selectAndSnap]);
+    }, [setRows, selectAndSnap, userProfile]);
 
     // Initial session and auth changes
     useEffect(() => {
@@ -86,6 +92,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
             }
         }
 
+        // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 fetchProfile(session.user);
@@ -97,10 +104,11 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
             const newUserId = session?.user?.id;
 
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                fetchProfile(session?.user ?? null);
+                if (newUserId !== currentUserId) {
+                    fetchProfile(session?.user ?? null);
+                }
             } else if (event === 'TOKEN_REFRESHED') {
-                // Only re-fetch if the user actually changed (rare) 
-                // or if we somehow lost the user state.
+                // Only re-fetch if the user actually changed 
                 if (newUserId && newUserId !== currentUserId) {
                     fetchProfile(session?.user);
                 }

@@ -19,7 +19,7 @@ export const storageService = {
 
             // 3. Upload
             const { data, error } = await supabase.storage
-                .from('user-content')
+                .from('images')
                 .upload(filePath, blob, {
                     cacheControl: '3600',
                     upsert: true // Allow overwriting if filename is provided
@@ -33,13 +33,47 @@ export const storageService = {
         }
     },
 
-    // In-memory cache to prevent flickering during re-renders
+    // In-memory cache + Session Persistence to prevent flickering
     _urlCache: new Map<string, { url: string, expires: number }>(),
+
+    _getPersistentCache() {
+        try {
+            const stored = sessionStorage.getItem('nano_url_cache');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // Convert object back to Map
+                Object.keys(parsed).forEach(key => {
+                    if (parsed[key].expires > Date.now()) {
+                        this._urlCache.set(key, parsed[key]);
+                    }
+                });
+            }
+        } catch (e) {
+            console.warn('Storage: Failed to load persistent cache', e);
+        }
+    },
+
+    _savePersistentCache() {
+        try {
+            const obj: any = {};
+            this._urlCache.forEach((val, key) => {
+                obj[key] = val;
+            });
+            sessionStorage.setItem('nano_url_cache', JSON.stringify(obj));
+        } catch (e) {
+            // Might fail if too large, ignore
+        }
+    },
 
     /**
      * Get a temporary public URL for a private image
      */
     async getSignedUrl(path: string): Promise<string | null> {
+        // Init cache if empty
+        if (this._urlCache.size === 0) {
+            this._getPersistentCache();
+        }
+
         // Check cache (valid for 1 hour locally, even though signed for 7 days)
         const cached = this._urlCache.get(path);
         if (cached && cached.expires > Date.now()) {
@@ -48,7 +82,7 @@ export const storageService = {
 
         try {
             const { data, error } = await supabase.storage
-                .from('user-content')
+                .from('images') // The bucket is actually 'images' based on previous context/code
                 .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
 
             if (error) throw error;
@@ -58,6 +92,7 @@ export const storageService = {
                     url: data.signedUrl,
                     expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
                 });
+                this._savePersistentCache();
             }
 
             return data.signedUrl;
@@ -69,7 +104,7 @@ export const storageService = {
 
     async deleteImage(path: string) {
         const { error } = await supabase.storage
-            .from('user-content')
+            .from('images')
             .remove([path]);
         if (error) console.error('Delete Storage Image Failed:', error);
     }
