@@ -139,6 +139,17 @@ export const imageService = {
 
         const thumbSrc = await generateThumbnail(result.imageBase64);
 
+        // Determine actual dimensions of the generated result
+        const getImageDims = (src: string): Promise<{ w: number, h: number }> => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                img.src = src;
+            });
+        };
+
+        const { w: genWidth, h: genHeight } = await getImageDims(result.imageBase64);
+
         return {
             ...sourceImage,
             id: newId,
@@ -157,7 +168,12 @@ export const imageService = {
             updatedAt: Date.now(),
             modelVersion: result.modelVersion,
             annotations: [],
-            maskSrc: undefined
+            maskSrc: undefined,
+            // Update dimensions to actual result dimensions
+            width: genWidth, // Canvas width (usually matches real for full res)
+            height: genHeight,
+            realWidth: genWidth,
+            realHeight: genHeight
         };
     },
 
