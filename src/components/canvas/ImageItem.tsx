@@ -4,6 +4,7 @@ import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality }
 import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
+import { downloadImage } from '@/utils/imageUtils';
 
 interface ImageItemProps {
     image: CanvasImage;
@@ -99,10 +100,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
-        const link = document.createElement('a');
-        link.href = image.src;
-        link.download = `${image.title}.png`;
-        link.click();
+        downloadImage(image.src, image.title);
     };
 
     // Unified Base styles for consistency
