@@ -224,7 +224,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <>
                         {/* Edge Navigation Icons - Hide when zoomed out (more than ~2-3 images visible) */}
                         <div className="absolute inset-0 pointer-events-none">
-                            {hasLeft && zoom > 1.2 && (
+                            {hasLeft && zoom > 0.4 && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }}
                                     className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
@@ -232,7 +232,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
                             )}
-                            {hasRight && zoom > 1.2 && (
+                            {hasRight && zoom > 0.4 && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }}
                                     className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
