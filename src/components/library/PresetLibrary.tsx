@@ -119,9 +119,9 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
             </div>
 
             {/* Content Area */}
-            <div className="px-2 pb-4 flex flex-col">
+            <div className="px-3 pb-4 flex flex-col">
 
-                <div className="px-4 py-1 space-y-2">
+                <div className="px-0 py-1 space-y-2">
 
                     {/* SEARCH: Tag Filter Bar & New Button */}
                     {isSearchActive && (
