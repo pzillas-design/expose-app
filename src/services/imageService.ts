@@ -214,12 +214,16 @@ export const imageService = {
                 record.thumb_storage_path ? storageService.getSignedUrl(record.thumb_storage_path) : Promise.resolve(null)
             ]);
 
+            const targetHeight = 512;
+            const aspectRatio = record.width / record.height;
+            const normalizedWidth = aspectRatio * targetHeight;
+
             return {
                 id: record.id,
                 src: signedUrl || '', // Fallback?
                 thumbSrc: thumbSignedUrl || undefined,
-                width: record.width,
-                height: record.height,
+                width: normalizedWidth,
+                height: targetHeight,
                 realWidth: record.real_width,
                 realHeight: record.real_height,
                 modelVersion: record.model_version,
