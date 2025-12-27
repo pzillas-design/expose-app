@@ -29,7 +29,7 @@ interface ContextMenuProps {
     selectedIds: string[];
     onDownloadSelected: () => void;
     onDeleteSelected: () => void;
-    onGenerateVariations: () => void;
+    onGenerateVariations: (id?: string) => void;
 
     t: TranslationFunction;
 }
@@ -137,15 +137,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 ) : (
                                     // Single Selected Image
                                     <>
-                                        {isGenerated(menu.targetId) && (
-                                            <>
-                                                <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
-                                                    <RotateCcw className={iconClass} />
-                                                    <span className={textClass}>{t('ctx_create_variations')}</span>
-                                                </button>
-                                                <Separator />
-                                            </>
-                                        )}
+                                        <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
+                                            <RotateCcw className={iconClass} />
+                                            <span className={textClass}>{t('ctx_create_variations')}</span>
+                                        </button>
+                                        <Separator />
 
                                         <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                             <Download className={iconClass} />
@@ -167,6 +163,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
                                     <Plus className={iconClass} />
                                     <span className={textClass}>{t('ctx_add_to_selection')}</span>
+                                </button>
+
+                                <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
+                                    <RotateCcw className={iconClass} />
+                                    <span className={textClass}>{t('ctx_create_variations')}</span>
                                 </button>
 
                                 <Separator />

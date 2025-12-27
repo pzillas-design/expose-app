@@ -221,8 +221,12 @@ export function App() {
         selectedIds.forEach(id => handleDownload(id));
     }, [selectedIds, allImages]);
 
-    const handleGenerateVariations = useCallback(() => {
-        selectedImages.forEach(img => handleGenerateMore(img));
+    const handleGenerateVariations = useCallback((id?: string) => {
+        if (id) {
+            handleGenerateMore(id);
+        } else {
+            selectedImages.forEach(img => handleGenerateMore(img));
+        }
     }, [selectedImages, handleGenerateMore]);
 
     const handleDeselectAllButOne = () => {

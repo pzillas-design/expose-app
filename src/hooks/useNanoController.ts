@@ -226,9 +226,18 @@ export const useNanoController = () => {
         if (selectedImage) performGeneration(selectedImage, selectedImage.userDraftPrompt || '');
     }, [selectedImage, performGeneration]);
 
-    const handleGenerateMore = useCallback((img: CanvasImage) => {
-        performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
-    }, [performGeneration]);
+    const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
+        let img: CanvasImage | undefined;
+        if (typeof idOrImg === 'string') {
+            img = allImages.find(i => i.id === idOrImg);
+        } else {
+            img = idOrImg;
+        }
+
+        if (img) {
+            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
+        }
+    }, [allImages, performGeneration]);
 
     const handleNavigateParent = useCallback((parentId: string) => {
         const parent = allImages.find(i => i.id === parentId);
