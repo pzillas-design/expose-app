@@ -1,5 +1,5 @@
 
-import React, { memo, useEffect, useState } from 'react';
+import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
 import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
@@ -83,7 +83,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     isSelected,
     hasAnySelection,
     zoom,
-    onMouseDown,
     onRetry,
     editorState,
     onUpdateAnnotations,
@@ -97,6 +96,33 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     t
 }) => {
     const [isLoaded, setIsLoaded] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Intersection Observer to only load when nearing viewport
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                setIsVisible(true);
+                // Once visible, we can stop observing if we want to keep it in memory,
+                // or keep observing to unload it (more aggressive memory saving)
+                // Let's keep observing for maximum performance with many images.
+            } else {
+                setIsVisible(false);
+            }
+        }, {
+            rootMargin: '100% 100%', // Load images when they are within 1 viewport distance
+            threshold: 0.01
+        });
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    const showHighRes = isSelected || zoom > 0.35;
+    const currentSrc = (image.maskSrc || (!showHighRes && image.thumbSrc ? image.thumbSrc : image.src));
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -115,6 +141,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
     return (
         <div
+            ref={containerRef}
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
             className={`relative shrink-0 select-none group transition-opacity duration-500 ease-out snap-center will-change-transform ${!hasAnySelection || isSelected
@@ -125,7 +152,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 width: image.width * zoom,
                 scrollSnapStop: 'always',
             }}
-        // onMouseDown removed to allow bubbling
         >
             {/* Top Toolbar: Filename + Actions */}
             <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
@@ -180,15 +206,19 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                <img
-                    src={image.maskSrc || (zoom < 0.3 && image.thumbSrc ? image.thumbSrc : image.src)}
-                    alt={image.title}
-                    onLoad={() => setIsLoaded(true)}
-                    loading="lazy"
-                    decoding="async"
-                    className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    style={{ imageRendering: 'auto' }}
-                />
+                {(isVisible || image.isGenerating) ? (
+                    <img
+                        src={currentSrc}
+                        alt={image.title}
+                        onLoad={() => setIsLoaded(true)}
+                        loading="lazy"
+                        decoding="async"
+                        className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
+                    />
+                ) : (
+                    <div className="w-full h-full bg-zinc-100 dark:bg-zinc-900/50" />
+                )}
 
                 {/* Editor Overlay - Only render if selected OR has existing annotations to show */}
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
