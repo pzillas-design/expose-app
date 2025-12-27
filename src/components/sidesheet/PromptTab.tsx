@@ -486,8 +486,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                             {currentLang === 'de' ? 'Modell' : 'Model'}
                                         </span>
-                                        <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                        <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
                                             {(() => {
+                                                // 1. Prefer exact API-reported model version
+                                                if (selectedImage.modelVersion) return selectedImage.modelVersion;
+
+                                                // 2. Fallback to mapped friendly names based on requested quality
                                                 const q = selectedImage.quality;
                                                 switch (q) {
                                                     case 'pro-4k': return 'Nano Banana Pro 4K';
