@@ -171,7 +171,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         <div className="text-center space-y-2">
                                             <span className={Typo.Label}>{t('balance')}</span>
                                             <div className="text-5xl font-light tracking-tight text-zinc-900 dark:text-zinc-100 font-mono">
-                                                {currentBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-1">€</span>
+                                                {(currentBalance || 0).toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-1">€</span>
                                             </div>
                                         </div>
 
