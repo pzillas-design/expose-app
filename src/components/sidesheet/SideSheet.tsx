@@ -6,6 +6,7 @@ import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { useResizable } from '@/hooks/useResizable';
 import { CropModal } from '@/components/modals/CropModal';
 import { generateId } from '@/utils/ids';
+import { downloadImage } from '@/utils/imageUtils';
 
 // Sub Components
 import { PromptTab } from './PromptTab';
@@ -99,17 +100,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
     const handleDownload = () => {
         if (isMulti && selectedImages) {
-            selectedImages.forEach(img => {
-                const link = document.createElement('a');
-                link.href = img.src;
-                link.download = `${img.title}.png`;
-                link.click();
-            });
+            selectedImages.forEach(img => downloadImage(img.src, img.title));
         } else if (selectedImage) {
-            const link = document.createElement('a');
-            link.href = selectedImage.src;
-            link.download = `${selectedImage.title}.png`;
-            link.click();
+            downloadImage(selectedImage.src, selectedImage.title);
         }
     };
 

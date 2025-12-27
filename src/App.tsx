@@ -10,6 +10,7 @@ import { useNanoController } from '@/hooks/useNanoController';
 import { Plus, ImagePlus } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
+import { downloadImage } from '@/utils/imageUtils';
 
 export function App() {
     const { state, actions, refs, t } = useNanoController();
@@ -175,27 +176,7 @@ export function App() {
     const handleDownload = async (id: string) => {
         const img = allImages.find(i => i.id === id);
         if (img) {
-            try {
-                // Fetch blob to enforce download (instead of opening in new tab)
-                const response = await fetch(img.src);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${img.title}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            } catch (e) {
-                console.error("Download failed, fallback to link", e);
-                // Fallback
-                const link = document.createElement('a');
-                link.href = img.src;
-                link.download = `${img.title}.png`;
-                link.target = "_blank";
-                link.click();
-            }
+            await downloadImage(img.src, img.title);
         }
     };
 

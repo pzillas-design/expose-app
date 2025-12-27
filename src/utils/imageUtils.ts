@@ -46,3 +46,32 @@ export async function generateThumbnail(src: string, maxDim: number = 512): Prom
         img.src = src;
     });
 }
+
+/**
+ * Robustly downloads an image by fetching it as a blob.
+ * This ensures the 'download' attribute works even for cross-origin URLs.
+ */
+export async function downloadImage(src: string, filename: string): Promise<void> {
+    try {
+        const response = await fetch(src);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename.endsWith('.png') || filename.endsWith('.jpg') ? filename : `${filename}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        // Important: revoke the object URL to free up memory
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+    } catch (error) {
+        console.error('Download failed:', error);
+        // Fallback for extreme cases (might still open in new tab)
+        const link = document.createElement('a');
+        link.href = src;
+        link.download = filename;
+        link.target = "_blank";
+        link.click();
+    }
+}
