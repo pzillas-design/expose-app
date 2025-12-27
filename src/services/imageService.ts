@@ -287,8 +287,8 @@ export const imageService = {
             });
         });
 
-        // Sort rows by newest first
-        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        // Sort rows by oldest first (newest will be at the bottom of the canvas)
+        rows.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
         return rows;
     }
