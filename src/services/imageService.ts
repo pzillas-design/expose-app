@@ -195,20 +195,30 @@ export const imageService = {
     async loadUserImages(userId: string): Promise<ImageRow[]> {
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
-        // 1. Get Metadata - Order by newest first
-        const { data: dbImages, error } = await supabase
-            .from('canvas_images')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+        // 1. Get Completed Images & Active Jobs in parallel
+        const [imgsRes, jobsRes] = await Promise.all([
+            supabase
+                .from('canvas_images')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false }),
+            supabase
+                .from('generation_jobs')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('status', 'processing')
+                .order('created_at', { ascending: false })
+        ]);
 
-        if (error || !dbImages) {
-            console.error('Deep Sync: Load Failed:', error);
+        if (imgsRes.error) {
+            console.error('Deep Sync: Load Images Failed:', imgsRes.error);
             return [];
         }
 
-        // 2. Resolve URLs with Prioritization
-        // We load in chunks to give the newest ones the strongest focus in the browser's network tab
+        const dbImages = imgsRes.data || [];
+        const activeJobs = jobsRes.data || [];
+
+        // 2. Resolve URLs for Completed Images with Prioritization
         const loadedImages: CanvasImage[] = [];
 
         // Helper to resolve a single record
@@ -246,7 +256,7 @@ export const imageService = {
             };
         };
 
-        // Chunk the work: Load first 10 immediately, then the rest
+        // Priority loading logic
         const priorityBatch = dbImages.slice(0, 10);
         const remainingBatch = dbImages.slice(10);
 
@@ -265,12 +275,42 @@ export const imageService = {
             }
         }
 
-        // 3. Group into Rows
+        // 3. Reconstruct Skeleton Placeholders from Active Jobs
+        activeJobs.forEach(job => {
+            // Find parent to inherit dimensions/baseName
+            const parent = loadedImages.find(img => img.id === job.parent_id) || dbImages.find(d => d.id === job.parent_id);
+
+            const baseName = job.prompt?.substring(0, 20) || 'Generating...';
+            const startTime = new Date(job.created_at).getTime();
+
+            const skeleton: CanvasImage = {
+                id: job.id,
+                src: '', // No image yet
+                width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
+                height: 512,
+                title: baseName,
+                baseName: parent?.base_name || baseName,
+                version: 0, // Will be updated on completion
+                isGenerating: true,
+                generationStartTime: startTime,
+                parentId: job.parent_id,
+                generationPrompt: job.prompt,
+                quality: job.model as any,
+                createdAt: startTime,
+                updatedAt: startTime,
+                annotations: []
+            };
+            loadedImages.push(skeleton);
+        });
+
+        // 4. Group into Rows
         const rows: ImageRow[] = [];
         const groups = new Map<string, CanvasImage[]>();
 
         loadedImages.forEach(img => {
-            if (!img.src) return;
+            // Filter out broken links, but KEEP skeletons (which have no src)
+            if (!img.src && !img.isGenerating) return;
+
             const key = img.baseName || img.title || 'untitled';
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(img);
@@ -283,7 +323,7 @@ export const imageService = {
                 id: items[0].id + '_row',
                 title: key,
                 items: items,
-                createdAt: items[items.length - 1].createdAt // Row date is newest item in row
+                createdAt: items[items.length - 1].createdAt || items[0].createdAt // Row date is newest item in row
             });
         });
 
