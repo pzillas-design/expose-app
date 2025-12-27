@@ -110,6 +110,7 @@ export const imageService = {
 
     /**
      * Handles the complex step of generating an image and returning the final CanvasImage object.
+     * NOW: Offloaded to Supabase Edge Function for persistence.
      */
     async processGeneration({
         sourceImage,
@@ -126,18 +127,27 @@ export const imageService = {
         newId: string;
         modelName: string;
     }): Promise<CanvasImage> {
-        const { editImageWithGemini } = await import('./geminiService');
+        console.log(`Generation: Invoking Edge Function for job ${newId}...`);
+
+        const { data, error } = await supabase.functions.invoke('generate-image', {
+            body: {
+                sourceImage,
+                prompt,
+                qualityMode,
+                maskDataUrl,
+                newId,
+                modelName
+            }
+        });
+
+        if (error || !data?.success) {
+            console.error("Edge Generation Failed:", error || data?.error);
+            throw new Error(error?.message || data?.error || "Generation error");
+        }
+
+        const result = data.image; // Server returns partially populated CanvasImage
         const { generateThumbnail } = await import('../utils/imageUtils');
-
-        const result = await editImageWithGemini(
-            sourceImage.src,
-            prompt,
-            maskDataUrl,
-            qualityMode,
-            sourceImage.annotations || []
-        );
-
-        const thumbSrc = await generateThumbnail(result.imageBase64);
+        const thumbSrc = await generateThumbnail(result.src);
 
         // Determine actual dimensions of the generated result
         const getImageDims = (src: string): Promise<{ w: number, h: number }> => {

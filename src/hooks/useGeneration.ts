@@ -47,11 +47,8 @@ export const useGeneration = ({
         const rowIndex = rows.findIndex(row => row.items.some(item => item.id === sourceImage.id));
         if (rowIndex === -1) return;
 
-        // Debit Credits
+        // Debit Credits Locally (for immediate UX)
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (currentUser && !isPro) {
-            await supabase.from('profiles').update({ credits: credits - cost }).eq('id', currentUser.id);
-        }
         if (!isPro) {
             setCredits(prev => prev - cost);
         }
@@ -90,6 +87,7 @@ export const useGeneration = ({
 
         if (currentUser && !isAuthDisabled) {
             try {
+                // Log the job as 'processing' - The Edge function will update this to 'completed'
                 await supabase.from('generation_jobs').insert({
                     id: newId,
                     user_id: currentUser.id,
@@ -100,7 +98,7 @@ export const useGeneration = ({
                     cost: cost,
                     prompt: prompt,
                     concurrent_jobs: currentConcurrency
-                }).select().single();
+                });
             } catch (dbErr) {
                 console.warn("Failed to log generation job:", dbErr);
             }
@@ -140,9 +138,7 @@ export const useGeneration = ({
                     return newRows;
                 });
 
-                if (currentUser && !isAuthDisabled) {
-                    await imageService.persistImage(finalImage, currentUser.id);
-                }
+                // NO NEED to persistImage here - Server already did it!
             } else {
                 throw new Error("Generation returned no image");
             }
