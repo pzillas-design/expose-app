@@ -181,8 +181,8 @@ export const imageService = {
             maskSrc: undefined,
             // Keep canvas dimensions consistent with the row height to prevent "huge" images
             // while storing the actual high-res pixels in realWidth/Height
-            width: (genWidth / genHeight) * sourceImage.height,
-            height: sourceImage.height,
+            width: (genWidth / genHeight) * 512,
+            height: 512,
             realWidth: genWidth,
             realHeight: genHeight
         };
