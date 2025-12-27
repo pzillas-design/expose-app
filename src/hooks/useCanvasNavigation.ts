@@ -171,13 +171,18 @@ export const useCanvasNavigation = ({
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
         autoScrollTimeoutRef.current = window.setTimeout(() => { isAutoScrollingRef.current = false; }, 800);
 
-        // Simple scroll into view
-        setTimeout(() => {
+        // Robust scroll into view with retries
+        let attempts = 0;
+        const tryScroll = () => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            } else if (attempts < 5) {
+                attempts++;
+                setTimeout(tryScroll, 100);
             }
-        }, 50);
+        };
+        setTimeout(tryScroll, 50);
     }, []);
 
     // Wheel Zoom & Gesture Listener

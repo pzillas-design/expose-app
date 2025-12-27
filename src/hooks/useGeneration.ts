@@ -114,7 +114,10 @@ export const useGeneration = ({
             return newRows;
         });
 
-        setTimeout(() => selectAndSnap(newId), 50);
+        // Use a slightly longer timeout to ensure React has finished rendering the new image element
+        setTimeout(() => {
+            selectAndSnap(newId);
+        }, 150);
 
         try {
             const finalImage = await imageService.processGeneration({
