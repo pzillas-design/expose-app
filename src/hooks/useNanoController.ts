@@ -14,6 +14,8 @@ import { useSelection } from './useSelection';
 import { useUIState } from './useUIState';
 import { useFileHandler } from './useFileHandler';
 import { useGeneration } from './useGeneration';
+import { usePersistence } from './usePersistence';
+import { useAnnotationHandler } from './useAnnotationHandler';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -28,7 +30,6 @@ export const useNanoController = () => {
 
     // Refs
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const promptSaveTimeoutRef = useRef<any>(null);
 
     // Derived
     const allImages = rows.flatMap(r => r.items);
@@ -120,65 +121,15 @@ export const useNanoController = () => {
         qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast
     });
 
-    // --- Actions ---
+    const { handleUpdateAnnotations, handleUpdatePrompt } = usePersistence({
+        user, isAuthDisabled, setRows
+    });
 
-    const handleUpdateAnnotations = useCallback((id: string, newAnnotations: AnnotationObject[]) => {
-        setRows(prev => prev.map(row => ({
-            ...row,
-            items: row.items.map(item => item.id === id ? { ...item, annotations: newAnnotations, updatedAt: Date.now() } : item)
-        })));
+    const { onAddReference } = useAnnotationHandler({
+        selectedImage, handleUpdateAnnotations, showToast, t
+    });
 
-        if (user && !isAuthDisabled) {
-            imageService.updateImage(id, { annotations: newAnnotations }, user.id)
-                .catch(err => console.error("Failed to save annotations", err));
-        }
-    }, [user, isAuthDisabled]);
-
-    const handleUpdatePrompt = useCallback((id: string, text: string) => {
-        setRows(prev => prev.map(row => ({
-            ...row,
-            items: row.items.map(item => item.id === id ? { ...item, userDraftPrompt: text, updatedAt: Date.now() } : item)
-        })));
-
-        if (promptSaveTimeoutRef.current) clearTimeout(promptSaveTimeoutRef.current);
-        promptSaveTimeoutRef.current = setTimeout(() => {
-            if (user && !isAuthDisabled) {
-                imageService.updateImage(id, { userDraftPrompt: text }, user.id)
-                    .catch(err => console.error("Failed to save prompt", err));
-            }
-        }, 1000);
-    }, [user, isAuthDisabled]);
-
-    const onAddReference = useCallback((file: File, annotationId?: string) => {
-        if (!selectedImage) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            if (typeof event.target?.result === 'string') {
-                const src = event.target.result;
-                if (annotationId) {
-                    const newAnns = (selectedImage.annotations || []).map(ann =>
-                        ann.id === annotationId ? { ...ann, referenceImage: src } : ann
-                    );
-                    handleUpdateAnnotations(selectedImage.id, newAnns);
-                    showToast(t('image_ref') + " " + t('added'), "success");
-                } else {
-                    const newId = generateId();
-                    const newRef: AnnotationObject = {
-                        id: newId,
-                        type: 'reference_image',
-                        points: [],
-                        strokeWidth: 0,
-                        color: '#fff',
-                        referenceImage: src,
-                        createdAt: Date.now()
-                    };
-                    const newAnns = [...(selectedImage.annotations || []), newRef];
-                    handleUpdateAnnotations(selectedImage.id, newAnns);
-                }
-            }
-        };
-        reader.readAsDataURL(file);
-    }, [selectedImage, handleUpdateAnnotations, showToast, t]);
+    // --- Actions --- (Integrated via Hooks above)
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();

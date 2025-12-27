@@ -58,14 +58,27 @@ Deno.serve(async (req) => {
             console.log(`Deducted ${cost} credits. New balance: ${profile.credits - cost}`);
         }
 
-        // 2. Prepare Gemini Call
-        // We use fetch to call Gemini directly (avoids SDK compat issues in Deno)
+        // 2. Prepare Gemini Call - Fetch image if URL
+        let finalSourceBase64 = sourceImage.src;
+        if (sourceImage.src.startsWith('http')) {
+            console.log("Fetching source image from URL...");
+            const response = await fetch(sourceImage.src);
+            const blob = await response.arrayBuffer();
+            const uint8 = new Uint8Array(blob);
+            let binary = '';
+            for (let i = 0; i < uint8.byteLength; i++) {
+                binary += String.fromCharCode(uint8[i]);
+            }
+            finalSourceBase64 = btoa(binary);
+        } else {
+            finalSourceBase64 = sourceImage.src.split(',')[1] || sourceImage.src;
+        }
+
         const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName || 'gemini-1.5-pro'}:generateContent?key=${GEMINI_API_KEY}`
 
         const parts: any[] = []
 
-        // Format parts similarly to geminiService.ts
         const hasMask = !!maskDataUrl
         let systemInstruction = "I am providing an ORIGINAL image (to be edited)."
         if (hasMask) systemInstruction += " I am also providing a MASK image (indicating areas to edit)."
@@ -74,9 +87,8 @@ Deno.serve(async (req) => {
         parts.push({ text: systemInstruction })
 
         // Source Image
-        const cleanSource = sourceImage.src.split(',')[1] || sourceImage.src
         parts.push({
-            inlineData: { data: cleanSource, mimeType: 'image/jpeg' }
+            inlineData: { data: finalSourceBase64, mimeType: 'image/jpeg' }
         })
         parts.push({ text: "Image 1: The Original Image" })
 
@@ -97,12 +109,14 @@ Deno.serve(async (req) => {
         else if (qualityMode === 'pro-4k') imageConfig = { imageSize: '4K' }
 
         // 3. Call Gemini
+        const geminiPayload = {
+            contents: [{ parts: parts }],
+            generationConfig: Object.keys(imageConfig).length > 0 ? { imageConfig: imageConfig } : undefined
+        };
+
         const geminiResponse = await fetch(endpoint, {
             method: 'POST',
-            body: JSON.stringify({
-                contents: { parts: parts },
-                config: { imageConfig: Object.keys(imageConfig).length > 0 ? imageConfig : undefined }
-            })
+            body: JSON.stringify(geminiPayload)
         })
 
         if (!geminiResponse.ok) {
@@ -126,7 +140,6 @@ Deno.serve(async (req) => {
         }
 
         const generatedBase64 = imagePart.inlineData.data
-        const fullBase64 = `data:image/jpeg;base64,${generatedBase64}`
 
         // 4. Save to Storage
         const filePath = `${user.id}/${newId}.jpg`

@@ -33,12 +33,9 @@ export const useFileHandler = ({
                     const img = new Image();
                     img.src = event.target.result;
                     img.onload = () => {
-                        let w = img.width, h = img.height;
-                        const maxDim = 500;
-                        if (w > maxDim || h > maxDim) {
-                            const ratio = w / h;
-                            if (w > h) { w = maxDim; h = maxDim / ratio; } else { h = maxDim; w = maxDim * ratio; }
-                        }
+                        const targetHeight = 512;
+                        const w = (img.width / img.height) * targetHeight;
+                        const h = targetHeight;
                         const baseName = file.name.replace(/\.[^/.]+$/, "");
                         const newId = generateId();
 

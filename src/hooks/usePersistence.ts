@@ -1,0 +1,45 @@
+import React, { useCallback, useRef } from 'react';
+import { imageService } from '../services/imageService';
+import { CanvasImage, ImageRow, AnnotationObject } from '../types';
+
+interface UsePersistenceProps {
+    user: any;
+    isAuthDisabled: boolean;
+    setRows: React.Dispatch<React.SetStateAction<ImageRow[]>>;
+}
+
+export const usePersistence = ({ user, isAuthDisabled, setRows }: UsePersistenceProps) => {
+    const promptSaveTimeoutRef = useRef<any>(null);
+
+    const handleUpdateAnnotations = useCallback((id: string, newAnnotations: AnnotationObject[]) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, annotations: newAnnotations, updatedAt: Date.now() } : item)
+        })));
+
+        if (user && !isAuthDisabled) {
+            imageService.updateImage(id, { annotations: newAnnotations }, user.id)
+                .catch(err => console.error("Failed to save annotations", err));
+        }
+    }, [user, isAuthDisabled, setRows]);
+
+    const handleUpdatePrompt = useCallback((id: string, text: string) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, userDraftPrompt: text, updatedAt: Date.now() } : item)
+        })));
+
+        if (promptSaveTimeoutRef.current) clearTimeout(promptSaveTimeoutRef.current);
+        promptSaveTimeoutRef.current = setTimeout(() => {
+            if (user && !isAuthDisabled) {
+                imageService.updateImage(id, { userDraftPrompt: text }, user.id)
+                    .catch(err => console.error("Failed to save prompt", err));
+            }
+        }, 1000);
+    }, [user, isAuthDisabled, setRows]);
+
+    return {
+        handleUpdateAnnotations,
+        handleUpdatePrompt
+    };
+};
