@@ -451,7 +451,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         {currentLang === 'de' ? 'Auflösung' : 'Resolution'}
                                     </span>
                                     <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
-                                        {selectedImage.realWidth || selectedImage.width} × {selectedImage.realHeight || selectedImage.height}px
+                                        {(() => {
+                                            if (selectedImage.realWidth && selectedImage.realHeight) {
+                                                return `${selectedImage.realWidth} × ${selectedImage.realHeight}px`;
+                                            }
+                                            // Fallbacks based on quality if real dims are missing
+                                            if (selectedImage.quality === 'pro-4k') return '4096 × 4096px';
+                                            if (selectedImage.quality === 'pro-2k') return '2048 × 2048px';
+                                            return '1024 × 1024px';
+                                        })()}
                                     </span>
                                 </div>
 
@@ -481,10 +489,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400`}>
                                             {(() => {
                                                 const q = selectedImage.quality;
-                                                const v = selectedImage.modelVersion || '';
-                                                if (q === 'fast' || v.includes('flash')) return 'Nanobanana';
-                                                if (q.startsWith('pro') || v.includes('pro')) return 'Nanobana Pro';
-                                                return 'Nanobanana'; // Default fallback
+                                                switch (q) {
+                                                    case 'pro-4k': return 'Nano Banana Pro 4K';
+                                                    case 'pro-2k': return 'Nano Banana Pro 2K';
+                                                    case 'pro-1k': return 'Nano Banana Pro 1K';
+                                                    case 'fast': default: return 'Nano Banana';
+                                                }
                                             })()}
                                         </span>
                                     </div>
@@ -509,7 +519,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {selectedImage.parentId && (
                                     <Button
                                         variant="secondary"
-                                        onClick={() => onNavigateParent(selectedImage.id)}
+                                        onClick={() => onNavigateParent(selectedImage.parentId!)}
                                         disabled={selectedImage.isGenerating}
                                         className="justify-start px-4 h-11 gap-2"
                                     >
