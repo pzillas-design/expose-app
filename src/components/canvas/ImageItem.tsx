@@ -213,6 +213,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         onLoad={() => setIsLoaded(true)}
                         loading="lazy"
                         decoding="async"
+                        // @ts-ignore - fetchpriority is a newer attribute
+                        fetchpriority={showHighRes ? "high" : "low"}
                         className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                         style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
                     />

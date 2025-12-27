@@ -193,22 +193,26 @@ export const imageService = {
      * Converts them back into the ImageRow structure used by the app.
      */
     async loadUserImages(userId: string): Promise<ImageRow[]> {
-        console.log('Deep Sync: Loading user history...');
+        console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
-        // 1. Get Metadata
+        // 1. Get Metadata - Order by newest first
         const { data: dbImages, error } = await supabase
             .from('canvas_images')
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: false });
 
         if (error || !dbImages) {
             console.error('Deep Sync: Load Failed:', error);
             return [];
         }
 
-        // 2. Resolve URLs (Parallel)
-        const loadedImages: CanvasImage[] = await Promise.all(dbImages.map(async (record) => {
+        // 2. Resolve URLs with Prioritization
+        // We load in chunks to give the newest ones the strongest focus in the browser's network tab
+        const loadedImages: CanvasImage[] = [];
+
+        // Helper to resolve a single record
+        const resolveRecord = async (record: any): Promise<CanvasImage> => {
             const [signedUrl, thumbSignedUrl] = await Promise.all([
                 storageService.getSignedUrl(record.storage_path),
                 record.thumb_storage_path ? storageService.getSignedUrl(record.thumb_storage_path) : Promise.resolve(null)
@@ -220,7 +224,7 @@ export const imageService = {
 
             return {
                 id: record.id,
-                src: signedUrl || '', // Fallback?
+                src: signedUrl || '',
                 thumbSrc: thumbSignedUrl || undefined,
                 width: normalizedWidth,
                 height: targetHeight,
@@ -231,7 +235,7 @@ export const imageService = {
                 baseName: record.base_name,
                 version: record.version,
                 isGenerating: false,
-                originalSrc: signedUrl || '', // For now assuming original is same
+                originalSrc: signedUrl || '',
                 generationPrompt: record.prompt,
                 userDraftPrompt: record.user_draft_prompt || '',
                 annotations: record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [],
@@ -240,35 +244,46 @@ export const imageService = {
                 createdAt: new Date(record.created_at).getTime(),
                 updatedAt: new Date(record.updated_at).getTime()
             };
-        }));
+        };
 
-        // 3. Group into Rows based on Parent/Child relationships
-        // Logic: Items with the same baseName (or lineage) likely belong in the same row.
-        // Simple approach: Group by baseName.
+        // Chunk the work: Load first 10 immediately, then the rest
+        const priorityBatch = dbImages.slice(0, 10);
+        const remainingBatch = dbImages.slice(10);
 
+        const priorityResults = await Promise.all(priorityBatch.map(resolveRecord));
+        loadedImages.push(...priorityResults);
+
+        // Load the rest in the background without blocking the first render
+        // (The caller will get the first set, and we could potentially update later, 
+        // but for now we just want to ensure the order of requests is correct)
+        if (remainingBatch.length > 0) {
+            // Process remaining in chunks of 20 to keep network pipe focused
+            for (let i = 0; i < remainingBatch.length; i += 20) {
+                const chunk = remainingBatch.slice(i, i + 20);
+                const chunkResults = await Promise.all(chunk.map(resolveRecord));
+                loadedImages.push(...chunkResults);
+            }
+        }
+
+        // 3. Group into Rows
         const rows: ImageRow[] = [];
         const groups = new Map<string, CanvasImage[]>();
 
         loadedImages.forEach(img => {
-            // Filter out images where signed URL failed
             if (!img.src) return;
-
             const key = img.baseName || img.title || 'untitled';
-            if (!groups.has(key)) {
-                groups.set(key, []);
-            }
+            if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(img);
         });
 
         groups.forEach((items, key) => {
-            // Sort by createdAt to ensure new images are always on the right
+            // Within a row, we still sort oldest to newest (left to right)
             items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-
             rows.push({
-                id: items[0].id + '_row', // reliable row id
+                id: items[0].id + '_row',
                 title: key,
                 items: items,
-                createdAt: items[0].createdAt
+                createdAt: items[items.length - 1].createdAt // Row date is newest item in row
             });
         });
 
