@@ -155,7 +155,9 @@ export const imageService = {
                 : `${sourceImage.title}_v2`,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            modelVersion: result.modelVersion
+            modelVersion: result.modelVersion,
+            annotations: [],
+            maskSrc: undefined
         };
     },
 
