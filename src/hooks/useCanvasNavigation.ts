@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { CanvasImage } from '../types';
 
 const MIN_ZOOM = 0.1;
@@ -193,16 +194,42 @@ export const useCanvasNavigation = ({
 
         const onGestureChange = (e: any) => {
             e.preventDefault();
-            // Safari provides e.scale (1 = neutral). >1 = zoom in, <1 = zoom out.
-            // This is a "step" scale for the event, but often cumulative for the gesture.
-            // However, a simple relative adjustment works well for smooth feel:
-            const scaleChange = e.scale;
-            // We dampen it slightly or use it directly depending on feel. 
-            // e.scale is cumulative in 'gesturechange' from the start? 
-            // Actually, in many implementations, simple fractional application works best:
-            // But to be safe and stateless:
-            const delta = scaleChange - 1;
-            setZoom(z => Math.min(Math.max(z * (1 + delta * 0.5), MIN_ZOOM), MAX_ZOOM));
+            const container = scrollContainerRef.current;
+            if (!container) return;
+
+            // Approximate center of pinch (fallback to center of viewport)
+            const centerX = e.clientX || (window.innerWidth / 2);
+            const centerY = e.clientY || (window.innerHeight / 2);
+
+            const rect = container.getBoundingClientRect();
+            const mouseX = centerX - rect.left;
+            const mouseY = centerY - rect.top;
+            const currentScrollLeft = container.scrollLeft;
+            const currentScrollTop = container.scrollTop;
+
+            // Content coords before zoom
+            const contentX = (currentScrollLeft + mouseX) / zoom;
+            const contentY = (currentScrollTop + mouseY) / zoom;
+
+            // Safari scale is cumulative. We derive a delta factor to apply to current local zoom.
+            // But since 'zoom' changes every render, using e.scale directly is tricky if it's cumulative from specific start.
+            // Using a small step approach based on change from last frame is complex without storing prevScale.
+            // Simplification: Treat e.scale diff from 1 as a "momentum" to apply to current zoom.
+            // Or better: Just use a small scaling factor derived from e.scale.
+            // For now, let's trust the logic that worked for scale, but fix the scroll.
+
+            const delta = e.scale - 1;
+            const factor = 1 + delta * 0.1; // Dampen the acceleration
+            const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
+
+            try {
+                flushSync(() => setZoom(targetZoom));
+            } catch (err) {
+                setZoom(targetZoom);
+            }
+
+            container.scrollLeft = (contentX * targetZoom) - mouseX;
+            container.scrollTop = (contentY * targetZoom) - mouseY;
         };
 
         const onGestureEnd = (e: any) => {
@@ -212,6 +239,9 @@ export const useCanvasNavigation = ({
 
         // --- Wheel Handling (Chrome/Edge/Firefox) ---
         const onWheel = (e: WheelEvent) => {
+            const container = scrollContainerRef.current;
+            if (!container) return;
+
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -225,46 +255,34 @@ export const useCanvasNavigation = ({
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
 
                 // Calculate new zoom
-                // Trackpads often send very small deltas (e.g. -1, -5). Mice send -100.
-                // We clamp the delta impact for smoother trackpad feel.
                 const delta = -e.deltaY;
-
-                // Adaptive factor: smaller for trackpads (small delta), larger for ratchet wheels
-                // Small delta (< 50) -> Trackpad likely.
                 const isTrackpad = Math.abs(delta) < 50;
                 const factor = isTrackpad
-                    ? Math.exp(delta * 0.01)  // More sensitive for trackpad small movements
-                    : Math.exp(delta * 0.002); // Less sensitive for mouse wheel big jumps
+                    ? Math.exp(delta * 0.01)
+                    : Math.exp(delta * 0.002);
 
                 const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                // For trackpad pinch, we usually want simpler center-zoom or cursor-zoom.
-                // The current logic forces cursor-zoom if nothing selected, which is good.
+                // Zoom-to-Cursor Logic (Always apply this, even if selected, to prevent jump)
+                const rect = container.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const currentScrollLeft = container.scrollLeft;
+                const currentScrollTop = container.scrollTop;
 
-                if (selectedIds.length > 0) {
+                // Calculate content coordinates under the mouse before zoom
+                const contentMouseX = (currentScrollLeft + mouseX) / zoom;
+                const contentMouseY = (currentScrollTop + mouseY) / zoom;
+
+                try {
+                    flushSync(() => setZoom(targetZoom));
+                } catch (err) {
                     setZoom(targetZoom);
-                } else {
-                    // Zoom-to-Cursor Logic
-                    const rect = container.getBoundingClientRect();
-                    const mouseX = e.clientX - rect.left;
-                    const mouseY = e.clientY - rect.top;
-                    const currentScrollLeft = container.scrollLeft;
-                    const currentScrollTop = container.scrollTop;
-
-                    // Calculate content coordinates under the mouse before zoom
-                    const contentMouseX = (currentScrollLeft + mouseX) / zoom;
-                    const contentMouseY = (currentScrollTop + mouseY) / zoom;
-
-                    try {
-                        flushSync(() => setZoom(targetZoom));
-                    } catch (err) {
-                        setZoom(targetZoom);
-                    }
-
-                    // Calculate new scroll position to keep content under mouse
-                    container.scrollLeft = (contentMouseX * targetZoom) - mouseX;
-                    container.scrollTop = (contentMouseY * targetZoom) - mouseY;
                 }
+
+                // Calculate new scroll position to keep content under mouse
+                container.scrollLeft = (contentMouseX * targetZoom) - mouseX;
+                container.scrollTop = (contentMouseY * targetZoom) - mouseY;
             }
         };
 
