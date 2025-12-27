@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { ImageRow } from '../types';
@@ -17,6 +17,11 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
     const [user, setUser] = useState<any>(isAuthDisabled ? { id: 'guest', email: 'guest@expose.ae' } : null);
     const [userProfile, setUserProfile] = useState<any>(isAuthDisabled ? { credits: 999.00, full_name: 'Guest User' } : null);
     const [credits, setCredits] = useState<number>(10.00);
+    const userRef = useRef<any>(user);
+
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
 
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(!isAuthDisabled);
@@ -88,8 +93,17 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+            const currentUserId = userRef.current?.id;
+            const newUserId = session?.user?.id;
+
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 fetchProfile(session?.user ?? null);
+            } else if (event === 'TOKEN_REFRESHED') {
+                // Only re-fetch if the user actually changed (rare) 
+                // or if we somehow lost the user state.
+                if (newUserId && newUserId !== currentUserId) {
+                    fetchProfile(session?.user);
+                }
             } else if (event === 'SIGNED_OUT') {
                 fetchProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
