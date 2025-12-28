@@ -249,12 +249,26 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                                         value={newItemName}
                                                         onChange={(e) => setNewItemName(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && handleCreateItem(category.id)}
-                                                        placeholder={t('item_name')}
+                                                        placeholder="Name des Objekts..."
                                                         className={`flex-1 ${Theme.Colors.Surface} border border-zinc-200 dark:border-zinc-700 rounded px-2 py-1 text-xs outline-none`}
                                                     />
                                                     <IconButton icon={<Check className="w-3 h-3" />} onClick={() => handleCreateItem(category.id)} disabled={!newItemName.trim()} className="h-6 w-6" />
                                                     <IconButton icon={<X className="w-3 h-3" />} onClick={() => setAddingItemToCatId(null)} className="h-6 w-6" />
                                                 </div>
+                                            )}
+
+                                            {/* Persistent Add Button as First Item (In Edit Mode OR if it's a User Category) */}
+                                            {isEditMode && !addingItemToCatId && (
+                                                <button
+                                                    onClick={() => {
+                                                        if (!openCategories.includes(category.id)) toggleCategory(category.id);
+                                                        setAddingItemToCatId(category.id);
+                                                    }}
+                                                    className="flex items-center gap-3 pl-6 pr-4 py-2.5 text-emerald-600 hover:text-emerald-700 dark:text-emerald-500 dark:hover:text-emerald-400 group/add transition-colors"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    <span className={`${Typo.Body} font-medium`}>Objekt hinzufügen</span>
+                                                </button>
                                             )}
 
                                             {category.items.map((item) => (
