@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Layout, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -52,8 +52,8 @@ export function BoardsPage({
             <div className="max-w-7xl mx-auto w-full px-8">
                 {/* Header */}
                 <header className="w-full pt-16 pb-12 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 mb-4">
-                    <div className="flex items-center gap-3">
-                        <Logo className="w-8 h-8" />
+                    <div className="flex items-center gap-4">
+                        <Logo className="w-12 h-12" />
                         <span
                             className="tracking-tight text-2xl"
                             style={{
@@ -108,14 +108,6 @@ export function BoardsPage({
                                 {boards.length} {boards.length === 1 ? 'Board' : 'Boards'} insgesamt
                             </p>
                         </div>
-
-                        <Button
-                            onClick={onCreateBoard}
-                            icon={<Plus className="w-4 h-4" />}
-                            className="px-8 py-6 rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
-                        >
-                            Neues Board
-                        </Button>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -124,21 +116,21 @@ export function BoardsPage({
                             onClick={onCreateBoard}
                             className={`
                                 group relative flex flex-col items-center justify-center gap-4
-                                bg-zinc-50/50 dark:bg-zinc-900/30 border border-dashed border-zinc-200 dark:border-zinc-800
-                                rounded-3xl hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-500
-                                hover:bg-zinc-50 dark:hover:bg-zinc-800/50 min-h-[340px] shadow-sm hover:shadow-md
+                                bg-white dark:bg-zinc-900 border border-dashed border-zinc-200 dark:border-zinc-800
+                                rounded-2xl hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300
+                                hover:bg-zinc-50 dark:hover:bg-zinc-800/50 min-h-[340px] shadow-sm
                             `}
                         >
-                            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center group-hover:scale-110 group-hover:rotate-90 transition-all duration-500 shadow-sm">
+                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center transition-all duration-300 shadow-sm border-dashed">
                                 <Plus className="w-8 h-8 text-zinc-400" />
                             </div>
-                            <span className={`${Typo.Label} text-zinc-400 font-medium tracking-wide`}>Erstelle dein erstes Board</span>
+                            <span className={`${Typo.Label} text-zinc-400 font-medium tracking-wide`}>Neues Board</span>
                         </button>
 
                         {isLoading ? (
                             // Skeleton Cards
                             Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-800 rounded-3xl animate-pulse" />
+                                <div key={i} className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
                             ))
                         ) : (
                             boards.map((board) => (
@@ -180,15 +172,15 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
 
     return (
         <Card
-            className="group relative flex flex-col hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 cursor-pointer border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 bg-white dark:bg-zinc-900 rounded-3xl"
+            className="group relative flex flex-col hover:shadow-md transition-all duration-300 cursor-pointer border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm"
             onClick={onSelect}
         >
             {/* Thumbnail Area */}
-            <div className="aspect-[4/3] bg-zinc-50 dark:bg-zinc-800/50 relative flex items-center justify-center overflow-hidden rounded-t-3xl border-b border-zinc-100 dark:border-zinc-800/50">
+            <div className="aspect-[4/3] bg-zinc-50 dark:bg-zinc-800/50 relative flex items-center justify-center overflow-hidden rounded-t-2xl border-b border-zinc-100 dark:border-zinc-800/50">
                 {board.thumbnail ? (
-                    <img src={board.thumbnail} alt={board.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <img src={board.thumbnail} alt={board.name} className="w-full h-full object-cover transition-opacity duration-300" />
                 ) : (
-                    <div className="flex flex-col items-center gap-4 opacity-10 group-hover:opacity-30 transition-all duration-500 transform group-hover:scale-110">
+                    <div className="flex flex-col items-center gap-4 opacity-10 group-hover:opacity-30 transition-all duration-300">
                         <ImageIcon className="w-16 h-16" strokeWidth={1} />
                         <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Keine Inhalte</span>
                     </div>
