@@ -36,42 +36,44 @@ export function BoardsPage({
     return (
         <div className={`min-h-screen w-full ${Theme.Colors.CanvasBg} ${Theme.Colors.TextPrimary} flex flex-col`}>
             {/* Header */}
-            <header className="h-16 px-8 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Logo className="w-10 h-10" />
-                    <span
-                        className="tracking-tight text-xl sm:text-2xl"
-                        style={{
-                            fontFamily: "'Kumbh Sans', sans-serif",
-                            fontWeight: 500,
-                            lineHeight: '100%',
-                            letterSpacing: '0%',
-                            textTransform: 'lowercase'
-                        }}
-                    >
-                        exposé
-                    </span>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-end mr-2">
-                        <span className={Typo.H3}>{user?.email?.split('@')[0]}</span>
-                        <span className={Typo.Micro}>{user?.email}</span>
+            <header className="w-full pt-10 pb-6 px-8">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Logo className="w-10 h-10" />
+                        <span
+                            className="tracking-tight text-xl sm:text-2xl"
+                            style={{
+                                fontFamily: "'Kumbh Sans', sans-serif",
+                                fontWeight: 500,
+                                lineHeight: '100%',
+                                letterSpacing: '0%',
+                                textTransform: 'lowercase'
+                            }}
+                        >
+                            exposé
+                        </span>
                     </div>
-                    <button
-                        onClick={onOpenSettings}
-                        className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:ring-2 ring-zinc-500/20 transition-all"
-                    >
-                        <img
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-                            alt="avatar"
-                            className="w-full h-full object-cover"
-                        />
-                    </button>
+
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end mr-2">
+                            <span className={Typo.H3}>{user?.email?.split('@')[0]}</span>
+                            <span className={Typo.Micro}>{user?.email}</span>
+                        </div>
+                        <button
+                            onClick={onOpenSettings}
+                            className="w-10 h-10 rounded-full border border-zinc-200 dark:border-zinc-800 overflow-hidden hover:ring-2 ring-zinc-500/20 transition-all font-sans"
+                        >
+                            <img
+                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
+                                alt="avatar"
+                                className="w-full h-full object-cover"
+                            />
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-12">
+            <main className="flex-1 max-w-7xl mx-auto w-full px-8 py-6">
                 <div className="flex items-baseline justify-between mb-10">
                     <div>
                         <h1 className={Typo.Display}>Boards</h1>
