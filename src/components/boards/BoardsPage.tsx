@@ -114,9 +114,8 @@ export function BoardsPage({
                                 {getInitials(userProfile?.full_name, user?.email)}
                             </div>
 
-                            {/* EMAIL / NAME */}
                             <span className="text-sm font-medium tracking-tight text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                                {userProfile?.full_name || user?.email || user?.email?.split('@')[0]}
+                                {user?.email || ''}
                             </span>
                         </div>
 

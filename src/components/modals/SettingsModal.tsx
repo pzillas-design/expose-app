@@ -175,17 +175,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                             <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-400 dark:text-zinc-600 shadow-inner overflow-hidden border border-zinc-200 dark:border-zinc-800">
                                                 {userProfile?.full_name ? userProfile.full_name.charAt(0) : user?.email?.charAt(0)?.toUpperCase()}
                                             </div>
-                                            <div className="text-center w-full space-y-3">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <input
-                                                        value={name}
-                                                        onChange={(e) => setName(e.target.value)}
-                                                        onBlur={handleUpdateName}
-                                                        placeholder="Dein Name"
-                                                        className="bg-transparent text-center text-base font-medium outline-none border-b border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 w-full hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded py-1 transition-colors"
-                                                    />
-                                                    <p className={`${Typo.Micro} text-zinc-400`}>{user?.email || ''}</p>
-                                                </div>
+                                            <div className="text-center w-full">
+                                                <p className="text-base font-medium text-zinc-900 dark:text-white">{user?.email || ''}</p>
                                             </div>
                                         </div>
 
