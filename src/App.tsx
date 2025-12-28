@@ -15,7 +15,7 @@ import { downloadImage } from '@/utils/imageUtils';
 export function App() {
     const { state, actions, refs, t } = useNanoController();
     const {
-        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, isDragOver,
+        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang, isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming
     } = state;
@@ -26,7 +26,8 @@ export function App() {
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
-        setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection
+        setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
+        setMaskTool
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -39,7 +40,7 @@ export function App() {
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
     // Stable Editor State Object to preserve ImageItem memoization during scroll
-    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize }), [sideSheetMode, brushSize]);
+    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool }), [sideSheetMode, brushSize, maskTool]);
 
     // URL Routing Support
     useEffect(() => {
@@ -380,6 +381,8 @@ export function App() {
                             onDeleteUserCategory={deleteUserCategory}
                             onAddUserItem={addUserItem}
                             onDeleteUserItem={deleteUserItem}
+                            maskTool={maskTool}
+                            onMaskToolChange={setMaskTool}
                         />
                     )}
 

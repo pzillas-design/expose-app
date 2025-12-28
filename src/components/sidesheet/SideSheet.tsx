@@ -36,8 +36,9 @@ interface SideSheetProps {
     fullLibrary: LibraryCategory[];
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
-    onAddUserItem: (catId: string, label: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
+    maskTool: 'brush' | 'text';
+    onMaskToolChange: (tool: 'brush' | 'text') => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -62,7 +63,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onAddUserCategory,
     onDeleteUserCategory,
     onAddUserItem,
-    onDeleteUserItem
+    onDeleteUserItem,
+    maskTool,
+    onMaskToolChange
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
@@ -347,7 +350,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     <div className="flex flex-col h-full">
                         <SubHeader title={t('back')} />
                         <div className={`flex-1 overflow-y-auto ${Theme.Colors.PanelBg}`}>
-                            <BrushTab brushSize={brushSize} onBrushSizeChange={onBrushSizeChange} t={t} />
+                            <BrushTab
+                                brushSize={brushSize}
+                                onBrushSizeChange={onBrushSizeChange}
+                                maskTool={maskTool}
+                                onMaskToolChange={onMaskToolChange}
+                                t={t}
+                            />
                         </div>
                         <DoneButton />
                     </div>

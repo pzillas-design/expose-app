@@ -52,6 +52,7 @@ export const useNanoController = () => {
     const {
         sideSheetMode, setSideSheetMode,
         brushSize, setBrushSize,
+        maskTool, setMaskTool,
         isDragOver, setIsDragOver,
         isSettingsOpen, setIsSettingsOpen,
         isAdminOpen, setIsAdminOpen
@@ -212,6 +213,7 @@ export const useNanoController = () => {
             currentLang,
             sideSheetMode,
             brushSize,
+            maskTool,
             userLibrary,
             globalLibrary,
             fullLibrary,
@@ -240,6 +242,7 @@ export const useNanoController = () => {
             handleModeChange,
             setSideSheetMode,
             setBrushSize,
+            setMaskTool,
             addUserCategory,
             deleteUserCategory,
             addUserItem,

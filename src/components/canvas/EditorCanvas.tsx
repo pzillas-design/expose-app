@@ -13,6 +13,7 @@ interface EditorCanvasProps {
     onChange: (newAnnotations: AnnotationObject[]) => void;
     brushSize: number;
     activeTab: string;
+    maskTool?: 'brush' | 'text';
     isActive: boolean;
     onEditStart?: (mode: 'brush' | 'objects') => void;
     onContextMenu?: (e: React.MouseEvent) => void;
@@ -42,6 +43,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     onChange,
     brushSize,
     activeTab,
+    maskTool = 'brush',
     isActive,
     onEditStart,
     onContextMenu,
@@ -142,13 +144,29 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             onChange(cleanedAnnotations);
         }
 
-        setIsDrawing(true);
         // @ts-ignore
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientX = e.touches ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
         // @ts-ignore
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientY = e.touches ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
         const { x, y } = getCoordinates(clientX, clientY);
+
+        if (maskTool === 'text') {
+            const newId = generateId();
+            const newStamp: AnnotationObject = {
+                id: newId,
+                type: 'stamp',
+                points: [],
+                x, y, strokeWidth: 0, color: '#fff',
+                text: '',
+                createdAt: Date.now()
+            };
+            onChange([...cleanedAnnotations, newStamp]);
+            setActiveMaskId(newId);
+            return;
+        }
+
+        setIsDrawing(true);
         currentPathRef.current = [{ x, y }];
         setActiveMaskId(null);
         renderCanvas();
@@ -174,7 +192,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             if (isHovering) setIsHovering(false);
         }
 
-        if (!isDrawing) return;
+        if (!isDrawing || maskTool === 'text') return;
         e.stopPropagation();
 
         const { x, y } = getCoordinates(clientX, clientY);
@@ -186,7 +204,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing) return;
+        if (!isDrawing || maskTool === 'text') return;
         setIsDrawing(false);
         e.stopPropagation();
 
@@ -312,11 +330,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                 <canvas
                     ref={canvasRef}
-                    className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? 'cursor-none' : 'cursor-default'}`}
+                    className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? (maskTool === 'text' ? 'cursor-text' : 'cursor-none') : 'cursor-default'}`}
                 />
 
                 {/* Cursor */}
-                {activeTab === 'brush' && isActive && (
+                {activeTab === 'brush' && maskTool === 'brush' && isActive && (
                     <>
                         <div
                             ref={cursorRef}
