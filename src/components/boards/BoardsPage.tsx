@@ -39,7 +39,18 @@ export function BoardsPage({
             <header className="h-16 px-8 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <Logo className="w-10 h-10" />
-                    <span className={`${Typo.H1} tracking-tight`}>Exposé</span>
+                    <span
+                        className="tracking-tight text-xl sm:text-2xl"
+                        style={{
+                            fontFamily: "'Kumbh Sans', sans-serif",
+                            fontWeight: 500,
+                            lineHeight: '100%',
+                            letterSpacing: '0%',
+                            textTransform: 'lowercase'
+                        }}
+                    >
+                        exposé
+                    </span>
                 </div>
 
                 <div className="flex items-center gap-4">
