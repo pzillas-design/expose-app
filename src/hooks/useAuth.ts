@@ -184,6 +184,18 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
         }
     };
 
+    const updateProfile = async (updates: { full_name?: string }) => {
+        if (!user || isAuthDisabled) return;
+        try {
+            const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+            if (error) throw error;
+            setUserProfile((prev: any) => ({ ...prev, ...updates }));
+            showToast("Profile updated successfully.", "success");
+        } catch (err: any) {
+            showToast(err.message || "Failed to update profile.", "error");
+        }
+    };
+
     const handleSignOut = async () => {
         await supabase.auth.signOut();
         window.location.reload();
@@ -203,6 +215,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
         authError,
         setAuthError,
         handleAddFunds,
-        handleSignOut
+        handleSignOut,
+        updateProfile
     };
 };

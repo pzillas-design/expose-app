@@ -22,6 +22,7 @@ interface SettingsModalProps {
     onLangChange: (lang: LocaleKey | 'auto') => void;
     onOpenAdmin: () => void;
     onSignOut: () => void;
+    updateProfile: (updates: { full_name?: string }) => Promise<void>;
     user: any;
     userProfile: any;
     t: TranslationFunction;
@@ -31,12 +32,14 @@ type TabId = 'account' | 'general' | 'about';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose, qualityMode, onQualityModeChange, currentBalance, onAddFunds,
-    initialTab, themeMode, onThemeChange, lang, onLangChange, onOpenAdmin, onSignOut, user, userProfile, t
+    initialTab, themeMode, onThemeChange, lang, onLangChange, onOpenAdmin, onSignOut, updateProfile, user, userProfile, t
 }) => {
     const [activeTab, setActiveTab] = useState<TabId>('account');
     const [customAmount, setCustomAmount] = useState('');
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
     const [showMinError, setShowMinError] = useState(false);
+    const [name, setName] = useState(userProfile?.full_name || '');
+    const [isUpdatingName, setIsUpdatingName] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -44,8 +47,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             setCustomAmount('');
             setIsTopUpExpanded(false);
             setShowMinError(false);
+            setName(userProfile?.full_name || '');
         }
-    }, [isOpen, initialTab]);
+    }, [isOpen, initialTab, userProfile?.full_name]);
 
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -62,6 +66,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             await onAddFunds(finalAmount);
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    const handleUpdateName = async () => {
+        if (name === userProfile?.full_name) return;
+        setIsUpdatingName(true);
+        try {
+            await updateProfile({ full_name: name });
+        } finally {
+            setIsUpdatingName(false);
         }
     };
 
@@ -157,13 +171,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                                     <div className="flex-1 flex flex-col items-center justify-center w-full space-y-10">
                                         {/* Profile Info */}
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-400 dark:text-zinc-600 shadow-inner overflow-hidden">
+                                        <div className="flex flex-col items-center gap-4 w-full">
+                                            <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-400 dark:text-zinc-600 shadow-inner overflow-hidden border border-zinc-200 dark:border-zinc-800">
                                                 {userProfile?.full_name ? userProfile.full_name.charAt(0) : user?.email?.charAt(0)?.toUpperCase()}
                                             </div>
-                                            <div className="text-center">
-                                                <h2 className={`${Typo.H2} text-base`}>{userProfile?.full_name || 'Guest'}</h2>
-                                                <p className={`${Typo.Body} text-zinc-400`}>{user?.email || ''}</p>
+                                            <div className="text-center w-full space-y-3">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <input
+                                                        value={name}
+                                                        onChange={(e) => setName(e.target.value)}
+                                                        onBlur={handleUpdateName}
+                                                        placeholder="Dein Name"
+                                                        className="bg-transparent text-center text-base font-medium outline-none border-b border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 w-full hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded py-1 transition-colors"
+                                                    />
+                                                    <p className={`${Typo.Micro} text-zinc-400`}>{user?.email || ''}</p>
+                                                </div>
                                             </div>
                                         </div>
 

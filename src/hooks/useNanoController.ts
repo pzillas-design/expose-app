@@ -70,9 +70,10 @@ export const useNanoController = () => {
 
     const {
         zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
-        isZoomingRef, isAutoScrollingRef, getMostVisibleItem,
-        isZooming = false, isAutoScrolling = false
+        isZoomingRef, isAutoScrollingRef, getMostVisibleItem
     } = canvasNav;
+    const isZooming = isZoomingRef.current;
+    const isAutoScrolling = isAutoScrollingRef.current;
 
     // --- Selection ---
     const {
@@ -105,7 +106,7 @@ export const useNanoController = () => {
         isAuthModalOpen, setIsAuthModalOpen,
         authEmail, setAuthEmail,
         authError, setAuthError,
-        handleAddFunds, handleSignOut
+        handleAddFunds, handleSignOut, updateProfile
     } = useAuth({
         isAuthDisabled,
         getResolvedLang
@@ -275,6 +276,7 @@ export const useNanoController = () => {
             setAuthError,
             handleAddFunds,
             handleSignOut,
+            updateProfile,
             setIsDragOver,
             handleFileDrop,
             setIsSettingsOpen,

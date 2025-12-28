@@ -28,7 +28,7 @@ export function App() {
         handleGenerateMore, handleNavigateParent,
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
-        addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut,
+        addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setCurrentBoardId, createBoard, deleteBoard, updateBoard
     } = actions;
@@ -286,7 +286,8 @@ export function App() {
                     onDeleteBoard={deleteBoard}
                     onRenameBoard={(id, name) => updateBoard(id, { name })}
                     user={user}
-                    onOpenSettings={() => setIsSettingsOpen(true)}
+                    userProfile={userProfile}
+                    onOpenSettings={(tab) => { setSettingsTab(tab || 'account'); setIsSettingsOpen(true); }}
                     t={t}
                     lang={currentLang}
                     isLoading={isBoardsLoading}
@@ -306,6 +307,7 @@ export function App() {
                     userProfile={userProfile}
                     onSignOut={handleSignOut}
                     onAddFunds={handleAddFunds}
+                    updateProfile={updateProfile}
                     onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
                     t={t}
                 />
