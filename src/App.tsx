@@ -198,8 +198,14 @@ export function App() {
         if (confirmed) handleDeleteImage(idsArray);
     }, [currentLang, t, confirm, handleDeleteImage]);
 
-    const handleDownloadSelected = useCallback(() => {
-        selectedIds.forEach(id => handleDownload(id));
+    const handleDownloadSelected = useCallback(async () => {
+        for (const id of selectedIds) {
+            const img = allImages.find(i => i.id === id);
+            if (img && img.src) {
+                await downloadImage(img.src, img.title);
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
     }, [selectedIds, allImages]);
 
     const handleGenerateVariations = useCallback((id?: string) => {

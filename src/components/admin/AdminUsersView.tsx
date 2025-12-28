@@ -4,6 +4,7 @@ import { AdminUser, TranslationFunction } from '@/types';
 import { Typo, Input } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminUserDetail } from './AdminUserDetail';
+import { useToast } from '@/components/ui/Toast';
 
 interface AdminUsersViewProps {
     t: TranslationFunction;
@@ -12,6 +13,7 @@ interface AdminUsersViewProps {
 export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
+    const { showToast } = useToast();
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [search, setSearch] = useState('');
 
@@ -38,8 +40,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
             if (selectedUser?.id === id) {
                 setSelectedUser(prev => prev ? { ...prev, ...updates } : null);
             }
-        } catch (error) {
-            alert('Failed to update user');
+            showToast(t('admin_user_updated_success') || 'User updated successfully', 'success');
+        } catch (error: any) {
+            console.error('Update failed:', error);
+            showToast(error.message || 'Failed to update user', 'error');
         }
     };
 

@@ -98,11 +98,17 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         if (isMulti && selectedImages) {
-            selectedImages.forEach(img => downloadImage(img.src, img.title));
-        } else if (selectedImage) {
-            downloadImage(selectedImage.src, selectedImage.title);
+            for (const img of selectedImages) {
+                if (img.src) {
+                    await downloadImage(img.src, img.title);
+                    // Small delay to prevent browser blocking multiple downloads
+                    await new Promise(r => setTimeout(r, 300));
+                }
+            }
+        } else if (selectedImage && selectedImage.src) {
+            await downloadImage(selectedImage.src, selectedImage.title);
         }
     };
 

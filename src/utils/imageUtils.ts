@@ -52,26 +52,50 @@ export async function generateThumbnail(src: string, maxDim: number = 512): Prom
  * This ensures the 'download' attribute works even for cross-origin URLs.
  */
 export async function downloadImage(src: string, filename: string): Promise<void> {
+    if (!src) return;
+
+    const finalFilename = filename.toLowerCase().endsWith('.png') ||
+        filename.toLowerCase().endsWith('.jpg') ||
+        filename.toLowerCase().endsWith('.jpeg')
+        ? filename : `${filename}.png`;
+
     try {
-        const response = await fetch(src);
-        if (!response.ok) throw new Error('Network response was not ok');
+        // Try fetching the image as a blob
+        const response = await fetch(src, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+
+        const link = document.body.appendChild(document.createElement('a'));
+        link.style.display = 'none';
         link.href = url;
-        link.download = filename.endsWith('.png') || filename.endsWith('.jpg') ? filename : `${filename}.png`;
-        document.body.appendChild(link);
+        link.download = finalFilename;
         link.click();
-        document.body.removeChild(link);
-        // Important: revoke the object URL to free up memory
-        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+
+        // Cleanup
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            link.remove();
+        }, 200);
+
     } catch (error) {
-        console.error('Download failed:', error);
-        // Fallback for extreme cases (might still open in new tab)
-        const link = document.createElement('a');
+        console.error('Download failed via fetch/blob:', error);
+
+        // Fallback: Use standard direct link with download attribute
+        // This might open in new tab in some browsers (like Safari) for cross-origin
+        const link = document.body.appendChild(document.createElement('a'));
+        link.style.display = 'none';
         link.href = src;
-        link.download = filename;
-        link.target = "_blank";
+        link.download = finalFilename;
+        link.target = "_blank"; // Mandatory for cross-origin fallback to avoid blocking navigation
         link.click();
+
+        setTimeout(() => link.remove(), 200);
     }
 }

@@ -47,7 +47,7 @@ export const adminService = {
             .eq('id', id);
 
         if (error) {
-            console.error('Error updating user:', error);
+            console.error('AdminService: Profile update failed!', error.message, error.details, error.hint);
             throw error;
         }
     },
