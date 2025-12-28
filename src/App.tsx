@@ -291,6 +291,7 @@ export function App() {
                     t={t}
                     lang={currentLang}
                     isLoading={isBoardsLoading}
+                    credits={credits}
                 />
                 <SettingsModal
                     isOpen={isSettingsOpen}
