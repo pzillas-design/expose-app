@@ -17,6 +17,7 @@ interface UseGenerationProps {
     selectAndSnap: (id: string) => void;
     setIsSettingsOpen: (open: boolean) => void;
     showToast: (msg: string, type: "success" | "error") => void;
+    currentBoardId: string | null;
 }
 
 const COSTS: Record<string, number> = {
@@ -35,7 +36,7 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId
 }: UseGenerationProps) => {
 
     const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
@@ -105,7 +106,8 @@ export const useGeneration = ({
                     status: 'processing',
                     cost: cost,
                     prompt: prompt,
-                    concurrent_jobs: currentConcurrency
+                    concurrent_jobs: currentConcurrency,
+                    board_id: currentBoardId
                 });
             } catch (dbErr) {
                 console.warn("Failed to log generation job:", dbErr);
@@ -134,6 +136,7 @@ export const useGeneration = ({
                 qualityMode,
                 maskDataUrl: maskDataUrl || undefined,
                 newId,
+                boardId: currentBoardId || undefined
                 // modelName removed as server handles mapping
             });
 

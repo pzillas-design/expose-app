@@ -11,6 +11,8 @@ interface UseFileHandlerProps {
     selectMultiple: (ids: string[]) => void;
     snapToItem: (id: string) => void;
     showToast: (msg: string, type: "success" | "error") => void;
+    currentBoardId: string | null;
+    setIsSettingsOpen: (open: boolean) => void;
 }
 
 export const useFileHandler = ({
@@ -19,7 +21,9 @@ export const useFileHandler = ({
     setRows,
     selectMultiple,
     snapToItem,
-    showToast
+    showToast,
+    currentBoardId,
+    setIsSettingsOpen
 }: UseFileHandlerProps) => {
 
     const processFiles = useCallback((files: File[]) => {
@@ -49,6 +53,7 @@ export const useFileHandler = ({
                                 title: baseName, baseName: baseName,
                                 version: 1, isGenerating: false, originalSrc: event.target!.result as string,
                                 userDraftPrompt: '',
+                                boardId: currentBoardId || undefined,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now()
                             };
@@ -79,7 +84,7 @@ export const useFileHandler = ({
             };
             reader.readAsDataURL(file);
         });
-    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId]);
 
     const processFile = useCallback((file: File) => processFiles([file]), [processFiles]);
 

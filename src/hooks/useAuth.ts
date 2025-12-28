@@ -8,11 +8,9 @@ import { useToast } from '../components/ui/Toast';
 interface UseAuthProps {
     isAuthDisabled: boolean;
     getResolvedLang: () => LocaleKey;
-    setRows: (rows: ImageRow[]) => void;
-    selectAndSnap: (id: string) => void;
 }
 
-export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSnap }: UseAuthProps) => {
+export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
     const { showToast } = useToast();
     const [user, setUser] = useState<any>(isAuthDisabled ? { id: 'guest', email: 'guest@expose.ae' } : null);
     const [userProfile, setUserProfile] = useState<any>(isAuthDisabled ? { credits: 999.00, full_name: 'Guest User' } : null);
@@ -53,12 +51,6 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
                 if (profile) {
                     setCredits(profile.credits);
                     setUserProfile(profile);
-
-                    // Load User Images
-                    imageService.loadUserImages(sessionUser.id).then(loadedRows => {
-                        setRows(loadedRows);
-                        // Removed automatic selectAndSnap to prevent jumping on tab focus
-                    });
                 }
             } catch (err) {
                 console.error("Auth: Profile fetch failed:", err);
@@ -67,7 +59,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, setRows, selectAndSna
             setUser(null);
             setUserProfile(null);
         }
-    }, [setRows, selectAndSnap, userProfile]);
+    }, [userProfile]);
 
     // Initial session and auth changes
     useEffect(() => {

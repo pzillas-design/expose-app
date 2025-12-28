@@ -48,15 +48,27 @@ export interface CanvasImage {
   modelVersion?: string; // Verified model version from API response
   estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
+  boardId?: string; // Link to board
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep
 }
 
 export interface ImageRow {
   id: string;
+  board_id?: string; // Link to board
   title: string;
   items: CanvasImage[];
   createdAt?: number; // DB Prep
+}
+
+export interface Board {
+  id: string;
+  userId: string;
+  name: string;
+  thumbnail?: string;
+  itemCount?: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface PresetOption {

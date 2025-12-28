@@ -16,6 +16,7 @@ import { useFileHandler } from './useFileHandler';
 import { useGeneration } from './useGeneration';
 import { usePersistence } from './usePersistence';
 import { useAnnotationHandler } from './useAnnotationHandler';
+import { useBoards } from './useBoards';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -24,6 +25,7 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true';
@@ -97,7 +99,6 @@ export const useNanoController = () => {
         getMostVisibleItem
     });
 
-    // --- Auth ---
     const {
         user, userProfile, credits, setCredits,
         authModalMode, setAuthModalMode,
@@ -107,19 +108,32 @@ export const useNanoController = () => {
         handleAddFunds, handleSignOut
     } = useAuth({
         isAuthDisabled,
-        getResolvedLang,
-        setRows,
-        selectAndSnap
+        getResolvedLang
     });
+
+    const {
+        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, deleteBoard, updateBoard
+    } = useBoards(user?.id);
+
+    // --- Board Image Loading ---
+    React.useEffect(() => {
+        if (user && currentBoardId) {
+            imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
+                setRows(loadedRows);
+            });
+        } else {
+            setRows([]);
+        }
+    }, [user, currentBoardId]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
-        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast
+        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen
     });
 
     const { performGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt } = usePersistence({
@@ -226,7 +240,10 @@ export const useNanoController = () => {
             authError,
             isDragOver,
             isSettingsOpen,
-            isAdminOpen
+            isAdminOpen,
+            currentBoardId,
+            boards,
+            isBoardsLoading
         },
         actions: {
             setRows,
@@ -271,7 +288,12 @@ export const useNanoController = () => {
             handleGenerate,
             handleGenerateMore,
             handleNavigateParent,
-            setSnapEnabled
+            setSnapEnabled,
+            setCurrentBoardId,
+            createBoard,
+            deleteBoard,
+            updateBoard,
+            fetchBoards
         },
         refs: {
             scrollContainerRef

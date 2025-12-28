@@ -28,6 +28,7 @@ export const imageService = {
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,
+            board_id: (image as any).boardId, // Use boardId if available
             storage_path: path,
             thumb_storage_path: thumbPath,
             width: Math.round(image.width),
@@ -118,7 +119,8 @@ export const imageService = {
         qualityMode,
         maskDataUrl,
         newId,
-        modelName
+        modelName,
+        boardId
     }: {
         sourceImage: CanvasImage;
         prompt: string;
@@ -126,6 +128,7 @@ export const imageService = {
         maskDataUrl?: string;
         newId: string;
         modelName?: string;
+        boardId?: string;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -136,7 +139,8 @@ export const imageService = {
                 qualityMode,
                 maskDataUrl,
                 newId,
-                modelName
+                modelName,
+                board_id: boardId
             }
         });
 
@@ -184,7 +188,8 @@ export const imageService = {
             width: (genWidth / genHeight) * 512,
             height: 512,
             realWidth: genWidth,
-            realHeight: genHeight
+            realHeight: genHeight,
+            boardId: boardId
         };
     },
 
@@ -192,22 +197,33 @@ export const imageService = {
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */
-    async loadUserImages(userId: string): Promise<ImageRow[]> {
+    async loadUserImages(userId: string, boardId?: string): Promise<ImageRow[]> {
+        console.log(`Deep Sync: Loading user history for board ${boardId || 'all'}...`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
         // 1. Get Completed Images & Active Jobs in parallel
+        let imgsQuery = supabase
+            .from('canvas_images')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (boardId) {
+            imgsQuery = imgsQuery.eq('board_id', boardId);
+        }
+
+        let jobsQuery = supabase
+            .from('generation_jobs')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'processing');
+
+        if (boardId) {
+            jobsQuery = jobsQuery.eq('board_id', boardId);
+        }
+
         const [imgsRes, jobsRes] = await Promise.all([
-            supabase
-                .from('canvas_images')
-                .select('*')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false }),
-            supabase
-                .from('generation_jobs')
-                .select('*')
-                .eq('user_id', userId)
-                .eq('status', 'processing')
-                .order('created_at', { ascending: false })
+            imgsQuery.order('created_at', { ascending: false }),
+            jobsQuery.order('created_at', { ascending: false })
         ]);
 
         if (imgsRes.error) {
