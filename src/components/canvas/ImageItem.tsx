@@ -150,43 +150,45 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 scrollSnapStop: 'always',
             }}
         >
-            {/* Top Toolbar: Filename + Actions */}
-            <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
-                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink-0`} title={image.title}>
-                    {image.title}
-                </span>
+            {/* Top Toolbar: Filename + Actions - Only show when zoomed in */}
+            {zoom > 0.4 && (
+                <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink-0`} title={image.title}>
+                        {image.title}
+                    </span>
 
-                <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'}`}>
-                    <Tooltip text={t('tt_save')} side="top">
-                        <button
-                            onClick={handleDownload}
-                            className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                        </button>
-                    </Tooltip>
-
-                    <Tooltip text={t('ctx_delete_image')} side="top">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
-                            className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    </Tooltip>
-
-                    {image.parentId && (
-                        <Tooltip text={t('tt_more')} side="top">
+                    <div className={`flex items-center gap-3 transition-opacity duration-200 ${isSelected ? 'opacity-100 pointer-events-auto' : 'opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto'}`}>
+                        <Tooltip text={t('tt_save')} side="top">
                             <button
-                                onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                                onClick={handleDownload}
                                 className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
                             >
-                                <RotateCcw className="w-3.5 h-3.5" />
+                                <Download className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
-                    )}
+
+                        <Tooltip text={t('ctx_delete_image')} side="top">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
+                                className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </Tooltip>
+
+                        {image.parentId && (
+                            <Tooltip text={t('tt_more')} side="top">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                                    className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all pointer-events-auto`}
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                            </Tooltip>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div
                 className={`relative ${Theme.Colors.PanelBg} overflow-hidden ${isSelected ? 'ring-1 ring-black dark:ring-white' : ''}`}
