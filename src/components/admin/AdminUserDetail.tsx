@@ -92,7 +92,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                         <p className="text-zinc-500 text-sm">{user.email}</p>
                         <div className="flex items-center gap-2 mt-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400`}>
-                                ID: {user.id}
+                                {t('id_label')}: {user.id}
                             </span>
                         </div>
                     </div>
@@ -174,9 +174,9 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                                 onChange={(e) => onUpdateUser(user.id, { role: e.target.value as any })}
                                 className="bg-transparent text-sm font-medium outline-none text-right cursor-pointer text-zinc-900 dark:text-zinc-100"
                             >
-                                <option value="user">User</option>
-                                <option value="pro">Pro</option>
-                                <option value="admin">Admin</option>
+                                <option value="user">{t('role_user')}</option>
+                                <option value="pro">{t('role_pro')}</option>
+                                <option value="admin">{t('role_admin')}</option>
                             </select>
                         </div>
 

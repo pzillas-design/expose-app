@@ -66,6 +66,7 @@ export interface Board {
   userId: string;
   name: string;
   thumbnail?: string;
+  previewImages?: string[]; // Added for dynamic multi-thumbnails
   itemCount?: number;
   createdAt: number;
   updatedAt: number;

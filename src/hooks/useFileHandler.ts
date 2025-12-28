@@ -13,6 +13,7 @@ interface UseFileHandlerProps {
     showToast: (msg: string, type: "success" | "error") => void;
     currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;
+    t: (key: any) => string;
 }
 
 export const useFileHandler = ({
@@ -23,7 +24,8 @@ export const useFileHandler = ({
     snapToItem,
     showToast,
     currentBoardId,
-    setIsSettingsOpen
+    setIsSettingsOpen,
+    t
 }: UseFileHandlerProps) => {
 
     const processFiles = useCallback((files: File[]) => {
@@ -75,7 +77,10 @@ export const useFileHandler = ({
 
                             if (user && !isAuthDisabled) {
                                 imageService.persistImage(newImage, user.id).then(result => {
-                                    if (!result.success) showToast(`Save Failed: ${result.error}`, "error");
+                                    if (!result.success) {
+                                        const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
+                                        showToast(`${t('save_failed')}: ${errorMsg}`, "error");
+                                    }
                                 });
                             }
                         });

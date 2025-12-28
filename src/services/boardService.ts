@@ -1,11 +1,15 @@
 import { supabase } from './supabaseClient';
 import { Board } from '../types';
+import { storageService } from './storageService';
 
 export const boardService = {
     async getBoards(userId: string): Promise<Board[]> {
         const { data, error } = await supabase
             .from('boards')
-            .select('*, canvas_images(count)')
+            .select(`
+                *,
+                canvas_images(thumb_storage_path)
+            `)
             .eq('user_id', userId)
             .order('updated_at', { ascending: false });
 
@@ -14,21 +18,37 @@ export const boardService = {
             return [];
         }
 
-        return data.map(b => ({
-            id: b.id,
-            userId: b.user_id,
-            name: b.name,
-            thumbnail: b.thumbnail,
-            itemCount: b.canvas_images?.[0]?.count || 0,
-            createdAt: new Date(b.created_at).getTime(),
-            updatedAt: new Date(b.updated_at).getTime()
+        // Get signed URLs for thumbnails (efficiently if possible, but 4 per board is manageable)
+        const boardsWithImages = await Promise.all(data.map(async (b) => {
+            const imagePaths = (b.canvas_images || [])
+                .filter((img: any) => img.thumb_storage_path)
+                .slice(0, 4)
+                .map((img: any) => img.thumb_storage_path);
+
+            const previewImages = await Promise.all(
+                imagePaths.map(path => storageService.getSignedUrl(path))
+            );
+
+            return {
+                id: b.id,
+                userId: b.user_id,
+                name: b.name,
+                thumbnail: b.thumbnail,
+                previewImages: previewImages.filter(Boolean) as string[],
+                itemCount: b.canvas_images?.length || 0,
+                createdAt: new Date(b.created_at).getTime(),
+                updatedAt: new Date(b.updated_at).getTime()
+            };
         }));
+
+        return boardsWithImages;
     },
 
-    async createBoard(userId: string, name: string = 'Mein Board'): Promise<Board | null> {
+    async createBoard(userId: string, name: string = 'Mein Board', id?: string): Promise<Board | null> {
         const { data, error } = await supabase
             .from('boards')
             .insert({
+                id: id || undefined,
                 user_id: userId,
                 name: name
             })
@@ -48,6 +68,18 @@ export const boardService = {
             createdAt: new Date(data.created_at).getTime(),
             updatedAt: new Date(data.updated_at).getTime()
         };
+    },
+
+    async ensureBoardExists(userId: string, boardId: string, name: string = 'Mein Board'): Promise<void> {
+        const { data: existing } = await supabase
+            .from('boards')
+            .select('id')
+            .eq('id', boardId)
+            .single();
+
+        if (!existing) {
+            await this.createBoard(userId, name, boardId);
+        }
     },
 
     async updateBoard(boardId: string, updates: Partial<Board>): Promise<void> {

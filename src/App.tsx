@@ -12,9 +12,13 @@ import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
+import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 
 export function App() {
     const { state, actions, refs, t } = useNanoController();
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
@@ -30,7 +34,7 @@ export function App() {
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
-        setMaskTool, setCurrentBoardId, createBoard, deleteBoard, updateBoard
+        setMaskTool, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -45,15 +49,25 @@ export function App() {
     // Stable Editor State Object to preserve ImageItem memoization during scroll
     const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool }), [sideSheetMode, brushSize, maskTool]);
 
-    // URL Routing Support
+    // URL Routing Sync
+    useEffect(() => {
+        const pathParts = location.pathname.split('/');
+        if (pathParts[1] === 'board' && pathParts[2]) {
+            if (currentBoardId !== pathParts[2]) {
+                setCurrentBoardId(pathParts[2]);
+            }
+        } else if (pathParts[1] === 'boards' || location.pathname === '/') {
+            if (currentBoardId !== null) {
+                setCurrentBoardId(null);
+            }
+        }
+    }, [location.pathname, currentBoardId, setCurrentBoardId]);
+
     useEffect(() => {
         const path = window.location.pathname;
         if (path === '/admin') {
             setIsAdminOpen(true);
         }
-        // Log version for debugging
-        // @ts-ignore
-        console.log("Exposé v5.1.0-fix-zoom-v2 - Environment:", import.meta.env.MODE);
     }, [setIsAdminOpen]);
 
     useEffect(() => {
@@ -251,10 +265,18 @@ export function App() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIds, moveSelection, moveRowSelection, requestDelete]);
 
-    const handleCreateBoardAndNavigate = async () => {
-        const newBoard = await createBoard();
+    const handleCreateBoardAndNavigate = () => {
+        const newBoard = initializeNewBoard();
         if (newBoard) {
-            setCurrentBoardId(newBoard.id);
+            navigate(`/board/${newBoard.id}`);
+        }
+    };
+
+    const handleSelectBoard = (id: string | null) => {
+        if (id) {
+            navigate(`/board/${id}`);
+        } else {
+            navigate('/boards');
         }
     };
 
@@ -276,49 +298,46 @@ export function App() {
         );
     }
 
-    if (!currentBoardId) {
-        return (
-            <>
-                <BoardsPage
-                    boards={boards}
-                    onSelectBoard={setCurrentBoardId}
-                    onCreateBoard={handleCreateBoardAndNavigate}
-                    onDeleteBoard={deleteBoard}
-                    onRenameBoard={(id, name) => updateBoard(id, { name })}
-                    user={user}
-                    userProfile={userProfile}
-                    onOpenSettings={(tab) => { setSettingsTab(tab || 'account'); setIsSettingsOpen(true); }}
-                    t={t}
-                    lang={currentLang}
-                    isLoading={isBoardsLoading}
-                    credits={credits}
-                />
-                <SettingsModal
-                    isOpen={isSettingsOpen}
-                    onClose={() => setIsSettingsOpen(false)}
-                    initialTab={settingsTab}
-                    qualityMode={qualityMode}
-                    onQualityModeChange={setQualityMode}
-                    themeMode={themeMode}
-                    onThemeChange={setThemeMode}
-                    currentBalance={credits}
-                    lang={lang}
-                    onLangChange={setLang}
-                    user={user}
-                    userProfile={userProfile}
-                    onSignOut={handleSignOut}
-                    onAddFunds={handleAddFunds}
-                    updateProfile={updateProfile}
-                    onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
-                    t={t}
-                />
-                {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
-            </>
-        );
-    }
-    const currentBoard = boards.find(b => b.id === currentBoardId);
+    const boardsPage = (
+        <>
+            <BoardsPage
+                boards={boards}
+                onSelectBoard={handleSelectBoard}
+                onCreateBoard={handleCreateBoardAndNavigate}
+                onDeleteBoard={deleteBoard}
+                onRenameBoard={(id, name) => updateBoard(id, { name })}
+                user={user}
+                userProfile={userProfile}
+                onOpenSettings={(tab) => { setSettingsTab(tab || 'account'); setIsSettingsOpen(true); }}
+                t={t}
+                lang={currentLang}
+                isLoading={isBoardsLoading}
+                credits={credits}
+            />
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                initialTab={settingsTab}
+                qualityMode={qualityMode}
+                onQualityModeChange={setQualityMode}
+                themeMode={themeMode}
+                onThemeChange={setThemeMode}
+                currentBalance={credits}
+                lang={lang}
+                onLangChange={setLang}
+                user={user}
+                userProfile={userProfile}
+                onSignOut={handleSignOut}
+                onAddFunds={handleAddFunds}
+                updateProfile={updateProfile}
+                onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
+                t={t}
+            />
+            {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
+        </>
+    );
 
-    return (
+    const canvasView = (
         <div
             className={`flex h-screen w-screen ${Theme.Colors.CanvasBg} overflow-hidden ${Theme.Colors.TextPrimary} ${Theme.Fonts.Main} selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black`}
             onDragLeave={handleDragLeave}
@@ -328,14 +347,14 @@ export function App() {
         >
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
                 <button
-                    onClick={() => setCurrentBoardId(null)}
+                    onClick={() => handleSelectBoard(null)}
                     className={`h-10 px-3 ${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} flex items-center gap-2 hover:ring-2 ring-zinc-500/10 transition-all group`}
                     title="Zurück zur Übersicht"
                 >
                     <Layout className="w-5 h-5 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
                     <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
                     <span className={`${Typo.Label} max-w-[120px] truncate text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors`}>
-                        {currentBoard?.name || 'Board'}
+                        {boards.find(b => b.id === currentBoardId)?.name || 'Board'}
                     </span>
                 </button>
                 <CommandDock
@@ -511,9 +530,19 @@ export function App() {
                 onAddFunds={handleAddFunds}
                 onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
                 t={t}
+                updateProfile={updateProfile}
             />
 
             {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
         </div>
+    );
+
+    return (
+        <Routes>
+            <Route path="/boards" element={boardsPage} />
+            <Route path="/board/:boardId" element={canvasView} />
+            <Route path="/admin" element={boardsPage} />
+            <Route path="/" element={<Navigate to="/boards" replace />} />
+        </Routes>
     );
 }

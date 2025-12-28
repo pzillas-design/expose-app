@@ -192,7 +192,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         onClick={() => setActiveInternalTab('prompt')}
                         className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'prompt' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
                     >
-                        {currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
+                        {t('tab_edit')}
                         {activeInternalTab === 'prompt' && (
                             <div className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-zinc-800 dark:bg-zinc-200" />
                         )}
@@ -449,7 +449,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {/* Resolution */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                            {currentLang === 'de' ? 'Auflösung' : 'Resolution'}
+                                            {t('resolution')}
                                         </span>
                                         <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
                                             {(() => {
@@ -467,7 +467,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {/* Created At */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                            {currentLang === 'de' ? 'Erstellt' : 'Created'}
+                                            {t('created_at')}
                                         </span>
                                         <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
                                             {selectedImage.createdAt ? (() => {
@@ -485,7 +485,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {selectedImage.quality && (
                                         <div className="flex flex-col gap-1.5">
                                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                                {currentLang === 'de' ? 'Modell' : 'Model'}
+                                                {t('model')}
                                             </span>
                                             <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
                                                 {(() => {
@@ -518,7 +518,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 >
                                     <RotateCcw className="w-4 h-4 text-zinc-400" />
                                     <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                        {currentLang === 'de' ? 'Neu generieren' : 'Regenerate'}
+                                        {t('ctx_create_variations')}
                                     </span>
                                 </Button>
 
@@ -547,7 +547,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 if (maskUrl) {
                                                     window.open(maskUrl, '_blank');
                                                 } else {
-                                                    showToast(currentLang === 'de' ? 'Keine Maske für dieses Bild gefunden.' : 'No mask found for this image.', 'error');
+                                                    showToast(t('no_mask_found'), 'error');
                                                 }
                                             }
                                         }}
@@ -556,7 +556,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     >
                                         <Eye className="w-4 h-4 text-zinc-400" />
                                         <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                            Debug: Maske prüfen
+                                            {t('debug_mask')}
                                         </span>
                                     </Button>
                                 )}

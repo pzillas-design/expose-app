@@ -1,5 +1,6 @@
-import React from 'react';
-import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Menu, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -15,6 +16,48 @@ const getInitials = (name?: string, email?: string) => {
     if (email) return email[0].toUpperCase();
     return '?';
 };
+
+function GridThumbnail({ images, thumbnail }: { images?: string[], thumbnail?: string }) {
+    const displayImages = images?.slice(0, 4) || [];
+
+    if (displayImages.length === 0) {
+        if (thumbnail) {
+            return <img src={thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />;
+        }
+        return (
+            <div className="absolute inset-0 flex items-center justify-center opacity-60">
+                <ImageIcon className="w-12 h-12 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            </div>
+        );
+    }
+
+    if (displayImages.length === 1) {
+        return <img src={displayImages[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />;
+    }
+
+    if (displayImages.length === 2) {
+        return (
+            <div className="absolute inset-0 grid grid-cols-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
+                {displayImages.map((src, i) => (
+                    <img key={i} src={src} className="w-full h-full object-cover" />
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
+            {displayImages.slice(0, 4).map((src, i) => (
+                <img key={i} src={src} className="w-full h-full object-cover" />
+            ))}
+            {displayImages.length === 3 && (
+                <div className="bg-zinc-100 dark:bg-zinc-800/50 flex items-center justify-center">
+                    <ImageIcon className="w-6 h-6 opacity-10" />
+                </div>
+            )}
+        </div>
+    );
+}
 
 interface BoardsPageProps {
     boards: Board[];
@@ -47,90 +90,75 @@ export function BoardsPage({
 }: BoardsPageProps) {
     const locale = lang === 'de' ? de : enUS;
 
+    const getPageStyles = () => {
+        return 'bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900';
+    };
+
     return (
-        <div className={`min-h-screen w-full ${Theme.Colors.CanvasBg} ${Theme.Colors.TextPrimary} flex flex-col`}>
-            <div className="max-w-7xl mx-auto w-full px-8">
-                {/* Header */}
-                <header className="w-full pt-16 pb-12 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/50 mb-4">
-                    <div className="flex items-center gap-4">
-                        <Logo className="w-12 h-12" />
-                        <span
-                            className="tracking-tight text-2xl"
-                            style={{
-                                fontFamily: "'Kumbh Sans', sans-serif",
-                                fontWeight: 400,
-                                lineHeight: '100%',
-                                letterSpacing: '-0.02em',
-                                textTransform: 'lowercase'
-                            }}
-                        >
-                            exposé
-                        </span>
+        <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
+
+            <div className="max-w-7xl mx-auto w-full px-8 flex-1 flex flex-col">
+
+                {/* REFINED MODERN HEADER */}
+                <header className="pt-16 pb-12 flex items-center justify-between">
+                    <div className="flex items-center gap-5 group cursor-pointer">
+                        <Logo className="w-14 h-14 group-hover:scale-105 transition-transform duration-500" />
+                        <span className="text-4xl font-medium tracking-tighter" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>exposé</span>
                     </div>
 
-                    <div className="flex items-center gap-8">
-                        {/* Status & Settings */}
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full border border-zinc-200 dark:border-zinc-700 transition-colors">
-                                <Wallet className="w-3.5 h-3.5 text-zinc-400" />
-                                <span className={`${Typo.Mono} text-sm font-medium`}>{(credits || 0).toFixed(2)} €</span>
+                    <div className="flex items-center gap-10">
+                        {/* USER PROFILE (AVATAR + EMAIL) */}
+                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => onOpenSettings('account')}>
+                            {/* AVATAR RUND */}
+                            <div className={`w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors`}>
+                                {getInitials(userProfile?.full_name, user?.email)}
                             </div>
-                            <IconButton
-                                icon={<Settings className="w-4 h-4" />}
-                                onClick={() => onOpenSettings('general')}
-                                tooltip="Einstellungen"
-                            />
+
+                            {/* EMAIL / NAME */}
+                            <span className="text-sm font-medium tracking-tight text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                                {userProfile?.full_name || user?.email || user?.email?.split('@')[0]}
+                            </span>
                         </div>
 
-                        {/* User Profile */}
-                        <div
-                            className="flex items-center gap-3 pl-8 border-l border-zinc-200 dark:border-zinc-800 cursor-pointer group hover:opacity-80 transition-all"
-                            onClick={() => onOpenSettings('account')}
+                        {/* CREDITS (CANVAS FONT) */}
+                        <span className="text-sm font-mono font-medium tracking-tight opacity-40">
+                            {(credits || 0).toFixed(2)} €
+                        </span>
+
+
+                        {/* MENU ICON ONLY (PLACED RIGHT) */}
+                        <button
+                            onClick={() => onOpenSettings('general')}
+                            className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+                            title="Settings"
                         >
-                            <div className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden ring-offset-2 ring-transparent group-hover:ring-zinc-200 dark:group-hover:ring-zinc-700 transition-all">
-                                <span className="text-sm font-bold text-zinc-500">
-                                    {getInitials(userProfile?.full_name, user?.email)}
-                                </span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className={`${Typo.H3} leading-tight`}>{userProfile?.full_name || user?.email?.split('@')[0]}</span>
-                                <span className={`${Typo.Micro} opacity-40 font-mono`}>{user?.email}</span>
-                            </div>
-                        </div>
+                            <Menu className="w-5 h-5" />
+                        </button>
                     </div>
                 </header>
 
-                <main className="py-12">
-                    <div className="flex items-baseline justify-between mb-12">
-                        <div>
-                            <h1 className={`${Typo.Display} text-4xl tracking-tight`}>Meine Boards</h1>
-                            <p className={`${Typo.Body} opacity-40 mt-2`}>
-                                {boards.length} {boards.length === 1 ? 'Board' : 'Boards'} insgesamt
-                            </p>
-                        </div>
+                <main className="pt-12 pb-32 flex-1 flex flex-col">
+
+                    <div className="flex items-center justify-between mb-16">
+                        <h1 className="text-[48px] font-bold tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
+                        <button onClick={onCreateBoard} className={`flex items-center gap-3 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ${Theme.Geometry.Radius} transition-all hover:opacity-90 active:scale-[0.98] group ${Theme.Effects.Shadow}`}>
+                            <Plus className="w-4 h-4" />
+                            <span className={Typo.ButtonLabel}>Neues Board</span>
+                        </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                        {/* Create New Board Card */}
-                        <button
-                            onClick={onCreateBoard}
-                            className={`
-                                group relative flex flex-col items-center justify-center gap-4
-                                bg-white dark:bg-zinc-900 border border-dashed border-zinc-200 dark:border-zinc-800
-                                rounded-2xl hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300
-                                hover:bg-zinc-50 dark:hover:bg-zinc-800/50 min-h-[340px] shadow-sm
-                            `}
-                        >
-                            <div className="w-16 h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 flex items-center justify-center transition-all duration-300 shadow-sm border-dashed">
-                                <Plus className="w-8 h-8 text-zinc-400" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+                        <button onClick={onCreateBoard} className={`group relative flex flex-col items-center justify-center gap-2 transition-all duration-500 outline-none ${Theme.Colors.Surface} border border-dashed ${Theme.Colors.Border} rounded-2xl aspect-[3/4] hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700`}>
+                            <div className="flex items-center justify-center transition-all duration-500 group-hover:scale-110">
+                                <Plus className="w-20 h-20 text-zinc-900 dark:text-white transition-colors" strokeWidth={0.5} />
                             </div>
-                            <span className={`${Typo.Label} text-zinc-400 font-medium tracking-wide`}>Neues Board</span>
+                            <span className={`${Typo.ButtonLabel} text-zinc-900 dark:text-white transition-all`}>Neues Board</span>
                         </button>
 
                         {isLoading ? (
-                            // Skeleton Cards
                             Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="aspect-[4/3] bg-zinc-100 dark:bg-zinc-800 rounded-2xl animate-pulse" />
+                                <div key={i} className={`aspect-[3/4] bg-zinc-100 dark:bg-zinc-900 animate-pulse rounded-2xl`} />
                             ))
                         ) : (
                             boards.map((board) => (
@@ -152,6 +180,7 @@ export function BoardsPage({
 }
 
 interface BoardCardProps {
+    key?: string;
     board: Board;
     onSelect: () => void;
     onDelete: () => void;
@@ -160,92 +189,94 @@ interface BoardCardProps {
 }
 
 function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardProps) {
-    const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-    const [isRenaming, setIsRenaming] = React.useState(false);
-    const [name, setName] = React.useState(board.name);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+    const hasImages = (board.previewImages && board.previewImages.length > 0) || board.thumbnail;
 
-    const handleRename = (e: React.FormEvent) => {
-        e.preventDefault();
-        onRename(name);
-        setIsRenaming(false);
+    const handleMenuClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMenuPos({ x: rect.left, y: rect.bottom + 8 });
+        setMenuOpen(true);
     };
 
     return (
-        <Card
-            className="group relative flex flex-col hover:shadow-md transition-all duration-300 cursor-pointer border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm"
-            onClick={onSelect}
-        >
-            {/* Thumbnail Area */}
-            <div className="aspect-[4/3] bg-zinc-50 dark:bg-zinc-800/50 relative flex items-center justify-center overflow-hidden rounded-t-2xl border-b border-zinc-100 dark:border-zinc-800/50">
-                {board.thumbnail ? (
-                    <img src={board.thumbnail} alt={board.name} className="w-full h-full object-cover transition-opacity duration-300" />
+        <>
+            <div className={`group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`} onClick={onSelect}>
+                <GridThumbnail images={board.previewImages} thumbnail={board.thumbnail} />
+
+                {hasImages ? (
+                    <>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-1 translate-y-1 group-hover:translate-y-0 transition-transform duration-500">
+                            <div className="flex items-center justify-between gap-3">
+                                <h3 className="text-base font-medium tracking-tight text-white truncate drop-shadow-sm flex-1">{board.name}</h3>
+                                <button
+                                    onClick={handleMenuClick}
+                                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                                >
+                                    <MoreVertical className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-white/70 uppercase tracking-widest font-medium whitespace-nowrap">
+                                    {formatDistanceToNow(board.updatedAt, { locale })} • {board.itemCount || 0} Fotos
+                                </span>
+                            </div>
+                        </div>
+                    </>
                 ) : (
-                    <div className="flex flex-col items-center gap-4 opacity-10 group-hover:opacity-30 transition-all duration-300">
-                        <ImageIcon className="w-16 h-16" strokeWidth={1} />
-                        <span className="text-[10px] uppercase tracking-[0.2em] font-bold">Keine Inhalte</span>
+                    <div className="absolute inset-0 p-6 flex flex-col justify-end bg-zinc-50/50 dark:bg-zinc-900/50">
+                        <div className="flex items-center justify-between gap-3 mb-1">
+                            <h3 className={`${Typo.H2} truncate group-hover:text-zinc-900 dark:group-hover:text-white transition-colors flex-1`}>{board.name}</h3>
+                            <button
+                                onClick={handleMenuClick}
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-medium whitespace-nowrap">
+                                {formatDistanceToNow(board.updatedAt, { locale })} • {board.itemCount || 0} Fotos
+                            </span>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* Info Area */}
-            <div className="p-6 flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-3">
-                    {isRenaming ? (
-                        <form onSubmit={handleRename} onClick={e => e.stopPropagation()} className="flex-1">
-                            <input
-                                autoFocus
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                onBlur={handleRename}
-                                className="w-full bg-zinc-100 dark:bg-zinc-800 border-none outline-none rounded-lg px-2 py-1 -ml-2 text-sm font-semibold"
-                            />
-                        </form>
-                    ) : (
-                        <span className={`${Typo.H3} truncate flex-1 text-base group-hover:text-black dark:group-hover:text-white transition-colors duration-300 font-semibold tracking-tight`}>
-                            {board.name}
-                        </span>
-                    )}
-
-                    <div className="relative" onClick={e => e.stopPropagation()}>
-                        <IconButton
-                            icon={<MoreVertical className="w-4 h-4" />}
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="opacity-0 group-hover:opacity-100 transition-all duration-300 -mr-2"
-                        />
-
-                        {isMenuOpen && (
-                            <div className="absolute right-0 top-10 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-20 py-2 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-                                <button
-                                    onClick={() => { setIsRenaming(true); setIsMenuOpen(false); }}
-                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm text-left transition-colors font-sans"
-                                >
-                                    <Edit3 className="w-4 h-4 text-zinc-400" /> Umbenennen
-                                </button>
-                                <button
-                                    onClick={() => { onDelete(); setIsMenuOpen(false); }}
-                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm text-red-500 text-left transition-colors font-sans"
-                                >
-                                    <Trash2 className="w-4 h-4" /> Löschen
-                                </button>
-                            </div>
-                        )}
+            {menuOpen && createPortal(
+                <>
+                    <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} onContextMenu={(e) => { e.preventDefault(); setMenuOpen(false); }} />
+                    <div
+                        className={`
+                            fixed z-[101] min-w-[160px]
+                            bg-white dark:bg-zinc-950
+                            border border-zinc-200 dark:border-zinc-800
+                            rounded-lg shadow-xl ring-1 ring-black/5
+                            overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
+                        `}
+                        style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
+                    >
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRename(board.name); setMenuOpen(false); }}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
+                        >
+                            <Edit3 className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
+                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>Umbennnen</span>
+                        </button>
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group"
+                        >
+                            <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
+                            <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>Löschen</span>
+                        </button>
                     </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-1">
-                    <div className="flex items-center gap-1.5 opacity-30 group-hover:opacity-60 transition-opacity">
-                        <Clock className="w-3 h-3" />
-                        <span className={Typo.Micro}>
-                            {formatDistanceToNow(board.updatedAt, { addSuffix: true, locale })}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-zinc-100/50 dark:bg-zinc-800/50 rounded-full border border-zinc-200/50 dark:border-zinc-800/50 opacity-40 group-hover:opacity-100 transition-all">
-                        <ImageIcon className="w-3 h-3" />
-                        <span className="text-[10px] font-bold font-mono">{board.itemCount || 0}</span>
-                    </div>
-                </div>
-            </div>
-        </Card>
+                </>,
+                document.body
+            )}
+        </>
     );
 }

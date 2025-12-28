@@ -109,11 +109,12 @@ export const useNanoController = () => {
         handleAddFunds, handleSignOut, updateProfile
     } = useAuth({
         isAuthDisabled,
-        getResolvedLang
+        getResolvedLang,
+        t
     });
 
     const {
-        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, deleteBoard, updateBoard
+        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard
     } = useBoards(user?.id);
 
     // --- Board Image Loading ---
@@ -129,12 +130,12 @@ export const useNanoController = () => {
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
-        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen
+        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t
     });
 
     const { performGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt } = usePersistence({
@@ -169,7 +170,7 @@ export const useNanoController = () => {
 
         if (user && !isAuthDisabled) {
             imageService.deleteImages(idsToDelete, user.id).catch(err => {
-                showToast(`Delete failed: ${err.message}`, "error");
+                showToast(`${t('delete_failed')}: ${err.message}`, "error");
             });
         }
     }, [user, isAuthDisabled, showToast]);
@@ -293,6 +294,7 @@ export const useNanoController = () => {
             setSnapEnabled,
             setCurrentBoardId,
             createBoard,
+            initializeNewBoard,
             deleteBoard,
             updateBoard,
             fetchBoards

@@ -8,9 +8,10 @@ import { useToast } from '../components/ui/Toast';
 interface UseAuthProps {
     isAuthDisabled: boolean;
     getResolvedLang: () => LocaleKey;
+    t: (key: any) => string;
 }
 
-export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
+export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) => {
     const { showToast } = useToast();
     const [user, setUser] = useState<any>(isAuthDisabled ? { id: 'guest', email: 'guest@expose.ae' } : null);
     const [userProfile, setUserProfile] = useState<any>(isAuthDisabled ? { credits: 999.00, full_name: 'Guest User' } : null);
@@ -140,14 +141,12 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('payment') === 'success') {
-            showToast(getResolvedLang() === 'de'
-                ? "Zahlung erfolgreich! Dein Guthaben wird in Kürze aktualisiert."
-                : "Payment successful! Your balance will be updated shortly.", "success");
+            showToast(t('payment_success'), "success");
 
             const newURL = window.location.origin + window.location.pathname;
             window.history.replaceState(null, '', newURL);
         }
-    }, [showToast, getResolvedLang]);
+    }, [showToast, t]);
 
     const handleAddFunds = async (amount: number) => {
         if (isAuthDisabled) {
@@ -180,7 +179,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
                 throw new Error("No checkout URL received from server.");
             }
         } catch (err: any) {
-            showToast(err.message || "Payment initialization failed.", "error");
+            showToast(err.message || t('payment_failed'), "error");
         }
     };
 
@@ -190,9 +189,9 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang }: UseAuthProps) => {
             const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
             if (error) throw error;
             setUserProfile((prev: any) => ({ ...prev, ...updates }));
-            showToast("Profile updated successfully.", "success");
+            showToast(t('profile_updated'), "success");
         } catch (err: any) {
-            showToast(err.message || "Failed to update profile.", "error");
+            showToast(err.message || t('failed_update_profile'), "error");
         }
     };
 

@@ -40,10 +40,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
             if (selectedUser?.id === id) {
                 setSelectedUser(prev => prev ? { ...prev, ...updates } : null);
             }
-            showToast(t('admin_user_updated_success') || 'User updated successfully', 'success');
+            showToast(t('admin_user_updated_success'), 'success');
         } catch (error: any) {
             console.error('Update failed:', error);
-            showToast(error.message || 'Failed to update user', 'error');
+            showToast(error.message || t('failed_update_user'), 'error');
         }
     };
 
@@ -53,7 +53,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
             setUsers(prev => prev.filter(u => u.id !== id));
             setSelectedUser(null);
         } catch (error) {
-            alert('Failed to delete user');
+            showToast(t('failed_delete_user'), 'error');
         }
     };
 

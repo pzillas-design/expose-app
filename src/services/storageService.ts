@@ -19,16 +19,19 @@ export const storageService = {
 
             // 3. Upload
             const { data, error } = await supabase.storage
-                .from('images')
+                .from('user-content')
                 .upload(filePath, blob, {
                     cacheControl: '3600',
                     upsert: true // Allow overwriting if filename is provided
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase Storage Error:', error);
+                throw error;
+            }
             return data.path;
-        } catch (error) {
-            console.error('Storage Upload Failed:', error);
+        } catch (error: any) {
+            console.error('Storage Upload Failed:', error.message || error, error);
             return null;
         }
     },
@@ -82,7 +85,7 @@ export const storageService = {
 
         try {
             const { data, error } = await supabase.storage
-                .from('images') // The bucket is actually 'images' based on previous context/code
+                .from('user-content')
                 .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
 
             if (error) throw error;
@@ -104,7 +107,7 @@ export const storageService = {
 
     async deleteImage(path: string) {
         const { error } = await supabase.storage
-            .from('images')
+            .from('user-content')
             .remove([path]);
         if (error) console.error('Delete Storage Image Failed:', error);
     }

@@ -18,6 +18,7 @@ interface UseGenerationProps {
     setIsSettingsOpen: (open: boolean) => void;
     showToast: (msg: string, type: "success" | "error") => void;
     currentBoardId: string | null;
+    t: (key: any) => string;
 }
 
 const COSTS: Record<string, number> = {
@@ -36,7 +37,7 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
 }: UseGenerationProps) => {
 
     const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
@@ -158,7 +159,7 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(`Generation failed: ${error.message}`, "error");
+            showToast(`${t('generation_failed')}: ${error.message}`, "error");
 
             setRows(prev => {
                 const newRows = prev.map(r => ({

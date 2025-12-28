@@ -174,7 +174,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                         <Button
                             variant="secondary"
                             onClick={() => setIsCreatingCategory(true)}
-                            className="w-full text-xs py-2 border-dashed"
+                            className="w-full text-xs py-2"
                             icon={<Plus className="w-3.5 h-3.5" />}
                         >
                             {t('add_category')}
@@ -214,15 +214,6 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                             <div className="flex items-center gap-1">
                                                 {isEditMode && (
                                                     <>
-                                                        <IconButton
-                                                            icon={<Plus className="w-3.5 h-3.5" />}
-                                                            onClick={() => {
-                                                                if (!openCategories.includes(category.id)) toggleCategory(category.id);
-                                                                setAddingItemToCatId(category.id);
-                                                            }}
-                                                            className="p-1 h-7 w-7 text-zinc-400 hover:text-black dark:hover:text-white"
-                                                            tooltip={t('add_item')}
-                                                        />
                                                         {isUserCat && (
                                                             <IconButton
                                                                 icon={<Trash2 className="w-3.5 h-3.5" />}
@@ -257,14 +248,14 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                                 </div>
                                             )}
 
-                                            {/* Persistent Add Button as First Item (In Edit Mode OR if it's a User Category) */}
-                                            {isEditMode && !addingItemToCatId && (
+                                            {/* Persistent Add Button as First Item */}
+                                            {!addingItemToCatId && (
                                                 <button
                                                     onClick={() => {
                                                         if (!openCategories.includes(category.id)) toggleCategory(category.id);
                                                         setAddingItemToCatId(category.id);
                                                     }}
-                                                    className="flex items-center gap-3 pl-6 pr-4 py-2.5 text-emerald-600 hover:text-emerald-700 dark:text-emerald-500 dark:hover:text-emerald-400 group/add transition-colors"
+                                                    className="flex items-center gap-3 pl-6 pr-4 py-2.5 text-zinc-400 hover:text-black dark:hover:text-white group/add transition-colors"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                     <span className={`${Typo.Body} font-medium`}>Objekt hinzufügen</span>

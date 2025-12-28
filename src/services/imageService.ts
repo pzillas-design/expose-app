@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
+import { boardService } from './boardService';
 
 export const imageService = {
     /**
@@ -9,6 +10,11 @@ export const imageService = {
      */
     async persistImage(image: CanvasImage, userId: string): Promise<{ success: boolean; error?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
+
+        const boardId = (image as any).boardId;
+        if (boardId) {
+            await boardService.ensureBoardExists(userId, boardId);
+        }
 
         // 1. Upload Full Image
         const path = await storageService.uploadImage(image.src, userId);
