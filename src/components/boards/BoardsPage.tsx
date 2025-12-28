@@ -4,6 +4,7 @@ import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
+import { Logo } from '../ui/Logo';
 
 interface BoardsPageProps {
     boards: Board[];
@@ -37,9 +38,7 @@ export function BoardsPage({
             {/* Header */}
             <header className="h-16 px-8 flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center">
-                        <img src="/src/logo.svg" alt="Exposé" className="w-5 h-5 invert dark:invert-0" />
-                    </div>
+                    <Logo className="w-10 h-10" />
                     <span className={`${Typo.H1} tracking-tight`}>Exposé</span>
                 </div>
 
