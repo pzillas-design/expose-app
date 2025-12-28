@@ -54,13 +54,21 @@ export const useGeneration = ({
         }
 
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
+
         const baseName = sourceImage.baseName || sourceImage.title;
+        const newId = generateId();
+
+        // Debug: Upload mask to storage so user can inspect it later
+        if (maskDataUrl && currentUser && !isAuthDisabled) {
+            const { storageService } = await import('@/services/storageService');
+            storageService.uploadImage(maskDataUrl, currentUser.id, `${newId}_mask.png`)
+                .catch(e => console.warn("Debug: Failed to save mask", e));
+        }
 
         const row = rows[rowIndex];
         const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
-        const newId = generateId();
 
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw } from 'lucide-react';
+import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 
@@ -532,6 +532,31 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <ArrowLeft className="w-4 h-4 text-zinc-400" />
                                         <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
                                             {currentLang === 'de' ? 'Zum Original' : 'Top Parent'}
+                                        </span>
+                                    </Button>
+                                )}
+                                {selectedImage.parentId && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={async () => {
+                                            const { storageService } = await import('@/services/storageService');
+                                            const { supabase } = await import('@/services/supabaseClient');
+                                            const { data: { user } } = await supabase.auth.getUser();
+                                            if (user) {
+                                                const maskUrl = await storageService.getSignedUrl(`${user.id}/${selectedImage.id}_mask.png`);
+                                                if (maskUrl) {
+                                                    window.open(maskUrl, '_blank');
+                                                } else {
+                                                    showToast(currentLang === 'de' ? 'Keine Maske für dieses Bild gefunden.' : 'No mask found for this image.', 'error');
+                                                }
+                                            }
+                                        }}
+                                        disabled={selectedImage.isGenerating}
+                                        className="justify-start px-4 h-11 gap-2 border-dashed opacity-60 hover:opacity-100"
+                                    >
+                                        <Eye className="w-4 h-4 text-zinc-400" />
+                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                            Debug: Maske prüfen
                                         </span>
                                     </Button>
                                 )}
