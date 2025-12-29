@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { ZoomOut, ZoomIn, Menu, Upload } from 'lucide-react';
+import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 
@@ -41,13 +41,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
   return (
     <div className={`flex items-center gap-1 p-1 ${Theme.Effects.Glass} border ${Theme.Colors.Border} ${Theme.Geometry.Radius}`}>
 
-      {/* Menu / Settings */}
-      <div className="flex items-center gap-1 px-1">
-        <IconButton icon={<Menu className="w-4 h-4" />} onClick={onOpenSettings} tooltip={t('open_settings')} />
-      </div>
-
-      <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r mx-1`} />
-
       {/* Zoom - Icons Only, No Text */}
       <div className="flex items-center gap-1 px-1">
         <IconButton icon={<ZoomOut className="w-3.5 h-3.5" />} onClick={() => onZoomChange(zoom / 1.2)} className="p-1.5" tooltip={t('zoom_out')} />
@@ -80,7 +73,13 @@ export const CommandDock: React.FC<CommandDockProps> = ({
           accept="image/*"
           onChange={handleFileChange}
         />
-        <IconButton icon={<Upload className="w-4 h-4" />} onClick={handleUploadClick} tooltip={t('upload_photos')} />
+        <button
+          onClick={handleUploadClick}
+          className={`flex items-center gap-2 px-3 py-1.5 ${Theme.Colors.SurfaceSubtle} hover:${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} transition-all group`}
+        >
+          <Plus className="w-3.5 h-3.5 text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors" />
+          <span className={`${Typo.Label} text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors uppercase !text-[10px] tracking-widest`}>Foto</span>
+        </button>
       </div>
 
     </div>

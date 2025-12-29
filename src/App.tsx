@@ -7,7 +7,7 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { useNanoController } from '@/hooks/useNanoController';
-import { Plus, ImagePlus, Layout } from 'lucide-react';
+import { Plus, ImagePlus, Layout, Home } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
@@ -348,14 +348,10 @@ export function App() {
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
                 <button
                     onClick={() => handleSelectBoard(null)}
-                    className={`h-10 px-3 ${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} flex items-center gap-2 hover:ring-2 ring-zinc-500/10 transition-all group`}
+                    className={`h-10 w-10 ${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all group`}
                     title="Zurück zur Übersicht"
                 >
-                    <Layout className="w-5 h-5 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                    <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
-                    <span className={`${Typo.Label} max-w-[120px] truncate text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors`}>
-                        {boards.find(b => b.id === currentBoardId)?.name || 'Board'}
-                    </span>
+                    <Home className="w-5 h-5 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
                 </button>
                 <CommandDock
                     zoom={zoom}
