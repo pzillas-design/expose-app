@@ -79,6 +79,24 @@ export const useBoards = (userId: string | undefined) => {
         }
     };
 
+    const resolveBoardIdentifier = async (identifier: string): Promise<Board | null> => {
+        if (!userId) return null;
+
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+        if (isUUID) {
+            const found = boards.find(b => b.id === identifier);
+            if (found) return found;
+            // If strictly UUID but not found in current list, it might be a valid ID anyway 
+            // (e.g. initial load). We'll trust the ID if it looks like a UUID for simplicity,
+            // or we could fetch specifically. For now, rely on UUID format.
+            return { id: identifier, name: 'Loading...', userId, createdAt: 0, updatedAt: 0 } as Board;
+        }
+
+        // It's a name
+        return await boardService.getBoardByName(userId, decodeURIComponent(identifier));
+    };
+
     return {
         boards,
         isLoading,
@@ -86,6 +104,7 @@ export const useBoards = (userId: string | undefined) => {
         createBoard,
         initializeNewBoard,
         deleteBoard,
-        updateBoard
+        updateBoard,
+        resolveBoardIdentifier
     };
 };

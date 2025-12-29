@@ -211,6 +211,7 @@ export const translations = {
     open_settings: "Settings",
     manage_credits: "Manage Credits",
     upload_photos: "Upload Photos",
+    back_to_boards: "Back to Boards",
 
     // Multi Select & Context Menu
     images_selected: "images",
@@ -506,6 +507,7 @@ export const translations = {
     open_settings: "Einstellungen",
     manage_credits: "Guthaben verwalten",
     upload_photos: "Fotos hochladen",
+    back_to_boards: "Zurück zur Übersicht",
 
     // Multi Select & Context Menu
     images_selected: "Bilder",

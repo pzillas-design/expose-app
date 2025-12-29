@@ -51,17 +51,23 @@ export function App() {
 
     // URL Routing Sync
     useEffect(() => {
-        const pathParts = location.pathname.split('/');
-        if (pathParts[1] === 'board' && pathParts[2]) {
-            if (currentBoardId !== pathParts[2]) {
-                setCurrentBoardId(pathParts[2]);
+        const syncUrl = async () => {
+            const pathParts = location.pathname.split('/');
+            if (pathParts[1] === 'board' && pathParts[2]) {
+                const identifier = decodeURIComponent(pathParts[2]);
+                const resolved = await actions.resolveBoardIdentifier(identifier);
+
+                if (resolved && resolved.id !== currentBoardId) {
+                    setCurrentBoardId(resolved.id);
+                }
+            } else if (pathParts[1] === 'boards' || location.pathname === '/') {
+                if (currentBoardId !== null) {
+                    setCurrentBoardId(null);
+                }
             }
-        } else if (pathParts[1] === 'boards' || location.pathname === '/') {
-            if (currentBoardId !== null) {
-                setCurrentBoardId(null);
-            }
-        }
-    }, [location.pathname, currentBoardId, setCurrentBoardId]);
+        };
+        syncUrl();
+    }, [location.pathname, actions, currentBoardId, setCurrentBoardId]);
 
     useEffect(() => {
         const path = window.location.pathname;
@@ -265,16 +271,17 @@ export function App() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIds, moveSelection, moveRowSelection, requestDelete]);
 
-    const handleCreateBoardAndNavigate = () => {
-        const newBoard = initializeNewBoard();
+    const handleCreateBoardAndNavigate = async () => {
+        const newBoard = await createBoard();
         if (newBoard) {
-            navigate(`/board/${newBoard.id}`);
+            navigate(`/board/${newBoard.name}`);
         }
     };
 
     const handleSelectBoard = (id: string | null) => {
         if (id) {
-            navigate(`/board/${id}`);
+            const b = boards.find(board => board.id === id);
+            navigate(`/board/${b ? b.name : id}`);
         } else {
             navigate('/boards');
         }
@@ -346,19 +353,13 @@ export function App() {
             onContextMenu={handleContextMenu}
         >
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
-                <button
-                    onClick={() => handleSelectBoard(null)}
-                    className={`h-10 w-10 ${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all group`}
-                    title="Zurück zur Übersicht"
-                >
-                    <Home className="w-5 h-5 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                </button>
                 <CommandDock
                     zoom={zoom}
                     credits={credits}
                     onZoomChange={(z) => smoothZoomTo(z)}
                     onOpenSettings={() => handleOpenSettings('account')}
                     onOpenCredits={() => handleOpenSettings('account')}
+                    onHome={() => handleSelectBoard(null)}
                     onUpload={handleDockUpload}
                     t={t}
                 />

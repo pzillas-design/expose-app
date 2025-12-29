@@ -114,7 +114,7 @@ export const useNanoController = () => {
     });
 
     const {
-        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard
+        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
     } = useBoards(user?.id);
 
     // --- Board Image Loading ---
@@ -297,7 +297,8 @@ export const useNanoController = () => {
             initializeNewBoard,
             deleteBoard,
             updateBoard,
-            fetchBoards
+            fetchBoards,
+            resolveBoardIdentifier
         },
         refs: {
             scrollContainerRef

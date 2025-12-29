@@ -11,6 +11,7 @@ interface CommandDockProps {
   onNavigate?: (direction: -1 | 1) => void;
   onOpenSettings: () => void;
   onOpenCredits: () => void;
+  onHome: () => void;
   onUpload?: (files: FileList) => void;
   t: TranslationFunction;
 }
@@ -21,6 +22,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
   onZoomChange,
   onOpenSettings,
   onOpenCredits,
+  onHome,
   onUpload,
   t
 }) => {
@@ -39,32 +41,58 @@ export const CommandDock: React.FC<CommandDockProps> = ({
   };
 
   return (
-    <div className={`flex items-center gap-1 p-1 ${Theme.Effects.Glass} border ${Theme.Colors.Border} ${Theme.Geometry.Radius}`}>
+    <div className={`flex items-center gap-1.5 p-1.5 ${Theme.Effects.Glass} border ${Theme.Colors.Border} ${Theme.Geometry.Radius}`}>
 
-      {/* Zoom - Icons Only, No Text */}
-      <div className="flex items-center gap-1 px-1">
-        <IconButton icon={<ZoomOut className="w-3.5 h-3.5" />} onClick={() => onZoomChange(zoom / 1.2)} className="p-1.5" tooltip={t('zoom_out')} />
-        <IconButton icon={<ZoomIn className="w-3.5 h-3.5" />} onClick={() => onZoomChange(zoom * 1.2)} className="p-1.5" tooltip={t('zoom_in')} />
+      {/* 1. Home */}
+      <div className="flex items-center px-0.5">
+        <IconButton
+          icon={<Home className="w-4 h-4" />}
+          onClick={onHome}
+          tooltip={t('back_to_boards')}
+          className="w-8 h-8 flex items-center justify-center p-0"
+        />
       </div>
 
-      <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r mx-1`} />
+      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
 
-      {/* Credits Display */}
-      <div className="flex items-center gap-1 px-2">
+      {/* 2. Credits */}
+      <div className="flex items-center px-0.5">
         <Tooltip text={t('manage_credits')}>
           <button
             onClick={onOpenCredits}
-            className={`min-w-[3rem] text-center select-none transition-colors cursor-pointer hover:${Theme.Colors.TextHighlight} ${Typo.Mono}`}
+            className={`
+              h-8 px-3 flex items-center justify-center rounded-md transition-all select-none
+              hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white
+              ${Typo.Mono}
+            `}
           >
             {credits.toFixed(2)} €
           </button>
         </Tooltip>
       </div>
 
-      <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r mx-1`} />
+      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
 
-      {/* Upload (Far Right) */}
-      <div className="flex items-center gap-1 px-1">
+      {/* 3. Zoom */}
+      <div className="flex items-center gap-0.5 px-0.5">
+        <IconButton
+          icon={<ZoomOut className="w-3.5 h-3.5" />}
+          onClick={() => onZoomChange(zoom / 1.2)}
+          className="w-8 h-8 flex items-center justify-center p-0"
+          tooltip={t('zoom_out')}
+        />
+        <IconButton
+          icon={<ZoomIn className="w-3.5 h-3.5" />}
+          onClick={() => onZoomChange(zoom * 1.2)}
+          className="w-8 h-8 flex items-center justify-center p-0"
+          tooltip={t('zoom_in')}
+        />
+      </div>
+
+      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
+
+      {/* 4. Upload (Ghost Button) */}
+      <div className="flex items-center px-0.5">
         <input
           type="file"
           ref={fileInputRef}
@@ -75,7 +103,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
         />
         <button
           onClick={handleUploadClick}
-          className={`flex items-center gap-2 px-3 py-1.5 ${Theme.Colors.SurfaceSubtle} hover:${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Geometry.Radius} transition-all group`}
+          className="h-8 flex items-center gap-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all group"
         >
           <Plus className="w-3.5 h-3.5 text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors" />
           <span className={`${Typo.Label} text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors uppercase !text-[10px] tracking-widest`}>Foto</span>
