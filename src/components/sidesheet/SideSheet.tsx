@@ -296,42 +296,44 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
                 <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
                     {/* Header */}
-                    <div className="flex flex-col items-center text-center gap-6">
-                        <h2
-                            className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
-                            style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
-                        >
-                            <span className="opacity-40">Willkommen bei</span>
-                            <div className="flex items-center gap-2">
-                                <Logo className="w-8 h-8" />
-                                <Wordmark className="h-6" />
-                            </div>
-                        </h2>
-                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
-                            {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
-                        </p>
+                    <div className="flex flex-col items-center text-center gap-8">
+                        <div className="flex flex-col items-center gap-6">
+                            <h2
+                                className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
+                                style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                            >
+                                <span>Willkommen bei</span>
+                                <div className="flex items-center gap-2.5">
+                                    <Logo className="w-8 h-8" />
+                                    <Wordmark className="h-6" />
+                                </div>
+                            </h2>
+                            <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
+                                {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
+                            </p>
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="flex flex-col gap-3 w-full max-w-[300px]">
+                            <Button
+                                variant="primary"
+                                className="w-full justify-start px-5 gap-3"
+                                onClick={onUpload}
+                                icon={<Upload className="w-5 h-5" />}
+                            >
+                                {t('upload_image_edit')}
+                            </Button>
+
+                            <Button
+                                variant="secondary"
+                                className="w-full justify-start px-5 gap-3"
+                                onClick={onCreateNew}
+                                icon={<Plus className="w-5 h-5" />}
+                            >
+                                {t('generate_new')}
+                            </Button>
+                        </div>
                     </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="flex flex-col gap-3 w-full">
-                    <Button
-                        variant="primary"
-                        className="w-full justify-start px-5 gap-3"
-                        onClick={onUpload}
-                        icon={<Upload className="w-5 h-5" />}
-                    >
-                        {t('upload_image_edit')}
-                    </Button>
-
-                    <Button
-                        variant="secondary"
-                        className="w-full justify-start px-5 gap-3"
-                        onClick={onCreateNew}
-                        icon={<Plus className="w-5 h-5" />}
-                    >
-                        {t('generate_new')}
-                    </Button>
                 </div>
             </div>
         );
