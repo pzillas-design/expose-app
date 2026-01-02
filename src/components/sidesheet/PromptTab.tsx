@@ -326,16 +326,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <button
                                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                                         className={`
-                                            w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all text-left
+                                            w-full flex items-center justify-between py-1 px-1 rounded-xl transition-all text-left
                                             hover:bg-zinc-100 dark:hover:bg-zinc-800 group
                                         `}
                                     >
                                         <div className="flex items-center gap-2 overflow-hidden">
-                                            <span className={`${Typo.Body} text-zinc-400 whitespace-nowrap`}>Modell</span>
-                                            <span className={`${Typo.Body} font-medium text-zinc-900 dark:text-zinc-100 truncate`}>
+                                            <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
                                                 {currentModel.label}
                                             </span>
-                                            <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 font-mono opacity-40 transition-opacity`}>
+                                            <span className={`${Typo.Micro} text-zinc-300 dark:text-zinc-600 font-mono opacity-60 transition-opacity`}>
                                                 {currentModel.price}
                                             </span>
                                         </div>
@@ -345,7 +344,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {isModelDropdownOpen && (
                                         <>
                                             <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                                            <div className={`absolute bottom-full left-0 right-0 mb-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} rounded-2xl shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50`}>
+                                            <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} rounded-2xl shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
                                                 {MODES.map((m) => (
                                                     <button
                                                         key={m.id}
