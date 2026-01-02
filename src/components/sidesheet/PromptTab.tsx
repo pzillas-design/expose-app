@@ -427,7 +427,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             : t('generate')}
                                 </Button>
 
-                                <div className="mt-2 flex justify-center">
+                                <div className="mt-4 flex justify-center">
                                     <div className="relative">
                                         <button
                                             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
@@ -445,7 +445,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         {isModelDropdownOpen && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                                                <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-1.5 min-w-[200px] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50`}>
+                                                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 p-1.5 min-w-[200px] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
                                                     {MODES.map((m) => (
                                                         <button
                                                             key={m.id}
