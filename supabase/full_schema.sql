@@ -136,15 +136,22 @@ ALTER TABLE public.global_objects_items ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS POLICIES
 
+-- Helper function to avoid RLS recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- PROFILES
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
-CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
+CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.is_admin());
+CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.is_admin());
 
 -- BOARDS
 CREATE POLICY "Users can view their own boards" ON public.boards FOR SELECT USING (auth.uid() = user_id);
@@ -165,19 +172,13 @@ CREATE POLICY "Users can update their own jobs" ON public.generation_jobs FOR UP
 
 -- GLOBAL PRESETS
 CREATE POLICY "Public Presets Read" ON public.global_presets FOR SELECT USING (true);
-CREATE POLICY "Admin Presets All" ON public.global_presets FOR ALL TO authenticated USING (
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
+CREATE POLICY "Admin Presets All" ON public.global_presets FOR ALL TO authenticated USING (public.is_admin());
 
 -- GLOBAL OBJECTS
 CREATE POLICY "Public Categories Read" ON public.global_objects_categories FOR SELECT USING (true);
 CREATE POLICY "Public Items Read" ON public.global_objects_items FOR SELECT USING (true);
-CREATE POLICY "Admin Objects All" ON public.global_objects_categories FOR ALL TO authenticated USING (
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
-CREATE POLICY "Admin Items All" ON public.global_objects_items FOR ALL TO authenticated USING (
-    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin'
-);
+CREATE POLICY "Admin Objects All" ON public.global_objects_categories FOR ALL TO authenticated USING (public.is_admin());
+CREATE POLICY "Admin Items All" ON public.global_objects_items FOR ALL TO authenticated USING (public.is_admin());
 
 -- 5. STORAGE SETUP
 -- Note: Buckets can be tricky via SQL, manual verification in UI is recommended.
