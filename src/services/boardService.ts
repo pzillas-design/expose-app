@@ -68,7 +68,7 @@ export const boardService = {
         };
     },
 
-    async createBoard(userId: string, name: string = 'Mein Board', id?: string): Promise<Board | null> {
+    async createBoard(userId: string, name: string = 'Main Board', id?: string): Promise<Board | null> {
         const { data, error } = await supabase
             .from('boards')
             .insert({
@@ -94,7 +94,7 @@ export const boardService = {
         };
     },
 
-    async ensureBoardExists(userId: string, boardId: string, name: string = 'Mein Board'): Promise<void> {
+    async ensureBoardExists(userId: string, boardId: string, name: string = 'Main Board'): Promise<void> {
         const { data: existing } = await supabase
             .from('boards')
             .select('id')

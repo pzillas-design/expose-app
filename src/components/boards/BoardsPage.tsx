@@ -17,42 +17,52 @@ const getInitials = (name?: string, email?: string) => {
     return '?';
 };
 
-function GridThumbnail({ images, thumbnail }: { images?: string[], thumbnail?: string }) {
-    const displayImages = images?.slice(0, 4) || [];
+function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], thumbnail?: string, itemCount?: number }) {
+    const displayImages = images || [];
+    const total = itemCount || displayImages.length;
 
     if (displayImages.length === 0) {
         if (thumbnail) {
-            return <img src={thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />;
+            return <img src={thumbnail} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />;
         }
         return (
-            <div className="absolute inset-0 flex items-center justify-center opacity-60">
-                <ImageIcon className="w-12 h-12 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
+                <ImageIcon className="w-10 h-10 text-zinc-300 dark:text-zinc-700" strokeWidth={1} />
             </div>
         );
     }
 
-    if (displayImages.length === 1) {
-        return <img src={displayImages[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />;
+    if (total === 1) {
+        return <img src={displayImages[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />;
     }
 
-    if (displayImages.length === 2) {
+    if (total === 2) {
         return (
             <div className="absolute inset-0 grid grid-cols-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
-                {displayImages.map((src, i) => (
+                {displayImages.slice(0, 2).map((src, i) => (
                     <img key={i} src={src} className="w-full h-full object-cover" />
                 ))}
             </div>
         );
     }
 
+    // Grid for 3+
+    const showPlus = total > 4;
+    const itemsToShow = showPlus ? displayImages.slice(0, 3) : displayImages.slice(0, 4);
+
     return (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
-            {displayImages.slice(0, 4).map((src, i) => (
+            {itemsToShow.map((src, i) => (
                 <img key={i} src={src} className="w-full h-full object-cover" />
             ))}
-            {displayImages.length === 3 && (
-                <div className="bg-zinc-100 dark:bg-zinc-800/50 flex items-center justify-center">
-                    <ImageIcon className="w-6 h-6 opacity-10" />
+            {showPlus && (
+                <div className="bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">+{total - 3}</span>
+                </div>
+            )}
+            {!showPlus && total === 3 && (
+                <div className="bg-zinc-100 dark:bg-zinc-800/30 flex items-center justify-center">
+                    <ImageIcon className="w-5 h-5 opacity-10" />
                 </div>
             )}
         </div>
@@ -190,7 +200,6 @@ interface BoardCardProps {
 function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
-    const hasImages = (board.previewImages && board.previewImages.length > 0) || board.thumbnail;
 
     const handleMenuClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -201,47 +210,35 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
 
     return (
         <>
-            <div className={`group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`} onClick={onSelect}>
-                <GridThumbnail images={board.previewImages} thumbnail={board.thumbnail} />
+            <div
+                className={`group flex flex-col aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`}
+                onClick={onSelect}
+            >
+                {/* Image Grid Section */}
+                <div className="flex-[2.5] relative bg-zinc-50 dark:bg-zinc-900 overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
+                    <GridThumbnail images={board.previewImages} thumbnail={board.thumbnail} itemCount={board.itemCount} />
+                </div>
 
-                {hasImages ? (
-                    <>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-1 translate-y-1 group-hover:translate-y-0 transition-transform duration-500">
-                            <div className="flex items-center justify-between gap-3">
-                                <h3 className="text-base font-medium tracking-tight text-white truncate drop-shadow-sm flex-1">{board.name}</h3>
-                                <button
-                                    onClick={handleMenuClick}
-                                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                                >
-                                    <MoreVertical className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-white/70 uppercase tracking-widest font-medium whitespace-nowrap">
-                                    {formatDistanceToNow(board.updatedAt, { locale })} • {board.itemCount || 0} Fotos
-                                </span>
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="absolute inset-0 p-6 flex flex-col justify-end bg-zinc-50/50 dark:bg-zinc-900/50">
-                        <div className="flex items-center justify-between gap-3 mb-1">
-                            <h3 className={`${Typo.H2} truncate group-hover:text-zinc-900 dark:group-hover:text-white transition-colors flex-1`}>{board.name}</h3>
-                            <button
-                                onClick={handleMenuClick}
-                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all"
-                            >
-                                <MoreVertical className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-medium whitespace-nowrap">
-                                {formatDistanceToNow(board.updatedAt, { locale })} • {board.itemCount || 0} Fotos
-                            </span>
-                        </div>
+                {/* Info Section */}
+                <div className="flex-1 p-5 flex flex-col justify-center min-h-0 bg-white dark:bg-zinc-900/50">
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                        <h3 className={`${Typo.H2} truncate flex-1 font-semibold`}>
+                            {board.name}
+                        </h3>
+                        <button
+                            onClick={handleMenuClick}
+                            className="p-1.5 -mr-1 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
                     </div>
-                )}
+                    <div className="flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span className="text-[11px] font-medium uppercase tracking-wider">
+                            {formatDistanceToNow(board.updatedAt, { locale, addSuffix: true })}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             {menuOpen && createPortal(
