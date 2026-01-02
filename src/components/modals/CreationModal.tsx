@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
-import { X, Sparkles, Wand2, Ratio } from 'lucide-react';
+import { X, Sparkles, Wand2, Ratio, ChevronDown, Check } from 'lucide-react';
 
 interface CreationModalProps {
     isOpen: boolean;
@@ -47,8 +47,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     lang
 }) => {
     const [prompt, setPrompt] = useState('');
-    const [selectedModel, setSelectedModel] = useState(MODELS[0].id);
-    const [selectedRatio, setSelectedRatio] = useState(ASPECT_RATIOS[0].value);
+    const [selectedModel, setSelectedModel] = useState('pro-2k');
+    const [selectedRatio, setSelectedRatio] = useState('4:3');
+    const [openDropdown, setOpenDropdown] = useState<'model' | 'ratio' | null>(null);
 
     const handleGenerate = () => {
         if (!prompt.trim()) return;
@@ -111,71 +112,113 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Model Selection */}
-                        <div className="flex flex-col gap-3">
+                    {/* Settings Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                        {/* Dropdown Backdrop */}
+                        {openDropdown && (
+                            <div
+                                className="fixed inset-0 z-40 bg-transparent"
+                                onClick={() => setOpenDropdown(null)}
+                            />
+                        )}
+
+                        {/* Model Dropdown */}
+                        <div className="flex flex-col gap-3 relative z-50">
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 <Wand2 className="w-4 h-4" />
                                 {lang === 'de' ? 'Modell & Qualität' : 'Model & Quality'}
                             </label>
-                            <div className="flex flex-col gap-2">
-                                {MODELS.map((model) => (
-                                    <button
-                                        key={model.id}
-                                        onClick={() => setSelectedModel(model.id)}
-                                        className={`
-                                            w-full flex flex-col items-start gap-1 p-3.5 ${Theme.Geometry.Radius} border text-left transition-all
-                                            ${selectedModel === model.id
-                                                ? `${Theme.Colors.SurfaceSubtle} border-zinc-900 dark:border-zinc-100 ring-1 ring-zinc-900 dark:ring-zinc-100`
-                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
-                                            }
-                                        `}
-                                    >
-                                        <div className="flex items-center justify-between w-full mb-0.5">
-                                            <span className={`text-sm font-bold ${selectedModel === model.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
-                                                {model.name}
-                                            </span>
-                                        </div>
-                                        <span className={`text-[10px] ${Theme.Colors.TextSubtle} font-mono uppercase tracking-wider`}>
-                                            {model.desc}
-                                        </span>
-                                    </button>
-                                ))}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setOpenDropdown(openDropdown === 'model' ? null : 'model')}
+                                    className={`
+                                        w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
+                                        ${openDropdown === 'model'
+                                            ? `border-zinc-400 dark:border-zinc-500 ring-4 ring-zinc-100 dark:ring-zinc-800/50`
+                                            : `${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
+                                        }
+                                    `}
+                                >
+                                    <span className={`${Typo.Body} font-medium px-1`}>
+                                        {MODELS.find(m => m.id === selectedModel)?.name}
+                                    </span>
+                                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${openDropdown === 'model' ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {openDropdown === 'model' && (
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top`}>
+                                        {MODELS.map((model) => (
+                                            <button
+                                                key={model.id}
+                                                onClick={() => { setSelectedModel(model.id); setOpenDropdown(null); }}
+                                                className={`
+                                                    flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
+                                                    ${selectedModel === model.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                `}
+                                            >
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className={`${Typo.Body} font-medium ${selectedModel === model.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                        {model.name}
+                                                    </span>
+                                                    <span className={`${Typo.Micro} text-[10px]`}>{model.desc}</span>
+                                                </div>
+                                                {selectedModel === model.id && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Aspect Ratio */}
-                        <div className="flex flex-col gap-3">
+                        {/* Aspect Ratio Dropdown */}
+                        <div className="flex flex-col gap-3 relative z-50">
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 <Ratio className="w-4 h-4" />
                                 {lang === 'de' ? 'Format' : 'Aspect Ratio'}
                             </label>
 
-                            {/* Horizontal Toggle Group */}
-                            <div className="flex flex-wrap gap-2">
-                                {ASPECT_RATIOS.map((r) => {
-                                    const isSelected = selectedRatio === r.value;
-                                    return (
-                                        <button
-                                            key={r.value}
-                                            onClick={() => setSelectedRatio(r.value)}
-                                            className={`
-                                                group flex-1 min-w-[60px] flex flex-col items-center justify-center gap-2 py-3 border transition-all ${Theme.Geometry.Radius}
-                                                ${isSelected
-                                                    ? `${Theme.Colors.SurfaceSubtle} border-zinc-900 dark:border-zinc-100 ring-1 ring-zinc-900 dark:ring-zinc-100`
-                                                    : `${Theme.Colors.Surface} ${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
-                                                }
-                                            `}
-                                        >
-                                            <div className="h-6 flex items-center justify-center">
-                                                <AspectIcon ratio={r.value} isSelected={isSelected} />
-                                            </div>
-                                            <span className={`text-[10px] font-bold ${isSelected ? Theme.Colors.TextHighlight : 'text-zinc-500'}`}>
-                                                {r.label}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setOpenDropdown(openDropdown === 'ratio' ? null : 'ratio')}
+                                    className={`
+                                        w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
+                                        ${openDropdown === 'ratio'
+                                            ? `border-zinc-400 dark:border-zinc-500 ring-4 ring-zinc-100 dark:ring-zinc-800/50`
+                                            : `${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
+                                        }
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3 px-1">
+                                        <AspectIcon ratio={selectedRatio} isSelected={true} />
+                                        <span className={`${Typo.Body} font-medium`}>
+                                            {ASPECT_RATIOS.find(r => r.value === selectedRatio)?.label}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${openDropdown === 'ratio' ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {openDropdown === 'ratio' && (
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top`}>
+                                        {ASPECT_RATIOS.map((r) => (
+                                            <button
+                                                key={r.value}
+                                                onClick={() => { setSelectedRatio(r.value); setOpenDropdown(null); }}
+                                                className={`
+                                                    flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
+                                                    ${selectedRatio === r.value ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                `}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <AspectIcon ratio={r.value} isSelected={selectedRatio === r.value} />
+                                                    <span className={`${Typo.Body} font-medium ${selectedRatio === r.value ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                        {r.label}
+                                                    </span>
+                                                </div>
+                                                {selectedRatio === r.value && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
