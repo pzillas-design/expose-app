@@ -78,7 +78,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 {/* Header */}
                 <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
                     <div className="flex flex-col gap-1">
-                        <h2 className={Typo.H3}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
+                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
                     </div>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
@@ -223,14 +223,11 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                 {/* Footer */}
                 <div className={`p-6 flex items-center gap-3 shrink-0`}>
-                    <Button variant="secondary" onClick={onClose} className="flex-1">
-                        {lang === 'de' ? 'Abbrechen' : 'Cancel'}
-                    </Button>
                     <Button
                         variant="primary"
                         onClick={handleGenerate}
                         disabled={!prompt.trim()}
-                        className="flex-1"
+                        className="w-full h-12"
                     >
                         {lang === 'de' ? 'Generieren' : 'Generate'}
                     </Button>
