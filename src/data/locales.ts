@@ -212,6 +212,9 @@ export const translations = {
     manage_credits: "Manage Credits",
     upload_photos: "Upload Photos",
     back_to_boards: "Back to Boards",
+    upload_image_edit: "Upload & Edit Image",
+    generate_new: "Generate New Image",
+    create_new: "Create New",
 
     // Multi Select & Context Menu
     images_selected: "images",
@@ -508,6 +511,9 @@ export const translations = {
     manage_credits: "Guthaben verwalten",
     upload_photos: "Fotos hochladen",
     back_to_boards: "Zurück zur Übersicht",
+    upload_image_edit: "Bild hochladen und bearbeiten",
+    generate_new: "Neues Bild generieren",
+    create_new: "Neu",
 
     // Multi Select & Context Menu
     images_selected: "Bilder",
