@@ -68,7 +68,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
             <div
 
                 className={`
-                    w-full max-w-2xl ${Theme.Colors.ModalBg} 
+                    w-full max-w-lg ${Theme.Colors.ModalBg} 
                     border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
                     shadow-2xl flex flex-col max-h-[90vh]
                     animate-in zoom-in-95 duration-200
@@ -79,9 +79,6 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
                     <div className="flex flex-col gap-1">
                         <h2 className={Typo.H3}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
-                        <p className={`${Typo.Label} text-zinc-500`}>
-                            {lang === 'de' ? 'Wähle Einstellungen und Prompt' : 'Choose settings and describe your image'}
-                        </p>
                     </div>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
@@ -95,7 +92,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         </label>
                         <textarea
                             className={`
-                                w-full h-32 p-4 rounded-xl resize-none
+                                w-full h-48 p-4 rounded-xl resize-none
                                 bg-zinc-50 dark:bg-zinc-900 
                                 border border-zinc-200 dark:border-zinc-800
                                 focus:border-blue-500 focus:ring-1 focus:ring-blue-500
@@ -224,16 +221,15 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className={`p-6 flex items-center justify-end gap-3 shrink-0`}>
-                    <Button variant="secondary" onClick={onClose} className="min-w-[100px]">
+                <div className={`p-6 flex items-center gap-3 shrink-0`}>
+                    <Button variant="secondary" onClick={onClose} className="flex-1">
                         {lang === 'de' ? 'Abbrechen' : 'Cancel'}
                     </Button>
                     <Button
                         variant="primary"
                         onClick={handleGenerate}
                         disabled={!prompt.trim()}
-                        icon={<Sparkles className="w-4 h-4" />}
-                        className="min-w-[140px]"
+                        className="flex-1"
                     >
                         {lang === 'de' ? 'Generieren' : 'Generate'}
                     </Button>
