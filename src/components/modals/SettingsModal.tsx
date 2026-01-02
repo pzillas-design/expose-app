@@ -391,7 +391,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Logo className="w-20 h-20 mb-4" />
+                                        <h3
+                                            className="text-3xl font-semibold tracking-tighter"
+                                            style={{
+                                                fontFamily: "'Kumbh Sans', sans-serif",
+                                                lineHeight: '100%',
+                                                textTransform: 'lowercase'
+                                            }}
+                                        >
+                                            exposé
+                                        </h3>
                                         <p className={`text-sm ${Theme.Colors.TextSecondary} max-w-md mx-auto leading-relaxed`}>
                                             {t('about_desc')}
                                         </p>
