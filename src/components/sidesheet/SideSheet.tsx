@@ -104,8 +104,10 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     useEffect(() => {
         if (selectedImage && !isMulti) {
             setPrompt(selectedImage.userDraftPrompt || '');
+
             // When a new image is selected, default to prompt (edit) mode
-            if (sideSheetMode !== 'prompt') {
+            // EXCEPT if it's currently generating (we stay in whatever mode we were in)
+            if (sideSheetMode !== 'prompt' && !selectedImage.isGenerating) {
                 onModeChange('prompt');
             }
         } else if (isMulti) {

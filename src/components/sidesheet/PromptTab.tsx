@@ -326,7 +326,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <button
                                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                                         className={`
-                                            flex items-center gap-1.5 py-1 px-2.5 rounded-xl transition-all text-left
+                                            flex items-center gap-1.5 py-1 px-2.5 ${Theme.Geometry.Radius} transition-all text-left
                                             hover:bg-zinc-100 dark:hover:bg-zinc-800 group
                                         `}
                                     >
@@ -339,13 +339,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {isModelDropdownOpen && (
                                         <>
                                             <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                                            <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} rounded-2xl shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
+                                            <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
                                                 {MODES.map((m) => (
                                                     <button
                                                         key={m.id}
                                                         onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
                                                         className={`
-                                                            flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors
+                                                            flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
                                                             ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
                                                         `}
                                                     >
