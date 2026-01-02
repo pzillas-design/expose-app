@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';
 import { CommandDock } from '@/components/canvas/CommandDock';
-import { SettingsModal } from '@/components/modals/SettingsModal';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
+import { SettingsPage } from '@/components/settings/SettingsPage';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
@@ -308,42 +308,20 @@ export function App() {
     }
 
     const boardsPage = (
-        <>
-            <BoardsPage
-                boards={boards}
-                onSelectBoard={handleSelectBoard}
-                onCreateBoard={handleCreateBoardAndNavigate}
-                onDeleteBoard={deleteBoard}
-                onRenameBoard={(id, name) => updateBoard(id, { name })}
-                user={user}
-                userProfile={userProfile}
-                onOpenSettings={(tab) => { setSettingsTab(tab || 'account'); setIsSettingsOpen(true); }}
-                t={t}
-                lang={currentLang}
-                isLoading={isBoardsLoading}
-                credits={credits}
-            />
-            <SettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                initialTab={settingsTab}
-                qualityMode={qualityMode}
-                onQualityModeChange={setQualityMode}
-                themeMode={themeMode}
-                onThemeChange={setThemeMode}
-                currentBalance={credits}
-                lang={lang}
-                onLangChange={setLang}
-                user={user}
-                userProfile={userProfile}
-                onSignOut={handleSignOut}
-                onAddFunds={handleAddFunds}
-                updateProfile={updateProfile}
-                onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
-                t={t}
-            />
-            {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
-        </>
+        <BoardsPage
+            boards={boards}
+            onSelectBoard={handleSelectBoard}
+            onCreateBoard={handleCreateBoardAndNavigate}
+            onDeleteBoard={deleteBoard}
+            onRenameBoard={(id, name) => updateBoard(id, { name })}
+            user={user}
+            userProfile={userProfile}
+            onOpenSettings={(tab) => navigate(`/settings/${tab || 'account'}`)}
+            t={t}
+            lang={currentLang}
+            isLoading={isBoardsLoading}
+            credits={credits}
+        />
     );
 
     const canvasView = (
@@ -359,8 +337,8 @@ export function App() {
                     zoom={zoom}
                     credits={credits}
                     onZoomChange={(z) => smoothZoomTo(z)}
-                    onOpenSettings={() => handleOpenSettings('account')}
-                    onOpenCredits={() => handleOpenSettings('account')}
+                    onOpenSettings={() => navigate('/settings')}
+                    onOpenCredits={() => navigate('/settings/account')}
                     onHome={() => handleSelectBoard(null)}
                     onUpload={handleDockUpload}
                     onCreateNew={() => setIsCreationModalOpen(true)}
@@ -530,34 +508,36 @@ export function App() {
                 lang={currentLang}
             />
 
-            <SettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-                initialTab={settingsTab}
-                qualityMode={qualityMode}
-                onQualityModeChange={setQualityMode}
-                themeMode={themeMode}
-                onThemeChange={setThemeMode}
-                currentBalance={credits}
-                lang={lang}
-                onLangChange={setLang}
-                user={user}
-                userProfile={userProfile}
-                onSignOut={handleSignOut}
-                onAddFunds={handleAddFunds}
-                onOpenAdmin={() => { setIsSettingsOpen(false); setIsAdminOpen(true); }}
-                t={t}
-                updateProfile={updateProfile}
-            />
-
             {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
         </div>
+    );
+
+    const settingsPage = (
+        <SettingsPage
+            qualityMode={qualityMode}
+            onQualityModeChange={setQualityMode}
+            themeMode={themeMode}
+            onThemeChange={setThemeMode}
+            currentBalance={credits}
+            lang={lang}
+            onLangChange={setLang}
+            user={user}
+            userProfile={userProfile}
+            onSignOut={handleSignOut}
+            onAddFunds={handleAddFunds}
+            onOpenAdmin={() => setIsAdminOpen(true)}
+            t={t}
+            updateProfile={updateProfile}
+            onCreateBoard={handleCreateBoardAndNavigate}
+        />
     );
 
     return (
         <Routes>
             <Route path="/boards" element={boardsPage} />
             <Route path="/board/:boardId" element={canvasView} />
+            <Route path="/settings" element={settingsPage} />
+            <Route path="/settings/:tab" element={settingsPage} />
             <Route path="/admin" element={boardsPage} />
             <Route path="/" element={<Navigate to="/boards" replace />} />
         </Routes>

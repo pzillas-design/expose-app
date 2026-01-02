@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
 import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
+import { AppNavbar } from '../layout/AppNavbar';
 
 const getInitials = (name?: string, email?: string) => {
     if (name) {
@@ -101,53 +102,21 @@ export function BoardsPage({
     return (
         <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
 
-            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 flex-1 flex flex-col">
+            <AppNavbar
+                user={user}
+                userProfile={userProfile}
+                credits={credits}
+                onCreateBoard={onCreateBoard}
+                t={t}
+            />
 
-                {/* REFINED MODERN HEADER */}
-                <header className="pt-16 pb-12 flex items-center justify-between">
-                    <div className="flex items-center gap-5 group cursor-pointer">
-                        <Logo className="w-14 h-14 group-hover:scale-105 transition-transform duration-500" />
-                        <Wordmark className="h-10 text-zinc-900 dark:text-white" />
-                    </div>
+            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 flex-1 flex flex-col pt-12">
 
-                    <div className="flex items-center gap-10">
-                        {/* USER PROFILE (AVATAR + EMAIL) */}
-                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => onOpenSettings('account')}>
-                            {/* AVATAR RUND */}
-                            <div className={`w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors`}>
-                                {getInitials(userProfile?.full_name, user?.email)}
-                            </div>
+                <main className="pb-32 flex-1 flex flex-col">
 
-                            <span className="text-sm font-medium tracking-tight text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
-                                {user?.email || ''}
-                            </span>
-                        </div>
-
-                        {/* CREDITS (CANVAS FONT) */}
-                        <span className="text-sm font-mono font-medium tracking-tight opacity-40">
-                            {(credits || 0).toFixed(2)} €
-                        </span>
-
-
-                        {/* MENU ICON ONLY (PLACED RIGHT) */}
-                        <button
-                            onClick={() => onOpenSettings('general')}
-                            className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-                            title="Settings"
-                        >
-                            <Settings className="w-5 h-5" />
-                        </button>
-                    </div>
-                </header>
-
-                <main className="pt-12 pb-32 flex-1 flex flex-col">
-
-                    <div className="flex items-center justify-between mb-16">
-                        <h1 className="text-xl font-medium tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
-                        <button onClick={onCreateBoard} className={`flex items-center gap-3 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ${Theme.Geometry.Radius} transition-all hover:opacity-90 active:scale-[0.98] group ${Theme.Effects.Shadow}`}>
-                            <Plus className="w-4 h-4" />
-                            <span className={Typo.ButtonLabel}>Neues Board</span>
-                        </button>
+                    <div className="mb-12">
+                        <h1 className="text-xl font-medium tracking-tight">Meine Boards</h1>
+                        <p className="text-sm text-zinc-500 mt-1">Überblick über all deine Projekte und Boards.</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
