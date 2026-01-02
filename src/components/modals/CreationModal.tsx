@@ -22,9 +22,9 @@ const ASPECT_RATIOS = [
 
 const MODELS = [
     { id: 'fast', name: 'Nano Banana', price: 'Free', res: '1024 × 1024 px' },
-    { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.50 €', res: '1024 × 1024 px' },
-    { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '1.00 €', res: '2048 × 2048 px' },
-    { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '2.00 €', res: '4096 × 4096 px' },
+    { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.10 €', res: '1024 × 1024 px' },
+    { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '0.25 €', res: '2048 × 2048 px' },
+    { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '0.50 €', res: '4096 × 4096 px' },
 ];
 
 const AspectIcon = ({ ratio, isSelected }: { ratio: string, isSelected: boolean }) => {

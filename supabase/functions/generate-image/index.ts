@@ -34,9 +34,9 @@ Deno.serve(async (req) => {
         // ... (costs and credit deduction remains the same) ...
         const COSTS: Record<string, number> = {
             'fast': 0.00,
-            'pro-1k': 0.50,
-            'pro-2k': 1.00,
-            'pro-4k': 2.00
+            'pro-1k': 0.10,
+            'pro-2k': 0.25,
+            'pro-4k': 0.50
         };
         const cost = COSTS[qualityMode] || 0;
 
