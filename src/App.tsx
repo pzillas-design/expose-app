@@ -8,7 +8,7 @@ import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { useNanoController } from '@/hooks/useNanoController';
-import { Plus, FilePlus, Layout, Home } from 'lucide-react';
+import { Plus, File, Layout, Home } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
@@ -382,7 +382,7 @@ export function App() {
                         `}
                     >
                         <div className="flex flex-col items-center gap-3 pointer-events-none">
-                            <FilePlus className={`w-8 h-8 ${isCanvasZoneActive ? 'text-white' : 'text-zinc-500'}`} strokeWidth={1.5} />
+                            <File className={`w-8 h-8 ${isCanvasZoneActive ? 'text-white' : 'text-zinc-500'}`} strokeWidth={1.5} />
                             <span className={`${Typo.Label} ${isCanvasZoneActive ? 'text-white' : 'text-zinc-500'} tracking-widest`}>{t('create')}</span>
                         </div>
                     </div>
