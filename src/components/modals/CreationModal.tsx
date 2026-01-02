@@ -12,11 +12,12 @@ interface CreationModalProps {
 }
 
 const ASPECT_RATIOS = [
-    { label: '1:1', value: '1:1', width: 40, height: 40 },
-    { label: '4:3', value: '4:3', width: 48, height: 36 },
     { label: '16:9', value: '16:9', width: 56, height: 32 },
-    { label: '9:16', value: '9:16', width: 32, height: 56 },
     { label: '3:2', value: '3:2', width: 48, height: 32 },
+    { label: '4:3', value: '4:3', width: 48, height: 36 },
+    { label: '1:1', value: '1:1', width: 40, height: 40 },
+    { label: '3:4', value: '3:4', width: 36, height: 48 },
+    { label: '9:16', value: '9:16', width: 32, height: 56 },
 ];
 
 const MODELS = [
@@ -65,31 +66,27 @@ export const CreationModal: React.FC<CreationModalProps> = ({
             onClick={onClose}
         >
             <div
+
                 className={`
                     w-full max-w-2xl ${Theme.Colors.ModalBg} 
                     border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-2xl overflow-hidden flex flex-col max-h-[90vh]
+                    shadow-2xl flex flex-col max-h-[90vh]
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between px-6 py-4 border-b ${Theme.Colors.Border} shrink-0`}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                            <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div className="flex flex-col">
-                            <h2 className={Typo.H3}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
-                            <p className={`${Typo.Label} text-zinc-500`}>
-                                {lang === 'de' ? 'Wähle Einstellungen und Prompt' : 'Choose settings and describe your image'}
-                            </p>
-                        </div>
+                <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
+                    <div className="flex flex-col gap-1">
+                        <h2 className={Typo.H3}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
+                        <p className={`${Typo.Label} text-zinc-500`}>
+                            {lang === 'de' ? 'Wähle Einstellungen und Prompt' : 'Choose settings and describe your image'}
+                        </p>
                     </div>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
+                <div className="flex-1 overflow-visible p-6 flex flex-col gap-8">
 
                     {/* Prompt Input */}
                     <div className="flex flex-col gap-3">
@@ -123,10 +120,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         )}
 
                         {/* Model Dropdown */}
-                        <div className="flex flex-col gap-3 relative z-50">
+                        <div className={`flex flex-col gap-3 relative ${openDropdown === 'model' ? 'z-[60]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
-                                <Wand2 className="w-4 h-4" />
-                                {lang === 'de' ? 'Modell & Qualität' : 'Model & Quality'}
+                                {lang === 'de' ? 'Qualität' : 'Quality'}
                             </label>
                             <div className="relative">
                                 <button
@@ -146,7 +142,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 </button>
 
                                 {openDropdown === 'model' && (
-                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top`}>
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
                                         {MODELS.map((model) => (
                                             <button
                                                 key={model.id}
@@ -171,9 +167,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         </div>
 
                         {/* Aspect Ratio Dropdown */}
-                        <div className="flex flex-col gap-3 relative z-50">
+                        <div className={`flex flex-col gap-3 relative ${openDropdown === 'ratio' ? 'z-[60]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
-                                <Ratio className="w-4 h-4" />
                                 {lang === 'de' ? 'Format' : 'Aspect Ratio'}
                             </label>
 
@@ -189,7 +184,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                     `}
                                 >
                                     <div className="flex items-center gap-3 px-1">
-                                        <AspectIcon ratio={selectedRatio} isSelected={true} />
+                                        <div className="w-5 flex justify-center">
+                                            <AspectIcon ratio={selectedRatio} isSelected={true} />
+                                        </div>
                                         <span className={`${Typo.Body} font-medium`}>
                                             {ASPECT_RATIOS.find(r => r.value === selectedRatio)?.label}
                                         </span>
@@ -198,7 +195,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 </button>
 
                                 {openDropdown === 'ratio' && (
-                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top`}>
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
                                         {ASPECT_RATIOS.map((r) => (
                                             <button
                                                 key={r.value}
@@ -209,7 +206,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                                 `}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <AspectIcon ratio={r.value} isSelected={selectedRatio === r.value} />
+                                                    <div className="w-5 flex justify-center">
+                                                        <AspectIcon ratio={r.value} isSelected={selectedRatio === r.value} />
+                                                    </div>
                                                     <span className={`${Typo.Body} font-medium ${selectedRatio === r.value ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
                                                         {r.label}
                                                     </span>
@@ -225,8 +224,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className={`p-6 border-t ${Theme.Colors.Border} bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-end gap-3 shrink-0`}>
-                    <Button variant="secondary" onClick={onClose}>
+                <div className={`p-6 flex items-center justify-end gap-3 shrink-0`}>
+                    <Button variant="secondary" onClick={onClose} className="min-w-[100px]">
                         {lang === 'de' ? 'Abbrechen' : 'Cancel'}
                     </Button>
                     <Button
