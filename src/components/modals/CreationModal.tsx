@@ -26,6 +26,19 @@ const MODELS = [
     { id: 'pro-4k', name: 'Nano Banana Pro 4K', desc: 'Ultra Quality (4096px)' },
 ];
 
+const AspectIcon = ({ ratio, isSelected }: { ratio: string, isSelected: boolean }) => {
+    const baseClass = `border-[1.5px] rounded-[1px] transition-colors ${isSelected ? 'border-current' : 'border-zinc-400 group-hover:border-zinc-600 dark:group-hover:border-zinc-300'}`;
+    switch (ratio) {
+        case '16:9': return <div className={`${baseClass} w-5 h-[11px]`} />;
+        case '4:3': return <div className={`${baseClass} w-5 h-[15px]`} />;
+        case '1:1': return <div className={`${baseClass} w-4 h-4`} />;
+        case '3:4': return <div className={`${baseClass} w-[15px] h-5`} />;
+        case '9:16': return <div className={`${baseClass} w-[11px] h-5`} />;
+        case '3:2': return <div className={`${baseClass} w-5 h-[13px]`} />;
+        default: return <div className={`${baseClass} w-4 h-4`} />;
+    }
+};
+
 export const CreationModal: React.FC<CreationModalProps> = ({
     isOpen,
     onClose,
@@ -101,9 +114,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Model Selection */}
                         <div className="flex flex-col gap-3">
-                            <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider flex items-center gap-2`}>
+                            <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 <Wand2 className="w-4 h-4" />
-                                {lang === 'de' ? 'Modell' : 'Model'}
+                                {lang === 'de' ? 'Modell & Qualität' : 'Model & Quality'}
                             </label>
                             <div className="flex flex-col gap-2">
                                 {MODELS.map((model) => (
@@ -111,16 +124,19 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                         key={model.id}
                                         onClick={() => setSelectedModel(model.id)}
                                         className={`
-                                            flex flex-col items-start p-3 rounded-lg border transition-all text-left
+                                            w-full flex flex-col items-start gap-1 p-3.5 ${Theme.Geometry.Radius} border text-left transition-all
                                             ${selectedModel === model.id
-                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
-                                                : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
+                                                ? `${Theme.Colors.SurfaceSubtle} border-zinc-900 dark:border-zinc-100 ring-1 ring-zinc-900 dark:ring-zinc-100`
+                                                : `${Theme.Colors.Surface} ${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
+                                            }
                                         `}
                                     >
-                                        <span className={`${Typo.Label} ${selectedModel === model.id ? 'text-blue-700 dark:text-blue-300' : Theme.Colors.TextPrimary}`}>
-                                            {model.name}
-                                        </span>
-                                        <span className={`text-[11px] ${selectedModel === model.id ? 'text-blue-600/80 dark:text-blue-400/80' : 'text-zinc-500'}`}>
+                                        <div className="flex items-center justify-between w-full mb-0.5">
+                                            <span className={`text-sm font-bold ${selectedModel === model.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                {model.name}
+                                            </span>
+                                        </div>
+                                        <span className={`text-[10px] ${Theme.Colors.TextSubtle} font-mono uppercase tracking-wider`}>
                                             {model.desc}
                                         </span>
                                     </button>
@@ -130,31 +146,36 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                         {/* Aspect Ratio */}
                         <div className="flex flex-col gap-3">
-                            <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider flex items-center gap-2`}>
+                            <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 <Ratio className="w-4 h-4" />
                                 {lang === 'de' ? 'Format' : 'Aspect Ratio'}
                             </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {ASPECT_RATIOS.map((ratio) => (
-                                    <button
-                                        key={ratio.value}
-                                        onClick={() => setSelectedRatio(ratio.value)}
-                                        className={`
-                                            aspect-square rounded-lg border flex flex-col items-center justify-center gap-2 transition-all
-                                            ${selectedRatio === ratio.value
-                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 ring-1 ring-blue-500/50'
-                                                : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
-                                        `}
-                                    >
-                                        <div
-                                            className={`border-2 ${selectedRatio === ratio.value ? 'border-blue-500 bg-blue-500/20' : 'border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800'}`}
-                                            style={{ width: `${ratio.width}px`, height: `${ratio.height}px`, borderRadius: '2px' }}
-                                        />
-                                        <span className={`text-[10px] font-medium ${selectedRatio === ratio.value ? 'text-blue-700 dark:text-blue-300' : 'text-zinc-500'}`}>
-                                            {ratio.label}
-                                        </span>
-                                    </button>
-                                ))}
+
+                            {/* Horizontal Toggle Group */}
+                            <div className="flex flex-wrap gap-2">
+                                {ASPECT_RATIOS.map((r) => {
+                                    const isSelected = selectedRatio === r.value;
+                                    return (
+                                        <button
+                                            key={r.value}
+                                            onClick={() => setSelectedRatio(r.value)}
+                                            className={`
+                                                group flex-1 min-w-[60px] flex flex-col items-center justify-center gap-2 py-3 border transition-all ${Theme.Geometry.Radius}
+                                                ${isSelected
+                                                    ? `${Theme.Colors.SurfaceSubtle} border-zinc-900 dark:border-zinc-100 ring-1 ring-zinc-900 dark:ring-zinc-100`
+                                                    : `${Theme.Colors.Surface} ${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
+                                                }
+                                            `}
+                                        >
+                                            <div className="h-6 flex items-center justify-center">
+                                                <AspectIcon ratio={r.value} isSelected={isSelected} />
+                                            </div>
+                                            <span className={`text-[10px] font-bold ${isSelected ? Theme.Colors.TextHighlight : 'text-zinc-500'}`}>
+                                                {r.label}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
