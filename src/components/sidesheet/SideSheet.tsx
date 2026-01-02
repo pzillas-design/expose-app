@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '@/types';
+import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
 import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
@@ -45,6 +45,8 @@ interface SideSheetProps {
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
+    qualityMode: GenerationQuality;
+    onQualityModeChange: (mode: GenerationQuality) => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -75,7 +77,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onMaskToolChange,
     onUpload,
     onCreateNew,
-    isBoardEmpty
+    isBoardEmpty,
+    qualityMode,
+    onQualityModeChange
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
@@ -403,6 +407,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onUpdateTemplate={handleUpdateTemplate}
                                 onGenerateMore={onGenerateMore}
                                 onNavigateParent={onNavigateParent}
+                                qualityMode={qualityMode}
+                                onQualityModeChange={onQualityModeChange}
                                 t={t}
                                 currentLang={lang}
                             />

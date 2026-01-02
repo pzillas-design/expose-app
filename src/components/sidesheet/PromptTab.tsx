@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl } from '@/types';
+import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye } from 'lucide-react';
+import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 
@@ -27,6 +27,8 @@ interface PromptTabProps {
     onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => void;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
+    qualityMode: GenerationQuality;
+    onQualityModeChange: (mode: GenerationQuality) => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
 }
@@ -35,7 +37,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     prompt, setPrompt, selectedImage, selectedImages, onGenerate, onDeselect, templates, onSelectTemplate,
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
     onUpdateAnnotation, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
-    onGenerateMore, onNavigateParent, t, currentLang
+    onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -53,6 +55,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const annFileInputRef = useRef<HTMLInputElement>(null);
     const targetAnnIdRef = useRef<string | null>(null);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
+    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
+    const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
+        { id: 'fast', label: 'Nano Banana', desc: '1024 × 1024 px', price: 'Free' },
+        { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 × 1024 px', price: '0.50 €' },
+        { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 × 2048 px', price: '1.00 €' },
+        { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 × 4096 px', price: '2.00 €' },
+    ];
+
+    const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
 
     const isMulti = selectedImages && selectedImages.length > 1;
 
@@ -269,10 +281,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                <div className="flex items-center min-h-[20px]">
-                                    <span className={`${Typo.Label} text-zinc-400`}>{t('context_label')}</span>
-                                </div>
-
                                 <div className="grid grid-cols-3 gap-2">
                                     <Button
                                         variant="secondary"
@@ -311,6 +319,58 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         accept="image/*"
                                         onChange={handleFileChange}
                                     />
+                                </div>
+
+                                {/* Model Selection Dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                                        className={`
+                                            w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all text-left
+                                            hover:bg-zinc-100 dark:hover:bg-zinc-800 group
+                                        `}
+                                    >
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <span className={`${Typo.Body} text-zinc-400 whitespace-nowrap`}>Modell:</span>
+                                            <span className={`${Typo.Body} font-medium text-zinc-900 dark:text-zinc-100 truncate`}>
+                                                {currentModel.label}
+                                            </span>
+                                            <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 font-mono opacity-40 transition-opacity`}>
+                                                {currentModel.price}
+                                            </span>
+                                        </div>
+                                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {isModelDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
+                                            <div className={`absolute bottom-full left-0 right-0 mb-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} rounded-2xl shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50`}>
+                                                {MODES.map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
+                                                        className={`
+                                                            flex items-center justify-between px-3 py-2 rounded-xl text-left transition-colors
+                                                            ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                        `}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                                {m.label}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
+                                                            </div>
+                                                        </div>
+                                                        {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {annotations.length > 0 && !isMulti && (

@@ -3,6 +3,7 @@ import { ImageItem } from '@/components/canvas/ImageItem';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { SettingsPage } from '@/components/settings/SettingsPage';
+import { CreditsModal } from '@/components/modals/CreditsModal';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
@@ -41,6 +42,7 @@ export function App() {
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
     const [isCanvasZoneActive, setIsCanvasZoneActive] = useState(false);
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+    const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
 
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
@@ -338,7 +340,7 @@ export function App() {
                     credits={credits}
                     onZoomChange={(z) => smoothZoomTo(z)}
                     onOpenSettings={() => navigate('/settings')}
-                    onOpenCredits={() => navigate('/settings/account')}
+                    onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
                     onUpload={handleDockUpload}
                     onCreateNew={() => setIsCreationModalOpen(true)}
@@ -463,6 +465,8 @@ export function App() {
                 onUpload={() => document.getElementById('ctx-upload-input')?.click()}
                 onCreateNew={() => setIsCreationModalOpen(true)}
                 isBoardEmpty={rows.length === 0}
+                qualityMode={qualityMode}
+                onQualityModeChange={setQualityMode}
             />
 
             <input
@@ -506,6 +510,14 @@ export function App() {
                 }}
                 t={t}
                 lang={currentLang}
+            />
+
+            <CreditsModal
+                isOpen={isCreditsModalOpen}
+                onClose={() => setIsCreditsModalOpen(false)}
+                currentBalance={credits}
+                onAddFunds={handleAddFunds}
+                t={t}
             />
 
             {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
