@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, ImagePlus } from 'lucide-react';
+import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, FilePlus } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
@@ -323,7 +323,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                             variant="secondary"
                             className="w-full justify-start px-5 gap-3"
                             onClick={onCreateNew}
-                            icon={<ImagePlus className="w-5 h-5" />}
+                            icon={<FilePlus className="w-5 h-5" />}
                         >
                             {t('generate_new')}
                         </Button>
