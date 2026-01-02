@@ -44,6 +44,7 @@ interface SideSheetProps {
     onMaskToolChange: (tool: 'brush' | 'text') => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
+    isBoardEmpty?: boolean;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -73,7 +74,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     maskTool,
     onMaskToolChange,
     onUpload,
-    onCreateNew
+    onCreateNew,
+    isBoardEmpty
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
@@ -299,7 +301,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 {t('welcome_title')}
                             </h2>
                             <p className={`${Typo.Body} ${Theme.Colors.TextSecondary}`}>
-                                {t('welcome_desc')}
+                                {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
                             </p>
                         </div>
                     </div>

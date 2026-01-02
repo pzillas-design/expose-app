@@ -484,6 +484,7 @@ export function App() {
 
                 onUpload={() => document.getElementById('ctx-upload-input')?.click()}
                 onCreateNew={() => setIsCreationModalOpen(true)}
+                isBoardEmpty={rows.length === 0}
             />
 
             <input

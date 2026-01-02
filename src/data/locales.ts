@@ -225,7 +225,8 @@ export const translations = {
 
     // Welcome Screen
     welcome_title: "Welcome to Exposé",
-    welcome_desc: "Select an image to start editing, or create something new.",
+    welcome_desc: "Select an image to edit or start a new flow.",
+    welcome_empty_desc: "Your board is empty. Upload a photo or generate your first image.",
 
     // Multi Select & Context Menu
     images_selected: "images",
@@ -534,7 +535,8 @@ export const translations = {
 
     // Welcome Screen
     welcome_title: "Willkommen bei Exposé",
-    welcome_desc: "Wähle ein Bild aus, um es zu bearbeiten, oder starte neu.",
+    welcome_desc: "Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie einen neuen Flow.",
+    welcome_empty_desc: "Ihr Board ist noch leer. Laden Sie ein Foto hoch oder generieren Sie Ihr erstes Bild.",
 
     // Multi Select & Context Menu
     images_selected: "Bilder",
