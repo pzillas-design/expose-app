@@ -99,18 +99,21 @@ export const CommandDock: React.FC<CommandDockProps> = ({
         {isMenuOpen && (
           <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsMenuOpen(false)} />
         )}
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className={`
-            w-8 h-8 flex items-center justify-center rounded-md transition-all
-            hover:bg-zinc-100 dark:hover:bg-zinc-800
-            ${isMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800' : ''}
-          `}
-        >
-          <div className="scale-90 transition-transform group-hover:scale-100">
-            <Plus className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
-          </div>
-        </button>
+        <Tooltip text={t('create_new') || 'Neu'}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className={`
+              w-8 h-8 flex items-center justify-center rounded-md transition-all
+              border border-black dark:border-transparent
+              hover:border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800
+              ${isMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 border-transparent' : ''}
+            `}
+          >
+            <div className="scale-90 transition-transform group-hover:scale-100">
+              <Plus className="w-4 h-4 text-zinc-900 dark:text-zinc-300" />
+            </div>
+          </button>
+        </Tooltip>
 
         {isMenuOpen && (
           <div className={`
@@ -126,9 +129,9 @@ export const CommandDock: React.FC<CommandDockProps> = ({
                 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group w-full
               `}
             >
-              <ImagePlus className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
+              <Upload className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
               <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>
-                {t('upload_image') || 'Bild hochladen'}
+                {t('upload_image_edit') || 'Bild hochladen und bearbeiten'}
               </span>
             </button>
 
@@ -139,7 +142,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
                 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group w-full
               `}
             >
-              <Sparkles className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
+              <ImagePlus className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
               <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>
                 {t('generate_new') || 'Neues Bild generieren'}
               </span>
