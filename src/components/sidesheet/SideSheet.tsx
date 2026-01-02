@@ -302,20 +302,20 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     <div className="flex flex-col gap-3 w-full">
                         <Button
                             variant="primary"
-                            className="w-full justify-start h-12 gap-3"
+                            className="w-full justify-start h-12 gap-3 uppercase tracking-widest !text-[11px]"
                             onClick={onUpload}
                             icon={<Upload className="w-5 h-5" />}
                         >
-                            {lang === 'de' ? 'Bild hochladen und bearbeiten' : 'Upload and Edit Image'}
+                            {lang === 'de' ? 'Bild hochladen & bearbeiten' : 'Upload & Edit Image'}
                         </Button>
 
                         <Button
                             variant="secondary"
-                            className="w-full justify-start h-12 gap-3"
+                            className="w-full justify-start h-12 gap-3 uppercase tracking-widest !text-[11px]"
                             onClick={() => { }}
                             icon={<ImagePlus className="w-5 h-5" />}
                         >
-                            {lang === 'de' ? 'Neues Bild erstellen' : 'Create New Image'}
+                            {lang === 'de' ? 'Neues Bild generieren' : 'Generate New Image'}
                         </Button>
                     </div>
                 </div>
