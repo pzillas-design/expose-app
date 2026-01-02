@@ -67,10 +67,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     };
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        { id: 'fast', label: 'Nano Banana', desc: '1024 × 1024 px', price: 'Free' },
-        { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 × 1024 px', price: '0.10 €' },
-        { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 × 2048 px', price: '0.25 €' },
-        { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 × 4096 px', price: '0.50 €' },
+        { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: 'Free' },
+        { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 px', price: '0.10 €' },
+        { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 px', price: '0.25 €' },
+        { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 px', price: '0.50 €' },
     ];
 
     const TABS = [
