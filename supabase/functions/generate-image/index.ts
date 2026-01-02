@@ -75,16 +75,16 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-3-pro-image-preview';
+        let finalModelName = 'gemini-2.0-flash-exp';
         switch (qualityMode) {
             case 'fast':
-                finalModelName = 'gemini-2.5-flash-image';
+                finalModelName = 'gemini-2.0-flash-exp';
                 break;
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
             default:
-                finalModelName = 'gemini-3-pro-image-preview';
+                finalModelName = 'gemini-2.0-flash-exp';
                 break;
         }
 

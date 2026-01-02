@@ -152,24 +152,24 @@ export const editImageWithGemini = async (
 
 
     // Determine Model and Config based on Quality Mode
-    let modelName = 'gemini-3-pro-image-preview'; // Default to cutting-edge preview
+    let modelName = 'gemini-2.0-flash-exp'; // Default to cutting-edge preview
     let imageConfig: any = {};
 
     switch (qualityMode) {
       case 'fast':
-        modelName = 'gemini-2.5-flash-image';
+        modelName = 'gemini-2.0-flash-exp';
         // No specific imageSize config for flash-image
         break;
       case 'pro-1k':
-        modelName = 'gemini-3-pro-image-preview';
+        modelName = 'gemini-2.0-flash-exp';
         imageConfig = { imageSize: '1K' };
         break;
       case 'pro-2k':
-        modelName = 'gemini-3-pro-image-preview';
+        modelName = 'gemini-2.0-flash-exp';
         imageConfig = { imageSize: '2K' };
         break;
       case 'pro-4k':
-        modelName = 'gemini-3-pro-image-preview';
+        modelName = 'gemini-2.0-flash-exp';
         imageConfig = { imageSize: '4K' };
         break;
     }
