@@ -283,7 +283,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col mb-7"> {/* Increased space above model */}
+                            <div className="flex flex-col mb-8"> {/* Even more space above model */}
                                 <div className="grid grid-cols-3 gap-2">
                                     <Button
                                         variant="secondary"
