@@ -88,25 +88,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
       </div>
 
 
-      {/* 4. Upload (Ghost Button) */}
-      <div className="flex items-center px-0.5">
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          multiple
-          accept="image/*"
-          onChange={handleFileChange}
-        />
-        <button
-          onClick={handleUploadClick}
-          className="h-8 flex items-center gap-2 px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all group"
-        >
-          <Plus className="w-3.5 h-3.5 text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors" />
-          <span className={`${Typo.Label} text-zinc-500 group-hover:text-black dark:group-hover:text-white transition-colors uppercase !text-[10px] tracking-widest`}>Foto</span>
-        </button>
-      </div>
-
     </div>
   );
 };
