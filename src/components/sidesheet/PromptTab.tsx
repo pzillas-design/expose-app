@@ -326,18 +326,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <button
                                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                                         className={`
-                                            w-full flex items-center justify-between py-1 px-1 rounded-xl transition-all text-left
+                                            flex items-center gap-1.5 py-1 px-1 rounded-xl transition-all text-left
                                             hover:bg-zinc-100 dark:hover:bg-zinc-800 group
                                         `}
                                     >
-                                        <div className="flex items-center gap-2 overflow-hidden">
-                                            <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
-                                                {currentModel.label}
-                                            </span>
-                                            <span className={`${Typo.Micro} text-zinc-300 dark:text-zinc-600 font-mono opacity-60 transition-opacity`}>
-                                                {currentModel.price}
-                                            </span>
-                                        </div>
+                                        <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
+                                            {currentModel.label}
+                                        </span>
                                         <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
