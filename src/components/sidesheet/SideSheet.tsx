@@ -294,30 +294,30 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     onMouseDown={startResizing}
                 />
 
-                <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
+                <div className="flex-1 flex flex-col gap-10 px-6 pt-12 pb-6">
                     {/* Header */}
-                    <div className="flex flex-col items-center text-center gap-8">
-                        <div className="flex flex-col items-center gap-6">
-                            <h2
-                                className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
-                                style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
-                            >
-                                <span>Willkommen bei</span>
-                                <div className="flex items-center gap-2.5">
-                                    <Logo className="w-8 h-8" />
-                                    <Wordmark className="h-6" />
-                                </div>
-                            </h2>
+                    <div className="flex flex-col gap-8">
+                        <div className="flex flex-col gap-6">
+                            <Logo className="w-12 h-12" />
+                            <div className="flex flex-col gap-1">
+                                <h2
+                                    className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
+                                    style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                                >
+                                    Willkommen bei
+                                </h2>
+                                <Wordmark className="h-7" />
+                            </div>
                             <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
                                 {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
                             </p>
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="flex flex-col gap-3 w-full max-w-[300px]">
+                        <div className="flex flex-col gap-3 w-full">
                             <Button
                                 variant="primary"
-                                className="w-full justify-start px-5 gap-3"
+                                className="w-full justify-start px-5 h-12 gap-3"
                                 onClick={onUpload}
                                 icon={<Upload className="w-5 h-5" />}
                             >
@@ -326,7 +326,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
                             <Button
                                 variant="secondary"
-                                className="w-full justify-start px-5 gap-3"
+                                className="w-full justify-start px-5 h-12 gap-3"
                                 onClick={onCreateNew}
                                 icon={<Plus className="w-5 h-5" />}
                             >

@@ -331,7 +331,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         `}
                                     >
                                         <div className="flex items-center gap-2 overflow-hidden">
-                                            <span className={`${Typo.Body} text-zinc-400 whitespace-nowrap`}>Modell:</span>
+                                            <span className={`${Typo.Body} text-zinc-400 whitespace-nowrap`}>Modell</span>
                                             <span className={`${Typo.Body} font-medium text-zinc-900 dark:text-zinc-100 truncate`}>
                                                 {currentModel.label}
                                             </span>
