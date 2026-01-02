@@ -292,7 +292,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
                     {/* Header */}
                     <div className="flex flex-col items-center text-center gap-8">
-                        <div className={`w-28 h-28 flex items-center justify-center rounded-3xl bg-zinc-100 dark:bg-zinc-800 transition-transform duration-700`}>
+                        <div className={`w-28 h-28 flex items-center justify-center rounded-3xl bg-black transition-transform duration-700`}>
                             <Logo className="w-16 h-16" />
                         </div>
                         <div className="flex flex-col gap-3">
