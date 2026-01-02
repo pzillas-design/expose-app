@@ -284,10 +284,10 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     onMouseDown={startResizing}
                 />
 
-                <div className="flex-1 flex flex-col p-6 gap-8 overflow-y-auto">
+                <div className="flex-1 flex flex-col p-6 gap-8 items-center justify-center">
                     {/* Header */}
-                    <div className="flex flex-col items-center text-center mt-12 gap-4">
-                        <Logo className="w-12 h-12" />
+                    <div className="flex flex-col items-center text-center gap-6">
+                        <Logo className="w-16 h-16" />
                         <div className="flex flex-col gap-2">
                             <h2 className={`${Typo.H3} ${Theme.Colors.TextPrimary}`}>
                                 {lang === 'de' ? 'Willkommen bei Exposé' : 'Welcome to Exposé'}
@@ -299,18 +299,18 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 w-full">
                         <Button
-                            variant="secondary"
+                            variant="primary"
                             className="w-full justify-start h-12 gap-3"
                             onClick={onUpload}
                             icon={<Upload className="w-5 h-5" />}
                         >
-                            {lang === 'de' ? 'Bild hochladen' : 'Upload Image'}
+                            {lang === 'de' ? 'Bild hochladen und bearbeiten' : 'Upload and Edit Image'}
                         </Button>
 
                         <Button
-                            variant="primary"
+                            variant="secondary"
                             className="w-full justify-start h-12 gap-3"
                             onClick={() => { }}
                             icon={<ImagePlus className="w-5 h-5" />}
