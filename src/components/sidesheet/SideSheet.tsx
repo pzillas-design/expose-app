@@ -4,6 +4,7 @@ import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus }
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
+import { Wordmark } from '@/components/ui/Wordmark';
 import { useResizable } from '@/hooks/useResizable';
 import { CropModal } from '@/components/modals/CropModal';
 import { generateId } from '@/utils/ids';
@@ -301,10 +302,11 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         </div>
                         <div className="flex flex-col gap-3">
                             <h2
-                                className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
+                                className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
                                 style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                             >
-                                {t('welcome_title')}
+                                <span className="opacity-40 text-lg">Willkommen bei</span>
+                                <Wordmark className="h-7" />
                             </h2>
                             <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
                                 {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
