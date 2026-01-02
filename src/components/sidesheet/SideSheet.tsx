@@ -299,7 +299,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         {/* Header */}
                         <div className="flex flex-col items-center gap-6">
                             <Logo className="w-16 h-16" />
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-4">
                                 <h2
                                     className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-1`}
                                     style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
