@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload, File } from 'lucide-react';
+import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload } from 'lucide-react';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { TranslationFunction, CanvasImage } from '@/types';
 
@@ -86,7 +86,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                         </button>
 
                         <button onClick={() => { onCreateNew(); onClose(); }} className={itemClass}>
-                            <File className={iconClass} />
+                            <Plus className={iconClass} />
                             <span className={textClass}>{t('generate_new')}</span>
                         </button>
 

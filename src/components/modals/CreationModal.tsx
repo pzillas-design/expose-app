@@ -99,11 +99,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 autoFocus
                             />
                         </div>
-                        <div className="flex justify-start">
-                            <Button variant="ghost" icon={<Paperclip className="w-4 h-4" />} onClick={() => { }}>
-                                {t('attach_file')}
-                            </Button>
-                        </div>
+                        <Button variant="secondary" className="w-full" icon={<Paperclip className="w-4 h-4" />} onClick={() => { }}>
+                            {t('attach_file')}
+                        </Button>
                     </div>
 
                     {/* Settings Grid */}
