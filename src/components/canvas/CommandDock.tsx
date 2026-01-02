@@ -114,40 +114,35 @@ export const CommandDock: React.FC<CommandDockProps> = ({
 
         {isMenuOpen && (
           <div className={`
-            absolute top-full right-0 mt-2 min-w-[240px] z-50 p-1.5 
-            ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl 
-            flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-100 origin-top-right
+            absolute top-full right-0 mt-2 min-w-[200px] z-50 py-1
+            bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 
+            rounded-lg shadow-md ring-1 ring-black/5
+            flex flex-col animate-in fade-in zoom-in-95 duration-100 origin-top-right
           `}>
             <button
               onClick={() => { handleUploadClick(); setIsMenuOpen(false); }}
               className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors
-                hover:bg-zinc-100 dark:hover:bg-zinc-800
+                flex items-center gap-3 px-4 py-2.5 
+                hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group w-full
               `}
             >
-              <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                <ImagePlus className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className={`${Typo.Body} font-medium`}>{t('upload_image') || 'Bild hochladen'}</span>
-                <span className={`${Typo.Micro} text-zinc-500`}>{t('upload_image_desc') || 'Bearbeiten & Erweitern'}</span>
-              </div>
+              <ImagePlus className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
+              <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>
+                {t('upload_image') || 'Bild hochladen'}
+              </span>
             </button>
 
             <button
               onClick={() => { onCreateNew(); setIsMenuOpen(false); }}
               className={`
-                flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors
-                hover:bg-zinc-100 dark:hover:bg-zinc-800
+                flex items-center gap-3 px-4 py-2.5 
+                hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group w-full
               `}
             >
-              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <span className={`${Typo.Body} font-medium`}>{t('generate_new') || 'Neues Bild generieren'}</span>
-                <span className={`${Typo.Micro} text-zinc-500`}>{t('generate_new_desc') || 'Mit KI erstellen'}</span>
-              </div>
+              <Sparkles className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
+              <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>
+                {t('generate_new') || 'Neues Bild generieren'}
+              </span>
             </button>
           </div>
         )}
