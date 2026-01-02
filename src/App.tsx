@@ -452,34 +452,34 @@ export function App() {
                 </div>
             </div>
 
-            {selectedIds.length > 0 && (
-                <SideSheet
-                    selectedImage={selectedImage}
-                    selectedImages={selectedImages}
-                    sideSheetMode={sideSheetMode}
-                    onModeChange={setSideSheetMode}
-                    brushSize={brushSize}
-                    onBrushSizeChange={setBrushSize}
-                    onGenerate={handleGenerate}
-                    onUpdateAnnotations={handleUpdateAnnotations}
-                    onUpdatePrompt={handleUpdatePrompt}
-                    onDeleteImage={requestDelete}
-                    onDeselectAllButOne={handleDeselectAllButOne}
-                    onGenerateMore={handleGenerateMore}
-                    onNavigateParent={handleNavigateParent}
-                    isGlobalDragOver={isDragOver}
-                    onGlobalDragLeave={() => setIsDragOver(false)}
-                    t={t}
-                    lang={currentLang}
-                    fullLibrary={fullLibrary}
-                    onAddUserCategory={addUserCategory}
-                    onDeleteUserCategory={deleteUserCategory}
-                    onAddUserItem={addUserItem}
-                    onDeleteUserItem={deleteUserItem}
-                    maskTool={maskTool}
-                    onMaskToolChange={setMaskTool}
-                />
-            )}
+            <SideSheet
+                selectedImage={selectedImage}
+                selectedImages={selectedImages}
+                sideSheetMode={sideSheetMode}
+                onModeChange={setSideSheetMode}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                onGenerate={handleGenerate}
+                onUpdateAnnotations={handleUpdateAnnotations}
+                onUpdatePrompt={handleUpdatePrompt}
+                onDeleteImage={requestDelete}
+                onDeselectAllButOne={handleDeselectAllButOne}
+                onDeselectAll={() => selectMultiple([])}
+                onGenerateMore={handleGenerateMore}
+                onNavigateParent={handleNavigateParent}
+                isGlobalDragOver={isDragOver}
+                onGlobalDragLeave={() => setIsDragOver(false)}
+                t={t}
+                lang={currentLang}
+                fullLibrary={fullLibrary}
+                onAddUserCategory={addUserCategory}
+                onDeleteUserCategory={deleteUserCategory}
+                onAddUserItem={addUserItem}
+                onDeleteUserItem={deleteUserItem}
+                maskTool={maskTool}
+                onMaskToolChange={setMaskTool}
+                onUpload={() => document.getElementById('ctx-upload-input')?.click()}
+            />
 
             <input
                 id="ctx-upload-input"

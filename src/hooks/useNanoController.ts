@@ -122,11 +122,18 @@ export const useNanoController = () => {
         if (user && currentBoardId) {
             imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
                 setRows(loadedRows);
+                if (loadedRows.length > 0) {
+                    const lastRow = loadedRows[loadedRows.length - 1];
+                    if (lastRow.items.length > 0) {
+                        const lastItem = lastRow.items[lastRow.items.length - 1];
+                        selectAndSnap(lastItem.id);
+                    }
+                }
             });
         } else {
             setRows([]);
         }
-    }, [user, currentBoardId]);
+    }, [user, currentBoardId, selectAndSnap]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({

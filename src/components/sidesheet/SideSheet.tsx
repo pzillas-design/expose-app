@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers } from 'lucide-react';
+import { Trash2, Download, ArrowLeft, Check, Layers, ChevronRight, Upload, ImagePlus, MousePointer2 } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { useResizable } from '@/hooks/useResizable';
@@ -25,6 +25,7 @@ interface SideSheetProps {
     onUpdatePrompt: (id: string, text: string) => void;
     onDeleteImage: (id: string | string[]) => void;
     onDeselectAllButOne?: () => void;
+    onDeselectAll?: () => void;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
     // Drag & Drop props
@@ -39,6 +40,7 @@ interface SideSheetProps {
     onDeleteUserItem: (catId: string, itemId: string) => void;
     maskTool: 'brush' | 'text';
     onMaskToolChange: (tool: 'brush' | 'text') => void;
+    onUpload?: () => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -53,6 +55,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onUpdatePrompt,
     onDeleteImage,
     onDeselectAllButOne,
+    onDeselectAll,
     onGenerateMore,
     onNavigateParent,
     isGlobalDragOver,
@@ -65,7 +68,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onAddUserItem,
     onDeleteUserItem,
     maskTool,
-    onMaskToolChange
+    onMaskToolChange,
+    onUpload
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
@@ -263,14 +267,62 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         setTemplates(prev => [...prev, template]);
     };
 
+    // --- RENDER CONTENT ---
+
+    // Base State (No Selection)
     if (!selectedImage) {
         return (
             <div
-                className={`w-[360px] ${Theme.Colors.PanelBg} border-l ${Theme.Colors.Border} flex items-center justify-center relative`}
+                className={`${Theme.Colors.PanelBg} border-l ${Theme.Colors.Border} flex flex-col h-full z-20 relative transition-colors duration-200`}
+                style={{ width: width }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); onGlobalDragLeave(); }}
             >
-                <div className={Typo.Label}>{t('no_image')}</div>
+                <div
+                    className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-zinc-400 dark:hover:bg-zinc-700 transition-colors z-50"
+                    onMouseDown={startResizing}
+                />
+
+                <div className="flex-1 flex flex-col p-6 gap-8 overflow-y-auto">
+                    {/* Header */}
+                    <div className="flex flex-col gap-2 mt-4">
+                        <h2 className={`${Typo.H3} ${Theme.Colors.TextPrimary}`}>
+                            {lang === 'de' ? 'Willkommen im Studio' : 'Welcome to Studio'}
+                        </h2>
+                        <p className={`${Typo.Body} ${Theme.Colors.TextSecondary}`}>
+                            {lang === 'de' ? 'Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie neu.' : 'Select an image to start editing, or create something new.'}
+                        </p>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="flex flex-col gap-3">
+                        <Button
+                            variant="secondary"
+                            className="w-full justify-start h-12 gap-3"
+                            onClick={onUpload}
+                            icon={<Upload className="w-5 h-5" />}
+                        >
+                            {lang === 'de' ? 'Bild hochladen' : 'Upload Image'}
+                        </Button>
+
+                        <Button
+                            variant="primary"
+                            className="w-full justify-start h-12 gap-3"
+                            onClick={() => { }}
+                            icon={<ImagePlus className="w-5 h-5" />}
+                        >
+                            {lang === 'de' ? 'Neues Bild erstellen' : 'Create New Image'}
+                        </Button>
+                    </div>
+
+                    {/* Tip / Visual */}
+                    <div className={`p-6 rounded-xl border border-dashed ${Theme.Colors.Border} flex flex-col items-center justify-center gap-4 text-center mt-auto mb-10 opacity-70`}>
+                        <MousePointer2 className={`w-8 h-8 ${Theme.Colors.TextSecondary}`} />
+                        <span className={`${Typo.Label} ${Theme.Colors.TextSecondary}`}>
+                            {lang === 'de' ? 'Klicken Sie auf ein Bild auf der Arbeitsfläche, um die Bearbeitungswerkzeuge anzuzeigen.' : 'Click any image on the canvas to reveal editing tools.'}
+                        </span>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -295,7 +347,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         </div>
     );
 
-    const renderContent = () => {
+    const renderSelectedContent = () => {
         switch (sideSheetMode) {
             case 'prompt':
                 return (
@@ -306,14 +358,22 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     {selectedImages.length} {t('images_selected')}
                                 </span>
                             ) : (
-                                <span className={`${Typo.Label} truncate max-w-[180px]`}>
-                                    {selectedImage.title}
-                                </span>
+                                <div className="flex items-center gap-1 w-full mr-2">
+                                    <span className={`${Typo.Label} truncate flex-1`}>
+                                        {selectedImage.title}
+                                    </span>
+                                </div>
                             )}
 
                             <div className="flex items-center gap-1">
                                 <IconButton icon={<Download className="w-4 h-4" />} onClick={handleDownload} tooltip={isMulti ? t('download_all') : "Download"} />
                                 <IconButton icon={<Trash2 className="w-4 h-4" />} onClick={handleDelete} className="hover:text-red-400" tooltip={isMulti ? t('delete_all') : t('delete')} />
+                                <div className={`w-px h-4 mx-1 ${Theme.Colors.Border} border-l`} />
+                                <IconButton
+                                    icon={<ChevronRight className="w-4 h-4" />}
+                                    onClick={() => onDeselectAll?.()}
+                                    tooltip={t('close')}
+                                />
                             </div>
                         </div>
                         <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
@@ -418,7 +478,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     onMouseDown={startResizing}
                 />
 
-                {renderContent()}
+                {renderSelectedContent()}
             </div>
 
             <CropModal
