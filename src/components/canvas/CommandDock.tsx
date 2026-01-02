@@ -102,12 +102,14 @@ export const CommandDock: React.FC<CommandDockProps> = ({
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className={`
-            w-8 h-8 flex items-center justify-center rounded-md transition-all shadow-sm
-            bg-black dark:bg-white text-white dark:text-black
-            hover:bg-zinc-800 dark:hover:bg-zinc-200
+            w-8 h-8 flex items-center justify-center rounded-md transition-all
+            hover:bg-zinc-100 dark:hover:bg-zinc-800
+            ${isMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800' : ''}
           `}
         >
-          <Plus className="w-5 h-5" />
+          <div className="scale-90 transition-transform group-hover:scale-100">
+            <Plus className="w-4 h-4 text-zinc-700 dark:text-zinc-300" />
+          </div>
         </button>
 
         {isMenuOpen && (
