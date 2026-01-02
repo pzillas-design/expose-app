@@ -210,13 +210,21 @@ export function App() {
 
     const { confirm } = useItemDialog();
 
-    const requestDelete = useCallback(async (ids: string | string[]) => {
-        const idsArray = Array.isArray(ids) ? ids : [ids];
+    const requestDelete = useCallback(async (idsOrId: string | string[]) => {
+        let idsArray = Array.isArray(idsOrId) ? idsOrId : [idsOrId];
+
+        // If we are deleting a single item that is currently part of a larger selection, 
+        // assume the user wants to delete the whole selection
+        if (idsArray.length === 1 && selectedIds.length > 1 && selectedIds.includes(idsArray[0])) {
+            idsArray = selectedIds;
+        }
+
         if (idsArray.length === 0) return;
         const count = idsArray.length;
         const finalDesc = count > 1
             ? (currentLang === 'de' ? `Möchtest du wirklich ${count} Bilder löschen?` : `Do you really want to delete ${count} images?`)
             : t('delete_confirm_single');
+
         const confirmed = await confirm({
             title: t('delete'),
             description: finalDesc,
@@ -224,7 +232,7 @@ export function App() {
             variant: 'danger'
         });
         if (confirmed) handleDeleteImage(idsArray);
-    }, [currentLang, t, confirm, handleDeleteImage]);
+    }, [currentLang, t, confirm, handleDeleteImage, selectedIds]);
 
     const handleDownloadSelected = useCallback(async () => {
         for (const id of selectedIds) {
