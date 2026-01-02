@@ -290,9 +290,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 <div className="flex-1 flex flex-col p-6 gap-8 items-center justify-center">
                     {/* Header */}
                     <div className="flex flex-col items-center text-center gap-6">
-                        <Logo className="w-16 h-16" />
+                        <Logo className="w-20 h-20" />
                         <div className="flex flex-col gap-2">
-                            <h2 className={`${Typo.H3} ${Theme.Colors.TextPrimary}`}>
+                            <h2
+                                className={`text-2xl font-bold tracking-tight ${Theme.Colors.TextHighlight}`}
+                                style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                            >
                                 {t('welcome_title')}
                             </h2>
                             <p className={`${Typo.Body} ${Theme.Colors.TextSecondary}`}>
