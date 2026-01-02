@@ -32,39 +32,32 @@ function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], th
         );
     }
 
-    if (total === 1) {
-        return <img src={displayImages[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />;
-    }
-
-    if (total === 2) {
-        return (
-            <div className="absolute inset-0 grid grid-cols-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
-                {displayImages.slice(0, 2).map((src, i) => (
-                    <img key={i} src={src} className="w-full h-full object-cover" />
-                ))}
-            </div>
-        );
-    }
-
-    // Grid for 3+
+    // Fixed 2x2 Grid Layout
     const showPlus = total > 4;
-    const itemsToShow = showPlus ? displayImages.slice(0, 3) : displayImages.slice(0, 4);
+    const itemsToShow = displayImages.slice(0, showPlus ? 3 : 4);
 
     return (
-        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-[2px] bg-white/10 group-hover:scale-105 transition-transform duration-700 ease-out">
-            {itemsToShow.map((src, i) => (
-                <img key={i} src={src} className="w-full h-full object-cover" />
-            ))}
-            {showPlus && (
-                <div className="bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
-                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">+{total - 3}</span>
-                </div>
-            )}
-            {!showPlus && total === 3 && (
-                <div className="bg-zinc-100 dark:bg-zinc-800/30 flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 opacity-10" />
-                </div>
-            )}
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-[2px] bg-zinc-100 dark:bg-zinc-800/20 group-hover:scale-105 transition-transform duration-700 ease-out">
+            {/* Slot 1 */}
+            <div className="relative bg-zinc-50 dark:bg-zinc-900/50">
+                {itemsToShow[0] && <img src={itemsToShow[0]} className="w-full h-full object-cover" />}
+            </div>
+            {/* Slot 2 */}
+            <div className="relative bg-zinc-50 dark:bg-zinc-900/50">
+                {itemsToShow[1] && <img src={itemsToShow[1]} className="w-full h-full object-cover" />}
+            </div>
+            {/* Slot 3 */}
+            <div className="relative bg-zinc-50 dark:bg-zinc-900/50">
+                {itemsToShow[2] && <img src={itemsToShow[2]} className="w-full h-full object-cover" />}
+            </div>
+            {/* Slot 4 / Plus */}
+            <div className="relative bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-center">
+                {showPlus ? (
+                    <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400">+{total - 3}</span>
+                ) : (
+                    itemsToShow[3] && <img src={itemsToShow[3]} className="w-full h-full object-cover" />
+                )}
+            </div>
         </div>
     );
 }
@@ -220,8 +213,8 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
                 </div>
 
                 {/* Info Section */}
-                <div className="flex-1 p-5 flex flex-col justify-center min-h-0 bg-white dark:bg-zinc-900/50">
-                    <div className="flex items-center justify-between gap-3 mb-1">
+                <div className="px-5 py-3.5 flex flex-col justify-center min-h-0 bg-white dark:bg-zinc-900/50">
+                    <div className="flex items-center justify-between gap-3 mb-0.5">
                         <h3 className={`${Typo.H2} truncate flex-1 font-semibold`}>
                             {board.name}
                         </h3>
@@ -232,9 +225,8 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
                             <MoreVertical className="w-5 h-5" />
                         </button>
                     </div>
-                    <div className="flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="text-[11px] font-medium uppercase tracking-wider">
+                    <div className="text-zinc-400 dark:text-zinc-500">
+                        <span className={`${Typo.Body} opacity-80`}>
                             {formatDistanceToNow(board.updatedAt, { locale, addSuffix: true })}
                         </span>
                     </div>
