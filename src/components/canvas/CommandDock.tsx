@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, ImagePlus } from 'lucide-react';
+import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 
@@ -162,7 +162,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
                 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group w-full
               `}
             >
-              <ImagePlus className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
+              <Plus className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors shrink-0" />
               <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>
                 {t('generate_new') || 'Neues Bild generieren'}
               </span>

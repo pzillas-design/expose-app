@@ -214,7 +214,7 @@ export const translations = {
     upload_photos: "Upload Photos",
     back_to_boards: "Back to Boards",
     upload_image_edit: "Upload",
-    generate_new: "Generate New Image",
+    generate_new: "Generate Image",
     create_new: "Create New",
 
     // Creation Modal
@@ -525,7 +525,7 @@ export const translations = {
     upload_photos: "Fotos hochladen",
     back_to_boards: "Zurück zur Übersicht",
     upload_image_edit: "Hochladen",
-    generate_new: "Neues Bild generieren",
+    generate_new: "Bild generieren",
     create_new: "Neu",
 
     creation_prompt_label: "Prompt",
