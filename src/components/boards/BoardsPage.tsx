@@ -106,7 +106,7 @@ export function BoardsPage({
                 <header className="pt-16 pb-12 flex items-center justify-between">
                     <div className="flex items-center gap-5 group cursor-pointer">
                         <Logo className="w-14 h-14 group-hover:scale-105 transition-transform duration-500" />
-                        <span className="text-4xl font-semibold tracking-tighter" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>exposé</span>
+                        <span className="text-4xl font-medium tracking-tighter" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>exposé</span>
                     </div>
 
                     <div className="flex items-center gap-10">
@@ -142,7 +142,7 @@ export function BoardsPage({
                 <main className="pt-12 pb-32 flex-1 flex flex-col">
 
                     <div className="flex items-center justify-between mb-16">
-                        <h1 className="text-[48px] font-semibold tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
+                        <h1 className="text-[48px] font-medium tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
                         <button onClick={onCreateBoard} className={`flex items-center gap-3 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ${Theme.Geometry.Radius} transition-all hover:opacity-90 active:scale-[0.98] group ${Theme.Effects.Shadow}`}>
                             <Plus className="w-4 h-4" />
                             <span className={Typo.ButtonLabel}>Neues Board</span>

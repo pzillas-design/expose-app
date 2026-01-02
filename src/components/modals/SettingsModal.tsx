@@ -392,7 +392,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                                     <div className="space-y-2">
                                         <h3
-                                            className="text-3xl font-semibold tracking-tighter"
+                                            className="text-3xl font-medium tracking-tighter"
                                             style={{
                                                 fontFamily: "'Kumbh Sans', sans-serif",
                                                 lineHeight: '100%',
