@@ -326,7 +326,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <button
                                         onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                                         className={`
-                                            flex items-center gap-1.5 py-1 px-1 rounded-xl transition-all text-left
+                                            flex items-center gap-1.5 py-1 px-2.5 rounded-xl transition-all text-left
                                             hover:bg-zinc-100 dark:hover:bg-zinc-800 group
                                         `}
                                     >
