@@ -100,7 +100,7 @@ export function BoardsPage({
     return (
         <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
 
-            <div className="max-w-7xl mx-auto w-full px-8 flex-1 flex flex-col">
+            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 flex-1 flex flex-col">
 
                 {/* REFINED MODERN HEADER */}
                 <header className="pt-16 pb-12 flex items-center justify-between">
@@ -149,7 +149,7 @@ export function BoardsPage({
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
 
                         <button onClick={onCreateBoard} className={`group relative flex flex-col items-center justify-center gap-2 transition-all duration-500 outline-none ${Theme.Colors.Surface} border border-dashed ${Theme.Colors.Border} rounded-2xl aspect-[3/4] hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700`}>
                             <div className="flex items-center justify-center transition-all duration-500 group-hover:scale-110">
