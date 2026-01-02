@@ -90,7 +90,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
         />
       </div>
 
-      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
+      <div className={`w-px h-5 border-r border-zinc-200 dark:border-zinc-700 mx-0.5`} />
 
       {/* 2. Credits (Balance) */}
       <div className="flex items-center px-0.5">
@@ -108,8 +108,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
         </Tooltip>
       </div>
 
-      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
-
       {/* 3. Zoom */}
       <div className="flex items-center gap-0.5 px-0.5">
         <IconButton
@@ -125,8 +123,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
           tooltip={t('zoom_in')}
         />
       </div>
-
-      <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
 
       {/* 4. Create Menu */}
       <div className="relative" ref={menuRef}>
