@@ -309,7 +309,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                             onClick={onUpload}
                             icon={<Upload className="w-5 h-5" />}
                         >
-                            {lang === 'de' ? 'Bild hochladen & bearbeiten' : 'Upload & Edit Image'}
+                            {t('upload_image_edit')}
                         </Button>
 
                         <Button
