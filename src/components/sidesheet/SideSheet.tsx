@@ -297,7 +297,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         </div>
                         <div className="flex flex-col gap-3">
                             <h2
-                                className={`text-2xl font-bold tracking-tight ${Theme.Colors.TextHighlight}`}
+                                className={`text-2xl font-semibold tracking-tight ${Theme.Colors.TextHighlight}`}
                                 style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                             >
                                 {t('welcome_title')}
