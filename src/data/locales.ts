@@ -17,6 +17,7 @@ export const translations = {
     copied_to_clipboard: "Prompt copied",
     back_to_app: "Back to App",
     added: "added",
+    attach_file: "Attach File",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -316,6 +317,7 @@ export const translations = {
     copied_to_clipboard: "Prompt kopiert",
     back_to_app: "Zurück zur App",
     added: "hinzugefügt",
+    attach_file: "Datei anhängen",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",

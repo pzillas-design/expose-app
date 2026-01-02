@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
-import { X, Sparkles, Wand2, Ratio, ChevronDown, Check } from 'lucide-react';
+import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip } from 'lucide-react';
 
 interface CreationModalProps {
     isOpen: boolean;
@@ -104,10 +104,15 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                             onChange={(e) => setPrompt(e.target.value)}
                             autoFocus
                         />
+                        <div className="flex justify-start">
+                            <Button variant="ghost" icon={<Paperclip className="w-4 h-4" />} onClick={() => { }}>
+                                {t('attach_file')}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Settings Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
                         {/* Dropdown Backdrop */}
                         {openDropdown && (
                             <div
