@@ -92,23 +92,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
 
       <div className={`w-px h-5 border-r border-zinc-200 dark:border-zinc-700 mx-0.5`} />
 
-      {/* 2. Credits (Balance) */}
-      <div className="flex items-center px-0.5">
-        <Tooltip text={t('manage_credits')}>
-          <button
-            onClick={onOpenCredits}
-            className={`
-              h-8 px-3 flex items-center justify-center rounded-md transition-all select-none
-              hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white
-              ${Typo.Mono}
-            `}
-          >
-            {credits.toFixed(2)} €
-          </button>
-        </Tooltip>
-      </div>
-
-      {/* 3. Zoom */}
+      {/* 2. Zoom */}
       <div className="flex items-center gap-0.5 px-0.5">
         <IconButton
           icon={<ZoomOut className="w-3.5 h-3.5" />}
@@ -122,6 +106,22 @@ export const CommandDock: React.FC<CommandDockProps> = ({
           className="w-8 h-8 flex items-center justify-center p-0"
           tooltip={t('zoom_in')}
         />
+      </div>
+
+      {/* 3. Credits (Balance) */}
+      <div className="flex items-center px-0.5">
+        <Tooltip text={t('manage_credits')}>
+          <button
+            onClick={onOpenCredits}
+            className={`
+              h-8 px-3 flex items-center justify-center rounded-md transition-all select-none
+              hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white
+              ${Typo.Mono}
+            `}
+          >
+            {credits.toFixed(2)} €
+          </button>
+        </Tooltip>
       </div>
 
       {/* 4. Create Menu */}
