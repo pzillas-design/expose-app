@@ -297,16 +297,16 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
                     {/* Header */}
                     <div className="flex flex-col items-center text-center gap-6">
-                        <div className="flex flex-col items-center gap-4">
-                            <Logo className="w-12 h-12" />
-                            <h2
-                                className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
-                                style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
-                            >
-                                <span className="opacity-40 text-lg">Willkommen bei</span>
-                                <Wordmark className="h-7" />
-                            </h2>
-                        </div>
+                        <h2
+                            className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
+                            style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                        >
+                            <span className="opacity-40">Willkommen bei</span>
+                            <div className="flex items-center gap-2">
+                                <Logo className="w-8 h-8" />
+                                <Wordmark className="h-6" />
+                            </div>
+                        </h2>
                         <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
                             {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
                         </p>
