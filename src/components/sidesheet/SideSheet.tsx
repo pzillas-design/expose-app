@@ -312,7 +312,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     <div className="flex flex-col gap-3 w-full">
                         <Button
                             variant="primary"
-                            className="w-full justify-start h-12 gap-3 uppercase tracking-widest !text-[11px]"
+                            className="w-full justify-start px-5 gap-3"
                             onClick={onUpload}
                             icon={<Upload className="w-5 h-5" />}
                         >
@@ -321,7 +321,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
                         <Button
                             variant="secondary"
-                            className="w-full justify-start h-12 gap-3 uppercase tracking-widest !text-[11px]"
+                            className="w-full justify-start px-5 gap-3"
                             onClick={onCreateNew}
                             icon={<ImagePlus className="w-5 h-5" />}
                         >
