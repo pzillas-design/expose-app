@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, ImagePlus } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
@@ -30,6 +30,22 @@ export const CommandDock: React.FC<CommandDockProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -95,10 +111,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
       <div className={`w-px h-5 ${Theme.Colors.BorderSubtle} border-r mx-0.5`} />
 
       {/* 4. Create Menu */}
-      <div className="relative">
-        {isMenuOpen && (
-          <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsMenuOpen(false)} />
-        )}
+      <div className="relative" ref={menuRef}>
         <Tooltip text={t('create_new') || 'Neu'}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
