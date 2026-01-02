@@ -27,11 +27,11 @@ Deno.serve(async (req) => {
         const { data: { user } } = await supabaseUser.auth.getUser()
         if (!user) throw new Error('User not found')
 
-        const { sourceImage, prompt, qualityMode, maskDataUrl, newId, modelName } = await req.json()
+        const { sourceImage, prompt, qualityMode, maskDataUrl, newId, modelName, boardId } = await req.json()
 
-        console.log(`Starting generation for user ${user.id}, quality: ${qualityMode}, job: ${newId}`);
+        console.log(`Starting generation for user ${user.id}, quality: ${qualityMode}, job: ${newId}, board: ${boardId}`);
 
-        // 1. Credit Check & Deduction
+        // ... (costs and credit deduction remains the same) ...
         const COSTS: Record<string, number> = {
             'fast': 0.00,
             'pro-1k': 0.50,
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
         // 2. Prepare Gemini Call - Fetch image if URL
         let finalSourceBase64 = sourceImage.src;
-        if (sourceImage.src.startsWith('http')) {
+        if (sourceImage.src && sourceImage.src.startsWith('http')) {
             console.log("Fetching source image from URL...");
             const response = await fetch(sourceImage.src);
             const blob = await response.arrayBuffer();
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
                 binary += String.fromCharCode(uint8[i]);
             }
             finalSourceBase64 = btoa(binary);
-        } else {
+        } else if (sourceImage.src) {
             finalSourceBase64 = sourceImage.src.split(',')[1] || sourceImage.src;
         }
 
@@ -100,11 +100,13 @@ Deno.serve(async (req) => {
 
         parts.push({ text: systemInstruction })
 
-        // Source Image
-        parts.push({
-            inlineData: { data: finalSourceBase64, mimeType: 'image/jpeg' }
-        })
-        parts.push({ text: "Image 1: The Original Image" })
+        // Source Image (only if present, for Text2Img it might be empty/placeholder)
+        if (finalSourceBase64) {
+            parts.push({
+                inlineData: { data: finalSourceBase64, mimeType: 'image/jpeg' }
+            })
+            parts.push({ text: "Image 1: The Original Image" })
+        }
 
         // Mask (if any)
         if (maskDataUrl) {
@@ -160,7 +162,7 @@ Deno.serve(async (req) => {
         const binaryData = Uint8Array.from(atob(generatedBase64), c => c.charCodeAt(0))
 
         const { error: uploadError } = await supabaseAdmin.storage
-            .from('images')
+            .from('user-content')
             .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true })
 
         if (uploadError) throw uploadError
@@ -169,17 +171,18 @@ Deno.serve(async (req) => {
         const newImage = {
             id: newId,
             user_id: user.id,
+            board_id: boardId,
             storage_path: filePath,
-            width: Math.round(sourceImage.width),
-            height: Math.round(sourceImage.height),
+            width: Math.round(sourceImage.width || 1024),
+            height: Math.round(sourceImage.height || 1024),
             real_width: sourceImage.realWidth || sourceImage.width || 1024,
             real_height: sourceImage.realHeight || sourceImage.height || 1024,
             model_version: resultData.modelVersion || modelName,
-            title: sourceImage.title + "_v" + (sourceImage.version + 1),
-            base_name: sourceImage.baseName || sourceImage.title,
-            version: sourceImage.version + 1,
+            title: (sourceImage.title || "Image") + "_v" + ((sourceImage.version || 0) + 1),
+            base_name: sourceImage.baseName || sourceImage.title || "Image",
+            version: (sourceImage.version || 0) + 1,
             prompt: prompt,
-            parent_id: sourceImage.id,
+            parent_id: sourceImage.id || null,
             generation_params: { quality: qualityMode }
         }
 

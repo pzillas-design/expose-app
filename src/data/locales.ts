@@ -535,7 +535,7 @@ export const translations = {
 
     // Welcome Screen
     welcome_title: "Willkommen bei Exposé",
-    welcome_desc: "Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie einen neuen Flow.",
+    welcome_desc: "Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie etwas neues:",
     welcome_empty_desc: "Laden Sie ein Foto hoch oder generieren Sie Ihr erstes.",
 
     // Multi Select & Context Menu
