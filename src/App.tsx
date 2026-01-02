@@ -507,7 +507,8 @@ export function App() {
                 onSelectAll={() => selectMultiple(allImages.map(i => i.id))}
                 onDeselectAll={() => selectMultiple([])}
                 onResetView={() => smoothZoomTo(1.0)}
-                onUpload={() => document.getElementById('ctx-upload-input')?.click()}
+                onUpload={handleDockUpload}
+                onCreateNew={() => setIsCreationModalOpen(true)}
                 selectedIds={selectedIds}
                 onDownloadSelected={handleDownloadSelected}
                 onDeleteSelected={() => requestDelete(selectedIds)}

@@ -90,20 +90,15 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider`}>
                             {t('creation_prompt_label')}
                         </label>
-                        <textarea
-                            className={`
-                                w-full h-48 p-4 rounded-xl resize-none
-                                bg-zinc-50 dark:bg-zinc-900 
-                                border border-zinc-200 dark:border-zinc-800
-                                focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-                                outline-none transition-all
-                                ${Typo.Body}
-                            `}
-                            placeholder={t('creation_prompt_placeholder')}
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            autoFocus
-                        />
+                        <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500 transition-colors overflow-hidden`}>
+                            <textarea
+                                className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none h-48`}
+                                placeholder={t('creation_prompt_placeholder')}
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
                         <div className="flex justify-start">
                             <Button variant="ghost" icon={<Paperclip className="w-4 h-4" />} onClick={() => { }}>
                                 {t('attach_file')}

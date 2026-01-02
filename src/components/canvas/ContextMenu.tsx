@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw } from 'lucide-react';
+import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload, ImagePlus } from 'lucide-react';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { TranslationFunction, CanvasImage } from '@/types';
 
@@ -23,7 +23,8 @@ interface ContextMenuProps {
     onSelectAll: () => void;
     onDeselectAll: () => void;
     onResetView: () => void;
-    onUpload: () => void; // New prop
+    onUpload: () => void;
+    onCreateNew: () => void;
 
     // Multi Actions
     selectedIds: string[];
@@ -36,7 +37,7 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
     menu, images, onClose, onDownload, onDelete, onSelect, onAddToSelection, onRemoveFromSelection, onSelectAll, onDeselectAll, onResetView,
-    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, t
+    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, onCreateNew, t
 }) => {
     if (!menu) return null;
 
@@ -80,8 +81,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 {menu.type === 'background' && (
                     <>
                         <button onClick={() => { onUpload(); onClose(); }} className={itemClass}>
-                            <Plus className={iconClass} />
-                            <span className={textClass}>{t('image_btn')}</span>
+                            <Upload className={iconClass} />
+                            <span className={textClass}>{t('upload_image_edit')}</span>
+                        </button>
+
+                        <button onClick={() => { onCreateNew(); onClose(); }} className={itemClass}>
+                            <ImagePlus className={iconClass} />
+                            <span className={textClass}>{t('generate_new')}</span>
                         </button>
 
                         <Separator />
