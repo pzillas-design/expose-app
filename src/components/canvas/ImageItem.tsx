@@ -153,7 +153,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Top Toolbar: Filename + Actions - Only show when zoomed in */}
             {zoom > 0.4 && (
-                <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300 relative z-[60]">
                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate tracking-wider uppercase text-[10px] leading-none shrink-0`} title={image.title}>
                         {image.title}
                     </span>
@@ -170,7 +170,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
                         <Tooltip text={t('ctx_delete_image')} side="top">
                             <button
-                                onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onDelete?.(image.id);
+                                }}
                                 className={`p-1.5 rounded-md ${Theme.Colors.TextSubtle} hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all pointer-events-auto`}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
