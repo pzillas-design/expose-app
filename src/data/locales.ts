@@ -213,7 +213,7 @@ export const translations = {
     manage_credits: "Manage Credits",
     upload_photos: "Upload Photos",
     back_to_boards: "Back to Boards",
-    upload_image_edit: "Upload & Edit Image",
+    upload_image_edit: "Upload",
     generate_new: "Generate New Image",
     create_new: "Create New",
 
@@ -523,7 +523,7 @@ export const translations = {
     manage_credits: "Guthaben verwalten",
     upload_photos: "Fotos hochladen",
     back_to_boards: "Zurück zur Übersicht",
-    upload_image_edit: "Bild hochladen & bearbeiten",
+    upload_image_edit: "Hochladen",
     generate_new: "Neues Bild generieren",
     create_new: "Neu",
 
