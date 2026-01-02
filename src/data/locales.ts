@@ -219,7 +219,7 @@ export const translations = {
 
     // Creation Modal
     creation_prompt_label: "Prompt",
-    creation_prompt_placeholder: "Describe the image (without going into detail)...",
+    creation_prompt_placeholder: "Describe the image",
     creation_quality_label: "Quality",
     creation_ratio_label: "Aspect Ratio",
 
@@ -528,7 +528,7 @@ export const translations = {
     create_new: "Neu",
 
     creation_prompt_label: "Prompt",
-    creation_prompt_placeholder: "Beschreibe das Bild (ohne ins Detail zu gehen)...",
+    creation_prompt_placeholder: "Beschreiben Sie das Bild",
     creation_quality_label: "Qualität",
     creation_ratio_label: "Format",
 
