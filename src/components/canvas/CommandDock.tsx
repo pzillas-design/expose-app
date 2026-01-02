@@ -61,6 +61,14 @@ export const CommandDock: React.FC<CommandDockProps> = ({
 
   return (
     <div className={`flex items-center gap-1.5 p-1.5 ${Theme.Effects.Glass} border ${Theme.Colors.Border} ${Theme.Geometry.Radius}`}>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+        multiple
+      />
 
       {/* 1. Home */}
       <div className="flex items-center px-0.5">

@@ -363,6 +363,7 @@ export function App() {
                     onOpenCredits={() => handleOpenSettings('account')}
                     onHome={() => handleSelectBoard(null)}
                     onUpload={handleDockUpload}
+                    onCreateNew={() => setIsCreationModalOpen(true)}
                     t={t}
                 />
             </div>
