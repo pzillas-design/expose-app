@@ -334,7 +334,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         `}
                                     >
                                         <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
-                                            {currentModel.label}
+                                            {t('model_prefix')}{currentModel.label}
                                         </span>
                                         <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>

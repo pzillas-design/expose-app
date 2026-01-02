@@ -19,6 +19,7 @@ export const translations = {
     added: "added",
     attach_file: "Attach File",
     price_free: "Free",
+    model_prefix: "AI: ",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -331,6 +332,7 @@ export const translations = {
     added: "hinzugefügt",
     attach_file: "Datei anhängen",
     price_free: "Kostenlos",
+    model_prefix: "KI: ",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",
