@@ -96,15 +96,28 @@ export const imageService = {
     async deleteImages(imageIds: string[], userId: string): Promise<void> {
         if (imageIds.length === 0) return;
 
-        const { error } = await supabase
+        // 1. Delete from canvas_images
+        const { error: imgError } = await supabase
             .from('canvas_images')
             .delete()
             .in('id', imageIds)
             .eq('user_id', userId);
 
-        if (error) {
-            console.error('Deep Sync: Bulk Delete DB Failed:', error);
-            throw error;
+        if (imgError) {
+            console.error('Deep Sync: Bulk Delete DB Failed:', imgError);
+            throw imgError;
+        }
+
+        // 2. Also delete from generation_jobs to prevent "resurrection" on reload
+        const { error: jobError } = await supabase
+            .from('generation_jobs')
+            .delete()
+            .in('id', imageIds)
+            .eq('user_id', userId);
+
+        if (jobError) {
+            console.warn('Deep Sync: Cleanup generation_jobs Failed:', jobError);
+            // We don't throw here as the main image deletion succeeded
         }
     },
 

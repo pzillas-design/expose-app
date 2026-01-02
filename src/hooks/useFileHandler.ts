@@ -38,14 +38,14 @@ export const useFileHandler = ({
                 if (typeof event.target?.result === 'string') {
                     const img = new Image();
                     img.src = event.target.result;
-                    img.onload = () => {
+                    img.onload = async () => {
                         const targetHeight = 512;
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
                         const baseName = file.name.replace(/\.[^/.]+$/, "");
                         const newId = generateId();
 
-                        generateThumbnail(event.target!.result as string).then(thumbSrc => {
+                        generateThumbnail(event.target!.result as string).then(async (thumbSrc) => {
                             const newImage: CanvasImage = {
                                 id: newId,
                                 src: event.target!.result as string,
@@ -76,12 +76,15 @@ export const useFileHandler = ({
                             }
 
                             if (user && !isAuthDisabled) {
-                                imageService.persistImage(newImage, user.id).then(result => {
+                                try {
+                                    const result = await imageService.persistImage(newImage, user.id);
                                     if (!result.success) {
                                         const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
                                         showToast(`${t('save_failed')}: ${errorMsg}`, "error");
                                     }
-                                });
+                                } catch (err: any) {
+                                    showToast(`${t('save_failed')}: ${err.message}`, "error");
+                                }
                             }
                         });
                     };

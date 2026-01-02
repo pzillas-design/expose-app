@@ -167,7 +167,24 @@ Deno.serve(async (req) => {
 
         if (uploadError) throw uploadError
 
-        // 5. Insert Record
+        // 5. Final Check: Did the user delete the job while we were generating?
+        const { data: jobStillExists } = await supabaseAdmin
+            .from('generation_jobs')
+            .select('id')
+            .eq('id', newId)
+            .single()
+
+        if (!jobStillExists) {
+            console.log(`Job ${newId} was deleted during generation. Aborting DB insert.`);
+            return new Response(JSON.stringify({
+                success: false,
+                error: 'Job was cancelled/deleted'
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200, // Status 200 but success: false
+            })
+        }
+
         const newImage = {
             id: newId,
             user_id: user.id,
@@ -186,10 +203,11 @@ Deno.serve(async (req) => {
             generation_params: { quality: qualityMode }
         }
 
+        // 6. Insert Record
         const { error: dbError } = await supabaseAdmin.from('canvas_images').insert(newImage)
         if (dbError) throw dbError
 
-        // 6. Update Job Status
+        // 7. Update Job Status
         await supabaseAdmin.from('generation_jobs').update({ status: 'completed' }).eq('id', newId)
 
         console.log(`Generation successful for job ${newId}`);
