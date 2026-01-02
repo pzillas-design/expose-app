@@ -6,6 +6,7 @@ import {
 import { TranslationFunction, GenerationQuality } from '@/types';
 import { Button, IconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
+import { Wordmark } from '@/components/ui/Wordmark';
 import { LocaleKey } from '../../data/locales';
 
 interface SettingsModalProps {
@@ -391,16 +392,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </div>
 
                                     <div className="space-y-2">
-                                        <h3
-                                            className="text-3xl font-medium tracking-tighter"
-                                            style={{
-                                                fontFamily: "'Kumbh Sans', sans-serif",
-                                                lineHeight: '100%',
-                                                textTransform: 'lowercase'
-                                            }}
-                                        >
-                                            exposé
-                                        </h3>
+                                        <Wordmark className="h-10 text-zinc-900 dark:text-white mx-auto" />
                                         <p className={`text-sm ${Theme.Colors.TextSecondary} max-w-md mx-auto leading-relaxed`}>
                                             {t('about_desc')}
                                         </p>

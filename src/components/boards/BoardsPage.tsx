@@ -6,6 +6,7 @@ import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
 import { Logo } from '../ui/Logo';
+import { Wordmark } from '../ui/Wordmark';
 
 const getInitials = (name?: string, email?: string) => {
     if (name) {
@@ -106,7 +107,7 @@ export function BoardsPage({
                 <header className="pt-16 pb-12 flex items-center justify-between">
                     <div className="flex items-center gap-5 group cursor-pointer">
                         <Logo className="w-14 h-14 group-hover:scale-105 transition-transform duration-500" />
-                        <span className="text-4xl font-medium tracking-tighter" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>exposé</span>
+                        <Wordmark className="h-10 text-zinc-900 dark:text-white" />
                     </div>
 
                     <div className="flex items-center gap-10">
