@@ -16,7 +16,7 @@ interface UseGenerationProps {
     isAuthDisabled: boolean;
     selectAndSnap: (id: string) => void;
     setIsSettingsOpen: (open: boolean) => void;
-    showToast: (msg: string, type: "success" | "error") => void;
+    showToast: (msg: string, type: "success" | "error", duration?: number) => void;
     currentBoardId: string | null;
     t: (key: any) => string;
 }
@@ -159,7 +159,7 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message}`, "error");
+            showToast(`${t('generation_failed')}: ${error.message}`, "error", 6000);
 
             setRows(prev => {
                 const newRows = prev.map(r => ({
@@ -296,7 +296,7 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("New Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message}`, "error");
+            showToast(`${t('generation_failed')}: ${error.message}`, "error", 6000);
 
             setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
