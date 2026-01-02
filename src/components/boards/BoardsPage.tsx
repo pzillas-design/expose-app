@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Menu, Wallet } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -134,7 +134,7 @@ export function BoardsPage({
                             className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
                             title="Settings"
                         >
-                            <Menu className="w-5 h-5" />
+                            <Settings className="w-5 h-5" />
                         </button>
                     </div>
                 </header>
@@ -142,7 +142,7 @@ export function BoardsPage({
                 <main className="pt-12 pb-32 flex-1 flex flex-col">
 
                     <div className="flex items-center justify-between mb-16">
-                        <h1 className="text-[48px] font-medium tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
+                        <h1 className="text-xl font-medium tracking-tight text-zinc-900 dark:text-white leading-none" style={{ fontFamily: "'Kumbh Sans', sans-serif" }}>Meine Boards</h1>
                         <button onClick={onCreateBoard} className={`flex items-center gap-3 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 ${Theme.Geometry.Radius} transition-all hover:opacity-90 active:scale-[0.98] group ${Theme.Effects.Shadow}`}>
                             <Plus className="w-4 h-4" />
                             <span className={Typo.ButtonLabel}>Neues Board</span>
