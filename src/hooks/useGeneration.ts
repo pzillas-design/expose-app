@@ -194,28 +194,43 @@ export const useGeneration = ({
         const newId = generateId();
         const baseName = prompt.slice(0, 30) || 'Untitled';
 
-        let width = 512;
-        let height = 512;
-        const [wStr, hStr] = ratio.split(':');
-        if (wStr && hStr) {
-            const aspect = Number(wStr) / Number(hStr);
-            // Fit within 512x512 box roughly, or keep height 512
-            if (aspect > 1) {
-                width = 512;
-                height = 512 / aspect;
-            } else {
-                height = 512;
-                width = 512 * aspect;
-            }
+        // Correctly calculate resolution based on Model & Ratio
+        let baseSize = 1024;
+        if (modelId === 'pro-2k') baseSize = 2048;
+        if (modelId === 'pro-4k') baseSize = 4096;
+
+        let wRatio = 1, hRatio = 1;
+        const parts = ratio.split(':').map(Number);
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+            wRatio = parts[0];
+            hRatio = parts[1];
         }
+
+        let realWidth = baseSize;
+        let realHeight = baseSize;
+
+        // Scale fitting the base size to the longest edge
+        if (wRatio >= hRatio) {
+            // Landscape or Square
+            realWidth = baseSize;
+            realHeight = Math.round(baseSize * (hRatio / wRatio));
+        } else {
+            // Portrait
+            realHeight = baseSize;
+            realWidth = Math.round(baseSize * (wRatio / hRatio));
+        }
+
+        // Display dimensions (normalized to 512px height for UI consistency)
+        const displayHeight = 512;
+        const displayWidth = (realWidth / realHeight) * displayHeight;
 
         const placeholder: CanvasImage = {
             id: newId,
             src: '',
-            width,
-            height,
-            realWidth: width,
-            realHeight: height,
+            width: displayWidth,
+            height: displayHeight,
+            realWidth,
+            realHeight,
             title: baseName,
             baseName: baseName,
             version: 1,
