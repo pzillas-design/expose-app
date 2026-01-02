@@ -140,7 +140,7 @@ export const useNanoController = () => {
         user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t
     });
 
-    const { performGeneration } = useGeneration({
+    const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
         qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
     });
@@ -213,6 +213,10 @@ export const useNanoController = () => {
             performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
         }
     }, [allImages, performGeneration]);
+
+    const handleCreateNew = useCallback((prompt: string, model: string, ratio: string) => {
+        performNewGeneration(prompt, model, ratio);
+    }, [performNewGeneration]);
 
     const handleNavigateParent = useCallback((parentId: string) => {
         const parent = allImages.find(i => i.id === parentId);
@@ -305,7 +309,8 @@ export const useNanoController = () => {
             deleteBoard,
             updateBoard,
             fetchBoards,
-            resolveBoardIdentifier
+            resolveBoardIdentifier,
+            handleCreateNew
         },
         refs: {
             scrollContainerRef

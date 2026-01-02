@@ -181,5 +181,116 @@ export const useGeneration = ({
         }
     };
 
-    return { performGeneration };
+    const performNewGeneration = async (prompt: string, modelId: string, ratio: string) => {
+        const cost = COSTS[modelId] || 0;
+        const isPro = userProfile?.role === 'pro';
+
+        if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
+
+        if (!isPro) {
+            setCredits(prev => prev - cost);
+        }
+
+        const newId = generateId();
+        const baseName = prompt.slice(0, 30) || 'Untitled';
+
+        let width = 512;
+        let height = 512;
+        const [wStr, hStr] = ratio.split(':');
+        if (wStr && hStr) {
+            const aspect = Number(wStr) / Number(hStr);
+            // Fit within 512x512 box roughly, or keep height 512
+            if (aspect > 1) {
+                width = 512;
+                height = 512 / aspect;
+            } else {
+                height = 512;
+                width = 512 * aspect;
+            }
+        }
+
+        const placeholder: CanvasImage = {
+            id: newId,
+            src: '',
+            width,
+            height,
+            realWidth: width,
+            realHeight: height,
+            title: baseName,
+            baseName: baseName,
+            version: 1,
+            isGenerating: true,
+            generationStartTime: Date.now(),
+            quality: modelId as any,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            generationPrompt: prompt,
+            userDraftPrompt: '',
+            annotations: [],
+            boardId: currentBoardId || undefined
+        };
+
+        const newRow: ImageRow = {
+            id: generateId(),
+            title: baseName,
+            items: [placeholder],
+            createdAt: Date.now()
+        };
+
+        // Appending to end implies newest
+        setRows(prev => [...prev, newRow]);
+
+        setTimeout(() => {
+            selectAndSnap(newId);
+        }, 150);
+
+        try {
+            if (user && !isAuthDisabled) {
+                await supabase.from('generation_jobs').insert({
+                    id: newId,
+                    user_id: user.id,
+                    user_name: user.email,
+                    type: 'Text2Img',
+                    model: modelId,
+                    status: 'processing',
+                    cost: cost,
+                    prompt: prompt,
+                    board_id: currentBoardId
+                });
+            }
+
+            const finalImage = await imageService.processGeneration({
+                sourceImage: placeholder,
+                prompt,
+                qualityMode: modelId,
+                newId,
+                boardId: currentBoardId || undefined
+            });
+
+            if (finalImage) {
+                setRows(prev => {
+                    const newRows = [...prev];
+                    const rIdx = newRows.findIndex(r => r.items.some(i => i.id === newId));
+                    if (rIdx !== -1) {
+                        const r = newRows[rIdx];
+                        const updatedItems = r.items.map(i => i.id === newId ? finalImage : i);
+                        newRows[rIdx] = { ...r, items: updatedItems };
+                    }
+                    return newRows;
+                });
+            }
+        } catch (error: any) {
+            console.error("New Generation failed:", error);
+            showToast(`${t('generation_failed')}: ${error.message}`, "error");
+
+            setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
+
+            if (!isPro) {
+                setCredits(prev => prev + cost);
+                // Optional: Refund DB update
+            }
+        }
+    };
+
+    return { performGeneration, performNewGeneration };
 };

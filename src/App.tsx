@@ -35,7 +35,7 @@ export function App() {
         setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
-        setMaskTool, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard
+        setMaskTool, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -519,8 +519,8 @@ export function App() {
             <CreationModal
                 isOpen={isCreationModalOpen}
                 onClose={() => setIsCreationModalOpen(false)}
-                onGenerate={(prompt) => {
-                    handleGenerate(prompt);
+                onGenerate={(prompt, model, ratio) => {
+                    handleCreateNew(prompt, model, ratio);
                     setIsCreationModalOpen(false);
                 }}
                 t={t}

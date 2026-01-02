@@ -21,10 +21,10 @@ const ASPECT_RATIOS = [
 ];
 
 const MODELS = [
-    { id: 'fast', name: 'Nano Banana', desc: '1024px • 0,20 €' },
-    { id: 'pro-1k', name: 'Nano Banana Pro 1K', desc: '1024px • 0,50 €' },
-    { id: 'pro-2k', name: 'Nano Banana Pro 2K', desc: '2048px • 0,75 €' },
-    { id: 'pro-4k', name: 'Nano Banana Pro 4K', desc: '4096px • 1,00 €' },
+    { id: 'fast', name: 'Nano Banana', price: 'Free', res: '1024 × 1024 px' },
+    { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.50 €', res: '1024 × 1024 px' },
+    { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '1.00 €', res: '2048 × 2048 px' },
+    { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '2.00 €', res: '4096 × 4096 px' },
 ];
 
 const AspectIcon = ({ ratio, isSelected }: { ratio: string, isSelected: boolean }) => {
@@ -153,7 +153,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                                     <span className={`${Typo.Body} font-medium ${selectedModel === model.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
                                                         {model.name}
                                                     </span>
-                                                    <span className={`${Typo.Micro} text-[10px]`}>{model.desc}</span>
+                                                    <span className={`${Typo.Micro} font-medium text-zinc-600 dark:text-zinc-400`}>{model.price}</span>
+                                                    <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{model.res}</span>
                                                 </div>
                                                 {selectedModel === model.id && <Check className="w-4 h-4 text-black dark:text-white" />}
                                             </button>
