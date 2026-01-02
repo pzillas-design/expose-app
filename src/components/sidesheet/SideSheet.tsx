@@ -296,11 +296,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
                 <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
                     {/* Header */}
-                    <div className="flex flex-col items-center text-center gap-8">
-                        <div className={`w-28 h-28 flex items-center justify-center rounded-3xl bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-800 transition-transform duration-700`}>
-                            <Logo className="w-16 h-16" />
-                        </div>
-                        <div className="flex flex-col gap-3">
+                    <div className="flex flex-col items-center text-center gap-6">
+                        <div className="flex flex-col items-center gap-4">
+                            <Logo className="w-12 h-12" />
                             <h2
                                 className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
                                 style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
@@ -308,32 +306,32 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 <span className="opacity-40 text-lg">Willkommen bei</span>
                                 <Wordmark className="h-7" />
                             </h2>
-                            <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
-                                {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
-                            </p>
                         </div>
+                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
+                            {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
+                        </p>
                     </div>
+                </div>
 
-                    {/* Quick Actions */}
-                    <div className="flex flex-col gap-3 w-full">
-                        <Button
-                            variant="primary"
-                            className="w-full justify-start px-5 gap-3"
-                            onClick={onUpload}
-                            icon={<Upload className="w-5 h-5" />}
-                        >
-                            {t('upload_image_edit')}
-                        </Button>
+                {/* Quick Actions */}
+                <div className="flex flex-col gap-3 w-full">
+                    <Button
+                        variant="primary"
+                        className="w-full justify-start px-5 gap-3"
+                        onClick={onUpload}
+                        icon={<Upload className="w-5 h-5" />}
+                    >
+                        {t('upload_image_edit')}
+                    </Button>
 
-                        <Button
-                            variant="secondary"
-                            className="w-full justify-start px-5 gap-3"
-                            onClick={onCreateNew}
-                            icon={<Plus className="w-5 h-5" />}
-                        >
-                            {t('generate_new')}
-                        </Button>
-                    </div>
+                    <Button
+                        variant="secondary"
+                        className="w-full justify-start px-5 gap-3"
+                        onClick={onCreateNew}
+                        icon={<Plus className="w-5 h-5" />}
+                    >
+                        {t('generate_new')}
+                    </Button>
                 </div>
             </div>
         );
