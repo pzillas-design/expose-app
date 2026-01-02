@@ -196,28 +196,31 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     };
 
     return (
-        <div className="h-full relative flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-2 duration-300">
+        <div className="h-full relative flex flex-col overflow-hidden">
             {/* Tab Header - Only show if not multiple selection (Info tab only makes sense for single image) */}
             {!isMulti && (
-                <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg}`}>
+                <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} relative`}>
                     <button
                         onClick={() => setActiveInternalTab('prompt')}
                         className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'prompt' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
                     >
                         {t('tab_edit')}
-                        {activeInternalTab === 'prompt' && (
-                            <div className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-zinc-800 dark:bg-zinc-200" />
-                        )}
                     </button>
                     <button
                         onClick={() => setActiveInternalTab('info')}
                         className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'info' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
                     >
                         {currentLang === 'de' ? 'Info' : 'Info'}
-                        {activeInternalTab === 'info' && (
-                            <div className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-zinc-800 dark:bg-zinc-200" />
-                        )}
                     </button>
+
+                    {/* Animated Underline */}
+                    <div
+                        className="absolute bottom-[-1px] h-[2px] bg-zinc-800 dark:bg-zinc-200 transition-all duration-300 ease-in-out"
+                        style={{
+                            width: '50%',
+                            left: activeInternalTab === 'prompt' ? '0%' : '50%'
+                        }}
+                    />
                 </div>
             )}
 
@@ -471,7 +474,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         </div>
                     ) : (
                         /* Info Tab Content */
-                        <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
                             {/* Prompt Section */}
                             {selectedImage.generationPrompt && (
                                 <div className="flex flex-col gap-2 group relative">
