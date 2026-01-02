@@ -213,7 +213,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
                 </div>
 
                 {/* Info Section */}
-                <div className="px-5 py-3.5 flex flex-col justify-center min-h-0 bg-white dark:bg-zinc-900/50">
+                <div className="px-5 py-[17px] flex flex-col justify-center min-h-0 bg-white dark:bg-zinc-900/50">
                     <div className="flex items-center justify-between gap-3 mb-0">
                         <h3 className={`${Typo.H2} truncate flex-1 font-semibold`}>
                             {board.name}
@@ -225,7 +225,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
                             <MoreVertical className="w-5 h-5" />
                         </button>
                     </div>
-                    <div className="text-zinc-400 dark:text-zinc-600">
+                    <div className="text-zinc-400 dark:text-zinc-600 -mt-[1px]">
                         <span className={`${Typo.Body} opacity-70`}>
                             {formatDistanceToNow(board.updatedAt, { locale, addSuffix: true })}
                         </span>
