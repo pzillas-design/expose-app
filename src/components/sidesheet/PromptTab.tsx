@@ -227,8 +227,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
                     {activeInternalTab === 'prompt' || isMulti ? (
-                        <div className="flex-1 flex flex-col gap-6 px-6 pt-8 pb-6">
-                            <div className="flex flex-col gap-1.5">
+                        <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
+                            <div className="flex flex-col mb-3"> {/* Closer to buttons */}
                                 <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500 transition-colors overflow-hidden`}>
                                     <textarea
                                         ref={textAreaRef}
@@ -283,7 +283,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3">
+                            <div className="flex flex-col mb-7"> {/* Increased space above model */}
                                 <div className="grid grid-cols-3 gap-2">
                                     <Button
                                         variant="secondary"
@@ -324,50 +324,51 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     />
                                 </div>
 
-                                {/* Model Selection Dropdown */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                                        className={`
-                                            flex items-center gap-1.5 py-1 px-2.5 ${Theme.Geometry.Radius} transition-all text-left
-                                            hover:bg-zinc-100 dark:hover:bg-zinc-800 group
-                                        `}
-                                    >
-                                        <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
-                                            {t('model_prefix')}{currentModel.label}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
+                                <div className="pt-2">
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                                            className={`
+                                                flex items-center gap-1.5 py-1 px-2.5 ${Theme.Geometry.Radius} transition-all text-left
+                                                hover:bg-zinc-100 dark:hover:bg-zinc-800 group
+                                            `}
+                                        >
+                                            <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
+                                                {t('model_prefix')}{currentModel.label}
+                                            </span>
+                                            <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </button>
 
-                                    {isModelDropdownOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                                            <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
-                                                {MODES.map((m) => (
-                                                    <button
-                                                        key={m.id}
-                                                        onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
-                                                        className={`
-                                                            flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
-                                                            ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                        `}
-                                                    >
-                                                        <div className="flex flex-col">
-                                                            <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
-                                                                {m.label}
-                                                            </span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
-                                                                <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
+                                        {isModelDropdownOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
+                                                <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
+                                                    {MODES.map((m) => (
+                                                        <button
+                                                            key={m.id}
+                                                            onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
+                                                            className={`
+                                                                flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
+                                                                ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                            `}
+                                                        >
+                                                            <div className="flex flex-col">
+                                                                <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                                    {m.label}
+                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
+                                                                    <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                                                                    <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
+                                                            {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {annotations.length > 0 && !isMulti && (
@@ -502,7 +503,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             {/* Metadata Grid (No border, 2 columns) - Hide while generating placeholder */}
                             {!selectedImage.isGenerating && (
-                                <div className="grid grid-cols-2 gap-x-8 gap-y-6 animate-in fade-in duration-500">
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                                     {/* Resolution */}
                                     <div className="flex flex-col gap-1.5">
                                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
@@ -645,8 +646,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 </div>
             </div>
 
-
-
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
                 onClose={() => setIsPresetModalOpen(false)}
@@ -659,6 +658,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 onDelete={onDeleteTemplate}
                 t={t}
             />
-        </div >
+        </div>
     );
 };

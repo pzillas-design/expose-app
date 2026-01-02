@@ -73,7 +73,17 @@ export const CommandDock: React.FC<CommandDockProps> = ({
       {/* 1. Home */}
       <div className="flex items-center px-0.5">
         <IconButton
-          icon={<Home className="w-4 h-4" />}
+          icon={(
+            <svg viewBox="0 0 256 256" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M40,216H216V120a8,8,0,0,0-2.34-5.66l-80-80a8,8,0,0,0-11.32,0l-80,80A8,8,0,0,0,40,120Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="20"
+              />
+            </svg>
+          )}
           onClick={onHome}
           tooltip={t('back_to_boards')}
           className="w-8 h-8 flex items-center justify-center p-0"
