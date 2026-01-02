@@ -6,6 +6,7 @@ import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
+import { CreationModal } from '@/components/modals/CreationModal';
 import { useNanoController } from '@/hooks/useNanoController';
 import { Plus, ImagePlus, Layout, Home } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
@@ -39,6 +40,7 @@ export function App() {
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
     const [isCanvasZoneActive, setIsCanvasZoneActive] = useState(false);
+    const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
 
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
@@ -478,7 +480,9 @@ export function App() {
                 onDeleteUserItem={deleteUserItem}
                 maskTool={maskTool}
                 onMaskToolChange={setMaskTool}
+
                 onUpload={() => document.getElementById('ctx-upload-input')?.click()}
+                onCreateNew={() => setIsCreationModalOpen(true)}
             />
 
             <input
@@ -508,6 +512,19 @@ export function App() {
                 onDeleteSelected={() => requestDelete(selectedIds)}
                 onGenerateVariations={handleGenerateVariations}
                 t={t}
+            />
+
+
+
+            <CreationModal
+                isOpen={isCreationModalOpen}
+                onClose={() => setIsCreationModalOpen(false)}
+                onGenerate={(prompt) => {
+                    handleGenerate(prompt);
+                    setIsCreationModalOpen(false);
+                }}
+                t={t}
+                lang={currentLang}
             />
 
             <SettingsModal

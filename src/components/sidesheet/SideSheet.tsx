@@ -8,6 +8,7 @@ import { useResizable } from '@/hooks/useResizable';
 import { CropModal } from '@/components/modals/CropModal';
 import { generateId } from '@/utils/ids';
 import { downloadImage } from '@/utils/imageUtils';
+import { CreationModal } from '@/components/modals/CreationModal';
 
 // Sub Components
 import { PromptTab } from './PromptTab';
@@ -42,6 +43,7 @@ interface SideSheetProps {
     maskTool: 'brush' | 'text';
     onMaskToolChange: (tool: 'brush' | 'text') => void;
     onUpload?: () => void;
+    onCreateNew?: () => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -70,7 +72,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onDeleteUserItem,
     maskTool,
     onMaskToolChange,
-    onUpload
+    onUpload,
+    onCreateNew
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
@@ -312,7 +315,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         <Button
                             variant="secondary"
                             className="w-full justify-start h-12 gap-3 uppercase tracking-widest !text-[11px]"
-                            onClick={() => { }}
+                            onClick={onCreateNew}
                             icon={<ImagePlus className="w-5 h-5" />}
                         >
                             {lang === 'de' ? 'Neues Bild generieren' : 'Generate New Image'}
