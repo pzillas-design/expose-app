@@ -20,9 +20,10 @@ const ASPECT_RATIOS = [
 ];
 
 const MODELS = [
-    { id: 'flux-schnell', name: 'Flux Schnell', desc: 'Fastest generation, good quality' },
-    { id: 'flux-dev', name: 'Flux Dev', desc: 'High quality, actively developed' },
-    { id: 'flux-pro', name: 'Flux Pro', desc: 'Premium quality, slower generation' },
+    { id: 'fast', name: 'Nano Banana', desc: 'Fastest generation (1024px)' },
+    { id: 'pro-1k', name: 'Nano Banana Pro 1K', desc: 'High Quality (1024px)' },
+    { id: 'pro-2k', name: 'Nano Banana Pro 2K', desc: 'High Quality (2048px)' },
+    { id: 'pro-4k', name: 'Nano Banana Pro 4K', desc: 'Ultra Quality (4096px)' },
 ];
 
 export const CreationModal: React.FC<CreationModalProps> = ({
