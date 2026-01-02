@@ -289,18 +289,20 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     onMouseDown={startResizing}
                 />
 
-                <div className="flex-1 flex flex-col p-6 gap-8 items-center justify-center">
+                <div className="flex-1 flex flex-col p-6 gap-12 items-center justify-center">
                     {/* Header */}
-                    <div className="flex flex-col items-center text-center gap-6">
-                        <Logo className="w-20 h-20" />
-                        <div className="flex flex-col gap-2">
+                    <div className="flex flex-col items-center text-center gap-8">
+                        <div className={`w-32 h-32 flex items-center justify-center rounded-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 shadow-sm transition-transform duration-700`}>
+                            <Logo className="w-20 h-20" />
+                        </div>
+                        <div className="flex flex-col gap-3">
                             <h2
                                 className={`text-2xl font-bold tracking-tight ${Theme.Colors.TextHighlight}`}
                                 style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                             >
                                 {t('welcome_title')}
                             </h2>
-                            <p className={`${Typo.Body} ${Theme.Colors.TextSecondary}`}>
+                            <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} max-w-[280px]`}>
                                 {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
                             </p>
                         </div>
