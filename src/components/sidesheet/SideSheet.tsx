@@ -293,10 +293,10 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         <Logo className="w-16 h-16" />
                         <div className="flex flex-col gap-2">
                             <h2 className={`${Typo.H3} ${Theme.Colors.TextPrimary}`}>
-                                {lang === 'de' ? 'Willkommen bei Exposé' : 'Welcome to Exposé'}
+                                {t('welcome_title')}
                             </h2>
                             <p className={`${Typo.Body} ${Theme.Colors.TextSecondary}`}>
-                                {lang === 'de' ? 'Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie neu.' : 'Select an image to start editing, or create something new.'}
+                                {t('welcome_desc')}
                             </p>
                         </div>
                     </div>
@@ -318,7 +318,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                             onClick={onCreateNew}
                             icon={<ImagePlus className="w-5 h-5" />}
                         >
-                            {lang === 'de' ? 'Neues Bild generieren' : 'Generate New Image'}
+                            {t('generate_new')}
                         </Button>
                     </div>
                 </div>

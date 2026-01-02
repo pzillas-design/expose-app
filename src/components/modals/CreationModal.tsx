@@ -78,7 +78,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 {/* Header */}
                 <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
                     <div className="flex flex-col gap-1">
-                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{lang === 'de' ? 'Neues Bild generieren' : 'Create New Image'}</h2>
+                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{t('generate_new')}</h2>
                     </div>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
@@ -88,7 +88,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     {/* Prompt Input */}
                     <div className="flex flex-col gap-3">
                         <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider`}>
-                            {lang === 'de' ? 'Prompt' : 'Prompt'}
+                            {t('creation_prompt_label')}
                         </label>
                         <textarea
                             className={`
@@ -99,7 +99,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 outline-none transition-all
                                 ${Typo.Body}
                             `}
-                            placeholder={lang === 'de' ? 'Beschreibe dein Bild im Detail...' : 'Describe your image in detail...'}
+                            placeholder={t('creation_prompt_placeholder')}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             autoFocus
@@ -124,7 +124,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         {/* Model Dropdown */}
                         <div className={`flex flex-col gap-3 relative ${openDropdown === 'model' ? 'z-[60]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
-                                {lang === 'de' ? 'Qualität' : 'Quality'}
+                                {t('creation_quality_label')}
                             </label>
                             <div className="relative">
                                 <button
@@ -172,7 +172,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         {/* Aspect Ratio Dropdown */}
                         <div className={`flex flex-col gap-3 relative ${openDropdown === 'ratio' ? 'z-[60]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
-                                {lang === 'de' ? 'Format' : 'Aspect Ratio'}
+                                {t('creation_ratio_label')}
                             </label>
 
                             <div className="relative">
@@ -234,7 +234,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         disabled={!prompt.trim()}
                         className="w-full h-12"
                     >
-                        {lang === 'de' ? 'Generieren' : 'Generate'}
+                        {t('generate')}
                     </Button>
                 </div>
             </div>

@@ -217,6 +217,16 @@ export const translations = {
     generate_new: "Generate New Image",
     create_new: "Create New",
 
+    // Creation Modal
+    creation_prompt_label: "Prompt",
+    creation_prompt_placeholder: "Describe the image (without going into detail)...",
+    creation_quality_label: "Quality",
+    creation_ratio_label: "Aspect Ratio",
+
+    // Welcome Screen
+    welcome_title: "Welcome to Exposé",
+    welcome_desc: "Select an image to start editing, or create something new.",
+
     // Multi Select & Context Menu
     images_selected: "images",
     delete_confirm_multi: "Are you sure you want to delete these images?",
@@ -516,6 +526,15 @@ export const translations = {
     upload_image_edit: "Bild hochladen & bearbeiten",
     generate_new: "Neues Bild generieren",
     create_new: "Neu",
+
+    creation_prompt_label: "Prompt",
+    creation_prompt_placeholder: "Beschreibe das Bild (ohne ins Detail zu gehen)...",
+    creation_quality_label: "Qualität",
+    creation_ratio_label: "Format",
+
+    // Welcome Screen
+    welcome_title: "Willkommen bei Exposé",
+    welcome_desc: "Wähle ein Bild aus, um es zu bearbeiten, oder starte neu.",
 
     // Multi Select & Context Menu
     images_selected: "Bilder",
