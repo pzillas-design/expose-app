@@ -18,6 +18,7 @@ export const translations = {
     back_to_app: "Back to App",
     added: "added",
     attach_file: "Attach File",
+    price_free: "Free",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -329,6 +330,7 @@ export const translations = {
     back_to_app: "Zurück zur App",
     added: "hinzugefügt",
     attach_file: "Datei anhängen",
+    price_free: "Kostenlos",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",

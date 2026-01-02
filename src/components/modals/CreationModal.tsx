@@ -20,13 +20,6 @@ const ASPECT_RATIOS = [
     { label: '9:16', value: '9:16', width: 32, height: 56 },
 ];
 
-const MODELS = [
-    { id: 'fast', name: 'Nano Banana', price: 'Free', res: '1024 px' },
-    { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.10 €', res: '1024 px' },
-    { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '0.25 €', res: '2048 px' },
-    { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '0.50 €', res: '4096 px' },
-];
-
 const AspectIcon = ({ ratio, isSelected }: { ratio: string, isSelected: boolean }) => {
     const baseClass = `border-[1.5px] rounded-[1px] transition-colors ${isSelected ? 'border-current' : 'border-zinc-400 group-hover:border-zinc-600 dark:group-hover:border-zinc-300'}`;
     switch (ratio) {
@@ -47,6 +40,13 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     t,
     lang
 }) => {
+    const MODELS = [
+        { id: 'fast', name: 'Nano Banana', price: t('price_free'), res: '1024 px' },
+        { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.10 €', res: '1024 px' },
+        { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '0.25 €', res: '2048 px' },
+        { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '0.50 €', res: '4096 px' },
+    ];
+
     const [prompt, setPrompt] = useState('');
     const [selectedModel, setSelectedModel] = useState('pro-2k');
     const [selectedRatio, setSelectedRatio] = useState('4:3');
