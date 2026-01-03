@@ -159,7 +159,7 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(t('generation_failed') || "Generation failed", "error");
+            showToast(`${t('generation_failed')}: ${error.message || error}`, "error");
 
             // Cleanup: remove the failed placeholder from rows
             setRows(prev => {

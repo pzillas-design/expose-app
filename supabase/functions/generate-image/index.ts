@@ -75,16 +75,16 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-2.0-flash-exp';
+        let finalModelName = 'gemini-1.5-flash';
         switch (qualityMode) {
             case 'fast':
-                finalModelName = 'gemini-2.0-flash-exp';
+                finalModelName = 'gemini-1.5-flash';
                 break;
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
             default:
-                finalModelName = 'gemini-2.0-flash-exp';
+                finalModelName = 'gemini-1.5-flash'; // Fallback to stable for now
                 break;
         }
 
@@ -222,6 +222,12 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         console.error("Edge Function Error:", error.message)
+
+        // Mark job as failed to prevent ghost skeletons
+        if (newId) {
+            await supabaseAdmin.from('generation_jobs').update({ status: 'failed', error: error.message }).eq('id', newId)
+        }
+
         return new Response(JSON.stringify({ error: error.message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 400,
