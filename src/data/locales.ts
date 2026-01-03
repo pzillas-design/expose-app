@@ -33,9 +33,9 @@ export const translations = {
     describe_changes: "Describe changes...",
     generate: "Generate",
     processing: "GENERATING...",
-    tt_prompt: "Describe the desired changes to the image",
-    tt_generate: "Start image generation with selected settings",
-    tt_model: "Choose the suitable AI model for your project",
+    tt_prompt: "Describe changes",
+    tt_generate: "Generate image",
+    tt_model: "Choose model",
 
     // Tools
     mask_btn: "Mask",
@@ -352,9 +352,9 @@ export const translations = {
     describe_changes: "Änderungen beschreiben...",
     generate: "Generieren",
     processing: "GENERIERE...",
-    tt_prompt: "Beschreibe die gewünschten Änderungen am Bild",
-    tt_generate: "Bildgenerierung mit den gewählten Einstellungen starten",
-    tt_model: "Wähle das passende KI-Modell für dein Projekt",
+    tt_prompt: "Änderungen beschreiben",
+    tt_generate: "Bild generieren",
+    tt_model: "Modell wählen",
 
     // Tools
     mask_btn: "Maske",

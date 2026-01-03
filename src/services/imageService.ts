@@ -181,7 +181,7 @@ export const imageService = {
             });
         };
 
-        const { w: genWidth, h: genHeight } = await getImageDims(result.imageBase64);
+        const { w: genWidth, h: genHeight } = await getImageDims(result.src);
 
         return {
             ...sourceImage,
