@@ -159,13 +159,14 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message}`, "error", 6000);
+            showToast(t('gen_failed') || "Generation failed", "error");
 
+            // Cleanup: remove the failed placeholder from rows
             setRows(prev => {
-                const newRows = prev.map(r => ({
-                    ...r,
-                    items: r.items.filter(i => i.id !== newId)
-                })).filter(r => r.items.length > 0);
+                const newRows = prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== newId)
+                })).filter(row => row.items.length > 0);
                 return newRows;
             });
 

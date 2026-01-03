@@ -44,7 +44,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const { showToast } = useToast();
 
     const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(null);
-    const [controlValues, setControlValues] = useState<Record<string, string>>({});
+    const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
 
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
@@ -141,20 +141,32 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const handleToggleControlOption = (controlId: string, value: string) => {
         setControlValues(prev => {
-            const current = prev[controlId];
-            if (current === value) {
+            const current = prev[controlId] || [];
+            if (current.includes(value)) {
+                const updated = current.filter(v => v !== value);
                 const newState = { ...prev };
-                delete newState[controlId];
+                if (updated.length === 0) {
+                    delete newState[controlId];
+                } else {
+                    newState[controlId] = updated;
+                }
                 return newState;
             }
-            return { ...prev, [controlId]: value };
+            return { ...prev, [controlId]: [...current, value] };
         });
     };
 
     const handleReset = () => {
-        // setPrompt(''); 
-        setActiveTemplate(null);
         setControlValues({});
+        setActiveTemplate(null);
+    };
+
+    const handleClearControl = (controlId: string) => {
+        setControlValues(prev => {
+            const newState = { ...prev };
+            delete newState[controlId];
+            return newState;
+        });
     };
 
     const handleDoGenerate = () => {
@@ -162,8 +174,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (activeTemplate && activeTemplate.controls) {
             const appendedParts: string[] = [];
             activeTemplate.controls.forEach(c => {
-                const val = controlValues[c.id];
-                if (val) appendedParts.push(val);
+                const vals = controlValues[c.id];
+                if (vals && vals.length > 0) {
+                    appendedParts.push(...vals);
+                }
             });
             if (appendedParts.length > 0) {
                 finalPrompt += " " + appendedParts.join(", ");
@@ -241,25 +255,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     {/* Active Variables Section */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                        <div className={`flex flex-col border-t ${Theme.Colors.BorderSubtle} bg-zinc-50 dark:bg-zinc-900/50`}>
+                                        <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50 dark:bg-zinc-900/50`}>
                                             {activeTemplate.controls.map((ctrl, idx) => (
-                                                <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.BorderSubtle}` : ''}`}>
+                                                <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.Border}` : ''}`}>
                                                     <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
                                                         <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
                                                             {ctrl.label}
                                                         </span>
-                                                        {idx === 0 && (
-                                                            <IconButton
-                                                                icon={<X className="w-3.5 h-3.5" />}
-                                                                onClick={handleReset}
-                                                                tooltip="Variablen entfernen"
-                                                                className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
-                                                            />
-                                                        )}
+                                                        <IconButton
+                                                            icon={<X className="w-3.5 h-3.5" />}
+                                                            onClick={() => handleClearControl(ctrl.id)}
+                                                            tooltip="Entfernen"
+                                                            className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
+                                                        />
                                                     </div>
                                                     <div className="px-3 pb-3 flex flex-wrap gap-1.5">
                                                         {ctrl.options.map((opt) => {
-                                                            const isSelected = controlValues[ctrl.id] === opt.value;
+                                                            const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
                                                             return (
                                                                 <button
                                                                     key={opt.id}
