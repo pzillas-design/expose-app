@@ -189,8 +189,11 @@ export const useNanoController = () => {
         }
     }, [selectedImage, smoothZoomTo, setSideSheetMode]);
 
-    const handleGenerate = useCallback(() => {
-        if (selectedImage) performGeneration(selectedImage, selectedImage.userDraftPrompt || '');
+    const handleGenerate = useCallback((prompt?: string) => {
+        if (selectedImage) {
+            const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
+            performGeneration(selectedImage, finalPrompt);
+        }
     }, [selectedImage, performGeneration]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {

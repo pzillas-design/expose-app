@@ -176,8 +176,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setHiddenControlIds(prev => [...prev, controlId]);
     };
 
-    const handleDoGenerate = () => {
-        let finalPrompt = prompt;
+    const getFinalPrompt = () => {
+        let final = prompt.trim();
         if (activeTemplate && activeTemplate.controls) {
             const appendedParts: string[] = [];
             activeTemplate.controls.forEach(c => {
@@ -187,10 +187,20 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 }
             });
             if (appendedParts.length > 0) {
-                finalPrompt += " " + appendedParts.join(", ");
+                // Smart join: add comma if prompt doesn't end with one/colon, but only if prompt isn't empty
+                if (final) {
+                    const needsComma = !final.endsWith(',') && !final.endsWith(':');
+                    final += (needsComma ? ", " : " ") + appendedParts.join(", ");
+                } else {
+                    final = appendedParts.join(", ");
+                }
             }
         }
-        onGenerate(finalPrompt);
+        return final;
+    };
+
+    const handleDoGenerate = () => {
+        onGenerate(getFinalPrompt());
     };
 
     const openCreatePreset = () => {
@@ -231,7 +241,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         onClick={() => setActiveInternalTab('info')}
                         className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'info' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
                     >
-                        {currentLang === 'de' ? 'Info' : 'Info'}
+                        {t('tab_info') || 'Info'}
                     </button>
 
                     {/* Animated Underline */}
@@ -426,12 +436,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 )}
                             </div>
 
-                            <div>
+                            <div className="flex flex-col gap-4">
+                                {prompt.trim() && getFinalPrompt() !== prompt && (
+                                    <div className={`p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-dashed ${Theme.Colors.Border} animate-in fade-in duration-300`}>
+                                        <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2`}>
+                                            Vorschau Prompt
+                                        </span>
+                                        <p className={`${Typo.Micro} font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed italic`}>
+                                            "{getFinalPrompt()}"
+                                        </p>
+                                    </div>
+                                )}
+
                                 {isMulti && (
                                     <Button
                                         variant="secondary"
                                         onClick={onDeselect}
-                                        className="w-full mb-4"
+                                        className="w-full"
                                     >
                                         {t('ctx_deselect')}
                                     </Button>
@@ -505,26 +526,28 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
                             {/* Prompt Section */}
                             {selectedImage.generationPrompt && (
-                                <div className="flex flex-col gap-2 group relative">
-                                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                        Prompt
-                                    </span>
-                                    <p className={`font-mono text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed pr-10`}>
-                                        "{selectedImage.generationPrompt}"
-                                    </p>
-                                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <IconButton
-                                            icon={<Copy className="w-3.5 h-3.5" />}
-                                            tooltip={t('copy')}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (selectedImage.generationPrompt) {
-                                                    navigator.clipboard.writeText(selectedImage.generationPrompt);
-                                                    showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
-                                                }
-                                            }}
-                                        />
+                                <div className="flex flex-col gap-3 group relative">
+                                    <div className="flex items-center justify-between">
+                                        <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                            Prompt
+                                        </span>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <IconButton
+                                                icon={<Copy className="w-3.5 h-3.5" />}
+                                                tooltip={t('copy')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (selectedImage.generationPrompt) {
+                                                        navigator.clipboard.writeText(selectedImage.generationPrompt);
+                                                        showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
+                                    <p className={`font-mono text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border ${Theme.Colors.Border}`}>
+                                        {selectedImage.generationPrompt}
+                                    </p>
                                 </div>
                             )}
 

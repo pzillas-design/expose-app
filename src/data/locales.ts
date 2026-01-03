@@ -314,10 +314,9 @@ export const translations = {
     admin_user_updated_success: "User updated successfully",
     failed_update_user: "Failed to update user",
     failed_delete_user: "Failed to delete user",
-    role_user: "User",
-    role_pro: "Pro",
     role_admin: "Admin",
     id_label: "ID",
+    tab_info: "Info",
   },
   de: {
     // General
@@ -632,10 +631,9 @@ export const translations = {
     admin_user_updated_success: "Benutzer erfolgreich aktualisiert",
     failed_update_user: "Benutzer konnte nicht aktualisiert werden",
     failed_delete_user: "Benutzer konnte nicht gelöscht werden",
-    role_user: "Benutzer",
-    role_pro: "Pro",
     role_admin: "Admin",
     id_label: "ID",
+    tab_info: "Info",
   }
 };
 
