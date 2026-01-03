@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { ImageRow } from '../types';
 
 interface UseSelectionProps {
@@ -89,18 +89,6 @@ export const useSelection = ({
         }
     }, [selectedIds.length, fitSelectionToView]);
 
-    // --- Anchor Selection on Zoom (Single Item) ---
-    // Note: We only re-center when the zoom level changes, not when selection changes,
-    // to prevent fighting the user during manual scrolling.
-    // --- Anchor Selection on Zoom (Single Item) ---
-    // [REMOVED] This Logic caused the "Zappeln" (jitter).
-    // The new useCanvasNavigation handles pivot-zooming correctly internally.
-    /*
-    useLayoutEffect(() => {
-        // ... Code Removed ...
-    }, []);
-    */
-
     // --- Scroll Logic (Focus Tracking) ---
     const handleScroll = useCallback(() => {
         if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1 || !isSnapEnabledRef.current) return;
@@ -115,7 +103,6 @@ export const useSelection = ({
             const viewportCenterX = containerRect.left + (containerRect.width / 2);
             const viewportCenterY = containerRect.top + (containerRect.height / 2);
 
-            // Optimization: Only query rows that are likely in view
             const rowElements = Array.from(container.querySelectorAll('[data-row-id]')) as HTMLElement[];
             let closestRow: HTMLElement | null = null;
             let minRowDist = Infinity;
@@ -127,8 +114,6 @@ export const useSelection = ({
                     minRowDist = dist;
                     closestRow = rowEl;
                 }
-                // If we've found a row and the distance starts increasing, we can stop
-                if (minRowDist < 100 && dist > minRowDist) break;
             }
 
             if (!closestRow) return;
@@ -145,38 +130,24 @@ export const useSelection = ({
                     minImgDist = dist;
                     closestImageId = img.getAttribute('data-image-id');
                 }
-                // Break early if we are moving away from center
-                if (minImgDist < 50 && dist > minImgDist) break;
             }
 
-            // Only update selection if the image is truly "focused" (near center)
-            // Adjust threshold based on zoom - when zoomed out, we need to be tighter
-            const threshold = Math.max(50, 150 * zoom);
-
-            if (closestImageId && primarySelectedId !== closestImageId && minImgDist < threshold) {
-                // If we are very close to the center, update selection
+            if (closestImageId && primarySelectedId !== closestImageId) {
                 setSelectedIds([closestImageId]);
             }
         });
-    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds, zoom]);
+    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds]);
 
     // Keyboard Navigation
     const moveSelection = useCallback((direction: -1 | 1, fromId?: string) => {
         if (allImages.length === 0) return;
-
-        // Smart Navigation: Use fromId, or the most visible item in viewport, or lastSelected
-        const currentId = fromId || getMostVisibleItem() || lastSelectedIdRef.current;
+        const currentId = fromId || lastSelectedIdRef.current || primarySelectedId;
 
         let nextIndex = 0;
         if (currentId) {
             const currentIndex = allImages.findIndex(img => img.id === currentId);
             if (currentIndex !== -1) {
                 nextIndex = currentIndex + direction;
-            } else {
-                // If the "anchor" isn't found in current state (e.g. deleted), find nearest visible
-                const visibleId = getMostVisibleItem();
-                const visibleIdx = visibleId ? allImages.findIndex(i => i.id === visibleId) : 0;
-                nextIndex = visibleIdx !== -1 ? visibleIdx : 0;
             }
         }
 
@@ -184,7 +155,7 @@ export const useSelection = ({
         if (nextIndex >= allImages.length) nextIndex = allImages.length - 1;
 
         selectAndSnap(allImages[nextIndex].id);
-    }, [allImages, selectAndSnap, getMostVisibleItem]);
+    }, [allImages, selectAndSnap, primarySelectedId]);
 
     const moveRowSelection = useCallback((direction: -1 | 1) => {
         const currentId = lastSelectedIdRef.current || primarySelectedId;

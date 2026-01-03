@@ -39,7 +39,7 @@ export const useCanvasNavigation = ({
     }, []);
 
     // --- Zoom Logic (Synchronized) ---
-    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }) => {
+    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration = 300) => {
         setIsZooming(true);
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
         const startZoom = zoom;
@@ -49,15 +49,14 @@ export const useCanvasNavigation = ({
         const startScrollY = container?.scrollTop || 0;
 
         const startTime = performance.now();
-        const duration = 400; // Smoother transition
 
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
 
         const animate = (time: number) => {
             const elapsed = time - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            // Ease Out Quart
-            const ease = 1 - Math.pow(1 - progress, 4);
+            const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
+            // Ease Out Quad
+            const ease = progress * (2 - progress);
 
             // Interpolate Zoom
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
@@ -85,7 +84,7 @@ export const useCanvasNavigation = ({
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
-    }, [zoom, scrollContainerRef]);
+    }, [zoom, scrollContainerRef, setIsZooming]);
 
     // --- Viewport Fitting (Magnetic Group) ---
     const fitSelectionToView = useCallback(() => {
@@ -171,8 +170,8 @@ export const useCanvasNavigation = ({
             const targetScrollLeft = newCenterX - (containerRect.width / 2);
             const targetScrollTop = newCenterY - (containerRect.height / 2);
 
-            // 5. Execute Synchronized Move
-            smoothZoomTo(targetZoom, { x: targetScrollLeft, y: targetScrollTop });
+            // 5. Execute Synchronized Move - INSTANT to avoid jitter ("Zappeln")
+            smoothZoomTo(targetZoom, { x: targetScrollLeft, y: targetScrollTop }, 0);
         });
 
     }, [selectedIds, zoom, smoothZoomTo, scrollContainerRef]);
@@ -183,82 +182,21 @@ export const useCanvasNavigation = ({
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
         autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, 800);
 
-        // Robust scroll into view with retries
-        let attempts = 0;
-        const tryScroll = () => {
+        // Simple scroll into view
+        setTimeout(() => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-            } else if (attempts < 5) {
-                attempts++;
-                setTimeout(tryScroll, 100);
             }
-        };
-        setTimeout(tryScroll, 50);
-    }, []);
+        }, 50);
+    }, [setIsAutoScrolling]);
 
-    // Wheel Zoom & Gesture Listener
+    // Wheel Zoom Listener
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
 
-        // --- Gesture Handling (Safari Trackpad) ---
-        // Helps prevent native browser zoom and handle smooth pinch
-        const onGestureStart = (e: any) => {
-            e.preventDefault();
-            setIsZooming(true);
-        };
-
-        const onGestureChange = (e: any) => {
-            e.preventDefault();
-            const container = scrollContainerRef.current;
-            if (!container) return;
-
-            // Approximate center of pinch (fallback to center of viewport)
-            const centerX = e.clientX || (window.innerWidth / 2);
-            const centerY = e.clientY || (window.innerHeight / 2);
-
-            const rect = container.getBoundingClientRect();
-            const mouseX = centerX - rect.left;
-            const mouseY = centerY - rect.top;
-            const currentScrollLeft = container.scrollLeft;
-            const currentScrollTop = container.scrollTop;
-
-            // Content coords before zoom
-            const contentX = (currentScrollLeft + mouseX) / zoom;
-            const contentY = (currentScrollTop + mouseY) / zoom;
-
-            // Safari scale is cumulative. We derive a delta factor to apply to current local zoom.
-            // But since 'zoom' changes every render, using e.scale directly is tricky if it's cumulative from specific start.
-            // Using a small step approach based on change from last frame is complex without storing prevScale.
-            // Simplification: Treat e.scale diff from 1 as a "momentum" to apply to current zoom.
-            // Or better: Just use a small scaling factor derived from e.scale.
-            // For now, let's trust the logic that worked for scale, but fix the scroll.
-
-            const delta = e.scale - 1;
-            const factor = 1 + delta * 0.1; // Dampen the acceleration
-            const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
-
-            try {
-                flushSync(() => setZoom(targetZoom));
-            } catch (err) {
-                setZoom(targetZoom);
-            }
-
-            container.scrollLeft = (contentX * targetZoom) - mouseX;
-            container.scrollTop = (contentY * targetZoom) - mouseY;
-        };
-
-        const onGestureEnd = (e: any) => {
-            e.preventDefault();
-            setIsZooming(false);
-        };
-
-        // --- Wheel Handling (Chrome/Edge/Firefox) ---
         const onWheel = (e: WheelEvent) => {
-            const container = scrollContainerRef.current;
-            if (!container) return;
-
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -273,54 +211,48 @@ export const useCanvasNavigation = ({
 
                 // Calculate new zoom
                 const delta = -e.deltaY;
-                const isTrackpad = Math.abs(delta) < 50;
-                const factor = isTrackpad
-                    ? Math.exp(delta * 0.01)
-                    : Math.exp(delta * 0.002);
-
+                const factor = Math.exp(delta * 0.008);
                 const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
 
-                // Zoom-to-Cursor Logic (Always apply this, even if selected, to prevent jump)
-                const rect = container.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                const currentScrollLeft = container.scrollLeft;
-                const currentScrollTop = container.scrollTop;
-
-                // Calculate content coordinates under the mouse before zoom
-                const contentMouseX = (currentScrollLeft + mouseX) / zoom;
-                const contentMouseY = (currentScrollTop + mouseY) / zoom;
-
-                try {
-                    flushSync(() => setZoom(targetZoom));
-                } catch (err) {
+                if (selectedIds.length > 0) {
+                    // Simple Zoom: Just update state.
                     setZoom(targetZoom);
-                }
+                } else {
+                    // Zoom-to-Cursor Logic
+                    const rect = container.getBoundingClientRect();
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
 
-                // Calculate new scroll position to keep content under mouse
-                container.scrollLeft = (contentMouseX * targetZoom) - mouseX;
-                container.scrollTop = (contentMouseY * targetZoom) - mouseY;
+                    const scrollLeft = container.scrollLeft;
+                    const scrollTop = container.scrollTop;
+
+                    // The canvas has fixed padding of 50vw/50vh that DOES NOT scale with zoom.
+                    const padX = window.innerWidth / 2;
+                    const padY = window.innerHeight / 2;
+
+                    // Content Point under mouse (unscaled, relative to true content origin)
+                    const contentX = (scrollLeft + mouseX - padX) / zoom;
+                    const contentY = (scrollTop + mouseY - padY) / zoom;
+
+                    try {
+                        // Force synchronous render to ensure DOM size updates before we set scroll
+                        flushSync(() => {
+                            setZoom(targetZoom);
+                        });
+                    } catch (err) {
+                        console.error("Zoom flushSync error:", err);
+                        setZoom(targetZoom);
+                    }
+
+                    // Calculate new scroll position
+                    container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
+                    container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
+                }
             }
         };
-
         container.addEventListener('wheel', onWheel, { passive: false });
-        // @ts-ignore
-        container.addEventListener('gesturestart', onGestureStart, { passive: false });
-        // @ts-ignore
-        container.addEventListener('gesturechange', onGestureChange, { passive: false });
-        // @ts-ignore
-        container.addEventListener('gestureend', onGestureEnd, { passive: false });
-
-        return () => {
-            container.removeEventListener('wheel', onWheel);
-            // @ts-ignore
-            container.removeEventListener('gesturestart', onGestureStart);
-            // @ts-ignore
-            container.removeEventListener('gesturechange', onGestureChange);
-            // @ts-ignore
-            container.removeEventListener('gestureend', onGestureEnd);
-        };
-    }, [scrollContainerRef, zoom, selectedIds]);
+        return () => container.removeEventListener('wheel', onWheel);
+    }, [scrollContainerRef, zoom, selectedIds, setIsZooming]);
 
     // Logic to find the most centered item in the viewport (Added for Staging Compatibility)
     const getMostVisibleItem = useCallback(() => {
