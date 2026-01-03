@@ -35,8 +35,9 @@ function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], th
     }
 
     // Fixed 2x2 Grid Layout
+    // Fixed 2x2 Grid Layout
     const showPlus = total > 4;
-    const itemsToShow = displayImages.slice(0, showPlus ? 3 : 4);
+    const itemsToShow = displayImages.slice(0, 4);
 
     return (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50 transition-transform duration-700 ease-out">
@@ -53,11 +54,13 @@ function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], th
                 {itemsToShow[2] && <img src={itemsToShow[2]} className="w-full h-full object-cover" />}
             </div>
             {/* Slot 4 / Plus */}
-            <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center">
-                {showPlus ? (
-                    <span className="text-xs font-bold text-zinc-400 dark:text-zinc-600">+{total - 3}</span>
-                ) : (
-                    itemsToShow[3] && <img src={itemsToShow[3]} className="w-full h-full object-cover" />
+            <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center overflow-hidden">
+                {itemsToShow[3] && <img src={itemsToShow[3]} className="w-full h-full object-cover" />}
+
+                {showPlus && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
+                        <span className="text-sm font-bold text-white">+{total - 3}</span>
+                    </div>
                 )}
             </div>
         </div>
