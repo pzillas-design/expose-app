@@ -69,9 +69,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const isMulti = selectedImages && selectedImages.length > 1;
 
+    const lastIdRef = useRef<string>(selectedImage.id);
     useEffect(() => {
         if (selectedImage.isGenerating) {
             setActiveInternalTab('info');
+        }
+
+        // Only reset if the actual image changed, not just the status
+        if (lastIdRef.current !== selectedImage.id) {
+            setActiveTemplate(null);
+            setControlValues({});
+            lastIdRef.current = selectedImage.id;
         }
     }, [selectedImage.id, selectedImage.isGenerating]);
 
@@ -534,7 +542,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             />
                                         </div>
                                     </div>
-                                    <p className={`font-mono text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border ${Theme.Colors.Border}`}>
+                                    <p className={`font-mono text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed`}>
                                         {selectedImage.generationPrompt}
                                     </p>
                                 </div>
