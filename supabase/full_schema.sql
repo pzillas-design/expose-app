@@ -140,12 +140,17 @@ ALTER TABLE public.global_objects_items ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
+  -- Optional: check JWT for speed, but search_path fix is the key for recursion
+  IF (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin') THEN
+    RETURN true;
+  END IF;
+
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
     WHERE id = auth.uid() AND role = 'admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- PROFILES
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);

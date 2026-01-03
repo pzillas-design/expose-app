@@ -165,7 +165,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                     <button
                                         key={t.id}
                                         onClick={() => onSelect(t)}
-                                        className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent`}
+                                        className={`w-full flex items-center justify-between gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent`}
                                     >
                                         <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
                                             <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-normal truncate`}>
@@ -202,7 +202,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                         <button
                                             key={t.id}
                                             onClick={() => onSelect(t)}
-                                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent relative`}
+                                            className={`w-full flex items-center justify-between gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent relative`}
                                         >
                                             <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
                                                 <span className={`${Typo.Body} text-zinc-900 dark:text-zinc-200 group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
@@ -242,7 +242,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                             <button
                                                 key={t.id}
                                                 onClick={() => onSelect(t)}
-                                                className={`w-full flex items-center gap-3 px-3 py-2.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                                className={`w-full flex items-center gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>

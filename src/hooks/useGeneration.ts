@@ -181,14 +181,18 @@ export const useGeneration = ({
                     });
             }
 
-            if (!isPro) {
-                setCredits(prev => prev + cost);
-                try {
-                    const { data: { user: refundUser } } = await supabase.auth.getUser();
-                    if (refundUser) {
-                        await supabase.from('profiles').update({ credits: credits }).eq('id', refundUser.id);
-                    }
-                } catch (e) { console.error("Refund failed", e); }
+            if (!isPro && cost > 0) {
+                setCredits(prev => {
+                    const newCredits = prev + cost;
+                    // Try to sync with DB, but don't block if it fails (the 500 you saw)
+                    supabase.from('profiles')
+                        .update({ credits: newCredits })
+                        .eq('id', user.id)
+                        .then(({ error }) => {
+                            if (error) console.warn("Refund DB update failed (likely RLS):", error);
+                        });
+                    return newCredits;
+                });
             }
         }
     };

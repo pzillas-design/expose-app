@@ -33,9 +33,9 @@ export const translations = {
     describe_changes: "Describe changes...",
     generate: "Generate",
     processing: "GENERATING...",
-    tt_prompt: "Describe changes",
-    tt_generate: "Generate image",
-    tt_model: "Choose model",
+    tt_prompt: "Prompt",
+    tt_generate: "Generate",
+    tt_model: "Model",
 
     // Tools
     mask_btn: "Mask",
@@ -352,9 +352,9 @@ export const translations = {
     describe_changes: "Änderungen beschreiben...",
     generate: "Generieren",
     processing: "GENERIERE...",
-    tt_prompt: "Änderungen beschreiben",
-    tt_generate: "Bild generieren",
-    tt_model: "Modell wählen",
+    tt_prompt: "Prompt",
+    tt_generate: "Generieren",
+    tt_model: "Modell",
 
     // Tools
     mask_btn: "Maske",
