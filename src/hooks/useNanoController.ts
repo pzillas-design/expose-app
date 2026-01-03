@@ -190,11 +190,16 @@ export const useNanoController = () => {
     }, [selectedImage, smoothZoomTo, setSideSheetMode]);
 
     const handleGenerate = useCallback((prompt?: string) => {
-        if (selectedImage) {
+        if (selectedImages.length > 1) {
+            selectedImages.forEach(img => {
+                const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
+                performGeneration(img, finalPrompt);
+            });
+        } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt);
         }
-    }, [selectedImage, performGeneration]);
+    }, [selectedImage, selectedImages, performGeneration]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
