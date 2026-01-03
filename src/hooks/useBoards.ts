@@ -30,9 +30,9 @@ export const useBoards = (userId: string | undefined) => {
 
     const getNextBoardName = () => {
         const now = new Date();
-        const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const base = `Projekt ${day}${month}`;
+        const day = now.getDate();
+        const month = now.getMonth() + 1;
+        const base = `Projekt ${day}.${month}.`;
 
         if (!boards.find(b => b.name === base)) return base;
 
