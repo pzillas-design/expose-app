@@ -384,7 +384,7 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative`}
+                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap ? 'snap-both snap-mandatory' : ''}`}
                     style={{ overflowAnchor: 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}

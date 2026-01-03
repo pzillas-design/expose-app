@@ -48,27 +48,6 @@ export const useCanvasNavigation = ({
         const startScrollX = container?.scrollLeft || 0;
         const startScrollY = container?.scrollTop || 0;
 
-        let finalTargetScroll = targetScroll;
-
-        if (!finalTargetScroll && container) {
-            // Zoom to viewport center if no target provided
-            const rect = container.getBoundingClientRect();
-            const mouseX = rect.width / 2;
-            const mouseY = rect.height / 2;
-
-            const padX = window.innerWidth / 2;
-            const padY = window.innerHeight / 2;
-
-            // Content Point at viewport center (unscaled)
-            const contentX = (startScrollX + mouseX - padX) / zoom;
-            const contentY = (startScrollY + mouseY - padY) / zoom;
-
-            finalTargetScroll = {
-                x: (padX + (contentX * clampedTargetZoom)) - mouseX,
-                y: (padY + (contentY * clampedTargetZoom)) - mouseY
-            };
-        }
-
         const startTime = performance.now();
 
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
@@ -84,9 +63,9 @@ export const useCanvasNavigation = ({
             setZoom(nextZoom);
 
             // Interpolate Scroll synchronously
-            if (finalTargetScroll && container) {
-                const nextScrollX = startScrollX + (finalTargetScroll.x - startScrollX) * ease;
-                const nextScrollY = startScrollY + (finalTargetScroll.y - startScrollY) * ease;
+            if (targetScroll && container) {
+                const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
+                const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
             }
@@ -96,9 +75,9 @@ export const useCanvasNavigation = ({
             } else {
                 setZoom(clampedTargetZoom);
                 // Ensure final position is exact
-                if (finalTargetScroll && container) {
-                    container.scrollLeft = finalTargetScroll.x;
-                    container.scrollTop = finalTargetScroll.y;
+                if (targetScroll && container) {
+                    container.scrollLeft = targetScroll.x;
+                    container.scrollTop = targetScroll.y;
                 }
                 zoomAnimFrameRef.current = null;
                 setIsZooming(false);
@@ -230,40 +209,10 @@ export const useCanvasNavigation = ({
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
 
-                // Calculate new zoom
+                // Simple Zoom (Snap will handle centering)
                 const delta = -e.deltaY;
                 const factor = Math.exp(delta * 0.008);
-                const targetZoom = Math.min(Math.max(zoom * factor, MIN_ZOOM), MAX_ZOOM);
-
-                // Always use Zoom-to-Cursor Logic for consistent, central feel
-                const rect = container.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-
-                const scrollLeft = container.scrollLeft;
-                const scrollTop = container.scrollTop;
-
-                // The canvas has fixed padding of 50vw/50vh that DOES NOT scale with zoom.
-                const padX = window.innerWidth / 2;
-                const padY = window.innerHeight / 2;
-
-                // Content Point under mouse (unscaled, relative to true content origin)
-                const contentX = (scrollLeft + mouseX - padX) / zoom;
-                const contentY = (scrollTop + mouseY - padY) / zoom;
-
-                try {
-                    // Force synchronous render to ensure DOM size updates before we set scroll
-                    flushSync(() => {
-                        setZoom(targetZoom);
-                    });
-                } catch (err) {
-                    console.error("Zoom flushSync error:", err);
-                    setZoom(targetZoom);
-                }
-
-                // Calculate new scroll position
-                container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
-                container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
+                setZoom(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev * factor)));
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
