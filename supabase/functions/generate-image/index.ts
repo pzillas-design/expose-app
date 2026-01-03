@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
         const { data: { user } } = await supabaseUser.auth.getUser()
         if (!user) throw new Error('User not found')
 
-        const { sourceImage, prompt, qualityMode, maskDataUrl, newId, modelName, boardId } = await req.json()
+        const { sourceImage, prompt, qualityMode, maskDataUrl, newId, modelName, board_id } = await req.json()
+        const boardId = board_id; // Alias for consistency in the rest of the file
 
         console.log(`Starting generation for user ${user.id}, quality: ${qualityMode}, job: ${newId}, board: ${boardId}`);
 
@@ -75,16 +76,16 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-1.5-flash';
+        let finalModelName = 'gemini-2.0-flash-exp';
         switch (qualityMode) {
             case 'fast':
-                finalModelName = 'gemini-1.5-flash';
+                finalModelName = 'gemini-2.0-flash-exp';
                 break;
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
             default:
-                finalModelName = 'gemini-1.5-flash'; // Fallback to stable for now
+                finalModelName = 'gemini-2.0-flash-exp';
                 break;
         }
 
