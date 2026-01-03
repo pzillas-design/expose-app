@@ -303,7 +303,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-blue-500 dark:text-blue-400'}`} />}
                                         className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : t('mask_btn')}
+                                        tooltip={isMulti ? t('tool_disabled_multi') : t('tt_mask')}
                                     >
                                         {t('mask_btn')}
                                     </Button>
@@ -313,7 +313,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Armchair className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-purple-500 dark:text-purple-400'}`} />}
                                         className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : t('object_btn')}
+                                        tooltip={isMulti ? t('tool_disabled_multi') : t('tt_objects')}
                                     >
                                         {t('object_btn')}
                                     </Button>
