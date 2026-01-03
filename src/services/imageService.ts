@@ -116,8 +116,12 @@ export const imageService = {
             .eq('user_id', userId);
 
         if (jobError) {
-            console.warn('Deep Sync: Cleanup generation_jobs Failed:', jobError);
-            // We don't throw here as the main image deletion succeeded
+            console.warn('Deep Sync: Bulk Delete jobs failed (missing RLS?), attempting status update fallback:', jobError);
+            await supabase
+                .from('generation_jobs')
+                .update({ status: 'failed' })
+                .in('id', imageIds)
+                .eq('user_id', userId);
         }
     },
 
@@ -315,7 +319,7 @@ export const imageService = {
             // Find parent to inherit dimensions/baseName
             const parent = loadedImages.find(img => img.id === job.parent_id) || dbImages.find(d => d.id === job.parent_id);
 
-            const baseName = job.prompt?.substring(0, 20) || 'Generating...';
+            const baseName = 'Generation'; // Avoid using long prompts as titles
             const startTime = new Date(job.created_at).getTime();
 
             const skeleton: CanvasImage = {

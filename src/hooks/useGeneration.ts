@@ -208,7 +208,7 @@ export const useGeneration = ({
         }
 
         const newId = generateId();
-        const baseName = prompt.slice(0, 30) || 'Untitled';
+        const baseName = t('new_generation') || 'Generation';
 
         // Correctly calculate resolution based on Model & Ratio
         let baseSize = 1024;
