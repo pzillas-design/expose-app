@@ -85,10 +85,9 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
     return (
         <div className={`flex flex-col ${Theme.Colors.PanelBg} relative transition-colors duration-200 w-full`}>
 
-            {/* Header */}
-            <div className="px-6 py-4 shrink-0 min-h-[57px] flex items-center">
-                {isSearchActive ? (
-                    // SEARCH HEADER
+            {/* Top Search Bar (Only when active) */}
+            {isSearchActive && (
+                <div className="px-6 py-4 shrink-0 min-h-[57px] flex items-center border-b border-zinc-100 dark:border-zinc-800/50">
                     <div className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-200">
                         <Search className={`w-3.5 h-3.5 ${Theme.Colors.TextSecondary} shrink-0`} />
                         <input
@@ -98,27 +97,14 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             placeholder={t('search_presets')}
                             className={`flex-1 bg-transparent border-none outline-none ${Typo.Body} placeholder-zinc-500 h-full`}
                         />
-
                         <IconButton icon={<X className="w-4 h-4" />} onClick={closeSearch} tooltip={t('close')} />
                     </div>
-                ) : (
-                    // STANDARD HEADER
-                    <div className="flex-1 flex items-center justify-between animate-in fade-in duration-200">
-                        <div className="flex items-center gap-2">
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                            <IconButton icon={<Plus className="w-4 h-4" />} onClick={onRequestCreate} tooltip={t('new_preset')} />
-                            <IconButton icon={<Search className="w-4 h-4" />} onClick={() => setIsSearchActive(true)} tooltip={t('search_presets')} />
-                        </div>
-                    </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Content Area */}
-            <div className="px-3 pb-4 flex flex-col">
-
-                <div className="px-0 py-1 space-y-2">
+            <div className="flex flex-col">
+                <div className="flex flex-col">
 
                     {/* SEARCH: Tag Filter Bar & New Button */}
                     {isSearchActive && (
@@ -194,18 +180,33 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         <>
                             {/* PRESETS SECTION */}
                             <div className="flex flex-col">
-                                <button
-                                    onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
-                                    className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
-                                >
-                                    {isPresetsExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
-                                    <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
-                                        {t('presets_header')}
-                                    </span>
-                                </button>
+                                <div className="flex items-center justify-between px-3 py-4 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group">
+                                    <button
+                                        onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
+                                        className="flex items-center gap-2 flex-1"
+                                    >
+                                        {isPresetsExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                                            {t('presets_header')}
+                                        </span>
+                                    </button>
+
+                                    <div className="flex items-center gap-1 transition-opacity">
+                                        <IconButton
+                                            icon={<Search className="w-3.5 h-3.5" />}
+                                            onClick={(e) => { e.stopPropagation(); setIsSearchActive(true); }}
+                                            tooltip={t('search_presets')}
+                                        />
+                                        <IconButton
+                                            icon={<Plus className="w-3.5 h-3.5" />}
+                                            onClick={(e) => { e.stopPropagation(); onRequestCreate(); }}
+                                            tooltip={t('new_preset')}
+                                        />
+                                    </div>
+                                </div>
 
                                 {isPresetsExpanded && (
-                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="p-3 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {pinnedTemplates.length > 0 ? (
                                             pinnedTemplates.map(t => (
                                                 <button
@@ -250,7 +251,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             <div className="flex flex-col">
                                 <button
                                     onClick={() => setIsRecentExpanded(!isRecentExpanded)}
-                                    className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-4 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors"
                                 >
                                     {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                                     <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
@@ -259,7 +260,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                 </button>
 
                                 {isRecentExpanded && (
-                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="p-3 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {recentTemplates.length > 0 ? (
                                             recentTemplates.map(t => (
                                                 <button
