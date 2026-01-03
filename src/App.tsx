@@ -24,7 +24,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
-        isAdminOpen, currentLang, allImages, fullLibrary, user, userProfile,
+        currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading
     } = state;
@@ -33,7 +33,7 @@ export function App() {
         moveSelection, handleAddFunds, setBrushSize, setSideSheetMode, handleGenerate,
         handleGenerateMore, handleNavigateParent,
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
-        setQualityMode, setThemeMode, setLang, setIsAdminOpen, handleSelection, selectMultiple,
+        setQualityMode, setThemeMode, setLang, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew
@@ -73,13 +73,7 @@ export function App() {
         syncUrl();
     }, [location.pathname, actions, currentBoardId, setCurrentBoardId]);
 
-    useEffect(() => {
-        if (location.pathname === '/admin') {
-            setIsAdminOpen(true);
-        } else if (isAdminOpen) {
-            setIsAdminOpen(false);
-        }
-    }, [location.pathname, setIsAdminOpen, isAdminOpen]);
+
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
@@ -520,18 +514,17 @@ export function App() {
                 onAddFunds={handleAddFunds}
                 t={t}
             />
-
-            {isAdminOpen && (
-                <AdminDashboard
-                    isOpen={isAdminOpen}
-                    onClose={() => {
-                        setIsAdminOpen(false);
-                        navigate('/boards');
-                    }}
-                    t={t}
-                />
-            )}
         </div>
+    );
+
+    const adminPage = (
+        <AdminDashboard
+            user={user}
+            userProfile={userProfile}
+            credits={credits}
+            onCreateBoard={handleCreateBoardAndNavigate}
+            t={t}
+        />
     );
 
     const settingsPage = (
@@ -547,7 +540,7 @@ export function App() {
             userProfile={userProfile}
             onSignOut={handleSignOut}
             onAddFunds={handleAddFunds}
-            onOpenAdmin={() => setIsAdminOpen(true)}
+            onOpenAdmin={() => navigate('/admin')}
             t={t}
             updateProfile={updateProfile}
             onCreateBoard={handleCreateBoardAndNavigate}
@@ -560,7 +553,7 @@ export function App() {
             <Route path="/board/:boardId" element={canvasView} />
             <Route path="/settings" element={settingsPage} />
             <Route path="/settings/:tab" element={settingsPage} />
-            <Route path="/admin" element={boardsPage} />
+            <Route path="/admin" element={adminPage} />
             <Route path="/" element={<Navigate to="/boards" replace />} />
         </Routes>
     );

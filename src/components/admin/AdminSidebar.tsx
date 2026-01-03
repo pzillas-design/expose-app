@@ -25,16 +25,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChan
 
     return (
         <div className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex flex-col shrink-0">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800">
-                <button
-                    onClick={onClose}
-                    className="group flex items-center gap-1.5 hover:opacity-70 transition-opacity"
-                >
-                    <ChevronLeft className="w-5 h-5 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                    <span className={`${Typo.H1}`}>Admin</span>
-                </button>
-            </div>
-            <div className="p-3 space-y-1">
+            <div className="p-3 space-y-1 pt-6">
                 {renderItem('users', t('admin_users'), <Users className="w-4 h-4" />)}
                 {renderItem('jobs', t('admin_jobs'), <Activity className="w-4 h-4" />)}
                 {renderItem('stats', 'Token & Kosten', <BarChart3 className="w-4 h-4" />)}

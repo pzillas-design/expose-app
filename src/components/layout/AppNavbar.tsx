@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Plus, Settings, LayoutGrid, Wallet } from 'lucide-react';
+import { Plus, Settings, LayoutGrid, Wallet, Shield } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
 import { Theme, Typo, Button } from '../ui/DesignSystem';
@@ -52,8 +52,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         `}
                     >
                         <LayoutGrid className="w-4 h-4" />
-                        Meine Boards
+                        Projekte
                     </NavLink>
+                    {userProfile?.role === 'admin' && (
+                        <NavLink
+                            to="/admin"
+                            className={({ isActive }) => `
+                                flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
+                                ${isActive
+                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
+                            `}
+                        >
+                            <Shield className="w-4 h-4" />
+                            Admin
+                        </NavLink>
+                    )}
                     <NavLink
                         to="/settings"
                         className={({ isActive }) => `
@@ -85,7 +99,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         icon={<Plus className="w-4 h-4" />}
                         className="px-6 h-11 hidden lg:flex"
                     >
-                        Neues Board
+                        Neues Projekt
                     </Button>
 
                     {/* Compact New Board for small screens */}
