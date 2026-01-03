@@ -143,8 +143,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
             className={`relative shrink-0 select-none group transition-all duration-300 ease-out snap-center will-change-transform ${isSelected
-                    ? 'z-30 scale-[1.025]'
-                    : (!hasAnySelection ? 'z-20' : 'z-0 hover:opacity-100')
+                ? 'z-30'
+                : (!hasAnySelection ? 'z-20' : 'z-0 hover:opacity-100')
                 } ${hasAnySelection && !isSelected ? 'opacity-70' : 'opacity-100'}`}
             style={{
                 width: image.width * zoom,
