@@ -437,17 +437,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             </div>
 
                             <div className="flex flex-col gap-4">
-                                {prompt.trim() && getFinalPrompt() !== prompt && (
-                                    <div className={`p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-dashed ${Theme.Colors.Border} animate-in fade-in duration-300`}>
-                                        <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 uppercase tracking-widest block mb-2`}>
-                                            Vorschau Prompt
-                                        </span>
-                                        <p className={`${Typo.Micro} font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed italic`}>
-                                            "{getFinalPrompt()}"
-                                        </p>
-                                    </div>
-                                )}
-
                                 {isMulti && (
                                     <Button
                                         variant="secondary"
@@ -659,7 +648,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 }
                                             }
                                         }}
-                                        disabled={selectedImage.isGenerating}
                                         className="justify-start px-4 h-11 gap-2 border-dashed opacity-60 hover:opacity-100"
                                     >
                                         <Eye className="w-4 h-4 text-zinc-400" />

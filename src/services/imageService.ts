@@ -212,7 +212,8 @@ export const imageService = {
             height: 512,
             realWidth: genWidth,
             realHeight: genHeight,
-            boardId: boardId
+            boardId: boardId,
+            parentId: sourceImage.id
         };
     },
 
