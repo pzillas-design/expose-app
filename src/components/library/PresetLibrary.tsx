@@ -30,7 +30,8 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
 
     // Filter State
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
-    const [expandedSection, setExpandedSection] = useState<'presets' | 'recent'>('presets');
+    const [isPresetsExpanded, setIsPresetsExpanded] = useState(true);
+    const [isRecentExpanded, setIsRecentExpanded] = useState(false);
 
     // --- Derived Data ---
 
@@ -194,16 +195,16 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             {/* PRESETS SECTION */}
                             <div className="flex flex-col">
                                 <button
-                                    onClick={() => setExpandedSection(expandedSection === 'presets' ? 'recent' : 'presets')}
+                                    onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
                                     className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
                                 >
-                                    {expandedSection === 'presets' ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                                    {isPresetsExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                                     <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
                                         {t('presets_header')}
                                     </span>
                                 </button>
 
-                                {expandedSection === 'presets' && (
+                                {isPresetsExpanded && (
                                     <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {pinnedTemplates.length > 0 ? (
                                             pinnedTemplates.map(t => (
@@ -245,22 +246,22 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                 )}
                             </div>
 
-                            {/* RECENT SECTION */}
-                            {recentTemplates.length > 0 && (
-                                <div className="flex flex-col">
-                                    <button
-                                        onClick={() => setExpandedSection(expandedSection === 'recent' ? 'presets' : 'recent')}
-                                        className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
-                                    >
-                                        {expandedSection === 'recent' ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
-                                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
-                                            {t('recent')}
-                                        </span>
-                                    </button>
+                            {/* RECENT SECTION - Always visible header */}
+                            <div className="flex flex-col">
+                                <button
+                                    onClick={() => setIsRecentExpanded(!isRecentExpanded)}
+                                    className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                                >
+                                    {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                                    <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                                        {t('recent')}
+                                    </span>
+                                </button>
 
-                                    {expandedSection === 'recent' && (
-                                        <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                                            {recentTemplates.map(t => (
+                                {isRecentExpanded && (
+                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        {recentTemplates.length > 0 ? (
+                                            recentTemplates.map(t => (
                                                 <button
                                                     key={t.id}
                                                     onClick={() => onSelect(t)}
@@ -280,17 +281,15 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                                         </div>
                                                     </div>
                                                 </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            {pinnedTemplates.length === 0 && recentTemplates.length === 0 && (
-                                <div className="text-center py-8">
-                                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} block mb-2`}>{t('library_empty')}</span>
-                                    <Button variant="secondary" onClick={onRequestCreate} className="mx-auto" icon={<Plus className="w-3 h-3" />}>{t('create_preset')}</Button>
-                                </div>
-                            )}
+                                            ))
+                                        ) : (
+                                            <div className="px-3 py-4 text-center">
+                                                <span className={`${Typo.Label} text-zinc-400 block mb-2`}>{t('no_objects')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </>
                     )}
                 </div>
