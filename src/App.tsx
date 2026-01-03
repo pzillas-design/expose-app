@@ -520,7 +520,7 @@ export function App() {
                 t={t}
             />
 
-            {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} t={t} />}
+            {isAdminOpen && <AdminDashboard isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} t={t} />}
         </div>
     );
 

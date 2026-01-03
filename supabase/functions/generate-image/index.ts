@@ -12,8 +12,11 @@ Deno.serve(async (req) => {
         return new Response('ok', { headers: corsHeaders })
     }
 
+    let newId = null
+    let supabaseAdmin = null
+
     try {
-        const supabaseAdmin = createClient(
+        supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
@@ -27,7 +30,9 @@ Deno.serve(async (req) => {
         const { data: { user } } = await supabaseUser.auth.getUser()
         if (!user) throw new Error('User not found')
 
-        const { sourceImage, prompt, qualityMode, maskDataUrl, newId, modelName, board_id } = await req.json()
+        const payload = await req.json()
+        newId = payload.newId
+        const { sourceImage, prompt, qualityMode, maskDataUrl, modelName, board_id } = payload
         const boardId = board_id; // Alias for consistency in the rest of the file
 
         console.log(`Starting generation for user ${user.id}, quality: ${qualityMode}, job: ${newId}, board: ${boardId}`);
@@ -246,7 +251,7 @@ Deno.serve(async (req) => {
         console.error("Edge Function Error:", error.message)
 
         // Mark job as failed to prevent ghost skeletons
-        if (newId) {
+        if (newId && supabaseAdmin) {
             await supabaseAdmin.from('generation_jobs').update({ status: 'failed', error: error.message }).eq('id', newId)
         }
 
