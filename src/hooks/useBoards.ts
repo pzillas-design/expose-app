@@ -29,14 +29,18 @@ export const useBoards = (userId: string | undefined) => {
     }, [fetchBoards]);
 
     const getNextBoardName = () => {
-        const base = 'meinBot';
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const base = `Projekt ${day}${month}`;
+
         if (!boards.find(b => b.name === base)) return base;
 
         let i = 2;
-        while (boards.find(b => b.name === `${base}${i}`)) {
+        while (boards.find(b => b.name === `${base} ${i}`)) {
             i++;
         }
-        return `${base}${i}`;
+        return `${base} ${i}`;
     };
 
     const createBoard = async (name?: string) => {
