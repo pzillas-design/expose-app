@@ -317,10 +317,18 @@ export const imageService = {
 
         // 3. Reconstruct Skeleton Placeholders from Active Jobs
         activeJobs.forEach(job => {
+            // SKIP if this ID is already loaded as a finished image
+            if (loadedImages.some(img => img.id === job.id)) {
+                console.log(`Deep Sync: Skipping job ${job.id} as it is already loaded as a finished image.`);
+                return;
+            }
+
             // Find parent to inherit dimensions/baseName
             const parent = loadedImages.find(img => img.id === job.parent_id) || dbImages.find(d => d.id === job.parent_id);
 
-            const baseName = 'Generation'; // Avoid using long prompts as titles
+            // Correctly resolve baseName from either CanvasImage (baseName) or DB record (base_name)
+            const parentBaseName = parent ? (('baseName' in parent) ? parent.baseName : (parent as any).base_name) : null;
+            const baseName = parentBaseName || 'Generation';
             const startTime = new Date(job.created_at).getTime();
 
             const skeleton: CanvasImage = {
@@ -329,7 +337,7 @@ export const imageService = {
                 width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
                 height: 512,
                 title: baseName,
-                baseName: parent?.base_name || baseName,
+                baseName: baseName,
                 version: 0, // Will be updated on completion
                 isGenerating: true,
                 generationStartTime: startTime,
@@ -338,7 +346,8 @@ export const imageService = {
                 quality: job.model as any,
                 createdAt: startTime,
                 updatedAt: startTime,
-                annotations: []
+                annotations: [],
+                boardId: job.board_id
             };
             loadedImages.push(skeleton);
         });

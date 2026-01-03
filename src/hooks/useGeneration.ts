@@ -143,17 +143,21 @@ export const useGeneration = ({
 
             if (finalImage) {
                 setRows(prev => {
-                    const newRows = [...prev];
-                    const rIdx = newRows.findIndex(r => r.items.some(i => i.id === newId));
-                    if (rIdx !== -1) {
-                        const r = newRows[rIdx];
-                        const updatedItems = r.items.map(i => i.id === newId ? finalImage : i);
-                        newRows[rIdx] = { ...r, items: updatedItems };
-                    }
-                    return newRows;
+                    return prev.map(row => ({
+                        ...row,
+                        items: row.items.map(i => i.id === newId ? finalImage : i)
+                    }));
                 });
 
-                // NO NEED to persistImage here - Server already did it!
+                if (user && !isAuthDisabled) {
+                    supabase.from('generation_jobs')
+                        .delete()
+                        .eq('id', newId)
+                        .eq('user_id', user.id)
+                        .then(({ error }) => {
+                            if (error) console.warn("Cleanup of successful job row failed:", error);
+                        });
+                }
             } else {
                 throw new Error("Generation returned no image");
             }
@@ -300,15 +304,21 @@ export const useGeneration = ({
 
             if (finalImage) {
                 setRows(prev => {
-                    const newRows = [...prev];
-                    const rIdx = newRows.findIndex(r => r.items.some(i => i.id === newId));
-                    if (rIdx !== -1) {
-                        const r = newRows[rIdx];
-                        const updatedItems = r.items.map(i => i.id === newId ? finalImage : i);
-                        newRows[rIdx] = { ...r, items: updatedItems };
-                    }
-                    return newRows;
+                    return prev.map(row => ({
+                        ...row,
+                        items: row.items.map(i => i.id === newId ? finalImage : i)
+                    }));
                 });
+
+                if (user && !isAuthDisabled) {
+                    supabase.from('generation_jobs')
+                        .delete()
+                        .eq('id', newId)
+                        .eq('user_id', user.id)
+                        .then(({ error }) => {
+                            if (error) console.warn("Cleanup of successful job row failed:", error);
+                        });
+                }
             }
         } catch (error: any) {
             console.error("New Generation failed:", error);
