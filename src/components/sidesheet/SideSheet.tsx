@@ -48,6 +48,8 @@ interface SideSheetProps {
     isBoardEmpty?: boolean;
     qualityMode: GenerationQuality;
     onQualityModeChange: (mode: GenerationQuality) => void;
+    templates: PromptTemplate[];
+    onRefreshTemplates?: () => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -80,10 +82,16 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onCreateNew,
     isBoardEmpty,
     qualityMode,
-    onQualityModeChange
+    onQualityModeChange,
+    templates: globalTemplates,
+    onRefreshTemplates
 }) => {
     const [prompt, setPrompt] = useState('');
-    const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
+    const [templates, setTemplates] = useState<PromptTemplate[]>(globalTemplates);
+
+    useEffect(() => {
+        setTemplates(globalTemplates);
+    }, [globalTemplates]);
 
     // Crop Modal State
     const [isCropOpen, setIsCropOpen] = useState(false);

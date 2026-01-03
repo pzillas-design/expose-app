@@ -474,6 +474,8 @@ export function App() {
                     isBoardEmpty={rows.length === 0}
                     qualityMode={qualityMode}
                     onQualityModeChange={setQualityMode}
+                    templates={state.templates}
+                    onRefreshTemplates={actions.refreshTemplates}
                 />
             )}
 

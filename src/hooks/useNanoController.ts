@@ -17,6 +17,7 @@ import { useGeneration } from './useGeneration';
 import { usePersistence } from './usePersistence';
 import { useAnnotationHandler } from './useAnnotationHandler';
 import { useBoards } from './useBoards';
+import { usePresets } from './usePresets';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -115,6 +116,8 @@ export const useNanoController = () => {
     const {
         boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
     } = useBoards(user?.id);
+
+    const { templates, refreshTemplates } = usePresets();
 
     // --- Board Image Loading ---
     React.useEffect(() => {
@@ -256,7 +259,8 @@ export const useNanoController = () => {
             isAdminOpen,
             currentBoardId,
             boards,
-            isBoardsLoading
+            isBoardsLoading,
+            templates
         },
         actions: {
             setRows,
@@ -310,7 +314,8 @@ export const useNanoController = () => {
             updateBoard,
             fetchBoards,
             resolveBoardIdentifier,
-            handleCreateNew
+            handleCreateNew,
+            refreshTemplates
         },
         refs: {
             scrollContainerRef
