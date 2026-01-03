@@ -90,8 +90,16 @@ export const useSelection = ({
     }, [selectedIds.length, fitSelectionToView]);
 
     // --- Scroll Logic (Focus Tracking) ---
+    const lastZoomFinishedRef = useRef<number>(0);
+
     const handleScroll = useCallback(() => {
         if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1 || !isSnapEnabledRef.current) return;
+
+        // Disable auto-select-on-scroll if zoomed in deep (prevents "jumps" when zooming/panning locally)
+        if (zoom > 1.5 && selectedIds.length === 1) return;
+
+        // Skip if we just finished zooming to let the browser snap settle without switching selection
+        if (Date.now() - lastZoomFinishedRef.current < 500) return;
 
         const container = scrollContainerRef.current;
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
@@ -136,7 +144,13 @@ export const useSelection = ({
                 setSelectedIds([closestImageId]);
             }
         });
-    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds]);
+    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds, zoom]);
+
+    useEffect(() => {
+        if (isZoomingRef.current) {
+            lastZoomFinishedRef.current = Date.now();
+        }
+    }, [zoom, isZoomingRef]);
 
     // Keyboard Navigation
     const moveSelection = useCallback((direction: -1 | 1, fromId?: string) => {

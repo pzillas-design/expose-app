@@ -226,7 +226,7 @@ export const useCanvasNavigation = ({
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     setIsZooming(false);
-                }, 400);
+                }, 600);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
 
