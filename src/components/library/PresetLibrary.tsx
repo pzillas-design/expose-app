@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Search, Bookmark, Plus, Pen, X } from 'lucide-react';
+import { Search, Bookmark, Plus, Pen, X, ChevronDown, ChevronRight } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
 import { Tooltip, Theme, Typo, Button, IconButton } from '@/components/ui/DesignSystem';
 
@@ -30,6 +30,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
 
     // Filter State
     const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
+    const [expandedSection, setExpandedSection] = useState<'presets' | 'recent'>('presets');
 
     // --- Derived Data ---
 
@@ -103,11 +104,6 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                     // STANDARD HEADER
                     <div className="flex-1 flex items-center justify-between animate-in fade-in duration-200">
                         <div className="flex items-center gap-2">
-                            <span
-                                className={`${Typo.Label} ${Theme.Colors.TextSecondary} select-none cursor-default`}
-                            >
-                                {t('presets_header')}
-                            </span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -195,74 +191,100 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                     ) : (
                         /* DEFAULT VIEW */
                         <>
-                            {/* PINNED */}
-                            {pinnedTemplates.length > 0 && (
-                                <div className="space-y-1">
-                                    {pinnedTemplates.map(t => (
-                                        <button
-                                            key={t.id}
-                                            onClick={() => onSelect(t)}
-                                            className={`w-full flex items-center justify-between gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent relative`}
-                                        >
-                                            <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
-                                                <span className={`${Typo.Body} text-zinc-900 dark:text-zinc-200 group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                                                    {t.title}
-                                                </span>
+                            {/* PRESETS SECTION */}
+                            <div className="flex flex-col">
+                                <button
+                                    onClick={() => setExpandedSection(expandedSection === 'presets' ? 'recent' : 'presets')}
+                                    className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                                >
+                                    {expandedSection === 'presets' ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                                    <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                                        {t('presets_header')}
+                                    </span>
+                                </button>
 
-                                                <div
-                                                    onClick={(e) => { e.stopPropagation(); onRequestEdit(t); }}
-                                                    className="p-1 text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                {expandedSection === 'presets' && (
+                                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        {pinnedTemplates.length > 0 ? (
+                                            pinnedTemplates.map(t => (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => onSelect(t)}
+                                                    className={`w-full flex items-center justify-between gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left border border-transparent relative`}
                                                 >
-                                                    <Pen className="w-3 h-3" />
-                                                </div>
-                                            </div>
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+                                                        <span className={`${Typo.Body} text-zinc-900 dark:text-zinc-200 group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
+                                                            {t.title}
+                                                        </span>
 
-                                            {/* Pin Button */}
-                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <div
-                                                    onClick={(e) => { e.stopPropagation(); onTogglePin(t.id); }}
-                                                    className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                                                >
-                                                    <Bookmark className="w-3 h-3 fill-zinc-400 dark:fill-zinc-500 group-hover:fill-zinc-600 dark:group-hover:fill-zinc-300 transition-colors" />
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                                                        <div
+                                                            onClick={(e) => { e.stopPropagation(); onRequestEdit(t); }}
+                                                            className="p-1 text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                                        >
+                                                            <Pen className="w-3 h-3" />
+                                                        </div>
+                                                    </div>
 
-                            {/* HISTORY */}
+                                                    {/* Pin Button */}
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div
+                                                            onClick={(e) => { e.stopPropagation(); onTogglePin(t.id); }}
+                                                            className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                                        >
+                                                            <Bookmark className="w-3 h-3 fill-zinc-400 dark:fill-zinc-500 group-hover:fill-zinc-600 dark:group-hover:fill-zinc-300 transition-colors" />
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="px-3 py-4 text-center">
+                                                <span className={`${Typo.Label} text-zinc-400 block mb-2`}>{t('library_empty')}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* RECENT SECTION */}
                             {recentTemplates.length > 0 && (
-                                <div className="space-y-2 pt-2">
-                                    <div className={`${Typo.LabelSmall} ${Theme.Colors.TextSecondary} pl-3 border-t ${Theme.Colors.BorderSubtle} pt-4 pb-1`}>
-                                        {t('recent')}
-                                    </div>
-                                    <div className="space-y-1">
-                                        {recentTemplates.map(t => (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => onSelect(t)}
-                                                className={`w-full flex items-center gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
-                                            >
-                                                <div className="flex-1 min-w-0">
-                                                    <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                                                        {t.title}
+                                <div className="flex flex-col">
+                                    <button
+                                        onClick={() => setExpandedSection(expandedSection === 'recent' ? 'presets' : 'recent')}
+                                        className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors"
+                                    >
+                                        {expandedSection === 'recent' ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                                            {t('recent')}
+                                        </span>
+                                    </button>
+
+                                    {expandedSection === 'recent' && (
+                                        <div className="space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            {recentTemplates.map(t => (
+                                                <button
+                                                    key={t.id}
+                                                    onClick={() => onSelect(t)}
+                                                    className={`w-full flex items-center gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
+                                                            {t.title}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <div
-                                                        onClick={(e) => { e.stopPropagation(); onTogglePin(t.id); }}
-                                                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors p-1"
-                                                    >
-                                                        <Bookmark className="w-3 h-3" />
+                                                    <div className="flex items-center gap-1">
+                                                        <div
+                                                            onClick={(e) => { e.stopPropagation(); onTogglePin(t.id); }}
+                                                            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors p-1"
+                                                        >
+                                                            <Bookmark className="w-3 h-3" />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
-
                             {pinnedTemplates.length === 0 && recentTemplates.length === 0 && (
                                 <div className="text-center py-8">
                                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} block mb-2`}>{t('library_empty')}</span>

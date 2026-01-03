@@ -196,6 +196,7 @@ export const imageService = {
             isGenerating: false,
             generationStartTime: undefined,
             generationPrompt: prompt,
+            quality: qualityMode,
             userDraftPrompt: '',
             version: (sourceImage.version || 1) + 1,
             title: sourceImage.title.includes('_v')

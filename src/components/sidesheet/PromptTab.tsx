@@ -594,17 +594,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             </span>
                                             <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
                                                 {(() => {
-                                                    // 1. Prefer exact API-reported model version
-                                                    if (selectedImage.modelVersion) return selectedImage.modelVersion;
-
-                                                    // 2. Fallback to mapped friendly names based on requested quality
+                                                    // 1. Map to friendly branded names based on recorded quality
                                                     const q = selectedImage.quality;
-                                                    switch (q) {
-                                                        case 'pro-4k': return 'Nano Banana Pro 4K';
-                                                        case 'pro-2k': return 'Nano Banana Pro 2K';
-                                                        case 'pro-1k': return 'Nano Banana Pro 1K';
-                                                        case 'fast': default: return 'Nano Banana';
+                                                    if (q) {
+                                                        switch (q) {
+                                                            case 'pro-4k': return 'Nano Banana Pro 4K';
+                                                            case 'pro-2k': return 'Nano Banana Pro 2K';
+                                                            case 'pro-1k': return 'Nano Banana Pro 1K';
+                                                            case 'fast': return 'Nano Banana (Fast)';
+                                                        }
                                                     }
+
+                                                    // 2. Fallback to API-reported model version
+                                                    return selectedImage.modelVersion || 'Nano Banana';
                                                 })()}
                                             </span>
                                         </div>

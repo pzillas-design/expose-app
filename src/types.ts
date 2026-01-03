@@ -97,6 +97,7 @@ export interface PromptTemplate {
   lastUsed?: number;
   controls?: PresetControl[];
   lang?: 'de' | 'en'; // Localization
+  isHistory?: boolean; // New: to distinguish on-the-fly prompts
   createdAt?: number; // DB Prep
 }
 

@@ -11,12 +11,23 @@ export const usePresets = () => {
         setIsLoading(true);
         try {
             const globalPresets = await adminService.getGlobalPresets();
+
+            // Merge logic: Start with defaults, then add DB presets. 
+            // If a DB preset has the same title and lang as a default, the DB version wins.
+            const merged = [...DEFAULT_TEMPLATES];
+
             if (globalPresets && globalPresets.length > 0) {
-                setTemplates(globalPresets);
-            } else {
-                // Fallback to defaults if DB is empty
-                setTemplates(DEFAULT_TEMPLATES);
+                globalPresets.forEach(dbPreset => {
+                    const existingIdx = merged.findIndex(m => m.title === dbPreset.title && m.lang === dbPreset.lang);
+                    if (existingIdx > -1) {
+                        merged[existingIdx] = dbPreset;
+                    } else {
+                        merged.push(dbPreset);
+                    }
+                });
             }
+
+            setTemplates(merged);
         } catch (error) {
             console.error('Failed to fetch global presets:', error);
             setTemplates(DEFAULT_TEMPLATES);

@@ -253,13 +253,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             }
             const newHistoryItem: PromptTemplate = {
                 id: generateId(),
-                title: p.length > 20 ? p.substring(0, 20) + '...' : p,
+                title: p.length > 45 ? p.substring(0, 45) + '...' : p,
                 prompt: p,
                 tags: [],
                 isPinned: false,
                 isCustom: false,
                 usageCount: 1,
                 lastUsed: Date.now(),
+                isHistory: true,
                 createdAt: Date.now(),
                 lang: lang
             };
