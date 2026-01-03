@@ -48,6 +48,27 @@ export const useCanvasNavigation = ({
         const startScrollX = container?.scrollLeft || 0;
         const startScrollY = container?.scrollTop || 0;
 
+        let finalTargetScroll = targetScroll;
+
+        if (!finalTargetScroll && container) {
+            // Zoom to viewport center if no target provided
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const padX = window.innerWidth / 2;
+            const padY = window.innerHeight / 2;
+
+            // Content Point at viewport center (unscaled)
+            const contentX = (startScrollX + centerX - padX) / zoom;
+            const contentY = (startScrollY + centerY - padY) / zoom;
+
+            finalTargetScroll = {
+                x: (padX + (contentX * clampedTargetZoom)) - centerX,
+                y: (padY + (contentY * clampedTargetZoom)) - centerY
+            };
+        }
+
         const startTime = performance.now();
 
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
@@ -63,9 +84,9 @@ export const useCanvasNavigation = ({
             setZoom(nextZoom);
 
             // Interpolate Scroll synchronously
-            if (targetScroll && container) {
-                const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
-                const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
+            if (finalTargetScroll && container) {
+                const nextScrollX = startScrollX + (finalTargetScroll.x - startScrollX) * ease;
+                const nextScrollY = startScrollY + (finalTargetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
             }
@@ -75,9 +96,9 @@ export const useCanvasNavigation = ({
             } else {
                 setZoom(clampedTargetZoom);
                 // Ensure final position is exact
-                if (targetScroll && container) {
-                    container.scrollLeft = targetScroll.x;
-                    container.scrollTop = targetScroll.y;
+                if (finalTargetScroll && container) {
+                    container.scrollLeft = finalTargetScroll.x;
+                    container.scrollTop = finalTargetScroll.y;
                 }
                 zoomAnimFrameRef.current = null;
                 setIsZooming(false);
@@ -209,10 +230,36 @@ export const useCanvasNavigation = ({
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
 
-                // Simple Zoom (Snap will handle centering)
+                // Calculate new zoom
                 const delta = -e.deltaY;
                 const factor = Math.exp(delta * 0.008);
-                setZoom(prev => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev * factor)));
+                const targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+
+                // Zoom-to-Cursor Logic (Stable Centering)
+                const rect = container.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const scrollLeft = container.scrollLeft;
+                const scrollTop = container.scrollTop;
+
+                const padX = window.innerWidth / 2;
+                const padY = window.innerHeight / 2;
+
+                // Point on canvas under the mouse
+                const contentX = (scrollLeft + mouseX - padX) / zoom;
+                const contentY = (scrollTop + mouseY - padY) / zoom;
+
+                try {
+                    flushSync(() => {
+                        setZoom(targetZoom);
+                    });
+                } catch (e) {
+                    setZoom(targetZoom);
+                }
+
+                container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
+                container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
