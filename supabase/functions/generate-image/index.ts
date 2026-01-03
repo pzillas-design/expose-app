@@ -214,7 +214,13 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify({
             success: true,
-            image: { ...newImage, src: `data:image/jpeg;base64,${generatedBase64}`, isGenerating: false }
+            // Return both 'src' (new) and 'imageBase64' (legacy) for backward compatibility
+            image: {
+                ...newImage,
+                src: `data:image/jpeg;base64,${generatedBase64}`,
+                imageBase64: `data:image/jpeg;base64,${generatedBase64}`,
+                isGenerating: false
+            }
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
