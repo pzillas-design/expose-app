@@ -45,6 +45,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
+    const [hiddenControlIds, setHiddenControlIds] = useState<string[]>([]);
 
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
@@ -129,6 +130,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const handleSelectPreset = (t: PromptTemplate) => {
         onSelectTemplate(t);
         setPrompt(t.prompt);
+        setHiddenControlIds([]); // Reset hidden controls when selecting new preset
 
         if (t.controls && t.controls.length > 0) {
             setActiveTemplate(t);
@@ -136,6 +138,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         } else {
             setActiveTemplate(null);
             setControlValues({});
+        }
+        if (textAreaRef.current) {
+            textAreaRef.current.focus();
         }
     };
 
@@ -159,6 +164,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const handleReset = () => {
         setControlValues({});
         setActiveTemplate(null);
+        setHiddenControlIds([]);
     };
 
     const handleClearControl = (controlId: string) => {
@@ -167,6 +173,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             delete newState[controlId];
             return newState;
         });
+        setHiddenControlIds(prev => [...prev, controlId]);
     };
 
     const handleDoGenerate = () => {
@@ -256,40 +263,42 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {/* Active Variables Section */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
                                         <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50 dark:bg-zinc-900/50`}>
-                                            {activeTemplate.controls.map((ctrl, idx) => (
-                                                <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.Border}` : ''}`}>
-                                                    <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
-                                                        <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
-                                                            {ctrl.label}
-                                                        </span>
-                                                        <IconButton
-                                                            icon={<X className="w-3.5 h-3.5" />}
-                                                            onClick={() => handleClearControl(ctrl.id)}
-                                                            tooltip="Entfernen"
-                                                            className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
-                                                        />
-                                                    </div>
-                                                    <div className="px-3 pb-3 flex flex-wrap gap-1.5">
-                                                        {ctrl.options.map((opt) => {
-                                                            const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                            return (
-                                                                <button
-                                                                    key={opt.id}
-                                                                    onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                    className={`
+                                            {activeTemplate.controls
+                                                .filter(c => !hiddenControlIds.includes(c.id))
+                                                .map((ctrl, idx) => (
+                                                    <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.Border}` : ''}`}>
+                                                        <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
+                                                            <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
+                                                                {ctrl.label}
+                                                            </span>
+                                                            <IconButton
+                                                                icon={<X className="w-3.5 h-3.5" />}
+                                                                onClick={() => handleClearControl(ctrl.id)}
+                                                                tooltip="Entfernen"
+                                                                className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
+                                                            />
+                                                        </div>
+                                                        <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+                                                            {ctrl.options.map((opt) => {
+                                                                const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                        className={`
                                                                         px-2.5 py-1 rounded-md text-[10px] font-medium transition-all font-mono shadow-sm
                                                                         ${isSelected
-                                                                            ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white'
-                                                                            : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
+                                                                                ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white'
+                                                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
                                                                     `}
-                                                                >
-                                                                    {opt.label}
-                                                                </button>
-                                                            );
-                                                        })}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
                                         </div>
                                     )}
                                 </div>

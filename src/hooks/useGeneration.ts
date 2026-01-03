@@ -170,6 +170,17 @@ export const useGeneration = ({
                 return newRows;
             });
 
+            // Deep Cleanup: Delete from DB if auth is enabled
+            if (user && !isAuthDisabled) {
+                supabase.from('generation_jobs')
+                    .delete()
+                    .eq('id', newId)
+                    .eq('user_id', user.id)
+                    .then(({ error }) => {
+                        if (error) console.warn("Failed to clean up failed job row from DB:", error);
+                    });
+            }
+
             if (!isPro) {
                 setCredits(prev => prev + cost);
                 try {
