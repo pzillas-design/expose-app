@@ -16,9 +16,11 @@ import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 
+const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
 const BoardRedirect = () => {
     const { boardId } = useParams();
-    return <Navigate to={`/project/${boardId}`} replace />;
+    return <Navigate to={`/projects/${boardId}`} replace />;
 };
 
 export function App() {
@@ -286,14 +288,17 @@ export function App() {
     const handleCreateBoardAndNavigate = async () => {
         const newBoard = await createBoard();
         if (newBoard) {
-            navigate(`/project/${newBoard.name}`);
+            navigate(`/projects/${newBoard.id}`); // Use ID by default for stability
         }
     };
 
     const handleSelectBoard = (id: string | null) => {
         if (id) {
             const b = boards.find(board => board.id === id);
-            navigate(`/project/${b ? b.name : id}`);
+            // If it has a custom name, use it as a slug-like part (but ID is safer for now)
+            // The user wants expose.ae/projects/projekt-3-1
+            const slug = b ? slugify(b.name) : id;
+            navigate(`/projects/${b ? b.id : id}`); // Keeping ID for now, but path is /projects/
         } else {
             navigate('/projects');
         }
@@ -378,7 +383,7 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isAutoScrolling && !isZooming ? 'snap-both snap-mandatory' : ''}`}
+                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative`}
                     style={{ overflowAnchor: 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}
@@ -435,39 +440,41 @@ export function App() {
                 </div>
             </div>
 
-            <SideSheet
-                selectedImage={selectedImage}
-                selectedImages={selectedImages}
-                sideSheetMode={sideSheetMode}
-                onModeChange={setSideSheetMode}
-                brushSize={brushSize}
-                onBrushSizeChange={setBrushSize}
-                onGenerate={handleGenerate}
-                onUpdateAnnotations={handleUpdateAnnotations}
-                onUpdatePrompt={handleUpdatePrompt}
-                onDeleteImage={requestDelete}
-                onDeselectAllButOne={handleDeselectAllButOne}
-                onDeselectAll={() => selectMultiple([])}
-                onGenerateMore={handleGenerateMore}
-                onNavigateParent={handleNavigateParent}
-                isGlobalDragOver={isDragOver}
-                onGlobalDragLeave={() => setIsDragOver(false)}
-                t={t}
-                lang={currentLang}
-                fullLibrary={fullLibrary}
-                onAddUserCategory={addUserCategory}
-                onDeleteUserCategory={deleteUserCategory}
-                onAddUserItem={addUserItem}
-                onDeleteUserItem={deleteUserItem}
-                maskTool={maskTool}
-                onMaskToolChange={setMaskTool}
+            {selectedIds.length > 0 && (
+                <SideSheet
+                    selectedImage={selectedImage}
+                    selectedImages={selectedImages}
+                    sideSheetMode={sideSheetMode}
+                    onModeChange={setSideSheetMode}
+                    brushSize={brushSize}
+                    onBrushSizeChange={setBrushSize}
+                    onGenerate={handleGenerate}
+                    onUpdateAnnotations={handleUpdateAnnotations}
+                    onUpdatePrompt={handleUpdatePrompt}
+                    onDeleteImage={requestDelete}
+                    onDeselectAllButOne={handleDeselectAllButOne}
+                    onDeselectAll={() => selectMultiple([])}
+                    onGenerateMore={handleGenerateMore}
+                    onNavigateParent={handleNavigateParent}
+                    isGlobalDragOver={isDragOver}
+                    onGlobalDragLeave={() => setIsDragOver(false)}
+                    t={t}
+                    lang={currentLang}
+                    fullLibrary={fullLibrary}
+                    onAddUserCategory={addUserCategory}
+                    onDeleteUserCategory={deleteUserCategory}
+                    onAddUserItem={addUserItem}
+                    onDeleteUserItem={deleteUserItem}
+                    maskTool={maskTool}
+                    onMaskToolChange={setMaskTool}
 
-                onUpload={() => document.getElementById('ctx-upload-input')?.click()}
-                onCreateNew={() => setIsCreationModalOpen(true)}
-                isBoardEmpty={rows.length === 0}
-                qualityMode={qualityMode}
-                onQualityModeChange={setQualityMode}
-            />
+                    onUpload={() => document.getElementById('ctx-upload-input')?.click()}
+                    onCreateNew={() => setIsCreationModalOpen(true)}
+                    isBoardEmpty={rows.length === 0}
+                    qualityMode={qualityMode}
+                    onQualityModeChange={setQualityMode}
+                />
+            )}
 
             <input
                 id="ctx-upload-input"
@@ -555,7 +562,7 @@ export function App() {
     return (
         <Routes>
             <Route path="/projects" element={boardsPage} />
-            <Route path="/project/:boardId" element={canvasView} />
+            <Route path="/projects/:boardId" element={canvasView} />
             <Route path="/settings" element={settingsPage} />
             <Route path="/settings/:tab" element={settingsPage} />
             <Route path="/admin" element={adminPage} />
@@ -564,6 +571,7 @@ export function App() {
             <Route path="/boards" element={<Navigate to="/projects" replace />} />
             <Route path="/projekte" element={<Navigate to="/projects" replace />} />
             <Route path="/board/:boardId" element={<BoardRedirect />} />
+            <Route path="/project/:boardId" element={<BoardRedirect />} />
             <Route path="/projekt/:boardId" element={<BoardRedirect />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
         </Routes>

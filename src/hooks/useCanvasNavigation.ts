@@ -22,13 +22,25 @@ export const useCanvasNavigation = ({
     const [zoom, setZoom] = useState(1.25);
     const zoomAnimFrameRef = useRef<number | null>(null);
     const isZoomingRef = useRef(false);
+    const [isZooming, setIsZoomingState] = useState(false);
     const zoomTimeoutRef = useRef<number | null>(null);
     const isAutoScrollingRef = useRef(false);
+    const [isAutoScrolling, setIsAutoScrollingState] = useState(false);
     const autoScrollTimeoutRef = useRef<number | null>(null);
+
+    const setIsZooming = useCallback((val: boolean) => {
+        isZoomingRef.current = val;
+        setIsZoomingState(val);
+    }, []);
+
+    const setIsAutoScrolling = useCallback((val: boolean) => {
+        isAutoScrollingRef.current = val;
+        setIsAutoScrollingState(val);
+    }, []);
 
     // --- Zoom Logic (Synchronized) ---
     const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }) => {
-        isZoomingRef.current = true;
+        setIsZooming(true);
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
         const startZoom = zoom;
 
@@ -69,7 +81,7 @@ export const useCanvasNavigation = ({
                     container.scrollTop = targetScroll.y;
                 }
                 zoomAnimFrameRef.current = null;
-                isZoomingRef.current = false;
+                setIsZooming(false);
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
@@ -167,9 +179,9 @@ export const useCanvasNavigation = ({
 
     // Snap to single item logic
     const snapToItem = useCallback((id: string) => {
-        isAutoScrollingRef.current = true;
+        setIsAutoScrolling(true);
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
-        autoScrollTimeoutRef.current = window.setTimeout(() => { isAutoScrollingRef.current = false; }, 800);
+        autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, 800);
 
         // Robust scroll into view with retries
         let attempts = 0;
@@ -194,7 +206,7 @@ export const useCanvasNavigation = ({
         // Helps prevent native browser zoom and handle smooth pinch
         const onGestureStart = (e: any) => {
             e.preventDefault();
-            isZoomingRef.current = true;
+            setIsZooming(true);
         };
 
         const onGestureChange = (e: any) => {
@@ -239,7 +251,7 @@ export const useCanvasNavigation = ({
 
         const onGestureEnd = (e: any) => {
             e.preventDefault();
-            isZoomingRef.current = false;
+            setIsZooming(false);
         };
 
         // --- Wheel Handling (Chrome/Edge/Firefox) ---
@@ -251,10 +263,10 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                isZoomingRef.current = true;
+                setIsZooming(true);
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
-                    isZoomingRef.current = false;
+                    setIsZooming(false);
                 }, 400);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
@@ -343,6 +355,8 @@ export const useCanvasNavigation = ({
         smoothZoomTo,
         fitSelectionToView,
         snapToItem,
+        isZooming,
+        isAutoScrolling,
         isZoomingRef,
         isAutoScrollingRef,
         getMostVisibleItem
