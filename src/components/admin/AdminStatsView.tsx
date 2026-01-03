@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, BarChart3, TrendingUp, DollarSign } from 'lucide-react';
+import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, Newspaper, ExternalLink, Eye } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -83,6 +83,71 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 />
             </div>
 
+            {/* Model Health & News */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                    <h3 className={`${Typo.H2} mb-4 flex items-center gap-2`}>
+                        <Activity className="w-4 h-4 text-emerald-500" />
+                        Model-Health (API Status)
+                    </h3>
+                    <div className="space-y-4">
+                        <HealthItem
+                            name="Nano Banana"
+                            modelId="gemini-2.5-flash-image"
+                            status="stable"
+                            desc="Optimiert für Speed/Cost. Aktuellste Version Jan 2026."
+                        />
+                        <HealthItem
+                            name="Nano Banana Pro"
+                            modelId="gemini-3-pro-image-preview"
+                            status="preview"
+                            desc="High-Fidelity mit Reasoning. Frontier-Modell."
+                        />
+                        <div className="pt-2">
+                            <a
+                                href="https://ai.google.dev/gemini-api/docs/models"
+                                target="_blank"
+                                className="text-[10px] text-blue-500 hover:underline flex items-center gap-1 font-bold uppercase tracking-wider"
+                            >
+                                <Eye className="w-3 h-3" />
+                                Google Modell-Liste prüfen
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                    <h3 className={`${Typo.H2} mb-4 flex items-center gap-2`}>
+                        <Newspaper className="w-4 h-4 text-blue-500" />
+                        Gemini API News
+                    </h3>
+                    <div className="space-y-3">
+                        <NewsItem
+                            date="Jan 2026"
+                            tag="NEW"
+                            title="Gemini 3 Pro Image Preview"
+                            desc="Native Image Generation jetzt mit Text-Rendering Support."
+                        />
+                        <NewsItem
+                            date="Dec 2025"
+                            tag="UPDATE"
+                            title="Gemini 2.5 Flash Image"
+                            desc="Standard-Version für Nano Banana released. 40% günstiger."
+                        />
+                        <div className="pt-2">
+                            <a
+                                href="https://ai.google.dev/gemini-api/docs/release-notes"
+                                target="_blank"
+                                className="text-[10px] text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1 font-bold uppercase tracking-wider transition-colors"
+                            >
+                                <ExternalLink className="w-3 h-3" />
+                                Offizielle Release Notes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Detailed Table */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
                 <h3 className={`${Typo.H2} mb-4`}>Verbrauch nach Modell</h3>
@@ -144,5 +209,34 @@ const StatCard = ({ title, value, icon, desc }: { title: string, value: string, 
         </div>
         <div className="text-2xl font-bold font-mono tracking-tight">{value}</div>
         {desc && <div className="text-[10px] text-zinc-500 italic">{desc}</div>}
+    </div>
+);
+
+const HealthItem = ({ name, modelId, status, desc }: { name: string, modelId: string, status: 'stable' | 'preview' | 'deprecated', desc: string }) => (
+    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+        <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-tight">{name}</span>
+                <span className="text-[9px] font-mono p-0.5 px-1.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-500">{modelId}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${status === 'stable' ? 'bg-emerald-500' : status === 'preview' ? 'bg-blue-500' : 'bg-red-500'} animate-pulse`} />
+                <span className="text-[9px] font-bold uppercase text-zinc-400">{status}</span>
+            </div>
+        </div>
+        <div className="text-[10px] text-zinc-500 leading-tight">{desc}</div>
+    </div>
+);
+
+const NewsItem = ({ date, tag, title, desc }: { date: string, tag: string, title: string, desc: string }) => (
+    <div className="flex gap-3">
+        <div className="shrink-0 text-[10px] font-mono text-zinc-400 pt-0.5">{date}</div>
+        <div className="space-y-1">
+            <div className="flex items-center gap-2">
+                <span className="text-[8px] font-bold px-1 rounded bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 uppercase">{tag}</span>
+                <span className="text-xs font-bold tracking-tight">{title}</span>
+            </div>
+            <div className="text-[10px] text-zinc-500 leading-tight">{desc}</div>
+        </div>
     </div>
 );
