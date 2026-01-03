@@ -375,7 +375,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 <IconButton
                                     icon={<ChevronLeft className="w-4 h-4" />}
                                     onClick={() => onDeselectAll?.()}
-                                    tooltip={t('close')}
+                                    tooltip={t('tt_deselect')}
                                 />
                                 {isMulti && selectedImages ? (
                                     <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
