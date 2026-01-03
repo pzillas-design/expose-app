@@ -324,7 +324,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col mb-8"> {/* Even more space above model */}
+                            <div className="flex flex-col mb-5"> {/* Reduced space above generate button */}
                                 <div className="grid grid-cols-3 gap-2">
                                     <Button
                                         variant="secondary"
@@ -444,7 +444,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-3">
                                 {isMulti && (
                                     <Button
                                         variant="secondary"
@@ -468,7 +468,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             : t('generate')}
                                 </Button>
 
-                                <div className="mt-4 flex justify-center">
+                                <div className="mt-2 flex justify-center">
                                     <div className="relative">
                                         <Tooltip text={t('tt_model')} side="top">
                                             <button
