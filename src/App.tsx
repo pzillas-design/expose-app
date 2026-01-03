@@ -64,21 +64,22 @@ export function App() {
     useEffect(() => {
         const syncUrl = async () => {
             const pathParts = location.pathname.split('/');
-            if (pathParts[1] === 'project' && pathParts[2]) {
+            // Check for /projects/:boardId (pathParts will be ['', 'projects', ':boardId'])
+            if (pathParts[1] === 'projects' && pathParts[2]) {
                 const identifier = decodeURIComponent(pathParts[2]);
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
                 if (resolved && resolved.id !== currentBoardId) {
                     setCurrentBoardId(resolved.id);
                 }
-            } else if (pathParts[1] === 'projects' || location.pathname === '/') {
+            } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
                 if (currentBoardId !== null) {
                     setCurrentBoardId(null);
                 }
             }
         };
         syncUrl();
-    }, [location.pathname, actions, currentBoardId, setCurrentBoardId]);
+    }, [location.pathname, actions, currentBoardId]);
 
 
 
