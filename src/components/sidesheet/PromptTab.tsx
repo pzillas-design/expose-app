@@ -290,7 +290,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-blue-500 dark:text-blue-400'}`} />}
-                                        className="px-2"
+                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('mask_btn')}
                                     >
                                         {t('mask_btn')}
@@ -300,7 +300,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={onAddObject}
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Armchair className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-purple-500 dark:text-purple-400'}`} />}
-                                        className="px-2"
+                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('object_btn')}
                                     >
                                         {t('object_btn')}
@@ -310,7 +310,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
                                         icon={<Paperclip className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />}
-                                        className="px-2"
+                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
                                         tooltip={t('upload_ref')}
                                     >
                                         {t('image_btn')}
