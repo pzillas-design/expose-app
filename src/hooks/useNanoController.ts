@@ -124,11 +124,24 @@ export const useNanoController = () => {
         if (user && currentBoardId) {
             imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
                 setRows(loadedRows);
+
+                // Auto-select newest image if nothing is selected
+                const allLoaded = loadedRows.flatMap(r => r.items);
+                if (allLoaded.length > 0 && selectedIds.length === 0) {
+                    // Sort to find newest
+                    const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+                    if (newest) {
+                        // Small delay to ensure canvas items are rendered before snapping
+                        setTimeout(() => {
+                            selectAndSnap(newest.id);
+                        }, 500);
+                    }
+                }
             });
         } else {
             setRows([]);
         }
-    }, [user, currentBoardId]);
+    }, [user, currentBoardId, selectAndSnap]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
