@@ -74,11 +74,12 @@ export function App() {
     }, [location.pathname, actions, currentBoardId, setCurrentBoardId]);
 
     useEffect(() => {
-        const path = window.location.pathname;
-        if (path === '/admin') {
+        if (location.pathname === '/admin') {
             setIsAdminOpen(true);
+        } else if (isAdminOpen) {
+            setIsAdminOpen(false);
         }
-    }, [setIsAdminOpen]);
+    }, [location.pathname, setIsAdminOpen, isAdminOpen]);
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
@@ -520,7 +521,16 @@ export function App() {
                 t={t}
             />
 
-            {isAdminOpen && <AdminDashboard isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} t={t} />}
+            {isAdminOpen && (
+                <AdminDashboard
+                    isOpen={isAdminOpen}
+                    onClose={() => {
+                        setIsAdminOpen(false);
+                        navigate('/boards');
+                    }}
+                    t={t}
+                />
+            )}
         </div>
     );
 
