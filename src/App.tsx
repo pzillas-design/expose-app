@@ -16,6 +16,11 @@ import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 
+const BoardRedirect = () => {
+    const { boardId } = useParams();
+    return <Navigate to={`/project/${boardId}`} replace />;
+};
+
 export function App() {
     const { state, actions, refs, t } = useNanoController();
     const navigate = useNavigate();
@@ -57,14 +62,14 @@ export function App() {
     useEffect(() => {
         const syncUrl = async () => {
             const pathParts = location.pathname.split('/');
-            if (pathParts[1] === 'board' && pathParts[2]) {
+            if (pathParts[1] === 'project' && pathParts[2]) {
                 const identifier = decodeURIComponent(pathParts[2]);
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
                 if (resolved && resolved.id !== currentBoardId) {
                     setCurrentBoardId(resolved.id);
                 }
-            } else if (pathParts[1] === 'boards' || location.pathname === '/') {
+            } else if (pathParts[1] === 'projects' || location.pathname === '/') {
                 if (currentBoardId !== null) {
                     setCurrentBoardId(null);
                 }
@@ -281,16 +286,16 @@ export function App() {
     const handleCreateBoardAndNavigate = async () => {
         const newBoard = await createBoard();
         if (newBoard) {
-            navigate(`/board/${newBoard.name}`);
+            navigate(`/project/${newBoard.name}`);
         }
     };
 
     const handleSelectBoard = (id: string | null) => {
         if (id) {
             const b = boards.find(board => board.id === id);
-            navigate(`/board/${b ? b.name : id}`);
+            navigate(`/project/${b ? b.name : id}`);
         } else {
-            navigate('/boards');
+            navigate('/projects');
         }
     };
 
@@ -549,12 +554,18 @@ export function App() {
 
     return (
         <Routes>
-            <Route path="/boards" element={boardsPage} />
-            <Route path="/board/:boardId" element={canvasView} />
+            <Route path="/projects" element={boardsPage} />
+            <Route path="/project/:boardId" element={canvasView} />
             <Route path="/settings" element={settingsPage} />
             <Route path="/settings/:tab" element={settingsPage} />
             <Route path="/admin" element={adminPage} />
-            <Route path="/" element={<Navigate to="/boards" replace />} />
+
+            {/* Redirects for clean SEO and legacy links */}
+            <Route path="/boards" element={<Navigate to="/projects" replace />} />
+            <Route path="/projekte" element={<Navigate to="/projects" replace />} />
+            <Route path="/board/:boardId" element={<BoardRedirect />} />
+            <Route path="/projekt/:boardId" element={<BoardRedirect />} />
+            <Route path="/" element={<Navigate to="/projects" replace />} />
         </Routes>
     );
 }

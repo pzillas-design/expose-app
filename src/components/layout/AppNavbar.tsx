@@ -35,7 +35,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <header className="sticky top-0 z-50 w-full backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70">
             <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-20 flex items-center justify-between">
                 {/* Brand */}
-                <NavLink to="/boards" className="flex items-center gap-4 group transition-all duration-300">
+                <NavLink to="/projects" className="flex items-center gap-4 group transition-all duration-300">
                     <Logo className="w-10 h-10 group-hover:scale-110 transition-transform duration-500" />
                     <Wordmark className="h-6 text-zinc-900 dark:text-white" />
                 </NavLink>
@@ -43,7 +43,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 {/* Navigation Links */}
                 <nav className="hidden md:flex items-center gap-2 bg-zinc-100/50 dark:bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5">
                     <NavLink
-                        to="/boards"
+                        to="/projects"
                         className={({ isActive }) => `
                             flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
                             ${isActive
