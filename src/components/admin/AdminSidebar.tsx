@@ -1,9 +1,9 @@
 import React from 'react';
-import { Users, Activity, Layers, Box, ChevronLeft } from 'lucide-react';
+import { Users, Activity, Layers, Box, ChevronLeft, BarChart3 } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 
-export type AdminTab = 'users' | 'jobs' | 'presets' | 'objects';
+export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'objects';
 
 interface AdminSidebarProps {
     activeTab: AdminTab;
@@ -37,6 +37,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, onTabChan
             <div className="p-3 space-y-1">
                 {renderItem('users', t('admin_users'), <Users className="w-4 h-4" />)}
                 {renderItem('jobs', t('admin_jobs'), <Activity className="w-4 h-4" />)}
+                {renderItem('stats', 'Token & Kosten', <BarChart3 className="w-4 h-4" />)}
                 {renderItem('presets', t('admin_presets'), <Layers className="w-4 h-4" />)}
                 {renderItem('objects', t('admin_objects'), <Box className="w-4 h-4" />)}
             </div>

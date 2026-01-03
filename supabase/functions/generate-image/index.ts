@@ -76,16 +76,16 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-2.0-flash-exp';
+        let finalModelName = 'gemini-3-pro-preview'; // Default to Pro
         switch (qualityMode) {
             case 'fast':
-                finalModelName = 'gemini-2.0-flash-exp';
+                finalModelName = 'gemini-3-flash-preview';
                 break;
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
             default:
-                finalModelName = 'gemini-2.0-flash-exp';
+                finalModelName = 'gemini-3-pro-preview';
                 break;
         }
 
@@ -208,10 +208,23 @@ Deno.serve(async (req) => {
         const { error: dbError } = await supabaseAdmin.from('canvas_images').insert(newImage)
         if (dbError) throw dbError
 
-        // 7. Update Job Status
-        await supabaseAdmin.from('generation_jobs').update({ status: 'completed' }).eq('id', newId)
+        // 7. Update Job Status & Usage Tracking
+        const usage = resultData.usageMetadata || {};
+        const tokensPrompt = usage.promptTokenCount || 0;
+        const tokensCompletion = usage.candidatesTokenCount || 0;
+        const tokensTotal = usage.totalTokenCount || 0;
+        const estimatedApiCost = (tokensPrompt * 0.0000001) + (tokensCompletion * 0.0000004);
 
-        console.log(`Generation successful for job ${newId}`);
+        await supabaseAdmin.from('generation_jobs').update({
+            status: 'completed',
+            model: finalModelName,
+            api_cost: estimatedApiCost,
+            tokens_prompt: tokensPrompt,
+            tokens_completion: tokensCompletion,
+            tokens_total: tokensTotal
+        }).eq('id', newId)
+
+        console.log(`Generation successful for job ${newId}. Usage: ${tokensTotal} tokens, Cost: $${estimatedApiCost.toFixed(6)}`);
 
         return new Response(JSON.stringify({
             success: true,

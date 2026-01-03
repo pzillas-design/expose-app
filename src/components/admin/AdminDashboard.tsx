@@ -6,6 +6,7 @@ import { Theme } from '@/components/ui/DesignSystem';
 import { AdminSidebar, AdminTab } from './AdminSidebar';
 import { AdminUsersView } from './AdminUsersView';
 import { AdminJobsView } from './AdminJobsView';
+import { AdminStatsView } from './AdminStatsView';
 import { AdminPresetsView } from './AdminPresetsView';
 import { AdminObjectsView } from './AdminObjectsView';
 
@@ -28,6 +29,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ isOpen, onClose,
         <div className="flex-1 overflow-y-auto">
           {activeTab === 'users' && <AdminUsersView t={t} />}
           {activeTab === 'jobs' && <AdminJobsView t={t} />}
+          {activeTab === 'stats' && <AdminStatsView t={t} />}
           {activeTab === 'presets' && <AdminPresetsView t={t} />}
           {activeTab === 'objects' && <AdminObjectsView t={t} />}
         </div>

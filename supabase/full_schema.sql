@@ -80,6 +80,9 @@ CREATE TABLE public.generation_jobs (
     status TEXT DEFAULT 'processing', -- 'processing', 'completed', 'failed'
     cost DOUBLE PRECISION DEFAULT 0.0,
     api_cost DOUBLE PRECISION,
+    tokens_prompt INTEGER,
+    tokens_completion INTEGER,
+    tokens_total INTEGER,
     prompt TEXT,
     concurrent_jobs INTEGER DEFAULT 1,
     created_at TIMESTAMPTZ DEFAULT NOW(),
