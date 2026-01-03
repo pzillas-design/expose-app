@@ -87,7 +87,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
                 <h3 className={`${Typo.H2} mb-4`}>Verbrauch nach Modell</h3>
                 <div className="space-y-3">
-                    {['gemini-3-flash-preview', 'gemini-3-pro-preview', 'fast', 'pro-1k', 'pro-2k', 'pro-4k'].map(modelId => {
+                    {['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'fast', 'pro-1k', 'pro-2k', 'pro-4k'].map(modelId => {
                         const modelJobs = jobs.filter(j => j.model === modelId);
                         if (modelJobs.length === 0) return null;
 
@@ -95,10 +95,14 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         const apiCost = modelJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
                         const userCost = modelJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
 
+                        let displayName = modelId;
+                        if (modelId === 'gemini-2.5-flash-image' || modelId === 'fast') displayName = 'Nano Banana';
+                        if (modelId === 'gemini-3-pro-image-preview' || modelId === 'pro-1k') displayName = 'Nano Banana Pro';
+
                         return (
-                            <div key={modelId} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                            <div key={modelId} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
                                 <div>
-                                    <div className="font-bold text-sm uppercase tracking-tight">{modelId.replace('-preview', '').replace('gemini-3-', 'Banana ')}</div>
+                                    <div className="font-bold text-sm uppercase tracking-tight">{displayName}</div>
                                     <div className="text-[10px] text-zinc-500 font-medium">{modelJobs.length} Generations</div>
                                 </div>
                                 <div className="flex gap-8 text-right">
@@ -124,7 +128,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             {/* Hint */}
             <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 text-[11px] text-blue-600 dark:text-blue-400 leading-relaxed">
                 <strong>Hintergrund:</strong> Die API-Kosten werden live auf Basis der von Google zurückgegebenen Tokens berechnet.
-                Die Schätzung nutzt die aktuellen Raten für Gemini 3 Flash ($0.10/1M input) und Gemini 3 Pro ($1.25/1M input).
+                Die Schätzung nutzt die aktuellen Raten für Gemini 2.5 Flash Image ($0.10/1M input) und Gemini 3 Pro Image Preview ($1.25/1M input).
             </div>
         </div>
     );

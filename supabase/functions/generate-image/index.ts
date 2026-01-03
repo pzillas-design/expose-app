@@ -76,16 +76,18 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-3-pro-preview'; // Default to Pro
+        let finalModelName = 'gemini-3-pro-image-preview'; // Nano Banana Pro
         switch (qualityMode) {
             case 'fast':
-                finalModelName = 'gemini-3-flash-preview';
+                // Nano Banana: Optimiert auf Speed & Effizienz
+                finalModelName = 'gemini-2.5-flash-image';
                 break;
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
             default:
-                finalModelName = 'gemini-3-pro-preview';
+                // Nano Banana Pro: Für professionelle Assets & High-Fidelity
+                finalModelName = 'gemini-3-pro-image-preview';
                 break;
         }
 
