@@ -38,8 +38,8 @@ export const translations = {
     mask_btn: "Mask",
     object_btn: "Objects",
     image_btn: "Image",
-    tt_mask: "draw & write in image",
-    tt_objects: "place in image",
+    tt_mask: "Draw & write in image",
+    tt_objects: "Place in image",
     tool_disabled_multi: "Not available for multi-selection",
 
     // Presets
@@ -353,8 +353,8 @@ export const translations = {
     mask_btn: "Maske",
     object_btn: "Objekte",
     image_btn: "Bild",
-    tt_mask: "ins bild zeichnen & schreiben",
-    tt_objects: "im bild platzieren",
+    tt_mask: "Im Bild zeichnen & schreiben",
+    tt_objects: "Im Bild platzieren",
     tool_disabled_multi: "Nicht verfügbar bei Mehrfachauswahl",
 
     // Presets
