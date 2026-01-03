@@ -180,7 +180,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         <>
                             {/* PRESETS SECTION */}
                             <div className="flex flex-col">
-                                <div className="flex items-center justify-between px-3 py-4 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group">
+                                <div className="flex items-center justify-between px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group">
                                     <button
                                         onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
                                         className="flex items-center gap-2 flex-1"
@@ -206,7 +206,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                 </div>
 
                                 {isPresetsExpanded && (
-                                    <div className="p-3 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="px-3 pt-1 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {pinnedTemplates.length > 0 ? (
                                             pinnedTemplates.map(t => (
                                                 <button
@@ -251,7 +251,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             <div className="flex flex-col">
                                 <button
                                     onClick={() => setIsRecentExpanded(!isRecentExpanded)}
-                                    className="flex items-center gap-2 px-3 py-4 border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors"
                                 >
                                     {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                                     <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
@@ -260,7 +260,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                 </button>
 
                                 {isRecentExpanded && (
-                                    <div className="p-3 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <div className="px-3 pt-1 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                                         {recentTemplates.length > 0 ? (
                                             recentTemplates.map(t => (
                                                 <button
