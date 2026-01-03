@@ -96,31 +96,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onContextMenu,
     t
 }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    // Intersection Observer to only load when nearing viewport
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                setIsVisible(true);
-                // Once visible, keep it in DOM to avoid flickering on scroll-back
-                observer.unobserve(entries[0].target);
-            }
-        }, {
-            rootMargin: '200% 200%', // More generous margin
-            threshold: 0.01
-        });
-
-        observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, []);
-
-    const showHighRes = isSelected || zoom > 0.35;
-    const currentSrc = (image.maskSrc || (!showHighRes && image.thumbSrc ? image.thumbSrc : image.src));
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -142,7 +118,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             ref={containerRef}
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
-            className={`relative shrink-0 select-none group transition-all duration-300 ease-out snap-center will-change-transform ${isSelected
+            className={`relative shrink-0 select-none group transition-opacity duration-200 snap-center will-change-transform ${isSelected
                 ? 'z-30'
                 : (!hasAnySelection ? 'z-20' : 'z-0 hover:opacity-100')
                 } ${hasAnySelection && !isSelected ? 'opacity-70' : 'opacity-100'}`}
@@ -199,44 +175,14 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative ${Theme.Colors.PanelBg} overflow-hidden ${isSelected ? 'ring-1 ring-black dark:ring-white' : ''}`}
                 style={{ height: image.height * zoom }}
             >
-                {/* Skeleton Loader */}
-                {!isLoaded && (
-                    <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center p-6 ${Theme.Colors.SurfaceSubtle}`}>
-                        <div className="w-full max-w-[100px] flex flex-col gap-2">
-                            <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-zinc-400 dark:bg-zinc-600 animate-[loading_2s_ease-in-out_infinite]" />
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Skeleton Removed */}
 
-                {(isVisible || image.isGenerating) ? (
-                    <>
-                        {/* 1. Base Layer: Thumb (Immediate) */}
-                        {image.thumbSrc && !isLoaded && (
-                            <img
-                                src={image.thumbSrc}
-                                className="absolute inset-0 w-full h-full object-cover blur-sm opacity-50 transition-opacity duration-300"
-                                alt=""
-                            />
-                        )}
-
-                        {/* 2. Content Layer: High-Res or Current */}
-                        <img
-                            src={currentSrc}
-                            alt={image.title}
-                            onLoad={() => setIsLoaded(true)}
-                            loading="lazy"
-                            decoding="async"
-                            // @ts-ignore
-                            fetchpriority={showHighRes ? "high" : "low"}
-                            className={`w-full h-full object-cover pointer-events-none block transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
-                        />
-                    </>
-                ) : (
-                    <div className="w-full h-full bg-zinc-100 dark:bg-zinc-900/50" />
-                )}
+                <img
+                    src={image.maskSrc || image.src}
+                    alt={image.title}
+                    className={`w-full h-full object-cover pointer-events-none block`}
+                    style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
+                />
 
                 {/* Editor Overlay - Only render if selected OR has existing annotations to show */}
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
