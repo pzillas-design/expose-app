@@ -303,6 +303,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 style={{ width: width }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => { e.preventDefault(); onGlobalDragLeave(); }}
+                onContextMenu={(e) => e.stopPropagation()}
             >
                 <div
                     className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-zinc-400 dark:hover:bg-zinc-700 transition-colors z-50"
@@ -481,6 +482,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 style={{ width: width }}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={handleDrop}
+                onContextMenu={(e) => e.stopPropagation()}
             >
                 {isGlobalDragOver && (
                     <div
