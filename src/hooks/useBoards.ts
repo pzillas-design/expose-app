@@ -6,7 +6,7 @@ import { useConfig } from './useConfig';
 import { generateId } from '../utils/ids';
 
 export const useBoards = (userId: string | undefined) => {
-    const { t } = useConfig();
+    const { t, currentLang } = useConfig();
     const [boards, setBoards] = useState<Board[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { showToast } = useToast();
@@ -30,17 +30,20 @@ export const useBoards = (userId: string | undefined) => {
 
     const getNextBoardName = () => {
         const now = new Date();
-        const day = now.getDate();
-        const month = now.getMonth() + 1;
-        const base = `Projekt ${day}.${month}.`;
+        const day = now.getDate().toString().padStart(2, '0');
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+
+        // DE: 04.01. | EN: 01-04
+        const dateStr = currentLang === 'de' ? `${day}.${month}.` : `${month}-${day}`;
+        const base = t('default_project_name' as any).replace('{{date}}', dateStr);
 
         if (!boards.find(b => b.name === base)) return base;
 
         let i = 2;
-        while (boards.find(b => b.name === `${base} ${i}`)) {
+        while (boards.find(b => b.name === `${base} #${i}`)) {
             i++;
         }
-        return `${base} ${i}`;
+        return `${base} #${i}`;
     };
 
     const createBoard = async (name?: string) => {

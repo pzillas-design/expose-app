@@ -258,6 +258,7 @@ export const translations = {
     ctx_remove_from_selection: "Remove from Selection",
     ctx_select_single: "Select",
     tt_deselect: "Exit selection",
+    default_project_name: "Project from {{date}}",
     // Auth
     auth_welcome_back: "Welcome back",
     auth_create_account: "Create an account",
@@ -576,6 +577,7 @@ export const translations = {
     ctx_remove_from_selection: "Auswahl entfernen",
     ctx_select_single: "Auswählen",
     tt_deselect: "Auswahl verlassen",
+    default_project_name: "Projekt vom {{date}}",
     // Auth
     auth_welcome_back: "Willkommen zurück",
     auth_create_account: "Account erstellen",
