@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip } from 'lucide-react';
@@ -6,6 +6,7 @@ import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip } from 'lucide
 interface CreationModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onGenerate: (prompt: string, model: string, ratio: string) => void;
     t: TranslationFunction;
     lang: 'de' | 'en';
     onUpload?: (files: FileList) => void;
@@ -53,10 +54,12 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [openDropdown, setOpenDropdown] = useState<'model' | 'ratio' | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const dragCounter = useRef(0);
 
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        dragCounter.current++;
         if (e.dataTransfer.types.includes('Files')) {
             setIsDragging(true);
         }
@@ -65,13 +68,17 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     const handleDragLeave = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragging(false);
+        dragCounter.current--;
+        if (dragCounter.current === 0) {
+            setIsDragging(false);
+        }
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
+        dragCounter.current = 0;
         if (e.dataTransfer.files && onUpload) {
             onUpload(e.dataTransfer.files);
         }
@@ -116,59 +123,63 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                 <div className="flex-1 overflow-visible p-6 flex flex-col gap-8">
 
-                    {/* Prompt Input */}
+                    {/* Unified Prompt & Upload Area */}
                     <div
-                        className="flex flex-col gap-3 relative"
+                        className={`
+                            relative flex flex-col gap-3 p-1 rounded-xl transition-all duration-300
+                            ${isDragging ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}
+                        `}
                         onDragEnter={handleDragEnter}
-                        onDragOver={(e) => e.preventDefault()}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                     >
-                        <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center justify-between`}>
-                            {t('creation_prompt_label')}
-                            {isDragging && <span className="text-blue-500 animate-pulse lowercase text-[10px] bg-blue-500/10 px-2 py-0.5 rounded-full">Drop to upload</span>}
-                        </label>
-                        <div className={`
-                            relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} 
-                            transition-all duration-200 overflow-hidden
-                            ${isDragging ? 'border-blue-500 ring-4 ring-blue-500/10 scale-[1.01] bg-blue-500/5' : 'hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500'}
-                        `}>
-                            <textarea
-                                className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none h-48`}
-                                placeholder={t('creation_prompt_placeholder')}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                autoFocus
-                            />
-
-                            {/* Drop Overlay */}
-                            {isDragging && (
-                                <div className="absolute inset-0 bg-blue-500/5 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-blue-500/50 m-2 rounded-lg">
-                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                                        <Paperclip className="w-5 h-5" />
-                                    </div>
-                                    <span className={`${Typo.Label} text-blue-600 dark:text-blue-400`}>Bild hier ablegen</span>
+                        {/* Unified Drop Overlay - Global to this section */}
+                        {isDragging && (
+                            <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[3px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-blue-500/50 rounded-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-xl">
+                                    <Paperclip className="w-7 h-7" />
                                 </div>
-                            )}
-                        </div>
+                                <span className={`${Typo.Label} text-blue-600 dark:text-blue-400 font-bold text-base`}>Bild hier ablegen</span>
+                            </div>
+                        )}
+                        <div className="flex flex-col gap-3">
+                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                                {t('creation_prompt_label')}
+                            </label>
 
-                        <div className="relative">
-                            <input
-                                type="file"
-                                id="creation-file-upload"
-                                className="hidden"
-                                multiple
-                                accept="image/*"
-                                onChange={handleFileInput}
-                            />
-                            <Button
-                                variant="secondary"
-                                className={`w-full transition-colors ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : ''}`}
-                                icon={<Paperclip className="w-4 h-4" />}
-                                onClick={() => document.getElementById('creation-file-upload')?.click()}
-                            >
-                                {t('attach_file')}
-                            </Button>
+                            <div className={`
+                                relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} 
+                                transition-all duration-200 overflow-hidden
+                                ${isDragging ? 'border-blue-500 ring-4 ring-blue-500/10' : 'hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500'}
+                            `}>
+                                <textarea
+                                    className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none h-48`}
+                                    placeholder={t('creation_prompt_placeholder')}
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    id="creation-file-upload"
+                                    className="hidden"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleFileInput}
+                                />
+                                <Button
+                                    variant="secondary"
+                                    className={`w-full transition-colors ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-300 shadow-sm' : ''}`}
+                                    icon={<Paperclip className="w-4 h-4" />}
+                                    onClick={() => document.getElementById('creation-file-upload')?.click()}
+                                >
+                                    {t('attach_file')}
+                                </Button>
+                            </div>
                         </div>
                     </div>
 

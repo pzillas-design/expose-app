@@ -532,7 +532,7 @@ export function App() {
                 }}
                 t={t}
                 lang={currentLang}
-                onUpload={processFile}
+                onUpload={(files) => Array.from(files).forEach(f => processFile(f))}
             />
 
             <CreditsModal
