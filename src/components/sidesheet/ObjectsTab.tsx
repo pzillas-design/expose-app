@@ -13,11 +13,12 @@ interface ObjectsTabProps {
     onDeleteUserCategory: (id: string) => void;
     onAddUserItem: (catId: string, label: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
+    onBack?: () => void;
 }
 
 export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     onAddObject, t, currentLang, library,
-    onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem
+    onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onBack
 }) => {
     const [openCategories, setOpenCategories] = useState<string[]>(['basics']); // Default open relevant cat
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -110,9 +111,14 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
 
                 {/* Title & Actions */}
                 <div className={`absolute inset-0 flex items-center justify-between px-4 transition-all duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}>
-                    <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>
-                        {isEditMode ? t('edit') : t('library')}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        {onBack && (
+                            <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={onBack} className="-ml-2" />
+                        )}
+                        <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>
+                            {isEditMode ? t('edit') : t('library')}
+                        </span>
+                    </div>
 
                     <div className="flex items-center gap-1">
                         <Tooltip text={isEditMode ? t('done') : t('edit')}>

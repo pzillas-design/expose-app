@@ -5,13 +5,14 @@ import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-r
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
+import { AnnotationToolbar } from './AnnotationToolbar';
+import { generateId } from '@/utils/ids';
 
 interface ImageItemProps {
     image: CanvasImage;
     isSelected: boolean;
     zoom: number;
     hasAnySelection?: boolean;
-    // onMouseDown: (e: React.MouseEvent, id: string) => void; // Removed per new logic
     onRetry?: (id: string) => void;
     onChangePrompt?: (id: string) => void;
     editorState?: {
@@ -27,10 +28,15 @@ interface ImageItemProps {
     onNavigate?: (direction: -1 | 1, fromId?: string) => void,
     hasLeft?: boolean,
     hasRight?: boolean,
-    index?: number; // For staggered animation
+    index?: number;
 
     onDelete?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    editorActions?: {
+        setMaskTool: (t: 'brush' | 'text' | 'shape') => void;
+        setBrushSize: (s: number) => void;
+        setActiveShape: (s: 'rect' | 'circle' | 'line') => void;
+    };
     t: TranslationFunction;
 }
 
@@ -43,7 +49,6 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
             const now = Date.now();
             const elapsed = now - start;
             let p = (elapsed / duration) * 100;
-            // Easing at the end
             if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
             setProgress(Math.min(p, 99.9));
         };
@@ -68,15 +73,10 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
 
 const getDurationForQuality = (quality?: GenerationQuality): number => {
     switch (quality) {
-        case 'fast':
-            return 12000; // 12s
-        case 'pro-2k':
-            return 36000; // 36s
-        case 'pro-4k':
-            return 60000; // 60s
-        case 'pro-1k':
-        default:
-            return 23000; // 23s
+        case 'fast': return 12000;
+        case 'pro-2k': return 36000;
+        case 'pro-4k': return 60000;
+        case 'pro-1k': default: return 23000;
     }
 };
 
@@ -92,9 +92,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onNavigate,
     hasLeft,
     hasRight,
-    index = 0,
     onDelete,
     onContextMenu,
+    editorActions,
     t
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -104,15 +104,35 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         downloadImage(image.src, image.title);
     };
 
-    // Unified Base styles for consistency
-    const baseGlass = `${Theme.Effects.Glass} border ${Theme.Colors.Border} rounded-lg shadow-sm`;
-    const hoverStyle = "hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors";
-
-    // Navigation Button specific: Ghost by default, Frame on hover
     const navIconBtnClass = `absolute flex items-center justify-center w-10 h-10 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-full hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 pointer-events-auto z-[60]`;
 
-    // Action Button specific: Inside container, Height 100% of container, No Radius (handled by parent overflow)
-    const actionBtnClass = `flex items-center gap-2 px-4 h-full ${hoverStyle} shrink-0 rounded-none`;
+    const handleAddShape = (type: 'rect' | 'circle' | 'line') => {
+        if (!onUpdateAnnotations) return;
+        const newId = generateId();
+        const cx = image.width / 2;
+        const cy = image.height / 2;
+        const size = Math.min(image.width, image.height) * 0.3; // 30% size
+
+        let newShape: AnnotationObject;
+
+        if (type === 'line') {
+            newShape = {
+                id: newId, type: 'shape', shapeType: 'line',
+                x: cx - size / 2, y: cy, width: size, height: size,
+                points: [{ x: cx - size / 2, y: cy }, { x: cx + size / 2, y: cy }],
+                strokeWidth: 4, color: '#fff', createdAt: Date.now()
+            };
+        } else {
+            newShape = {
+                id: newId, type: 'shape', shapeType: type,
+                x: cx - size / 2, y: cy - size / 2, width: size, height: size,
+                points: [],
+                strokeWidth: 4, color: '#fff', createdAt: Date.now()
+            };
+        }
+        const existing = image.annotations || [];
+        onUpdateAnnotations(image.id, [...existing, newShape]);
+    };
 
     return (
         <div
@@ -176,9 +196,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative ${Theme.Colors.PanelBg} overflow-hidden ${isSelected ? 'ring-1 ring-black dark:ring-white' : ''}`}
                 style={{ height: image.height * zoom }}
             >
-                {/* Skeleton Removed */}
-
-                {/* LOD Image Loading: Show Thumbnail by default, HQ only when needed */}
+                {/* LOD Image Loading */}
                 <img
                     src={image.maskSrc || (zoom >= 1.0 ? image.src : (image.thumbSrc || image.src))}
                     alt={image.title}
@@ -189,7 +207,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     }}
                 />
 
-                {/* Editor Overlay - Only render if selected OR has existing annotations to show */}
+                {/* Editor Overlay */}
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
                     <div className="absolute inset-0 z-10">
                         <EditorCanvas
@@ -209,6 +227,19 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
+                {/* Floating Annotation Toolbar */}
+                {isSelected && editorState && (editorState.mode === 'brush' || editorState.mode === 'objects') && editorActions && (
+                    <AnnotationToolbar
+                        maskTool={editorState.maskTool}
+                        setMaskTool={editorActions.setMaskTool}
+                        brushSize={editorState.brushSize}
+                        setBrushSize={editorActions.setBrushSize}
+                        activeShape={editorState.activeShape || 'rect'}
+                        setActiveShape={editorActions.setActiveShape}
+                        onAddShape={handleAddShape}
+                    />
+                )}
+
                 {image.isGenerating && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
@@ -218,32 +249,27 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
             </div>
 
-            {
-                isSelected && (
-                    <>
-                        {/* Edge Navigation Icons - Hide when zoomed out (more than ~2-3 images visible) */}
-                        <div className="absolute inset-0 pointer-events-none">
-                            {hasLeft && zoom > 1.2 && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }}
-                                    className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
-                                >
-                                    <ChevronLeft className="w-6 h-6" />
-                                </button>
-                            )}
-                            {hasRight && zoom > 1.2 && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }}
-                                    className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
-                                >
-                                    <ChevronRight className="w-6 h-6" />
-                                </button>
-                            )}
-                        </div>
-                    </>
-                )
-            }
-        </div >
+            {isSelected && (
+                <div className="absolute inset-0 pointer-events-none">
+                    {hasLeft && zoom > 1.2 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }}
+                            className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+                    )}
+                    {hasRight && zoom > 1.2 && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }}
+                            className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
+                        >
+                            <ChevronRight className="w-6 h-6" />
+                        </button>
+                    )}
+                </div>
+            )}
+        </div>
     );
 });
 

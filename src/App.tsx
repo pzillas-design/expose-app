@@ -121,7 +121,8 @@ export function App() {
 
     const handleAnnotationEditStart = useCallback((mode: 'brush' | 'objects') => {
         setSideSheetMode(mode);
-    }, [setSideSheetMode]);
+        smoothZoomTo(1.0);
+    }, [setSideSheetMode, smoothZoomTo]);
 
     const handleDockUpload = (files: FileList) => {
         Array.from(files).forEach((f) => processFile(f));
@@ -369,7 +370,14 @@ export function App() {
                     onOpenSettings={() => navigate('/settings')}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
-                    onAnnotate={() => setSideSheetMode(prev => prev === 'brush' ? null : 'brush')}
+                    onAnnotate={() => {
+                        if (sideSheetMode === 'brush') {
+                            setSideSheetMode(null);
+                        } else {
+                            setSideSheetMode('brush');
+                            smoothZoomTo(1.0);
+                        }
+                    }}
                     isAnnotationMode={sideSheetMode === 'brush'}
                     onUpload={handleDockUpload}
                     onCreateNew={() => setIsCreationModalOpen(true)}
@@ -429,6 +437,11 @@ export function App() {
                                             editorState={editorState}
                                             onUpdateAnnotations={handleUpdateAnnotations}
                                             onEditStart={handleAnnotationEditStart}
+                                            editorActions={{
+                                                setMaskTool: actions.setMaskTool,
+                                                setBrushSize: actions.setBrushSize,
+                                                setActiveShape: actions.setActiveShape
+                                            }}
                                             onNavigate={moveSelection}
                                             hasLeft={imgIndex > 0}
                                             hasRight={imgIndex < row.items.length - 1}

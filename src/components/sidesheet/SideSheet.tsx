@@ -443,7 +443,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full">
-                        <SubHeader title={t('back')} />
                         <div className={`flex-1 overflow-hidden ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
@@ -460,9 +459,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
+                                onBack={() => onModeChange('prompt')}
                             />
                         </div>
-                        <DoneButton />
                     </div>
                 );
             case 'objects':

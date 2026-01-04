@@ -231,8 +231,8 @@ export const useNanoController = () => {
         }
     }, [allImages, performGeneration]);
 
-    const handleCreateNew = useCallback((prompt: string, model: string, ratio: string) => {
-        performNewGeneration(prompt, model, ratio);
+    const handleCreateNew = useCallback((prompt: string, model: string, ratio: string, attachments: string[] = []) => {
+        performNewGeneration(prompt, model, ratio, attachments);
     }, [performNewGeneration]);
 
     const handleNavigateParent = useCallback((parentId: string) => {
