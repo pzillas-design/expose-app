@@ -162,7 +162,19 @@ export function App() {
         e.preventDefault();
         const deltaX = e.clientX - panState.current.startX;
         const deltaY = e.clientY - panState.current.startY;
-        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) panState.current.hasMoved = true;
+
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+            if (!panState.current.hasMoved) {
+                // First movement detected: Deselect all and disable snap
+                if (selectedIds.length > 0) {
+                    selectMultiple([]);
+                    setEnableSnap(false);
+                    actions.setSnapEnabled(false);
+                }
+                panState.current.hasMoved = true;
+            }
+        }
+
         refs.scrollContainerRef.current.scrollLeft = panState.current.scrollLeft - deltaX;
         refs.scrollContainerRef.current.scrollTop = panState.current.scrollTop - deltaY;
     };
