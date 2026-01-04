@@ -110,9 +110,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 
-        // Rough estimate of tooltip width to prevent edge clipping (e.g. at the sidebar)
-        const padding = 16;
-        const estimatedHalfWidth = 80;
+        // Rough estimate of tooltip width to prevent edge clipping
+        const padding = 8;
+        const estimatedHalfWidth = 20; // Very small guess, rely on centering
 
         let left = rect.left + rect.width / 2;
         const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
