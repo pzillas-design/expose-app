@@ -71,9 +71,12 @@ Deno.serve(async (req) => {
             const response = await fetch(sourceImage.src);
             const blob = await response.arrayBuffer();
             const uint8 = new Uint8Array(blob);
+
+            // Efficient chunked encoding to base64
             let binary = '';
-            for (let i = 0; i < uint8.byteLength; i++) {
-                binary += String.fromCharCode(uint8[i]);
+            const chunkSize = 0x8000; // 32KB chunks
+            for (let i = 0; i < uint8.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, uint8.subarray(i, i + chunkSize) as any);
             }
             finalSourceBase64 = btoa(binary);
         } else if (sourceImage.src) {
@@ -101,10 +104,20 @@ Deno.serve(async (req) => {
 
         const parts: any[] = []
 
+        const annotations = sourceImage.annotations || [];
+        const hasRefs = annotations.some((ann: any) => ann.type === 'reference_image');
         const hasMask = !!maskDataUrl
+
         let systemInstruction = "I am providing an ORIGINAL image (to be edited)."
-        if (hasMask) systemInstruction += " I am also providing a MASK image (indicating areas to edit)."
-        systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt."
+        if (hasMask) {
+            systemInstruction += " I am also providing an ANNOTATION image (the original image muted/dimmed, with bright markings and text indicating desired changes)."
+            const labels = annotations.map((a: any) => a.text).filter(Boolean);
+            if (labels.length > 0) {
+                systemInstruction += ` The following labels are marked in the Annotation Image: ${labels.map(l => `"${l.toUpperCase()}"`).join(", ")}.`
+            }
+        }
+        if (hasRefs) systemInstruction += " I am also providing REFERENCE images for guidance (style, context, or visual elements)."
+        systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt, following the visual cues in the ANNOTATION image and using the REFERENCE images as a basis for style or objects."
 
         parts.push({ text: systemInstruction })
 
@@ -122,8 +135,27 @@ Deno.serve(async (req) => {
             parts.push({
                 inlineData: { data: cleanMask, mimeType: 'image/png' }
             })
-            parts.push({ text: "Image 2: The Mask. White areas = edit region." })
+            parts.push({ text: "Image 2: The Annotation Image (Muted original + overlays showing where and what to change)." })
         }
+
+        // --- REFERENCE IMAGES (Croppings) ---
+        // Collect ALL reference images from any annotation type
+        const refAnns = annotations.filter((ann: any) => ann.referenceImage);
+
+        refAnns.forEach((ann: any, index: number) => {
+            const base64 = ann.referenceImage.split(',')[1] || ann.referenceImage;
+            const imgNum = index + 3;
+            parts.push({
+                inlineData: { data: base64, mimeType: 'image/png' }
+            });
+
+            // Addressing the reference image to a specific label if available
+            if (ann.text) {
+                parts.push({ text: `Image ${imgNum}: Reference Image specifically for the object labeled "${ann.text.toUpperCase()}" in the Annotation Image.` });
+            } else {
+                parts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
+            }
+        });
 
         parts.push({ text: `User Prompt: ${prompt}` })
 
@@ -174,6 +206,17 @@ Deno.serve(async (req) => {
             .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true })
 
         if (uploadError) throw uploadError
+
+        // NEW: Get a signed URL for the newly uploaded image instead of returning huge base64
+        const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+            .from('user-content')
+            .createSignedUrl(filePath, 3600) // 1 hour expiry
+
+        if (signedUrlError) {
+            console.warn("Failed to create signed URL, falling back to base64 (risky for 4k):", signedUrlError);
+        }
+
+        const finalUrl = signedUrlData?.signedUrl || `data:image/jpeg;base64,${generatedBase64}`;
 
         // 5. Final Check: Did the user delete the job while we were generating?
         const { data: jobStillExists } = await supabaseAdmin
@@ -235,11 +278,10 @@ Deno.serve(async (req) => {
 
         return new Response(JSON.stringify({
             success: true,
-            // Return both 'src' (new) and 'imageBase64' (legacy) for backward compatibility
+            // Return 'src' as URL to keep payload small
             image: {
                 ...newImage,
-                src: `data:image/jpeg;base64,${generatedBase64}`,
-                imageBase64: `data:image/jpeg;base64,${generatedBase64}`,
+                src: finalUrl,
                 isGenerating: false
             }
         }), {

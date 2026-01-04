@@ -95,7 +95,7 @@ export function App() {
 
     // Manage Snap State (Restore on selection change)
     useEffect(() => {
-        if (selectedIds.length === 1) {
+        if (selectedIds.length <= 1) {
             setEnableSnap(true);
             actions.setSnapEnabled(true);
         } else {
@@ -188,17 +188,18 @@ export function App() {
                     const id = imageWrapper.getAttribute('data-image-id');
                     if (id) {
                         handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
-                        if (!e.metaKey && !e.ctrlKey && !e.shiftKey) {
-                            setEnableSnap(true);
-                            actions.setSnapEnabled(true);
-                        }
                     }
                 } else {
                     selectMultiple([]);
-                    setEnableSnap(false);
-                    actions.setSnapEnabled(false);
                 }
             }
+
+            // Always restore snap if selection count is low enough
+            if (selectedIds.length <= 1) {
+                setEnableSnap(true);
+                actions.setSnapEnabled(true);
+            }
+
             panState.current = null;
             document.body.style.cursor = '';
         }

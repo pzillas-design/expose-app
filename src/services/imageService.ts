@@ -190,7 +190,7 @@ export const imageService = {
         return {
             ...sourceImage,
             id: newId,
-            src: result.imageBase64,
+            src: result.src, // Use the optimized 'src' (URL or base64)
             thumbSrc: thumbSrc,
             originalSrc: sourceImage.src,
             isGenerating: false,

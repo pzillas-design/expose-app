@@ -22,7 +22,7 @@ export const CropModal: React.FC<CropModalProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Crop state in Percentages (0-100)
-    const [crop, setCrop] = useState({ x: 10, y: 10, width: 80, height: 80 });
+    const [crop, setCrop] = useState({ x: 0, y: 0, width: 100, height: 100 });
     const [dragMode, setDragMode] = useState<DragMode>(null);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [startCrop, setStartCrop] = useState({ x: 0, y: 0, width: 0, height: 0 });
@@ -30,7 +30,7 @@ export const CropModal: React.FC<CropModalProps> = ({
     // Reset crop when image changes
     useEffect(() => {
         if (isOpen) {
-            setCrop({ x: 10, y: 10, width: 80, height: 80 });
+            setCrop({ x: 0, y: 0, width: 100, height: 100 });
         }
     }, [isOpen, imageSrc]);
 

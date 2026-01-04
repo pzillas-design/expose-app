@@ -102,7 +102,7 @@ export const useGeneration = ({
                     id: newId,
                     user_id: currentUser.id,
                     user_name: currentUser.email,
-                    type: maskDataUrl ? 'Inpaint' : 'Style',
+                    type: maskDataUrl ? 'Edit' : 'Create',
                     model: qualityMode,
                     status: 'processing',
                     cost: cost,

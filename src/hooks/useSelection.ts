@@ -93,10 +93,12 @@ export const useSelection = ({
     const lastZoomFinishedRef = useRef<number>(0);
 
     const handleScroll = useCallback(() => {
+        // Allow selection when 0 or 1 items are selected
         if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1 || !isSnapEnabledRef.current) return;
 
         // Disable auto-select-on-scroll if zoomed in deep (prevents "jumps" when zooming/panning locally)
-        if (zoom > 1.5 && selectedIds.length === 1) return;
+        // Increased threshold to 1.8 to allow more flexibility
+        if (zoom > 1.8 && selectedIds.length === 1) return;
 
         // Skip if we just finished zooming to let the browser snap settle without switching selection
         if (Date.now() - lastZoomFinishedRef.current < 500) return;
@@ -105,7 +107,7 @@ export const useSelection = ({
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
 
         focusCheckRafRef.current = requestAnimationFrame(() => {
-            if (isZoomingRef.current || isAutoScrollingRef.current) return;
+            if (isZoomingRef.current || isAutoScrollingRef.current || !isSnapEnabledRef.current) return;
 
             const containerRect = container.getBoundingClientRect();
             const viewportCenterX = containerRect.left + (containerRect.width / 2);

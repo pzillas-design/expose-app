@@ -14,7 +14,9 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
     baseImg.crossOrigin = "anonymous";
     baseImg.src = img.src;
     await new Promise(r => baseImg.onload = r);
+    ctx.globalAlpha = 0.4; // "leicht gemutet" - 40% opacity
     ctx.drawImage(baseImg, 0, 0, img.width, img.height);
+    ctx.globalAlpha = 1.0; // Reset for annotations
 
     // 2. Draw Paths
     ctx.lineCap = 'round';
@@ -45,11 +47,15 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     img.annotations.forEach(ann => {
+        // Skip reference images - their names should not be on the mask
+        if (ann.type === 'reference_image') return;
+
         const text = ann.text;
         if (!text) return;
         let x = 0, y = 0;
         if (ann.type === 'stamp') { x = ann.x!; y = ann.y!; }
-        else if (ann.type === 'mask_path') { x = ann.points[0].x; y = ann.points[0].y; } // Approx center
+        else if (ann.type === 'mask_path') { x = ann.points[0].x; y = ann.points[0].y; }
+        else return; // Don't draw text for unknown types at 0,0
 
         const fontSize = Math.max(24, img.width * 0.03);
         ctx.font = `900 ${fontSize}px monospace`;
