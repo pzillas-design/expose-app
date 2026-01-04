@@ -109,8 +109,21 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
     const handleMouseEnter = (e: React.MouseEvent) => {
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
-        const left = rect.left + rect.width / 2;
+
+        // Rough estimate of tooltip width to prevent edge clipping (e.g. at the sidebar)
+        const padding = 16;
+        const estimatedHalfWidth = 80;
+
+        let left = rect.left + rect.width / 2;
         const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
+
+        // Boundary check: nudge left if too close to edges
+        if (left < estimatedHalfWidth + padding) {
+            left = estimatedHalfWidth + padding;
+        } else if (left > window.innerWidth - estimatedHalfWidth - padding) {
+            left = window.innerWidth - estimatedHalfWidth - padding;
+        }
+
         setCoords({ top, left });
         setIsVisible(true);
         if (children.props.onMouseEnter) children.props.onMouseEnter(e);
