@@ -177,11 +177,16 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             >
                 {/* Skeleton Removed */}
 
+                {/* LOD Image Loading: Show Thumbnail by default, HQ only when needed */}
                 <img
-                    src={image.maskSrc || image.src}
+                    src={image.maskSrc || ((isSelected || zoom > 0.8) ? image.src : (image.thumbSrc || image.src))}
                     alt={image.title}
-                    className={`w-full h-full object-cover pointer-events-none block`}
-                    style={{ imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }}
+                    className="w-full h-full object-cover pointer-events-none block"
+                    style={{
+                        imageRendering: zoom > 1.5 ? 'pixelated' : 'auto',
+                        // Add a slight blur transition when switching from thumb to HQ
+                        filter: (!isSelected && zoom <= 0.8 && image.thumbSrc) ? 'none' : 'none'
+                    }}
                 />
 
                 {/* Editor Overlay - Only render if selected OR has existing annotations to show */}
@@ -190,7 +195,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <EditorCanvas
                             width={image.width}
                             height={image.height}
-                            imageSrc={image.src}
                             annotations={image.annotations || []}
                             onChange={(anns) => onUpdateAnnotations(image.id, anns)}
                             brushSize={editorState.brushSize}

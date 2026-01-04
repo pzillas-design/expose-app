@@ -8,7 +8,6 @@ import { generateId } from '@/utils/ids';
 interface EditorCanvasProps {
     width: number;
     height: number;
-    imageSrc: string;
     annotations: AnnotationObject[];
     onChange: (newAnnotations: AnnotationObject[]) => void;
     brushSize: number;
