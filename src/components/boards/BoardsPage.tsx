@@ -141,6 +141,7 @@ export function BoardsPage({
                                     onDelete={() => onDeleteBoard(board.id)}
                                     onRename={(name) => onRenameBoard(board.id, name)}
                                     locale={locale}
+                                    t={t}
                                 />
                             ))
                         )}
@@ -158,9 +159,10 @@ interface BoardCardProps {
     onDelete: () => void;
     onRename: (name: string) => void;
     locale: any;
+    t: (key: any) => string;
 }
 
-function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardProps) {
+function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
@@ -217,11 +219,18 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale }: BoardCardPro
                         style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
                     >
                         <button
-                            onClick={(e) => { e.stopPropagation(); onRename(board.name); setMenuOpen(false); }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const newName = window.prompt(t('rename_board' as any) || 'Projekt umbenennen', board.name);
+                                if (newName && newName !== board.name) {
+                                    onRename(newName);
+                                }
+                                setMenuOpen(false);
+                            }}
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >
                             <Edit3 className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>Umbennnen</span>
+                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>Umbenennen</span>
                         </button>
                         <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
                         <button
