@@ -110,9 +110,10 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 
-        // Rough estimate of tooltip width to prevent edge clipping
+        // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
         const padding = 8;
-        const estimatedHalfWidth = 20; // Very small guess, rely on centering
+        const charWidth = 6; // Average width per character in pixels for text-[10px]
+        const estimatedHalfWidth = Math.max(20, (text.length * charWidth) / 2 + 10);
 
         let left = rect.left + rect.width / 2;
         const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
