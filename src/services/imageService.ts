@@ -219,6 +219,54 @@ export const imageService = {
     },
 
     /**
+     * Resolves a single DB record into a CanvasImage object.
+     */
+    async resolveImageRecord(record: any): Promise<CanvasImage> {
+        const [signedUrl, thumbSignedUrl] = await Promise.all([
+            storageService.getSignedUrl(record.storage_path),
+            record.thumb_storage_path ? storageService.getSignedUrl(record.thumb_storage_path) : Promise.resolve(null)
+        ]);
+
+        const targetHeight = 512;
+        const aspectRatio = record.width / record.height;
+        const normalizedWidth = aspectRatio * targetHeight;
+
+        const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
+
+        // Resolve reference image paths in annotations
+        const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
+            if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
+                const resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
+                return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
+            }
+            return ann;
+        }));
+
+        return {
+            id: record.id,
+            src: signedUrl || '',
+            thumbSrc: thumbSignedUrl || undefined,
+            width: normalizedWidth,
+            height: targetHeight,
+            realWidth: record.real_width,
+            realHeight: record.real_height,
+            modelVersion: record.model_version,
+            title: record.title,
+            baseName: record.base_name,
+            version: record.version,
+            isGenerating: false,
+            originalSrc: signedUrl || '',
+            generationPrompt: record.prompt,
+            userDraftPrompt: record.user_draft_prompt || '',
+            annotations: resolvedAnns,
+            parentId: record.parent_id,
+            quality: record.generation_params?.quality || 'pro-1k',
+            createdAt: new Date(record.created_at).getTime(),
+            updatedAt: new Date(record.updated_at).getTime()
+        };
+    },
+
+    /**
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */
@@ -257,72 +305,38 @@ export const imageService = {
         }
 
         const dbImages = imgsRes.data || [];
-        const activeJobs = jobsRes.data || [];
+
+        // 1.5. Clean up and filter stale jobs (older than 6 minutes)
+        const rawJobs = jobsRes.data || [];
+        const sixMinutesAgo = Date.now() - (6 * 60 * 1000);
+
+        const activeJobs = rawJobs.filter(j => new Date(j.created_at).getTime() >= sixMinutesAgo);
+        const staleJobs = rawJobs.filter(j => new Date(j.created_at).getTime() < sixMinutesAgo);
+
+        if (staleJobs.length > 0) {
+            console.log(`Deep Sync: Automatically cleaning up ${staleJobs.length} stale jobs...`);
+            supabase.from('generation_jobs')
+                .delete()
+                .in('id', staleJobs.map(j => j.id))
+                .then(({ error }) => {
+                    if (error) console.error('Stale job cleanup failed:', error);
+                });
+        }
 
         // 2. Resolve URLs for Completed Images with Prioritization
         const loadedImages: CanvasImage[] = [];
-
-        // Helper to resolve a single record
-        const resolveRecord = async (record: any): Promise<CanvasImage> => {
-            const [signedUrl, thumbSignedUrl] = await Promise.all([
-                storageService.getSignedUrl(record.storage_path),
-                record.thumb_storage_path ? storageService.getSignedUrl(record.thumb_storage_path) : Promise.resolve(null)
-            ]);
-
-            const targetHeight = 512;
-            const aspectRatio = record.width / record.height;
-            const normalizedWidth = aspectRatio * targetHeight;
-
-            const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
-
-            // Resolve reference image paths in annotations
-            const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
-                if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                    const resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
-                    return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
-                }
-                return ann;
-            }));
-
-            return {
-                id: record.id,
-                src: signedUrl || '',
-                thumbSrc: thumbSignedUrl || undefined,
-                width: normalizedWidth,
-                height: targetHeight,
-                realWidth: record.real_width,
-                realHeight: record.real_height,
-                modelVersion: record.model_version,
-                title: record.title,
-                baseName: record.base_name,
-                version: record.version,
-                isGenerating: false,
-                originalSrc: signedUrl || '',
-                generationPrompt: record.prompt,
-                userDraftPrompt: record.user_draft_prompt || '',
-                annotations: resolvedAnns,
-                parentId: record.parent_id,
-                quality: record.generation_params?.quality || 'pro-1k',
-                createdAt: new Date(record.created_at).getTime(),
-                updatedAt: new Date(record.updated_at).getTime()
-            };
-        };
 
         // Priority loading logic
         const priorityBatch = dbImages.slice(0, 10);
         const remainingBatch = dbImages.slice(10);
 
-        const priorityResults = await Promise.all(priorityBatch.map(resolveRecord));
+        const priorityResults = await Promise.all(priorityBatch.map(rec => this.resolveImageRecord(rec)));
         loadedImages.push(...priorityResults);
 
-        // Load the rest in the background without blocking the first render
-        // (The caller will get the first set, and we could potentially update later, 
-        // but for now we just want to ensure the order of requests is correct)
         if (remainingBatch.length > 0) {
-            // Process remaining in chunks of 20 to keep network pipe focused
             for (let i = 0; i < remainingBatch.length; i += 20) {
                 const chunk = remainingBatch.slice(i, i + 20);
-                const chunkResults = await Promise.all(chunk.map(resolveRecord));
+                const chunkResults = await Promise.all(chunk.map(rec => this.resolveImageRecord(rec)));
                 loadedImages.push(...chunkResults);
             }
         }

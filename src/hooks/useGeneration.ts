@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
@@ -39,6 +39,81 @@ export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
     qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
 }: UseGenerationProps) => {
+    const attachedJobIds = React.useRef<Set<string>>(new Set());
+
+    const pollForJob = useCallback(async (jobId: string) => {
+        if (attachedJobIds.current.has(jobId)) return;
+        attachedJobIds.current.add(jobId);
+
+        let attempts = 0;
+        const maxAttempts = 60; // 5 minutes at 5s interval
+
+        const poll = async () => {
+            attempts++;
+            if (attempts > maxAttempts) {
+                attachedJobIds.current.delete(jobId);
+                return;
+            }
+
+            // 1. Check if image exists in DB
+            const { data: imgData } = await supabase
+                .from('canvas_images')
+                .select('*')
+                .eq('id', jobId)
+                .maybeSingle();
+
+            if (imgData) {
+                const finalImage = await imageService.resolveImageRecord(imgData);
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.map(item => item.id === jobId ? finalImage : item)
+                })));
+
+                // Cleanup job row if user is logged in
+                if (user) {
+                    supabase.from('generation_jobs').delete().eq('id', jobId).then();
+                }
+
+                attachedJobIds.current.delete(jobId);
+                return;
+            }
+
+            // 2. Check if job failed
+            const { data: jobData } = await supabase
+                .from('generation_jobs')
+                .select('status')
+                .eq('id', jobId)
+                .maybeSingle();
+
+            if (jobData?.status === 'failed') {
+                showToast(t('generation_failed'), "error");
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== jobId)
+                })).filter(r => r.items.length > 0));
+                attachedJobIds.current.delete(jobId);
+                return;
+            }
+
+            // 3. Continue polling
+            setTimeout(poll, 5000);
+        };
+
+        poll();
+    }, [setRows, user, t, showToast]);
+
+    // Re-attach to orphaned jobs on load/change
+    React.useEffect(() => {
+        const generatingIds = rows.flatMap(r => r.items)
+            .filter(i => i.isGenerating)
+            .map(i => i.id);
+
+        generatingIds.forEach(id => {
+            if (!attachedJobIds.current.has(id)) {
+                pollForJob(id);
+            }
+        });
+    }, [rows, pollForJob]);
 
     const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
         const cost = COSTS[qualityMode];
@@ -110,6 +185,7 @@ export const useGeneration = ({
                     concurrent_jobs: currentConcurrency,
                     board_id: currentBoardId
                 });
+                attachedJobIds.current.add(newId);
             } catch (dbErr) {
                 console.warn("Failed to log generation job:", dbErr);
             }
