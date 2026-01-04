@@ -97,6 +97,7 @@ CREATE TABLE public.global_presets (
     tags TEXT[] DEFAULT '{}',
     is_pinned BOOLEAN DEFAULT false,
     is_custom BOOLEAN DEFAULT false,
+    is_default BOOLEAN DEFAULT false,
     usage_count INTEGER DEFAULT 0,
     lang TEXT DEFAULT 'de',
     created_at TIMESTAMPTZ DEFAULT NOW(),

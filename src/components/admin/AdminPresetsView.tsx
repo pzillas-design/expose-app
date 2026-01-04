@@ -58,6 +58,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                         ...item,
                         isPinned: false,
                         isCustom: false,
+                        isDefault: false,
                         usageCount: 0,
                         createdAt: Date.now()
                     };
@@ -93,6 +94,19 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             setGlobalPresets(prev => prev.map(p => p.id === id ? updated : p));
         } catch (error) {
             alert(t('admin_pin_error') || 'Failed to toggle pin');
+        }
+    };
+
+    const handleToggleDefault = async (id: string) => {
+        const preset = globalPresets.find(p => p.id === id);
+        if (!preset) return;
+
+        try {
+            const updated = { ...preset, isDefault: !preset.isDefault };
+            await adminService.updateGlobalPreset(updated);
+            setGlobalPresets(prev => prev.map(p => p.id === id ? updated : p));
+        } catch (error) {
+            alert('Failed to update default bookmark status');
         }
     };
 
@@ -275,6 +289,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 <tr>
                                     <th className="px-2 py-3 w-10 text-center"></th> {/* Grip */}
                                     <th className="px-2 py-3 w-10 text-center"><Bookmark className="w-3.5 h-3.5 mx-auto opacity-50" /></th>
+                                    <th className="px-2 py-3 w-10 text-center"><div className="w-3.5 h-3.5 mx-auto rounded-full border-2 border-zinc-300 dark:border-zinc-700" title="System Standard" /></th>
                                     <th className="px-4 py-3 font-medium">{t('admin_preset_title')}</th>
                                     <th className="px-4 py-3 font-medium">{t('admin_preset_prompt')}</th>
                                     <th className="px-4 py-3 font-medium">{t('variables_label')}</th>
@@ -304,15 +319,24 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                                 <Bookmark className={`w-3.5 h-3.5 ${preset.isPinned ? 'fill-amber-500 text-amber-500' : ''}`} />
                                             </button>
                                         </td>
+                                        <td className="px-2 py-3 text-center">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleToggleDefault(preset.id); }}
+                                                className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-blue-500"
+                                                title="Toggle Default Bookmark for all users"
+                                            >
+                                                <div className={`w-3 h-3 mx-auto rounded-full border-2 ${preset.isDefault ? 'bg-blue-500 border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'border-zinc-300 dark:border-zinc-700'}`} />
+                                            </button>
+                                        </td>
                                         <td className="px-4 py-3 font-medium text-black dark:text-white whitespace-nowrap">
                                             {preset.title}
                                         </td>
                                         <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 max-w-xs truncate" title={preset.prompt}>
                                             {preset.prompt}
                                         </td>
-                                        <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 text-xs">
+                                        <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 text-xs text-center">
                                             {preset.controls && preset.controls.length > 0
-                                                ? preset.controls.map(c => c.label).join(', ')
+                                                ? preset.controls.length
                                                 : <span className="text-zinc-300 dark:text-zinc-700">-</span>
                                             }
                                         </td>
@@ -350,7 +374,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 ))}
                                 {filteredPresets.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-zinc-500">
+                                        <td colSpan={9} className="px-4 py-12 text-center text-zinc-500">
                                             {t('no_objects')}
                                         </td>
                                     </tr>

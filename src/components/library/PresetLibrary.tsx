@@ -47,7 +47,9 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
         return Array.from(usedTags).sort();
     }, [languageFilteredTemplates]);
 
-    const pinnedTemplates = useMemo(() => languageFilteredTemplates.filter(t => t.isPinned), [languageFilteredTemplates]);
+    const pinnedTemplates = useMemo(() => {
+        return languageFilteredTemplates.filter(t => t.isPinned || t.isDefault);
+    }, [languageFilteredTemplates]);
 
     const recentTemplates = useMemo(() => {
         return languageFilteredTemplates
@@ -180,10 +182,10 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         <>
                             {/* PRESETS SECTION */}
                             <div className="flex flex-col">
-                                <div className={`flex items-center justify-between px-3 py-3 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group`}>
+                                <div className={`flex items-center justify-between px-3 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group`}>
                                     <button
                                         onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
-                                        className="flex items-center gap-2 flex-1"
+                                        className="flex items-center gap-2 flex-1 h-full"
                                     >
                                         {isPresetsExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                                         <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
@@ -255,11 +257,11 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             <div className="flex flex-col">
                                 <button
                                     onClick={() => setIsRecentExpanded(!isRecentExpanded)}
-                                    className={`flex items-center gap-2 px-3 py-3 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors`}
+                                    className={`flex items-center gap-2 px-3 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors`}
                                 >
                                     {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                                     <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
-                                        {t('recent')}
+                                        {currentLang === 'de' ? 'Zuletzt' : 'Recent'}
                                     </span>
                                 </button>
 

@@ -98,6 +98,7 @@ export interface PromptTemplate {
   controls?: PresetControl[];
   lang?: 'de' | 'en'; // Localization
   isHistory?: boolean; // New: to distinguish on-the-fly prompts
+  isDefault?: boolean; // New: to mark as default system bookmark
   createdAt?: number; // DB Prep
 }
 
