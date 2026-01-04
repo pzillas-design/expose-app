@@ -227,19 +227,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {/* Floating Annotation Toolbar */}
-                {isSelected && editorState && (editorState.mode === 'brush' || editorState.mode === 'objects') && editorActions && (
-                    <AnnotationToolbar
-                        maskTool={editorState.maskTool}
-                        setMaskTool={editorActions.setMaskTool}
-                        brushSize={editorState.brushSize}
-                        setBrushSize={editorActions.setBrushSize}
-                        activeShape={editorState.activeShape || 'rect'}
-                        setActiveShape={editorActions.setActiveShape}
-                        onAddShape={handleAddShape}
-                    />
-                )}
-
                 {image.isGenerating && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}

@@ -116,14 +116,14 @@ export interface PresetTag {
 export interface LibraryItem {
   id: string;
   label: string;
-  icon: string;
+  icon?: string;
   isUserCreated?: boolean; // New
 }
 
 export interface LibraryCategory {
   id: string;
   label: string;
-  icon: string;
+  icon?: string;
   items: LibraryItem[];
   lang?: 'de' | 'en'; // Localization
   isUserCreated?: boolean; // New

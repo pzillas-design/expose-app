@@ -232,6 +232,51 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
 
+        // Handle SHAPES
+        if (itemId.startsWith('shape:')) {
+            const shapeType = itemId.split(':')[1] as 'rect' | 'circle' | 'line';
+            const cx = selectedImage.width / 2;
+            const cy = selectedImage.height / 2;
+            const size = Math.min(selectedImage.width, selectedImage.height) * 0.3;
+
+            let newShape: AnnotationObject;
+            if (shapeType === 'line') {
+                newShape = {
+                    id: generateId(), type: 'shape', shapeType: 'line',
+                    x: cx - size / 2, y: cy, width: size, height: size,
+                    points: [{ x: cx - size / 2, y: cy }, { x: cx + size / 2, y: cy }],
+                    strokeWidth: 4, color: '#fff', createdAt: Date.now()
+                };
+            } else {
+                newShape = {
+                    id: generateId(), type: 'shape', shapeType: shapeType,
+                    x: cx - size / 2, y: cy - size / 2, width: size, height: size,
+                    points: [],
+                    strokeWidth: 4, color: '#fff', createdAt: Date.now()
+                };
+            }
+            onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
+            return;
+        }
+
+        // Handle REMOVE stamp
+        if (itemId === 'util:remove') {
+            const newStamp: AnnotationObject = {
+                id: generateId(),
+                type: 'stamp',
+                points: [],
+                x: selectedImage.width / 2,
+                y: selectedImage.height / 2,
+                strokeWidth: 0,
+                color: '#ef4444', // Red-500
+                text: 'Remove',
+                itemId: itemId,
+                createdAt: Date.now()
+            };
+            onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+            return;
+        }
+
         const newStamp: AnnotationObject = {
             id: generateId(),
             type: 'stamp',
@@ -443,6 +488,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full">
+                        <SubHeader title={t('back')} />
                         <div className={`flex-1 overflow-hidden ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
@@ -459,9 +505,9 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
-                                onBack={() => onModeChange('prompt')}
                             />
                         </div>
+                        <DoneButton />
                     </div>
                 );
             case 'objects':

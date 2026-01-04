@@ -58,7 +58,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     // Resizing State
     const [dragState, setDragState] = useState<{
         id: string;
-        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 'p1' | 'p2';
+        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'p1' | 'p2';
         startX: number;
         startY: number;
         initialX: number;
@@ -233,6 +233,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         newX += dx; newW -= dx; newH += dy;
                     } else if (dragState.mode === 'br') {
                         newW += dx; newH += dy;
+                    } else if (dragState.mode === 't') {
+                        newY += dy; newH -= dy;
+                    } else if (dragState.mode === 'b') {
+                        newH += dy;
+                    } else if (dragState.mode === 'l') {
+                        newX += dx; newW -= dx;
+                    } else if (dragState.mode === 'r') {
+                        newW += dx;
                     }
 
                     // Enforce min size
@@ -314,7 +322,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
 
     // --- Drag Start Handlers ---
-    const startDrag = (e: React.MouseEvent, id: string, mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 'p1' | 'p2', ann: AnnotationObject) => {
+    const startDrag = (e: React.MouseEvent, id: string, mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'p1' | 'p2', ann: AnnotationObject) => {
         e.stopPropagation();
         e.preventDefault();
 

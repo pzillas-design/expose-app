@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Search, Box, ArrowLeft, GripVertical, X, Plus, Trash2, Check, Pen } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, Box, ArrowLeft, GripVertical, X, Plus, Trash2, Check, Pen, Eraser, Square, Circle, Minus } from 'lucide-react';
 import { Typo, Theme, IconButton, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
 
@@ -20,7 +20,8 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     onAddObject, t, currentLang, library,
     onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onBack
 }) => {
-    const [openCategories, setOpenCategories] = useState<string[]>(['basics']); // Default open relevant cat
+    // Open "utilities" by default if it exists
+    const [openCategories, setOpenCategories] = useState<string[]>(['utilities', 'basics']);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -40,24 +41,6 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             searchInputRef.current.focus();
         }
     }, [isSearchOpen]);
-
-    const handleDragStart = (e: React.DragEvent, text: string, itemId: string) => {
-        if (isEditMode) {
-            e.preventDefault();
-            return;
-        }
-        const payload = JSON.stringify({ text: text, itemId, variantIndex: 0 });
-        e.dataTransfer.setData('application/x-nano-stamp', payload);
-        e.dataTransfer.effectAllowed = 'copy';
-
-        const el = e.currentTarget as HTMLElement;
-        el.style.opacity = '0.5';
-    };
-
-    const handleDragEnd = (e: React.DragEvent) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.opacity = '1';
-    };
 
     const toggleCategory = (id: string) => {
         setOpenCategories(prev =>
@@ -103,8 +86,18 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         return cats;
     }, [search, currentLang, library]);
 
+    // Helpers for Icons
+    const renderIcon = (iconNameOrChar: string | undefined) => {
+        if (!iconNameOrChar) return '📦';
+        if (iconNameOrChar === 'Square') return <Square className="w-5 h-5" />;
+        if (iconNameOrChar === 'Circle') return <Circle className="w-5 h-5" />;
+        if (iconNameOrChar === 'Minus') return <Minus className="w-5 h-5 -rotate-45" />;
+        if (iconNameOrChar === 'Eraser') return <Eraser className="w-5 h-5" />;
+        return iconNameOrChar; // Return as char/string if it's an emoji
+    };
+
     return (
-        <div className="flex flex-col h-1/2 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
 
             {/* Embedded Header */}
             <div className={`h-12 shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center px-4 justify-between relative transition-colors ${isEditMode ? 'bg-zinc-100 dark:bg-zinc-800/50' : ''}`}>
@@ -156,7 +149,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             </div>
 
             {/* List Content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white dark:bg-zinc-900">
 
                 {/* Category Creation Input (Only visible in Edit Mode) */}
                 {isCreatingCategory && (
@@ -198,8 +191,6 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                         </div>
                     ) : (
                         filteredCategories.map((category) => {
-                            // In Edit mode, expand everything slightly differently or keep user preference? 
-                            // Let's keep user preference but auto-expand if adding item.
                             const isExpanded = search.trim() ? true : openCategories.includes(category.id);
                             const isUserCat = category.isUserCreated;
 
@@ -256,8 +247,8 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                                 </div>
                                             )}
 
-                                            {/* Persistent Add Button as First Item */}
-                                            {!addingItemToCatId && (
+                                            {/* Persistent Add Button as First Item for User Categories */}
+                                            {!addingItemToCatId && category.isUserCreated && (
                                                 <button
                                                     onClick={() => {
                                                         if (!openCategories.includes(category.id)) toggleCategory(category.id);
@@ -273,18 +264,16 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                             {category.items.map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    draggable={!isEditMode}
-                                                    onDragStart={(e) => handleDragStart(e, item.label, item.id)}
-                                                    onDragEnd={handleDragEnd}
+                                                    // Removed Draggable attributes
                                                     onClick={() => !isEditMode && onAddObject?.(item.label, item.id)}
                                                     className={`
                                                       group/item relative flex items-center gap-3 pl-6 pr-4 py-2.5
-                                                      ${isEditMode ? 'hover:bg-transparent' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-grab active:cursor-grabbing'}
-                                                      select-none transition-colors
+                                                      ${isEditMode ? 'hover:bg-transparent' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer active:scale-[0.99]'}
+                                                      select-none transition-all
                                                   `}
                                                 >
-                                                    <span className={`text-lg leading-none filter drop-shadow-sm select-none w-6 text-center shrink-0 ${!item.icon ? 'opacity-0' : ''}`}>
-                                                        {item.icon || '📦'}
+                                                    <span className={`text-lg leading-none filter drop-shadow-sm select-none w-6 text-center shrink-0 flex items-center justify-center`}>
+                                                        {renderIcon(item.icon)}
                                                     </span>
 
                                                     <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-400 ${!isEditMode && 'group-hover/item:text-black dark:group-hover/item:text-white'} transition-colors flex-1 truncate`}>
