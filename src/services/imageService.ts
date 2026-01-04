@@ -273,6 +273,17 @@ export const imageService = {
             const aspectRatio = record.width / record.height;
             const normalizedWidth = aspectRatio * targetHeight;
 
+            const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
+
+            // Resolve reference image paths in annotations
+            const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
+                if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
+                    const resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
+                    return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
+                }
+                return ann;
+            }));
+
             return {
                 id: record.id,
                 src: signedUrl || '',
@@ -289,7 +300,7 @@ export const imageService = {
                 originalSrc: signedUrl || '',
                 generationPrompt: record.prompt,
                 userDraftPrompt: record.user_draft_prompt || '',
-                annotations: record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [],
+                annotations: resolvedAnns,
                 parentId: record.parent_id,
                 quality: record.generation_params?.quality || 'pro-1k',
                 createdAt: new Date(record.created_at).getTime(),

@@ -158,7 +158,7 @@ export const useNanoController = () => {
     });
 
     const { onAddReference } = useAnnotationHandler({
-        selectedImage, handleUpdateAnnotations, showToast, t
+        selectedImage, handleUpdateAnnotations, showToast, t, user
     });
 
     // --- Actions --- (Integrated via Hooks above)

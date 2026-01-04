@@ -16,6 +16,7 @@ export interface AnnotationObject {
   variantIndex?: number;
   color: string;
   referenceImage?: string;
+  _tempSrc?: string; // Client-side preview for paths
   createdAt?: number; // DB Prep
 }
 

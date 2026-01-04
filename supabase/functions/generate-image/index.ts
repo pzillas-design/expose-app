@@ -143,20 +143,40 @@ Deno.serve(async (req) => {
         // Collect ALL reference images from any annotation type
         const refAnns = annotations.filter((ann: any) => ann.referenceImage);
 
-        refAnns.forEach((ann: any, index: number) => {
-            const base64 = ann.referenceImage.split(',')[1] || ann.referenceImage;
-            const imgNum = index + 3;
-            parts.push({
-                inlineData: { data: base64, mimeType: 'image/png' }
-            });
+        // Map them to promises to handle storage resolution in parallel
+        const refImageParts = await Promise.all(refAnns.map(async (ann: any, index: number) => {
+            let base64 = ann.referenceImage;
 
-            // Addressing the reference image to a specific label if available
-            if (ann.text) {
-                parts.push({ text: `Image ${imgNum}: Reference Image specifically for the object labeled "${ann.text.toUpperCase()}" in the Annotation Image.` });
+            // If it's a storage path, we need to download it
+            if (!base64.startsWith('data:') && !base64.startsWith('http')) {
+                console.log(`Edge: Resolving reference image from storage: ${base64}`);
+                const { data, error } = await supabaseAdmin.storage.from('user-content').download(base64);
+                if (error) {
+                    console.error(`Edge: Failed to download reference image ${base64}:`, error);
+                    return null;
+                }
+                const buffer = await data.arrayBuffer();
+                base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
             } else {
-                parts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
+                // It's already base64 (or a URL)
+                base64 = base64.split(',')[1] || base64;
             }
-        });
+
+            const imgNum = index + 3;
+            const resParts = [
+                { inlineData: { data: base64, mimeType: 'image/png' } }
+            ];
+
+            if (ann.text) {
+                resParts.push({ text: `Image ${imgNum}: Reference Image specifically for the object labeled "${ann.text.toUpperCase()}" in the Annotation Image.` });
+            } else {
+                resParts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
+            }
+            return resParts;
+        }));
+
+        // Flatten and add to parts
+        refImageParts.filter(Boolean).forEach((p: any) => parts.push(...p));
 
         let imageConfig: any = {}
         if (qualityMode === 'pro-1k') imageConfig = { imageSize: '1K' }
