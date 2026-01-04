@@ -672,7 +672,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                     {/* Preset Library - Now part of the main scroll flow */}
                     {(activeInternalTab === 'prompt' || isMulti) && (
-                        <div className={`mt-auto border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} w-full pt-2`}>
+                        <div className={`mt-auto ${Theme.Colors.PanelBg} w-full`}>
                             <input
                                 type="file"
                                 ref={annFileInputRef}
