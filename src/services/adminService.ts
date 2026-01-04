@@ -115,11 +115,33 @@ export const adminService = {
     async getGlobalPresets(): Promise<any[]> {
         const { data, error } = await supabase.from('global_presets').select('*').order('created_at', { ascending: false });
         if (error) throw error;
-        return data || [];
+        return (data || []).map(p => ({
+            ...p,
+            isPinned: p.is_pinned,
+            isCustom: p.is_custom,
+            isDefault: p.is_default,
+            usageCount: p.usage_count,
+            createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
+            lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
+        }));
     },
 
     async updateGlobalPreset(preset: any): Promise<void> {
-        const { error } = await supabase.from('global_presets').upsert(preset);
+        const dbPreset = {
+            id: preset.id,
+            title: preset.title,
+            prompt: preset.prompt,
+            tags: preset.tags,
+            is_pinned: preset.isPinned,
+            is_custom: preset.isCustom,
+            is_default: preset.isDefault,
+            usage_count: preset.usageCount,
+            lang: preset.lang,
+            updated_at: new Date().toISOString(),
+            last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
+            controls: preset.controls
+        };
+        const { error } = await supabase.from('global_presets').upsert(dbPreset);
         if (error) throw error;
     },
 
