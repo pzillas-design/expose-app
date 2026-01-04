@@ -6,7 +6,6 @@ import { TranslationFunction, LibraryCategory } from '@/types';
 
 interface ObjectsTabProps {
     onAddObject?: (label: string, itemId: string) => void;
-    onBack?: () => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
     library: LibraryCategory[];
@@ -17,7 +16,7 @@ interface ObjectsTabProps {
 }
 
 export const ObjectsTab: React.FC<ObjectsTabProps> = ({
-    onAddObject, onBack, t, currentLang, library,
+    onAddObject, t, currentLang, library,
     onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem
 }) => {
     const [openCategories, setOpenCategories] = useState<string[]>(['basics']); // Default open relevant cat
@@ -104,30 +103,33 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     }, [search, currentLang, library]);
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-900">
+        <div className="flex flex-col h-1/2 min-h-0 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
 
-            {/* Header */}
-            <div className={`h-14 shrink-0 border-b ${Theme.Colors.Border} flex items-center px-4 justify-between relative transition-colors ${isEditMode ? 'bg-zinc-100 dark:bg-zinc-800/50' : Theme.Colors.PanelBg}`}>
+            {/* Embedded Header */}
+            <div className={`h-12 shrink-0 border-b border-zinc-100 dark:border-zinc-800 flex items-center px-4 justify-between relative transition-colors ${isEditMode ? 'bg-zinc-100 dark:bg-zinc-800/50' : ''}`}>
 
-                {/* Default Header Content */}
+                {/* Title & Actions */}
                 <div className={`absolute inset-0 flex items-center justify-between px-4 transition-all duration-300 ${isSearchOpen ? 'opacity-0 pointer-events-none scale-95' : 'opacity-100 scale-100'}`}>
-                    <div className="flex items-center gap-2">
-                        <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={onBack} tooltip={t('back')} />
-                        <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>
-                            {isEditMode ? t('edit') : t('objects_tool')}
-                        </span>
-                    </div>
+                    <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>
+                        {isEditMode ? t('edit') : t('library')}
+                    </span>
 
                     <div className="flex items-center gap-1">
                         <Tooltip text={isEditMode ? t('done') : t('edit')}>
                             <IconButton
-                                icon={isEditMode ? <Check className="w-4 h-4 text-emerald-500" /> : <Pen className="w-4 h-4" />}
+                                icon={isEditMode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Pen className="w-3.5 h-3.5" />}
                                 onClick={() => setIsEditMode(!isEditMode)}
                                 active={isEditMode}
+                                className="h-7 w-7"
                             />
                         </Tooltip>
                         {!isEditMode && (
-                            <IconButton icon={<Search className="w-4 h-4" />} onClick={() => setIsSearchOpen(true)} tooltip={t('search')} />
+                            <IconButton
+                                icon={<Search className="w-3.5 h-3.5" />}
+                                onClick={() => setIsSearchOpen(true)}
+                                tooltip={t('search')}
+                                className="h-7 w-7"
+                            />
                         )}
                     </div>
                 </div>
@@ -141,9 +143,9 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('search_library')}
-                        className={`flex-1 bg-transparent border-none outline-none ${Typo.Body} ${Theme.Colors.TextPrimary} placeholder-zinc-500 h-full`}
+                        className={`flex-1 bg-transparent border-none outline-none ${Typo.Micro} ${Theme.Colors.TextPrimary} placeholder-zinc-500 h-full`}
                     />
-                    <IconButton icon={<X className="w-4 h-4" />} onClick={clearSearch} tooltip={t('close')} />
+                    <IconButton icon={<X className="w-3.5 h-3.5" />} onClick={clearSearch} tooltip={t('close')} className="h-7 w-7" />
                 </div>
             </div>
 

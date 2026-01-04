@@ -29,7 +29,7 @@ export function App() {
     const location = useLocation();
 
     const {
-        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, isDragOver,
+        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, activeShape, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
         currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
@@ -43,7 +43,7 @@ export function App() {
         setQualityMode, setThemeMode, setLang, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
-        setMaskTool, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew
+        setMaskTool, setActiveShape, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -58,7 +58,7 @@ export function App() {
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
     // Stable Editor State Object to preserve ImageItem memoization during scroll
-    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool }), [sideSheetMode, brushSize, maskTool]);
+    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape }), [sideSheetMode, brushSize, maskTool, activeShape]);
 
     // URL Routing Sync
     useEffect(() => {
@@ -369,6 +369,8 @@ export function App() {
                     onOpenSettings={() => navigate('/settings')}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
+                    onAnnotate={() => setSideSheetMode(prev => prev === 'brush' ? null : 'brush')}
+                    isAnnotationMode={sideSheetMode === 'brush'}
                     onUpload={handleDockUpload}
                     onCreateNew={() => setIsCreationModalOpen(true)}
                     t={t}
@@ -480,6 +482,8 @@ export function App() {
                 onDeleteUserItem={deleteUserItem}
                 maskTool={maskTool}
                 onMaskToolChange={setMaskTool}
+                activeShape={activeShape}
+                onActiveShapeChange={setActiveShape}
 
                 onUpload={() => document.getElementById('ctx-upload-input')?.click()}
                 onCreateNew={() => setIsCreationModalOpen(true)}

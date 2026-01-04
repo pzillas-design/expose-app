@@ -17,7 +17,8 @@ interface ImageItemProps {
     editorState?: {
         mode: 'prompt' | 'brush' | 'objects';
         brushSize: number;
-        maskTool: 'brush' | 'text';
+        maskTool: 'brush' | 'text' | 'shape';
+        activeShape?: 'rect' | 'circle' | 'line';
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
@@ -199,6 +200,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             brushSize={editorState.brushSize}
                             activeTab={editorState.mode}
                             maskTool={editorState.maskTool}
+                            activeShape={editorState.activeShape}
                             isActive={isSelected}
                             onEditStart={onEditStart}
                             onContextMenu={(e) => onContextMenu?.(e, image.id)}

@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles } from 'lucide-react';
+import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, Pencil } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 
@@ -12,6 +12,8 @@ interface CommandDockProps {
   onOpenSettings: () => void;
   onOpenCredits: () => void;
   onHome: () => void;
+  onAnnotate: () => void;
+  isAnnotationMode: boolean;
   onUpload?: (files: FileList) => void;
   onCreateNew: () => void;
   t: TranslationFunction;
@@ -24,6 +26,8 @@ export const CommandDock: React.FC<CommandDockProps> = ({
   onOpenSettings,
   onOpenCredits,
   onHome,
+  onAnnotate,
+  isAnnotationMode,
   onUpload,
   onCreateNew,
   t
@@ -87,6 +91,18 @@ export const CommandDock: React.FC<CommandDockProps> = ({
           onClick={onHome}
           tooltip="Home"
           className="w-8 h-8 flex items-center justify-center p-0"
+        />
+      </div>
+
+      <div className={`w-px h-5 border-r border-zinc-200 dark:border-zinc-700 mx-0.5`} />
+
+      {/* 1.5. Annotate */}
+      <div className="flex items-center px-0.5">
+        <IconButton
+          icon={<Pencil className="w-4 h-4" />}
+          onClick={onAnnotate}
+          tooltip={t('annotate') || 'Annotate'}
+          className={`w-8 h-8 flex items-center justify-center p-0 ${isAnnotationMode ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white' : ''}`}
         />
       </div>
 

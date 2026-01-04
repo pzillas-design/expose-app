@@ -62,6 +62,23 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
     const Separator = () => <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />;
 
+    const handleCopy = async (id: string) => {
+        const img = images.find(i => i.id === id);
+        if (!img?.src) return;
+        onClose();
+        try {
+            const response = await fetch(img.src);
+            const blob = await response.blob();
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    [blob.type]: blob
+                })
+            ]);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+    };
+
     return createPortal(
         <>
             {/* Backdrop to close */}
@@ -153,6 +170,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Download className={iconClass} />
                                             <span className={textClass}>{t('ctx_download_image')}</span>
                                         </button>
+                                        <button onClick={() => handleCopy(menu.targetId!)} className={itemClass}>
+                                            <Copy className={iconClass} />
+                                            <span className={textClass}>{t('copy_image')}</span>
+                                        </button>
 
                                         <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
                                             <Trash2 className={dangerIconClass} />
@@ -181,6 +202,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                     <Download className={iconClass} />
                                     <span className={textClass}>{t('ctx_download_image')}</span>
+                                </button>
+                                <button onClick={() => handleCopy(menu.targetId!)} className={itemClass}>
+                                    <Copy className={iconClass} />
+                                    <span className={textClass}>{t('copy_image')}</span>
                                 </button>
 
                                 <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>

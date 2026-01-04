@@ -41,8 +41,10 @@ interface SideSheetProps {
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
-    maskTool: 'brush' | 'text';
-    onMaskToolChange: (tool: 'brush' | 'text') => void;
+    maskTool: 'brush' | 'text' | 'shape';
+    onMaskToolChange: (tool: 'brush' | 'text' | 'shape') => void;
+    activeShape: 'rect' | 'circle' | 'line';
+    onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -79,6 +81,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onDeleteUserItem,
     maskTool,
     onMaskToolChange,
+    activeShape,
+    onActiveShapeChange,
     onUpload,
     onCreateNew,
     isBoardEmpty,
@@ -415,7 +419,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 templates={templates}
                                 onSelectTemplate={(t) => handlePromptChange(t.prompt)}
                                 onAddBrush={() => onModeChange('brush')}
-                                onAddObject={() => onModeChange('objects')}
+                                onAddObject={() => onModeChange('brush')}
                                 onAddReference={handleAddReferenceImage}
                                 annotations={selectedImage.annotations || []}
                                 onDeleteAnnotation={deleteAnnotation}
@@ -440,26 +444,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 return (
                     <div className="flex flex-col h-full">
                         <SubHeader title={t('back')} />
-                        <div className={`flex-1 overflow-y-auto ${Theme.Colors.PanelBg}`}>
+                        <div className={`flex-1 overflow-hidden ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
                                 onBrushSizeChange={onBrushSizeChange}
                                 maskTool={maskTool}
                                 onMaskToolChange={onMaskToolChange}
-                                t={t}
-                            />
-                        </div>
-                        <DoneButton />
-                    </div>
-                );
-            case 'objects':
-                if (isMulti) return null;
-                return (
-                    <div className="flex flex-col h-full">
-                        <div className={`flex-1 overflow-hidden flex flex-col ${Theme.Colors.PanelBg}`}>
-                            <ObjectsTab
-                                onAddObject={handleAddObjectCenter}
-                                onBack={() => onModeChange('prompt')}
+                                activeShape={activeShape}
+                                onActiveShapeChange={onActiveShapeChange}
                                 t={t}
                                 currentLang={lang}
                                 library={fullLibrary}
@@ -467,11 +459,17 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onDeleteUserCategory={onDeleteUserCategory}
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
+                                onAddObject={handleAddObjectCenter}
                             />
                         </div>
                         <DoneButton />
                     </div>
                 );
+            case 'objects':
+                // Deprecated: Objects tool is now inside 'brush' tab
+                // Redirect to brush just in case
+                if (sideSheetMode === 'objects') onModeChange('brush');
+                return null;
             default:
                 return null;
         }
