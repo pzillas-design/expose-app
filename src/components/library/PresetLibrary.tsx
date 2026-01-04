@@ -242,7 +242,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                             ))
                                         ) : (
                                             <div className="px-6 py-10 text-center animate-in fade-in duration-500">
-                                                <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed max-w-[200px] mx-auto`}>
+                                                <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed w-full`}>
                                                     {currentLang === 'de'
                                                         ? 'Suchen und speichern Sie Presets, um sie hier griffbereit zu haben.'
                                                         : 'Search and save presets to keep them handy right here.'}
@@ -291,7 +291,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                             ))
                                         ) : (
                                             <div className="px-6 py-10 text-center animate-in fade-in duration-500">
-                                                <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed max-w-[200px] mx-auto`}>
+                                                <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed w-full`}>
                                                     {currentLang === 'de'
                                                         ? 'Ihre zuletzt verwendeten Prompts werden hier gelistet.'
                                                         : 'Your recently used prompts will automatically appear here.'}
