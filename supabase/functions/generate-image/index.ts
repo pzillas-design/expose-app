@@ -163,20 +163,14 @@ Deno.serve(async (req) => {
             }
 
             const imgNum = index + 3;
-            const resParts = [
-                { inlineData: { data: base64, mimeType: 'image/png' } }
-            ];
+            parts.push({ inlineData: { data: base64, mimeType: 'image/png' } });
 
             if (ann.text) {
-                resParts.push({ text: `Image ${imgNum}: Reference Image specifically for the object labeled "${ann.text.toUpperCase()}" in the Annotation Image.` });
+                parts.push({ text: `Image ${imgNum}: Reference Image specifically for the object labeled "${ann.text.toUpperCase()}" in the Annotation Image.` });
             } else {
-                resParts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
+                parts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
             }
-            return resParts;
         }));
-
-        // Flatten and add to parts
-        refImageParts.filter(Boolean).forEach((p: any) => parts.push(...p));
 
         let imageConfig: any = {}
         if (qualityMode === 'pro-1k') imageConfig = { imageSize: '1K' }

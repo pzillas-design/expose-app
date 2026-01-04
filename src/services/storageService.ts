@@ -72,6 +72,14 @@ export const storageService = {
      * Get a temporary public URL for a private image
      */
     async getSignedUrl(path: string): Promise<string | null> {
+        if (!path) return null;
+
+        // PERFORMANCE HACK: If it's a thumbnail, use the public URL directly
+        // This avoids the 'Signed URL Waterfall' that slows down the projects page.
+        if (path.includes('thumb_')) {
+            return this.getPublicUrl(path);
+        }
+
         // Init cache if empty
         if (this._urlCache.size === 0) {
             this._getPersistentCache();
@@ -103,6 +111,17 @@ export const storageService = {
             console.error('Get Signed URL Failed:', error);
             return null;
         }
+    },
+
+    /**
+     * Constructs a public URL for a file. 
+     * Note: Requires the bucket or the path to be public in Supabase.
+     */
+    getPublicUrl(path: string): string {
+        const { data } = supabase.storage
+            .from('user-content')
+            .getPublicUrl(path);
+        return data.publicUrl;
     },
 
     async deleteImage(path: string) {
