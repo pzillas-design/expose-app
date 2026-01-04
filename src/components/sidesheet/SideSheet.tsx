@@ -311,18 +311,19 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 />
 
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                    <div className="flex flex-col items-center gap-14 w-full max-w-[400px]">
+                    <div className="flex flex-col items-center gap-12 w-full max-w-[400px]">
                         {/* Header */}
-                        <div className="flex flex-col items-center gap-6">
-                            <div className="flex flex-col gap-6">
-                                <h1
-                                    className={`text-3xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
+                        <div className="flex flex-col items-center gap-8 w-full">
+                            <Logo className="w-16 h-16" />
+                            <div className="flex flex-col gap-6 w-full">
+                                <h2
+                                    className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-1`}
                                     style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                                 >
-                                    <span className="text-zinc-400 dark:text-zinc-500 font-normal italic text-xl">Willkommen bei</span>
-                                    <span className="text-4xl tracking-tighter">expose</span>
-                                </h1>
-                                <p className={`${Typo.Body} leading-relaxed text-zinc-500 max-w-[280px] mx-auto`}>
+                                    <span>Willkommen bei</span>
+                                    <span className="text-5xl font-bold tracking-tighter mt-1">exposé</span>
+                                </h2>
+                                <p className={`${Typo.Body} leading-relaxed text-zinc-500 w-full`}>
                                     {lang === 'de'
                                         ? 'Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie neu.'
                                         : 'Select an image to edit or start a new creation.'
