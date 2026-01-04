@@ -647,16 +647,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </Button>
                                 )}
                                 {userProfile?.role === 'admin' && (
-                                    <Button
-                                        variant="ghost"
+                                    <button
                                         onClick={() => setIsDebugOpen(true)}
-                                        className="justify-start px-4 h-11 gap-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 border border-blue-200/50"
+                                        className="flex items-center gap-2 px-2 py-1 text-blue-500 hover:text-blue-600 transition-colors"
                                     >
                                         <Bug className="w-4 h-4" />
-                                        <span className={`${Typo.Label} uppercase tracking-wider`}>
-                                            Maske/API prüfen
+                                        <span className={`${Typo.Label} uppercase tracking-wider font-bold text-[10px]`}>
+                                            Debug
                                         </span>
-                                    </Button>
+                                    </button>
                                 )}
                             </div>
                         </div>
