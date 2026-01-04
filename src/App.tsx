@@ -85,13 +85,13 @@ export function App() {
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
-            if (e.dataTransfer?.types.includes('Files')) {
+            if (e.dataTransfer?.types.includes('Files') && !isCreationModalOpen) {
                 setIsDragOver(true);
             }
         };
         window.addEventListener('dragenter', handleWindowDragEnter);
         return () => window.removeEventListener('dragenter', handleWindowDragEnter);
-    }, [setIsDragOver]);
+    }, [setIsDragOver, isCreationModalOpen]);
 
     // Manage Snap State (Restore on selection change)
     useEffect(() => {
@@ -532,6 +532,7 @@ export function App() {
                 }}
                 t={t}
                 lang={currentLang}
+                onUpload={processFile}
             />
 
             <CreditsModal

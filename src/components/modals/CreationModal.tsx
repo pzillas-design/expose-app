@@ -6,9 +6,9 @@ import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip } from 'lucide
 interface CreationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onGenerate: (prompt: string, model: string, ratio: string) => void;
     t: TranslationFunction;
     lang: 'de' | 'en';
+    onUpload?: (files: FileList) => void;
 }
 
 const ASPECT_RATIOS = [
@@ -38,7 +38,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     onClose,
     onGenerate,
     t,
-    lang
+    lang,
+    onUpload
 }) => {
     const MODELS = [
         { id: 'fast', name: 'Nano Banana', price: t('price_free'), res: '1024 px' },
@@ -51,6 +52,36 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     const [selectedModel, setSelectedModel] = useState('pro-2k');
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [openDropdown, setOpenDropdown] = useState<'model' | 'ratio' | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types.includes('Files')) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        if (e.dataTransfer.files && onUpload) {
+            onUpload(e.dataTransfer.files);
+        }
+    };
+
+    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && onUpload) {
+            onUpload(e.target.files);
+        }
+    };
 
     const handleGenerate = () => {
         if (!prompt.trim()) return;
@@ -86,11 +117,22 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 <div className="flex-1 overflow-visible p-6 flex flex-col gap-8">
 
                     {/* Prompt Input */}
-                    <div className="flex flex-col gap-3">
-                        <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider`}>
+                    <div
+                        className="flex flex-col gap-3 relative"
+                        onDragEnter={handleDragEnter}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center justify-between`}>
                             {t('creation_prompt_label')}
+                            {isDragging && <span className="text-blue-500 animate-pulse lowercase text-[10px] bg-blue-500/10 px-2 py-0.5 rounded-full">Drop to upload</span>}
                         </label>
-                        <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500 transition-colors overflow-hidden`}>
+                        <div className={`
+                            relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} 
+                            transition-all duration-200 overflow-hidden
+                            ${isDragging ? 'border-blue-500 ring-4 ring-blue-500/10 scale-[1.01] bg-blue-500/5' : 'hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500'}
+                        `}>
                             <textarea
                                 className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none h-48`}
                                 placeholder={t('creation_prompt_placeholder')}
@@ -98,10 +140,36 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 onChange={(e) => setPrompt(e.target.value)}
                                 autoFocus
                             />
+
+                            {/* Drop Overlay */}
+                            {isDragging && (
+                                <div className="absolute inset-0 bg-blue-500/5 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-blue-500/50 m-2 rounded-lg">
+                                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                        <Paperclip className="w-5 h-5" />
+                                    </div>
+                                    <span className={`${Typo.Label} text-blue-600 dark:text-blue-400`}>Bild hier ablegen</span>
+                                </div>
+                            )}
                         </div>
-                        <Button variant="secondary" className="w-full" icon={<Paperclip className="w-4 h-4" />} onClick={() => { }}>
-                            {t('attach_file')}
-                        </Button>
+
+                        <div className="relative">
+                            <input
+                                type="file"
+                                id="creation-file-upload"
+                                className="hidden"
+                                multiple
+                                accept="image/*"
+                                onChange={handleFileInput}
+                            />
+                            <Button
+                                variant="secondary"
+                                className={`w-full transition-colors ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-200' : ''}`}
+                                icon={<Paperclip className="w-4 h-4" />}
+                                onClick={() => document.getElementById('creation-file-upload')?.click()}
+                            >
+                                {t('attach_file')}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Settings Grid */}
