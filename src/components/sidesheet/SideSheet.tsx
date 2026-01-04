@@ -320,8 +320,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
                                     style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                                 >
-                                    <span>Willkommen bei</span>
-                                    <span className="font-bold tracking-[0.2em] uppercase">Expose</span>
+                                    Willkommen bei exposé
                                 </h2>
                                 <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full`}>
                                     {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
