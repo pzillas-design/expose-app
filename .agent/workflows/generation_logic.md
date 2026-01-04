@@ -57,6 +57,7 @@ The payload sent to the Gemini API is multimodal, containing both text instructi
     {
       "parts": [
         { "text": "I am providing an ORIGINAL image (to be edited). I am also providing an ANNOTATION image... The following labels are marked in the Annotation Image: \"SOFA\"." },
+        { "text": "User Prompt: [USER_INPUT_PROMPT]" },
         {
           "inlineData": {
             "data": "base64_encoded_original_image",
@@ -77,8 +78,7 @@ The payload sent to the Gemini API is multimodal, containing both text instructi
             "mimeType": "image/png"
           }
         },
-        { "text": "Image 3: Reference Image specifically for the object labeled 'SOFA' in the Annotation Image." },
-        { "text": "User Prompt: [USER_INPUT_PROMPT]" }
+        { "text": "Image 3: Reference Image specifically for the object labeled 'SOFA' in the Annotation Image." }
       ]
     }
   ],
@@ -91,6 +91,6 @@ The payload sent to the Gemini API is multimodal, containing both text instructi
 ```
 
 ### Key Payload Rules:
-1.  **Order Matters**: Gemini processes parts in sequence. We start with the system instruction, then the images (with their respective labels), and finally the user prompt.
+1.  **Order Matters**: Gemini processes parts in sequence. We start with the system instruction followed immediately by the **User Prompt** to establish the goal. Then we provide the visual context (images + identifies).
 2.  **Explicit Labeling**: Every `inlineData` part is immediately followed by a `text` part identifying it (e.g., "Image 1: ...").
 3.  **Addresssing**: For specifically addressed reference images, the label matches the text found in the Annotation Image.

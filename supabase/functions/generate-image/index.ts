@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
         systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt, following the visual cues in the ANNOTATION image and using the REFERENCE images as a basis for style or objects."
 
         parts.push({ text: systemInstruction })
+        parts.push({ text: `User Prompt: ${prompt}` })
 
         // Source Image (only if present, for Text2Img it might be empty/placeholder)
         if (finalSourceBase64) {
@@ -156,8 +157,6 @@ Deno.serve(async (req) => {
                 parts.push({ text: `Image ${imgNum}: General Reference Image for visual guidance.` });
             }
         });
-
-        parts.push({ text: `User Prompt: ${prompt}` })
 
         let imageConfig: any = {}
         if (qualityMode === 'pro-1k') imageConfig = { imageSize: '1K' }
