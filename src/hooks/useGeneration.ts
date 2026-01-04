@@ -160,7 +160,7 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
-            annotations: [],
+            annotations: sourceImage.annotations || [],
             parentId: sourceImage.id,
             generationPrompt: prompt,
             userDraftPrompt: '',
@@ -213,7 +213,9 @@ export const useGeneration = ({
                 qualityMode,
                 maskDataUrl: maskDataUrl || undefined,
                 newId,
-                boardId: currentBoardId || undefined
+                boardId: currentBoardId || undefined,
+                targetVersion: newVersion,
+                targetTitle: placeholder.title
                 // modelName removed as server handles mapping
             });
 
@@ -277,7 +279,7 @@ export const useGeneration = ({
         }
     };
 
-    const performNewGeneration = async (prompt: string, modelId: string, ratio: string) => {
+    const performNewGeneration = async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
         const cost = COSTS[modelId] || 0;
         const isPro = userProfile?.role === 'pro';
 
@@ -320,6 +322,17 @@ export const useGeneration = ({
         const displayHeight = 512;
         const displayWidth = (realWidth / realHeight) * displayHeight;
 
+        // Map attachments to annotations format for the Edge function
+        const creationAnns: any[] = attachments.map(src => ({
+            id: generateId(),
+            type: 'reference_image',
+            referenceImage: src,
+            points: [],
+            strokeWidth: 0,
+            color: '#000000',
+            x: 0, y: 0, width: 0, height: 0 // Not used for global refs
+        }));
+
         const placeholder: CanvasImage = {
             id: newId,
             src: '',
@@ -337,7 +350,7 @@ export const useGeneration = ({
             updatedAt: Date.now(),
             generationPrompt: prompt,
             userDraftPrompt: '',
-            annotations: [],
+            annotations: creationAnns,
             boardId: currentBoardId || undefined
         };
 
@@ -366,7 +379,9 @@ export const useGeneration = ({
                     status: 'processing',
                     cost: cost,
                     prompt: prompt,
-                    board_id: currentBoardId
+                    board_id: currentBoardId,
+                    // If we want the Edge function to see the attachments, 
+                    // we could also pack them into generation_params or just trust the processGeneration call
                 });
             }
 
@@ -375,7 +390,8 @@ export const useGeneration = ({
                 prompt,
                 qualityMode: modelId,
                 newId,
-                boardId: currentBoardId || undefined
+                boardId: currentBoardId || undefined,
+                attachments
             });
 
             if (finalImage) {

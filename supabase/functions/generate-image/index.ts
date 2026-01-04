@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
         const payload = await req.json()
         newId = payload.newId
-        const { sourceImage, prompt, qualityMode, maskDataUrl, modelName, board_id } = payload
+        const { sourceImage, prompt, qualityMode, maskDataUrl, modelName, board_id, attachments: payloadAttachments } = payload
         const boardId = board_id; // Alias for consistency in the rest of the file
 
         console.log(`Starting generation for user ${user.id}, quality: ${qualityMode}, job: ${newId}, board: ${boardId}`);
@@ -105,8 +105,22 @@ Deno.serve(async (req) => {
         const parts: any[] = []
 
         const annotations = sourceImage.annotations || [];
-        const hasRefs = annotations.some((ann: any) => ann.type === 'reference_image');
         const hasMask = !!maskDataUrl
+
+        // --- REFERENCE IMAGES (Croppings & Attachments) ---
+        // 1. Existing reference images from annotations
+        const refAnns = annotations.filter((ann: any) => ann.referenceImage);
+
+        // 2. New attachments from payload (ensure uniqueness by checking if they are already in refAnns)
+        const freshAttachments = (payloadAttachments || [])
+            .filter((att: string) => !refAnns.some((ann: any) => ann.referenceImage === att))
+            .map((att: string) => ({
+                referenceImage: att,
+                type: 'reference_image'
+            }));
+
+        const allRefs = [...refAnns, ...freshAttachments];
+        const hasRefs = allRefs.length > 0;
 
         let systemInstruction = "I am providing an ORIGINAL image (to be edited)."
         if (hasMask) {
@@ -118,6 +132,7 @@ Deno.serve(async (req) => {
         }
         if (hasRefs) systemInstruction += " I am also providing REFERENCE images for guidance (style, context, or visual elements)."
         systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt, following the visual cues in the ANNOTATION image and using the REFERENCE images as a basis for style or objects."
+        systemInstruction += " CRITICAL: The generated image must NEVER include any of the text, lines, or markings shown in the ANNOTATION image. Those elements are strictly for your instructions and should be removed/replaced with realistic image content."
 
         parts.push({ text: systemInstruction })
         parts.push({ text: `User Prompt: ${prompt}` })
@@ -139,12 +154,8 @@ Deno.serve(async (req) => {
             parts.push({ text: "Image 2: The Annotation Image (Muted original + overlays showing where and what to change)." })
         }
 
-        // --- REFERENCE IMAGES (Croppings) ---
-        // Collect ALL reference images from any annotation type
-        const refAnns = annotations.filter((ann: any) => ann.referenceImage);
-
-        // Map them to promises to handle storage resolution in parallel
-        const refImageParts = await Promise.all(refAnns.map(async (ann: any, index: number) => {
+        // Process ALL reference images
+        await Promise.all(allRefs.map(async (ann: any, index: number) => {
             let base64 = ann.referenceImage;
 
             // If it's a storage path, we need to download it
@@ -153,7 +164,7 @@ Deno.serve(async (req) => {
                 const { data, error } = await supabaseAdmin.storage.from('user-content').download(base64);
                 if (error) {
                     console.error(`Edge: Failed to download reference image ${base64}:`, error);
-                    return null;
+                    return;
                 }
                 const buffer = await data.arrayBuffer();
                 base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -249,7 +260,7 @@ Deno.serve(async (req) => {
             })
         }
 
-        const newImage = {
+        const newImage: any = {
             id: newId,
             user_id: user.id,
             board_id: boardId,
@@ -264,6 +275,7 @@ Deno.serve(async (req) => {
             version: (sourceImage.version || 0) + 1,
             prompt: prompt,
             parent_id: sourceImage.id || null,
+            annotations: sourceImage.annotations ? JSON.stringify(sourceImage.annotations) : null,
             generation_params: { quality: qualityMode }
         }
 

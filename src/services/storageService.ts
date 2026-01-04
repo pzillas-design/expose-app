@@ -69,45 +69,69 @@ export const storageService = {
     },
 
     /**
-     * Get a temporary public URL for a private image
+     * Get multiple signed URLs at once (batching)
+     * @param paths List of storage paths
+     * @returns A map of path -> signedUrl
      */
-    async getSignedUrl(path: string): Promise<string | null> {
-        if (!path) return null;
+    async getSignedUrls(paths: string[]): Promise<Record<string, string>> {
+        if (!paths || paths.length === 0) return {};
 
-        // Signed URL required for private 'user-content' bucket
-
-
-        // Init cache if empty
+        // 0. Ensure cache is loaded
         if (this._urlCache.size === 0) {
             this._getPersistentCache();
         }
 
-        // Check cache (valid for 1 hour locally, even though signed for 7 days)
-        const cached = this._urlCache.get(path);
-        if (cached && cached.expires > Date.now()) {
-            return cached.url;
-        }
+        const results: Record<string, string> = {};
+        const toFetch: string[] = [];
+
+        // 1. Check Cache
+        paths.forEach(path => {
+            const cached = this._urlCache.get(path);
+            if (cached && cached.expires > Date.now()) {
+                results[path] = cached.url;
+            } else if (path) {
+                toFetch.push(path);
+            }
+        });
+
+        if (toFetch.length === 0) return results;
 
         try {
+            // 2. Fetch missing in one call
+            console.log(`Storage: Batch signing ${toFetch.length} paths...`);
             const { data, error } = await supabase.storage
                 .from('user-content')
-                .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+                .createSignedUrls(toFetch, 60 * 60 * 24 * 7); // 7 days
 
             if (error) throw error;
 
-            if (data?.signedUrl) {
-                this._urlCache.set(path, {
-                    url: data.signedUrl,
-                    expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
+            if (data) {
+                data.forEach((item: any) => {
+                    if (item.signedUrl) {
+                        results[item.path] = item.signedUrl;
+                        this._urlCache.set(item.path, {
+                            url: item.signedUrl,
+                            expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
+                        });
+                    }
                 });
                 this._savePersistentCache();
             }
 
-            return data.signedUrl;
+            return results;
         } catch (error) {
-            console.error('Get Signed URL Failed:', error);
-            return null;
+            console.error('Batch Signed URLs Failed:', error);
+            return results;
         }
+    },
+
+    /**
+     * Get a temporary public URL for a private image
+     */
+    async getSignedUrl(path: string): Promise<string | null> {
+        if (!path) return null;
+        const res = await this.getSignedUrls([path]);
+        return res[path] || null;
     },
 
     /**

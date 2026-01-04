@@ -212,6 +212,7 @@ export const translations = {
     untitled: "Untitled",
     image_ref: "Image",
     upload_ref: "Upload Reference",
+    reference_images: "Reference Images",
     remove_btn: "Remove",
 
     // CommandDock Tooltips
@@ -230,6 +231,7 @@ export const translations = {
     creation_prompt_placeholder: "Describe the image",
     creation_quality_label: "Quality",
     creation_ratio_label: "Aspect Ratio",
+    drop_here: "Drop image here",
 
     // Welcome Screen
     welcome_title: "Welcome to Exposé",
@@ -533,6 +535,7 @@ export const translations = {
     untitled: "Unbenannt",
     image_ref: "Bild",
     upload_ref: "Referenzbild hochladen",
+    reference_images: "Referenzbilder",
     remove_btn: "Entfernen",
 
     // CommandDock Tooltips
@@ -550,6 +553,7 @@ export const translations = {
     creation_prompt_placeholder: "Beschreiben Sie das Bild",
     creation_quality_label: "Qualität",
     creation_ratio_label: "Format",
+    drop_here: "Bild hier ablegen",
 
     // Welcome Screen
     welcome_title: "Willkommen bei Exposé",

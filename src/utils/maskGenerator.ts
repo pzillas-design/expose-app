@@ -1,6 +1,6 @@
 import { CanvasImage, AnnotationObject } from '../types';
 
-export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<string> => {
+export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSrc?: string): Promise<string> => {
     if (!img.annotations || img.annotations.length === 0) return '';
 
     const canvas = document.createElement('canvas');
@@ -12,7 +12,7 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
     // 1. Draw Original (background)
     const baseImg = new Image();
     baseImg.crossOrigin = "anonymous";
-    baseImg.src = img.src;
+    baseImg.src = customBaseSrc || img.src;
     await new Promise(r => baseImg.onload = r);
     ctx.globalAlpha = 0.4; // "leicht gemutet" - 40% opacity
     ctx.drawImage(baseImg, 0, 0, img.width, img.height);
@@ -35,7 +35,7 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
     // 3. Draw Stamps
     img.annotations.forEach(ann => {
         if (ann.type === 'stamp' && ann.x !== undefined && ann.y !== undefined) {
-            const radius = Math.max(80, img.width * 0.08);
+            const radius = Math.max(50, img.width * 0.05); // Reduced from 80 / 0.08
             ctx.beginPath();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.arc(ann.x, ann.y, radius, 0, Math.PI * 2);
@@ -57,7 +57,7 @@ export const generateMaskFromAnnotations = async (img: CanvasImage): Promise<str
         else if (ann.type === 'mask_path') { x = ann.points[0].x; y = ann.points[0].y; }
         else return; // Don't draw text for unknown types at 0,0
 
-        const fontSize = Math.max(24, img.width * 0.03);
+        const fontSize = Math.max(16, img.width * 0.018); // Reduced from 24 / 0.03 (approx 40% smaller)
         ctx.font = `900 ${fontSize}px monospace`;
         ctx.strokeStyle = '#000000';
         ctx.lineWidth = fontSize / 4;

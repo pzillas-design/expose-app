@@ -24,7 +24,9 @@ export const DebugModal: React.FC<DebugModalProps> = ({
 
     useEffect(() => {
         if (isOpen && image) {
-            generateMaskFromAnnotations(image).then(setMaskUrl);
+            // Generate mask using the original source as background if available, 
+            // otherwise use current src (fallback for first iterations)
+            generateMaskFromAnnotations(image, image.originalSrc).then(setMaskUrl);
         }
     }, [isOpen, image]);
 
@@ -36,17 +38,17 @@ export const DebugModal: React.FC<DebugModalProps> = ({
 
     const labels = annotations.map(a => a.text).filter(Boolean);
     const systemInstruction = `I am providing an ORIGINAL image (to be edited). ${maskAnns.length > 0 ? `I am also providing an ANNOTATION image (the original image muted/dimmed, with bright markings and text indicating desired changes).${labels.length > 0 ? ` The following labels are marked in the Annotation Image: ${labels.map(l => `"${l?.toUpperCase()}"`).join(", ")}.` : ''
-            }` : ''
+        }` : ''
         } ${refAnns.length > 0 ? `I am also providing REFERENCE images for guidance (style, context, or visual elements).` : ''
         } Apply the edits to the ORIGINAL image based on the user prompt, following the visual cues in the ANNOTATION image and using the REFERENCE images as a basis for style or objects.`;
 
     return (
         <div className="fixed inset-0 z-[100] bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div
-                className={`w-full max-w-4xl max-h-[90vh] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200`}
+                className={`w-full max-w-6xl max-h-[90vh] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200`}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
+                {/* Header omitted for brevity in targetContent match, but included in replacement */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -84,29 +86,43 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                 <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
                     {activeTab === 'visual' ? (
                         <>
-                            {/* Mask & Original Side by Side */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Visual Grid: Source -> Mask -> Result */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="flex flex-col gap-3">
-                                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Annotation Image (Mask)</span>
+                                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>1. Original Input (Source)</span>
+                                    <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex items-center justify-center">
+                                        <img src={image.originalSrc || image.src} className="w-full h-full object-contain" alt="original-source" />
+                                    </div>
+                                    <span className={`${Typo.Micro} text-zinc-500 text-center italic`}>The base image sent to Gemini</span>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>2. Annotation Image (Mask)</span>
                                     <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex items-center justify-center">
                                         {maskUrl ? (
                                             <img src={maskUrl} className="w-full h-full object-contain" alt="mask" />
                                         ) : (
-                                            <span className="text-zinc-500">No Mask Generated</span>
+                                            <div className="flex flex-col items-center gap-2 text-zinc-500">
+                                                <Layers className="w-8 h-8 opacity-20" />
+                                                <span>No Mask Generated</span>
+                                            </div>
                                         )}
                                     </div>
+                                    <span className={`${Typo.Micro} text-zinc-500 text-center italic`}>Visual instructions overlays</span>
                                 </div>
+
                                 <div className="flex flex-col gap-3">
-                                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Original Source</span>
-                                    <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                                        <img src={image.src} className="w-full h-full object-contain" alt="original" />
+                                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>3. Generated Result (Current)</span>
+                                    <div className="aspect-square bg-zinc-100 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden flex items-center justify-center">
+                                        <img src={image.src} className="w-full h-full object-contain" alt="result" />
                                     </div>
+                                    <span className={`${Typo.Micro} text-zinc-500 text-center italic`}>The final output pixels</span>
                                 </div>
                             </div>
 
                             {/* Reference Images */}
                             {refAnns.length > 0 && (
-                                <div className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                                     <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Reference Images ({refAnns.length})</span>
                                     <div className="flex flex-wrap gap-4">
                                         {refAnns.map((ann, i) => (

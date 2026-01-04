@@ -554,65 +554,93 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             {/* Metadata Grid (No border, 2 columns) - Hide while generating placeholder */}
                             {!selectedImage.isGenerating && (
-                                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                                    {/* Resolution */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                            {t('resolution')}
-                                        </span>
-                                        <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
-                                            {(() => {
-                                                if (selectedImage.realWidth && selectedImage.realHeight) {
-                                                    return `${selectedImage.realWidth} × ${selectedImage.realHeight}px`;
-                                                }
-                                                // Fallbacks based on quality if real dims are missing
-                                                if (selectedImage.quality === 'pro-4k') return '4096 × 4096px';
-                                                if (selectedImage.quality === 'pro-2k') return '2048 × 2048px';
-                                                return '1024 × 1024px';
-                                            })()}
-                                        </span>
-                                    </div>
-
-                                    {/* Created At */}
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                            {t('created_at')}
-                                        </span>
-                                        <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
-                                            {selectedImage.createdAt ? (() => {
-                                                const d = new Date(selectedImage.createdAt);
-                                                const day = String(d.getDate()).padStart(2, '0');
-                                                const month = String(d.getMonth() + 1).padStart(2, '0');
-                                                const hours = String(d.getHours()).padStart(2, '0');
-                                                const minutes = String(d.getMinutes()).padStart(2, '0');
-                                                return `${day}.${month}. ${hours}:${minutes}`;
-                                            })() : '-'}
-                                        </span>
-                                    </div>
-
-                                    {/* Model */}
-                                    {selectedImage.quality && (
+                                <div className="flex flex-col gap-8">
+                                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                        {/* Resolution */}
                                         <div className="flex flex-col gap-1.5">
                                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                                {t('model')}
+                                                {t('resolution')}
                                             </span>
-                                            <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
+                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
                                                 {(() => {
-                                                    // 1. Map to friendly branded names based on recorded quality
-                                                    const q = selectedImage.quality;
-                                                    if (q) {
-                                                        switch (q) {
-                                                            case 'pro-4k': return 'Nano Banana Pro 4K';
-                                                            case 'pro-2k': return 'Nano Banana Pro 2K';
-                                                            case 'pro-1k': return 'Nano Banana Pro 1K';
-                                                            case 'fast': return 'Nano Banana (Fast)';
-                                                        }
+                                                    if (selectedImage.realWidth && selectedImage.realHeight) {
+                                                        return `${selectedImage.realWidth} × ${selectedImage.realHeight}px`;
                                                     }
-
-                                                    // 2. Fallback to API-reported model version
-                                                    return selectedImage.modelVersion || 'Nano Banana';
+                                                    // Fallbacks based on quality if real dims are missing
+                                                    if (selectedImage.quality === 'pro-4k') return '4096 × 4096px';
+                                                    if (selectedImage.quality === 'pro-2k') return '2048 × 2048px';
+                                                    return '1024 × 1024px';
                                                 })()}
                                             </span>
+                                        </div>
+
+                                        {/* Created At */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                {t('created_at')}
+                                            </span>
+                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                                {selectedImage.createdAt ? (() => {
+                                                    const d = new Date(selectedImage.createdAt);
+                                                    const day = String(d.getDate()).padStart(2, '0');
+                                                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                                                    const hours = String(d.getHours()).padStart(2, '0');
+                                                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                                                    return `${day}.${month}. ${hours}:${minutes}`;
+                                                })() : '-'}
+                                            </span>
+                                        </div>
+
+                                        {/* Model */}
+                                        {selectedImage.quality && (
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                    {t('model')}
+                                                </span>
+                                                <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
+                                                    {(() => {
+                                                        // 1. Map to friendly branded names based on recorded quality
+                                                        const q = selectedImage.quality;
+                                                        if (q) {
+                                                            switch (q) {
+                                                                case 'pro-4k': return 'Nano Banana Pro 4K';
+                                                                case 'pro-2k': return 'Nano Banana Pro 2K';
+                                                                case 'pro-1k': return 'Nano Banana Pro 1K';
+                                                                case 'fast': return 'Nano Banana (Fast)';
+                                                            }
+                                                        }
+
+                                                        // 2. Fallback to API-reported model version
+                                                        return selectedImage.modelVersion || 'Nano Banana';
+                                                    })()}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Reference Images Section */}
+                                    {selectedImage.annotations?.some(ann => ann.referenceImage) && (
+                                        <div className="flex flex-col gap-3">
+                                            <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                                {t('reference_images')}
+                                            </span>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {selectedImage.annotations
+                                                    .filter(ann => ann.referenceImage)
+                                                    .map((ann, idx) => (
+                                                        <div
+                                                            key={ann.id || idx}
+                                                            className="aspect-square rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
+                                                        >
+                                                            <img
+                                                                src={ann.referenceImage}
+                                                                alt={`Ref ${idx + 1}`}
+                                                                className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

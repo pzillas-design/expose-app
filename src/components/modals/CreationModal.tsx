@@ -1,15 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
-import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip } from 'lucide-react';
+import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash2 } from 'lucide-react';
 
 interface CreationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onGenerate: (prompt: string, model: string, ratio: string) => void;
+    onGenerate: (prompt: string, model: string, ratio: string, attachments: string[]) => void;
     t: TranslationFunction;
     lang: 'de' | 'en';
-    onUpload?: (files: FileList) => void;
 }
 
 const ASPECT_RATIOS = [
@@ -39,8 +38,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     onClose,
     onGenerate,
     t,
-    lang,
-    onUpload
+    lang
 }) => {
     const MODELS = [
         { id: 'fast', name: 'Nano Banana', price: t('price_free'), res: '1024 px' },
@@ -54,7 +52,32 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [openDropdown, setOpenDropdown] = useState<'model' | 'ratio' | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [attachments, setAttachments] = useState<string[]>([]);
     const dragCounter = useRef(0);
+
+    // Reset state on open
+    useEffect(() => {
+        if (isOpen) {
+            setPrompt('');
+            setAttachments([]);
+            dragCounter.current = 0;
+            setIsDragging(false);
+        }
+    }, [isOpen]);
+
+    const processFilesLocally = (files: FileList | File[]) => {
+        Array.from(files).forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target?.result as string;
+                if (result) {
+                    setAttachments(prev => [...prev, result]);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    };
 
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault();
@@ -79,20 +102,20 @@ export const CreationModal: React.FC<CreationModalProps> = ({
         e.stopPropagation();
         setIsDragging(false);
         dragCounter.current = 0;
-        if (e.dataTransfer.files && onUpload) {
-            onUpload(e.dataTransfer.files);
+        if (e.dataTransfer.files) {
+            processFilesLocally(e.dataTransfer.files);
         }
     };
 
     const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && onUpload) {
-            onUpload(e.target.files);
+        if (e.target.files) {
+            processFilesLocally(e.target.files);
         }
     };
 
     const handleGenerate = () => {
         if (!prompt.trim()) return;
-        onGenerate(prompt, selectedModel, selectedRatio);
+        onGenerate(prompt, selectedModel, selectedRatio, attachments);
         onClose();
     };
 
@@ -140,7 +163,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-xl">
                                     <Paperclip className="w-7 h-7" />
                                 </div>
-                                <span className={`${Typo.Label} text-blue-600 dark:text-blue-400 font-bold text-base`}>Bild hier ablegen</span>
+                                <span className={`${Typo.Label} text-blue-600 dark:text-blue-400 font-bold text-base`}>{t('drop_here')}</span>
                             </div>
                         )}
                         <div className="flex flex-col gap-3">
@@ -180,6 +203,23 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                     {t('attach_file')}
                                 </Button>
                             </div>
+
+                            {/* Local Attachments Preview */}
+                            {attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {attachments.map((src, idx) => (
+                                        <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 group/item">
+                                            <img src={src} className="w-full h-full object-cover" />
+                                            <button
+                                                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 className="w-4 h-4 text-white" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

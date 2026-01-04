@@ -143,7 +143,10 @@ export const imageService = {
         maskDataUrl,
         newId,
         modelName,
-        boardId
+        boardId,
+        attachments,
+        targetVersion,
+        targetTitle
     }: {
         sourceImage: CanvasImage;
         prompt: string;
@@ -152,6 +155,9 @@ export const imageService = {
         newId: string;
         modelName?: string;
         boardId?: string;
+        attachments?: string[];
+        targetVersion?: number;
+        targetTitle?: string;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -163,7 +169,8 @@ export const imageService = {
                 maskDataUrl,
                 newId,
                 modelName,
-                board_id: boardId
+                board_id: boardId,
+                attachments
             }
         });
 
@@ -175,6 +182,22 @@ export const imageService = {
         const result = data.image; // Server returns partially populated CanvasImage
         const { generateThumbnail } = await import('../utils/imageUtils');
         const thumbSrc = await generateThumbnail(result.src);
+
+        // Upload thumbnail to storage and update DB record
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && thumbSrc) {
+            const thumbFileName = `thumb_${newId}.jpg`;
+            storageService.uploadImage(thumbSrc, user.id, thumbFileName).then(thumbPath => {
+                if (thumbPath) {
+                    supabase.from('canvas_images')
+                        .update({ thumb_storage_path: thumbPath })
+                        .eq('id', newId)
+                        .then(({ error }) => {
+                            if (error) console.warn("Failed to update thumb path in DB:", error);
+                        });
+                }
+            });
+        }
 
         // Determine actual dimensions of the generated result
         const getImageDims = (src: string): Promise<{ w: number, h: number }> => {
@@ -198,14 +221,14 @@ export const imageService = {
             generationPrompt: prompt,
             quality: qualityMode,
             userDraftPrompt: '',
-            version: (sourceImage.version || 1) + 1,
-            title: sourceImage.title.includes('_v')
+            version: targetVersion || (sourceImage.version || 1) + 1,
+            title: targetTitle || (sourceImage.title.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
-                : `${sourceImage.title}_v2`,
+                : `${sourceImage.title}_v2`),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             modelVersion: result.modelVersion,
-            annotations: [],
+            annotations: sourceImage.annotations || [],
             maskSrc: undefined,
             // Keep canvas dimensions consistent with the row height to prevent "huge" images
             // while storing the actual high-res pixels in realWidth/Height
@@ -220,12 +243,11 @@ export const imageService = {
 
     /**
      * Resolves a single DB record into a CanvasImage object.
+     * Uses pre-signed URLs if provided to avoid sequential network requests.
      */
-    async resolveImageRecord(record: any): Promise<CanvasImage> {
-        const [signedUrl, thumbSignedUrl] = await Promise.all([
-            storageService.getSignedUrl(record.storage_path),
-            record.thumb_storage_path ? storageService.getSignedUrl(record.thumb_storage_path) : Promise.resolve(null)
-        ]);
+    async resolveImageRecord(record: any, preSignedUrls: Record<string, string> = {}): Promise<CanvasImage> {
+        const signedUrl = preSignedUrls[record.storage_path] || '';
+        const thumbSignedUrl = record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null;
 
         const targetHeight = 512;
         const aspectRatio = record.width / record.height;
@@ -233,14 +255,14 @@ export const imageService = {
 
         const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
 
-        // Resolve reference image paths in annotations
-        const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
+        // Resolve reference image paths in annotations from the provided pre-signed map
+        const resolvedAnns = rawAnns.map((ann: any) => {
             if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                const resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
+                const resolvedUrl = preSignedUrls[ann.referenceImage];
                 return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
             }
             return ann;
-        }));
+        });
 
         return {
             id: record.id,
@@ -323,22 +345,38 @@ export const imageService = {
                 });
         }
 
-        // 2. Resolve URLs for Completed Images with Prioritization
+        // 2. Resolve URLs for Completed Images with Batching
         const loadedImages: CanvasImage[] = [];
 
-        // Priority loading logic
-        const priorityBatch = dbImages.slice(0, 10);
-        const remainingBatch = dbImages.slice(10);
+        if (dbImages.length > 0) {
+            // Collect ALL paths that need signing
+            const allPathsToSign = new Set<string>();
+            dbImages.forEach(rec => {
+                if (rec.storage_path) allPathsToSign.add(rec.storage_path);
+                if (rec.thumb_storage_path) allPathsToSign.add(rec.thumb_storage_path);
 
-        const priorityResults = await Promise.all(priorityBatch.map(rec => this.resolveImageRecord(rec)));
-        loadedImages.push(...priorityResults);
+                // Add reference images from annotations
+                const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
+                rawAnns.forEach((ann: any) => {
+                    if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
+                        allPathsToSign.add(ann.referenceImage);
+                    }
+                });
+            });
 
-        if (remainingBatch.length > 0) {
-            for (let i = 0; i < remainingBatch.length; i += 20) {
-                const chunk = remainingBatch.slice(i, i + 20);
-                const chunkResults = await Promise.all(chunk.map(rec => this.resolveImageRecord(rec)));
-                loadedImages.push(...chunkResults);
+            // Batch sign 100 paths at a time
+            const pathsArray = Array.from(allPathsToSign);
+            const signedUrlMap: Record<string, string> = {};
+
+            for (let i = 0; i < pathsArray.length; i += 100) {
+                const chunk = pathsArray.slice(i, i + 100);
+                const results = await storageService.getSignedUrls(chunk);
+                Object.assign(signedUrlMap, results);
             }
+
+            // Transform records using the map
+            const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
+            loadedImages.push(...transformed);
         }
 
         // 3. Reconstruct Skeleton Placeholders from Active Jobs

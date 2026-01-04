@@ -409,7 +409,7 @@ export function App() {
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                         style={{
                             padding: '50vh 50vw',
-                            gap: `${6 * zoom}rem`,
+                            gap: `${12 * zoom}rem`,
                         }}
                     >
                         {rows.map((row) => (
@@ -428,8 +428,8 @@ export function App() {
                                             onUpdateAnnotations={handleUpdateAnnotations}
                                             onEditStart={handleAnnotationEditStart}
                                             onNavigate={moveSelection}
-                                            hasLeft={!selectedIds.length && imgIndex > 0}
-                                            hasRight={!selectedIds.length && imgIndex < row.items.length - 1}
+                                            hasLeft={imgIndex > 0}
+                                            hasRight={imgIndex < row.items.length - 1}
                                             onDelete={requestDelete}
                                             onContextMenu={handleImageContextMenu}
                                             t={t}

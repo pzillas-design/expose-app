@@ -179,13 +179,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
                 {/* LOD Image Loading: Show Thumbnail by default, HQ only when needed */}
                 <img
-                    src={image.maskSrc || ((isSelected || zoom > 0.8) ? image.src : (image.thumbSrc || image.src))}
+                    src={image.maskSrc || (zoom >= 1.0 ? image.src : (image.thumbSrc || image.src))}
                     alt={image.title}
+                    loading="lazy"
                     className="w-full h-full object-cover pointer-events-none block"
                     style={{
                         imageRendering: zoom > 1.5 ? 'pixelated' : 'auto',
-                        // Add a slight blur transition when switching from thumb to HQ
-                        filter: (!isSelected && zoom <= 0.8 && image.thumbSrc) ? 'none' : 'none'
                     }}
                 />
 
@@ -222,7 +221,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <>
                         {/* Edge Navigation Icons - Hide when zoomed out (more than ~2-3 images visible) */}
                         <div className="absolute inset-0 pointer-events-none">
-                            {hasLeft && zoom > 0.4 && (
+                            {hasLeft && zoom > 1.2 && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }}
                                     className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}
@@ -230,7 +229,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
                             )}
-                            {hasRight && zoom > 0.4 && (
+                            {hasRight && zoom > 1.2 && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }}
                                     className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}
