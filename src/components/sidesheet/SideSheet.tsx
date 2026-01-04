@@ -50,6 +50,7 @@ interface SideSheetProps {
     onQualityModeChange: (mode: GenerationQuality) => void;
     templates: PromptTemplate[];
     onRefreshTemplates?: () => void;
+    userProfile: any;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -84,7 +85,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     qualityMode,
     onQualityModeChange,
     templates: globalTemplates,
-    onRefreshTemplates
+    onRefreshTemplates,
+    userProfile
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(globalTemplates);
@@ -428,6 +430,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onQualityModeChange={onQualityModeChange}
                                 t={t}
                                 currentLang={lang}
+                                userProfile={userProfile}
                             />
                         </div>
                     </>

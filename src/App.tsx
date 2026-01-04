@@ -488,6 +488,7 @@ export function App() {
                 onQualityModeChange={setQualityMode}
                 templates={state.templates}
                 onRefreshTemplates={actions.refreshTemplates}
+                userProfile={userProfile}
             />
 
             <input

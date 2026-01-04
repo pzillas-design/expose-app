@@ -6,6 +6,8 @@ import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
+import { DebugModal } from '@/components/modals/DebugModal';
+import { Bug } from 'lucide-react';
 
 interface PromptTabProps {
     prompt: string;
@@ -31,13 +33,14 @@ interface PromptTabProps {
     onQualityModeChange: (mode: GenerationQuality) => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
+    userProfile: any;
 }
 
 export const PromptTab: React.FC<PromptTabProps> = ({
     prompt, setPrompt, selectedImage, selectedImages, onGenerate, onDeselect, templates, onSelectTemplate,
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
     onUpdateAnnotation, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
-    onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang
+    onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -57,6 +60,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const targetAnnIdRef = useRef<string | null>(null);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+    const [isDebugOpen, setIsDebugOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
         { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: t('price_free') },
@@ -642,27 +646,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </span>
                                     </Button>
                                 )}
-                                {selectedImage.parentId && (
+                                {userProfile?.role === 'admin' && (
                                     <Button
-                                        variant="secondary"
-                                        onClick={async () => {
-                                            const { storageService } = await import('@/services/storageService');
-                                            const { supabase } = await import('@/services/supabaseClient');
-                                            const { data: { user } } = await supabase.auth.getUser();
-                                            if (user) {
-                                                const maskUrl = await storageService.getSignedUrl(`${user.id}/${selectedImage.id}_mask.png`);
-                                                if (maskUrl) {
-                                                    window.open(maskUrl, '_blank');
-                                                } else {
-                                                    showToast(t('no_mask_found'), 'error');
-                                                }
-                                            }
-                                        }}
-                                        className="justify-start px-4 h-11 gap-2 border-dashed opacity-60 hover:opacity-100"
+                                        variant="ghost"
+                                        onClick={() => setIsDebugOpen(true)}
+                                        className="justify-start px-4 h-11 gap-2 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 border border-blue-200/50"
                                     >
-                                        <Eye className="w-4 h-4 text-zinc-400" />
-                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                            {t('debug_mask')}
+                                        <Bug className="w-4 h-4" />
+                                        <span className={`${Typo.Label} uppercase tracking-wider`}>
+                                            Maske/API prüfen
                                         </span>
                                     </Button>
                                 )}
@@ -704,6 +696,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 existingTemplates={templates}
                 onSave={handleSavePreset}
                 onDelete={onDeleteTemplate}
+                t={t}
+            />
+            <DebugModal
+                isOpen={isDebugOpen}
+                onClose={() => setIsDebugOpen(false)}
+                image={selectedImage}
+                prompt={getFinalPrompt()}
                 t={t}
             />
         </div>
