@@ -332,20 +332,20 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         <div className="flex flex-col gap-3 w-full">
                             <Button
                                 variant="primary"
-                                className="w-full justify-start px-6 py-4 h-auto gap-4"
+                                className="w-full"
                                 onClick={onUpload}
                                 icon={<Upload className="w-5 h-5" />}
                             >
-                                <span className="flex-1 text-left">{t('upload_image_edit')}</span>
+                                {t('upload_image_edit')}
                             </Button>
 
                             <Button
                                 variant="secondary"
-                                className="w-full justify-start px-6 py-4 h-auto gap-4"
+                                className="w-full"
                                 onClick={onCreateNew}
                                 icon={<Plus className="w-5 h-5" />}
                             >
-                                <span className="flex-1 text-left">{t('generate_new')}</span>
+                                {t('generate_new')}
                             </Button>
                         </div>
                     </div>
