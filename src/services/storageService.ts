@@ -74,11 +74,8 @@ export const storageService = {
     async getSignedUrl(path: string): Promise<string | null> {
         if (!path) return null;
 
-        // PERFORMANCE HACK: If it's a thumbnail, use the public URL directly
-        // This avoids the 'Signed URL Waterfall' that slows down the projects page.
-        if (path.includes('thumb_')) {
-            return this.getPublicUrl(path);
-        }
+        // Signed URL required for private 'user-content' bucket
+
 
         // Init cache if empty
         if (this._urlCache.size === 0) {
