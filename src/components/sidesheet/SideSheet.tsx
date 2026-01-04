@@ -310,43 +310,45 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     onMouseDown={startResizing}
                 />
 
-                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <div className="flex flex-col items-center gap-12 w-full max-w-[300px]">
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                    <div className="flex flex-col items-center gap-14 w-full max-w-[400px]">
                         {/* Header */}
                         <div className="flex flex-col items-center gap-6">
-                            <Logo className="w-16 h-16" />
                             <div className="flex flex-col gap-6">
-                                <h2
-                                    className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-1`}
+                                <h1
+                                    className={`text-3xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex flex-col items-center gap-2`}
                                     style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                                 >
-                                    <span>Willkommen bei</span>
-                                    <Wordmark className="h-7" />
-                                </h2>
-                                <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary}`}>
-                                    {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
+                                    <span className="text-zinc-400 dark:text-zinc-500 font-normal italic text-xl">Willkommen bei</span>
+                                    <span className="text-4xl tracking-tighter">expose</span>
+                                </h1>
+                                <p className={`${Typo.Body} leading-relaxed text-zinc-500 max-w-[280px] mx-auto`}>
+                                    {lang === 'de'
+                                        ? 'Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie neu.'
+                                        : 'Select an image to edit or start a new creation.'
+                                    }
                                 </p>
                             </div>
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="flex flex-col gap-3 w-full">
+                        <div className="flex flex-col gap-3 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">
                             <Button
                                 variant="primary"
-                                className="w-full justify-start px-5 gap-3"
+                                className="w-full justify-center h-14 px-8 gap-3"
                                 onClick={onUpload}
                                 icon={<Upload className="w-5 h-5" />}
                             >
-                                {t('upload_image_edit')}
+                                <span className="text-base font-medium">{t('upload_image_edit')}</span>
                             </Button>
 
                             <Button
                                 variant="secondary"
-                                className="w-full justify-start px-5 gap-3"
+                                className="w-full justify-center h-14 px-8 gap-3"
                                 onClick={onCreateNew}
                                 icon={<Plus className="w-5 h-5" />}
                             >
-                                {t('generate_new')}
+                                <span className="text-base font-medium">{t('generate_new')}</span>
                             </Button>
                         </div>
                     </div>
