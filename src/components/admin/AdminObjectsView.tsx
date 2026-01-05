@@ -113,8 +113,8 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                 </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
-                <div className={`sticky top-0 z-10 grid ${gridTemplate} bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
+            <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900">
+                <div className={`sticky top-0 z-10 grid ${gridTemplate} bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
                     <div className="p-3 text-center"></div>
                     <div className="p-3 flex items-center justify-center">{t('icon_label')}</div>
                     <div className="p-3 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (DE)</div>

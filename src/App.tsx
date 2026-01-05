@@ -597,6 +597,7 @@ export function App() {
             <Route path="/settings" element={settingsPage} />
             <Route path="/settings/:tab" element={settingsPage} />
             <Route path="/admin" element={adminPage} />
+            <Route path="/admin/:tab" element={adminPage} />
 
             {/* Redirects for clean SEO and legacy links */}
             <Route path="/boards" element={<Navigate to="/projects" replace />} />
