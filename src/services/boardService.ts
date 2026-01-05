@@ -18,28 +18,39 @@ export const boardService = {
             return [];
         }
 
-        // Get signed URLs for thumbnails (efficiently if possible, but 4 per board is manageable)
-        const boardsWithImages = await Promise.all(data.map(async (b) => {
-            const imagePaths = (b.canvas_images || [])
+        // 1. Collect all paths to fetch
+        const allPathsToSign: string[] = [];
+        const boardImageMap = new Map<string, string[]>();
+
+        data.forEach((b) => {
+            const paths = (b.canvas_images || [])
                 .filter((img: any) => img.thumb_storage_path)
-                .slice(0, 4)
+                .slice(0, 4) // Max 4 thumbnails per board
                 .map((img: any) => img.thumb_storage_path);
 
-            const previewImages = await Promise.all(
-                imagePaths.map(path => storageService.getSignedUrl(path))
-            );
+            boardImageMap.set(b.id, paths);
+            allPathsToSign.push(...paths);
+        });
+
+        // 2. Batch fetch signed URLs
+        const signedUrlsMap = await storageService.getSignedUrls(allPathsToSign);
+
+        // 3. Map back to boards
+        const boardsWithImages = data.map((b) => {
+            const originalPaths = boardImageMap.get(b.id) || [];
+            const previewImages = originalPaths.map(path => signedUrlsMap[path]).filter(Boolean);
 
             return {
                 id: b.id,
                 userId: b.user_id,
                 name: b.name,
                 thumbnail: b.thumbnail,
-                previewImages: previewImages.filter(Boolean) as string[],
+                previewImages: previewImages,
                 itemCount: b.canvas_images?.length || 0,
                 createdAt: new Date(b.created_at).getTime(),
                 updatedAt: new Date(b.updated_at).getTime()
             };
-        }));
+        });
 
         return boardsWithImages;
     },
