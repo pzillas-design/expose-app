@@ -312,88 +312,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         />
                                     </Tooltip>
 
-                                    {/* CHIPS AREA: Annotations + Selected Variables */}
-                                    {(annotations.length > 0 || (activeTemplate && Object.keys(controlValues).length > 0)) && (
+                                    {/* CHIPS AREA: Selected Variables (ONLY) */}
+                                    {activeTemplate && Object.keys(controlValues).length > 0 && (
                                         <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
-                                            {/* Annotations Chips */}
-                                            {annotations.map((ann) => {
-                                                const isRefType = ann.type === 'reference_image';
-                                                const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-                                                const defaultLabel = isRefType ? `${t('image_ref')}` : '';
-                                                const displayText = ann.text || defaultLabel || t('untitled');
-                                                const isEditing = editingId === ann.id;
-
-                                                return (
-                                                    <div
-                                                        key={ann.id}
-                                                        className={`
-                                                            group relative flex items-center gap-1.5 px-3 py-1 rounded-full transition-all
-                                                            ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-400 dark:ring-zinc-500' : 'bg-zinc-100/80 dark:bg-zinc-800/60 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 border border-transparent'}
-                                                        `}
-                                                    >
-                                                        {isRefType && ann.referenceImage ? (
-                                                            <div className="shrink-0 w-4 h-4 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                {ann.type === 'stamp' ? (
-                                                                    isEditing ? null : <Type className="w-3 h-3" />
-                                                                ) : ann.type === 'shape' ? (
-                                                                    ann.shapeType === 'circle' ? <Circle className="w-3 h-3" /> :
-                                                                        ann.shapeType === 'line' ? <Minus className="w-3 h-3" /> :
-                                                                            <Square className="w-3 h-3" />
-                                                                ) : (
-                                                                    <Pen className="w-3 h-3" />
-                                                                )}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex-1 min-w-0">
-                                                            {isEditing ? (
-                                                                <input
-                                                                    autoFocus
-                                                                    value={editValue}
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    onBlur={saveEditing}
-                                                                    onKeyDown={handleKeyDown}
-                                                                    className="bg-transparent border-none outline-none text-[11px] font-medium text-black dark:text-white p-0 min-w-[60px]"
-                                                                    style={{ width: `${Math.max(6, editValue.length) + 1}ch` }}
-                                                                />
-                                                            ) : (
-                                                                <span
-                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                    className={`text-[11px] font-medium cursor-text truncate max-w-[120px] ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-600 dark:text-zinc-300'}`}
-                                                                >
-                                                                    {displayText}
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        {!isEditing && (
-                                                            <div className="flex items-center gap-1 overflow-hidden w-0 group-hover:w-auto opacity-0 group-hover:opacity-100 transition-all ml-1">
-                                                                {!isRefType && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                                                        className="p-1 text-zinc-400 hover:text-orange-500 transition-colors"
-                                                                    >
-                                                                        <Camera className="w-3 h-3" />
-                                                                    </button>
-                                                                )}
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                    className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
-                                                                >
-                                                                    <X className="w-3 h-3" />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-
-                                            {/* Selected Variables Chips */}
-                                            {activeTemplate?.controls.map(ctrl => {
+                                            {activeTemplate.controls.map(ctrl => {
                                                 const selections = controlValues[ctrl.id] || [];
                                                 return selections.map(val => {
                                                     const opt = ctrl.options.find(o => o.value === val);
@@ -422,6 +344,98 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </div>
                                     )}
                                 </div>
+
+                                {/* ANNOTATIONS LIST (Outside) */}
+                                {annotations.length > 0 && !isMulti && (
+                                    <div className="flex flex-col gap-1 w-full border-t border-zinc-100 dark:border-zinc-800/50 pt-2">
+                                        {annotations.map((ann) => {
+                                            const isRefType = ann.type === 'reference_image';
+                                            const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
+                                            const defaultLabel = isRefType ? `${t('image_ref')}` : '';
+                                            const displayText = ann.text || defaultLabel || t('untitled');
+                                            const isEditing = editingId === ann.id;
+
+                                            return (
+                                                <div
+                                                    key={ann.id}
+                                                    className={`
+                                                        group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
+                                                        ${isEditing ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30'}
+                                                    `}
+                                                >
+                                                    {isRefType && ann.referenceImage ? (
+                                                        <div className="shrink-0 w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="shrink-0 w-8 h-8 flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-zinc-400">
+                                                            {ann.type === 'stamp' ? (
+                                                                isEditing ? (
+                                                                    <div className="w-6 h-6 flex items-center justify-center">
+                                                                        <input
+                                                                            value={editEmojiValue}
+                                                                            onChange={(e) => setEditEmojiValue(e.target.value)}
+                                                                            className="w-full h-full bg-transparent border-none outline-none text-sm text-center p-0"
+                                                                        />
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-sm leading-none">{ann.emoji || '🏷️'}</span>
+                                                                )
+                                                            ) : ann.type === 'shape' ? (
+                                                                ann.shapeType === 'circle' ? <Circle className="w-4 h-4" /> :
+                                                                    ann.shapeType === 'line' ? <Minus className="w-4 h-4" /> :
+                                                                        <Square className="w-4 h-4" />
+                                                            ) : (
+                                                                <Pen className="w-4 h-4" />
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex-1 min-w-0 flex items-center">
+                                                        {isEditing ? (
+                                                            <input
+                                                                autoFocus
+                                                                value={editValue}
+                                                                onChange={(e) => setEditValue(e.target.value)}
+                                                                onBlur={saveEditing}
+                                                                onKeyDown={handleKeyDown}
+                                                                className="bg-transparent border-none outline-none text-[13px] font-medium text-black dark:text-white p-0 w-full"
+                                                                placeholder={isRefType ? t('describe_style') : t('what_is_this')}
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                className={`text-[13px] font-medium cursor-text truncate ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-700 dark:text-zinc-300'}`}
+                                                            >
+                                                                {displayText}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {!isEditing && (
+                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                                                            {!isRefType && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
+                                                                    className="p-1.5 rounded-lg text-zinc-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all"
+                                                                    title={t('upload_ref')}
+                                                                >
+                                                                    <Camera className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
                                 {/* VARIABLE OPTIONS (Outside) */}
                                 {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
