@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -344,19 +344,40 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                                 className="w-6 h-6 bg-transparent border-none outline-none text-sm text-center p-0"
                                                                             />
                                                                         ) : (
-                                                                            <span
-                                                                                onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                                className="text-sm leading-none opacity-80 cursor-text"
-                                                                            >
-                                                                                {ann.emoji || '🏷️'}
-                                                                            </span>
+                                                                            ann.emoji ? (
+                                                                                <span
+                                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                                    className="text-sm leading-none opacity-80 cursor-text"
+                                                                                >
+                                                                                    {ann.emoji}
+                                                                                </span>
+                                                                            ) : (
+                                                                                !ann.itemId ? (
+                                                                                    <Type
+                                                                                        className="w-3.5 h-3.5 cursor-text"
+                                                                                        onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <span
+                                                                                        onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                                        className="text-sm leading-none opacity-80 cursor-text"
+                                                                                    >
+                                                                                        🏷️
+                                                                                    </span>
+                                                                                )
+                                                                            )
                                                                         )
                                                                     ) : ann.type === 'shape' ? (
-                                                                        ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
-                                                                            ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
-                                                                                <Square className="w-3.5 h-3.5" />
+                                                                        <div className="cursor-text" onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}>
+                                                                            {ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
+                                                                                ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
+                                                                                    <Square className="w-3.5 h-3.5" />}
+                                                                        </div>
                                                                     ) : (
-                                                                        <Pen className="w-3.5 h-3.5" />
+                                                                        <Pen
+                                                                            className="w-3.5 h-3.5 cursor-text"
+                                                                            onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                        />
                                                                     )}
                                                                 </div>
                                                             )}
