@@ -477,6 +477,7 @@ export function App() {
                 onGenerate={handleGenerate}
                 onUpdateAnnotations={handleUpdateAnnotations}
                 onUpdatePrompt={handleUpdatePrompt}
+                onUpdateVariables={actions.handleUpdateVariables}
                 onDeleteImage={requestDelete}
                 onDeselectAllButOne={handleDeselectAllButOne}
                 onDeselectAll={() => selectMultiple([])}

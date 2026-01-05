@@ -21,6 +21,8 @@ interface PromptTabProps {
     onAddObject: () => void;
     onDeleteAnnotation: (id: string) => void;
     onUpdateAnnotation: (id: string, patch: Partial<AnnotationObject>) => void;
+    annotations: AnnotationObject[];
+    onUpdateVariables: (id: string, templateId: string | undefined, vars: Record<string, string[]>) => void;
     onAddReference: (file: File, annotationId?: string) => void;
     onTogglePin?: (id: string) => void;
     onDeleteTemplate?: (id: string) => void;
@@ -38,7 +40,7 @@ interface PromptTabProps {
 export const PromptTab: React.FC<PromptTabProps> = ({
     prompt, setPrompt, selectedImage, selectedImages, onGenerate, onDeselect, templates, onSelectTemplate,
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
-    onUpdateAnnotation, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
+    onUpdateAnnotation, onUpdateVariables, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
     onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -78,13 +80,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setActiveInternalTab('info');
         }
 
-        // Only reset if the actual image changed, not just the status
+        // Restore state from selected image or reset
         if (lastIdRef.current !== selectedImage.id) {
-            setActiveTemplate(null);
-            setControlValues({});
+            if (selectedImage.activeTemplateId) {
+                const found = templates.find(t => t.id === selectedImage.activeTemplateId);
+                setActiveTemplate(found || null);
+            } else {
+                setActiveTemplate(null);
+            }
+            setControlValues(selectedImage.variableValues || {});
+            setHiddenControlIds([]);
             lastIdRef.current = selectedImage.id;
         }
-    }, [selectedImage.id, selectedImage.isGenerating]);
+    }, [selectedImage.id, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
 
     useLayoutEffect(() => {
         if (textAreaRef.current) {
@@ -147,9 +155,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (t.controls && t.controls.length > 0) {
             setActiveTemplate(t);
             setControlValues({});
+            onUpdateVariables(selectedImage.id, t.id, {});
         } else {
             setActiveTemplate(null);
             setControlValues({});
+            onUpdateVariables(selectedImage.id, undefined, {});
         }
         if (textAreaRef.current) {
             textAreaRef.current.focus();
@@ -159,6 +169,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const handleToggleControlOption = (controlId: string, value: string) => {
         setControlValues(prev => {
             const current = prev[controlId] || [];
+            let updatedValues: Record<string, string[]> = {};
+
             if (current.includes(value)) {
                 const updated = current.filter(v => v !== value);
                 const newState = { ...prev };
@@ -167,9 +179,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 } else {
                     newState[controlId] = updated;
                 }
-                return newState;
+                updatedValues = newState;
+            } else {
+                updatedValues = { ...prev, [controlId]: [...current, value] };
             }
-            return { ...prev, [controlId]: [...current, value] };
+
+            onUpdateVariables(selectedImage.id, activeTemplate?.id, updatedValues);
+            return updatedValues;
         });
     };
 
@@ -177,12 +193,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setControlValues({});
         setActiveTemplate(null);
         setHiddenControlIds([]);
+        onUpdateVariables(selectedImage.id, undefined, {});
     };
 
     const handleClearControl = (controlId: string) => {
         setControlValues(prev => {
             const newState = { ...prev };
             delete newState[controlId];
+            onUpdateVariables(selectedImage.id, activeTemplate?.id, newState);
             return newState;
         });
         setHiddenControlIds(prev => [...prev, controlId]);

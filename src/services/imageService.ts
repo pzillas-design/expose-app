@@ -69,6 +69,21 @@ export const imageService = {
             dbUpdates.user_draft_prompt = updates.userDraftPrompt;
         }
 
+        if (updates.activeTemplateId !== undefined || updates.variableValues !== undefined || updates.quality !== undefined) {
+            const { data: current } = await supabase
+                .from('canvas_images')
+                .select('generation_params')
+                .eq('id', imageId)
+                .single();
+
+            const params = current?.generation_params || {};
+            if (updates.activeTemplateId !== undefined) params.activeTemplateId = updates.activeTemplateId;
+            if (updates.variableValues !== undefined) params.variableValues = updates.variableValues;
+            if (updates.quality !== undefined) params.quality = updates.quality;
+
+            dbUpdates.generation_params = params;
+        }
+
         // Only proceed if there are actual updates
         if (Object.keys(dbUpdates).length === 0) return;
 
@@ -299,6 +314,8 @@ export const imageService = {
             annotations: resolvedAnns,
             parentId: record.parent_id,
             quality: record.generation_params?.quality || 'pro-1k',
+            activeTemplateId: record.generation_params?.activeTemplateId,
+            variableValues: record.generation_params?.variableValues,
             userId: record.user_id,
             createdAt: new Date(record.created_at).getTime(),
             updatedAt: new Date(record.updated_at).getTime()

@@ -156,7 +156,7 @@ export const useNanoController = () => {
         qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
     });
 
-    const { handleUpdateAnnotations, handleUpdatePrompt } = usePersistence({
+    const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
         user, isAuthDisabled, setRows
     });
 
@@ -342,6 +342,7 @@ export const useNanoController = () => {
             handleDeleteImage,
             handleUpdateAnnotations,
             handleUpdatePrompt,
+            handleUpdateVariables,
             onAddReference,
             performGeneration,
             handleGenerate,

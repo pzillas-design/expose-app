@@ -26,6 +26,7 @@ interface SideSheetProps {
     onGenerate: (prompt: string) => void;
     onUpdateAnnotations: (id: string, anns: any[]) => void;
     onUpdatePrompt: (id: string, text: string) => void;
+    onUpdateVariables: (id: string, templateId: string | undefined, vars: Record<string, string[]>) => void;
     onDeleteImage: (id: string | string[]) => void;
     onDeselectAllButOne?: () => void;
     onDeselectAll?: () => void;
@@ -65,6 +66,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onGenerate,
     onUpdateAnnotations,
     onUpdatePrompt,
+    onUpdateVariables,
     onDeleteImage,
     onDeselectAllButOne,
     onDeselectAll,
@@ -469,6 +471,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 annotations={selectedImage.annotations || []}
                                 onDeleteAnnotation={deleteAnnotation}
                                 onUpdateAnnotation={updateAnnotation}
+                                onUpdateVariables={onUpdateVariables}
                                 onTogglePin={handleTogglePin}
                                 onDeleteTemplate={handleDeleteTemplate}
                                 onCreateTemplate={handleCreateTemplate}

@@ -38,8 +38,21 @@ export const usePersistence = ({ user, isAuthDisabled, setRows }: UsePersistence
         }, 1000);
     }, [user, isAuthDisabled, setRows]);
 
+    const handleUpdateVariables = useCallback((id: string, templateId: string | undefined, variableValues: Record<string, string[]>) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, activeTemplateId: templateId, variableValues, updatedAt: Date.now() } : item)
+        })));
+
+        if (user && !isAuthDisabled) {
+            imageService.updateImage(id, { activeTemplateId: templateId, variableValues }, user.id)
+                .catch(err => console.error("Failed to save variables", err));
+        }
+    }, [user, isAuthDisabled, setRows]);
+
     return {
         handleUpdateAnnotations,
-        handleUpdatePrompt
+        handleUpdatePrompt,
+        handleUpdateVariables
     };
 };

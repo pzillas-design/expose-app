@@ -44,6 +44,8 @@ export interface CanvasImage {
   parentId?: string;
   generationPrompt?: string;
   userDraftPrompt?: string;
+  activeTemplateId?: string; // Currently active preset template ID
+  variableValues?: Record<string, string[]>; // Selected variable options for the active template
 
   maskSrc?: string | null;
   annotations?: AnnotationObject[];
