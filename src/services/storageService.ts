@@ -9,9 +9,16 @@ export const storageService = {
      */
     async uploadImage(imageSrc: string, userId: string, customFileName?: string): Promise<string | null> {
         try {
-            // 1. Convert Base64/URL to Blob
-            const response = await fetch(imageSrc);
-            const blob = await response.blob();
+            // 1. Optimize Image (Resize to 4K max & Compress)
+            // Skip optimization for thumbnails (already small)
+            let blob: Blob;
+            if (customFileName?.startsWith('thumb_')) {
+                const response = await fetch(imageSrc);
+                blob = await response.blob();
+            } else {
+                const { compressImage } = await import('../utils/imageUtils');
+                blob = await compressImage(imageSrc);
+            }
 
             // 2. Generate Path
             const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
@@ -71,9 +78,10 @@ export const storageService = {
     /**
      * Get multiple signed URLs at once (batching)
      * @param paths List of storage paths
+     * @param options Transformation options
      * @returns A map of path -> signedUrl
      */
-    async getSignedUrls(paths: string[]): Promise<Record<string, string>> {
+    async getSignedUrls(paths: string[], options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<Record<string, string>> {
         if (!paths || paths.length === 0) return {};
 
         // 0. Ensure cache is loaded
@@ -84,9 +92,13 @@ export const storageService = {
         const results: Record<string, string> = {};
         const toFetch: string[] = [];
 
+        // Generate a cache key suffix based on options
+        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+
         // 1. Check Cache
         paths.forEach(path => {
-            const cached = this._urlCache.get(path);
+            const cacheKey = path + optionsKey;
+            const cached = this._urlCache.get(cacheKey);
             if (cached && cached.expires > Date.now()) {
                 results[path] = cached.url;
             } else if (path) {
@@ -101,7 +113,14 @@ export const storageService = {
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
             const { data, error } = await supabase.storage
                 .from('user-content')
-                .createSignedUrls(toFetch, 60 * 60 * 24 * 7); // 7 days
+                .createSignedUrls(toFetch, 60 * 60 * 24 * 7, {
+                    transform: options ? {
+                        width: options.width,
+                        height: options.height,
+                        quality: options.quality,
+                        resize: options.resize
+                    } : undefined
+                } as any);
 
             if (error) throw error;
 
@@ -109,7 +128,7 @@ export const storageService = {
                 data.forEach((item: any) => {
                     if (item.signedUrl) {
                         results[item.path] = item.signedUrl;
-                        this._urlCache.set(item.path, {
+                        this._urlCache.set(item.path + optionsKey, {
                             url: item.signedUrl,
                             expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
                         });
@@ -128,11 +147,14 @@ export const storageService = {
     /**
      * Get a temporary public URL for a private image
      */
-    async getSignedUrl(path: string): Promise<string | null> {
+    async getSignedUrl(path: string, options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<string | null> {
         if (!path) return null;
 
+        // Generate a cache key suffix based on options
+        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+
         // 1. Check Cache
-        const cached = this._urlCache.get(path);
+        const cached = this._urlCache.get(path + optionsKey);
         if (cached && cached.expires > Date.now()) {
             return cached.url;
         }
@@ -140,12 +162,19 @@ export const storageService = {
         try {
             const { data, error } = await supabase.storage
                 .from('user-content')
-                .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+                .createSignedUrl(path, 60 * 60 * 24 * 7, {
+                    transform: options ? {
+                        width: options.width,
+                        height: options.height,
+                        quality: options.quality,
+                        resize: options.resize
+                    } : undefined
+                } as any);
 
             if (error) throw error;
 
             if (data?.signedUrl) {
-                this._urlCache.set(path, {
+                this._urlCache.set(path + optionsKey, {
                     url: data.signedUrl,
                     expires: Date.now() + 1000 * 60 * 60
                 });

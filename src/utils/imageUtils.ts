@@ -48,6 +48,55 @@ export async function generateThumbnail(src: string, maxDim: number = 512): Prom
 }
 
 /**
+ * Compresses and resizes an image for storage optimization.
+ * @param src The source image (Data URL or URL)
+ * @param maxDim Maximum dimension for 4K (4096)
+ * @param quality JPEG quality (0.85 is a good balance)
+ */
+export async function compressImage(src: string, maxDim: number = 4096, quality: number = 0.85): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width;
+            let h = img.height;
+
+            if (w > maxDim || h > maxDim) {
+                const ratio = w / h;
+                if (w > h) {
+                    w = maxDim;
+                    h = maxDim / ratio;
+                } else {
+                    h = maxDim;
+                    w = maxDim * ratio;
+                }
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error("Failed to get canvas context"));
+                return;
+            }
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+
+            canvas.toBlob((blob) => {
+                if (blob) resolve(blob);
+                else reject(new Error("Failed to create blob from canvas"));
+            }, 'image/jpeg', quality);
+        };
+        img.onerror = () => reject(new Error("Failed to load image for compression"));
+        img.src = src;
+    });
+}
+
+
+/**
  * Robustly downloads an image by fetching it as a blob.
  * This ensures the 'download' attribute works even for cross-origin URLs.
  */

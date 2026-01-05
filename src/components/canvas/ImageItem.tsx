@@ -7,6 +7,8 @@ import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
 import { AnnotationToolbar } from './AnnotationToolbar';
 import { generateId } from '@/utils/ids';
+import { storageService } from '@/services/storageService';
+
 
 interface ImageItemProps {
     image: CanvasImage;
@@ -79,6 +81,49 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
         case 'pro-1k': default: return 23000;
     }
 };
+
+const ImageSource = memo(({ path, maskSrc, zoom, title }: { path: string, maskSrc?: string, zoom: number, title: string }) => {
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || null);
+    const [isHighRes, setIsHighRes] = useState(zoom >= 1.0);
+    const lastZoomRef = useRef(zoom);
+
+    useEffect(() => {
+        if (maskSrc) {
+            setCurrentSrc(maskSrc);
+            return;
+        }
+
+        const fetchUrl = async () => {
+            const highRes = zoom >= 1.0;
+            const url = await storageService.getSignedUrl(path, highRes ? undefined : { width: 600, quality: 75 });
+            setCurrentSrc(url);
+            setIsHighRes(highRes);
+        };
+
+        // Debounce switching to avoid hammering during scroll
+        const shouldSwitchRes = (zoom >= 1.0 && !isHighRes) || (zoom < 0.8 && isHighRes);
+
+        if (!currentSrc || shouldSwitchRes) {
+            const timeout = setTimeout(fetchUrl, currentSrc ? 500 : 0);
+            return () => clearTimeout(timeout);
+        }
+    }, [path, zoom, maskSrc]);
+
+    return (
+        <img
+            src={currentSrc || ''}
+            alt={title}
+            loading="lazy"
+            className="w-full h-full object-cover pointer-events-none block"
+            style={{
+                imageRendering: zoom > 1.5 ? 'pixelated' : 'auto',
+                filter: !currentSrc ? 'blur(10px)' : 'none',
+                transition: 'filter 0.3s ease-out'
+            }}
+        />
+    );
+});
+
 
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
@@ -197,14 +242,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 style={{ height: image.height * zoom }}
             >
                 {/* LOD Image Loading */}
-                <img
-                    src={image.maskSrc || (zoom >= 1.0 ? image.src : (image.thumbSrc || image.src))}
-                    alt={image.title}
-                    loading="lazy"
-                    className="w-full h-full object-cover pointer-events-none block"
-                    style={{
-                        imageRendering: zoom > 1.5 ? 'pixelated' : 'auto',
-                    }}
+                <ImageSource
+                    path={image.storage_path}
+                    maskSrc={image.maskSrc}
+                    zoom={zoom}
+                    title={image.title}
                 />
 
                 {/* Editor Overlay */}

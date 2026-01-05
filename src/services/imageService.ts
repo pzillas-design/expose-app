@@ -16,27 +16,20 @@ export const imageService = {
             await boardService.ensureBoardExists(userId, boardId);
         }
 
-        // 1. Upload Full Image
+        // 1. Upload Full Image (Compressed to 4K max via uploadImage)
         const path = await storageService.uploadImage(image.src, userId);
         if (!path) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };
         }
 
-        // 2. Upload Thumbnail if exists
-        let thumbPath: string | null = null;
-        if (image.thumbSrc) {
-            const thumbFileName = `thumb_${image.id}.jpg`;
-            thumbPath = await storageService.uploadImage(image.thumbSrc, userId, thumbFileName);
-        }
-
-        // 3. Insert into DB
+        // 2. Insert into DB (Thumbnail path is now optional/null as we use dynamic transformations)
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,
             board_id: (image as any).boardId, // Use boardId if available
             storage_path: path,
-            thumb_storage_path: thumbPath,
+            thumb_storage_path: null,
             width: Math.round(image.width),
             height: Math.round(image.height),
             real_width: image.realWidth,
@@ -51,6 +44,7 @@ export const imageService = {
             annotations: image.annotations ? JSON.stringify(image.annotations) : null,
             generation_params: { quality: image.quality }
         });
+
 
         if (error) {
             console.error('Deep Sync: DB Insert Failed:', error);
@@ -180,24 +174,10 @@ export const imageService = {
         }
 
         const result = data.image; // Server returns partially populated CanvasImage
-        const { generateThumbnail } = await import('../utils/imageUtils');
-        const thumbSrc = await generateThumbnail(result.src);
 
-        // Upload thumbnail to storage and update DB record
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && thumbSrc) {
-            const thumbFileName = `thumb_${newId}.jpg`;
-            storageService.uploadImage(thumbSrc, user.id, thumbFileName).then(thumbPath => {
-                if (thumbPath) {
-                    supabase.from('canvas_images')
-                        .update({ thumb_storage_path: thumbPath })
-                        .eq('id', newId)
-                        .then(({ error }) => {
-                            if (error) console.warn("Failed to update thumb path in DB:", error);
-                        });
-                }
-            });
-        }
+        // We skip manual thumbnail generation now, as we use dynamic transformations.
+        // The resolved record will handle requesting a smaller version via Supabase.
+
 
         // Determine actual dimensions of the generated result
         const getImageDims = (src: string): Promise<{ w: number, h: number }> => {
@@ -214,8 +194,9 @@ export const imageService = {
             ...sourceImage,
             id: newId,
             src: result.src, // Use the optimized 'src' (URL or base64)
-            thumbSrc: thumbSrc,
+            thumbSrc: undefined,
             originalSrc: sourceImage.src,
+
             isGenerating: false,
             generationStartTime: undefined,
             generationPrompt: prompt,
