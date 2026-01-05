@@ -351,16 +351,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .filter(c => !hiddenControlIds.includes(c.id))
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[9px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
                                                                 onClick={() => handleClearControl(ctrl.id)}
-                                                                className="text-zinc-400 hover:text-red-500 transition-colors"
+                                                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 transition-colors"
                                                                 title="Reset"
                                                             >
-                                                                <X className="w-3 h-3" />
+                                                                <X className="w-2.5 h-2.5" />
                                                             </button>
                                                         </div>
                                                         <div className="flex flex-wrap gap-1.5">
@@ -373,8 +373,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         className={`
                                                                             px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
                                                                             ${isSelected
-                                                                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md scale-105 z-10'
-                                                                                : 'bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}
+                                                                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm scale-105 z-10'
+                                                                                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
                                                                         `}
                                                                     >
                                                                         {opt.label}
