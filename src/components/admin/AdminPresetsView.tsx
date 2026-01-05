@@ -212,56 +212,127 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
 
                                 {/* DE Column */}
-                                <div className="space-y-10">
+                                <div className="space-y-12">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <span className="text-[10px] font-black bg-amber-100 text-amber-900 px-2 py-0.5 rounded uppercase tracking-wider">Deutsch</span>
+                                        <span className="text-[10px] font-black bg-amber-100 text-amber-900 px-3 py-1 rounded-full uppercase tracking-wider">Deutsch</span>
                                     </div>
 
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         <div className="space-y-3">
                                             <SectionHeader>Titel (DE)</SectionHeader>
-                                            <Input className="text-lg font-bold h-12" value={formState.de.title} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, title: e.target.value } }))} placeholder="Name der Vorlage..." />
+                                            <Input className="text-xl font-bold h-14 bg-zinc-50 dark:bg-zinc-900/40 border-none shadow-none focus:bg-white dark:focus:bg-zinc-900" value={formState.de.title} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, title: e.target.value } }))} placeholder="Name der Vorlage..." />
                                         </div>
 
                                         <div className="space-y-3">
                                             <SectionHeader>Prompt (DE)</SectionHeader>
-                                            <TextArea className="min-h-[220px] text-sm leading-relaxed p-5 bg-zinc-50 dark:bg-zinc-900/50 border-none text-zinc-700 dark:text-zinc-300 font-mono" value={formState.de.prompt} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, prompt: e.target.value } }))} placeholder="Der Prompt für die Generierung..." />
+                                            <TextArea className="min-h-[250px] text-[13px] leading-relaxed p-6 bg-zinc-50 dark:bg-zinc-900/40 border-none text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-900" value={formState.de.prompt} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, prompt: e.target.value } }))} placeholder="Der Prompt für die Generierung..." />
+                                        </div>
+
+                                        <div className="space-y-4 pt-4">
+                                            <SectionHeader>Variablen (DE)</SectionHeader>
+                                            <ControlsEditor
+                                                controls={formState.de.controls}
+                                                onChange={(ctrls) => setFormState(s => ({ ...s, de: { ...s.de, controls: ctrls } }))}
+                                                t={t}
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* EN Column */}
-                                <div className="space-y-10">
+                                <div className="space-y-12">
                                     <div className="flex items-center gap-2 mb-4">
-                                        <span className="text-[10px] font-black bg-blue-100 text-blue-900 px-2 py-0.5 rounded uppercase tracking-wider">English</span>
+                                        <span className="text-[10px] font-black bg-blue-100 text-blue-900 px-3 py-1 rounded-full uppercase tracking-wider">English</span>
                                     </div>
 
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         <div className="space-y-3">
                                             <SectionHeader>Title (EN)</SectionHeader>
-                                            <Input className="text-lg font-bold h-12" value={formState.en.title} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, title: e.target.value } }))} placeholder="Template name..." />
+                                            <Input className="text-xl font-bold h-14 bg-zinc-50 dark:bg-zinc-900/40 border-none shadow-none focus:bg-white dark:focus:bg-zinc-900" value={formState.en.title} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, title: e.target.value } }))} placeholder="Template name..." />
                                         </div>
 
                                         <div className="space-y-3">
                                             <SectionHeader>Prompt (EN)</SectionHeader>
-                                            <TextArea className="min-h-[220px] text-sm leading-relaxed p-5 bg-zinc-50 dark:bg-zinc-900/50 border-none text-zinc-700 dark:text-zinc-300 font-mono" value={formState.en.prompt} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, prompt: e.target.value } }))} placeholder="The generation prompt..." />
+                                            <TextArea className="min-h-[250px] text-[13px] leading-relaxed p-6 bg-zinc-50 dark:bg-zinc-900/40 border-none text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-900" value={formState.en.prompt} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, prompt: e.target.value } }))} placeholder="The generation prompt..." />
+                                        </div>
+
+                                        <div className="space-y-4 pt-4">
+                                            <SectionHeader>Variables (EN)</SectionHeader>
+                                            <ControlsEditor
+                                                controls={formState.en.controls}
+                                                onChange={(ctrls) => setFormState(s => ({ ...s, en: { ...s.en, controls: ctrls } }))}
+                                                t={t}
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                            </div>
-
-                            {/* Controls Section (Common for now) */}
-                            <div className="pt-10 border-t border-zinc-100 dark:border-zinc-800">
-                                <SectionHeader className="mb-6">Variablen & Controls (DE Context)</SectionHeader>
-                                <div className="bg-zinc-50 dark:bg-zinc-900/30 rounded-3xl p-8 border border-zinc-100 dark:border-zinc-800 text-center">
-                                    <p className="text-xs text-zinc-500">Variablen-Editor wird in Kürze in dieses Layout integriert. Aktuell werden die existierenden Controls beibehalten.</p>
-                                </div>
                             </div>
                         </div>
                     </>
                 )}
             </div>
+        </div>
+    );
+};
+
+// --- Sub-Component for Controls Editor ---
+const ControlsEditor = ({ controls, onChange, t }: { controls: PresetControl[], onChange: (c: PresetControl[]) => void, t: TranslationFunction }) => {
+    const [isAdding, setIsAdding] = useState(false);
+    const [newLabel, setNewLabel] = useState('');
+    const [newOptions, setNewOptions] = useState('');
+
+    const addControl = () => {
+        if (!newLabel) return;
+        const optionsArray = newOptions.split(',').map(s => s.trim()).filter(s => s);
+        const newCtrl: PresetControl = {
+            id: generateId(),
+            label: newLabel,
+            options: optionsArray.map(o => ({ id: generateId(), label: o, value: o }))
+        };
+        onChange([...controls, newCtrl]);
+        setIsAdding(false); setNewLabel(''); setNewOptions('');
+    };
+
+    const removeControl = (id: string) => {
+        onChange(controls.filter(c => c.id !== id));
+    };
+
+    return (
+        <div className="space-y-4">
+            {controls.map((ctrl) => (
+                <div key={ctrl.id} className="relative group p-5 bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800 rounded-2xl">
+                    <button onClick={() => removeControl(ctrl.id)} className="absolute top-4 right-4 text-zinc-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 mb-2">{ctrl.label}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {ctrl.options.map(o => (
+                            <span key={o.id} className="text-[10px] px-2 py-0.5 bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-zinc-500 rounded-md">
+                                {o.label}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            {isAdding ? (
+                <div className="p-6 bg-white dark:bg-zinc-900 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl space-y-4">
+                    <Input className="h-10 text-xs" label="Angezeigter Name" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="z.B. Wetter" autoFocus />
+                    <Input className="h-10 text-xs" label="Optionen (mit Komma getrennt)" value={newOptions} onChange={e => setNewOptions(e.target.value)} placeholder="sonnig, bewölkt, Regen" />
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button onClick={() => setIsAdding(false)} className="text-xs font-bold text-zinc-400">Abbrechen</button>
+                        <Button onClick={addControl} className="h-8 px-4 text-xs font-bold">Variable hinzufügen</Button>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    onClick={() => setIsAdding(true)}
+                    className="w-full py-4 flex items-center justify-center gap-2 border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-3xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:border-zinc-200 dark:hover:border-zinc-700 transition-all text-xs font-bold"
+                >
+                    <Plus className="w-4 h-4" /> Variable hinzufügen
+                </button>
+            )}
         </div>
     );
 };
