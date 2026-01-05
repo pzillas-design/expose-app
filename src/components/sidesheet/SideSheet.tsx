@@ -292,7 +292,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             strokeWidth: 0,
             color: '#fff',
             text: label,
-            emoji: icon || '💬', // Use provided icon or default to speech bubble as requested
+            emoji: icon || '🏷️', // Use provided icon or default to label as requested
             itemId: itemId,
             variantIndex: 0,
             createdAt: Date.now()

@@ -45,6 +45,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
+    const [editEmojiValue, setEditEmojiValue] = useState('');
     const { showToast } = useToast();
 
     const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(null);
@@ -105,13 +106,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const startEditing = (ann: AnnotationObject, defaultText: string) => {
         setEditingId(ann.id);
         setEditValue(ann.text || defaultText);
-        // Prevent event bubbling
+        setEditEmojiValue(ann.emoji || '🏷️');
     };
 
     const saveEditing = () => {
         if (editingId) {
-            if (editValue.trim()) {
-                onUpdateAnnotation(editingId, { text: editValue });
+            const updates: Partial<AnnotationObject> = {};
+            if (editValue.trim()) updates.text = editValue;
+            if (editEmojiValue.trim()) updates.emoji = editEmojiValue;
+
+            if (Object.keys(updates).length > 0) {
+                onUpdateAnnotation(editingId, updates);
             }
             setEditingId(null);
         }
@@ -332,7 +337,20 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                             ) : (
                                                                 <div className="shrink-0 flex items-center justify-center text-zinc-400">
                                                                     {ann.type === 'stamp' ? (
-                                                                        <span className="text-sm leading-none opacity-80">{ann.emoji || '💬'}</span>
+                                                                        isEditing ? (
+                                                                            <input
+                                                                                value={editEmojiValue}
+                                                                                onChange={(e) => setEditEmojiValue(e.target.value)}
+                                                                                className="w-6 h-6 bg-transparent border-none outline-none text-sm text-center p-0"
+                                                                            />
+                                                                        ) : (
+                                                                            <span
+                                                                                onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                                className="text-sm leading-none opacity-80 cursor-text"
+                                                                            >
+                                                                                {ann.emoji || '🏷️'}
+                                                                            </span>
+                                                                        )
                                                                     ) : ann.type === 'shape' ? (
                                                                         ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
                                                                             ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
