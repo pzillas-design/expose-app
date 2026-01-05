@@ -67,11 +67,14 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                             src={displayImages[3]}
                             onLoad={handleLoad}
                             onError={handleLoad}
-                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-[2.0] opacity-40 dark:opacity-20"
+                            className="absolute inset-0 w-full h-full object-cover"
                             alt=""
                         />
                     )}
-                    <span className="relative z-10 text-sm font-bold text-zinc-500 dark:text-zinc-400">+{total - 3}</span>
+                    <div className="absolute inset-0 bg-black/10 dark:bg-black/40 z-0" />
+                    <div className="relative z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                        <span className="text-sm font-bold text-white dark:text-zinc-200">+{total - 3}</span>
+                    </div>
                 </div>
             )}
         </div>

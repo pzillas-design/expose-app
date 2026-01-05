@@ -229,7 +229,10 @@ export const imageService = {
      */
     async resolveImageRecord(record: any, preSignedUrls: Record<string, string> = {}): Promise<CanvasImage> {
         const signedUrl = preSignedUrls[record.storage_path] || '';
-        const thumbSignedUrl = record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null;
+
+        // Use pre-signed 800px version as thumbSrc if available
+        const thumbOptionsKey = '_800xundefined_q75';
+        const thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey] || (record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null);
 
         const targetHeight = 512;
         const aspectRatio = record.width / record.height;
@@ -353,8 +356,14 @@ export const imageService = {
 
             for (let i = 0; i < pathsArray.length; i += 100) {
                 const chunk = pathsArray.slice(i, i + 100);
-                const results = await storageService.getSignedUrls(chunk);
-                Object.assign(signedUrlMap, results);
+
+                // 1. Sign original HD versions
+                const hdResults = await storageService.getSignedUrls(chunk);
+                Object.assign(signedUrlMap, hdResults);
+
+                // 2. Pre-sign 800px optimized versions for immediate canvas display
+                const optResults = await storageService.getSignedUrls(chunk, { width: 800, quality: 75 });
+                Object.assign(signedUrlMap, optResults);
             }
 
             // Transform records using the map

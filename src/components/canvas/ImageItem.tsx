@@ -82,10 +82,11 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
     }
 };
 
-const ImageSource = memo(({ path, src, maskSrc, zoom, title }: { path: string, src: string, maskSrc?: string, zoom: number, title: string }) => {
-    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || null);
+const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string }) => {
+    // Start with maskSrc (if editing) or thumbSrc (if available) or nothing (to avoid HD flash)
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || null);
     const [isHighRes, setIsHighRes] = useState(zoom >= 1.0);
-    const lastZoomRef = useRef(zoom);
+    const isInitialRef = useRef(true);
 
     useEffect(() => {
         if (maskSrc) {
@@ -94,8 +95,13 @@ const ImageSource = memo(({ path, src, maskSrc, zoom, title }: { path: string, s
         }
 
         const fetchUrl = async () => {
-            if (!path) return;
-            const highRes = zoom >= 1.0;
+            if (!path) {
+                // Legacy fallback: if no storage path, we must use the original src
+                if (src && currentSrc !== src) setCurrentSrc(src);
+                return;
+            }
+
+            const highRes = isSelected && zoom >= 1.0;
             const url = await storageService.getSignedUrl(path, highRes ? undefined : { width: 800, quality: 75 });
             if (url) {
                 setCurrentSrc(url);
@@ -103,14 +109,22 @@ const ImageSource = memo(({ path, src, maskSrc, zoom, title }: { path: string, s
             }
         };
 
-        // Debounce switching to avoid hammering during scroll
-        const shouldSwitchRes = (zoom >= 1.0 && !isHighRes) || (zoom < 0.8 && isHighRes);
+        // Determine if we need to fetch/switch resolution
+        // Switching to HighRes: needs to be selected AND zoom >= 1.0
+        // Switching back to LowRes: if zoom drops low OR it's no longer selected
+        const shouldSwitchRes = (isSelected && zoom >= 1.0 && !isHighRes) ||
+            ((zoom < 0.8 || !isSelected) && isHighRes);
 
-        if (!currentSrc || shouldSwitchRes) {
-            const timeout = setTimeout(fetchUrl, currentSrc ? 500 : 0);
+        const needsInitialFetch = !currentSrc && path;
+
+        if (needsInitialFetch || shouldSwitchRes) {
+            // No debounce for first load, 500ms debounce for switching
+            const delay = (needsInitialFetch && isInitialRef.current) ? 0 : 500;
+            const timeout = setTimeout(fetchUrl, delay);
+            isInitialRef.current = false;
             return () => clearTimeout(timeout);
         }
-    }, [path, zoom, maskSrc, src]);
+    }, [path, zoom, maskSrc, src, thumbSrc, isSelected]);
 
     return (
         <img
@@ -248,8 +262,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 <ImageSource
                     path={image.storage_path}
                     src={image.src}
+                    thumbSrc={image.thumbSrc}
                     maskSrc={image.maskSrc}
                     zoom={zoom}
+                    isSelected={isSelected}
                     title={image.title}
                 />
 
