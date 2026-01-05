@@ -61,8 +61,8 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                 </div>
             ))}
             {showPlus && (
-                <div className="relative bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center">
-                    <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">+{total - 3}</span>
+                <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500">+{total - 3}</span>
                 </div>
             )}
         </div>
