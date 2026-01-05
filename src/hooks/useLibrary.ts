@@ -16,6 +16,7 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
     // --- User Library State ---
     const [userLibrary, setUserLibrary] = useState<LibraryCategory[]>([]);
     const [globalLibrary, setGlobalLibrary] = useState<LibraryCategory[]>([]);
+    const [hiddenObjectIds, setHiddenObjectIds] = useState<string[]>([]);
 
     // Combine System + Global + User Library
     const fullLibrary = useMemo(() => {
@@ -26,7 +27,9 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
         [...LIBRARY_CATEGORIES, ...globalLibrary].forEach(cat => {
             if (cat.lang === currentLang || !cat.lang) {
                 cat.items.forEach(item => {
-                    mergedItems[item.id] = { ...item };
+                    if (!hiddenObjectIds.includes(item.id)) {
+                        mergedItems[item.id] = { ...item };
+                    }
                 });
             }
         });
@@ -34,7 +37,9 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
         // 2. User items (can overwrite or add)
         userLibrary.forEach(cat => {
             cat.items.forEach(item => {
-                mergedItems[item.id] = { ...item, isUserCreated: true };
+                if (!hiddenObjectIds.includes(item.id)) {
+                    mergedItems[item.id] = { ...item, isUserCreated: true };
+                }
             });
         });
 
@@ -44,14 +49,18 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
             label: 'All',
             items: Object.values(mergedItems)
         }];
-    }, [globalLibrary, userLibrary, currentLang]);
+    }, [globalLibrary, userLibrary, currentLang, hiddenObjectIds]);
 
     // Load User Library (Supabase first, then local fallback)
     useEffect(() => {
         const loadUserLibrary = async () => {
             if (user && user.id !== 'guest') {
                 try {
-                    const items = await userService.getUserObjects(user.id);
+                    const [items, hidden] = await Promise.all([
+                        userService.getUserObjects(user.id),
+                        userService.getHiddenObjects(user.id)
+                    ]);
+                    setHiddenObjectIds(hidden);
                     if (items.length > 0) {
                         setUserLibrary([{
                             id: 'basics',
@@ -169,10 +178,18 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
     const deleteUserItem = async (catId: string, itemId: string) => {
         if (user && user.id !== 'guest') {
             try {
-                await userService.deleteUserObject(user.id, itemId);
+                const isCustom = userLibrary.some(c => c.items.some(i => i.id === itemId));
+                if (isCustom) {
+                    await userService.deleteUserObject(user.id, itemId);
+                } else {
+                    await userService.hideSystemObject(user.id, itemId);
+                    setHiddenObjectIds(prev => [...prev, itemId]);
+                }
             } catch (err) {
                 console.error("Failed to delete user object from DB", err);
             }
+        } else {
+            setHiddenObjectIds(prev => [...prev, itemId]);
         }
 
         setUserLibrary(prev => prev.map(cat => {

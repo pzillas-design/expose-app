@@ -59,5 +59,30 @@ export const userService = {
             console.error('Error deleting user object:', error);
             throw error;
         }
+    },
+
+    async hideSystemObject(userId: string, objectId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_hidden_objects')
+            .upsert({ user_id: userId, object_id: objectId });
+
+        if (error) {
+            console.error('Error hiding system object:', error);
+            throw error;
+        }
+    },
+
+    async getHiddenObjects(userId: string): Promise<string[]> {
+        const { data, error } = await supabase
+            .from('user_hidden_objects')
+            .select('object_id')
+            .eq('user_id', userId);
+
+        if (error) {
+            console.error('Error fetching hidden objects:', error);
+            return [];
+        }
+
+        return (data || []).map(d => d.object_id);
     }
 };

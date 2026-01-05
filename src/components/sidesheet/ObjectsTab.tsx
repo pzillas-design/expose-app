@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Box, Plus, Square, Circle, Minus, Eraser, Loader2, Check, Pencil, Trash2 } from 'lucide-react';
+import { Box, Plus, Square, Circle, Minus, Eraser, Loader2, Check, Pencil, Trash2, StickyNote } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
 
@@ -57,11 +57,11 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     };
 
     const renderIcon = (iconNameOrChar: string | undefined) => {
-        if (!iconNameOrChar) return '📦';
-        if (iconNameOrChar === 'Square') return <Square className="w-5 h-5 opacity-70" />;
-        if (iconNameOrChar === 'Circle') return <Circle className="w-5 h-5 opacity-70" />;
-        if (iconNameOrChar === 'Minus') return <Minus className="w-5 h-5 -rotate-45 opacity-70" />;
-        if (iconNameOrChar === 'Eraser') return <Eraser className="w-5 h-5 opacity-70" />;
+        if (!iconNameOrChar || iconNameOrChar === '📦') return <StickyNote className="w-3.5 h-3.5 opacity-40 translate-y-[0.5px]" />;
+        if (iconNameOrChar === 'Square') return <Square className="w-4 h-4 opacity-40 translate-y-[0.5px]" />;
+        if (iconNameOrChar === 'Circle') return <Circle className="w-4 h-4 opacity-40 translate-y-[0.5px]" />;
+        if (iconNameOrChar === 'Minus') return <Minus className="w-4 h-4 -rotate-45 opacity-40 translate-y-[0.5px]" />;
+        if (iconNameOrChar === 'Eraser') return <Eraser className="w-4 h-4 opacity-40 translate-y-[0.5px]" />;
         return <span className="text-xl leading-none">{iconNameOrChar}</span>;
     };
 
@@ -96,8 +96,8 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     {/* Inline Adding Row at the TOP */}
                     {isAdding && (
                         <div className="flex items-center gap-3 px-5 py-3.5 bg-zinc-50/50 dark:bg-zinc-800/30 border-y border-zinc-100 dark:border-zinc-800/50 animate-in slide-in-from-top-2 duration-200">
-                            <span className="w-6 shrink-0 flex items-center justify-center opacity-40">
-                                📦
+                            <span className="w-6 shrink-0 flex items-center justify-center">
+                                <StickyNote className="w-3.5 h-3.5 text-zinc-400 opacity-40 translate-y-[0.5px]" />
                             </span>
                             <input
                                 ref={inputRef}
@@ -145,14 +145,12 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                     </span>
 
                                     {isEditMode ? (
-                                        item.isUserCreated && (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); onDeleteUserItem(item.catId, item.id); }}
-                                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-300 hover:text-red-500 rounded-md transition-all animate-in fade-in zoom-in-90"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
-                                        )
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onDeleteUserItem(item.catId, item.id); }}
+                                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-300 hover:text-red-500 rounded-md transition-all animate-in fade-in zoom-in-90"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
                                     ) : (
                                         <span className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-medium whitespace-nowrap pointer-events-none">
                                             {currentLang === 'de' ? 'Hinzufügen' : 'Add'}
