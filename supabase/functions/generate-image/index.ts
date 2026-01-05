@@ -123,17 +123,23 @@ Deno.serve(async (req) => {
         const allRefs = [...refAnns, ...freshAttachments];
         const hasRefs = allRefs.length > 0;
 
-        let systemInstruction = "I am providing an ORIGINAL image (to be edited)."
+        let systemInstruction = "I am providing an ORIGINAL image (to be edited). "
         if (hasMask) {
-            systemInstruction += " I am also providing an ANNOTATION image (the original image muted/dimmed, with bright markings and text indicating desired changes)."
+            systemInstruction += "I am also providing an ANNOTATION image (the original image muted/dimmed, with bright markings and text indicating desired changes). "
             const labels = annotations.map((a: any) => a.text).filter(Boolean);
             if (labels.length > 0) {
-                systemInstruction += ` The following labels are marked in the Annotation Image: ${labels.map(l => `"${l.toUpperCase()}"`).join(", ")}.`
+                systemInstruction += `The following labels are marked in the Annotation Image: ${labels.map(l => `"${l.toUpperCase()}"`).join(", ")}. `
             }
         }
-        if (hasRefs) systemInstruction += " I am also providing REFERENCE images for guidance (style, context, or visual elements)."
-        systemInstruction += " Apply the edits to the ORIGINAL image based on the user prompt, following the visual cues in the ANNOTATION image and using the REFERENCE images as a basis for style or objects."
-        systemInstruction += " CRITICAL: The generated image must NEVER include any of the text, lines, or markings shown in the ANNOTATION image. Those elements are strictly for your instructions and should be removed/replaced with realistic image content."
+        if (hasRefs) {
+            systemInstruction += "I am also providing REFERENCE images for guidance (style, context, or visual elements). "
+        }
+
+        systemInstruction += `Apply the edits to the ORIGINAL image based on the user prompt${hasMask ? ', following the visual cues in the ANNOTATION image' : ''}${hasRefs ? ' and using the REFERENCE images as a basis for style or objects' : ''}. `
+
+        if (hasMask) {
+            systemInstruction += "CRITICAL: The generated image must NEVER include any of the text, lines, or markings shown in the ANNOTATION image. Those elements are strictly for your instructions and should be removed/replaced with realistic image content."
+        }
 
         parts.push({ text: systemInstruction })
         parts.push({ text: `User Prompt: ${prompt}` })
