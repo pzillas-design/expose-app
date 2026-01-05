@@ -37,13 +37,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} onClose={() => { }} t={t} />
 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-white/50 dark:bg-zinc-950/50">
-          <div className="flex-1 overflow-y-auto">
-            {activeTab === 'users' && <AdminUsersView t={t} />}
-            {activeTab === 'jobs' && <AdminJobsView t={t} />}
-            {activeTab === 'stats' && <AdminStatsView t={t} />}
-            {activeTab === 'presets' && <AdminPresetsView t={t} />}
-            {activeTab === 'objects' && <AdminObjectsView t={t} />}
-          </div>
+          {activeTab === 'users' && <AdminUsersView t={t} />}
+          {activeTab === 'jobs' && <AdminJobsView t={t} />}
+          {activeTab === 'stats' && <AdminStatsView t={t} />}
+          {activeTab === 'presets' && <AdminPresetsView t={t} />}
+          {activeTab === 'objects' && <AdminObjectsView t={t} />}
         </div>
       </div>
     </div>

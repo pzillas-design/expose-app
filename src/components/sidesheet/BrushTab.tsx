@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
-import { Pen, Type, Stamp, Square, Circle, Minus, Eraser, MousePointer2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, Minus, MousePointer2 } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -103,7 +103,6 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <UtilityButton icon={Square} label="Box" onClick={() => onAddObject('Box', 'shape:rect')} />
                         <UtilityButton icon={Circle} label="Kreis" onClick={() => onAddObject('Kreis', 'shape:circle')} />
                         <UtilityButton icon={Minus} label="Linie" onClick={() => onAddObject('Linie', 'shape:line')} />
-                        <UtilityButton icon={Eraser} label="Eraser" onClick={() => onAddObject('Remove', 'util:remove')} />
                     </div>
                 </div>
 
