@@ -130,8 +130,33 @@ export const storageService = {
      */
     async getSignedUrl(path: string): Promise<string | null> {
         if (!path) return null;
-        const res = await this.getSignedUrls([path]);
-        return res[path] || null;
+
+        // 1. Check Cache
+        const cached = this._urlCache.get(path);
+        if (cached && cached.expires > Date.now()) {
+            return cached.url;
+        }
+
+        try {
+            const { data, error } = await supabase.storage
+                .from('user-content')
+                .createSignedUrl(path, 60 * 60 * 24 * 7); // 7 days
+
+            if (error) throw error;
+
+            if (data?.signedUrl) {
+                this._urlCache.set(path, {
+                    url: data.signedUrl,
+                    expires: Date.now() + 1000 * 60 * 60
+                });
+                this._savePersistentCache();
+                return data.signedUrl;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error signing url:', path, error);
+            return null;
+        }
     },
 
     /**
