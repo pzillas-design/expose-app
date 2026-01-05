@@ -324,6 +324,7 @@ export const useGeneration = ({
         const placeholder: CanvasImage = {
             id: newId,
             src: '',
+            storage_path: '',
             width: displayWidth,
             height: displayHeight,
             realWidth,

@@ -26,6 +26,7 @@ export interface AnnotationObject {
 export interface CanvasImage {
   id: string;
   src: string;
+  storage_path: string;
   thumbSrc?: string; // Low-res thumbnail for LOD performance
   width: number;
   height: number;

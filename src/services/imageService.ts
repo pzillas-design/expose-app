@@ -194,6 +194,7 @@ export const imageService = {
             ...sourceImage,
             id: newId,
             src: result.src, // Use the optimized 'src' (URL or base64)
+            storage_path: result.storage_path,
             thumbSrc: undefined,
             originalSrc: sourceImage.src,
 
@@ -248,6 +249,7 @@ export const imageService = {
         return {
             id: record.id,
             src: signedUrl || '',
+            storage_path: record.storage_path,
             thumbSrc: thumbSignedUrl || undefined,
             width: normalizedWidth,
             height: targetHeight,
@@ -379,6 +381,7 @@ export const imageService = {
             const skeleton: CanvasImage = {
                 id: job.id,
                 src: '', // No image yet
+                storage_path: '',
                 width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
                 height: 512,
                 title: baseName,

@@ -49,6 +49,7 @@ export const useFileHandler = ({
                             const newImage: CanvasImage = {
                                 id: newId,
                                 src: event.target!.result as string,
+                                storage_path: '',
                                 thumbSrc: thumbSrc,
                                 width: w, height: h,
                                 realWidth: img.width, realHeight: img.height,

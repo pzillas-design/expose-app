@@ -82,8 +82,8 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
     }
 };
 
-const ImageSource = memo(({ path, maskSrc, zoom, title }: { path: string, maskSrc?: string, zoom: number, title: string }) => {
-    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || null);
+const ImageSource = memo(({ path, src, maskSrc, zoom, title }: { path: string, src: string, maskSrc?: string, zoom: number, title: string }) => {
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || null);
     const [isHighRes, setIsHighRes] = useState(zoom >= 1.0);
     const lastZoomRef = useRef(zoom);
 
@@ -94,10 +94,13 @@ const ImageSource = memo(({ path, maskSrc, zoom, title }: { path: string, maskSr
         }
 
         const fetchUrl = async () => {
+            if (!path) return;
             const highRes = zoom >= 1.0;
             const url = await storageService.getSignedUrl(path, highRes ? undefined : { width: 800, quality: 75 });
-            setCurrentSrc(url);
-            setIsHighRes(highRes);
+            if (url) {
+                setCurrentSrc(url);
+                setIsHighRes(highRes);
+            }
         };
 
         // Debounce switching to avoid hammering during scroll
@@ -107,7 +110,7 @@ const ImageSource = memo(({ path, maskSrc, zoom, title }: { path: string, maskSr
             const timeout = setTimeout(fetchUrl, currentSrc ? 500 : 0);
             return () => clearTimeout(timeout);
         }
-    }, [path, zoom, maskSrc]);
+    }, [path, zoom, maskSrc, src]);
 
     return (
         <img
@@ -244,6 +247,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 {/* LOD Image Loading */}
                 <ImageSource
                     path={image.storage_path}
+                    src={image.src}
                     maskSrc={image.maskSrc}
                     zoom={zoom}
                     title={image.title}
