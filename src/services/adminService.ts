@@ -126,7 +126,7 @@ export const adminService = {
             ...p,
             isPinned: p.is_pinned,
             isCustom: p.is_custom,
-            isDefault: p.is_default,
+            isDefault: p.is_default || false,
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
             lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
@@ -134,14 +134,13 @@ export const adminService = {
     },
 
     async updateGlobalPreset(preset: any): Promise<void> {
-        const dbPreset = {
+        const dbPreset: any = {
             id: preset.id,
             title: preset.title,
             prompt: preset.prompt,
             tags: [],
             is_pinned: preset.isPinned,
             is_custom: preset.isCustom,
-            is_default: preset.isDefault,
             usage_count: preset.usageCount,
             lang: preset.lang,
             updated_at: new Date().toISOString(),

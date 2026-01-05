@@ -99,7 +99,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-auto">
+            <div className="flex-1 min-h-0 overflow-auto">
                 <div className="min-w-[900px]">
                     {loading ? (
                         <div className="py-20 flex items-center justify-center">

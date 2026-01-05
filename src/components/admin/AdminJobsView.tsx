@@ -73,7 +73,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-auto">
+            <div className="flex-1 min-h-0 overflow-auto">
                 <div className="min-w-[900px] flex flex-col">
                     {loading && jobs.length === 0 ? (
                         <div className="py-20 flex items-center justify-center">

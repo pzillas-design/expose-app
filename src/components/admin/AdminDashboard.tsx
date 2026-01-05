@@ -28,9 +28,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   const navigate = useNavigate();
 
   const activeTab = useMemo(() => {
-    if (!tab) return 'users';
-    if (tab === 'stamps') return 'objects';
-    return tab as AdminTab;
+    const t = tab || 'users';
+    return (t === 'stamps' ? 'objects' : t) as AdminTab;
   }, [tab]);
 
   const navItems = [
@@ -42,7 +41,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   ];
 
   return (
-    <div className={`min-h-screen flex flex-col ${Theme.Colors.CanvasBg} text-zinc-900 dark:text-zinc-100`}>
+    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       <AppNavbar
         user={user}
         userProfile={userProfile}
@@ -52,16 +51,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
       />
 
       {/* Sub Header Nav */}
-      <div className="z-40 mt-8 mb-4">
-        <div className="max-w-[1700px] mx-auto px-6 h-10 flex items-center justify-center gap-1">
+      <div className="z-40 mt-10 mb-2">
+        <div className="max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 flex items-center justify-center gap-1">
           {navItems.map((item) => {
             const isActive = activeTab === item.id || (item.id === 'stamps' && activeTab as string === 'objects');
             return (
               <button
                 key={item.id}
                 onClick={() => navigate(`/admin/${item.id}`)}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[13px] font-bold transition-all ${isActive
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm'
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-[13px] font-bold transition-all ${isActive
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-lg shadow-black/5 dark:shadow-white/5'
                   : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white capitalize'}`}
               >
                 {React.cloneElement(item.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
@@ -73,8 +72,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
       </div>
 
       <main className="flex-1 min-h-0">
-        <div className="w-full h-[calc(100vh-180px)]">
-          <div className="bg-white dark:bg-zinc-900 h-full flex flex-col">
+        <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-10 h-[calc(100vh-220px)]">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 h-full flex flex-col rounded-[2.5rem] overflow-hidden shadow-sm">
             {activeTab === 'users' && <AdminUsersView t={t} />}
             {activeTab === 'jobs' && <AdminJobsView t={t} />}
             {activeTab === 'stats' && <AdminStatsView t={t} />}

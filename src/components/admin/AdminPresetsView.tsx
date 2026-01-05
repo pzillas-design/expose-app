@@ -119,7 +119,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     id: selectedId,
                     lang: 'de',
                     ...formState.de,
-                    isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+                    isPinned: true, isCustom: false, usageCount: 0
                 });
             }
 
@@ -129,7 +129,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     id: selectedId + '-en',
                     lang: 'en',
                     ...formState.en,
-                    isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+                    isPinned: true, isCustom: false, usageCount: 0
                 });
             }
 
@@ -159,7 +159,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     };
 
     return (
-        <div className="flex flex-1 min-h-0 overflow-hidden bg-white dark:bg-zinc-950">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* LEFT SIDEBAR: List */}
             <div className="w-[300px] flex flex-col border-r border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10">
                 <div className="p-5 pb-3 flex flex-col gap-3">
@@ -208,7 +208,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             </div>
 
             {/* RIGHT SIDE: Editor */}
-            <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-950">
+            <div className="flex-1 flex flex-col min-w-0">
                 {!selectedId ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 gap-4">
                         <Bookmark className="w-12 h-12 opacity-10" strokeWidth={1} />
