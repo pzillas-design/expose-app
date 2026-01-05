@@ -297,146 +297,176 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
                     {activeInternalTab === 'prompt' || isMulti ? (
-                        <div className="flex-1 flex flex-col px-6 pt-5 pb-6">
-                            <div className="flex flex-col">
-                                {/* UNIFIED MODULAR BOX */}
-                                <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.RadiusLg} overflow-hidden transition-all duration-300 shadow-sm focus-within:border-zinc-400 dark:focus-within:border-zinc-500`}>
+                        <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
+                            <div className="flex flex-col mb-8 gap-4">
+                                {/* UNIFIED BOX: Prompt + Chips */}
+                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600 overflow-hidden`}>
+                                    <Tooltip text={t('tt_prompt')} side="top">
+                                        <textarea
+                                            ref={textAreaRef}
+                                            value={prompt}
+                                            onChange={(e) => setPrompt(e.target.value)}
+                                            placeholder={t('describe_changes')}
+                                            className={`w-full bg-transparent border-none outline-none p-4 pb-2 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
+                                            disabled={selectedImage.isGenerating}
+                                        />
+                                    </Tooltip>
 
-                                    {/* 1. Prompt Input */}
-                                    <textarea
-                                        ref={textAreaRef}
-                                        value={prompt}
-                                        onChange={(e) => setPrompt(e.target.value)}
-                                        placeholder={t('describe_changes')}
-                                        className={`w-full bg-transparent border-none outline-none p-5 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[120px] overflow-hidden`}
-                                        disabled={selectedImage.isGenerating}
-                                    />
+                                    {/* CHIPS AREA: Annotations + Selected Variables */}
+                                    {(annotations.length > 0 || (activeTemplate && Object.keys(controlValues).length > 0)) && (
+                                        <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
+                                            {/* Annotations Chips */}
+                                            {annotations.map((ann) => {
+                                                const isRefType = ann.type === 'reference_image';
+                                                const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
+                                                const defaultLabel = isRefType ? `${t('image_ref')}` : '';
+                                                const displayText = ann.text || defaultLabel || t('untitled');
+                                                const isEditing = editingId === ann.id;
 
-                                    {/* 2. Modular Content Area (Annotations + Variables) */}
-                                    {(annotations.length > 0 || (activeTemplate?.controls?.length || 0) > 0) && (
-                                        <div className="px-5 pb-4 flex flex-col gap-4">
+                                                return (
+                                                    <div
+                                                        key={ann.id}
+                                                        className={`
+                                                            group relative flex items-center gap-1.5 px-3 py-1 rounded-full transition-all
+                                                            ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-400 dark:ring-zinc-500' : 'bg-zinc-100/80 dark:bg-zinc-800/60 hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 border border-transparent'}
+                                                        `}
+                                                    >
+                                                        {isRefType && ann.referenceImage ? (
+                                                            <div className="shrink-0 w-4 h-4 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="shrink-0 flex items-center justify-center text-zinc-400">
+                                                                {ann.type === 'stamp' ? (
+                                                                    isEditing ? null : <Type className="w-3 h-3" />
+                                                                ) : ann.type === 'shape' ? (
+                                                                    ann.shapeType === 'circle' ? <Circle className="w-3 h-3" /> :
+                                                                        ann.shapeType === 'line' ? <Minus className="w-3 h-3" /> :
+                                                                            <Square className="w-3 h-3" />
+                                                                ) : (
+                                                                    <Pen className="w-3 h-3" />
+                                                                )}
+                                                            </div>
+                                                        )}
 
-                                            {/* Annotations Section */}
-                                            {annotations.length > 0 && !isMulti && (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {annotations.map((ann, idx) => {
-                                                        const isRefType = ann.type === 'reference_image';
-                                                        const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-                                                        const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
-                                                        const displayText = ann.text || defaultLabel || t('untitled');
-                                                        const isEditing = editingId === ann.id;
+                                                        <div className="flex-1 min-w-0">
+                                                            {isEditing ? (
+                                                                <input
+                                                                    autoFocus
+                                                                    value={editValue}
+                                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                                    onBlur={saveEditing}
+                                                                    onKeyDown={handleKeyDown}
+                                                                    className="bg-transparent border-none outline-none text-[11px] font-medium text-black dark:text-white p-0 min-w-[60px]"
+                                                                    style={{ width: `${Math.max(6, editValue.length) + 1}ch` }}
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                    className={`text-[11px] font-medium cursor-text truncate max-w-[120px] ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-600 dark:text-zinc-300'}`}
+                                                                >
+                                                                    {displayText}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
-                                                        return (
-                                                            <div
-                                                                key={ann.id}
-                                                                className={`group relative flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800/80 rounded-full border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all ${isEditing ? 'ring-1 ring-zinc-400' : ''}`}
+                                                        {!isEditing && (
+                                                            <div className="flex items-center gap-1 overflow-hidden w-0 group-hover:w-auto opacity-0 group-hover:opacity-100 transition-all ml-1">
+                                                                {!isRefType && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
+                                                                        className="p-1 text-zinc-400 hover:text-orange-500 transition-colors"
+                                                                    >
+                                                                        <Camera className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                                    className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Selected Variables Chips */}
+                                            {activeTemplate?.controls.map(ctrl => {
+                                                const selections = controlValues[ctrl.id] || [];
+                                                return selections.map(val => {
+                                                    const opt = ctrl.options.find(o => o.value === val);
+                                                    if (!opt) return null;
+                                                    return (
+                                                        <div
+                                                            key={`${ctrl.id}-${val}`}
+                                                            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-transparent"
+                                                        >
+                                                            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 uppercase tracking-tight font-mono whitespace-nowrap">
+                                                                {ctrl.label}:
+                                                            </span>
+                                                            <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                                                                {opt.label}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleToggleControlOption(ctrl.id, val)}
+                                                                className="ml-0.5 text-zinc-400 hover:text-red-500 transition-colors"
                                                             >
-                                                                <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                    {isRefType && ann.referenceImage ? (
-                                                                        <div className="w-4 h-4 rounded-sm overflow-hidden border border-zinc-300 dark:border-zinc-600">
-                                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                                        </div>
-                                                                    ) : ann.type === 'stamp' ? (
-                                                                        <Type className="w-3.5 h-3.5" />
-                                                                    ) : ann.type === 'shape' ? (
-                                                                        ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
-                                                                            ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
-                                                                                <Square className="w-3.5 h-3.5" />
-                                                                    ) : (
-                                                                        <Pen className="w-3.5 h-3.5" />
-                                                                    )}
-                                                                </div>
-
-                                                                <div className="flex-1 min-w-0">
-                                                                    {isEditing ? (
-                                                                        <input
-                                                                            autoFocus
-                                                                            value={editValue}
-                                                                            onChange={(e) => setEditValue(e.target.value)}
-                                                                            onBlur={saveEditing}
-                                                                            onKeyDown={handleKeyDown}
-                                                                            className={`w-[100px] bg-transparent border-none outline-none text-[11px] font-medium text-black dark:text-white placeholder-zinc-400 p-0`}
-                                                                        />
-                                                                    ) : (
-                                                                        <span
-                                                                            onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                            className={`text-[11px] font-medium whitespace-nowrap cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-700 dark:text-zinc-300'}`}
-                                                                        >
-                                                                            {displayText}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Hover Actions */}
-                                                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
-                                                                    {!isRefType && (
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                                                            className="p-1 rounded-full text-zinc-400 hover:text-orange-500 hover:bg-white dark:hover:bg-zinc-700 transition-all"
-                                                                        >
-                                                                            <Camera className="w-3 h-3" />
-                                                                        </button>
-                                                                    )}
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                        className="p-1 rounded-full text-zinc-400 hover:text-red-500 hover:bg-white dark:hover:bg-zinc-700 transition-all"
-                                                                    >
-                                                                        <X className="w-3 h-3" />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-
-                                            {/* Variables Section */}
-                                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                                <div className="flex flex-col gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
-                                                    {activeTemplate.controls
-                                                        .filter(c => !hiddenControlIds.includes(c.id))
-                                                        .map((ctrl) => (
-                                                            <div key={ctrl.id} className="flex flex-col gap-2">
-                                                                <div className="flex items-center justify-between group">
-                                                                    <span className={`${Typo.Mono} text-[9px] uppercase tracking-widest text-zinc-400`}>
-                                                                        {ctrl.label}
-                                                                    </span>
-                                                                    <button
-                                                                        onClick={() => handleClearControl(ctrl.id)}
-                                                                        className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-red-500 transition-all"
-                                                                    >
-                                                                        <X className="w-2.5 h-2.5" />
-                                                                    </button>
-                                                                </div>
-                                                                <div className="flex flex-wrap gap-1.5">
-                                                                    {ctrl.options.map((opt) => {
-                                                                        const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                                        return (
-                                                                            <button
-                                                                                key={opt.id}
-                                                                                onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                                className={`
-                                                                                    px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all shadow-sm
-                                                                                    ${isSelected
-                                                                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-black'
-                                                                                        : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white'}
-                                                                                `}
-                                                                            >
-                                                                                {opt.label}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                            )}
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                });
+                                            })}
                                         </div>
                                     )}
                                 </div>
+
+                                {/* VARIABLE OPTIONS (Outside) */}
+                                {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
+                                    <div className="flex flex-col gap-4">
+                                        {activeTemplate.controls
+                                            .filter(c => !hiddenControlIds.includes(c.id))
+                                            .map((ctrl) => (
+                                                <div key={ctrl.id} className="flex flex-col gap-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 uppercase`}>
+                                                            {ctrl.label}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleClearControl(ctrl.id)}
+                                                            className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                                                        >
+                                                            Reset
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {ctrl.options.map((opt) => {
+                                                            const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                            return (
+                                                                <button
+                                                                    key={opt.id}
+                                                                    onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                    className={`
+                                                                        px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
+                                                                        ${isSelected
+                                                                            ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md scale-105 z-10'
+                                                                            : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700/80'}
+                                                                    `}
+                                                                >
+                                                                    {opt.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex flex-col mt-6 mb-8">
+                            <div className="flex flex-col mb-8">
                                 {/* Tools Buttons */}
                                 <div className="flex items-center justify-center gap-4">
                                     <Button
