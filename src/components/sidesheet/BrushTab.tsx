@@ -34,11 +34,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 }) => {
 
     const objectLibrary = useMemo(() => {
-        const basicCategory = library.find(c => c.id === 'basics');
-        const userCats = library.filter(c => c.isUserCreated);
-        const filtered: LibraryCategory[] = [];
-        if (basicCategory) filtered.push(basicCategory);
-        return [...filtered, ...userCats];
+        // Return all categories from the library (Global + User)
+        return library;
     }, [library]);
 
     const SectionHeader = ({ label }: { label: string }) => (
