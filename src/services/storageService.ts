@@ -82,8 +82,7 @@ export const storageService = {
         }
 
         const results: Record<string, string> = {};
-        // Use Set to ensure uniqueness for fetching
-        const toFetchSet = new Set<string>();
+        const toFetch: string[] = [];
 
         // 1. Check Cache
         paths.forEach(path => {
@@ -91,42 +90,34 @@ export const storageService = {
             if (cached && cached.expires > Date.now()) {
                 results[path] = cached.url;
             } else if (path) {
-                toFetchSet.add(path);
+                toFetch.push(path);
             }
         });
 
-        const toFetch = Array.from(toFetchSet);
         if (toFetch.length === 0) return results;
 
         try {
-            // 2. Process in chunks of 50 to avoid request limits
-            const CHUNK_SIZE = 50;
-            console.log(`Storage: Batch signing ${toFetch.length} paths in chunks of ${CHUNK_SIZE}...`);
+            // 2. Fetch missing in one call
+            console.log(`Storage: Batch signing ${toFetch.length} paths...`);
+            const { data, error } = await supabase.storage
+                .from('user-content')
+                .createSignedUrls(toFetch, 60 * 60 * 24 * 7); // 7 days
 
-            for (let i = 0; i < toFetch.length; i += CHUNK_SIZE) {
-                const chunk = toFetch.slice(i, i + CHUNK_SIZE);
-                const { data, error } = await supabase.storage
-                    .from('user-content')
-                    .createSignedUrls(chunk, 60 * 60 * 24 * 7); // 7 days
+            if (error) throw error;
 
-                if (error) {
-                    console.error(`Storage: Error signing chunk ${i / CHUNK_SIZE}:`, error);
-                    continue; // Best effort
-                }
-
-                if (data) {
-                    data.forEach((item: any) => {
-                        if (item.signedUrl) {
-                            results[item.path] = item.signedUrl;
-                            this._urlCache.set(item.path, {
-                                url: item.signedUrl,
-                                expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
-                            });
-                        }
-                    });
-                }
+            if (data) {
+                data.forEach((item: any) => {
+                    if (item.signedUrl) {
+                        results[item.path] = item.signedUrl;
+                        this._urlCache.set(item.path, {
+                            url: item.signedUrl,
+                            expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
+                        });
+                    }
+                });
+                this._savePersistentCache();
             }
-            this._savePersistentCache();
+
             return results;
         } catch (error) {
             console.error('Batch Signed URLs Failed:', error);
