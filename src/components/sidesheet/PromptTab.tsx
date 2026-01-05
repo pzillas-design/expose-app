@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, SlidersHorizontal } from 'lucide-react';
+import { Pen, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Box } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -305,7 +305,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                             </div>
                                                         ) : (
                                                             <div className="shrink-0 flex items-center justify-center text-zinc-400 transform scale-90">
-                                                                {ann.type === 'stamp' ? <Armchair className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
+                                                                {ann.type === 'stamp' ? <Box className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
                                                             </div>
                                                         )}
 
@@ -401,21 +401,21 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {/* Tools Buttons */}
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
-                                        variant="secondary"
+                                        variant="ghost"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`} />}
-                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-orange-500'}`} />}
+                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
                                     </Button>
                                     <Button
-                                        variant="secondary"
+                                        variant="ghost"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<Paperclip className="w-3.5 h-3.5 text-orange-500 dark:text-orange-400" />}
-                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
+                                        icon={<Paperclip className="w-3.5 h-3.5 text-orange-500" />}
+                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
                                         tooltip={t('upload_ref')}
                                     >
                                         {t('image_btn')}
@@ -436,13 +436,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             onClick={handleDoGenerate}
                                             disabled={selectedImage.isGenerating}
                                             className={`
-                                                relative flex-1 flex items-center justify-center py-2.5 rounded-lg transition-all shadow-sm font-medium text-xs tracking-wide
+                                                relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
                                                 ${selectedImage.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                                                    : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'}
+                                                    : 'bg-orange-500 hover:bg-orange-600 text-white'}
                                             `}
                                         >
-                                            <span className="flex items-center gap-2">
+                                            <span className={`flex items-center gap-2 ${Typo.Label} text-white`}>
                                                 {selectedImage.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
@@ -461,11 +461,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                             }}
                                                             className={`
                                                                 w-full h-full flex items-center justify-center rounded
-                                                                hover:bg-white/20 dark:hover:bg-black/10 transition-colors cursor-pointer
-                                                                ${isModelDropdownOpen ? 'bg-white/20 dark:bg-black/10' : ''}
+                                                                hover:bg-black/10 transition-colors cursor-pointer
+                                                                ${isModelDropdownOpen ? 'bg-black/10' : ''}
                                                             `}
                                                         >
-                                                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                                                            <Settings2 className="w-4 h-4 text-white" />
                                                         </div>
                                                     </Tooltip>
                                                 </div>

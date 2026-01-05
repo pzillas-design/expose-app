@@ -345,7 +345,7 @@ export const translations = {
     attach_file: "Datei anhängen",
     price_free: "Kostenlos",
     model_prefix: "Modell: ",
-    annotate: "Anmerkungen",
+    annotate: "Anmerkung",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",
