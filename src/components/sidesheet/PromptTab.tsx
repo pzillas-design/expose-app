@@ -350,14 +350,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             {activeTemplate.controls
                                                 .filter(c => !hiddenControlIds.includes(c.id))
                                                 .map((ctrl) => (
-                                                    <div key={ctrl.id} className="flex flex-col gap-2">
+                                                    <div key={ctrl.id} className="flex flex-col gap-2 group">
                                                         <div className="flex items-center gap-1.5">
                                                             <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
                                                                 onClick={() => handleClearControl(ctrl.id)}
-                                                                className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                                                                 title="Reset"
                                                             >
                                                                 <X className="w-3 h-3" />
