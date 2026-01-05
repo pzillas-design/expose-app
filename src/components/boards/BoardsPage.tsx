@@ -71,9 +71,17 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                             alt=""
                         />
                     )}
-                    <div className="absolute inset-0 bg-black/10 dark:bg-black/40 z-0" />
-                    <div className="relative z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
-                        <span className="text-sm font-bold text-white dark:text-zinc-200">+{total - 3}</span>
+                    {/* Darker overlay for better contrast of the number */}
+                    <div className="absolute inset-0 bg-black/5 dark:bg-black/20 z-0" />
+
+                    {/* Premium Glass Circle */}
+                    <div className="relative z-10 w-12 h-12 flex items-center justify-center rounded-full 
+                        bg-white/80 dark:bg-black/60 
+                        backdrop-blur-xl 
+                        border border-white/50 dark:border-white/10 
+                        shadow-xl shadow-black/5"
+                    >
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">+{total - 3}</span>
                     </div>
                 </div>
             )}
