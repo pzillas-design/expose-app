@@ -224,6 +224,23 @@ Deno.serve(async (req) => {
             }
         }
 
+        // DEBUG MODE: Return the prepared payload instead of calling Gemini
+        if (payload.debug) {
+            return new Response(JSON.stringify({
+                success: true,
+                debug: {
+                    systemInstruction,
+                    prompt,
+                    model: finalModelName,
+                    config: imageConfig,
+                    partsCount: parts.length
+                }
+            }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200,
+            });
+        }
+
         // 3. Call Gemini
         const geminiPayload = {
             contents: [{ parts: parts }],

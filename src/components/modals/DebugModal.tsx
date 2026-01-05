@@ -12,6 +12,8 @@ interface DebugModalProps {
     t: TranslationFunction;
 }
 
+import { supabase } from '@/services/supabaseClient';
+
 export const DebugModal: React.FC<DebugModalProps> = ({
     isOpen,
     onClose,
@@ -21,21 +23,44 @@ export const DebugModal: React.FC<DebugModalProps> = ({
 }) => {
     const [maskUrl, setMaskUrl] = useState<string>('');
     const [viewMode, setViewMode] = useState<'original' | 'mask' | 'result'>('original');
+    const [debugData, setDebugData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen && image) {
             generateMaskFromAnnotations(image, image.originalSrc).then(setMaskUrl);
+
+            // FETCH REAL PAYLOAD FROM EDGE FUNCTION
+            const fetchDebug = async () => {
+                setIsLoading(true);
+                try {
+                    const { data, error } = await supabase.functions.invoke('generate-image', {
+                        body: {
+                            sourceImage: image,
+                            prompt: prompt,
+                            qualityMode: image.quality || 'pro-1k',
+                            maskDataUrl: await generateMaskFromAnnotations(image, image.originalSrc),
+                            debug: true
+                        }
+                    });
+                    if (!error && data?.success) {
+                        setDebugData(data.debug);
+                    }
+                } catch (e) {
+                    console.error("Debug fetch failed:", e);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchDebug();
         }
-    }, [isOpen, image]);
+    }, [isOpen, image, prompt]);
 
     if (!isOpen) return null;
 
     const annotations = image.annotations || [];
     const refAnns = annotations.filter(a => a.type === 'reference_image');
-    const maskAnns = annotations.filter(a => a.type !== 'reference_image');
-    const labels = annotations.map(a => a.text).filter(Boolean);
-
-    const systemInstruction = `I am providing an ORIGINAL image (to be edited). ${maskAnns.length > 0 ? `I am also providing an ANNOTATION image (the original image muted/dimmed, with bright markings and text indicating desired changes).${labels.length > 0 ? ` The following labels are marked in the Annotation Image: ${labels.map(l => `"${l?.toUpperCase()}"`).join(", ")}.` : ''} ` : ''}${refAnns.length > 0 ? `I am also providing REFERENCE images for guidance (style, context, or visual elements). ` : ''}Apply the edits to the ORIGINAL image based on the user prompt${maskAnns.length > 0 ? ', following the visual cues in the ANNOTATION image' : ''}${refAnns.length > 0 ? ' and using the REFERENCE images as a basis for style or objects' : ''}.`;
+    const systemInstruction = debugData?.systemInstruction || "Loading live instructions...";
 
     return (
         <div
@@ -146,6 +171,9 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                             <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-x-auto">
                                 <pre className="text-[10px] text-zinc-500 font-mono leading-tight whitespace-pre-wrap">{JSON.stringify({
                                     id: image.id,
+                                    model: debugData?.model,
+                                    config: debugData?.config,
+                                    partsCount: debugData?.partsCount,
                                     annotations: annotations.map(a => ({
                                         type: a.type,
                                         label: a.text,
@@ -155,6 +183,15 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                                 }, null, 2)}</pre>
                             </div>
                         </div>
+
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-[2px] flex items-center justify-center z-10 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-xs font-medium text-zinc-500">Fetching live payload...</span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Ref Thumbs */}
                         {refAnns.length > 0 && (
