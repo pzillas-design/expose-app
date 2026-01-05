@@ -4,6 +4,8 @@ import { TranslationFunction, PromptTemplate, PresetControl } from '@/types';
 import { Typo, Button, Input, TextArea, SectionHeader, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { generateId } from '@/utils/ids';
+import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface AdminPresetsViewProps {
     t: TranslationFunction;
@@ -21,6 +23,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     const [search, setSearch] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const { showToast } = useToast();
+
+    // Dialog State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     // Form State (Combined DE & EN)
     const [formState, setFormState] = useState<{
@@ -113,22 +119,26 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                 isPinned: true, isCustom: false, isDefault: false, usageCount: 0
             });
             await fetchPresets();
+            showToast('Vorlage erfolgreich gespeichert', 'success');
         } catch (error) {
-            alert('Fehler beim Speichern');
+            showToast('Fehler beim Speichern', 'error');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!selectedId || !window.confirm(t('admin_delete_preset_desc'))) return;
+        if (!selectedId) return;
         try {
             await adminService.deleteGlobalPreset(selectedId);
             await adminService.deleteGlobalPreset(selectedId + '-en');
             await fetchPresets();
             setSelectedId(null);
+            showToast('Vorlage gelöscht', 'success');
         } catch (error) {
-            alert('Fehler beim Löschen');
+            showToast('Fehler beim Löschen', 'error');
+        } finally {
+            setIsDeleteDialogOpen(false);
         }
     };
 
@@ -199,7 +209,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                     <h1 className={`${Typo.H1} text-3xl font-black`}>{formState.de.title || 'Ohne Titel'}</h1>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Button variant="danger" onClick={handleDelete} className="bg-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 h-10 border-none">
+                                    <Button variant="danger" onClick={() => setIsDeleteDialogOpen(true)} className="bg-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 h-10 border-none">
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                     <Button onClick={handleSave} disabled={isSaving} className="h-10 px-10 shadow-lg shadow-zinc-200 dark:shadow-black/20" icon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}>
@@ -272,6 +282,18 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     </>
                 )}
             </div>
+
+            {/* Dialogs */}
+            <ConfirmDialog
+                isOpen={isDeleteDialogOpen}
+                title="Vorlage löschen?"
+                description="Möchtest du diese Vorlage und ihre englische Übersetzung wirklich dauerhaft entfernen?"
+                confirmLabel="Löschen"
+                cancelLabel="Abbrechen"
+                onConfirm={handleDelete}
+                onCancel={() => setIsDeleteDialogOpen(false)}
+                variant="danger"
+            />
         </div>
     );
 };
