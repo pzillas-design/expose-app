@@ -1,32 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Plus, Pen, Trash2, GripVertical, Loader2, Bookmark } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Plus, Trash2, Loader2, Bookmark, Check, ArrowRight } from 'lucide-react';
 import { TranslationFunction, PromptTemplate, PresetControl } from '@/types';
-import { Typo, Button, Input, IconButton } from '@/components/ui/DesignSystem';
+import { Typo, Button, Input, TextArea, SectionHeader, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
-import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { generateId } from '@/utils/ids';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface AdminPresetsViewProps {
     t: TranslationFunction;
 }
 
+interface PresetGroup {
+    baseId: string;
+    de?: PromptTemplate;
+    en?: PromptTemplate;
+}
+
 export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
-    const [globalPresets, setGlobalPresets] = useState<PromptTemplate[]>([]);
+    const [allPresets, setAllPresets] = useState<PromptTemplate[]>([]);
     const [loading, setLoading] = useState(true);
-    const [presetSearch, setPresetSearch] = useState('');
-    const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
-    const [editingPreset, setEditingPreset] = useState<PromptTemplate | null>(null);
+    const [search, setSearch] = useState('');
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Language State
-    const [activeLang, setActiveLang] = useState<'de' | 'en'>('de');
-
-    // Drag State
-    const [draggedPresetId, setDraggedPresetId] = useState<string | null>(null);
-
-    // Modal/Select State
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [presetToDelete, setPresetToDelete] = useState<string | null>(null);
+    // Form State (Combined DE & EN)
+    const [formState, setFormState] = useState<{
+        de: { title: string, prompt: string, controls: PresetControl[] },
+        en: { title: string, prompt: string, controls: PresetControl[] }
+    }>({
+        de: { title: '', prompt: '', controls: [] },
+        en: { title: '', prompt: '', controls: [] }
+    });
 
     useEffect(() => {
         fetchPresets();
@@ -36,7 +39,13 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         setLoading(true);
         try {
             const data = await adminService.getGlobalPresets();
-            setGlobalPresets(data);
+            setAllPresets(data);
+
+            // Auto-select first if nothing selected
+            if (data.length > 0 && !selectedId) {
+                const firstDe = data.find(p => (p.lang || 'de') === 'de');
+                if (firstDe) handleSelect(firstDe.id, data);
+            }
         } catch (error) {
             console.error('Failed to fetch presets:', error);
         } finally {
@@ -44,200 +53,215 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         }
     };
 
-    const handleSavePresets = async (data: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => {
+    // Grouping Logic: Link '-en' IDs to their base IDs
+    const groupedPresets = useMemo(() => {
+        const groups: Record<string, PresetGroup> = {};
+        allPresets.forEach(p => {
+            const isEn = p.id.endsWith('-en');
+            const baseId = isEn ? p.id.slice(0, -3) : p.id;
+            if (!groups[baseId]) groups[baseId] = { baseId };
+            if (isEn) groups[baseId].en = p;
+            else groups[baseId].de = p;
+        });
+        return Object.values(groups).sort((a, b) =>
+            (a.de?.title || '').localeCompare(b.de?.title || '')
+        );
+    }, [allPresets]);
+
+    const filteredGroups = groupedPresets.filter(g =>
+        (g.de?.title || '').toLowerCase().includes(search.toLowerCase()) ||
+        (g.de?.prompt || '').toLowerCase().includes(search.toLowerCase())
+    );
+
+    const handleSelect = (deId: string, currentPresets = allPresets) => {
+        const baseId = deId.endsWith('-en') ? deId.slice(0, -3) : deId;
+        const de = currentPresets.find(p => p.id === baseId);
+        const en = currentPresets.find(p => p.id === baseId + '-en');
+
+        setSelectedId(baseId);
+        setFormState({
+            de: { title: de?.title || '', prompt: de?.prompt || '', controls: de?.controls || [] },
+            en: { title: en?.title || '', prompt: en?.prompt || '', controls: en?.controls || [] }
+        });
+    };
+
+    const handleNew = () => {
+        const newId = generateId();
+        setSelectedId(newId);
+        setFormState({
+            de: { title: 'Neue Vorlage', prompt: '', controls: [] },
+            en: { title: 'New Template', prompt: '', controls: [] }
+        });
+    };
+
+    const handleSave = async () => {
+        if (!selectedId || isSaving) return;
+        setIsSaving(true);
         try {
-            for (const item of data) {
-                // Ensure tags is always empty array even if passed by mistake (though modal sends [])
-                const cleanItem = { ...item, tags: [] };
-
-                const presetToSave = editingPreset
-                    ? { ...editingPreset, ...cleanItem }
-                    : {
-                        id: generateId(),
-                        ...cleanItem,
-                        isPinned: false,
-                        isCustom: false,
-                        isDefault: false,
-                        usageCount: 0,
-                        createdAt: Date.now()
-                    };
-
-                await adminService.updateGlobalPreset(presetToSave);
-            }
+            // Update DE
+            await adminService.updateGlobalPreset({
+                id: selectedId,
+                lang: 'de',
+                ...formState.de,
+                isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+            });
+            // Update EN
+            await adminService.updateGlobalPreset({
+                id: selectedId + '-en',
+                lang: 'en',
+                ...formState.en,
+                isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+            });
             await fetchPresets();
-            setIsPresetModalOpen(false);
-            setEditingPreset(null);
         } catch (error) {
-            alert(t('admin_save_error') || 'Failed to save preset');
-        }
-    };
-
-    const handleDeletePreset = async () => {
-        if (!presetToDelete) return;
-        try {
-            await adminService.deleteGlobalPreset(presetToDelete);
-            setGlobalPresets(prev => prev.filter(p => p.id !== presetToDelete));
-        } catch (error) {
-            alert(t('admin_delete_error') || 'Failed to delete preset');
+            alert('Fehler beim Speichern');
         } finally {
-            setIsDeleteModalOpen(false);
-            setPresetToDelete(null);
+            setIsSaving(false);
         }
     };
 
-    const onDragStart = (e: React.DragEvent, id: string) => {
-        if (presetSearch) {
-            e.preventDefault();
-            return;
+    const handleDelete = async () => {
+        if (!selectedId || !window.confirm(t('admin_delete_preset_desc'))) return;
+        try {
+            await adminService.deleteGlobalPreset(selectedId);
+            await adminService.deleteGlobalPreset(selectedId + '-en');
+            await fetchPresets();
+            setSelectedId(null);
+        } catch (error) {
+            alert('Fehler beim Löschen');
         }
-        setDraggedPresetId(id);
-        e.dataTransfer.effectAllowed = 'move';
     };
-
-    const onDragOver = (e: React.DragEvent, targetId: string) => {
-        e.preventDefault();
-        if (!draggedPresetId || draggedPresetId === targetId) return;
-
-        const fromIndex = globalPresets.findIndex(p => p.id === draggedPresetId);
-        const toIndex = globalPresets.findIndex(p => p.id === targetId);
-
-        if (fromIndex < 0 || toIndex < 0) return;
-
-        const newPresets = [...globalPresets];
-        const [moved] = newPresets.splice(fromIndex, 1);
-        newPresets.splice(toIndex, 0, moved);
-        setGlobalPresets(newPresets);
-    };
-
-    const filteredPresets = (globalPresets || []).filter(p => {
-        if (!p) return false;
-        const langMatch = (p.lang || 'de') === activeLang;
-        if (!langMatch) return false;
-
-        const matchesSearch =
-            (p.title || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
-            (p.prompt || "").toLowerCase().includes((presetSearch || "").toLowerCase());
-
-        return matchesSearch;
-    });
 
     return (
-        <div className="flex flex-col flex-1 min-h-0">
-            <div className="p-8 pb-6 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-                    <div>
-                        <h2 className={Typo.H1}>{t('admin_presets')}</h2>
-                        <p className={Typo.Micro}>{t('admin_presets_desc')}</p>
+        <div className="flex flex-1 min-h-0 overflow-hidden bg-white dark:bg-zinc-950">
+            {/* LEFT SIDEBAR: List */}
+            <div className="w-[320px] flex flex-col border-r border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20">
+                <div className="p-6 pb-4 flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className={`${Typo.H2} font-bold`}>{t('admin_presets')}</h2>
+                        <IconButton icon={<Plus className="w-4 h-4" />} onClick={handleNew} className="bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700" />
                     </div>
-
-                    <div className="flex items-center gap-4">
-                        <div className="flex bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded-xl shrink-0">
-                            {(['de', 'en'] as const).map(l => (
-                                <button
-                                    key={l}
-                                    onClick={() => setActiveLang(l)}
-                                    className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${activeLang === l ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white' : 'text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                                >
-                                    {t(l === 'de' ? 'lang_de' : 'lang_en')}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="relative w-64">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                            <Input
-                                className="pl-9 bg-zinc-50 dark:bg-zinc-800/50 border-none h-9"
-                                placeholder={t('search_presets')}
-                                value={presetSearch}
-                                onChange={(e) => setPresetSearch(e.target.value)}
-                            />
-                        </div>
-
-                        <Button
-                            onClick={() => { setEditingPreset(null); setIsPresetModalOpen(true); }}
-                            icon={<Plus className="w-4 h-4" />}
-                            className="h-9 px-4"
-                        >
-                            {t('new_preset')}
-                        </Button>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                        <Input
+                            className="pl-9 bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 h-9 text-xs"
+                            placeholder={t('search_presets')}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
                     </div>
                 </div>
-            </div>
 
-            <div className="flex-1 flex min-h-0 overflow-hidden">
-                {/* Presets Grid/List - Removed Sidebar */}
-                <div className="flex-1 overflow-y-auto p-8 pt-6">
-                    {loading ? (
-                        <div className="h-full flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-zinc-200" />
-                        </div>
-                    ) : filteredPresets.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-zinc-400 gap-3">
-                            <Bookmark className="w-12 h-12 opacity-10" />
-                            <span className="text-sm">{t('no_entries_found') || 'Keine Vorlagen gefunden.'}</span>
-                        </div>
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2">
+                    {loading && allPresets.length === 0 ? (
+                        <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-300" /></div>
+                    ) : filteredGroups.length === 0 ? (
+                        <div className="p-10 text-center text-xs text-zinc-400">{t('no_entries_found')}</div>
                     ) : (
-                        <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
-                            {filteredPresets.map(preset => (
-                                <div
-                                    key={preset.id}
-                                    className="group relative flex items-center gap-4 p-5 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-all shadow-sm"
-                                    draggable
-                                    onDragStart={(e) => onDragStart(e, preset.id)}
-                                    onDragOver={(e) => onDragOver(e, preset.id)}
-                                >
-                                    <div className="cursor-move text-zinc-200 hover:text-zinc-400 transition-colors">
-                                        <GripVertical className="w-4 h-4" />
+                        filteredGroups.map(group => (
+                            <button
+                                key={group.baseId}
+                                onClick={() => handleSelect(group.baseId)}
+                                className={`w-full text-left px-6 py-3.5 flex items-center justify-between group transition-all border-l-2 ${selectedId === group.baseId
+                                    ? 'bg-zinc-100 dark:bg-zinc-800/50 border-zinc-900 dark:border-white'
+                                    : 'border-transparent hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30'}`}
+                            >
+                                <div className="flex-1 min-w-0">
+                                    <div className={`text-sm font-semibold truncate ${selectedId === group.baseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                        {group.de?.title || group.baseId}
                                     </div>
-
-                                    <div className="flex-1 min-w-0 space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="font-bold text-sm tracking-tight truncate">{preset.title}</h3>
-                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <IconButton
-                                                    icon={<Pen className="w-3.5 h-3.5" />}
-                                                    onClick={() => { setEditingPreset(preset); setIsPresetModalOpen(true); }}
-                                                    className="hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                                />
-                                                <IconButton
-                                                    icon={<Trash2 className="w-3.5 h-3.5" />}
-                                                    onClick={() => { setPresetToDelete(preset.id); setIsDeleteModalOpen(true); }}
-                                                    className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed font-medium">
-                                            {preset.prompt}
-                                        </p>
+                                    <div className="text-[10px] text-zinc-400 truncate mt-0.5 font-medium opacity-60">
+                                        ID: {group.baseId}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                                <ArrowRight className={`w-3.5 h-3.5 transition-transform ${selectedId === group.baseId ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0 group-hover:opacity-40'}`} />
+                            </button>
+                        ))
                     )}
                 </div>
             </div>
 
-            <PresetEditorModal
-                isOpen={isPresetModalOpen}
-                onClose={() => setIsPresetModalOpen(false)}
-                mode={editingPreset ? 'edit' : 'create'}
-                scope="admin"
-                initialTemplate={editingPreset}
-                onSave={handleSavePresets}
-                t={t}
-            />
+            {/* RIGHT SIDE: Editor */}
+            <div className="flex-1 flex flex-col min-w-0">
+                {!selectedId ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 gap-4">
+                        <Bookmark className="w-16 h-16 opacity-10" strokeWidth={1} />
+                        <p className="text-sm font-medium opacity-40">Wähle eine Vorlage zum Bearbeiten</p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex-1 overflow-y-auto p-12 lg:p-16 max-w-5xl w-full mx-auto space-y-16 no-scrollbar">
 
-            <ConfirmDialog
-                isOpen={isDeleteModalOpen}
-                title={t('admin_confirm_delete_preset') || "Vorlage löschen"}
-                description={t('admin_delete_preset_desc') || "Möchtest du diese Vorlage wirklich unwiderruflich löschen?"}
-                confirmLabel={t('delete') || "Löschen"}
-                cancelLabel={t('cancel') || "Abbrechen"}
-                onConfirm={handleDeletePreset}
-                onCancel={() => { setIsDeleteModalOpen(false); setPresetToDelete(null); }}
-                variant="danger"
-            />
+                            {/* Header Info */}
+                            <div className="flex items-end justify-between border-b border-zinc-100 dark:border-zinc-800 pb-10">
+                                <div className="space-y-1">
+                                    <span className="text-[10px] uppercase tracking-widest font-bold text-zinc-400 dark:text-zinc-500">Vorlage bearbeiten</span>
+                                    <h1 className={`${Typo.H1} text-3xl font-black`}>{formState.de.title || 'Ohne Titel'}</h1>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button variant="danger" onClick={handleDelete} className="bg-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 h-10 border-none">
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button onClick={handleSave} disabled={isSaving} className="h-10 px-10 shadow-lg shadow-zinc-200 dark:shadow-black/20" icon={isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}>
+                                        {isSaving ? 'Speichert...' : t('save')}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Dual Language Form */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+                                {/* DE Column */}
+                                <div className="space-y-10">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-[10px] font-black bg-amber-100 text-amber-900 px-2 py-0.5 rounded uppercase tracking-wider">Deutsch</span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <SectionHeader>Titel (DE)</SectionHeader>
+                                            <Input className="text-lg font-bold h-12" value={formState.de.title} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, title: e.target.value } }))} placeholder="Name der Vorlage..." />
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <SectionHeader>Prompt (DE)</SectionHeader>
+                                            <TextArea className="min-h-[220px] text-sm leading-relaxed p-5 bg-zinc-50 dark:bg-zinc-900/50 border-none text-zinc-700 dark:text-zinc-300 font-mono" value={formState.de.prompt} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, prompt: e.target.value } }))} placeholder="Der Prompt für die Generierung..." />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* EN Column */}
+                                <div className="space-y-10">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-[10px] font-black bg-blue-100 text-blue-900 px-2 py-0.5 rounded uppercase tracking-wider">English</span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <SectionHeader>Title (EN)</SectionHeader>
+                                            <Input className="text-lg font-bold h-12" value={formState.en.title} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, title: e.target.value } }))} placeholder="Template name..." />
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <SectionHeader>Prompt (EN)</SectionHeader>
+                                            <TextArea className="min-h-[220px] text-sm leading-relaxed p-5 bg-zinc-50 dark:bg-zinc-900/50 border-none text-zinc-700 dark:text-zinc-300 font-mono" value={formState.en.prompt} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, prompt: e.target.value } }))} placeholder="The generation prompt..." />
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            {/* Controls Section (Common for now) */}
+                            <div className="pt-10 border-t border-zinc-100 dark:border-zinc-800">
+                                <SectionHeader className="mb-6">Variablen & Controls (DE Context)</SectionHeader>
+                                <div className="bg-zinc-50 dark:bg-zinc-900/30 rounded-3xl p-8 border border-zinc-100 dark:border-zinc-800 text-center">
+                                    <p className="text-xs text-zinc-500">Variablen-Editor wird in Kürze in dieses Layout integriert. Aktuell werden die existierenden Controls beibehalten.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };
