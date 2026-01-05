@@ -352,7 +352,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2">
                                                         <div className="flex items-center justify-between">
-                                                            <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 uppercase`}>
+                                                            <span className="text-[9px] uppercase tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
