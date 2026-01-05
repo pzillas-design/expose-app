@@ -344,40 +344,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                                 className="w-6 h-6 bg-transparent border-none outline-none text-sm text-center p-0"
                                                                             />
                                                                         ) : (
-                                                                            ann.emoji ? (
-                                                                                <span
-                                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                                    className="text-sm leading-none opacity-80 cursor-text"
-                                                                                >
-                                                                                    {ann.emoji}
-                                                                                </span>
-                                                                            ) : (
-                                                                                !ann.itemId ? (
-                                                                                    <Type
-                                                                                        className="w-3.5 h-3.5 cursor-text"
-                                                                                        onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                                    />
-                                                                                ) : (
-                                                                                    <span
-                                                                                        onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                                        className="text-sm leading-none opacity-80 cursor-text"
-                                                                                    >
-                                                                                        🏷️
-                                                                                    </span>
-                                                                                )
-                                                                            )
+                                                                            <Type className="w-3.5 h-3.5" />
                                                                         )
                                                                     ) : ann.type === 'shape' ? (
-                                                                        <div className="cursor-text" onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}>
+                                                                        <div className="flex">
                                                                             {ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
                                                                                 ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
                                                                                     <Square className="w-3.5 h-3.5" />}
                                                                         </div>
                                                                     ) : (
-                                                                        <Pen
-                                                                            className="w-3.5 h-3.5 cursor-text"
-                                                                            onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                        />
+                                                                        <Pen className="w-3.5 h-3.5" />
                                                                     )}
                                                                 </div>
                                                             )}
