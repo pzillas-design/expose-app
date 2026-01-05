@@ -399,13 +399,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             <div className="flex flex-col mb-5">
                                 {/* Tools Buttons */}
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="flex items-center justify-center gap-4">
                                     <Button
                                         variant="ghost"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-orange-500'}`} />}
-                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-[#E76741]'}`} />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#E76741] hover:text-[#E76741] hover:bg-[#E76741]/10 dark:hover:bg-[#E76741]/20"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
@@ -414,8 +414,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         variant="ghost"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<Paperclip className="w-3.5 h-3.5 text-orange-500" />}
-                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                                        icon={<Paperclip className="w-3.5 h-3.5 text-[#E76741]" />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#E76741] hover:text-[#E76741] hover:bg-[#E76741]/10 dark:hover:bg-[#E76741]/20"
                                         tooltip={t('upload_ref')}
                                     >
                                         {t('image_btn')}
@@ -439,10 +439,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
                                                 ${selectedImage.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                                                    : 'bg-orange-500 hover:bg-orange-600 text-white'}
+                                                    : 'bg-[#E76741] hover:opacity-90 text-zinc-900'}
                                             `}
                                         >
-                                            <span className={`flex items-center gap-2 ${Typo.Label} text-white`}>
+                                            <span className={`flex items-center gap-2 ${Typo.Label} text-zinc-900`}>
                                                 {selectedImage.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
@@ -465,7 +465,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 ${isModelDropdownOpen ? 'bg-black/10' : ''}
                                                             `}
                                                         >
-                                                            <Settings2 className="w-4 h-4 text-white" />
+                                                            <Settings2 className="w-4 h-4 text-zinc-900" />
                                                         </div>
                                                     </Tooltip>
                                                 </div>

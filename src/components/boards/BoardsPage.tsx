@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
@@ -179,9 +180,9 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
 
     return (
         <>
-            <div
+            <Link
+                to={`/projects/${board.id}`}
                 className={`group flex flex-col aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`}
-                onClick={onSelect}
             >
                 {/* Image Grid Section */}
                 <div className="flex-[2.5] relative bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
@@ -219,7 +220,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                         </span>
                     </div>
                 </div>
-            </div>
+            </Link>
 
             {menuOpen && createPortal(
                 <>
