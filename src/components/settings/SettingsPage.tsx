@@ -146,7 +146,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
 
                     {/* Content Area */}
-                    <div className="flex-1 w-full max-w-3xl">
+                    <div className="flex-1 w-full min-w-0">
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full">
 
                             {/* --- ACCOUNT TAB --- */}

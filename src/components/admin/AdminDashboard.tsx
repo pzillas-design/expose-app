@@ -44,7 +44,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
       <main className="flex-1 overflow-y-auto no-scrollbar">
         {/* Centered Premium Container */}
-        <div className="max-w-7xl mx-auto w-full px-4 py-8 lg:py-12">
+        <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-8 lg:py-12">
 
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
