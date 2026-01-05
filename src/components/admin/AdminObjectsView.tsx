@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, GripVertical, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Loader2, Image as ImageIcon, Check } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { generateId } from '@/utils/ids';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface AdminObjectsViewProps {
     t: TranslationFunction;
@@ -13,6 +14,15 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+
+    // Selection State
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // Delete Confirmation State
+    const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; targetId?: string; isBulk: boolean }>({
+        isOpen: false,
+        isBulk: false
+    });
 
     useEffect(() => {
         fetchData();
@@ -44,19 +54,46 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             await adminService.updateObjectItem(newItem);
             await fetchData();
         } catch (error) {
-            alert(t('admin_add_error'));
+            console.error('Add failed:', error);
         }
     };
 
-    const handleDeleteItem = async (itemId: string) => {
-        if (confirm(t('admin_confirm_delete_preset'))) {
-            try {
-                await adminService.deleteObjectItem(itemId);
-                setItems(prev => prev.filter(i => i.id !== itemId));
-            } catch (error) {
-                alert(t('admin_delete_error'));
+    const performDelete = async () => {
+        try {
+            if (deleteModal.isBulk) {
+                const idsToDelete = Array.from(selectedIds) as string[];
+                // Perform sequential deletes for now or add bulk delete to service
+                for (const id of idsToDelete) {
+                    await adminService.deleteObjectItem(id);
+                }
+                setItems(prev => prev.filter(i => !selectedIds.has(i.id)));
+                setSelectedIds(new Set());
+            } else if (deleteModal.targetId) {
+                await adminService.deleteObjectItem(deleteModal.targetId);
+                setItems(prev => prev.filter(i => i.id !== deleteModal.targetId));
+                if (selectedIds.has(deleteModal.targetId)) {
+                    const newSelected = new Set(selectedIds);
+                    newSelected.delete(deleteModal.targetId);
+                    setSelectedIds(newSelected);
+                }
             }
+        } catch (error) {
+            console.error('Delete failed:', error);
+        } finally {
+            setDeleteModal({ isOpen: false, isBulk: false });
         }
+    };
+
+    const toggleSelection = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) newSelected.delete(id);
+        else newSelected.add(id);
+        setSelectedIds(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === items.length) setSelectedIds(new Set());
+        else setSelectedIds(new Set(items.map(i => i.id)));
     };
 
     const handleUpdateItem = async (itemId: string, updates: any) => {
@@ -92,23 +129,34 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         setItems(newItems);
     };
 
-    const gridTemplate = "grid-cols-[40px_60px_1fr_1fr_80px]";
-    const minWidth = "800px";
+    const gridTemplate = "grid-cols-[40px_60px_1fr_1fr_80px_60px]";
+    const minWidth = "950px";
 
     return (
-        <div className="flex flex-col h-[700px]">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className={Typo.H1}>{t('admin_objects')}</h2>
                     <p className={Typo.Micro}>Verwalte die Sticker und Symbole für das Anmerkungs-Werkzeug.</p>
                 </div>
-                <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
-                    Stempel hinzufügen
-                </Button>
+                <div className="flex items-center gap-4">
+                    {selectedIds.size > 0 && (
+                        <Button
+                            variant="danger"
+                            onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
+                            icon={<Trash2 className="w-4 h-4" />}
+                            className="px-4"
+                        >
+                            Auswahl löschen ({selectedIds.size})
+                        </Button>
+                    )}
+                    <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
+                        Stempel hinzufügen
+                    </Button>
+                </div>
             </div>
 
-            {/* Horizontal and Vertical Scroll Container */}
-            <div className="flex-1 overflow-auto border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex-1 overflow-auto border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
                 <div style={{ minWidth }} className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-zinc-50/80 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
                         <div className="p-4 text-center"></div>
@@ -116,6 +164,14 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                         <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (DE)</div>
                         <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (EN)</div>
                         <div className="p-4 text-center">Aktionen</div>
+                        <div className="p-4 flex items-center justify-center">
+                            <button
+                                onClick={toggleSelectAll}
+                                className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${selectedIds.size === items.length && items.length > 0 ? 'bg-black dark:bg-white border-black dark:border-white' : 'border-zinc-300 dark:border-zinc-600'}`}
+                            >
+                                {selectedIds.size === items.length && items.length > 0 && <Check className="w-3 h-3 text-white dark:text-black" />}
+                            </button>
+                        </div>
                     </div>
 
                     {loading && items.length === 0 && (
@@ -127,7 +183,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     {items.map((item) => (
                         <div
                             key={item.id}
-                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center h-[52px] group ${draggedItemId === item.id ? 'opacity-50' : ''}`}
+                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center h-[52px] group ${draggedItemId === item.id ? 'opacity-50' : ''} ${selectedIds.has(item.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
                             draggable
                             onDragStart={(e) => onDragStart(e, item.id)}
                             onDragOver={(e) => onDragOver(e, item.id)}
@@ -167,9 +223,18 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                             <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <IconButton
                                     icon={<Trash2 className="w-4 h-4" />}
-                                    onClick={() => handleDeleteItem(item.id)}
+                                    onClick={() => setDeleteModal({ isOpen: true, targetId: item.id, isBulk: false })}
                                     className="hover:text-red-500 p-2"
                                 />
+                            </div>
+
+                            <div className="flex items-center justify-center">
+                                <button
+                                    onClick={() => toggleSelection(item.id)}
+                                    className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${selectedIds.has(item.id) ? 'bg-black dark:bg-white border-black dark:border-white' : 'border-zinc-300 dark:border-zinc-600'}`}
+                                >
+                                    {selectedIds.has(item.id) && <Check className="w-3 h-3 text-white dark:text-black" />}
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -182,6 +247,19 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={deleteModal.isOpen}
+                title={deleteModal.isBulk ? "Auswahl löschen" : "Objekt löschen"}
+                description={deleteModal.isBulk
+                    ? `Möchtest du wirklich ${selectedIds.size} Objekte unwiderruflich löschen?`
+                    : "Möchtest du dieses Objekt wirklich unwiderruflich löschen?"}
+                confirmLabel="Löschen"
+                cancelLabel="Abbrechen"
+                onConfirm={performDelete}
+                onCancel={() => setDeleteModal({ isOpen: false, isBulk: false })}
+                variant="danger"
+            />
         </div>
     );
 };

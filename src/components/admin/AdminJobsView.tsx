@@ -56,7 +56,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="flex flex-col h-[750px]">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className={Typo.H1}>{t('admin_jobs')}</h2>
@@ -101,19 +101,32 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         >
                                             <td className="px-5 py-5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
                                             <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
-                                            <td className="px-5 py-5 uppercase text-xs font-bold text-zinc-500">{j.type}</td>
+                                            <td className="px-5 py-5 uppercase text-[10px] font-bold text-zinc-400">
+                                                {j.type === 'Edit' || j.type === 'Inpaint' ? 'Bearbeitung' : 'Erstellung'}
+                                            </td>
                                             <td className="px-5 py-5">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
-                                                ${j.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                                                        j.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                                                ${j.status?.toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                                                        j.status?.toLowerCase() === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
                                                             'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
-                                                    {j.status === 'completed' ? (t('admin_job_completed') || "Completed") :
-                                                        j.status === 'failed' ? (t('admin_job_failed') || "Failed") :
+                                                    {j.status?.toLowerCase() === 'completed' ? (t('admin_job_completed') || "Completed") :
+                                                        j.status?.toLowerCase() === 'failed' ? (t('admin_job_failed') || "Failed") :
                                                             (t('admin_job_processing') || "Processing")}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">{j.cost.toFixed(2)}</td>
-                                            <td className="px-5 py-5 text-right text-zinc-500 text-xs">{new Date(j.createdAt).toLocaleString()}</td>
+                                            <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">
+                                                <div className="flex flex-col items-end">
+                                                    <span>{j.cost.toFixed(2)} €</span>
+                                                    {j.apiCost !== undefined && j.apiCost !== null && (
+                                                        <span className="text-[9px] text-zinc-400 font-sans tracking-tight">
+                                                            ${(j.apiCost).toFixed(6)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-5 py-5 text-right text-zinc-500 text-xs">
+                                                {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

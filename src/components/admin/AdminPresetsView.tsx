@@ -5,6 +5,7 @@ import { Typo, Button, Input, IconButton, Tooltip, TableInput } from '@/componen
 import { adminService } from '@/services/adminService';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { generateId } from '@/utils/ids';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface AdminPresetsViewProps {
     t: TranslationFunction;
@@ -26,6 +27,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
 
     // Drag State
     const [draggedPresetId, setDraggedPresetId] = useState<string | null>(null);
+
+    // Modal/Select State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [presetToDelete, setPresetToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         fetchPresets();
@@ -72,14 +77,16 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         }
     };
 
-    const handleDeletePreset = async (id: string) => {
-        if (confirm(t('admin_confirm_delete_preset'))) {
-            try {
-                await adminService.deleteGlobalPreset(id);
-                setGlobalPresets(prev => prev.filter(p => p.id !== id));
-            } catch (error) {
-                alert(t('admin_delete_error') || 'Failed to delete preset');
-            }
+    const handleDeletePreset = async () => {
+        if (!presetToDelete) return;
+        try {
+            await adminService.deleteGlobalPreset(presetToDelete);
+            setGlobalPresets(prev => prev.filter(p => p.id !== presetToDelete));
+        } catch (error) {
+            alert(t('admin_delete_error') || 'Failed to delete preset');
+        } finally {
+            setIsDeleteModalOpen(false);
+            setPresetToDelete(null);
         }
     };
 
@@ -129,7 +136,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     });
 
     return (
-        <div className="flex flex-col h-[800px]">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="p-8 pb-6 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                 <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                     <div>
@@ -190,7 +197,16 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                         </button>
 
                         {availableTags.map(tag => {
-                            const count = globalPresets.filter(p => (p.lang || 'de') === activeLang && (p.tags || []).includes(activeLang === 'de' ? tag.de : tag.en)).length;
+                            if (!tag) return null;
+                            const labelToMatch = activeLang === 'de' ? tag.de : tag.en;
+                            if (!labelToMatch) return null;
+
+                            const count = globalPresets.filter(p =>
+                                p &&
+                                (p.lang || 'de') === activeLang &&
+                                (p.tags || []).includes(labelToMatch)
+                            ).length;
+
                             if (count === 0) return null;
                             return (
                                 <button
@@ -245,7 +261,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                                 />
                                                 <IconButton
                                                     icon={<Trash2 className="w-3.5 h-3.5" />}
-                                                    onClick={() => handleDeletePreset(preset.id)}
+                                                    onClick={() => { setPresetToDelete(preset.id); setIsDeleteModalOpen(true); }}
                                                     className="hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
                                                 />
                                             </div>
@@ -256,7 +272,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                         </p>
 
                                         <div className="flex flex-wrap gap-1.5">
-                                            {preset.tags.map(tag => (
+                                            {(preset.tags || []).map(tag => (
                                                 <span key={tag} className="px-2 py-0.5 rounded-full bg-zinc-50 dark:bg-zinc-800 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                                                     {tag}
                                                 </span>
@@ -277,6 +293,17 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                 preset={editingPreset}
                 availableTags={availableTags}
                 t={t}
+            />
+
+            <ConfirmDialog
+                isOpen={isDeleteModalOpen}
+                title={t('admin_confirm_delete_preset') || "Preset löschen"}
+                description={t('admin_delete_preset_desc') || "Möchtest du dieses Preset wirklich unwiderruflich löschen?"}
+                confirmLabel={t('delete') || "Löschen"}
+                cancelLabel={t('cancel') || "Abbrechen"}
+                onConfirm={handleDeletePreset}
+                onCancel={() => { setIsDeleteModalOpen(false); setPresetToDelete(null); }}
+                variant="danger"
             />
         </div>
     );

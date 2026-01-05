@@ -98,7 +98,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({
                                 <div className="text-xs text-zinc-500 uppercase tracking-wider">{t('admin_job_api_cost') || "API Cost"}</div>
                             </div>
                             <div className="text-xl font-mono text-zinc-500 dark:text-zinc-400">
-                                {job.apiCost ? `$${job.apiCost.toFixed(4)}` : '-'}
+                                {job.apiCost !== undefined && job.apiCost !== null ? `$${job.apiCost.toFixed(6)}` : '-'}
                             </div>
                         </div>
                     </div>

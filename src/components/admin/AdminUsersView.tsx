@@ -5,6 +5,7 @@ import { Typo, Input } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminUserDetail } from './AdminUserDetail';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface AdminUsersViewProps {
     t: TranslationFunction;
@@ -16,6 +17,8 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     const { showToast } = useToast();
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
     const [search, setSearch] = useState('');
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -47,13 +50,17 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         }
     };
 
-    const handleDeleteUser = async (id: string) => {
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
         try {
-            await adminService.deleteUser(id);
-            setUsers(prev => prev.filter(u => u.id !== id));
-            setSelectedUser(null);
+            await adminService.deleteUser(userToDelete);
+            setUsers(prev => prev.filter(u => u.id !== userToDelete));
+            if (selectedUser?.id === userToDelete) setSelectedUser(null);
         } catch (error) {
             showToast(t('failed_delete_user'), 'error');
+        } finally {
+            setIsDeleteModalOpen(false);
+            setUserToDelete(null);
         }
     };
 
@@ -76,7 +83,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     };
 
     return (
-        <div className="flex flex-col h-[700px]">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <h2 className={Typo.H1}>{t('admin_users')}</h2>
                 <div className="flex items-center gap-4">
@@ -144,6 +151,17 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                     t={t}
                 />
             )}
+
+            <ConfirmDialog
+                isOpen={isDeleteModalOpen}
+                title={t('admin_delete_user') || "Benutzer löschen"}
+                description={t('admin_delete_user_desc') || "Möchtest du diesen Benutzer wirklich unwiderruflich löschen?"}
+                confirmLabel={t('delete') || "Löschen"}
+                cancelLabel={t('cancel') || "Abbrechen"}
+                onConfirm={handleDeleteUser}
+                onCancel={() => { setIsDeleteModalOpen(false); setUserToDelete(null); }}
+                variant="danger"
+            />
         </div>
     );
 };
