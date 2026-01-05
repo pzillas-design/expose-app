@@ -72,6 +72,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     ];
 
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
+
     const isMulti = selectedImages && selectedImages.length > 1;
 
     const lastIdRef = useRef<string>(selectedImage.id);
@@ -80,6 +81,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setActiveInternalTab('info');
         }
 
+        // Restore state from selected image or reset
         if (lastIdRef.current !== selectedImage.id) {
             if (selectedImage.activeTemplateId) {
                 const found = templates.find(t => t.id === selectedImage.activeTemplateId);
@@ -96,7 +98,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     useLayoutEffect(() => {
         if (textAreaRef.current) {
             textAreaRef.current.style.height = 'auto';
-            const newHeight = Math.max(textAreaRef.current.scrollHeight, 100);
+            const newHeight = Math.max(textAreaRef.current.scrollHeight, 120);
             textAreaRef.current.style.height = `${newHeight}px`;
         }
     }, [prompt, activeTemplate, activeInternalTab]);
@@ -110,10 +112,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const saveEditing = () => {
         if (editingId) {
             const updates: Partial<AnnotationObject> = {};
-            if (editValue.trim() !== undefined) updates.text = editValue;
+            if (editValue.trim()) updates.text = editValue;
             if (editEmojiValue.trim()) updates.emoji = editEmojiValue;
 
-            onUpdateAnnotation(editingId, updates);
+            if (Object.keys(updates).length > 0) {
+                onUpdateAnnotation(editingId, updates);
+            }
             setEditingId(null);
         }
     };
@@ -151,7 +155,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const handleSelectPreset = (t: PromptTemplate) => {
         onSelectTemplate(t);
         setPrompt(t.prompt);
-        setHiddenControlIds([]);
+        setHiddenControlIds([]); // Reset hidden controls when selecting new preset
 
         if (t.controls && t.controls.length > 0) {
             setActiveTemplate(t);
@@ -161,6 +165,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setActiveTemplate(null);
             setControlValues({});
             onUpdateVariables(selectedImage.id, undefined, {});
+        }
+        if (textAreaRef.current) {
+            textAreaRef.current.focus();
         }
     };
 
@@ -185,6 +192,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             onUpdateVariables(selectedImage.id, activeTemplate?.id, updatedValues);
             return updatedValues;
         });
+    };
+
+    const handleReset = () => {
+        setControlValues({});
+        setActiveTemplate(null);
+        setHiddenControlIds([]);
+        onUpdateVariables(selectedImage.id, undefined, {});
     };
 
     const handleClearControl = (controlId: string) => {
@@ -212,6 +226,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 }
             });
             if (appendedParts.length > 0) {
+                // Smart join: add comma if prompt doesn't end with one/colon, but only if prompt isn't empty
                 if (final) {
                     const needsComma = !final.endsWith(',') && !final.endsWith(':');
                     final += (needsComma ? ", " : " ") + appendedParts.join(", ");
@@ -250,82 +265,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setIsPresetModalOpen(false);
     };
 
-    const AnnotationChip: React.FC<{ ann: AnnotationObject }> = ({ ann }) => {
-        const isRefType = ann.type === 'reference_image';
-        const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-        const defaultLabel = isRefType ? `${t('image_ref') || 'Ref'} ${refIndex + 1}` : '';
-        const displayText = ann.text || defaultLabel || t('untitled') || 'Untitled';
-        const isEditing = editingId === ann.id;
-
-        return (
-            <div
-                className={`
-                    group flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] transition-all
-                    ${isEditing
-                        ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100'
-                        : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
-                `}
-            >
-                <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                    {isRefType && ann.referenceImage ? (
-                        <div className="w-3.5 h-3.5 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                        </div>
-                    ) : (
-                        ann.type === 'stamp' ? <Type className="w-3 h-3" /> :
-                            ann.type === 'shape' ? (
-                                ann.shapeType === 'circle' ? <Circle className="w-3 h-3" /> :
-                                    ann.shapeType === 'line' ? <Minus className="w-3 h-3" /> :
-                                        <Square className="w-3 h-3" />
-                            ) : <Pen className="w-3 h-3" />
-                    )}
-                </div>
-
-                <div className="flex-1 min-w-0 max-w-[100px]">
-                    {isEditing ? (
-                        <input
-                            autoFocus
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onBlur={saveEditing}
-                            onKeyDown={handleKeyDown}
-                            className="w-full bg-transparent border-none outline-none p-0 text-black dark:text-white"
-                        />
-                    ) : (
-                        <span
-                            onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                            className={`truncate cursor-text ${!ann.text && !defaultLabel ? 'italic opacity-60' : ''}`}
-                        >
-                            {displayText}
-                        </span>
-                    )}
-                </div>
-
-                {!isEditing && (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {!isRefType && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-orange-500 transition-colors"
-                            >
-                                <Camera className="w-2.5 h-2.5" />
-                            </button>
-                        )}
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                            className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-red-500 transition-colors"
-                        >
-                            <X className="w-2.5 h-2.5" />
-                        </button>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     return (
         <div className="h-full relative flex flex-col overflow-hidden">
-            {/* 1. TAB HEADER - KEPT ORIGINAL */}
+            {/* Tab Header - Only show if not multiple selection (Info tab only makes sense for single image) */}
             {!isMulti && (
                 <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} relative`}>
                     <button
@@ -355,94 +297,158 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
                     {activeInternalTab === 'prompt' || isMulti ? (
-                        <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
+                        <div className="flex-1 flex flex-col px-6 pt-10 pb-6">
+                            <div className="flex flex-col">
+                                {/* Single Modular Input Box */}
+                                <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.RadiusLg} shadow-sm transition-all focus-within:ring-2 focus-within:ring-zinc-500/10 dark:focus-within:ring-white/5`}>
 
-                            {/* 2. MODULAR UNIFIED BOX - ONLY ADJUSTED AREA */}
-                            <div className="flex flex-col mb-6">
-                                <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.RadiusLg} shadow-sm transition-all focus-within:ring-2 focus-within:ring-zinc-500/10 focus-within:border-zinc-400 dark:focus-within:border-zinc-500`}>
+                                    {/* 1. Prompt Input */}
                                     <textarea
                                         ref={textAreaRef}
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder={t('describe_changes')}
-                                        className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} leading-relaxed resize-none min-h-[100px]`}
+                                        className={`w-full bg-transparent border-none outline-none p-5 pb-2 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
                                         disabled={selectedImage.isGenerating}
                                     />
 
-                                    {(annotations.length > 0 || (activeTemplate && Object.keys(controlValues).length > 0)) && (
-                                        <div className="px-4 pb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                            {/* Variable Chips */}
-                                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.map(ctrl => {
-                                                const selectedOpts = controlValues[ctrl.id];
-                                                if (!selectedOpts || selectedOpts.length === 0 || hiddenControlIds.includes(ctrl.id)) return null;
+                                    {/* 2. Content Row (Variables & Annotations) */}
+                                    <div className="flex flex-wrap gap-2 px-4 pb-4">
 
-                                                return selectedOpts.map(val => (
-                                                    <div
-                                                        key={`${ctrl.id}-${val}`}
-                                                        className="group flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[10px] font-mono leading-none"
+                                        {/* Variables as Chips */}
+                                        {activeTemplate && activeTemplate.controls && activeTemplate.controls
+                                            .filter(c => !hiddenControlIds.includes(c.id) && (controlValues[c.id] || []).length > 0)
+                                            .map((ctrl) => (
+                                                <div
+                                                    key={ctrl.id}
+                                                    className="group relative flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-700/50 transition-all"
+                                                >
+                                                    <span className={`${Typo.Mono} text-[10px] text-zinc-400 font-bold uppercase tracking-tighter opacity-70`}>{ctrl.label}</span>
+                                                    <span className={`${Typo.Mono} text-[10px] text-zinc-800 dark:text-zinc-200`}>
+                                                        {(controlValues[ctrl.id] || []).join(", ")}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleClearControl(ctrl.id); }}
+                                                        className="opacity-0 group-hover:opacity-100 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all ml-0.5"
                                                     >
-                                                        <span className="opacity-60">{ctrl.label}:</span>
-                                                        <span>{val}</span>
+                                                        <X className="w-3 h-3 text-zinc-400" />
+                                                    </button>
+                                                </div>
+                                            ))}
+
+                                        {/* Annotations as Chips */}
+                                        {!isMulti && annotations.map((ann, idx) => {
+                                            const isRefType = ann.type === 'reference_image';
+                                            const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
+                                            const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
+                                            const displayText = ann.text || defaultLabel || t('untitled');
+                                            const isEditing = editingId === ann.id;
+
+                                            return (
+                                                <div
+                                                    key={ann.id}
+                                                    className={`group relative flex items-center gap-2 px-2.5 py-1.5 rounded-lg border ${isEditing ? 'border-zinc-500 dark:border-zinc-400 ring-2 ring-zinc-500/10' : 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900'} hover:border-zinc-400 dark:hover:border-zinc-500 transition-all cursor-pointer`}
+                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                >
+                                                    <div className="shrink-0 flex items-center justify-center text-zinc-400">
+                                                        {isRefType && ann.referenceImage ? (
+                                                            <div className="w-4 h-4 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                            </div>
+                                                        ) : (
+                                                            ann.type === 'stamp' ? <Type className="w-3.5 h-3.5" /> :
+                                                                ann.type === 'shape' ? (
+                                                                    ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
+                                                                        ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
+                                                                            <Square className="w-3.5 h-3.5" />
+                                                                ) : <Pen className="w-3.5 h-3.5" />
+                                                        )}
+                                                    </div>
+
+                                                    <div className="min-w-0 max-w-[120px]">
+                                                        {isEditing ? (
+                                                            <input
+                                                                autoFocus
+                                                                value={editValue}
+                                                                onChange={(e) => setEditValue(e.target.value)}
+                                                                onBlur={saveEditing}
+                                                                onKeyDown={handleKeyDown}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className={`w-full bg-transparent border-none outline-none ${Typo.Mono} text-[10px] text-zinc-900 dark:text-white p-0 h-4`}
+                                                                placeholder="..."
+                                                            />
+                                                        ) : (
+                                                            <span className={`${Typo.Mono} text-[10px] truncate block ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                                                                {displayText}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Hover Actions */}
+                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                                        {!isRefType && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
+                                                                className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-orange-500 transition-all"
+                                                                title={t('upload_ref')}
+                                                            >
+                                                                <Camera className="w-3 h-3" />
+                                                            </button>
+                                                        )}
                                                         <button
-                                                            onClick={() => handleToggleControlOption(ctrl.id, val)}
-                                                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5"
+                                                            onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-400 hover:text-red-500 transition-all"
                                                         >
-                                                            <X className="w-2.5 h-2.5" />
+                                                            <X className="w-3 h-3" />
                                                         </button>
                                                     </div>
-                                                ));
-                                            })}
-
-                                            {/* Annotation Chips */}
-                                            {!isMulti && annotations.map((ann) => (
-                                                <AnnotationChip key={ann.id} ann={ann} />
-                                            ))}
-                                        </div>
-                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
+
+                                {/* 3. Available Controls (Selection UI) */}
+                                {activeTemplate && activeTemplate.controls && activeTemplate.controls
+                                    .filter(c => !hiddenControlIds.includes(c.id))
+                                    .map((ctrl) => (
+                                        <div key={ctrl.id} className={`mt-3 p-4 rounded-xl border ${Theme.Colors.Border} bg-zinc-50/50 dark:bg-zinc-900/30 transition-all`}>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 font-bold uppercase`}>
+                                                    {ctrl.label}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleClearControl(ctrl.id)}
+                                                    className="p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                                                >
+                                                    <X className="w-3.5 h-3.5 text-zinc-400" />
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {ctrl.options.map((opt) => {
+                                                    const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                    return (
+                                                        <button
+                                                            key={opt.id}
+                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                            className={`
+                                                                px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all shadow-sm border
+                                                                ${isSelected
+                                                                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-black border-zinc-900 dark:border-white'
+                                                                    : 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
+                                                            `}
+                                                        >
+                                                            {opt.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
                             </div>
 
-                            {/* Secondary Controls (Remaining inactive options) */}
-                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                <div className="flex flex-col gap-4 mb-8">
-                                    {activeTemplate.controls
-                                        .filter(c => !hiddenControlIds.includes(c.id))
-                                        .map((ctrl) => (
-                                            <div key={ctrl.id} className="flex flex-col gap-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className={`${Typo.Label} opacity-50`}>{ctrl.label}</span>
-                                                    <IconButton
-                                                        icon={<X className="w-3 h-3" />}
-                                                        onClick={() => handleClearControl(ctrl.id)}
-                                                        className="h-6 w-6 opacity-40 hover:opacity-100"
-                                                    />
-                                                </div>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {ctrl.options.map((opt) => {
-                                                        const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                        return (
-                                                            <button
-                                                                key={opt.id}
-                                                                onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                className={`
-                                                                    px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
-                                                                    ${isSelected
-                                                                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black'
-                                                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'}
-                                                                `}
-                                                            >
-                                                                {opt.label}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
-                                </div>
-                            )}
-
-                            {/* 3. TOOLS BUTTONS - KEPT ORIGINAL */}
                             <div className="flex flex-col mb-8">
+                                {/* Tools Buttons */}
                                 <div className="flex items-center justify-center gap-4">
                                     <Button
                                         variant="ghost"
@@ -473,18 +479,18 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     />
                                 </div>
 
-                                {/* 4. GENERATE BUTTON - KEPT ORIGINAL */}
+                                {/* Generate Button with Integrated Settings */}
                                 <div className="mt-3 relative z-20">
                                     <div className="flex w-full">
                                         <button
                                             onClick={handleDoGenerate}
                                             disabled={selectedImage.isGenerating}
                                             className={`
-                                            relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
-                                            ${selectedImage.isGenerating
+                                                relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
+                                                ${selectedImage.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
-                                        `}
+                                            `}
                                         >
                                             <span className={`flex items-center gap-2 ${Typo.Label}`}>
                                                 {selectedImage.isGenerating
@@ -494,6 +500,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         : t('generate')}
                                             </span>
 
+                                            {/* ABSOLUTE SETTINGS BUTTON INSIDE GENERATE */}
                                             {!selectedImage.isGenerating && (
                                                 <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
                                                     <Tooltip text={t('tt_model')} side="top">
@@ -503,10 +510,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 setIsModelDropdownOpen(!isModelDropdownOpen);
                                                             }}
                                                             className={`
-                                                            w-full h-full flex items-center justify-center rounded
-                                                            hover:bg-black/10 transition-colors cursor-pointer
-                                                            ${isModelDropdownOpen ? 'bg-black/10' : ''}
-                                                        `}
+                                                                w-full h-full flex items-center justify-center rounded
+                                                                hover:bg-black/10 transition-colors cursor-pointer
+                                                                ${isModelDropdownOpen ? 'bg-black/10' : ''}
+                                                            `}
                                                         >
                                                             <Settings2 className="w-4 h-4" />
                                                         </div>
@@ -516,22 +523,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </button>
                                     </div>
 
+                                    {/* DROPDOWN MENU - Positioned relative to the container */}
                                     {isModelDropdownOpen && (
                                         <>
                                             <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
                                             <div className={`
-                                            absolute bottom-full right-0 mb-2 w-64 p-1.5
-                                            ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-                                            shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50
-                                        `}>
+                                                absolute bottom-full right-0 mb-2 w-64 p-1.5
+                                                ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
+                                                shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50
+                                            `}>
                                                 {MODES.map((m) => (
                                                     <button
                                                         key={m.id}
                                                         onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
                                                         className={`
-                                                        flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
-                                                        ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                    `}
+                                                            flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
+                                                            ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                        `}
                                                     >
                                                         <div className="flex flex-col">
                                                             <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
@@ -552,23 +560,22 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             </div>
 
-                            {/* 5. PRESET LIBRARY - KEPT ORIGINAL */}
-                            <div className="mt-auto">
-                                <input type="file" ref={annFileInputRef} className="hidden" accept="image/*" onChange={handleAnnFileChange} />
-                                <PresetLibrary
-                                    templates={templates}
-                                    onSelect={handleSelectPreset}
-                                    onTogglePin={onTogglePin || (() => { })}
-                                    onRequestCreate={openCreatePreset}
-                                    onRequestEdit={openEditPreset}
-                                    t={t}
-                                    currentLang={currentLang}
-                                />
+                            <div className="flex flex-col gap-3">
+                                {isMulti && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={onDeselect}
+                                        className="w-full"
+                                    >
+                                        {t('ctx_deselect')}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     ) : (
                         /* Info Tab Content */
                         <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
+                            {/* Prompt Section */}
                             {selectedImage.generationPrompt && (
                                 <div className="flex flex-col gap-3 group relative">
                                     <div className="flex items-center justify-between">
@@ -583,7 +590,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     e.stopPropagation();
                                                     if (selectedImage.generationPrompt) {
                                                         navigator.clipboard.writeText(selectedImage.generationPrompt);
-                                                        showToast(t('copied_to_clipboard') || 'Copied', 'success');
+                                                        showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
                                                     }
                                                 }}
                                             />
@@ -595,48 +602,162 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                                <div className="flex flex-col gap-1.5">
-                                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('resolution')}</span>
-                                    <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
-                                        {selectedImage.realWidth && selectedImage.realHeight ? `${selectedImage.realWidth} × ${selectedImage.realHeight}px` : '1024 × 1024px'}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created_at')}</span>
-                                    <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
-                                        {selectedImage.createdAt ? new Date(selectedImage.createdAt).toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
-                                    </span>
-                                </div>
-                            </div>
+                            {/* Metadata Grid (No border, 2 columns) - Hide while generating placeholder */}
+                            {!selectedImage.isGenerating && (
+                                <div className="flex flex-col gap-8">
+                                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                        {/* Resolution */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                {t('resolution')}
+                                            </span>
+                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                                {(() => {
+                                                    if (selectedImage.realWidth && selectedImage.realHeight) {
+                                                        return `${selectedImage.realWidth} × ${selectedImage.realHeight}px`;
+                                                    }
+                                                    // Fallbacks based on quality if real dims are missing
+                                                    if (selectedImage.quality === 'pro-4k') return '4096 × 4096px';
+                                                    if (selectedImage.quality === 'pro-2k') return '2048 × 2048px';
+                                                    return '1024 × 1024px';
+                                                })()}
+                                            </span>
+                                        </div>
 
-                            {selectedImage.annotations?.some(ann => ann.referenceImage) && (
-                                <div className="flex flex-col gap-3">
-                                    <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
-                                        {t('reference_images')}
-                                    </span>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {selectedImage.annotations.filter(ann => ann.referenceImage).map((ann, idx) => (
-                                            <div key={idx} className="aspect-square rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="Ref" />
+                                        {/* Created At */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                {t('created_at')}
+                                            </span>
+                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                                {selectedImage.createdAt ? (() => {
+                                                    const d = new Date(selectedImage.createdAt);
+                                                    const day = String(d.getDate()).padStart(2, '0');
+                                                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                                                    const hours = String(d.getHours()).padStart(2, '0');
+                                                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                                                    return `${day}.${month}. ${hours}:${minutes}`;
+                                                })() : '-'}
+                                            </span>
+                                        </div>
+
+                                        {/* Model */}
+                                        {selectedImage.quality && (
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                    {t('model')}
+                                                </span>
+                                                <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
+                                                    {(() => {
+                                                        // 1. Map to friendly branded names based on recorded quality
+                                                        const q = selectedImage.quality;
+                                                        if (q) {
+                                                            switch (q) {
+                                                                case 'pro-4k': return 'Nano Banana Pro 4K';
+                                                                case 'pro-2k': return 'Nano Banana Pro 2K';
+                                                                case 'pro-1k': return 'Nano Banana Pro 1K';
+                                                                case 'fast': return 'Nano Banana (Fast)';
+                                                            }
+                                                        }
+
+                                                        // 2. Fallback to API-reported model version
+                                                        return selectedImage.modelVersion || 'Nano Banana';
+                                                    })()}
+                                                </span>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
+
+                                    {/* Reference Images Section - Only in Info tab now */}
+                                    {selectedImage.annotations?.some(ann => ann.referenceImage) && (
+                                        <div className="flex flex-col gap-3">
+                                            <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                                {t('reference_images')}
+                                            </span>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {selectedImage.annotations
+                                                    .filter(ann => ann.referenceImage)
+                                                    .map((ann, idx) => (
+                                                        <div
+                                                            key={ann.id || idx}
+                                                            className="aspect-square rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900"
+                                                        >
+                                                            <img
+                                                                src={ann.referenceImage}
+                                                                alt={`Ref ${idx + 1}`}
+                                                                className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
+                            {/* Actions Container (No Header) */}
                             <div className="flex flex-col gap-2">
-                                <Button variant="secondary" onClick={() => onGenerateMore(selectedImage.id)} className="justify-start px-4 h-11 gap-2">
+
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => onGenerateMore(selectedImage.id)}
+                                    disabled={selectedImage.isGenerating}
+                                    className="justify-start px-4 h-11 gap-2"
+                                >
                                     <RotateCcw className="w-4 h-4 text-zinc-400" />
-                                    <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>{t('ctx_create_variations')}</span>
+                                    <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                        {t('ctx_create_variations')}
+                                    </span>
                                 </Button>
+
                                 {selectedImage.parentId && (
-                                    <Button variant="secondary" onClick={() => onNavigateParent(selectedImage.parentId!)} className="justify-start px-4 h-11 gap-2">
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => selectedImage.parentId && onNavigateParent(selectedImage.parentId)}
+                                        disabled={selectedImage.isGenerating}
+                                        className="justify-start px-4 h-11 gap-2"
+                                    >
                                         <ArrowLeft className="w-4 h-4 text-zinc-400" />
-                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>{currentLang === 'de' ? 'Zum Original' : 'Back to Original'}</span>
+                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                            {currentLang === 'de' ? 'Zum Original' : 'Top Parent'}
+                                        </span>
                                     </Button>
                                 )}
+                                {userProfile?.role === 'admin' && (
+                                    <button
+                                        onClick={() => setIsDebugOpen(true)}
+                                        className="flex items-center gap-2 px-2 py-1 text-blue-500 hover:text-blue-600 transition-colors"
+                                    >
+                                        <Bug className="w-4 h-4" />
+                                        <span className={`${Typo.Label} uppercase tracking-wider font-bold text-[10px]`}>
+                                            Debug
+                                        </span>
+                                    </button>
+                                )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Preset Library - Now part of the main scroll flow */}
+                    {(activeInternalTab === 'prompt' || isMulti) && (
+                        <div className={`mt-auto ${Theme.Colors.PanelBg} w-full`}>
+                            <input
+                                type="file"
+                                ref={annFileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleAnnFileChange}
+                            />
+                            <PresetLibrary
+                                templates={templates}
+                                onSelect={handleSelectPreset}
+                                onTogglePin={onTogglePin || (() => { })}
+                                onRequestCreate={openCreatePreset}
+                                onRequestEdit={openEditPreset}
+                                t={t}
+                                currentLang={currentLang}
+                            />
                         </div>
                     )}
                 </div>
@@ -654,7 +775,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 onDelete={onDeleteTemplate}
                 t={t}
             />
-
             <DebugModal
                 isOpen={isDebugOpen}
                 onClose={() => setIsDebugOpen(false)}
