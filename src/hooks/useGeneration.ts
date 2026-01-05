@@ -23,9 +23,9 @@ interface UseGenerationProps {
 
 const COSTS: Record<string, number> = {
     'fast': 0.00,
-    'pro-1k': 0.50,
-    'pro-2k': 1.00,
-    'pro-4k': 2.00
+    'pro-1k': 0.10,
+    'pro-2k': 0.25,
+    'pro-4k': 0.50
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
@@ -69,11 +69,7 @@ export const useGeneration = ({
                     items: row.items.map(item => item.id === jobId ? finalImage : item)
                 })));
 
-                // Cleanup job row if user is logged in
-                if (user) {
-                    supabase.from('generation_jobs').delete().eq('id', jobId).then();
-                }
-
+                // Persist job history for admin dashboard
                 attachedJobIds.current.delete(jobId);
                 return;
             }
@@ -227,15 +223,7 @@ export const useGeneration = ({
                     }));
                 });
 
-                if (user && !isAuthDisabled) {
-                    supabase.from('generation_jobs')
-                        .delete()
-                        .eq('id', newId)
-                        .eq('user_id', user.id)
-                        .then(({ error }) => {
-                            if (error) console.warn("Cleanup of successful job row failed:", error);
-                        });
-                }
+                // Success: record preserved
             } else {
                 throw new Error("Generation returned no image");
             }
@@ -380,8 +368,6 @@ export const useGeneration = ({
                     cost: cost,
                     prompt: prompt,
                     board_id: currentBoardId,
-                    // If we want the Edge function to see the attachments, 
-                    // we could also pack them into generation_params or just trust the processGeneration call
                 });
             }
 
@@ -402,15 +388,7 @@ export const useGeneration = ({
                     }));
                 });
 
-                if (user && !isAuthDisabled) {
-                    supabase.from('generation_jobs')
-                        .delete()
-                        .eq('id', newId)
-                        .eq('user_id', user.id)
-                        .then(({ error }) => {
-                            if (error) console.warn("Cleanup of successful job row failed:", error);
-                        });
-                }
+                // Success: record preserved
             }
         } catch (error: any) {
             console.error("New Generation failed:", error);
@@ -420,7 +398,6 @@ export const useGeneration = ({
 
             if (!isPro) {
                 setCredits(prev => prev + cost);
-                // Optional: Refund DB update
             }
         }
     };

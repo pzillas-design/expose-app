@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, GripVertical, Loader2, Image as ImageIcon } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
@@ -22,10 +22,6 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         setLoading(true);
         try {
             const rawItems = await adminService.getObjectItems();
-
-            // Clean up: If we find items NOT in 'basics', we should probably force them or just filter.
-            // User requested to "delete the rest", but for now we'll just show them all in a flat list 
-            // and ensure any updates/adds use 'basics'.
             setItems(rawItems);
         } catch (error) {
             console.error('Failed to fetch objects:', error);
@@ -67,7 +63,6 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         const existing = items.find(i => i.id === itemId);
         if (!existing) return;
 
-        // Force 'basics' category on every update to migrate legacy data naturally
         const updatedItem = { ...existing, ...updates, category_id: 'basics' };
         setItems(prev => prev.map(i => i.id === itemId ? updatedItem : i));
 
@@ -95,15 +90,14 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         const [moved] = newItems.splice(fromIdx, 1);
         newItems.splice(toIdx, 0, moved);
         setItems(newItems);
-
-        // In a real scenario, we would trigger a 'save order' call here
     };
 
     const gridTemplate = "grid-cols-[40px_60px_1fr_1fr_80px]";
+    const minWidth = "800px";
 
     return (
-        <div className="p-6 h-full flex flex-col min-h-0 bg-zinc-50/50 dark:bg-zinc-950/50">
-            <div className="flex items-center justify-between mb-6 shrink-0">
+        <div className="flex flex-col h-[700px]">
+            <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className={Typo.H1}>{t('admin_objects')}</h2>
                     <p className={Typo.Micro}>Verwalte die Sticker und Symbole für das Anmerkungs-Werkzeug.</p>
@@ -113,16 +107,17 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                 </Button>
             </div>
 
-            <div className="flex-1 min-h-0 bg-white dark:bg-zinc-900">
-                <div className={`sticky top-0 z-10 grid ${gridTemplate} bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
-                    <div className="p-3 text-center"></div>
-                    <div className="p-3 flex items-center justify-center">{t('icon_label')}</div>
-                    <div className="p-3 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (DE)</div>
-                    <div className="p-3 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (EN)</div>
-                    <div className="p-3 text-center">Aktionen</div>
-                </div>
+            {/* Horizontal and Vertical Scroll Container */}
+            <div className="flex-1 overflow-auto border-t border-zinc-100 dark:border-zinc-800">
+                <div style={{ minWidth }} className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-zinc-50/80 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
+                        <div className="p-4 text-center"></div>
+                        <div className="p-4 flex items-center justify-center">{t('icon_label')}</div>
+                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (DE)</div>
+                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (EN)</div>
+                        <div className="p-4 text-center">Aktionen</div>
+                    </div>
 
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {loading && items.length === 0 && (
                         <div className="py-20 text-center">
                             <Loader2 className="w-6 h-6 animate-spin mx-auto text-zinc-300" />
@@ -132,48 +127,48 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     {items.map((item) => (
                         <div
                             key={item.id}
-                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center py-1 group ${draggedItemId === item.id ? 'opacity-50' : ''}`}
+                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center h-[52px] group ${draggedItemId === item.id ? 'opacity-50' : ''}`}
                             draggable
                             onDragStart={(e) => onDragStart(e, item.id)}
                             onDragOver={(e) => onDragOver(e, item.id)}
                             onDragEnd={() => setDraggedItemId(null)}
                         >
                             <div className="flex items-center justify-center cursor-move text-zinc-300 hover:text-zinc-500">
-                                <GripVertical className="w-3.5 h-3.5" />
+                                <GripVertical className="w-4 h-4" />
                             </div>
 
                             <div className="px-2 flex items-center justify-center">
                                 <TableInput
                                     value={item.icon || '📦'}
                                     onChange={e => handleUpdateItem(item.id, { icon: e.target.value })}
-                                    className="text-center text-lg w-full p-0"
+                                    className="text-center text-xl w-full p-0 border-none bg-transparent"
                                     placeholder="📦"
                                 />
                             </div>
 
-                            <div className="px-4 border-r border-zinc-100 dark:border-zinc-800/50">
+                            <div className="px-5 border-r border-zinc-100 dark:border-zinc-800/50 h-full flex items-center">
                                 <TableInput
                                     value={item.label_de || ''}
                                     onChange={e => handleUpdateItem(item.id, { label_de: e.target.value })}
-                                    className="font-medium text-xs"
+                                    className="font-medium text-sm border-none bg-transparent w-full"
                                     placeholder="Name (DE)"
                                 />
                             </div>
 
-                            <div className="px-4 border-r border-zinc-100 dark:border-zinc-800/50">
+                            <div className="px-5 border-r border-zinc-100 dark:border-zinc-800/50 h-full flex items-center">
                                 <TableInput
                                     value={item.label_en || ''}
                                     onChange={e => handleUpdateItem(item.id, { label_en: e.target.value })}
-                                    className="text-zinc-500 text-xs"
+                                    className="text-zinc-500 text-sm border-none bg-transparent w-full"
                                     placeholder="Name (EN)"
                                 />
                             </div>
 
                             <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <IconButton
-                                    icon={<Trash2 className="w-3.5 h-3.5" />}
+                                    icon={<Trash2 className="w-4 h-4" />}
                                     onClick={() => handleDeleteItem(item.id)}
-                                    className="hover:text-red-500 p-1.5"
+                                    className="hover:text-red-500 p-2"
                                 />
                             </div>
                         </div>
@@ -181,7 +176,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
                     {!loading && items.length === 0 && (
                         <div className="py-20 text-center text-zinc-400 flex flex-col items-center gap-3">
-                            <ImageIcon className="w-8 h-8 opacity-20" />
+                            <ImageIcon className="w-10 h-10 opacity-20" />
                             <span className={Typo.Body}>Keine Objekte vorhanden.</span>
                         </div>
                     )}

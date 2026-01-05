@@ -76,14 +76,14 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     };
 
     return (
-        <div className="p-6 h-full flex flex-col bg-zinc-50/50 dark:bg-zinc-950/50">
-            <div className="flex items-center justify-between mb-6 shrink-0">
+        <div className="flex flex-col h-[700px]">
+            <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <h2 className={Typo.H1}>{t('admin_users')}</h2>
                 <div className="flex items-center gap-4">
                     <div className="relative w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                         <Input
-                            className="pl-9 py-2 bg-white dark:bg-zinc-900"
+                            className="pl-9 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-none"
                             placeholder={t('search')}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -92,47 +92,47 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900">
-                {loading ? (
-                    <div className="h-full flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
-                    </div>
-                ) : (
-                    <div className="overflow-y-auto h-full">
+            <div className="flex-1 min-h-0 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-auto">
+                <div className="min-w-[900px]">
+                    {loading ? (
+                        <div className="py-20 flex items-center justify-center">
+                            <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
+                        </div>
+                    ) : (
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
+                            <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 font-medium">{t('admin_user_name')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('admin_user_email')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('admin_role_label')}</th>
-                                    <th className="px-4 py-3 font-medium">{t('admin_last_online')}</th>
-                                    <th className="px-4 py-3 font-medium text-right">{t('admin_balance')}</th>
-                                    <th className="px-4 py-3 font-medium text-right">{t('admin_user_joined')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_user_name')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_user_email')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_role_label')}</th>
+                                    <th className="px-5 py-4 font-medium">{t('admin_last_online')}</th>
+                                    <th className="px-5 py-4 font-medium text-right">{t('admin_balance')}</th>
+                                    <th className="px-5 py-4 font-medium text-right">{t('admin_user_joined')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                            <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
                                 {filteredUsers.map(u => (
                                     <tr
                                         key={u.id}
                                         onClick={() => setSelectedUser(u)}
-                                        className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
+                                        className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-4 py-3 font-medium text-black dark:text-white">{u.name}</td>
-                                        <td className="px-4 py-3 text-zinc-500">{u.email}</td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-5 py-5 font-medium text-black dark:text-white">{u.name}</td>
+                                        <td className="px-5 py-5 text-zinc-500">{u.email}</td>
+                                        <td className="px-5 py-5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                                                 {u.role}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-zinc-500">{getRelativeTime(u.lastActiveAt)}</td>
-                                        <td className="px-4 py-3 text-right font-mono text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
-                                        <td className="px-4 py-3 text-right text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
+                                        <td className="px-5 py-5 text-zinc-500">{getRelativeTime(u.lastActiveAt)}</td>
+                                        <td className="px-5 py-5 text-right font-mono text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
+                                        <td className="px-5 py-5 text-right text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {selectedUser && (

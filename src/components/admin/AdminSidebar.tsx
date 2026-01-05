@@ -33,9 +33,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, t }) => {
 
     return (
         <div className="w-full lg:w-72 flex flex-col gap-1 p-2">
-            <div className="px-4 py-4 mb-2">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Navigation</span>
-            </div>
             {renderItem('users', t('admin_users'), <Users />)}
             {renderItem('jobs', t('admin_jobs'), <Activity />)}
             {renderItem('stats', 'Token & Kosten', <BarChart3 />)}

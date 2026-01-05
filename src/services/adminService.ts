@@ -85,14 +85,21 @@ export const adminService = {
     },
 
     /**
-     * Fetch all generation jobs
+     * Fetch generation jobs with pagination
      */
-    async getJobs(): Promise<any[]> {
-        const { data, error } = await supabase
+    async getJobs(page?: number, pageSize?: number): Promise<any[]> {
+        let query = supabase
             .from('generation_jobs')
             .select('*')
             .order('created_at', { ascending: false });
 
+        if (page !== undefined && pageSize !== undefined) {
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize - 1;
+            query = query.range(from, to);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
         return (data || []).map(job => ({
             id: job.id,
