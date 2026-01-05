@@ -102,26 +102,42 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
 
     const handleSave = async () => {
         if (!selectedId || isSaving) return;
+
+        const hasDe = formState.de.prompt.trim().length > 0;
+        const hasEn = formState.en.prompt.trim().length > 0;
+
+        if (!hasDe && !hasEn) {
+            showToast('Mindestens ein Prompt (DE oder EN) muss ausgefüllt sein', 'error');
+            return;
+        }
+
         setIsSaving(true);
         try {
-            // Update DE
-            await adminService.updateGlobalPreset({
-                id: selectedId,
-                lang: 'de',
-                ...formState.de,
-                isPinned: true, isCustom: false, isDefault: false, usageCount: 0
-            });
-            // Update EN
-            await adminService.updateGlobalPreset({
-                id: selectedId + '-en',
-                lang: 'en',
-                ...formState.en,
-                isPinned: true, isCustom: false, isDefault: false, usageCount: 0
-            });
+            // Save DE if provided
+            if (hasDe) {
+                await adminService.updateGlobalPreset({
+                    id: selectedId,
+                    lang: 'de',
+                    ...formState.de,
+                    isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+                });
+            }
+
+            // Save EN if provided
+            if (hasEn) {
+                await adminService.updateGlobalPreset({
+                    id: selectedId + '-en',
+                    lang: 'en',
+                    ...formState.en,
+                    isPinned: true, isCustom: false, isDefault: false, usageCount: 0
+                });
+            }
+
             await fetchPresets();
-            showToast('Vorlage erfolgreich gespeichert', 'success');
-        } catch (error) {
-            showToast('Fehler beim Speichern', 'error');
+            showToast('Erfolgreich gespeichert', 'success');
+        } catch (error: any) {
+            console.error('Save failed:', error);
+            showToast(error.message || 'Fehler beim Speichern', 'error');
         } finally {
             setIsSaving(false);
         }

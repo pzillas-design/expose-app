@@ -149,7 +149,10 @@ export const adminService = {
             controls: preset.controls
         };
         const { error } = await supabase.from('global_presets').upsert(dbPreset);
-        if (error) throw error;
+        if (error) {
+            console.error('AdminService: updateGlobalPreset failed!', error);
+            throw error;
+        }
     },
 
     async deleteGlobalPreset(id: string): Promise<void> {
