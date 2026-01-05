@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
+import { useItemDialog } from '../ui/Dialog';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { de, enUS } from 'date-fns/locale';
@@ -170,6 +171,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
     const [isLoaded, setIsLoaded] = useState(false);
+    const { prompt, confirm } = useItemDialog();
 
     const handleMenuClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -236,13 +238,19 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                         style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
                     >
                         <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                const newName = window.prompt(t('rename_board' as any) || 'Projekt umbenennen', board.name);
+                                setMenuOpen(false); // Close menu first
+                                const newName = await prompt({
+                                    title: t('rename_board' as any) || 'Projekt umbenennen',
+                                    value: board.name,
+                                    confirmLabel: 'Speichern',
+                                    placeholder: 'Projektname'
+                                });
                                 if (newName && newName !== board.name) {
                                     onRename(newName);
                                 }
-                                setMenuOpen(false);
                             }}
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >

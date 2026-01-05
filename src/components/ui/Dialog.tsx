@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Theme, Button, Typo, Card } from './DesignSystem';
-import { X, AlertTriangle, Trash2 } from 'lucide-react';
+import { Theme, Button, Typo, Card, Input } from './DesignSystem';
+import { X, AlertTriangle, Trash2, Edit3 } from 'lucide-react';
 
 // --- Context ---
 
@@ -14,8 +14,14 @@ interface ConfirmOptions {
     variant?: 'danger' | 'primary';
 }
 
+interface PromptOptions extends ConfirmOptions {
+    value?: string;
+    placeholder?: string;
+}
+
 interface DialogContextType {
     confirm: (options: ConfirmOptions) => Promise<boolean>;
+    prompt: (options: PromptOptions) => Promise<string | null>;
 }
 
 const DialogContext = createContext<DialogContextType | undefined>(undefined);
@@ -32,10 +38,13 @@ export const useItemDialog = () => {
 
 export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [options, setOptions] = useState<ConfirmOptions>({});
-    const resolver = useRef<((value: boolean) => void) | null>(null);
+    const [mode, setMode] = useState<'confirm' | 'prompt'>('confirm');
+    const [options, setOptions] = useState<PromptOptions>({});
+    const [inputValue, setInputValue] = useState('');
+    const resolver = useRef<((value: any) => void) | null>(null);
 
     const confirm = useCallback((opts: ConfirmOptions) => {
+        setMode('confirm');
         setOptions(opts);
         setIsOpen(true);
         return new Promise<boolean>((resolve) => {
@@ -43,16 +52,30 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
     }, []);
 
+    const prompt = useCallback((opts: PromptOptions) => {
+        setMode('prompt');
+        setOptions(opts);
+        setInputValue(opts.value || '');
+        setIsOpen(true);
+        return new Promise<string | null>((resolve) => {
+            resolver.current = resolve;
+        });
+    }, []);
+
     const handleClose = (result: boolean) => {
         setIsOpen(false);
         if (resolver.current) {
-            resolver.current(result);
+            if (mode === 'prompt') {
+                resolver.current(result ? inputValue : null);
+            } else {
+                resolver.current(result);
+            }
             resolver.current = null;
         }
     };
 
     return (
-        <DialogContext.Provider value={{ confirm }}>
+        <DialogContext.Provider value={{ confirm, prompt }}>
             {children}
             {isOpen && createPortal(
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
@@ -70,6 +93,22 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mb-8 max-w-[320px]`}>
                                     {options.description}
                                 </p>
+                            )}
+
+                            {mode === 'prompt' && (
+                                <div className="w-full mb-8">
+                                    <Input
+                                        autoFocus
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        placeholder={options.placeholder}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleClose(true);
+                                            if (e.key === 'Escape') handleClose(false);
+                                        }}
+                                        className="text-center"
+                                    />
+                                </div>
                             )}
 
                             <div className="flex items-center justify-center gap-3 w-full">
