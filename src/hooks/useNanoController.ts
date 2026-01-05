@@ -243,6 +243,15 @@ export const useNanoController = () => {
         }
 
         if (img) {
+            // If it's a versioned image, we want to regenerate from its parent using the same prompt
+            if (img.parentId) {
+                const parent = allImages.find(p => p.id === img!.parentId);
+                if (parent) {
+                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '');
+                    return;
+                }
+            }
+            // Fallback: regenerate from current
             performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
         }
     }, [allImages, performGeneration]);

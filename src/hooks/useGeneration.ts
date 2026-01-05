@@ -216,10 +216,17 @@ export const useGeneration = ({
             });
 
             if (finalImage) {
+                // Add cache busting to ensure the new image loads immediately
+                const cacheBuster = `?t=${Date.now()}`;
+                const refreshedImage = {
+                    ...finalImage,
+                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
+                };
+
                 setRows(prev => {
                     return prev.map(row => ({
                         ...row,
-                        items: row.items.map(i => i.id === newId ? finalImage : i)
+                        items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     }));
                 });
 
