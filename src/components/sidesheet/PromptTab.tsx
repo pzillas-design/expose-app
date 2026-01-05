@@ -352,7 +352,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2 group">
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
+                                                            <span className="text-[11px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
@@ -371,7 +371,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         key={opt.id}
                                                                         onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
                                                                         className={`
-                                                                            px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
+                                                                            px-3 py-1.5 rounded-full text-[13px] font-medium transition-all font-mono
                                                                             ${isSelected
                                                                                 ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm scale-105 z-10'
                                                                                 : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
