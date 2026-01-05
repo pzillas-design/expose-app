@@ -66,6 +66,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         initialW: number;
         initialH: number;
         initialPoints: { x: number, y: number }[];
+        isMoved: boolean;
     } | null>(null);
 
     const currentPathRef = useRef<{ x: number, y: number }[]>([]);
@@ -195,6 +196,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             const dx = x - dragState.startX;
             const dy = y - dragState.startY;
 
+            // Threshold for movement
+            if (!dragState.isMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+                setDragState(prev => prev ? { ...prev, isMoved: true } : null);
+            }
+
             const updated = annotations.map(ann => {
                 if (ann.id !== dragState.id) return ann;
 
@@ -292,6 +298,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
         if (dragState) {
+            // If it was just a click (no move), activate this item
+            if (!dragState.isMoved) {
+                setActiveMaskId(dragState.id);
+            }
             setDragState(null);
             return;
         }
@@ -341,9 +351,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             initialY: ann.y || 0,
             initialW: ann.width || 0,
             initialH: ann.height || 0,
-            initialPoints: ann.points || []
+            initialPoints: ann.points || [],
+            isMoved: false
         });
-        setActiveMaskId(id);
+        // We don't set activeMaskId here anymore, we do it on mouseUp if it wasn't a drag
     };
 
     // --- Helpers ---
@@ -554,63 +565,85 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                     const hasText = ann.text && ann.text.trim().length > 0;
                     const isInitial = !hasText;
+                    const isStamp = ann.type === 'stamp' || ann.type === 'mask_path';
 
+                    // Specialized render for reference images (they have arrows in BOTH states)
+                    if (ann.type === 'reference_image') {
+                        return (
+                            <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${leftPct}%`, top: `${topPct}%` }}>
+                                <div style={{ transform: finalTransform }} className="transition-all duration-200">
+                                    <div className={`${isActiveItem ? OVERLAY_STYLES.ChipContainerActive : OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move`} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
+                                        <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
+                                        <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
+                                        <div className="relative shrink-0 w-6 h-6 mr-1.5"><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>
+                                        {isActiveItem ? (
+                                            <input
+                                                value={ann.text || ''}
+                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
+                                                placeholder="Describe..."
+                                                className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
+                                                autoFocus
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                            />
+                                        ) : (
+                                            <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>{ann.text || "Ref"}</span>
+                                        )}
+                                        <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}><X className="w-3 h-3" /></button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // Unified Black Chip for Stamps and Mask Labels
                     return (
                         <div
                             key={ann.id}
                             className="absolute annotation-ui z-20"
                             style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                            onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                            onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}
                         >
                             <div style={{ transform: finalTransform }} className="transition-transform duration-200">
-                                {isActiveItem ? (
-                                    <div className={OVERLAY_STYLES.ChipContainerActive}>
-                                        <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
-                                        <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-                                        {ann.referenceImage && <div className={OVERLAY_STYLES.RefThumb}><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>}
-                                        <input
-                                            value={ann.text || ''}
-                                            onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                            onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                            placeholder="Describe..."
-                                            className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
-                                            autoFocus
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                        />
-                                        {ann.type === 'mask_path' && isInitial && (
-                                            <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); updateAnnotation(ann.id, { text: 'remove this' }); setActiveMaskId(null); }} className="px-1 py-0.5 mx-1 text-[10px] font-medium whitespace-nowrap text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors">{t ? t('remove_btn') : 'Remove'}</button>
-                                        )}
-                                        <Tooltip text="Save">
-                                            <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }} className={OVERLAY_STYLES.SaveBtn}><Check className="w-3 h-3" /></button>
-                                        </Tooltip>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {ann.type === 'reference_image' ? (
-                                            <div className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-default hover:scale-105`}>
-                                                <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
-                                                <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-                                                <div className="relative shrink-0 w-6 h-6 mr-1.5"><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>
-                                                <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>{ann.text || "Ref"}</span>
-                                                <div className="flex items-center gap-0.5">
-                                                    <Tooltip text="Delete"><button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}><X className="w-3 h-3" /></button></Tooltip>
-                                                </div>
+                                <div
+                                    className={`group/chip relative font-sans font-bold text-white px-3 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-2 ring-blue-500 scale-105' : 'hover:scale-105'}`}
+                                    style={{
+                                        fontSize: Math.max(14, width * 0.02),
+                                        backgroundColor: 'rgba(0,0,0,0.85)',
+                                        lineHeight: 1.2,
+                                        minWidth: isActiveItem ? '140px' : 'auto'
+                                    }}
+                                >
+                                    {isActiveItem ? (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                value={ann.text || ''}
+                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
+                                                placeholder="Type custom text..."
+                                                className="bg-transparent border-none outline-none text-white placeholder-zinc-500 w-full p-0 focus:ring-0 h-auto font-bold"
+                                                style={{ fontSize: 'inherit' }}
+                                                autoFocus
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                            />
+                                            <div className="flex items-center gap-1.5 ml-1">
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }} className="p-1 hover:bg-white/20 rounded-full transition-colors text-white"><Check className="w-3.5 h-3.5" /></button>
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-1 hover:bg-red-500 rounded-full transition-colors text-white"><X className="w-3.5 h-3.5" /></button>
                                             </div>
-                                        ) : (
-                                            // WYSIWYG Text/Stamp
-                                            <div className="group/wysiwyg relative select-none" onClick={(e) => { e.stopPropagation(); handleEditClick(ann); }}>
-                                                <div className="font-sans font-bold text-white px-3 py-1.5 rounded-lg shadow-sm transition-transform hover:scale-105 cursor-pointer backdrop-blur-sm" style={{ fontSize: Math.max(16, width * 0.025), backgroundColor: 'rgba(0,0,0,0.85)', lineHeight: 1.2 }}>
-                                                    {ann.text || (ann.type === 'stamp' ? "📦" : "TEXT")}
-                                                </div>
-                                                <div className="absolute left-1/2 -translate-x-1/2 -top-10 flex items-center gap-1 bg-black p-1.5 rounded-full shadow-xl opacity-0 group-hover/wysiwyg:opacity-100 transition-opacity pointer-events-none group-hover/wysiwyg:pointer-events-auto z-50 ring-1 ring-white/20">
-                                                    <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); handleEditClick(ann); }} className="text-white hover:text-blue-300 p-1 rounded-full hover:bg-white/10"><Pen className="w-3.5 h-3.5" /></button>
-                                                    <div className="w-px h-3 bg-white/20 mx-1" />
-                                                    <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="text-white hover:text-red-300 p-1 rounded-full hover:bg-white/10"><X className="w-3.5 h-3.5" /></button>
-                                                </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {ann.text || (ann.type === 'stamp' ? "📦" : "TEXT")}
+
+                                            {/* Hover Actions for non-active state */}
+                                            <div className="absolute left-1/2 -translate-x-1/2 -top-10 flex items-center gap-1 bg-black p-1.5 rounded-full shadow-xl opacity-0 group-hover/chip:opacity-100 transition-opacity pointer-events-none group-hover/chip:pointer-events-auto z-50 ring-1 ring-white/20">
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }} className="text-white hover:text-blue-300 p-1 rounded-full hover:bg-white/10"><Pen className="w-3.5 h-3.5" /></button>
+                                                <div className="w-px h-3 bg-white/20 mx-1" />
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="text-white hover:text-red-300 p-1 rounded-full hover:bg-white/10"><X className="w-3.5 h-3.5" /></button>
                                             </div>
-                                        )}
-                                    </>
-                                )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );

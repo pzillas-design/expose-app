@@ -58,10 +58,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         <div className="flex flex-col h-full bg-white dark:bg-zinc-900">
             <div className="px-5 pt-6 pb-2 space-y-6 shrink-0">
                 {/* Tool Toggle */}
-                <div className="flex bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-xl">
+                <div className="grid grid-cols-2 gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-xl">
                     <button
                         onClick={() => onMaskToolChange?.('brush')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'brush'
+                        className={`flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'brush'
                             ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
                             : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                             }`}
@@ -71,29 +71,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     </button>
                     <button
                         onClick={() => onMaskToolChange?.('text')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'text'
+                        className={`flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'text'
                             ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
                             : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                             }`}
                     >
                         <Type className="w-4 h-4" />
                         <span className={Typo.Label}>Text</span>
-                    </button>
-                    <button
-                        onClick={() => onMaskToolChange?.('shape')} // Using 'shape' mode to represent "Stamps/Objects" mode now? 
-                        // Wait, user said "Objects we call Stamps". "Tools, Text, Brush, and then Objects we call Stamps".
-                        // Existing modes are 'brush' | 'text' | 'shape'. We can reuse 'shape' or just use a new visual label but same enum.
-                        // Or is 'shape' the mode for dragging shapes? 
-                        // User wants shapes IN the library. So if I click "Stamps" tab, I see the library.
-                        // So let's map "Stamps" UI button to... 'shape' mode? Or maybe keep it as a tab selector?
-                        // Let's assume 'shape' mode activates the Stamp/Object placement features.
-                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'shape'
-                            ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
-                            : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                            }`}
-                    >
-                        <Stamp className="w-4 h-4" />
-                        <span className={Typo.Label}>Stamps</span>
                     </button>
                 </div>
 
@@ -125,14 +109,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                 )}
             </div>
 
-            {/* Objects Library (Takes remaining space, visible when Stamps is selected OR just visible always below? User said "And then the tools... and then Objects we call Stamps." and "Forms we put into Objects Library". Usually libraries are large.
-                If I toggle Text, I don't need the library. If I toggle Brush, I don't need the library.
-                So Library should only be visible when "Stamps" (maskTool === 'shape') is active?
-                The user didn't explicitly say "hide library when brush active", but it makes sense for space.
-                Let's show Library ONLY when `maskTool === 'shape'`. 
-            */}
-            {maskTool === 'shape' && (
-                <div className="flex-1 min-h-0 px-4 pb-4 animate-in slide-in-from-bottom-2 duration-300">
+            {/* Stamps Section (Always Visible) */}
+            <div className="flex-1 min-h-0 flex flex-col pt-2 bg-zinc-50/30 dark:bg-zinc-950/20 border-t border-zinc-100 dark:border-zinc-800/50">
+                <div className="px-5 py-4 flex items-center gap-2">
+                    <Stamp className="w-4 h-4 text-zinc-400" />
+                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Stamps</span>
+                </div>
+                <div className="flex-1 min-h-0 px-4 pb-4 overflow-hidden">
                     <ObjectsTab
                         t={t}
                         currentLang={currentLang}
@@ -142,14 +125,9 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         onAddUserItem={onAddUserItem}
                         onDeleteUserItem={onDeleteUserItem}
                         onAddObject={onAddObject}
-                    // hide Header back button in embedded mode?
-                    // User wants "SideSheet header with Back button", so ObjectsTab header might be redundant if we have SideSheet header?
-                    // But I restored SideSheet header. ObjectsTab has an embedded header I should probably hide or simplify.
-                    // I will pass `hideHeader={true}` if I modify ObjectsTab to support it, or just let it be.
-                    // ObjectsTab has "Library | Edit | Search". This is useful. I'll keep it.
                     />
                 </div>
-            )}
+            </div>
         </div>
     );
 };
