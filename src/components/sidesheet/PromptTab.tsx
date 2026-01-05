@@ -260,7 +260,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         return (
             <div
                 className={`
-                    group/chip flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] transition-all
+                    group flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] transition-all
                     ${isEditing
                         ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100'
                         : 'bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
@@ -302,20 +302,20 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 </div>
 
                 {!isEditing && (
-                    <div className="flex items-center gap-1 px-1 opacity-0 group-hover/chip:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!isRefType && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
                                 className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-orange-500 transition-colors"
                             >
-                                <Camera className="w-3 h-3" />
+                                <Camera className="w-2.5 h-2.5" />
                             </button>
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
                             className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-red-500 transition-colors"
                         >
-                            <X className="w-3 h-3" />
+                            <X className="w-2.5 h-2.5" />
                         </button>
                     </div>
                 )}
@@ -325,73 +325,97 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     return (
         <div className="h-full relative flex flex-col overflow-hidden">
+            {/* 1. TAB HEADER - KEPT ORIGINAL */}
             {!isMulti && (
                 <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} relative`}>
-                    <button onClick={() => setActiveInternalTab('prompt')} className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'prompt' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600'}`}>{t('tab_edit')}</button>
-                    <button onClick={() => setActiveInternalTab('info')} className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'info' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600'}`}>{t('tab_info') || 'Info'}</button>
-                    <div className="absolute bottom-[-1px] h-[2px] bg-zinc-800 dark:bg-zinc-200 transition-all duration-300" style={{ width: '50%', left: activeInternalTab === 'prompt' ? '0%' : '50%' }} />
+                    <button
+                        onClick={() => setActiveInternalTab('prompt')}
+                        className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'prompt' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
+                    >
+                        {t('tab_edit')}
+                    </button>
+                    <button
+                        onClick={() => setActiveInternalTab('info')}
+                        className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'info' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
+                    >
+                        {t('tab_info') || 'Info'}
+                    </button>
+
+                    {/* Animated Underline */}
+                    <div
+                        className="absolute bottom-[-1px] h-[2px] bg-zinc-800 dark:bg-zinc-200 transition-all duration-300 ease-in-out"
+                        style={{
+                            width: '50%',
+                            left: activeInternalTab === 'prompt' ? '0%' : '50%'
+                        }}
+                    />
                 </div>
             )}
 
             <div className="flex-1 overflow-y-auto no-scrollbar">
-                <div className="min-h-full flex flex-col px-6 py-8">
+                <div className="min-h-full flex flex-col">
                     {activeInternalTab === 'prompt' || isMulti ? (
-                        <>
-                            {/* Unified Modular Input Box */}
-                            <div className={`
-                                flex flex-col mb-8 ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-sm 
-                                transition-all focus-within:ring-2 focus-within:ring-zinc-500/10 focus-within:border-zinc-400 dark:focus-within:border-zinc-500
-                            `}>
-                                <textarea
-                                    ref={textAreaRef}
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder={t('describe_changes')}
-                                    className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} leading-relaxed resize-none min-h-[100px]`}
-                                    disabled={selectedImage.isGenerating}
-                                />
+                        <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
 
-                                {(annotations.length > 0 || (activeTemplate && Object.keys(controlValues).length > 0)) && (
-                                    <div className="px-4 pb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                                        {/* Variable Chips */}
-                                        {activeTemplate && activeTemplate.controls && activeTemplate.controls.map(ctrl => {
-                                            const selectedOpts = controlValues[ctrl.id];
-                                            if (!selectedOpts || selectedOpts.length === 0 || hiddenControlIds.includes(ctrl.id)) return null;
-                                            return selectedOpts.map(val => (
-                                                <div
-                                                    key={`${ctrl.id}-${val}`}
-                                                    className="group/var flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[10px] font-mono transition-all"
-                                                >
-                                                    <span className="opacity-60">{ctrl.label}:</span>
-                                                    <span>{val}</span>
-                                                    <button
-                                                        onClick={() => handleToggleControlOption(ctrl.id, val)}
-                                                        className="opacity-0 group-hover/var:opacity-100 transition-opacity ml-0.5"
+                            {/* 2. MODULAR UNIFIED BOX - ONLY ADJUSTED AREA */}
+                            <div className="flex flex-col mb-6">
+                                <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.RadiusLg} shadow-sm transition-all focus-within:ring-2 focus-within:ring-zinc-500/10 focus-within:border-zinc-400 dark:focus-within:border-zinc-500`}>
+                                    <textarea
+                                        ref={textAreaRef}
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder={t('describe_changes')}
+                                        className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} leading-relaxed resize-none min-h-[100px]`}
+                                        disabled={selectedImage.isGenerating}
+                                    />
+
+                                    {(annotations.length > 0 || (activeTemplate && Object.keys(controlValues).length > 0)) && (
+                                        <div className="px-4 pb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                                            {/* Variable Chips */}
+                                            {activeTemplate && activeTemplate.controls && activeTemplate.controls.map(ctrl => {
+                                                const selectedOpts = controlValues[ctrl.id];
+                                                if (!selectedOpts || selectedOpts.length === 0 || hiddenControlIds.includes(ctrl.id)) return null;
+
+                                                return selectedOpts.map(val => (
+                                                    <div
+                                                        key={`${ctrl.id}-${val}`}
+                                                        className="group flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black text-[10px] font-mono leading-none"
                                                     >
-                                                        <X className="w-2.5 h-2.5" />
-                                                    </button>
-                                                </div>
-                                            ));
-                                        })}
+                                                        <span className="opacity-60">{ctrl.label}:</span>
+                                                        <span>{val}</span>
+                                                        <button
+                                                            onClick={() => handleToggleControlOption(ctrl.id, val)}
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" />
+                                                        </button>
+                                                    </div>
+                                                ));
+                                            })}
 
-                                        {/* Annotation Chips */}
-                                        {!isMulti && annotations.map((ann) => (
-                                            <AnnotationChip key={ann.id} ann={ann} />
-                                        ))}
-                                    </div>
-                                )}
+                                            {/* Annotation Chips */}
+                                            {!isMulti && annotations.map((ann) => (
+                                                <AnnotationChip key={ann.id} ann={ann} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Options Area (Inactive items from preset) */}
+                            {/* Secondary Controls (Remaining inactive options) */}
                             {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                <div className="flex flex-col gap-6 mb-8">
+                                <div className="flex flex-col gap-4 mb-8">
                                     {activeTemplate.controls
                                         .filter(c => !hiddenControlIds.includes(c.id))
                                         .map((ctrl) => (
-                                            <div key={ctrl.id} className="flex flex-col gap-2.5">
+                                            <div key={ctrl.id} className="flex flex-col gap-2">
                                                 <div className="flex items-center justify-between">
-                                                    <span className={`${Typo.Label} opacity-40`}>{ctrl.label}</span>
-                                                    <IconButton icon={<X className="w-3 h-3" />} onClick={() => handleClearControl(ctrl.id)} className="h-6 w-6 opacity-30 hover:opacity-100" />
+                                                    <span className={`${Typo.Label} opacity-50`}>{ctrl.label}</span>
+                                                    <IconButton
+                                                        icon={<X className="w-3 h-3" />}
+                                                        onClick={() => handleClearControl(ctrl.id)}
+                                                        className="h-6 w-6 opacity-40 hover:opacity-100"
+                                                    />
                                                 </div>
                                                 <div className="flex flex-wrap gap-1.5">
                                                     {ctrl.options.map((opt) => {
@@ -404,7 +428,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                     px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
                                                                     ${isSelected
                                                                         ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black'
-                                                                        : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-500 hover:text-black dark:hover:text-white border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700'}
+                                                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'}
                                                                 `}
                                                             >
                                                                 {opt.label}
@@ -417,81 +441,119 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             )}
 
-                            {/* Interaction Tools */}
-                            <div className="flex items-center justify-center gap-6 mb-6">
-                                <button onClick={onAddBrush} disabled={selectedImage.isGenerating || isMulti} className="flex items-center gap-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-30">
-                                    <Pen className="w-4 h-4" />
-                                    <span className={Typo.ButtonLabel}>{t('annotate') || 'Annotate'}</span>
-                                </button>
-                                <button onClick={() => fileInputRef.current?.click()} disabled={selectedImage.isGenerating} className="flex items-center gap-2 text-zinc-500 hover:text-black dark:hover:text-white transition-colors">
-                                    <Camera className="w-4 h-4" />
-                                    <span className={Typo.ButtonLabel}>{currentLang === 'de' ? 'Referenz' : 'Reference'}</span>
-                                </button>
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                            </div>
-
-                            {/* Generate Button Wrapper */}
-                            <div className="mb-8 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/50 border ${Theme.Colors.Border}">
-                                <div className="relative">
-                                    <button
-                                        onClick={handleDoGenerate}
-                                        disabled={selectedImage.isGenerating}
-                                        className={`
-                                            w-full flex items-center justify-center py-4 rounded-lg transition-all shadow-md
-                                            ${selectedImage.isGenerating
-                                                ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                                                : 'bg-black dark:bg-white text-white dark:text-black hover:scale-[1.01] active:scale-[0.99]'}
-                                        `}
+                            {/* 3. TOOLS BUTTONS - KEPT ORIGINAL */}
+                            <div className="flex flex-col mb-8">
+                                <div className="flex items-center justify-center gap-4">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={onAddBrush}
+                                        disabled={selectedImage.isGenerating || isMulti}
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-zinc-500'}`} />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                                        tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
-                                        <span className={`${Typo.Label} tracking-[0.15em]`}>
-                                            {selectedImage.isGenerating ? t('processing') : (isMulti ? `${t('generate_multi')} (${selectedImages.length})` : t('generate'))}
-                                        </span>
-                                    </button>
+                                        {t('annotate') || 'Annotate'}
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={selectedImage.isGenerating}
+                                        icon={<Camera className="w-3.5 h-3.5 text-zinc-500" />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                                        tooltip={t('upload_ref')}
+                                    >
+                                        {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
+                                    </Button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                    />
+                                </div>
 
-                                    {!selectedImage.isGenerating && (
-                                        <div className="absolute right-2 top-2 bottom-2 aspect-square">
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setIsModelDropdownOpen(!isModelDropdownOpen); }}
-                                                className="w-full h-full flex items-center justify-center rounded-md hover:bg-white/10 dark:hover:bg-black/5 text-white/50 dark:text-black/50 hover:text-white dark:hover:text-black transition-all"
-                                            >
-                                                <Settings2 className="w-4 h-4" />
-                                            </button>
+                                {/* 4. GENERATE BUTTON - KEPT ORIGINAL */}
+                                <div className="mt-3 relative z-20">
+                                    <div className="flex w-full">
+                                        <button
+                                            onClick={handleDoGenerate}
+                                            disabled={selectedImage.isGenerating}
+                                            className={`
+                                            relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
+                                            ${selectedImage.isGenerating
+                                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
+                                                    : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
+                                        `}
+                                        >
+                                            <span className={`flex items-center gap-2 ${Typo.Label}`}>
+                                                {selectedImage.isGenerating
+                                                    ? t('processing')
+                                                    : isMulti && selectedImages
+                                                        ? `${t('generate_multi')} (${selectedImages.length})`
+                                                        : t('generate')}
+                                            </span>
 
-                                            {isModelDropdownOpen && (
-                                                <>
-                                                    <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
-                                                    <div className="absolute bottom-full right-0 mb-4 w-72 p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-4">
-                                                        {MODES.map((m) => (
-                                                            <button
-                                                                key={m.id}
-                                                                onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
-                                                                className={`
-                                                                    w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all
-                                                                    ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                                `}
-                                                            >
-                                                                <div className="flex flex-col">
-                                                                    <span className={`${Typo.Body} font-semibold ${qualityMode === m.id ? 'text-black dark:text-white' : 'text-zinc-500'}`}>{m.label}</span>
-                                                                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest mt-0.5">{m.price} • {m.desc}</span>
-                                                                </div>
-                                                                {qualityMode === m.id && <Check className="w-4 h-4" />}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </>
+                                            {!selectedImage.isGenerating && (
+                                                <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
+                                                    <Tooltip text={t('tt_model')} side="top">
+                                                        <div
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setIsModelDropdownOpen(!isModelDropdownOpen);
+                                                            }}
+                                                            className={`
+                                                            w-full h-full flex items-center justify-center rounded
+                                                            hover:bg-black/10 transition-colors cursor-pointer
+                                                            ${isModelDropdownOpen ? 'bg-black/10' : ''}
+                                                        `}
+                                                        >
+                                                            <Settings2 className="w-4 h-4" />
+                                                        </div>
+                                                    </Tooltip>
+                                                </div>
                                             )}
-                                        </div>
+                                        </button>
+                                    </div>
+
+                                    {isModelDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
+                                            <div className={`
+                                            absolute bottom-full right-0 mb-2 w-64 p-1.5
+                                            ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
+                                            shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50
+                                        `}>
+                                                {MODES.map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
+                                                        className={`
+                                                        flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
+                                                        ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                    `}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                                {m.label}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
+                                                            </div>
+                                                        </div>
+                                                        {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             </div>
 
-                            {isMulti && (
-                                <button onClick={onDeselect} className="w-full py-3 text-zinc-400 hover:text-black dark:hover:text-white transition-colors font-medium text-xs">
-                                    {t('ctx_deselect')}
-                                </button>
-                            )}
-
-                            <div className="mt-12 opacity-80 border-t border-zinc-100 dark:border-zinc-800 pt-8">
+                            {/* 5. PRESET LIBRARY - KEPT ORIGINAL */}
+                            <div className="mt-auto">
                                 <input type="file" ref={annFileInputRef} className="hidden" accept="image/*" onChange={handleAnnFileChange} />
                                 <PresetLibrary
                                     templates={templates}
@@ -503,51 +565,59 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     currentLang={currentLang}
                                 />
                             </div>
-                        </>
+                        </div>
                     ) : (
                         /* Info Tab Content */
-                        <div className="flex-1 flex flex-col gap-10">
+                        <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
                             {selectedImage.generationPrompt && (
-                                <div className="group flex flex-col gap-4">
+                                <div className="flex flex-col gap-3 group relative">
                                     <div className="flex items-center justify-between">
-                                        <span className={Typo.Label}>Prompt</span>
-                                        <button
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(selectedImage.generationPrompt || '');
-                                                showToast(t('copied_to_clipboard') || 'Copied', 'success');
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-400"
-                                        >
-                                            <Copy className="w-3.5 h-3.5" />
-                                        </button>
+                                        <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                            Prompt
+                                        </span>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <IconButton
+                                                icon={<Copy className="w-3.5 h-3.5" />}
+                                                tooltip={t('copy')}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (selectedImage.generationPrompt) {
+                                                        navigator.clipboard.writeText(selectedImage.generationPrompt);
+                                                        showToast(t('copied_to_clipboard') || 'Copied', 'success');
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <p className="font-mono text-xs leading-relaxed text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
+                                    <p className={`font-mono text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed`}>
                                         {selectedImage.generationPrompt}
                                     </p>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-y-8 gap-x-12">
-                                <div className="flex flex-col gap-2">
-                                    <span className={Typo.Label}>{t('resolution')}</span>
-                                    <span className={Typo.Mono}>{selectedImage.realWidth && selectedImage.realHeight ? `${selectedImage.realWidth} × ${selectedImage.realHeight}` : '1024 × 1024'}</span>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('resolution')}</span>
+                                    <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                        {selectedImage.realWidth && selectedImage.realHeight ? `${selectedImage.realWidth} × ${selectedImage.realHeight}px` : '1024 × 1024px'}
+                                    </span>
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <span className={Typo.Label}>{t('created_at')}</span>
-                                    <span className={Typo.Mono}>{selectedImage.createdAt ? new Date(selectedImage.createdAt).toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}</span>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <span className={Typo.Label}>{t('model')}</span>
-                                    <span className={Typo.Body}>{selectedImage.quality || 'Standard'}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created_at')}</span>
+                                    <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                        {selectedImage.createdAt ? new Date(selectedImage.createdAt).toLocaleDateString(currentLang, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                    </span>
                                 </div>
                             </div>
 
                             {selectedImage.annotations?.some(ann => ann.referenceImage) && (
-                                <div className="flex flex-col gap-4 pt-4">
-                                    <span className={Typo.Label}>{t('reference_images')}</span>
-                                    <div className="grid grid-cols-4 gap-3">
+                                <div className="flex flex-col gap-3">
+                                    <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                        {t('reference_images')}
+                                    </span>
+                                    <div className="grid grid-cols-4 gap-2">
                                         {selectedImage.annotations.filter(ann => ann.referenceImage).map((ann, idx) => (
-                                            <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-zinc-100 dark:border-zinc-800 grayscale hover:grayscale-0 transition-all duration-500 scale-95 hover:scale-100">
+                                            <div key={idx} className="aspect-square rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-800">
                                                 <img src={ann.referenceImage} className="w-full h-full object-cover" alt="Ref" />
                                             </div>
                                         ))}
@@ -555,15 +625,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             )}
 
-                            <div className="flex flex-col gap-3 mt-4">
-                                <Button variant="secondary" onClick={() => onGenerateMore(selectedImage.id)} className="h-14 font-bold border-none bg-zinc-100 dark:bg-zinc-800">
-                                    <RotateCcw className="w-4 h-4" />
-                                    {t('ctx_create_variations')}
+                            <div className="flex flex-col gap-2">
+                                <Button variant="secondary" onClick={() => onGenerateMore(selectedImage.id)} className="justify-start px-4 h-11 gap-2">
+                                    <RotateCcw className="w-4 h-4 text-zinc-400" />
+                                    <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>{t('ctx_create_variations')}</span>
                                 </Button>
                                 {selectedImage.parentId && (
-                                    <Button variant="ghost" onClick={() => onNavigateParent(selectedImage.parentId!)}>
-                                        <ArrowLeft className="w-4 h-4" />
-                                        {currentLang === 'de' ? 'Original anzeigen' : 'View Original'}
+                                    <Button variant="secondary" onClick={() => onNavigateParent(selectedImage.parentId!)} className="justify-start px-4 h-11 gap-2">
+                                        <ArrowLeft className="w-4 h-4 text-zinc-400" />
+                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>{currentLang === 'de' ? 'Zum Original' : 'Back to Original'}</span>
                                     </Button>
                                 )}
                             </div>
