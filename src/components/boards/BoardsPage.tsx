@@ -19,13 +19,27 @@ const getInitials = (name?: string, email?: string) => {
     return '?';
 };
 
-function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], thumbnail?: string, itemCount?: number }) {
+function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: string[], thumbnail?: string, itemCount?: number, onLoaded: () => void }) {
     const displayImages = images || [];
     const total = itemCount || displayImages.length;
+    const [loadedCount, setLoadedCount] = React.useState(0);
+    const totalToLoad = displayImages.length > 0 ? (total > 4 ? 3 : displayImages.length) : (thumbnail ? 1 : 0);
+
+    React.useEffect(() => {
+        if (totalToLoad === 0) onLoaded();
+    }, [totalToLoad]);
+
+    const handleLoad = () => {
+        setLoadedCount(prev => {
+            const next = prev + 1;
+            if (next >= totalToLoad) onLoaded();
+            return next;
+        });
+    };
 
     if (displayImages.length === 0) {
         if (thumbnail) {
-            return <img src={thumbnail} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out" />;
+            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-cover" />;
         }
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
@@ -34,32 +48,21 @@ function GridThumbnail({ images, thumbnail, itemCount }: { images?: string[], th
         );
     }
 
-    // Fixed 2x2 Grid Layout
     const showPlus = total > 4;
     const itemsToShow = displayImages.slice(0, showPlus ? 3 : 4);
 
     return (
-        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50 transition-transform duration-700 ease-out">
-            {/* Slot 1 */}
-            <div className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                {itemsToShow[0] && <img src={itemsToShow[0]} className="w-full h-full object-cover" />}
-            </div>
-            {/* Slot 2 */}
-            <div className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                {itemsToShow[1] && <img src={itemsToShow[1]} className="w-full h-full object-cover" />}
-            </div>
-            {/* Slot 3 */}
-            <div className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                {itemsToShow[2] && <img src={itemsToShow[2]} className="w-full h-full object-cover" />}
-            </div>
-            {/* Slot 4 / Plus */}
-            <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center overflow-hidden">
-                {showPlus ? (
+        <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50">
+            {itemsToShow.map((src, i) => (
+                <div key={i} className="relative bg-zinc-50 dark:bg-zinc-900/30">
+                    <img src={src} onLoad={handleLoad} className="w-full h-full object-cover" />
+                </div>
+            ))}
+            {showPlus && (
+                <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center overflow-hidden">
                     <span className="text-sm font-bold text-zinc-400 dark:text-zinc-600">+{total - 3}</span>
-                ) : (
-                    itemsToShow[3] && <img src={itemsToShow[3]} className="w-full h-full object-cover" />
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -165,6 +168,7 @@ interface BoardCardProps {
 function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const handleMenuClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -180,8 +184,20 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                 onClick={onSelect}
             >
                 {/* Image Grid Section */}
-                <div className="flex-[2.5] relative bg-zinc-50 dark:bg-zinc-900 overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
-                    <GridThumbnail images={board.previewImages} thumbnail={board.thumbnail} itemCount={board.itemCount} />
+                <div className="flex-[2.5] relative bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
+                    {!isLoaded && (
+                        <div className="absolute inset-0 z-10 bg-zinc-100 dark:bg-zinc-800 animate-pulse overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
+                        </div>
+                    )}
+                    <div className={`transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}>
+                        <GridThumbnail
+                            images={board.previewImages}
+                            thumbnail={board.thumbnail}
+                            itemCount={board.itemCount}
+                            onLoaded={() => setIsLoaded(true)}
+                        />
+                    </div>
                 </div>
 
                 {/* Info Section */}

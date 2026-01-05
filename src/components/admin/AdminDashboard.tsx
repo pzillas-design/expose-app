@@ -46,7 +46,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
         {/* Centered Premium Container */}
         <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-8 lg:py-12">
 
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
+          <div className="flex flex-col lg:flex-row gap-8 items-stretch">
 
             {/* Sidebar - Stuck to top when scrolling content */}
             <div className="w-full lg:w-72 lg:sticky lg:top-8">
@@ -57,7 +57,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
             {/* Main Content Area */}
             <div className="flex-1 w-full min-w-0">
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm h-[calc(100vh-180px)] flex flex-col">
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm h-[calc(100vh-140px)] flex flex-col">
                 {activeTab === 'users' && <AdminUsersView t={t} />}
                 {activeTab === 'jobs' && <AdminJobsView t={t} />}
                 {activeTab === 'stats' && <AdminStatsView t={t} />}

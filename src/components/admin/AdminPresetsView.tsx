@@ -119,17 +119,18 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         const langMatch = (p.lang || 'de') === activeLang;
         if (!langMatch) return false;
 
+        const pTags = Array.isArray(p.tags) ? p.tags : [];
         const matchesSearch =
             (p.title || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
             (p.prompt || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
-            (p.tags || []).some(t => t && t.toLowerCase().includes((presetSearch || "").toLowerCase()));
+            pTags.some(t => t && typeof t === 'string' && t.toLowerCase().includes((presetSearch || "").toLowerCase()));
 
         let matchesCategory = true;
         if (selectedTagId) {
             const tag = availableTags.find(t => t.id === selectedTagId);
             if (tag) {
                 const labelToMatch = activeLang === 'de' ? tag.de : tag.en;
-                matchesCategory = (p.tags || []).includes(labelToMatch);
+                matchesCategory = pTags.includes(labelToMatch);
             }
         }
 
