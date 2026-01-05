@@ -329,26 +329,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             </div>
 
                             <div className="flex flex-col mb-5"> {/* Reduced space above generate button */}
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         variant="secondary"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-blue-500 dark:text-blue-400'}`} />}
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`} />}
                                         className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : t('tt_mask')}
+                                        tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
-                                        {t('mask_btn')}
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={onAddObject}
-                                        disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Armchair className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-purple-500 dark:text-purple-400'}`} />}
-                                        className="px-2 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : t('tt_objects')}
-                                    >
-                                        {t('object_btn')}
+                                        {t('annotate') || 'Annotate'}
                                     </Button>
                                     <Button
                                         variant="secondary"
