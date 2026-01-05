@@ -18,6 +18,7 @@ export interface AnnotationObject {
   itemId?: string;
   variantIndex?: number;
   color: string;
+  emoji?: string; // New: editable emoji for the object
   referenceImage?: string;
   _tempSrc?: string; // Client-side preview for paths
   createdAt?: number; // DB Prep

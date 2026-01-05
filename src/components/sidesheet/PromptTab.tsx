@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -331,7 +331,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 </div>
                                                             ) : (
                                                                 <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                    {ann.type === 'stamp' ? <Square className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
+                                                                    {ann.type === 'stamp' ? (
+                                                                        <span className="text-sm leading-none opacity-80">{ann.emoji || '💬'}</span>
+                                                                    ) : ann.type === 'shape' ? (
+                                                                        ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
+                                                                            ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
+                                                                                <Square className="w-3.5 h-3.5" />
+                                                                    ) : (
+                                                                        <Pen className="w-3.5 h-3.5" />
+                                                                    )}
                                                                 </div>
                                                             )}
 

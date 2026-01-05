@@ -5,7 +5,7 @@ import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
 
 interface ObjectsTabProps {
-    onAddObject?: (label: string, itemId: string) => void;
+    onAddObject?: (label: string, itemId: string, icon?: string) => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
     library: LibraryCategory[];
@@ -134,7 +134,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                             {allItems.map((item, idx) => (
                                 <div
                                     key={`${item.id}-${idx}`}
-                                    onClick={() => !isEditMode && onAddObject?.(item.label, item.id)}
+                                    onClick={() => !isEditMode && onAddObject?.(item.label, item.id, item.icon)}
                                     className={`group/item relative flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 select-none transition-all ${isEditMode ? 'cursor-default' : 'cursor-pointer active:scale-[0.98]'}`}
                                 >
                                     <span className="w-6 shrink-0 flex items-center justify-center">

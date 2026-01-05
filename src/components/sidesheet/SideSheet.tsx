@@ -230,7 +230,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         setPendingFileName('');
     };
 
-    const handleAddObjectCenter = (label: string, itemId: string) => {
+    const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
 
@@ -241,20 +241,23 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             const cy = selectedImage.height / 2;
             const size = Math.min(selectedImage.width, selectedImage.height) * 0.3;
 
+            // Suggested default emojis for shapes
+            const shapeEmoji = shapeType === 'rect' ? '📦' : shapeType === 'circle' ? '⭕' : '📏';
+
             let newShape: AnnotationObject;
             if (shapeType === 'line') {
                 newShape = {
                     id: generateId(), type: 'shape', shapeType: 'line',
                     x: cx - size / 2, y: cy, width: size, height: size,
                     points: [{ x: cx - size / 2, y: cy }, { x: cx + size / 2, y: cy }],
-                    strokeWidth: 4, color: '#fff', createdAt: Date.now()
+                    strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
                 };
             } else {
                 newShape = {
                     id: generateId(), type: 'shape', shapeType: shapeType,
                     x: cx - size / 2, y: cy - size / 2, width: size, height: size,
                     points: [],
-                    strokeWidth: 4, color: '#fff', createdAt: Date.now()
+                    strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
                 };
             }
             onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
@@ -272,6 +275,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 strokeWidth: 0,
                 color: '#ef4444', // Red-500
                 text: 'Remove',
+                emoji: '🗑️',
                 itemId: itemId,
                 createdAt: Date.now()
             };
@@ -288,6 +292,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             strokeWidth: 0,
             color: '#fff',
             text: label,
+            emoji: icon || '💬', // Use provided icon or default to speech bubble as requested
             itemId: itemId,
             variantIndex: 0,
             createdAt: Date.now()

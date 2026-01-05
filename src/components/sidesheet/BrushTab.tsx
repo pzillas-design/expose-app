@@ -21,7 +21,7 @@ interface BrushTabProps {
     onDeleteUserCategory: (id: string) => void;
     onAddUserItem: (catId: string, label: string, icon?: string) => Promise<void>;
     onDeleteUserItem: (catId: string, itemId: string) => void;
-    onAddObject: (label: string, itemId: string) => void;
+    onAddObject: (label: string, itemId: string, icon?: string) => void;
     onBack?: () => void;
 }
 
