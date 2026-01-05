@@ -190,13 +190,29 @@ export const imageService = {
 
         const { w: genWidth, h: genHeight } = await getImageDims(result.src);
 
+        const logicalWidth = (genWidth / genHeight) * 512;
+        const logicalHeight = 512;
+
+        // NEW: Sync the DB if the returned dimensions differ from the placeholder
+        // This prevents "cropping" on reload when the placeholder had the wrong aspect ratio
+        if (Math.abs(logicalWidth - sourceImage.width) > 1) {
+            console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
+            this.updateImage(newId, {
+                width: logicalWidth,
+                height: logicalHeight,
+                realWidth: genWidth,
+                realHeight: genHeight
+            } as any, sourceImage.userId || (sourceImage as any).user_id)
+                .catch(e => console.warn("Failed to sync natural dimensions to DB:", e));
+        }
+
         return {
             ...sourceImage,
             id: newId,
             src: result.src, // Use the optimized 'src' (URL or base64)
             storage_path: result.storage_path,
             thumbSrc: undefined,
-            originalSrc: sourceImage.src,
+            originalSrc: result.src,
 
             isGenerating: false,
             generationStartTime: undefined,
@@ -214,8 +230,8 @@ export const imageService = {
             maskSrc: undefined,
             // Keep canvas dimensions consistent with the row height to prevent "huge" images
             // while storing the actual high-res pixels in realWidth/Height
-            width: (genWidth / genHeight) * 512,
-            height: 512,
+            width: logicalWidth,
+            height: logicalHeight,
             realWidth: genWidth,
             realHeight: genHeight,
             boardId: boardId,
@@ -283,6 +299,7 @@ export const imageService = {
             annotations: resolvedAnns,
             parentId: record.parent_id,
             quality: record.generation_params?.quality || 'pro-1k',
+            userId: record.user_id,
             createdAt: new Date(record.created_at).getTime(),
             updatedAt: new Date(record.updated_at).getTime()
         };

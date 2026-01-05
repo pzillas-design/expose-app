@@ -54,6 +54,7 @@ export interface CanvasImage {
   estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
   boardId?: string; // Link to board
+  userId?: string; // Owner ID (mapped from DB user_id)
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep
 }

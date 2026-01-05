@@ -82,7 +82,7 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
     }
 };
 
-const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string }) => {
+const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void }) => {
     // Start with maskSrc (if editing) or thumbSrc (if available) or nothing (to avoid HD flash)
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || null);
     const [isHighRes, setIsHighRes] = useState(zoom >= 1.0);
@@ -131,7 +131,13 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             src={currentSrc || ''}
             alt={title}
             loading="lazy"
-            className="w-full h-full object-cover pointer-events-none block"
+            onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth && img.naturalHeight) {
+                    onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
+                }
+            }}
+            className="w-full h-full object-contain pointer-events-none block"
             style={{
                 imageRendering: zoom > 1.5 ? 'pixelated' : 'auto',
                 filter: !currentSrc ? 'blur(10px)' : 'none',
@@ -160,6 +166,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     t
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
+
+    const displayWidth = naturalAspectRatio ? naturalAspectRatio * image.height : image.width;
+    const finalWidth = displayWidth * zoom;
 
     const handleDownload = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -206,7 +216,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 : (!hasAnySelection ? 'z-20' : 'z-0 hover:opacity-100')
                 } ${hasAnySelection && !isSelected ? 'opacity-70' : 'opacity-100'}`}
             style={{
-                width: image.width * zoom,
+                width: finalWidth,
                 scrollSnapStop: 'always',
             }}
         >
@@ -267,6 +277,13 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     zoom={zoom}
                     isSelected={isSelected}
                     title={image.title}
+                    onDimensionsDetected={(w, h) => {
+                        // Calculate logical width based on fixed height (512)
+                        const logicalW = (w / h) * 512;
+                        if (Math.abs(logicalW - image.width) > 1) {
+                            setNaturalAspectRatio(w / h);
+                        }
+                    }}
                 />
 
                 {/* Editor Overlay */}
