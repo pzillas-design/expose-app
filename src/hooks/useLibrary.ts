@@ -19,35 +19,31 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
 
     // Combine System + Global + User Library
     const fullLibrary = useMemo(() => {
-        const merged: Record<string, LibraryCategory> = {};
+        // Combine System + Global + User Library
+        const mergedItems: Record<string, LibraryItem> = {};
 
-        // 1. System Categories (Base)
-        LIBRARY_CATEGORIES.forEach(c => {
-            if (c.lang === currentLang) {
-                merged[c.id] = { ...c, items: [...c.items] };
+        // 1. System & Global items
+        [...LIBRARY_CATEGORIES, ...globalLibrary].forEach(cat => {
+            if (cat.lang === currentLang || !cat.lang) {
+                cat.items.forEach(item => {
+                    mergedItems[item.id] = { ...item };
+                });
             }
         });
 
-        // 2. Global Categories (from admin)
-        globalLibrary.forEach(c => {
-            if (merged[c.id]) {
-                merged[c.id].items = [...merged[c.id].items, ...c.items];
-            } else {
-                merged[c.id] = { ...c };
-            }
+        // 2. User items (can overwrite or add)
+        userLibrary.forEach(cat => {
+            cat.items.forEach(item => {
+                mergedItems[item.id] = { ...item, isUserCreated: true };
+            });
         });
 
-        // 3. User Categories (Custom items)
-        userLibrary.forEach(c => {
-            if (merged[c.id]) {
-                merged[c.id].items = [...merged[c.id].items, ...c.items];
-                merged[c.id].isUserCreated = merged[c.id].isUserCreated || c.isUserCreated;
-            } else {
-                merged[c.id] = { ...c };
-            }
-        });
-
-        return Object.values(merged);
+        // Convert back to a single flat category structure for the UI
+        return [{
+            id: 'all',
+            label: 'All',
+            items: Object.values(mergedItems)
+        }];
     }, [globalLibrary, userLibrary, currentLang]);
 
     // Load User Library (Supabase first, then local fallback)
