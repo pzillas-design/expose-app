@@ -343,6 +343,49 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             })}
                                         </div>
                                     )}
+
+                                    {/* VARIABLE OPTIONS (Now INSIDE the box) */}
+                                    {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
+                                        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-zinc-100 dark:border-zinc-800/50 pt-4">
+                                            {activeTemplate.controls
+                                                .filter(c => !hiddenControlIds.includes(c.id))
+                                                .map((ctrl) => (
+                                                    <div key={ctrl.id} className="flex flex-col gap-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 uppercase`}>
+                                                                {ctrl.label}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleClearControl(ctrl.id)}
+                                                                className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                                title="Reset"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {ctrl.options.map((opt) => {
+                                                                const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                        className={`
+                                                                            px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
+                                                                            ${isSelected
+                                                                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md scale-105 z-10'
+                                                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/80'}
+                                                                        `}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* ANNOTATIONS LIST (Outside) */}
@@ -437,47 +480,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </div>
                                 )}
 
-                                {/* VARIABLE OPTIONS (Outside) */}
-                                {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                    <div className="flex flex-col gap-4">
-                                        {activeTemplate.controls
-                                            .filter(c => !hiddenControlIds.includes(c.id))
-                                            .map((ctrl) => (
-                                                <div key={ctrl.id} className="flex flex-col gap-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500 uppercase`}>
-                                                            {ctrl.label}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => handleClearControl(ctrl.id)}
-                                                            className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                                                        >
-                                                            Reset
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {ctrl.options.map((opt) => {
-                                                            const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                            return (
-                                                                <button
-                                                                    key={opt.id}
-                                                                    onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                    className={`
-                                                                        px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
-                                                                        ${isSelected
-                                                                            ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md scale-105 z-10'
-                                                                            : 'bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700/80'}
-                                                                    `}
-                                                                >
-                                                                    {opt.label}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                    </div>
-                                )}
+
                             </div>
 
                             <div className="flex flex-col mb-8">
