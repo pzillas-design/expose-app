@@ -35,55 +35,84 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject, onBack
 }) => {
 
-    // Inject "Utilities" category (Forms + Remove)
-    const extendedLibrary = useMemo(() => {
-        const utilCategory: LibraryCategory = {
-            id: 'utilities',
-            label: 'Utilities', // Or 'Helfer', but user said "Utilities ist vielleicht die erste Kategorie"
-            lang: 'de',
-            isUserCreated: false,
-            items: [
-                { id: 'shape:rect', label: currentLang === 'de' ? 'Rechteck' : 'Rectangle', icon: 'Square' as any }, // We'll handle icon logic in ObjectsTab or assume emoji for now, but user wants shapes.
-                { id: 'shape:circle', label: currentLang === 'de' ? 'Kreis' : 'Circle', icon: 'Circle' as any },
-                { id: 'shape:line', label: currentLang === 'de' ? 'Linie' : 'Line', icon: 'Minus' as any },
-                { id: 'util:remove', label: 'Remove', icon: 'Eraser' as any } // User said: "Stamp called Remove... Utilities... Polygon-Forms included"
-            ]
-        };
-        // Ensure we don't duplicate if it already exists (though it shouldn't here)
-        return [utilCategory, ...library];
+    // Simplified library for ObjectsTab (Basics + User Items)
+    const objectLibrary = useMemo(() => {
+        const basicCategory = library.find(c => c.id === 'basics');
+        const userCats = library.filter(c => c.isUserCreated);
+
+        const filtered: LibraryCategory[] = [];
+        if (basicCategory) {
+            filtered.push({
+                ...basicCategory,
+                label: currentLang === 'de' ? 'Objekte' : 'Objects'
+            });
+        }
+        // Include user categories but merge them or keep as is? User said "nur noch einzelne stamps" 
+        // but we keep their existing categories for now, just don't allow NEW ones in ObjectsTab.
+        return [...filtered, ...userCats];
     }, [library, currentLang]);
 
+    const UtilityButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
+        <button
+            onClick={onClick}
+            className="flex flex-col items-center justify-center gap-2 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 transition-all group active:scale-95"
+        >
+            <Icon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <span className={`${Typo.Micro} font-medium`}>{label}</span>
+        </button>
+    );
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-zinc-900">
-            <div className="px-5 pt-6 pb-2 space-y-6 shrink-0">
-                {/* Tool Toggle */}
-                <div className="grid grid-cols-2 gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-xl">
-                    <button
-                        onClick={() => onMaskToolChange?.('brush')}
-                        className={`flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'brush'
-                            ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
-                            : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                            }`}
-                    >
-                        <Pen className="w-4 h-4" />
-                        <span className={Typo.Label}>Pinsel</span>
-                    </button>
-                    <button
-                        onClick={() => onMaskToolChange?.('text')}
-                        className={`flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all ${maskTool === 'text'
-                            ? 'bg-white dark:bg-zinc-700 shadow-sm text-black dark:text-white'
-                            : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                            }`}
-                    >
-                        <Type className="w-4 h-4" />
-                        <span className={Typo.Label}>Text</span>
-                    </button>
+            <div className="px-5 pt-6 pb-2 space-y-6 shrink-0 overflow-y-auto no-scrollbar">
+                {/* Core Tools */}
+                <div className="space-y-2">
+                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px]`}>Werkzeuge</span>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={() => onMaskToolChange?.('brush')}
+                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all ${maskTool === 'brush'
+                                ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-md'
+                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Pen className="w-4 h-4" />
+                                <span className={Typo.Label}>Pinsel</span>
+                            </div>
+                            {maskTool === 'brush' && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-black" />}
+                        </button>
+
+                        <button
+                            onClick={() => onMaskToolChange?.('text')}
+                            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all ${maskTool === 'text'
+                                ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white shadow-md'
+                                : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-800 text-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Type className="w-4 h-4" />
+                                <span className={Typo.Label}>Text</span>
+                            </div>
+                            {maskTool === 'text' && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-black" />}
+                        </button>
+                    </div>
                 </div>
 
-                {/* Brush Size - On Brush */}
+                {/* Utilities Section */}
+                <div className="space-y-2">
+                    <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px]`}>Utilities</span>
+                    <div className="grid grid-cols-4 gap-2">
+                        <UtilityButton icon={Square} label="Box" onClick={() => onAddObject('Box', 'shape:rect')} />
+                        <UtilityButton icon={Circle} label="Kreis" onClick={() => onAddObject('Kreis', 'shape:circle')} />
+                        <UtilityButton icon={Minus} label="Linie" onClick={() => onAddObject('Linie', 'shape:line')} />
+                        <UtilityButton icon={Eraser} label="Eraser" onClick={() => onAddObject('Remove', 'util:remove')} />
+                    </div>
+                </div>
+
+                {/* Brush Settings */}
                 {maskTool === 'brush' && (
-                    <div className="space-y-4 animate-in fade-in duration-300">
+                    <div className="space-y-4 animate-in fade-in duration-300 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
                         <div className="flex items-center justify-between">
                             <label className={Typo.Label}>{t('brush_size')}</label>
                             <span className={Typo.Mono}>{brushSize}px</span>
@@ -97,21 +126,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className="w-full h-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-sm [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:transition-transform"
                             />
                         </div>
-                        <div className={`pt-2 ${Typo.Micro} text-zinc-500 text-center leading-relaxed flex items-center justify-center`}>
-                            {t('brush_hint')}
-                        </div>
-                    </div>
-                )}
-                {maskTool === 'text' && (
-                    <div className={`px-2 py-2 ${Typo.Micro} text-zinc-500 text-center leading-relaxed flex items-center justify-center`}>
-                        {t('text_hint') || "Click on the image to place text."}
                     </div>
                 )}
             </div>
 
-            {/* Stamps Section (Always Visible) */}
+            {/* Stamps Section */}
             <div className="flex-1 min-h-0 flex flex-col pt-2 bg-zinc-50/30 dark:bg-zinc-950/20 border-t border-zinc-100 dark:border-zinc-800/50">
-                <div className="px-5 py-4 flex items-center gap-2">
+                <div className="px-5 py-3 flex items-center gap-2">
                     <Stamp className="w-4 h-4 text-zinc-400" />
                     <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Stamps</span>
                 </div>
@@ -119,7 +140,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <ObjectsTab
                         t={t}
                         currentLang={currentLang}
-                        library={extendedLibrary}
+                        library={objectLibrary}
                         onAddUserCategory={onAddUserCategory}
                         onDeleteUserCategory={onDeleteUserCategory}
                         onAddUserItem={onAddUserItem}

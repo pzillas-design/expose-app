@@ -606,7 +606,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         >
                             <div style={{ transform: finalTransform }} className="transition-transform duration-200">
                                 <div
-                                    className={`group/chip relative font-sans font-bold text-white px-3 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-2 ring-blue-500 scale-105' : 'hover:scale-105'}`}
+                                    className={`group/chip relative font-sans font-bold text-white px-3 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 scale-105' : 'hover:scale-105'}`}
                                     style={{
                                         fontSize: Math.max(14, width * 0.02),
                                         backgroundColor: 'rgba(0,0,0,0.85)',
@@ -620,15 +620,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 value={ann.text || ''}
                                                 onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                                placeholder="Type custom text..."
+                                                placeholder=""
                                                 className="bg-transparent border-none outline-none text-white placeholder-zinc-500 p-0 focus:ring-0 h-auto font-bold"
                                                 style={{ fontSize: 'inherit', width: `${Math.max(4, (ann.text?.length || 0) + 1)}ch` }}
                                                 autoFocus
                                                 onMouseDown={(e) => e.stopPropagation()}
                                             />
                                             <div className="flex items-center gap-1.5 ml-1">
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }} className="p-1 hover:bg-white/20 rounded-full transition-colors text-white"><Check className="w-3.5 h-3.5" /></button>
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-1 hover:bg-red-500 rounded-full transition-colors text-white"><X className="w-3.5 h-3.5" /></button>
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }} className="p-1 hover:bg-white/20 rounded-md transition-colors text-white"><Check className="w-3.5 h-3.5" /></button>
+                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-1 hover:bg-red-500 rounded-md transition-colors text-white"><X className="w-3.5 h-3.5" /></button>
                                             </div>
                                         </div>
                                     ) : (
