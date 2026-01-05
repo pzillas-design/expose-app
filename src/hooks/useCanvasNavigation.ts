@@ -271,19 +271,19 @@ export const useCanvasNavigation = ({
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     setIsZooming(false);
-                }, 600);
+                }, 400);
 
                 if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
 
                 // Calculate new zoom
                 const delta = -e.deltaY;
-                const factor = Math.exp(delta * 0.008);
+                const factor = Math.exp(delta * 0.006); // Slightly slower for more control
                 const targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
 
-                // Zoom-to-Cursor Logic (Stable Centering)
+                // Central Viewport Zoom Logic
                 const rect = container.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
 
                 const scrollLeft = container.scrollLeft;
                 const scrollTop = container.scrollTop;
@@ -291,9 +291,9 @@ export const useCanvasNavigation = ({
                 const padX = window.innerWidth / 2;
                 const padY = window.innerHeight / 2;
 
-                // Point on canvas under the mouse
-                const contentX = (scrollLeft + mouseX - padX) / zoom;
-                const contentY = (scrollTop + mouseY - padY) / zoom;
+                // Point on canvas under the center of the viewport
+                const contentX = (scrollLeft + centerX - padX) / zoom;
+                const contentY = (scrollTop + centerY - padY) / zoom;
 
                 try {
                     flushSync(() => {
@@ -303,8 +303,8 @@ export const useCanvasNavigation = ({
                     setZoom(targetZoom);
                 }
 
-                container.scrollLeft = (padX + (contentX * targetZoom)) - mouseX;
-                container.scrollTop = (padY + (contentY * targetZoom)) - mouseY;
+                container.scrollLeft = (padX + (contentX * targetZoom)) - centerX;
+                container.scrollTop = (padY + (contentY * targetZoom)) - centerY;
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
