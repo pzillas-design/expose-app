@@ -217,7 +217,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 
     const availableTags = useMemo(() => {
         const set = new Set(DEFAULT_TAGS);
-        existingTemplates.forEach(t => t.tags.forEach(tag => set.add(tag)));
+        existingTemplates.forEach(t => (t.tags || []).forEach(tag => set.add(tag)));
         return Array.from(set).sort();
     }, [existingTemplates]);
 

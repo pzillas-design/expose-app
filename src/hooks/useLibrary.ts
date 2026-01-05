@@ -1,24 +1,23 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { LibraryCategory, LibraryItem } from '../types';
 import { adminService } from '../services/adminService';
+import { userService } from '../services/userService';
 import { LIBRARY_CATEGORIES } from '../data/libraryItems';
 import { generateId } from '../utils/ids';
 
 interface UseLibraryProps {
     lang: 'de' | 'en' | 'auto';
     currentLang: 'de' | 'en';
+    user?: any;
 }
 
-export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
-    // --- User Library State (Persisted) ---
-    const [userLibrary, setUserLibrary] = useState<LibraryCategory[]>(() => {
-        const saved = localStorage.getItem('nano_user_library');
-        return saved ? JSON.parse(saved) : [];
-    });
+export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
+    // --- User Library State ---
+    const [userLibrary, setUserLibrary] = useState<LibraryCategory[]>([]);
     const [globalLibrary, setGlobalLibrary] = useState<LibraryCategory[]>([]);
 
     // Combine System + Global + User Library
-    // We merge them by ID so that user items can be added to system categories
     const fullLibrary = useMemo(() => {
         const merged: Record<string, LibraryCategory> = {};
 
@@ -29,7 +28,7 @@ export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
             }
         });
 
-        // 2. Global Categories (overwrite/merge)
+        // 2. Global Categories (from admin)
         globalLibrary.forEach(c => {
             if (merged[c.id]) {
                 merged[c.id].items = [...merged[c.id].items, ...c.items];
@@ -38,12 +37,10 @@ export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
             }
         });
 
-        // 3. User Categories (merge items into existing or add new)
+        // 3. User Categories (Custom items)
         userLibrary.forEach(c => {
             if (merged[c.id]) {
-                // If it's a known category, merge the items
                 merged[c.id].items = [...merged[c.id].items, ...c.items];
-                // Mark as having user items for UI if needed
                 merged[c.id].isUserCreated = merged[c.id].isUserCreated || c.isUserCreated;
             } else {
                 merged[c.id] = { ...c };
@@ -53,10 +50,42 @@ export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
         return Object.values(merged);
     }, [globalLibrary, userLibrary, currentLang]);
 
-    // Persist User Library
+    // Load User Library (Supabase first, then local fallback)
     useEffect(() => {
-        localStorage.setItem('nano_user_library', JSON.stringify(userLibrary));
-    }, [userLibrary]);
+        const loadUserLibrary = async () => {
+            if (user && user.id !== 'guest') {
+                try {
+                    const items = await userService.getUserObjects(user.id);
+                    if (items.length > 0) {
+                        setUserLibrary([{
+                            id: 'basics',
+                            label: 'Custom',
+                            items,
+                            isUserCreated: true
+                        }]);
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Failed to load user objects from DB", err);
+                }
+            }
+
+            // Fallback to local storage for guests or if DB is empty
+            const saved = localStorage.getItem('nano_user_library');
+            if (saved) {
+                setUserLibrary(JSON.parse(saved));
+            }
+        };
+
+        loadUserLibrary();
+    }, [user]);
+
+    // Persist User Library (Local fallback only)
+    useEffect(() => {
+        if (!user || user.id === 'guest') {
+            localStorage.setItem('nano_user_library', JSON.stringify(userLibrary));
+        }
+    }, [userLibrary, user]);
 
     // Sync Global Objects
     const syncGlobalItems = useCallback(async () => {
@@ -103,13 +132,24 @@ export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
         setUserLibrary(prev => prev.filter(c => c.id !== id));
     };
 
-    const addUserItem = (catId: string, label: string, icon: string = '') => {
-        const newItem: LibraryItem = {
-            id: generateId(),
-            label,
-            icon,
-            isUserCreated: true
-        };
+    const addUserItem = async (catId: string, label: string, icon: string = '📦') => {
+        let newItem: LibraryItem;
+
+        if (user && user.id !== 'guest') {
+            const saved = await userService.addUserObject(user.id, label, icon);
+            if (saved) {
+                newItem = saved;
+            } else {
+                throw new Error("Failed to save to database");
+            }
+        } else {
+            newItem = {
+                id: generateId(),
+                label,
+                icon,
+                isUserCreated: true
+            };
+        }
 
         setUserLibrary(prev => {
             const existingCat = prev.find(c => c.id === catId);
@@ -119,22 +159,26 @@ export const useLibrary = ({ lang, currentLang }: UseLibraryProps) => {
                     : c
                 );
             } else {
-                // Find category label from fullLibrary to keep it consistent
-                const sourceCat = fullLibrary.find(c => c.id === catId);
-                const newCat: LibraryCategory = {
+                return [...prev, {
                     id: catId,
-                    label: sourceCat?.label || label,
-                    icon: sourceCat?.icon || '📁',
+                    label: 'Custom',
                     items: [newItem],
                     lang: currentLang,
-                    isUserCreated: false // It's a shadow of a system/global cat
-                };
-                return [...prev, newCat];
+                    isUserCreated: true
+                }];
             }
         });
     };
 
-    const deleteUserItem = (catId: string, itemId: string) => {
+    const deleteUserItem = async (catId: string, itemId: string) => {
+        if (user && user.id !== 'guest') {
+            try {
+                await userService.deleteUserObject(user.id, itemId);
+            } catch (err) {
+                console.error("Failed to delete user object from DB", err);
+            }
+        }
+
         setUserLibrary(prev => prev.map(cat => {
             if (cat.id === catId) {
                 return { ...cat, items: cat.items.filter(i => i.id !== itemId) };

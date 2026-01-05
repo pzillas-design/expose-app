@@ -47,10 +47,23 @@ export const useNanoController = () => {
     } = useConfig();
 
     const {
+        user, userProfile, credits, setCredits,
+        authModalMode, setAuthModalMode,
+        isAuthModalOpen, setIsAuthModalOpen,
+        authEmail, setAuthEmail,
+        authError, setAuthError,
+        handleAddFunds, handleSignOut, updateProfile
+    } = useAuth({
+        isAuthDisabled,
+        getResolvedLang,
+        t
+    });
+
+    const {
         userLibrary, globalLibrary, fullLibrary,
         addUserCategory, deleteUserCategory,
         addUserItem, deleteUserItem
-    } = useLibrary({ lang, currentLang });
+    } = useLibrary({ lang, currentLang, user });
 
     const {
         sideSheetMode, setSideSheetMode,
@@ -102,18 +115,6 @@ export const useNanoController = () => {
         getMostVisibleItem
     });
 
-    const {
-        user, userProfile, credits, setCredits,
-        authModalMode, setAuthModalMode,
-        isAuthModalOpen, setIsAuthModalOpen,
-        authEmail, setAuthEmail,
-        authError, setAuthError,
-        handleAddFunds, handleSignOut, updateProfile
-    } = useAuth({
-        isAuthDisabled,
-        getResolvedLang,
-        t
-    });
 
     const {
         boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier

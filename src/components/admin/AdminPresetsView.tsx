@@ -39,7 +39,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
 
             // Extract unique tags for the sidebar
             const tags = new Set<string>();
-            data.forEach(p => p.tags.forEach(t => tags.add(t)));
+            data.forEach(p => (p.tags || []).forEach(t => tags.add(t)));
             setAvailableTags(Array.from(tags).map(t => ({ id: t, de: t, en: t })));
         } catch (error) {
             console.error('Failed to fetch presets:', error);
@@ -211,14 +211,14 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         const matchesSearch =
             p.title.toLowerCase().includes(presetSearch.toLowerCase()) ||
             p.prompt.toLowerCase().includes(presetSearch.toLowerCase()) ||
-            p.tags.some(t => t.toLowerCase().includes(presetSearch.toLowerCase()));
+            (p.tags || []).some(t => t.toLowerCase().includes(presetSearch.toLowerCase()));
 
         let matchesCategory = true;
         if (selectedTagId) {
             const tag = availableTags.find(t => t.id === selectedTagId);
             if (tag) {
                 const labelToMatch = activeLang === 'de' ? tag.de : tag.en;
-                matchesCategory = p.tags.includes(labelToMatch);
+                matchesCategory = (p.tags || []).includes(labelToMatch);
             }
         }
 
@@ -409,15 +409,12 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             {/* Modals */}
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
-                initialData={editingPreset ? {
-                    title: editingPreset.title,
-                    prompt: editingPreset.prompt,
-                    tags: editingPreset.tags,
-                    controls: editingPreset.controls || [],
-                    lang: editingPreset.lang || 'de'
-                } : undefined}
+                mode={editingPreset ? 'edit' : 'create'}
+                scope="admin"
+                initialTemplate={editingPreset}
+                existingTemplates={globalPresets}
                 onClose={() => setIsPresetModalOpen(false)}
-                onSave={(data) => handleSavePresets([data])}
+                onSave={(data) => handleSavePresets(data)}
                 t={t}
             />
 
