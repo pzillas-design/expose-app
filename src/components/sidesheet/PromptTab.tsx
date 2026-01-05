@@ -195,7 +195,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             activeTemplate.controls.forEach(c => {
                 const vals = controlValues[c.id];
                 if (vals && vals.length > 0) {
-                    appendedParts.push(...vals);
+                    if (c.label) {
+                        appendedParts.push(`${c.label}: ${vals.join(", ")}`);
+                    } else {
+                        appendedParts.push(...vals);
+                    }
                 }
             });
             if (appendedParts.length > 0) {
