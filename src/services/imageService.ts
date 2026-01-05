@@ -228,11 +228,22 @@ export const imageService = {
      * Uses pre-signed URLs if provided to avoid sequential network requests.
      */
     async resolveImageRecord(record: any, preSignedUrls: Record<string, string> = {}): Promise<CanvasImage> {
-        const signedUrl = preSignedUrls[record.storage_path] || '';
+        let signedUrl = preSignedUrls[record.storage_path];
+
+        // AUTO-SIGN FALLBACK: If URL is missing (e.g. newly generated), fetch it now
+        if (!signedUrl && record.storage_path) {
+            signedUrl = await storageService.getSignedUrl(record.storage_path);
+        }
 
         // Use pre-signed 800px version as thumbSrc if available
         const thumbOptionsKey = '_800xundefined_q75';
-        const thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey] || (record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null);
+        let thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey]
+            || (record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null);
+
+        // AUTO-SIGN FALLBACK FOR OPTIMIZED:
+        if (!thumbSignedUrl && record.storage_path) {
+            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+        }
 
         const targetHeight = 512;
         const aspectRatio = record.width / record.height;
@@ -241,13 +252,16 @@ export const imageService = {
         const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
 
         // Resolve reference image paths in annotations from the provided pre-signed map
-        const resolvedAnns = rawAnns.map((ann: any) => {
+        const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
             if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                const resolvedUrl = preSignedUrls[ann.referenceImage];
+                let resolvedUrl = preSignedUrls[ann.referenceImage];
+                if (!resolvedUrl) {
+                    resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
+                }
                 return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
             }
             return ann;
-        });
+        }));
 
         return {
             id: record.id,

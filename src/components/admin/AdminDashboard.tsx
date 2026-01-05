@@ -52,8 +52,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
       />
 
       {/* Sub Header Nav */}
-      <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 sticky top-[64px] z-40">
-        <div className="max-w-[1700px] mx-auto px-6 h-14 flex items-center gap-1">
+      <div className="z-40 mt-8 mb-4">
+        <div className="max-w-[1700px] mx-auto px-6 h-10 flex items-center justify-center gap-1">
           {navItems.map((item) => {
             const isActive = activeTab === item.id || (item.id === 'stamps' && activeTab as string === 'objects');
             return (
@@ -61,8 +61,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
                 key={item.id}
                 onClick={() => navigate(`/admin/${item.id}`)}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[13px] font-bold transition-all ${isActive
-                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white capitalize'}`}
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-white capitalize'}`}
               >
                 {React.cloneElement(item.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
                 {item.label}
@@ -73,8 +73,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
       </div>
 
       <main className="flex-1 min-h-0">
-        <div className="max-w-[1850px] mx-auto w-full p-4 lg:p-6">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm h-[calc(100vh-140px)] flex flex-col">
+        <div className="w-full h-[calc(100vh-180px)]">
+          <div className="bg-white dark:bg-zinc-900 h-full flex flex-col">
             {activeTab === 'users' && <AdminUsersView t={t} />}
             {activeTab === 'jobs' && <AdminJobsView t={t} />}
             {activeTab === 'stats' && <AdminStatsView t={t} />}

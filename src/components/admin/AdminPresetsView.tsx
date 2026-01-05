@@ -216,7 +216,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     </div>
                 ) : (
                     <>
-                        <div className="flex-1 overflow-y-auto p-8 lg:p-10 max-w-6xl w-full mx-auto space-y-12 no-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-8 lg:p-10 w-full mx-auto space-y-12 no-scrollbar">
 
                             {/* Header Info */}
                             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-8">
@@ -240,7 +240,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 {/* DE Column */}
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black border border-amber-200 text-amber-600 px-2 py-0.5 rounded uppercase tracking-widest">Deutsch</span>
+                                        <span className="text-[9px] font-black text-amber-600 px-0 py-0.5 rounded uppercase tracking-widest">Deutsch</span>
                                     </div>
 
                                     <div className="space-y-6">
@@ -267,7 +267,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 {/* EN Column */}
                                 <div className="space-y-8">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black border border-blue-200 text-blue-600 px-2 py-0.5 rounded uppercase tracking-widest">English</span>
+                                        <span className="text-[9px] font-black text-blue-600 px-0 py-0.5 rounded uppercase tracking-widest">English</span>
                                     </div>
 
                                     <div className="space-y-6">
@@ -314,20 +314,44 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
 
 // --- TABLE STYLE CONTROLS EDITOR ---
 const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onChange: (c: PresetControl[]) => void }) => {
+    // Local state to hold the raw string values for each input to prevent "vanishing spaces" while typing
+    const [localValues, setLocalValues] = useState<Record<string, { label: string, options: string }>>({});
 
     const handleUpdate = (id: string, updates: Partial<PresetControl>) => {
         onChange(controls.map(c => c.id === id ? { ...c, ...updates } : c));
     };
 
     const handleOptionsChange = (id: string, val: string) => {
+        // 1. Update local string value immediately (so cursor/spaces stay)
+        setLocalValues(prev => ({
+            ...prev,
+            [id]: {
+                ...(prev[id] || { label: controls.find(c => c.id === id)?.label || '' }),
+                options: val
+            }
+        }));
+
+        // 2. Map to data structure for persistence (only filter/trim for data, not for the display value)
         const labels = val.split(',').map(s => s.trim()).filter(s => s);
         const options = labels.map(l => ({ id: generateId(), label: l, value: l }));
         handleUpdate(id, { options });
     };
 
+    const handleLabelChange = (id: string, val: string) => {
+        setLocalValues(prev => ({
+            ...prev,
+            [id]: {
+                ...(prev[id] || { options: controls.find(c => c.id === id)?.options.map(o => o.label).join(', ') || '' }),
+                label: val
+            }
+        }));
+        handleUpdate(id, { label: val });
+    };
+
     const addRow = () => {
+        const newId = generateId();
         const newCtrl: PresetControl = {
-            id: generateId(),
+            id: newId,
             label: 'Neue Variable',
             options: []
         };
@@ -336,6 +360,11 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
 
     const removeRow = (id: string) => {
         onChange(controls.filter(c => c.id !== id));
+        setLocalValues(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
     };
 
     const grid = "grid-cols-[1fr_2fr_32px]";
@@ -355,15 +384,15 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
                     <div key={ctrl.id} className={`grid ${grid} items-center group hover:bg-white dark:hover:bg-zinc-900 transition-colors`}>
                         <div className="p-0.5 pl-3">
                             <TableInput
-                                value={ctrl.label}
-                                onChange={e => handleUpdate(ctrl.id, { label: e.target.value })}
+                                value={localValues[ctrl.id]?.label ?? ctrl.label}
+                                onChange={e => handleLabelChange(ctrl.id, e.target.value)}
                                 className="text-[11px] font-bold border-none h-8"
                                 placeholder="z.B. Intensität"
                             />
                         </div>
                         <div className="p-0.5 border-l border-zinc-100 dark:border-zinc-800">
                             <TableInput
-                                value={ctrl.options.map(o => o.label).join(', ')}
+                                value={localValues[ctrl.id]?.options ?? ctrl.options.map(o => o.label).join(', ')}
                                 onChange={e => handleOptionsChange(ctrl.id, e.target.value)}
                                 className="text-[11px] text-zinc-500 border-none h-8"
                                 placeholder="leicht, mittel, stark"
