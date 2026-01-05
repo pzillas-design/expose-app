@@ -351,13 +351,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .filter(c => !hiddenControlIds.includes(c.id))
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-[9px] uppercase tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
                                                                 onClick={() => handleClearControl(ctrl.id)}
-                                                                className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                                className="text-zinc-400 hover:text-red-500 transition-colors"
                                                                 title="Reset"
                                                             >
                                                                 <X className="w-3 h-3" />
@@ -374,7 +374,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                             px-3 py-1.5 rounded-full text-[10px] font-medium transition-all font-mono
                                                                             ${isSelected
                                                                                 ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md scale-105 z-10'
-                                                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-700/80'}
+                                                                                : 'bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}
                                                                         `}
                                                                     >
                                                                         {opt.label}
