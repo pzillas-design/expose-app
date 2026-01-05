@@ -346,7 +346,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     {/* VARIABLE OPTIONS (Now INSIDE the box) */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                        <div className="px-4 pb-4 flex flex-col gap-4 border-t border-zinc-100 dark:border-zinc-800/50 pt-4">
+                                        <div className="px-4 pb-4 flex flex-col gap-4 pt-2">
                                             {activeTemplate.controls
                                                 .filter(c => !hiddenControlIds.includes(c.id))
                                                 .map((ctrl) => (
@@ -390,7 +390,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                 {/* ANNOTATIONS LIST (Outside) */}
                                 {annotations.length > 0 && !isMulti && (
-                                    <div className="flex flex-col gap-1 w-full border-t border-zinc-100 dark:border-zinc-800/50 pt-2">
+                                    <div className="flex flex-col gap-1 w-full pt-4">
                                         {annotations.map((ann) => {
                                             const isRefType = ann.type === 'reference_image';
                                             const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
