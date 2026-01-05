@@ -53,7 +53,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     }
 
     return (
-        <div className="p-6 h-full flex flex-col bg-zinc-50/50 dark:bg-zinc-950/50 space-y-6 overflow-y-auto">
+        <div className="p-6 flex-1 min-h-0 bg-zinc-50/50 dark:bg-zinc-950/50 space-y-6 overflow-y-auto">
             <h2 className={Typo.H1}>Token & Kosten Analyse</h2>
 
             {/* Stats Grid */}

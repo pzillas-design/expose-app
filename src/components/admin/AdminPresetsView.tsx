@@ -114,14 +114,15 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         setGlobalPresets(newPresets);
     };
 
-    const filteredPresets = globalPresets.filter(p => {
+    const filteredPresets = (globalPresets || []).filter(p => {
+        if (!p) return false;
         const langMatch = (p.lang || 'de') === activeLang;
         if (!langMatch) return false;
 
         const matchesSearch =
-            p.title.toLowerCase().includes(presetSearch.toLowerCase()) ||
-            p.prompt.toLowerCase().includes(presetSearch.toLowerCase()) ||
-            (p.tags || []).some(t => t.toLowerCase().includes(presetSearch.toLowerCase()));
+            (p.title || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
+            (p.prompt || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
+            (p.tags || []).some(t => t && t.toLowerCase().includes((presetSearch || "").toLowerCase()));
 
         let matchesCategory = true;
         if (selectedTagId) {
