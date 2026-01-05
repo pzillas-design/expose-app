@@ -61,27 +61,9 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                 </div>
             ))}
             {showPlus && (
-                <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center overflow-hidden">
-                    {displayImages[3] && (
-                        <img
-                            src={displayImages[3]}
-                            onLoad={handleLoad}
-                            onError={handleLoad}
-                            className="absolute inset-0 w-full h-full object-cover"
-                            alt=""
-                        />
-                    )}
-                    {/* Darker overlay for better contrast of the number */}
-                    <div className="absolute inset-0 bg-black/5 dark:bg-black/20 z-0" />
-
-                    {/* Sleek Glass Circle */}
-                    <div className="relative z-10 w-9 h-9 flex items-center justify-center rounded-full 
-                        bg-white/70 dark:bg-black/50 
-                        backdrop-blur-md 
-                        border border-white/40 dark:border-white/10 
-                        shadow-lg shadow-black/5"
-                    >
-                        <span className="text-[11px] font-medium text-zinc-900 dark:text-zinc-100/90 tracking-tight">+{total - 3}</span>
+                <div className="relative bg-zinc-100 dark:bg-zinc-900/50 flex items-center justify-center">
+                    <div className="relative z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/20 dark:bg-black/20 backdrop-blur-md border border-white/30 dark:border-white/10 shadow-lg">
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">+{total - 3}</span>
                     </div>
                 </div>
             )}

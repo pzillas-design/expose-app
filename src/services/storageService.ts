@@ -127,8 +127,9 @@ export const storageService = {
             if (data) {
                 data.forEach((item: any) => {
                     if (item.signedUrl) {
-                        results[item.path] = item.signedUrl;
-                        this._urlCache.set(item.path + optionsKey, {
+                        const fullKey = item.path + optionsKey;
+                        results[fullKey] = item.signedUrl;
+                        this._urlCache.set(fullKey, {
                             url: item.signedUrl,
                             expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
                         });
