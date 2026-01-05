@@ -8,7 +8,7 @@ export const boardService = {
             .from('boards')
             .select(`
                 *,
-                canvas_images(thumb_storage_path)
+                canvas_images(thumb_storage_path, storage_path)
             `)
             .eq('user_id', userId)
             .order('updated_at', { ascending: false });
@@ -21,9 +21,9 @@ export const boardService = {
         // Get signed URLs for thumbnails (efficiently if possible, but 4 per board is manageable)
         const boardsWithImages = await Promise.all(data.map(async (b) => {
             const imagePaths = (b.canvas_images || [])
-                .filter((img: any) => img.thumb_storage_path)
+                .filter((img: any) => img.thumb_storage_path || img.storage_path)
                 .slice(0, 4)
-                .map((img: any) => img.thumb_storage_path);
+                .map((img: any) => img.thumb_storage_path || img.storage_path);
 
             const previewImages = await Promise.all(
                 imagePaths.map(path => storageService.getSignedUrl(path))
