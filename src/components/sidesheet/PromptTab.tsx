@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Image as ImageIcon, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -337,7 +337,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                     className="p-1.5 rounded-md text-zinc-400 hover:text-orange-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                                                                     title={t('upload_ref')}
                                                                 >
-                                                                    <ImageIcon className="w-3 h-3" />
+                                                                    <Camera className="w-3 h-3" />
                                                                 </button>
                                                             )}
                                                             <button
@@ -414,7 +414,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         variant="ghost"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<ImageIcon className="w-3.5 h-3.5 text-[#E06A49]" />}
+                                        icon={<Camera className="w-3.5 h-3.5 text-[#E06A49]" />}
                                         className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#E06A49] hover:text-[#E06A49] hover:bg-[#E06A49]/10 dark:hover:bg-[#E06A49]/20"
                                         tooltip={t('upload_ref')}
                                     >

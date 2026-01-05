@@ -174,6 +174,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
     const { prompt, confirm } = useItemDialog();
 
     const handleMenuClick = (e: React.MouseEvent) => {
+        e.preventDefault();
         e.stopPropagation();
         const rect = e.currentTarget.getBoundingClientRect();
         setMenuPos({ x: rect.left, y: rect.bottom + 8 });
