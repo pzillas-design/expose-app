@@ -1,23 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { ModalHeader, Button, Input, TextArea, SectionHeader, Theme } from '@/components/ui/DesignSystem';
-import { Plus, Trash2, Check, X, ArrowLeftRight } from 'lucide-react';
+import { Plus, Trash2, Check, X } from 'lucide-react';
 import { generateId } from '@/utils/ids';
 
 interface PresetEditorModalProps {
     isOpen: boolean;
     onClose: () => void;
     mode: 'create' | 'edit';
-    scope: 'admin' | 'user'; // New prop to determine layout
-    currentLang?: 'de' | 'en'; // Required if scope is user
+    scope: 'admin' | 'user';
+    currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
-    existingTemplates: PromptTemplate[];
+    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility but unused
     onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
     onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
-
-const DEFAULT_TAGS = ['Außen', 'Innen', 'Retusche', 'Staging', 'Mood'];
 
 // Sub-component for a single language form
 const LanguageForm = ({
@@ -25,8 +23,6 @@ const LanguageForm = ({
     title, setTitle,
     prompt, setPrompt,
     controls, setControls,
-    tags, setTags,
-    availableTags,
     showHeader,
     t
 }: {
@@ -34,16 +30,12 @@ const LanguageForm = ({
     title: string; setTitle: (s: string) => void;
     prompt: string; setPrompt: (s: string) => void;
     controls: PresetControl[]; setControls: React.Dispatch<React.SetStateAction<PresetControl[]>>;
-    tags: string[]; setTags: React.Dispatch<React.SetStateAction<string[]>>;
-    availableTags: string[];
     showHeader: boolean;
     t: TranslationFunction;
 }) => {
     const [isAddingControl, setIsAddingControl] = useState(false);
     const [newControlLabel, setNewControlLabel] = useState('');
     const [newControlOptions, setNewControlOptions] = useState('');
-    const [newTagInput, setNewTagInput] = useState('');
-    const [isAddingTag, setIsAddingTag] = useState(false);
 
     const handleAddControl = () => {
         if (!newControlLabel.trim()) return;
@@ -57,18 +49,6 @@ const LanguageForm = ({
         setIsAddingControl(false);
         setNewControlLabel('');
         setNewControlOptions('');
-    };
-
-    const handleAddTag = () => {
-        if (newTagInput.trim() && !tags.includes(newTagInput.trim())) {
-            setTags(prev => [...prev, newTagInput.trim()]);
-        }
-        setNewTagInput('');
-        setIsAddingTag(false);
-    };
-
-    const toggleTag = (tag: string) => {
-        setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     };
 
     return (
@@ -127,37 +107,6 @@ const LanguageForm = ({
                         )}
                     </div>
                 </div>
-
-                {/* Tags */}
-                <div>
-                    <SectionHeader>{t('tags_label')}</SectionHeader>
-                    <div className="flex flex-wrap gap-2">
-                        {availableTags.map(tag => (
-                            <button
-                                key={tag}
-                                onClick={() => toggleTag(tag)}
-                                className={`px-2 py-1 ${Theme.Geometry.Radius} text-[10px] border transition-all ${tags.includes(tag) ? 'bg-zinc-800 text-white border-zinc-800 dark:bg-zinc-200 dark:text-black dark:border-zinc-200' : 'bg-white border-zinc-200 text-zinc-500 hover:border-zinc-400 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-400'}`}
-                            >
-                                {tag}
-                            </button>
-                        ))}
-                        {isAddingTag ? (
-                            <input
-                                autoFocus
-                                value={newTagInput}
-                                onChange={(e) => setNewTagInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                                onBlur={handleAddTag}
-                                className={`w-20 px-2 py-1 ${Theme.Geometry.Radius} text-[10px] bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 outline-none`}
-                                placeholder={t('tag_name')}
-                            />
-                        ) : (
-                            <button onClick={() => setIsAddingTag(true)} className={`px-2 py-1 ${Theme.Geometry.Radius} border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} text-zinc-400 hover:text-black dark:hover:text-white`}>
-                                <Plus className="w-3 h-3" />
-                            </button>
-                        )}
-                    </div>
-                </div>
             </div>
         </div>
     );
@@ -171,7 +120,6 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     scope,
     currentLang = 'en',
     initialTemplate,
-    existingTemplates,
     onSave,
     onDelete,
     t
@@ -179,47 +127,35 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     // DE State
     const [titleDe, setTitleDe] = useState('');
     const [promptDe, setPromptDe] = useState('');
-    const [tagsDe, setTagsDe] = useState<string[]>([]);
     const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
 
     // EN State
     const [titleEn, setTitleEn] = useState('');
     const [promptEn, setPromptEn] = useState('');
-    const [tagsEn, setTagsEn] = useState<string[]>([]);
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
 
     useEffect(() => {
         if (isOpen) {
             // Reset
-            setTitleDe(''); setPromptDe(''); setTagsDe([]); setControlsDe([]);
-            setTitleEn(''); setPromptEn(''); setTagsEn([]); setControlsEn([]);
+            setTitleDe(''); setPromptDe(''); setControlsDe([]);
+            setTitleEn(''); setPromptEn(''); setControlsEn([]);
 
             if (mode === 'edit' && initialTemplate) {
                 // Load initial template into corresponding side
                 const isEn = initialTemplate.lang === 'en';
 
-                // In User mode, we simply populate the matching state for the current language
-                // In Admin mode, we might be editing one specific lang instance, or potentially link them (out of scope, assuming single edit)
                 if (isEn) {
                     setTitleEn(initialTemplate.title);
                     setPromptEn(initialTemplate.prompt);
-                    setTagsEn(initialTemplate.tags || []);
                     setControlsEn(initialTemplate.controls || []);
                 } else {
                     setTitleDe(initialTemplate.title);
                     setPromptDe(initialTemplate.prompt);
-                    setTagsDe(initialTemplate.tags || []);
                     setControlsDe(initialTemplate.controls || []);
                 }
             }
         }
     }, [isOpen, mode, initialTemplate]);
-
-    const availableTags = useMemo(() => {
-        const set = new Set(DEFAULT_TAGS);
-        existingTemplates.forEach(t => (t.tags || []).forEach(tag => set.add(tag)));
-        return Array.from(set).sort();
-    }, [existingTemplates]);
 
     const handleSave = () => {
         const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
@@ -229,11 +165,11 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
             // Only save the current language form
             if (currentLang === 'de') {
                 if (promptDe.trim()) {
-                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: tagsDe, controls: controlsDe, lang: 'de' });
+                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
                 }
             } else {
                 if (promptEn.trim()) {
-                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: tagsEn, controls: controlsEn, lang: 'en' });
+                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
                 }
             }
         } else {
@@ -242,7 +178,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 results.push({
                     title: titleDe.trim() || 'Untitled',
                     prompt: promptDe,
-                    tags: tagsDe,
+                    tags: [],
                     controls: controlsDe,
                     lang: 'de'
                 });
@@ -252,7 +188,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 results.push({
                     title: titleEn.trim() || 'Untitled',
                     prompt: promptEn,
-                    tags: tagsEn,
+                    tags: [],
                     controls: controlsEn,
                     lang: 'en'
                 });
@@ -296,8 +232,6 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 title={titleDe} setTitle={setTitleDe}
                                 prompt={promptDe} setPrompt={setPromptDe}
                                 controls={controlsDe} setControls={setControlsDe}
-                                tags={tagsDe} setTags={setTagsDe}
-                                availableTags={availableTags}
                                 showHeader={scope === 'admin'}
                                 t={t}
                             />
@@ -312,8 +246,6 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 title={titleEn} setTitle={setTitleEn}
                                 prompt={promptEn} setPrompt={setPromptEn}
                                 controls={controlsEn} setControls={setControlsEn}
-                                tags={tagsEn} setTags={setTagsEn}
-                                availableTags={availableTags}
                                 showHeader={scope === 'admin'}
                                 t={t}
                             />

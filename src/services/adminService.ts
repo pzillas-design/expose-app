@@ -138,7 +138,7 @@ export const adminService = {
             id: preset.id,
             title: preset.title,
             prompt: preset.prompt,
-            tags: preset.tags,
+            tags: [],
             is_pinned: preset.isPinned,
             is_custom: preset.isCustom,
             is_default: preset.isDefault,

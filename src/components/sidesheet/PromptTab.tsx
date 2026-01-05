@@ -1,9 +1,8 @@
-
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check } from 'lucide-react';
+import { Pen, Armchair, Paperclip, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, SlidersHorizontal } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -98,6 +97,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const startEditing = (ann: AnnotationObject, defaultText: string) => {
         setEditingId(ann.id);
         setEditValue(ann.text || defaultText);
+        // Prevent event bubbling
     };
 
     const saveEditing = () => {
@@ -284,6 +284,75 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         />
                                     </Tooltip>
 
+                                    {/* Integrated Annotations Section - Now inside the border */}
+                                    {annotations.length > 0 && !isMulti && (
+                                        <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50/50 dark:bg-zinc-900/30`}>
+                                            {annotations.map((ann, idx) => {
+                                                const isRefType = ann.type === 'reference_image';
+                                                const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
+                                                const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
+                                                const displayText = ann.text || defaultLabel || t('untitled');
+                                                const isEditing = editingId === ann.id;
+
+                                                return (
+                                                    <div
+                                                        key={ann.id}
+                                                        className={`flex items-center gap-3 px-3 py-2 border-b ${Theme.Colors.Border} last:border-0 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors`}
+                                                    >
+                                                        {isRefType && ann.referenceImage ? (
+                                                            <div className="shrink-0 w-6 h-6 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="shrink-0 flex items-center justify-center text-zinc-400 transform scale-90">
+                                                                {ann.type === 'stamp' ? <Armchair className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex-1 min-w-0">
+                                                            {isEditing ? (
+                                                                <input
+                                                                    autoFocus
+                                                                    value={editValue}
+                                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                                    onBlur={saveEditing}
+                                                                    onKeyDown={handleKeyDown}
+                                                                    className={`w-full bg-transparent border-none outline-none ${Typo.Micro} !text-sm text-black dark:text-white placeholder-zinc-400 p-0`}
+                                                                    placeholder={isRefType ? t('describe_style') : t('what_is_this')}
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                    className={`${Typo.Micro} block truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : Theme.Colors.TextPrimary}`}
+                                                                >
+                                                                    {displayText}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                                            {!isRefType && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
+                                                                    className="p-1.5 rounded-md text-zinc-400 hover:text-orange-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                                                    title={t('upload_ref')}
+                                                                >
+                                                                    <Paperclip className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                                className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
                                     {/* Active Variables Section */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
                                         <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50 dark:bg-zinc-900/50`}>
@@ -328,7 +397,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col mb-5"> {/* Reduced space above generate button */}
+                            <div className="flex flex-col mb-5">
+                                {/* Tools Buttons */}
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         variant="secondary"
@@ -359,83 +429,85 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     />
                                 </div>
 
+                                {/* Generate Button with Integrated Settings */}
+                                <div className="mt-3 relative z-20">
+                                    <div className="flex w-full">
+                                        <button
+                                            onClick={handleDoGenerate}
+                                            disabled={selectedImage.isGenerating}
+                                            className={`
+                                                relative flex-1 flex items-center justify-center py-2.5 rounded-lg transition-all shadow-sm font-medium text-xs tracking-wide
+                                                ${selectedImage.isGenerating
+                                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
+                                                    : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'}
+                                            `}
+                                        >
+                                            <span className="flex items-center gap-2">
+                                                {selectedImage.isGenerating
+                                                    ? t('processing')
+                                                    : isMulti && selectedImages
+                                                        ? `${t('generate_multi')} (${selectedImages.length})`
+                                                        : t('generate')}
+                                            </span>
 
-
-                                {annotations.length > 0 && !isMulti && (
-                                    <div className="flex flex-col gap-2 pt-1">
-                                        {annotations.map((ann) => {
-                                            const isRefType = ann.type === 'reference_image';
-                                            const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-                                            const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
-                                            const displayText = ann.text || defaultLabel || t('untitled');
-                                            const isEditing = editingId === ann.id;
-
-                                            return (
-                                                <div
-                                                    key={ann.id}
-                                                    className={`
-                                                    group relative flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all
-                                                    ${isEditing ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
-                                                `}
-                                                >
-                                                    {isRefType && ann.referenceImage && (
-                                                        <div className="shrink-0 w-8 h-8 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                        </div>
-                                                    )}
-
-                                                    {!isRefType && (
-                                                        <div className={`shrink-0 flex items-center justify-center text-zinc-500 dark:text-zinc-400`}>
-                                                            {ann.type === 'stamp' ? <Armchair className="w-4 h-4 text-purple-500 dark:text-purple-400" /> : <Pen className="w-4 h-4 text-blue-500 dark:text-blue-400" />}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex-1 min-w-0 flex items-center h-8">
-                                                        {isEditing ? (
-                                                            <input
-                                                                autoFocus
-                                                                value={editValue}
-                                                                onChange={(e) => setEditValue(e.target.value)}
-                                                                onBlur={saveEditing}
-                                                                onKeyDown={handleKeyDown}
-                                                                className={`w-full bg-transparent border-none outline-none ${Typo.Body} text-black dark:text-white placeholder-zinc-400`}
-                                                                placeholder={isRefType ? t('describe_style') : t('what_is_this')}
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                onClick={() => startEditing(ann, defaultLabel)}
-                                                                className={`
-                                                                ${Typo.Body} truncate cursor-text w-full block
-                                                                ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : Theme.Colors.TextPrimary}
-                                                                `}
-                                                            >
-                                                                {displayText}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        {!isRefType && (
-                                                            <button
-                                                                onClick={() => triggerAnnFile(ann.id)}
-                                                                className="w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-orange-500 dark:text-zinc-500 dark:hover:text-orange-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                                                                title={t('upload_ref')}
-                                                            >
-                                                                <Paperclip className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => onDeleteAnnotation(ann.id)}
-                                                            className="w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                            {/* ABSOLUTE SETTINGS BUTTON INSIDE GENERATE */}
+                                            {!selectedImage.isGenerating && (
+                                                <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
+                                                    <Tooltip text={t('tt_model')} side="top">
+                                                        <div
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setIsModelDropdownOpen(!isModelDropdownOpen);
+                                                            }}
+                                                            className={`
+                                                                w-full h-full flex items-center justify-center rounded
+                                                                hover:bg-white/20 dark:hover:bg-black/10 transition-colors cursor-pointer
+                                                                ${isModelDropdownOpen ? 'bg-white/20 dark:bg-black/10' : ''}
+                                                            `}
                                                         >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
+                                                            <SlidersHorizontal className="w-3.5 h-3.5" />
+                                                        </div>
+                                                    </Tooltip>
                                                 </div>
-                                            );
-                                        })}
+                                            )}
+                                        </button>
                                     </div>
-                                )}
+
+                                    {/* DROPDOWN MENU - Positioned relative to the container */}
+                                    {isModelDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
+                                            <div className={`
+                                                absolute bottom-full right-0 mb-2 w-64 p-1.5
+                                                ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
+                                                shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50
+                                            `}>
+                                                {MODES.map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
+                                                        className={`
+                                                            flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
+                                                            ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                                                        `}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
+                                                                {m.label}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                                                                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
+                                                            </div>
+                                                        </div>
+                                                        {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-3">
@@ -448,68 +520,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         {t('ctx_deselect')}
                                     </Button>
                                 )}
-
-                                <Button
-                                    onClick={handleDoGenerate}
-                                    disabled={selectedImage.isGenerating}
-                                    className="w-full"
-                                    tooltip={t('tt_generate')}
-                                >
-                                    {selectedImage.isGenerating
-                                        ? t('processing')
-                                        : isMulti && selectedImages
-                                            ? `${t('generate_multi')} (${selectedImages.length})`
-                                            : t('generate')}
-                                </Button>
-
-                                <div className="mt-2 flex justify-center">
-                                    <div className="relative">
-                                        <Tooltip text={t('tt_model')} side="top">
-                                            <button
-                                                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                                                className={`
-                                                    flex items-center gap-1.5 py-1 px-3 ${Theme.Geometry.Radius} transition-all
-                                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 group
-                                                `}
-                                            >
-                                                <span className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 truncate`}>
-                                                    {t('model_prefix')}{currentModel.label}
-                                                </span>
-                                                <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
-                                            </button>
-                                        </Tooltip>
-
-                                        {isModelDropdownOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setIsModelDropdownOpen(false)} />
-                                                <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-2 p-1.5 min-w-[200px] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50`}>
-                                                    {MODES.map((m) => (
-                                                        <button
-                                                            key={m.id}
-                                                            onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
-                                                            className={`
-                                                                flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
-                                                                ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                            `}
-                                                        >
-                                                            <div className="flex flex-col">
-                                                                <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
-                                                                    {m.label}
-                                                                </span>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.price}</span>
-                                                                    <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-                                                                    <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>{m.desc}</span>
-                                                                </div>
-                                                            </div>
-                                                            {qualityMode === m.id && <Check className="w-4 h-4 text-black dark:text-white" />}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     ) : (
@@ -608,7 +618,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         )}
                                     </div>
 
-                                    {/* Reference Images Section */}
+                                    {/* Reference Images Section - Only in Info tab now */}
                                     {selectedImage.annotations?.some(ann => ann.referenceImage) && (
                                         <div className="flex flex-col gap-3">
                                             <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>

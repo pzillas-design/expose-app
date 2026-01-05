@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Pen, Trash2, Tag, ChevronRight, Bookmark, GripVertical, Loader2 } from 'lucide-react';
-import { TranslationFunction, PromptTemplate, PresetControl, PresetTag } from '@/types';
-import { Typo, Button, Input, IconButton, Tooltip, TableInput } from '@/components/ui/DesignSystem';
+import { Search, Plus, Pen, Trash2, GripVertical, Loader2, Bookmark } from 'lucide-react';
+import { TranslationFunction, PromptTemplate, PresetControl } from '@/types';
+import { Typo, Button, Input, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { generateId } from '@/utils/ids';
@@ -18,12 +18,8 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
     const [editingPreset, setEditingPreset] = useState<PromptTemplate | null>(null);
 
-    // Language & Category State
+    // Language State
     const [activeLang, setActiveLang] = useState<'de' | 'en'>('de');
-
-    // Tag Management State
-    const [availableTags, setAvailableTags] = useState<PresetTag[]>([]);
-    const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
     // Drag State
     const [draggedPresetId, setDraggedPresetId] = useState<string | null>(null);
@@ -41,10 +37,6 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         try {
             const data = await adminService.getGlobalPresets();
             setGlobalPresets(data);
-
-            const tags = new Set<string>();
-            data.forEach(p => (p.tags || []).forEach(t => tags.add(t)));
-            setAvailableTags(Array.from(tags).map(t => ({ id: t, de: t, en: t })));
         } catch (error) {
             console.error('Failed to fetch presets:', error);
         } finally {
@@ -55,11 +47,14 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     const handleSavePresets = async (data: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => {
         try {
             for (const item of data) {
+                // Ensure tags is always empty array even if passed by mistake (though modal sends [])
+                const cleanItem = { ...item, tags: [] };
+
                 const presetToSave = editingPreset
-                    ? { ...editingPreset, ...item }
+                    ? { ...editingPreset, ...cleanItem }
                     : {
                         id: generateId(),
-                        ...item,
+                        ...cleanItem,
                         isPinned: false,
                         isCustom: false,
                         isDefault: false,
@@ -119,22 +114,11 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         const langMatch = (p.lang || 'de') === activeLang;
         if (!langMatch) return false;
 
-        const pTags = Array.isArray(p.tags) ? p.tags : [];
         const matchesSearch =
             (p.title || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
-            (p.prompt || "").toLowerCase().includes((presetSearch || "").toLowerCase()) ||
-            pTags.some(t => t && typeof t === 'string' && t.toLowerCase().includes((presetSearch || "").toLowerCase()));
+            (p.prompt || "").toLowerCase().includes((presetSearch || "").toLowerCase());
 
-        let matchesCategory = true;
-        if (selectedTagId) {
-            const tag = availableTags.find(t => t.id === selectedTagId);
-            if (tag) {
-                const labelToMatch = activeLang === 'de' ? tag.de : tag.en;
-                matchesCategory = pTags.includes(labelToMatch);
-            }
-        }
-
-        return matchesSearch && matchesCategory;
+        return matchesSearch;
     });
 
     return (
@@ -181,53 +165,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             </div>
 
             <div className="flex-1 flex min-h-0 overflow-hidden">
-                {/* Tags Sidebar */}
-                <div className="w-64 border-r border-zinc-100 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-900/30 flex flex-col shrink-0">
-                    <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/10">
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Filter Tags</span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-                        <button
-                            onClick={() => setSelectedTagId(null)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${!selectedTagId ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white' : 'text-zinc-500 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'}`}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Bookmark className="w-4 h-4" />
-                                <span>Alle Presets</span>
-                            </div>
-                            <span className="text-[10px] bg-zinc-200 dark:bg-zinc-700 px-1.5 rounded text-zinc-500">{globalPresets.filter(p => (p.lang || 'de') === activeLang).length}</span>
-                        </button>
-
-                        {availableTags.map(tag => {
-                            if (!tag) return null;
-                            const labelToMatch = activeLang === 'de' ? tag.de : tag.en;
-                            if (!labelToMatch) return null;
-
-                            const count = globalPresets.filter(p =>
-                                p &&
-                                (p.lang || 'de') === activeLang &&
-                                (p.tags || []).includes(labelToMatch)
-                            ).length;
-
-                            if (count === 0) return null;
-                            return (
-                                <button
-                                    key={tag.id}
-                                    onClick={() => setSelectedTagId(tag.id)}
-                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${selectedTagId === tag.id ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white' : 'text-zinc-500 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'}`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Tag className="w-4 h-4 opacity-40" />
-                                        <span>{activeLang === 'de' ? tag.de : tag.en}</span>
-                                    </div>
-                                    <span className="text-[10px] bg-zinc-200 dark:bg-zinc-700 px-1.5 rounded text-zinc-500">{count}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Presets Grid/List */}
+                {/* Presets Grid/List - Removed Sidebar */}
                 <div className="flex-1 overflow-y-auto p-8 pt-6">
                     {loading ? (
                         <div className="h-full flex items-center justify-center">
@@ -236,7 +174,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     ) : filteredPresets.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-zinc-400 gap-3">
                             <Bookmark className="w-12 h-12 opacity-10" />
-                            <span className="text-sm">Keine Presets gefunden.</span>
+                            <span className="text-sm">{t('no_entries_found') || 'Keine Vorlagen gefunden.'}</span>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
@@ -272,14 +210,6 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                         <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed font-medium">
                                             {preset.prompt}
                                         </p>
-
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {(preset.tags || []).map(tag => (
-                                                <span key={tag} className="px-2 py-0.5 rounded-full bg-zinc-50 dark:bg-zinc-800 text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -291,16 +221,17 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
                 onClose={() => setIsPresetModalOpen(false)}
+                mode={editingPreset ? 'edit' : 'create'}
+                scope="admin"
+                initialTemplate={editingPreset}
                 onSave={handleSavePresets}
-                preset={editingPreset}
-                availableTags={availableTags}
                 t={t}
             />
 
             <ConfirmDialog
                 isOpen={isDeleteModalOpen}
-                title={t('admin_confirm_delete_preset') || "Preset löschen"}
-                description={t('admin_delete_preset_desc') || "Möchtest du dieses Preset wirklich unwiderruflich löschen?"}
+                title={t('admin_confirm_delete_preset') || "Vorlage löschen"}
+                description={t('admin_delete_preset_desc') || "Möchtest du diese Vorlage wirklich unwiderruflich löschen?"}
                 confirmLabel={t('delete') || "Löschen"}
                 cancelLabel={t('cancel') || "Abbrechen"}
                 onConfirm={handleDeletePreset}

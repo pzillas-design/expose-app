@@ -624,7 +624,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             <input
                                                 value={ann.text || ''}
                                                 onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        if (!ann.text || ann.text.trim() === '') {
+                                                            deleteAnnotation(ann.id);
+                                                        } else {
+                                                            setActiveMaskId(null);
+                                                        }
+                                                    }
+                                                }}
                                                 placeholder=""
                                                 className="bg-transparent border-none outline-none text-white placeholder-zinc-500 p-0 focus:ring-0 h-auto font-bold"
                                                 style={{ fontSize: 'inherit', width: `${Math.max(4, (ann.text?.length || 0) + 1)}ch` }}

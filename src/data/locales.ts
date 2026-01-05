@@ -355,7 +355,7 @@ export const translations = {
     // Prompt Tab
     prompt_label: "PROMPT",
     context_label: "KONTEXT",
-    reset_tooltip: "Preset zurücksetzen",
+    reset_tooltip: "Vorlage zurücksetzen",
     describe_changes: "Änderungen beschreiben...",
     generate: "Generieren",
     processing: "GENERIERE...",
@@ -372,9 +372,9 @@ export const translations = {
     tool_disabled_multi: "Nicht verfügbar bei Mehrfachauswahl",
 
     // Presets
-    presets_header: "Presets",
+    presets_header: "Vorlagen",
     new_preset: "Neues Preset",
-    search_presets: "Presets suchen...",
+    search_presets: "Vorlagen suchen...",
     library_empty: "Bibliothek ist leer.",
     create_first: "Foto hochladen",
     create_preset: "Preset erstellen",
@@ -449,7 +449,7 @@ export const translations = {
     // Admin
     admin_users: "Benutzer",
     admin_jobs: "Jobs",
-    admin_presets: "Presets",
+    admin_presets: "Vorlagen",
     admin_presets_desc: "Verwalte systemweite Presets für alle Benutzer.",
     admin_objects: "Stempel",
     admin_objects_desc: "Verwalte Kategorien und Möbelstücke der Bibliothek.",

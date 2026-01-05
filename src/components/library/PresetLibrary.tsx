@@ -14,7 +14,6 @@ interface PresetLibraryProps {
     currentLang: 'de' | 'en';
 }
 
-const DEFAULT_TAGS = ['Außen', 'Innen', 'Retusche', 'Staging', 'Mood'];
 
 export const PresetLibrary: React.FC<PresetLibraryProps> = ({
     templates,
@@ -29,7 +28,6 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
     const [search, setSearch] = useState('');
 
     // Filter State
-    const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
     const [isPresetsExpanded, setIsPresetsExpanded] = useState(true);
     const [isRecentExpanded, setIsRecentExpanded] = useState(false);
 
@@ -40,12 +38,6 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
         return templates.filter(t => !t.lang || t.lang === currentLang);
     }, [templates, currentLang]);
 
-    // Merge default tags with all tags used in filtered templates
-    const allAvailableTags = useMemo(() => {
-        const usedTags = new Set(languageFilteredTemplates.flatMap(t => t.tags || []));
-        DEFAULT_TAGS.forEach(t => usedTags.add(t));
-        return Array.from(usedTags).sort();
-    }, [languageFilteredTemplates]);
 
     const pinnedTemplates = useMemo(() => {
         return languageFilteredTemplates.filter(t => t.isPinned || t.isDefault);
@@ -69,19 +61,23 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
             );
         }
 
-        if (selectedTagFilter) {
-            result = result.filter(t => t.tags && t.tags.includes(selectedTagFilter));
+        if (search.trim()) {
+            const lower = search.toLowerCase();
+            result = result.filter(t =>
+                t.title.toLowerCase().includes(lower) ||
+                t.prompt.toLowerCase().includes(lower)
+            );
         }
 
         return result;
-    }, [languageFilteredTemplates, search, selectedTagFilter]);
+    }, [languageFilteredTemplates, search]);
 
     // --- Handlers ---
 
     const closeSearch = () => {
         setIsSearchActive(false);
         setSearch('');
-        setSelectedTagFilter(null);
+        setSearch('');
     };
 
     return (
@@ -108,30 +104,9 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
             <div className="flex flex-col">
                 <div className="flex flex-col">
 
-                    {/* SEARCH: Tag Filter Bar & New Button */}
+                    {/* SEARCH: New Button */}
                     {isSearchActive && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 mask-linear-fade">
-                                {allAvailableTags.map(tag => {
-                                    const isActive = selectedTagFilter === tag;
-                                    return (
-                                        <button
-                                            key={tag}
-                                            onClick={() => setSelectedTagFilter(isActive ? null : tag)}
-                                            className={`
-                                            px-3 py-1.5 ${Theme.Geometry.Radius} text-[10px] font-medium tracking-wide transition-all shrink-0 border
-                                            ${isActive
-                                                    ? 'bg-zinc-800 text-white border-zinc-700 dark:bg-zinc-200 dark:text-black dark:border-zinc-200'
-                                                    : `${Theme.Colors.Surface} ${Theme.Colors.Border} ${Theme.Colors.TextSecondary} hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white`}
-                                        `}
-                                        >
-                                            {tag}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* New Button */}
+                        <div className="flex flex-col gap-1 pb-4 px-3">
                             <button
                                 onClick={onRequestCreate}
                                 className={`flex items-center gap-2 py-2.5 px-3 ${Theme.Geometry.Radius} text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all w-full text-left group`}
