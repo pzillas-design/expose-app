@@ -154,7 +154,12 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                             <div className="flex flex-col gap-3">
                                 <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[10px]`}>Annotations JSON</span>
                                 <div className="p-4 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg border border-zinc-200 dark:border-zinc-800 font-mono text-[10px] leading-tight text-zinc-500 overflow-x-auto">
-                                    <pre>{JSON.stringify(annotations.map(a => ({ id: a.id, type: a.type, text: a.text })), null, 2)}</pre>
+                                    <pre>{JSON.stringify(annotations.map(a => ({
+                                        id: a.id,
+                                        type: a.type,
+                                        text: a.text,
+                                        refImage: a.referenceImage ? `Data (${a.referenceImage.length} chars)` : undefined
+                                    })), null, 2)}</pre>
                                 </div>
                             </div>
                         </div>

@@ -543,8 +543,8 @@ export function App() {
             <CreationModal
                 isOpen={isCreationModalOpen}
                 onClose={() => setIsCreationModalOpen(false)}
-                onGenerate={(prompt, model, ratio) => {
-                    handleCreateNew(prompt, model, ratio);
+                onGenerate={(prompt, model, ratio, attachments) => {
+                    handleCreateNew(prompt, model, ratio, attachments);
                     setIsCreationModalOpen(false);
                 }}
                 t={t}
