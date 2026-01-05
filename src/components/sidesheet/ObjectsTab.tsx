@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronRight, Box, Plus, Square, Circle, Minus, Eraser } from 'lucide-react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Box, Plus, Square, Circle, Minus, Eraser } from 'lucide-react';
+import { Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
 
 interface ObjectsTabProps {
@@ -20,17 +20,10 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     onAddObject, t, currentLang, library,
     onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onBack
 }) => {
-    // Open categories by default
-    const [openCategories, setOpenCategories] = useState<string[]>(['basics', 'utilities']);
-
-    // Auto-expand categories if library changes
-    useEffect(() => {
-        if (library.length > 0) {
-            setOpenCategories(library.map(c => c.id));
-        }
+    // Collect all items from all categories if we want to remove category headers
+    const allItems = useMemo(() => {
+        return library.flatMap(cat => cat.items.map(item => ({ ...item, catId: cat.id })));
     }, [library]);
-
-    const filteredCategories = library;
 
     // Helpers for Icons
     const renderIcon = (iconNameOrChar: string | undefined) => {
@@ -43,78 +36,55 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-
-            {/* Minimal spacing at top */}
-            <div className="h-2 shrink-0" />
+        <div className="flex flex-col h-full bg-white dark:bg-zinc-900 overflow-hidden">
 
             {/* List Content */}
             <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
                 <div className="flex flex-col">
-                    {filteredCategories.length === 0 ? (
+                    {allItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-zinc-500 gap-2">
                             <Box className="w-8 h-8 opacity-20" />
                             <span className={Typo.Label}>{t('no_objects')}</span>
                         </div>
                     ) : (
-                        filteredCategories.map((category) => {
-                            const isExpanded = openCategories.includes(category.id);
+                        <div className="flex flex-col divide-y divide-zinc-50 dark:divide-zinc-800/50">
+                            {allItems.map((item, idx) => (
+                                <div
+                                    key={`${item.id}-${idx}`}
+                                    onClick={() => onAddObject?.(item.label, item.id)}
+                                    className="group/item relative flex items-center gap-3 px-6 py-3.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer active:scale-[0.98] select-none transition-all"
+                                >
+                                    <span className="w-6 shrink-0 flex items-center justify-center">
+                                        {renderIcon(item.icon)}
+                                    </span>
 
-                            return (
-                                <div key={category.id} className="border-b border-zinc-100 dark:border-zinc-800 last:border-none">
-                                    <div className="flex items-center justify-between pl-6 pr-4 py-3.5 transition-colors group select-none hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                        <button
-                                            onClick={() => setOpenCategories(prev =>
-                                                prev.includes(category.id) ? prev.filter(c => c !== category.id) : [...prev, category.id]
-                                            )}
-                                            className="flex-1 flex items-center gap-3 text-left min-w-0"
-                                        >
-                                            <span className="text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 transition-colors shrink-0">
-                                                {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                                            </span>
-                                            <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white transition-colors normal-case tracking-normal text-[13px] truncate`}>
-                                                {category.label}
-                                            </span>
-                                        </button>
-                                    </div>
+                                    <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-400 group-hover/item:text-black dark:group-hover/item:text-white transition-colors flex-1 truncate`}>
+                                        {item.label}
+                                    </span>
 
-                                    {isExpanded && (
-                                        <div className="flex flex-col pb-2 animate-in slide-in-from-top-1 duration-200">
-                                            {category.items.map((item) => (
-                                                <div
-                                                    key={item.id}
-                                                    onClick={() => onAddObject?.(item.label, item.id)}
-                                                    className="group/item relative flex items-center gap-3 pl-6 pr-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer active:scale-[0.99] select-none transition-all"
-                                                >
-                                                    <span className="w-6 shrink-0 flex items-center justify-center">
-                                                        {renderIcon(item.icon)}
-                                                    </span>
-
-                                                    <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-400 group-hover/item:text-black dark:group-hover/item:text-white transition-colors flex-1 truncate`}>
-                                                        {item.label}
-                                                    </span>
-
-                                                    {/* Hover Hint Label - Premium Slide Out */}
-                                                    <div className="absolute left-[70%] top-1/2 -translate-y-1/2 opacity-0 group-hover/item:opacity-100 group-hover/item:left-[100%] transition-all duration-300 pointer-events-none whitespace-nowrap z-50 pl-4">
-                                                        <div className="bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-2xl flex items-center gap-2 border border-white/10 dark:border-black/10">
-                                                            <Plus className="w-3 h-3" />
-                                                            {currentLang === 'de' ? 'Klicken zum Einfügen' : 'Click to place'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-
-                                            {category.items.length === 0 && (
-                                                <div className="px-6 py-3 text-xs text-zinc-400 italic">
-                                                    Empty
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    {/* Simplified Hover Hint - Fade in on the right */}
+                                    <span className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-medium whitespace-nowrap pointer-events-none">
+                                        {currentLang === 'de' ? 'Hinzufügen' : 'Add'}
+                                    </span>
                                 </div>
-                            );
-                        })
+                            ))}
+                        </div>
                     )}
+                </div>
+
+                {/* Add Button at the bottom of the list */}
+                <div className="px-6 py-6 flex justify-center">
+                    <button
+                        onClick={() => {/* Trigger flow */ }}
+                        className="group/add flex items-center gap-2.5 px-6 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-dashed border-zinc-200 dark:border-zinc-700/50 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-[0.98]"
+                    >
+                        <div className="w-5 h-5 rounded-full bg-zinc-200/50 dark:bg-zinc-700/50 flex items-center justify-center group-hover/add:bg-black dark:group-hover/add:bg-white group-hover/add:text-white dark:group-hover/add:text-black transition-all">
+                            <Plus className="w-3 h-3" />
+                        </div>
+                        <span className={`${Typo.Label} font-semibold tracking-tight`}>
+                            {currentLang === 'de' ? 'Objekt hinzufügen' : 'Add object'}
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -146,8 +146,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if ((e.target as HTMLElement).closest('.annotation-ui')) return;
         e.stopPropagation();
 
-        // Clean empty annotations
-        const cleanedAnnotations = annotations.filter(a => (a.text && a.text.trim() !== '') || a.referenceImage || a.type === 'shape' || a.points.length > 1 || a.type === 'stamp');
+        // Clean empty annotations (stamps must have text, mask_paths must have points)
+        const cleanedAnnotations = annotations.filter(a => {
+            if (a.type === 'stamp' && (!a.text || a.text.trim() === '')) return false;
+            if (a.type === 'mask_path' && a.points.length <= 1) return false;
+            return true;
+        });
+
         if (cleanedAnnotations.length !== annotations.length) {
             onChange(cleanedAnnotations);
         }
@@ -606,7 +611,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         >
                             <div style={{ transform: finalTransform }} className="transition-transform duration-200">
                                 <div
-                                    className={`group/chip relative font-sans font-bold text-white px-3 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 scale-105' : 'hover:scale-105'}`}
+                                    className={`group/chip relative font-sans font-bold text-white px-2.5 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 scale-105' : 'hover:scale-105'}`}
                                     style={{
                                         fontSize: Math.max(14, width * 0.02),
                                         backgroundColor: 'rgba(0,0,0,0.85)',
@@ -626,14 +631,27 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 autoFocus
                                                 onMouseDown={(e) => e.stopPropagation()}
                                             />
-                                            <div className="flex items-center gap-1.5 ml-1">
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }} className="p-1 hover:bg-white/20 rounded-md transition-colors text-white"><Check className="w-3.5 h-3.5" /></button>
+                                            <div className="flex items-center gap-0.5 ml-0.5">
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!ann.text || ann.text.trim() === '') {
+                                                            deleteAnnotation(ann.id);
+                                                        } else {
+                                                            setActiveMaskId(null);
+                                                        }
+                                                    }}
+                                                    className="p-1 hover:bg-white/20 rounded-md transition-colors text-white"
+                                                >
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
                                                 <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-1 hover:bg-red-500 rounded-md transition-colors text-white"><X className="w-3.5 h-3.5" /></button>
                                             </div>
                                         </div>
                                     ) : (
                                         <>
-                                            {ann.text || (ann.type === 'stamp' ? "📦" : "TEXT")}
+                                            {ann.text || ""}
                                         </>
                                     )}
                                 </div>

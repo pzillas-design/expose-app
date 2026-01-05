@@ -59,7 +59,8 @@ export const useNanoController = () => {
         activeShape, setActiveShape,
         isDragOver, setIsDragOver,
         isSettingsOpen, setIsSettingsOpen,
-        isAdminOpen, setIsAdminOpen
+        isAdminOpen, setIsAdminOpen,
+        previousNav, setPreviousNav
     } = useUIState();
 
     // --- Navigation ---
@@ -73,7 +74,7 @@ export const useNanoController = () => {
     const {
         zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
         isZooming, isAutoScrolling,
-        isZoomingRef, isAutoScrollingRef, getMostVisibleItem
+        isZoomingRef, isAutoScrollingRef, getMostVisibleItem, zoomToItem
     } = canvasNav;
 
     // --- Selection ---
@@ -192,19 +193,33 @@ export const useNanoController = () => {
     }, [user, isAuthDisabled, showToast]);
 
     const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {
+        const oldMode = sideSheetMode;
         setSideSheetMode(newMode);
-        if (newMode === 'brush' || newMode === 'objects') {
+
+        if ((newMode === 'brush' || newMode === 'objects') && oldMode === 'prompt') {
+            // Entering annotation mode: Store current state
+            const container = scrollContainerRef.current;
+            if (container) {
+                setPreviousNav({
+                    zoom: zoom,
+                    scroll: { x: container.scrollLeft, y: container.scrollTop }
+                });
+            }
+
             if (selectedImage) {
-                const sidebarWidth = 360;
-                const fitZoom = Math.min((window.innerWidth - sidebarWidth) / selectedImage.width, window.innerHeight / selectedImage.height) * 0.9;
-                smoothZoomTo(fitZoom);
+                // Smooth zoom into the image (sidebar width 360)
+                zoomToItem(selectedImage.id, 0.9, 360);
+            }
+        } else if (newMode === 'prompt' && (oldMode === 'brush' || oldMode === 'objects')) {
+            // Leaving annotation mode: Restore previous state
+            if (previousNav) {
+                smoothZoomTo(previousNav.zoom, previousNav.scroll, 400);
+                setPreviousNav(null);
             } else {
                 smoothZoomTo(1.0);
             }
-        } else if (newMode === 'prompt') {
-            smoothZoomTo(1.0);
         }
-    }, [selectedImage, smoothZoomTo, setSideSheetMode]);
+    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav]);
 
     const handleGenerate = useCallback((prompt?: string) => {
         if (selectedImages.length > 1) {

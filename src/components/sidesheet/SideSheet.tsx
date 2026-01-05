@@ -488,7 +488,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full">
-                        <SubHeader title={t('back')} />
+                        <SubHeader title={t('annotate')} />
                         <div className={`flex-1 overflow-hidden ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}

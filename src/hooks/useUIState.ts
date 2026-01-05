@@ -8,6 +8,7 @@ export const useUIState = () => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAdminOpen, setIsAdminOpen] = useState(false);
+    const [previousNav, setPreviousNav] = useState<{ zoom: number, scroll: { x: number, y: number } } | null>(null);
 
     return {
         sideSheetMode,
@@ -23,6 +24,8 @@ export const useUIState = () => {
         isSettingsOpen,
         setIsSettingsOpen,
         isAdminOpen,
-        setIsAdminOpen
+        setIsAdminOpen,
+        previousNav,
+        setPreviousNav
     };
 };

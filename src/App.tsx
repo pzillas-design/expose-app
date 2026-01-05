@@ -43,7 +43,8 @@ export function App() {
         setQualityMode, setThemeMode, setLang, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
-        setMaskTool, setActiveShape, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew
+        setMaskTool, setActiveShape, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
+        handleModeChange
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -371,11 +372,10 @@ export function App() {
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
                     onAnnotate={() => {
-                        if (sideSheetMode === 'brush') {
-                            setSideSheetMode(null);
+                        if (sideSheetMode === 'brush' || sideSheetMode === 'objects') {
+                            handleModeChange('prompt');
                         } else {
-                            setSideSheetMode('brush');
-                            smoothZoomTo(1.0);
+                            handleModeChange('brush');
                         }
                     }}
                     isAnnotationMode={sideSheetMode === 'brush'}
@@ -453,8 +453,6 @@ export function App() {
                                 </div>
                             </div>
                         ))}
-
-
                     </div>
 
                     {rows.length === 0 && !isDragOver && (
@@ -473,7 +471,7 @@ export function App() {
                 selectedImage={selectedImage}
                 selectedImages={selectedImages}
                 sideSheetMode={sideSheetMode}
-                onModeChange={setSideSheetMode}
+                onModeChange={handleModeChange}
                 brushSize={brushSize}
                 onBrushSizeChange={setBrushSize}
                 onGenerate={handleGenerate}

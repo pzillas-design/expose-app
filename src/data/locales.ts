@@ -20,6 +20,7 @@ export const translations = {
     attach_file: "Attach File",
     price_free: "Free",
     model_prefix: "Model: ",
+    annotate: "Annotation",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -344,6 +345,7 @@ export const translations = {
     attach_file: "Datei anhängen",
     price_free: "Kostenlos",
     model_prefix: "Modell: ",
+    annotate: "Anmerkungen",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",

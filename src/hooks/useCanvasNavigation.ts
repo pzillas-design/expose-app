@@ -197,6 +197,51 @@ export const useCanvasNavigation = ({
 
     }, [selectedIds, zoom, smoothZoomTo, scrollContainerRef]);
 
+    const zoomToItem = useCallback((id: string, paddingPercentage = 0.9, sidebarWidth = 0) => {
+        if (!scrollContainerRef.current) return;
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const el = container.querySelector(`[data-image-id="${id}"]`);
+        if (!el) return;
+
+        const rect = el.getBoundingClientRect();
+        const currentScrollLeft = container.scrollLeft;
+        const currentScrollTop = container.scrollTop;
+
+        // Convert viewport-relative rect to absolute scroll coordinates (current zoom)
+        const absLeft = rect.left + currentScrollLeft - containerRect.left;
+        const absTop = rect.top + currentScrollTop - containerRect.top;
+
+        const itemWidth = rect.width / zoom;
+        const itemHeight = rect.height / zoom;
+
+        // Calculate Ideal Zoom
+        const availableWidth = (containerRect.width - sidebarWidth) * paddingPercentage;
+        const availableHeight = containerRect.height * paddingPercentage;
+
+        const targetZoom = Math.min(availableWidth / itemWidth, availableHeight / itemHeight);
+        const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
+
+        // Center item in the visible area (viewport minus sidebar)
+        const centerX = absLeft + (rect.width / 2);
+        const centerY = absTop + (rect.height / 2);
+
+        const padX = window.innerWidth / 2;
+        const padY = window.innerHeight / 2;
+
+        // Point on canvas (unscaled)
+        const contentX = (centerX - padX) / zoom;
+        const contentY = (centerY - padY) / zoom;
+
+        const viewportCenterX = (containerRect.width - sidebarWidth) / 2;
+        const viewportCenterY = containerRect.height / 2;
+
+        const targetScrollLeft = (padX + (contentX * clampedTargetZoom)) - viewportCenterX;
+        const targetScrollTop = (padY + (contentY * clampedTargetZoom)) - viewportCenterY;
+
+        smoothZoomTo(clampedTargetZoom, { x: targetScrollLeft, y: targetScrollTop }, 400);
+    }, [zoom, smoothZoomTo, scrollContainerRef]);
+
     // Snap to single item logic
     const snapToItem = useCallback((id: string) => {
         setIsAutoScrolling(true);
@@ -303,6 +348,7 @@ export const useCanvasNavigation = ({
         isAutoScrolling,
         isZoomingRef,
         isAutoScrollingRef,
-        getMostVisibleItem
+        getMostVisibleItem,
+        zoomToItem
     };
 };
