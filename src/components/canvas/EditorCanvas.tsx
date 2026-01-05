@@ -611,7 +611,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         fontSize: Math.max(14, width * 0.02),
                                         backgroundColor: 'rgba(0,0,0,0.85)',
                                         lineHeight: 1.2,
-                                        minWidth: isActiveItem ? '140px' : 'auto'
+                                        minWidth: 'none'
                                     }}
                                 >
                                     {isActiveItem ? (
@@ -621,8 +621,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
                                                 placeholder="Type custom text..."
-                                                className="bg-transparent border-none outline-none text-white placeholder-zinc-500 w-full p-0 focus:ring-0 h-auto font-bold"
-                                                style={{ fontSize: 'inherit' }}
+                                                className="bg-transparent border-none outline-none text-white placeholder-zinc-500 p-0 focus:ring-0 h-auto font-bold"
+                                                style={{ fontSize: 'inherit', width: `${Math.max(4, (ann.text?.length || 0) + 1)}ch` }}
                                                 autoFocus
                                                 onMouseDown={(e) => e.stopPropagation()}
                                             />
@@ -634,13 +634,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     ) : (
                                         <>
                                             {ann.text || (ann.type === 'stamp' ? "📦" : "TEXT")}
-
-                                            {/* Hover Actions for non-active state */}
-                                            <div className="absolute left-1/2 -translate-x-1/2 -top-10 flex items-center gap-1 bg-black p-1.5 rounded-full shadow-xl opacity-0 group-hover/chip:opacity-100 transition-opacity pointer-events-none group-hover/chip:pointer-events-auto z-50 ring-1 ring-white/20">
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }} className="text-white hover:text-blue-300 p-1 rounded-full hover:bg-white/10"><Pen className="w-3.5 h-3.5" /></button>
-                                                <div className="w-px h-3 bg-white/20 mx-1" />
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="text-white hover:text-red-300 p-1 rounded-full hover:bg-white/10"><X className="w-3.5 h-3.5" /></button>
-                                            </div>
                                         </>
                                     )}
                                 </div>
