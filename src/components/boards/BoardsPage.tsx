@@ -62,7 +62,16 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
             ))}
             {showPlus && (
                 <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center overflow-hidden">
-                    <span className="text-sm font-bold text-zinc-400 dark:text-zinc-600">+{total - 3}</span>
+                    {displayImages[3] && (
+                        <img
+                            src={displayImages[3]}
+                            onLoad={handleLoad}
+                            onError={handleLoad}
+                            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-[2.0] opacity-40 dark:opacity-20"
+                            alt=""
+                        />
+                    )}
+                    <span className="relative z-10 text-sm font-bold text-zinc-500 dark:text-zinc-400">+{total - 3}</span>
                 </div>
             )}
         </div>
@@ -194,7 +203,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                         </div>
                     )}
-                    <div className={`absolute inset-0 transition-all duration-700 ease-out ${isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-105 blur-sm'}`}>
+                    <div className={`absolute inset-0 transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
                         <GridThumbnail
                             images={board.previewImages}
                             thumbnail={board.thumbnail}

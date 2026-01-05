@@ -95,7 +95,7 @@ const ImageSource = memo(({ path, maskSrc, zoom, title }: { path: string, maskSr
 
         const fetchUrl = async () => {
             const highRes = zoom >= 1.0;
-            const url = await storageService.getSignedUrl(path, highRes ? undefined : { width: 600, quality: 75 });
+            const url = await storageService.getSignedUrl(path, highRes ? undefined : { width: 800, quality: 75 });
             setCurrentSrc(url);
             setIsHighRes(highRes);
         };

@@ -411,8 +411,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         variant="ghost"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-[#CD6549]'}`} />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#CD6549] hover:text-[#CD6549] hover:bg-[#CD6549]/10 dark:hover:bg-[#CD6549]/20"
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-zinc-500'}`} />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
@@ -421,8 +421,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         variant="ghost"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<Camera className="w-3.5 h-3.5 text-[#CD6549]" />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#CD6549] hover:text-[#CD6549] hover:bg-[#CD6549]/10 dark:hover:bg-[#CD6549]/20"
+                                        icon={<Camera className="w-3.5 h-3.5 text-zinc-500" />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
                                         tooltip={t('upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
@@ -446,10 +446,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
                                                 ${selectedImage.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                                                    : 'bg-[#CD6549] hover:opacity-90 text-zinc-900'}
+                                                    : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
                                         >
-                                            <span className={`flex items-center gap-2 ${Typo.Label} text-zinc-900`}>
+                                            <span className={`flex items-center gap-2 ${Typo.Label}`}>
                                                 {selectedImage.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
@@ -472,7 +472,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 ${isModelDropdownOpen ? 'bg-black/10' : ''}
                                                             `}
                                                         >
-                                                            <Settings2 className="w-4 h-4 text-zinc-900" />
+                                                            <Settings2 className="w-4 h-4" />
                                                         </div>
                                                     </Tooltip>
                                                 </div>

@@ -42,10 +42,10 @@ export const Theme = {
         DangerBorder: "border-red-200 dark:border-red-800",
 
         // Brand
-        Terracotta: "text-[#CD6549]",
-        TerracottaBg: "bg-[#CD6549]",
-        TerracottaBorder: "border-[#CD6549]",
-        TerracottaHex: "#CD6549",
+        Terracotta: "text-[#CC673F]",
+        TerracottaBg: "bg-[#CC673F]",
+        TerracottaBorder: "border-[#CC673F]",
+        TerracottaHex: "#CC673F",
     },
     Effects: {
         Glass: "bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm", // Slight blur for floating elements
