@@ -272,140 +272,147 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     {activeInternalTab === 'prompt' || isMulti ? (
                         <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
                             <div className="flex flex-col mb-3"> {/* Closer to buttons */}
-                                <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500 transition-colors overflow-hidden`}>
-                                    <Tooltip text={t('tt_prompt')} side="top">
-                                        <textarea
-                                            ref={textAreaRef}
-                                            value={prompt}
-                                            onChange={(e) => setPrompt(e.target.value)}
-                                            placeholder={t('describe_changes')}
-                                            className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[120px] overflow-hidden`}
-                                            disabled={selectedImage.isGenerating}
-                                        />
-                                    </Tooltip>
+                                <div className="flex flex-col gap-2">
+                                    {/* 1. Prompt Input Block */}
+                                    <div className={`relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500 transition-colors overflow-hidden`}>
+                                        <Tooltip text={t('tt_prompt')} side="top">
+                                            <textarea
+                                                ref={textAreaRef}
+                                                value={prompt}
+                                                onChange={(e) => setPrompt(e.target.value)}
+                                                placeholder={t('describe_changes')}
+                                                className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[120px] overflow-hidden`}
+                                                disabled={selectedImage.isGenerating}
+                                            />
+                                        </Tooltip>
+                                    </div>
 
-                                    {/* Integrated Annotations Section - Now inside the border */}
+                                    {/* 2. Annotations Block */}
                                     {annotations.length > 0 && !isMulti && (
-                                        <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50/50 dark:bg-zinc-900/30`}>
-                                            {annotations.map((ann, idx) => {
-                                                const isRefType = ann.type === 'reference_image';
-                                                const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-                                                const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
-                                                const displayText = ann.text || defaultLabel || t('untitled');
-                                                const isEditing = editingId === ann.id;
+                                        <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} overflow-hidden`}>
+                                            <div className={`flex flex-col bg-zinc-50/50 dark:bg-zinc-900/30`}>
+                                                {annotations.map((ann, idx) => {
+                                                    const isRefType = ann.type === 'reference_image';
+                                                    const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
+                                                    const defaultLabel = isRefType ? `${t('image_ref')} ${refIndex + 1}` : '';
+                                                    const displayText = ann.text || defaultLabel || t('untitled');
+                                                    const isEditing = editingId === ann.id;
 
-                                                return (
-                                                    <div
-                                                        key={ann.id}
-                                                        className={`flex items-center gap-3 px-3 py-2 border-b ${Theme.Colors.Border} last:border-0 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors`}
-                                                    >
-                                                        {isRefType && ann.referenceImage ? (
-                                                            <div className="shrink-0 w-6 h-6 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                            </div>
-                                                        ) : (
-                                                            <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                {ann.type === 'stamp' ? <Square className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex-1 min-w-0">
-                                                            {isEditing ? (
-                                                                <input
-                                                                    autoFocus
-                                                                    value={editValue}
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    onBlur={saveEditing}
-                                                                    onKeyDown={handleKeyDown}
-                                                                    className={`w-full bg-transparent border-none outline-none ${Typo.Micro} !text-sm text-black dark:text-white placeholder-zinc-400 p-0`}
-                                                                    placeholder={isRefType ? t('describe_style') : t('what_is_this')}
-                                                                />
+                                                    return (
+                                                        <div
+                                                            key={ann.id}
+                                                            className={`flex items-center gap-3 px-3 py-2 border-b ${Theme.Colors.Border} last:border-0 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 transition-colors`}
+                                                        >
+                                                            {isRefType && ann.referenceImage ? (
+                                                                <div className="shrink-0 w-6 h-6 rounded overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                    <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                                </div>
                                                             ) : (
-                                                                <span
-                                                                    onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                    className={`${Typo.Micro} block truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : Theme.Colors.TextPrimary}`}
-                                                                >
-                                                                    {displayText}
-                                                                </span>
+                                                                <div className="shrink-0 flex items-center justify-center text-zinc-400">
+                                                                    {ann.type === 'stamp' ? <Square className="w-4 h-4" /> : <Pen className="w-4 h-4" />}
+                                                                </div>
                                                             )}
-                                                        </div>
 
-                                                        <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
-                                                            {!isRefType && (
+                                                            <div className="flex-1 min-w-0">
+                                                                {isEditing ? (
+                                                                    <input
+                                                                        autoFocus
+                                                                        value={editValue}
+                                                                        onChange={(e) => setEditValue(e.target.value)}
+                                                                        onBlur={saveEditing}
+                                                                        onKeyDown={handleKeyDown}
+                                                                        className={`w-full bg-transparent border-none outline-none ${Typo.Micro} !text-sm text-black dark:text-white placeholder-zinc-400 p-0`}
+                                                                        placeholder={isRefType ? t('describe_style') : t('what_is_this')}
+                                                                    />
+                                                                ) : (
+                                                                    <span
+                                                                        onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
+                                                                        className={`${Typo.Micro} block truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : Theme.Colors.TextPrimary}`}
+                                                                    >
+                                                                        {displayText}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                                                {!isRefType && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
+                                                                        className="p-1.5 rounded-md text-zinc-400 hover:text-orange-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                                                        title={t('upload_ref')}
+                                                                    >
+                                                                        <Camera className="w-3 h-3" />
+                                                                    </button>
+                                                                )}
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                                                    className="p-1.5 rounded-md text-zinc-400 hover:text-orange-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                                                                    title={t('upload_ref')}
+                                                                    onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                                    className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                                                 >
-                                                                    <Camera className="w-3 h-3" />
+                                                                    <X className="w-3 h-3" />
                                                                 </button>
-                                                            )}
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     )}
 
-                                    {/* Active Variables Section */}
+                                    {/* 3. Controls Block */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                        <div className={`flex flex-col border-t ${Theme.Colors.Border} bg-zinc-50 dark:bg-zinc-900/50`}>
-                                            {activeTemplate.controls
-                                                .filter(c => !hiddenControlIds.includes(c.id))
-                                                .map((ctrl, idx) => (
-                                                    <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.Border}` : ''}`}>
-                                                        <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
-                                                            <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
-                                                                {ctrl.label}
-                                                            </span>
-                                                            <IconButton
-                                                                icon={<X className="w-3.5 h-3.5" />}
-                                                                onClick={() => handleClearControl(ctrl.id)}
-                                                                tooltip="Entfernen"
-                                                                className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
-                                                            />
-                                                        </div>
-                                                        <div className="px-3 pb-3 flex flex-wrap gap-1.5">
-                                                            {ctrl.options.map((opt) => {
-                                                                const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                                return (
-                                                                    <button
-                                                                        key={opt.id}
-                                                                        onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                        className={`
+                                        <div className={`flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} overflow-hidden`}>
+                                            <div className={`flex flex-col bg-zinc-50 dark:bg-zinc-900/50`}>
+                                                {activeTemplate.controls
+                                                    .filter(c => !hiddenControlIds.includes(c.id))
+                                                    .map((ctrl, idx) => (
+                                                        <div key={ctrl.id} className={`${idx > 0 ? `border-t ${Theme.Colors.Border}` : ''}`}>
+                                                            <div className="flex items-center justify-between px-3 py-2 min-h-[40px]">
+                                                                <span className={`${Typo.Mono} text-[10px] tracking-wider text-zinc-400 dark:text-zinc-500`}>
+                                                                    {ctrl.label}
+                                                                </span>
+                                                                <IconButton
+                                                                    icon={<X className="w-3.5 h-3.5" />}
+                                                                    onClick={() => handleClearControl(ctrl.id)}
+                                                                    tooltip="Entfernen"
+                                                                    className="hover:bg-zinc-200 dark:hover:bg-zinc-700 -mr-1"
+                                                                />
+                                                            </div>
+                                                            <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+                                                                {ctrl.options.map((opt) => {
+                                                                    const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                                    return (
+                                                                        <button
+                                                                            key={opt.id}
+                                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                            className={`
                                                                         px-2.5 py-1 rounded-md text-[10px] font-medium transition-all font-mono shadow-sm
                                                                         ${isSelected
-                                                                                ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white'
-                                                                                : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
+                                                                                    ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-900 dark:border-zinc-100 border text-black dark:text-white'
+                                                                                    : 'bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-black dark:hover:text-white'}
                                                                     `}
-                                                                    >
-                                                                        {opt.label}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                                        >
+                                                                            {opt.label}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="flex flex-col mb-5">
+                            <div className="flex flex-col mb-8">
                                 {/* Tools Buttons */}
                                 <div className="flex items-center justify-center gap-4">
                                     <Button
                                         variant="ghost"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-[#E06A49]'}`} />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#E06A49] hover:text-[#E06A49] hover:bg-[#E06A49]/10 dark:hover:bg-[#E06A49]/20"
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-[#CD6549]'}`} />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#CD6549] hover:text-[#CD6549] hover:bg-[#CD6549]/10 dark:hover:bg-[#CD6549]/20"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
@@ -414,8 +421,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         variant="ghost"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<Camera className="w-3.5 h-3.5 text-[#E06A49]" />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#E06A49] hover:text-[#E06A49] hover:bg-[#E06A49]/10 dark:hover:bg-[#E06A49]/20"
+                                        icon={<Camera className="w-3.5 h-3.5 text-[#CD6549]" />}
+                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-[#CD6549] hover:text-[#CD6549] hover:bg-[#CD6549]/10 dark:hover:bg-[#CD6549]/20"
                                         tooltip={t('upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
@@ -439,7 +446,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
                                                 ${selectedImage.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                                                    : 'bg-[#E06A49] hover:opacity-90 text-zinc-900'}
+                                                    : 'bg-[#CD6549] hover:opacity-90 text-zinc-900'}
                                             `}
                                         >
                                             <span className={`flex items-center gap-2 ${Typo.Label} text-zinc-900`}>
