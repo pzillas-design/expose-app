@@ -71,8 +71,11 @@ export const useSelection = ({
         } else if (multi) {
             // Cmd/Ctrl Click
             setSelectedIds(prev => {
-                if (prev.includes(id)) return prev.filter(x => x !== id);
-                return [...prev, id];
+                const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+                if (next.length > 1) {
+                    isSnapEnabledRef.current = false;
+                }
+                return next;
             });
             lastSelectedIdRef.current = id;
         } else {
@@ -82,12 +85,7 @@ export const useSelection = ({
         }
     }, [allImages, selectAndSnap, setSelectedIds]);
 
-    // Trigger fit when multi-selection changes
-    useEffect(() => {
-        if (selectedIds.length > 1) {
-            fitSelectionToView();
-        }
-    }, [selectedIds.length, fitSelectionToView]);
+    // fitSelectionToView removed to allow free movement during multi-select as requested
 
     // --- Scroll Logic (Focus Tracking) ---
     const lastZoomFinishedRef = useRef<number>(0);

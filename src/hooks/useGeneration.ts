@@ -117,7 +117,7 @@ export const useGeneration = ({
         });
     }, [rows, pollForJob]);
 
-    const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1) => {
+    const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1, shouldSnap: boolean = true) => {
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
 
@@ -204,9 +204,11 @@ export const useGeneration = ({
         });
 
         // Use a slightly longer timeout to ensure React has finished rendering the new image element
-        setTimeout(() => {
-            selectAndSnap(newId);
-        }, 150);
+        if (shouldSnap) {
+            setTimeout(() => {
+                selectAndSnap(newId);
+            }, 150);
+        }
 
         try {
             const finalImage = await imageService.processGeneration({

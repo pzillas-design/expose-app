@@ -243,9 +243,10 @@ export const useNanoController = () => {
 
     const handleGenerate = useCallback((prompt?: string) => {
         if (selectedImages.length > 1) {
-            selectedImages.forEach(img => {
+            selectedImages.forEach((img, index) => {
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
-                performGeneration(img, finalPrompt);
+                // Snap only to the first generated image in the batch
+                performGeneration(img, finalPrompt, 1, index === 0);
             });
         } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
