@@ -183,13 +183,19 @@ CREATE POLICY "Users can delete their own jobs" ON public.generation_jobs FOR DE
 
 -- GLOBAL PRESETS
 CREATE POLICY "Public Presets Read" ON public.global_presets FOR SELECT USING (true);
-CREATE POLICY "Admin Presets Write" ON public.global_presets FOR INSERT, UPDATE, DELETE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Presets Insert" ON public.global_presets FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
+CREATE POLICY "Admin Presets Update" ON public.global_presets FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Presets Delete" ON public.global_presets FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
 
 -- GLOBAL OBJECTS
 CREATE POLICY "Public Categories Read" ON public.global_objects_categories FOR SELECT USING (true);
 CREATE POLICY "Public Items Read" ON public.global_objects_items FOR SELECT USING (true);
-CREATE POLICY "Admin Objects Write" ON public.global_objects_categories FOR INSERT, UPDATE, DELETE TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admin Items Write" ON public.global_objects_items FOR INSERT, UPDATE, DELETE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Categories Insert" ON public.global_objects_categories FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
+CREATE POLICY "Admin Categories Update" ON public.global_objects_categories FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Categories Delete" ON public.global_objects_categories FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Items Insert" ON public.global_objects_items FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
+CREATE POLICY "Admin Items Update" ON public.global_objects_items FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Admin Items Delete" ON public.global_objects_items FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
 
 -- 5. STORAGE SETUP
 -- Note: Buckets can be tricky via SQL, manual verification in UI is recommended.

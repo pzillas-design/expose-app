@@ -7,20 +7,17 @@ CREATE OR REPLACE FUNCTION public.recreate_optimized_policy(
     pol_name text, 
     cmd text, 
     roles text[], 
-    using_expr text, 
-    check_expr text DEFAULT NULL
+    expr text
 ) RETURNS void AS $$
-DECLARE
-    role_name text;
 BEGIN
     EXECUTE format('DROP POLICY IF EXISTS %I ON %I', pol_name, tbl_name);
     
-    IF check_expr IS NOT NULL THEN
-        EXECUTE format('CREATE POLICY %I ON %I FOR %s TO %s USING (%s) WITH CHECK (%s)', 
-            pol_name, tbl_name, cmd, array_to_string(roles, ','), using_expr, check_expr);
+    IF cmd = 'INSERT' THEN
+        EXECUTE format('CREATE POLICY %I ON %I FOR %s TO %s WITH CHECK (%s)', 
+            pol_name, tbl_name, cmd, array_to_string(roles, ','), expr);
     ELSE
         EXECUTE format('CREATE POLICY %I ON %I FOR %s TO %s USING (%s)', 
-            pol_name, tbl_name, cmd, array_to_string(roles, ','), using_expr);
+            pol_name, tbl_name, cmd, array_to_string(roles, ','), expr);
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -36,31 +33,38 @@ BEGIN
 
     -- BOARDS
     PERFORM public.recreate_optimized_policy('boards', 'Users can view their own boards', 'SELECT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
-    PERFORM public.recreate_optimized_policy('boards', 'Users can insert their own boards', 'INSERT', ARRAY['public'], 'true', '(SELECT auth.uid()) = user_id');
+    PERFORM public.recreate_optimized_policy('boards', 'Users can insert their own boards', 'INSERT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('boards', 'Users can update their own boards', 'UPDATE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('boards', 'Users can delete their own boards', 'DELETE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
 
     -- CANVAS IMAGES
     PERFORM public.recreate_optimized_policy('canvas_images', 'Users can view their own images', 'SELECT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
-    PERFORM public.recreate_optimized_policy('canvas_images', 'Users can insert their own images', 'INSERT', ARRAY['public'], 'true', '(SELECT auth.uid()) = user_id');
+    PERFORM public.recreate_optimized_policy('canvas_images', 'Users can insert their own images', 'INSERT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('canvas_images', 'Users can update their own images', 'UPDATE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('canvas_images', 'Users can delete their own images', 'DELETE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
 
     -- GENERATION JOBS
     PERFORM public.recreate_optimized_policy('generation_jobs', 'Users can view their own jobs', 'SELECT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
-    PERFORM public.recreate_optimized_policy('generation_jobs', 'Users can insert their own jobs', 'INSERT', ARRAY['public'], 'true', '(SELECT auth.uid()) = user_id');
+    PERFORM public.recreate_optimized_policy('generation_jobs', 'Users can insert their own jobs', 'INSERT', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('generation_jobs', 'Users can update their own jobs', 'UPDATE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
     PERFORM public.recreate_optimized_policy('generation_jobs', 'Users can delete their own jobs', 'DELETE', ARRAY['public'], '(SELECT auth.uid()) = user_id');
 
     -- GLOBAL PRESETS (Overlapping fixes)
     PERFORM public.recreate_optimized_policy('global_presets', 'Public Presets Read', 'SELECT', ARRAY['public'], 'true');
-    PERFORM public.recreate_optimized_policy('global_presets', 'Admin Presets Write', 'INSERT,UPDATE,DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_presets', 'Admin Presets Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_presets', 'Admin Presets Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_presets', 'Admin Presets Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
 
     -- GLOBAL OBJECTS (Overlapping fixes)
     PERFORM public.recreate_optimized_policy('global_objects_categories', 'Public Categories Read', 'SELECT', ARRAY['public'], 'true');
-    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Objects Write', 'INSERT,UPDATE,DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+
     PERFORM public.recreate_optimized_policy('global_objects_items', 'Public Items Read', 'SELECT', ARRAY['public'], 'true');
-    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Write', 'INSERT,UPDATE,DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
 
     -- TABLES POSSIBLY ADDED VIA UI (mentioned in lint)
     IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'user_presets') THEN
