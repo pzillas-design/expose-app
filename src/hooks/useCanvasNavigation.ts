@@ -54,21 +54,10 @@ export const useCanvasNavigation = ({
 
         if (!finalTargetScroll) {
             const containerRect = container.getBoundingClientRect();
-            let pivotX, pivotY;
 
-            // Try to find the primary selected item to zoom around it
-            const selectedEl = primarySelectedId ? container.querySelector(`[data-image-id="${primarySelectedId}"]`) : null;
-
-            if (selectedEl) {
-                const sRect = selectedEl.getBoundingClientRect();
-                // Get the center of the item relative to the scroll origin (padX/padY)
-                pivotX = sRect.left + (sRect.width / 2) + startScrollX - containerRect.left;
-                pivotY = sRect.top + (sRect.height / 2) + startScrollY - containerRect.top;
-            } else {
-                // Fallback: Zoom around the center of the current viewport
-                pivotX = startScrollX + (containerRect.width / 2);
-                pivotY = startScrollY + (containerRect.height / 2);
-            }
+            // Zoom around the center of the current viewport
+            const pivotX = startScrollX + (containerRect.width / 2);
+            const pivotY = startScrollY + (containerRect.height / 2);
 
             const padX = window.innerWidth / 2;
             const padY = window.innerHeight / 2;
