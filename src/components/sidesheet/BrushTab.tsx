@@ -1,8 +1,7 @@
-
 import React, { useMemo } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
-import { Pen, Type, Square, Circle, MousePointer2, Shapes, Triangle, Trash2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, MousePointer2, Shapes, Trash2, Minus } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -21,6 +20,7 @@ interface BrushTabProps {
     onDeleteUserItem: (catId: string, itemId: string) => void;
     onAddObject: (label: string, itemId: string, icon?: string) => void;
     onBack?: () => void;
+    onBrushPreviewingChange?: (active: boolean) => void;
 }
 
 export const BrushTab: React.FC<BrushTabProps> = ({
@@ -30,7 +30,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     onMaskToolChange,
     activeShape = 'rect',
     onActiveShapeChange,
-    t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject
+    t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject,
+    onBrushPreviewingChange
 }) => {
 
     const objectLibrary = useMemo(() => {
@@ -43,82 +44,54 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         </span>
     );
 
-    const ToolCard = ({ icon: Icon, label, description, toolId, active, children }: { icon: any, label: string, description?: string, toolId: any, active: boolean, children?: React.ReactNode }) => (
-        <div
-            className={`
-                group flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden
-                ${active
-                    ? 'bg-zinc-900 dark:bg-zinc-100 border-zinc-900 dark:border-zinc-100 shadow-lg scale-[1.02]'
-                    : 'bg-white dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                }
-            `}
-        >
+    const ToolTile = ({ icon: Icon, label, description, toolId, active, children }: { icon: any, label: string, description?: string, toolId: any, active: boolean, children?: React.ReactNode }) => (
+        <div className={`flex flex-col rounded-2xl transition-all duration-300 ${active ? 'bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/5 shadow-sm' : ''}`}>
             <button
                 onClick={() => onMaskToolChange?.(toolId)}
-                className={`
-                    w-full flex items-center gap-4 px-4 py-4 text-left transition-colors
-                    ${active ? 'text-white dark:text-black' : 'text-zinc-600 dark:text-zinc-400'}
-                `}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl w-full text-left transition-all ${active ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
             >
-                <div className={`p-2.5 rounded-xl transition-colors ${active ? 'bg-white/10 dark:bg-black/5' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
-                    <Icon className="w-5 h-5" />
+                <div className={`p-2 rounded-xl transition-colors ${active ? 'bg-white dark:bg-zinc-800 shadow-sm' : 'bg-transparent'}`}>
+                    <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col">
-                    <span className={`${Typo.Label} font-bold`}>{label}</span>
-                    {description && <span className={`${Typo.Micro} opacity-60`}>{description}</span>}
+                    <span className={`${Typo.Label} font-bold leading-tight`}>{label}</span>
+                    {description && !active && <span className="text-[10px] opacity-60 font-medium truncate max-w-[140px]">{description}</span>}
                 </div>
             </button>
-
             {active && children && (
-                <div className="px-5 pb-5 pt-2 animate-in slide-in-from-top-2 duration-300">
+                <div className="px-4 pb-4 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
                     {children}
                 </div>
             )}
         </div>
     );
 
-    const SubTool = ({ icon: Icon, label, id, active, onClick }: { icon: any, label: string, id: string, active: boolean, onClick: () => void }) => (
-        <button
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className={`
-                flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border transition-all
-                ${active
-                    ? 'bg-white/20 dark:bg-black/10 border-white/20 dark:border-black/10 text-white dark:text-black'
-                    : 'bg-white/5 dark:bg-black/5 border-transparent text-white/60 dark:text-black/60 hover:bg-white/10'
-                }
-            `}
-        >
-            <Icon className="w-4 h-4" />
-            <span className={Typo.Micro}>{label}</span>
-        </button>
-    );
+
 
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
             <div className="px-5 pt-6 pb-6 space-y-4 shrink-0 overflow-y-auto no-scrollbar">
                 <SectionHeader label={t('tools_label') || (currentLang === 'de' ? 'Werkzeuge' : 'Tools')} />
 
-                <div className="flex flex-col gap-3">
-                    {/* SELECTION */}
-                    <ToolCard
+                <div className="flex flex-col gap-1">
+                    <ToolTile
                         icon={MousePointer2}
                         label={t('selection_tool') || (currentLang === 'de' ? 'Auswahl' : 'Selection')}
-                        description={currentLang === 'de' ? 'Objekte verschieben und bearbeiten' : 'Move and edit objects'}
+                        description={currentLang === 'de' ? 'Verschieben & Bearbeiten' : 'Move & Edit'}
                         toolId="select"
                         active={maskTool === 'select'}
                     />
 
-                    {/* BRUSH */}
-                    <ToolCard
+                    <ToolTile
                         icon={Pen}
                         label={currentLang === 'de' ? 'Pinsel' : 'Brush'}
-                        description={currentLang === 'de' ? 'Bereiche manuell markieren' : 'Mark areas manually'}
+                        description={currentLang === 'de' ? 'Manuell markieren' : 'Manual marking'}
                         toolId="brush"
                         active={maskTool === 'brush'}
                     >
-                        <div className="space-y-4 mt-2">
-                            <div className="flex items-center justify-between text-white dark:text-black">
-                                <label className={Typo.Micro}>{t('brush_size')}</label>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between text-zinc-500">
+                                <label className="text-[10px] font-bold uppercase tracking-wider">{t('brush_size')}</label>
                                 <span className={Typo.Mono}>{brushSize}px</span>
                             </div>
                             <input
@@ -126,10 +99,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 min="10" max="400"
                                 value={brushSize}
                                 onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
+                                onMouseDown={() => onBrushPreviewingChange?.(true)}
+                                onMouseUp={() => onBrushPreviewingChange?.(false)}
                                 className={`
-                                    w-full h-1 rounded-lg appearance-none cursor-pointer bg-white/20 dark:bg-black/10
+                                    w-full h-1 rounded-lg appearance-none cursor-pointer bg-zinc-200 dark:bg-zinc-800
                                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 
-                                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white dark:[&::-webkit-slider-thumb]:bg-black
+                                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white
+                                    [&::-webkit-slider-thumb]:shadow-special
                                 `}
                             />
                             <button
@@ -137,70 +113,51 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     e.stopPropagation();
                                     onAddObject('Clear', 'util:clear_masks');
                                 }}
-                                className="w-full py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[11px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors flex items-center justify-center gap-2 text-red-500"
+                                className="w-full py-2.5 px-3 rounded-xl border border-zinc-200 dark:border-white/5 text-[11px] font-bold hover:bg-white dark:hover:bg-zinc-800 transition-all flex items-center justify-center gap-2 text-red-500 shadow-sm"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
+                                {currentLang === 'de' ? 'Masken löschen' : 'Clear Masks'}
                             </button>
-                            <p className={`${Typo.Micro} opacity-50 text-white dark:text-black leading-relaxed`}>
-                                {currentLang === 'de' ? 'Klicke und ziehe im Bild, um Masken zu malen.' : 'Click and drag on the image to paint masks.'}
-                            </p>
                         </div>
-                    </ToolCard>
+                    </ToolTile>
 
-                    {/* TEXT */}
-                    <ToolCard
+                    <ToolTile
                         icon={Type}
                         label="Text"
-                        description={currentLang === 'de' ? 'Beschreibungen hinzufügen' : 'Add descriptions'}
+                        description={currentLang === 'de' ? 'Hinweise geben' : 'Add hints'}
                         toolId="text"
                         active={maskTool === 'text'}
-                    >
-                        <p className={`${Typo.Micro} text-white dark:text-black opacity-60 leading-relaxed`}>
-                            {currentLang === 'de' ? 'Klicke auf eine Stelle im Bild, um Text zu platzieren.' : 'Click anywhere on the image to place text.'}
-                        </p>
-                    </ToolCard>
+                    />
 
-                    {/* SHAPES */}
-                    <ToolCard
+                    <ToolTile
                         icon={Shapes}
                         label={currentLang === 'de' ? 'Formen' : 'Shapes'}
-                        description={currentLang === 'de' ? 'Geometrische Masken' : 'Geometric masks'}
+                        description={currentLang === 'de' ? 'Geometrische Auswahl' : 'Geometric selection'}
                         toolId="shape"
-                        active={maskTool === 'shape' || maskTool === 'polygon'}
+                        active={maskTool === 'shape'}
                     >
-                        <div className="space-y-4 mt-2">
-                            <div className="flex gap-2">
-                                <SubTool
-                                    icon={Square}
-                                    label="Box"
-                                    id="rect"
-                                    active={maskTool === 'shape' && activeShape === 'rect'}
-                                    onClick={() => { onMaskToolChange?.('shape'); onActiveShapeChange?.('rect'); }}
-                                />
-                                <SubTool
-                                    icon={Circle}
-                                    label="Kreis"
-                                    id="circle"
-                                    active={maskTool === 'shape' && activeShape === 'circle'}
-                                    onClick={() => { onMaskToolChange?.('shape'); onActiveShapeChange?.('circle'); }}
-                                />
-                                <SubTool
-                                    icon={Triangle}
-                                    label="Polygon"
-                                    id="polygon"
-                                    active={maskTool === 'polygon'}
-                                    onClick={() => onMaskToolChange?.('polygon')}
-                                />
-                            </div>
-                            <p className={`${Typo.Micro} text-white dark:text-black opacity-60 leading-relaxed`}>
-                                {maskTool === 'polygon'
-                                    ? (currentLang === 'de' ? 'Klicke im Bild, um Eckpunkte für dein Polygon zu setzen.' : 'Click on the image to set vertices for your polygon.')
-                                    : (currentLang === 'de' ? 'Klicke und ziehe im Bild, um die Form aufzuspannen.' : 'Click and drag on the image to create the shape.')
-                                }
-                            </p>
+                        <div className="flex gap-1.5">
+                            {[
+                                { id: 'rect', icon: Square, label: 'Box' },
+                                { id: 'circle', icon: Circle, label: 'Kreis' },
+                                { id: 'line', icon: Minus, label: 'Linie' }
+                            ].map((s) => (
+                                <button
+                                    key={s.id}
+                                    onClick={(e) => { e.stopPropagation(); onMaskToolChange?.('shape'); onActiveShapeChange?.(s.id as any); }}
+                                    className={`
+                                        flex-1 flex flex-col items-center gap-1.5 p-2.5 rounded-xl transition-all
+                                        ${maskTool === 'shape' && activeShape === s.id
+                                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}
+                                    `}
+                                >
+                                    <s.icon className="w-4 h-4" />
+                                    <span className="text-[9px] font-bold uppercase">{s.label}</span>
+                                </button>
+                            ))}
                         </div>
-                    </ToolCard>
+                    </ToolTile>
                 </div>
             </div>
 

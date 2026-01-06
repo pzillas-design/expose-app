@@ -19,6 +19,7 @@ interface EditorCanvasProps {
     onEditStart?: (mode: 'brush' | 'objects') => void;
     onContextMenu?: (e: React.MouseEvent) => void;
     t?: TranslationFunction;
+    isBrushPreviewing?: boolean; // New: force show brush cursor for slider preview
 }
 
 const RES_SCALE = 3;
@@ -36,7 +37,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     isActive,
     onEditStart,
     onContextMenu,
-    t
+    t,
+    isBrushPreviewing = false
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -99,12 +101,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         ctx.beginPath();
                         ctx.arc((ann.x || 0) + (ann.width || 0) / 2, (ann.y || 0) + (ann.height || 0) / 2, (Math.min(ann.width || 0, ann.height || 0)) / 2, 0, Math.PI * 2);
                         ctx.fill();
-                    } else if (ann.shapeType === 'polygon' && ann.points.length > 0) {
+                    } else if (ann.shapeType === 'line' && ann.points.length >= 2) {
                         ctx.beginPath();
+                        ctx.lineWidth = ann.strokeWidth;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
                         ctx.moveTo(ann.points[0].x, ann.points[0].y);
-                        ann.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-                        ctx.closePath();
-                        ctx.fill();
+                        ctx.lineTo(ann.points[1].x, ann.points[1].y);
+                        ctx.stroke();
                     }
                 }
             }
@@ -164,17 +167,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             return;
         }
 
-        if (maskTool === 'polygon') {
-            if (activeMaskId) {
-                const activeAnn = annotations.find(a => a.id === activeMaskId);
-                if (activeAnn && activeAnn.shapeType === 'polygon') {
-                    updateAnnotation(activeMaskId, { points: [...(activeAnn.points || []), { x, y }] });
-                    return;
-                }
-            }
+        if (maskTool === 'shape' && activeShape === 'line') {
             const newId = generateId();
-            onChange([...annotations, { id: newId, type: 'shape', shapeType: 'polygon', points: [{ x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now() }]);
-            setActiveMaskId(newId);
+            onChange([...annotations, { id: newId, type: 'shape', shapeType: 'line', points: [{ x, y }, { x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now() }]);
+            setDragState({
+                id: newId, mode: 'draw_shape', startX: x, startY: y, initialX: x, initialY: y, initialW: 0, initialH: 0, initialPoints: [{ x, y }, { x, y }], isMoved: false
+            });
             return;
         }
 
@@ -220,6 +218,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 if (ann.id !== dragState.id) return ann;
 
                 if (dragState.mode === 'draw_shape') {
+                    if (ann.shapeType === 'line') {
+                        return { ...ann, points: [ann.points[0], { x, y }] };
+                    }
                     const newX = Math.min(dragState.startX, x);
                     const newY = Math.min(dragState.startY, y);
                     const newW = Math.abs(x - dragState.startX);
@@ -254,7 +255,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
         if (cursorRef.current && containerRef.current && activeTab === 'brush' && maskTool === 'brush') {
             const rect = containerRef.current.getBoundingClientRect();
-            const cx = clientX - rect.left; const cy = clientY - rect.top;
+            const cx = isBrushPreviewing ? rect.width / 2 : (clientX - rect.left);
+            const cy = isBrushPreviewing ? rect.height / 2 : (clientY - rect.top);
             cursorRef.current.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
         }
 
@@ -297,7 +299,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         <div ref={containerRef} className="absolute inset-0 z-10 w-full h-full" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
             <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? (maskTool === 'brush' ? 'cursor-none' : 'cursor-default') : 'cursor-default'}`} />
 
-            {activeTab === 'brush' && maskTool === 'brush' && isActive && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize, height: brushSize, left: 0, top: 0 }} />}
+            {activeTab === 'brush' && maskTool === 'brush' && isActive && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${(isHovering || isBrushPreviewing) ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize, height: brushSize, left: 0, top: 0 }} />}
 
             {/* UI Overlay for Annotations (Visible in both Edit and Prompt modes now) */}
             {annotations.map(ann => {

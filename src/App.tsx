@@ -63,6 +63,9 @@ export function App() {
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
+    // Brush Preview State
+    const [isBrushPreviewing, setIsBrushPreviewing] = useState(false);
+
     // Stable Editor State Object to preserve ImageItem memoization during scroll
     const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape }), [sideSheetMode, brushSize, maskTool, activeShape]);
 
@@ -157,6 +160,9 @@ export function App() {
         e.preventDefault();
 
         if (refs.scrollContainerRef.current) {
+            // Disable hand tool panning when in brush mode to avoid conflicts with drawing
+            if (sideSheetMode === 'brush') return;
+
             panState.current = {
                 isPanning: true,
                 startX: e.clientX,
@@ -455,6 +461,7 @@ export function App() {
                                                 hasRight={imgIndex < row.items.length - 1}
                                                 onDelete={requestDelete}
                                                 onContextMenu={handleImageContextMenu}
+                                                isBrushPreviewing={img.id === selectedIds[0] && isBrushPreviewing}
                                                 t={t}
                                             />
                                         ))}
@@ -506,9 +513,9 @@ export function App() {
                 isBoardEmpty={rows.length === 0}
                 qualityMode={qualityMode}
                 onQualityModeChange={setQualityMode}
-                templates={templates}
                 onRefreshTemplates={refreshTemplates}
                 userProfile={userProfile}
+                onBrushPreviewingChange={setIsBrushPreviewing}
             />
 
             {contextMenu && (

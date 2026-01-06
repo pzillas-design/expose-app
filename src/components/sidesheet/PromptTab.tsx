@@ -320,13 +320,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             value={prompt}
                                             onChange={(e) => setPrompt(e.target.value)}
                                             placeholder={t('describe_changes')}
-                                            className={`w-full bg-transparent border-none outline-none p-4 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
+                                            className={`w-full bg-transparent border-none outline-none p-4 pb-2 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
                                             disabled={selectedImage.isGenerating}
                                         />
                                     </Tooltip>
 
                                     {/* SECTIONS CONTAINER */}
-                                    <div className="p-4 flex flex-col gap-4">
+                                    <div className="px-4 pb-4 flex flex-col gap-3">
                                         {/* VARIABLE OPTIONS */}
                                         {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
                                             <div className="flex flex-col gap-4">
@@ -527,7 +527,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
 
                             </div>
-
                             <div className="flex flex-col">
                                 {/* Tools Buttons */}
                                 <div className="grid grid-cols-2 gap-2 py-4">
@@ -573,7 +572,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
                                         >
-                                            <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest">
+                                            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em]">
                                                 {selectedImage.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
@@ -805,17 +804,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </span>
                                     </Button>
                                 )}
-                                {userProfile?.role === 'admin' && (
-                                    <button
-                                        onClick={() => setIsDebugOpen(true)}
-                                        className="flex items-center gap-2 px-2 py-1 text-blue-500 hover:text-blue-600 transition-colors"
-                                    >
-                                        <Bug className="w-4 h-4" />
-                                        <span className={`${Typo.Label} uppercase tracking-wider font-bold text-[10px]`}>
-                                            Debug
-                                        </span>
-                                    </button>
-                                )}
+
                             </div>
                         </div>
                     )}

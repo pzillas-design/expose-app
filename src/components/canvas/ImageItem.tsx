@@ -28,6 +28,7 @@ interface ImageItemProps {
     onDelete?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     t: TranslationFunction;
+    isBrushPreviewing?: boolean;
 }
 
 const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
@@ -167,7 +168,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasRight,
     onDelete,
     onContextMenu,
-    t
+    t,
+    isBrushPreviewing = false
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
@@ -260,6 +262,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             onEditStart={onEditStart}
                             onContextMenu={(e) => onContextMenu?.(e, image.id)}
                             t={t}
+                            isBrushPreviewing={isBrushPreviewing}
                         />
                     </div>
                 )}

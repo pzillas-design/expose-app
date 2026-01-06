@@ -14,7 +14,7 @@ import { CreationModal } from '@/components/modals/CreationModal';
 // Sub Components
 import { PromptTab } from './PromptTab';
 import { BrushTab } from './BrushTab';
-import { ObjectsTab } from './ObjectsTab';
+import { DebugModal } from '../modals/DebugModal';
 
 interface SideSheetProps {
     selectedImage: CanvasImage | null;
@@ -54,6 +54,7 @@ interface SideSheetProps {
     templates: PromptTemplate[];
     onRefreshTemplates?: () => void;
     userProfile: any;
+    onBrushPreviewingChange?: (active: boolean) => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -92,7 +93,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onQualityModeChange,
     templates: globalTemplates,
     onRefreshTemplates,
-    userProfile
+    userProfile,
+    onBrushPreviewingChange
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(globalTemplates);
@@ -107,6 +109,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [pendingFileName, setPendingFileName] = useState<string>('');
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
+    const [isDebugOpen, setIsDebugOpen] = useState(false);
 
     const { size: width, startResizing } = useResizable({
         initialSize: 360,
@@ -517,7 +520,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onBrushSizeChange={onBrushSizeChange}
                                 maskTool={maskTool}
                                 onMaskToolChange={onMaskToolChange}
-                                activeShape={activeShape}
+                                activeShape={activeShape as any}
                                 onActiveShapeChange={onActiveShapeChange}
                                 t={t}
                                 currentLang={lang}
@@ -527,6 +530,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
+                                onBrushPreviewingChange={onBrushPreviewingChange}
                             />
                         </div>
                         <DoneButton />
@@ -584,6 +588,27 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 imageSrc={pendingFile}
                 onCropComplete={handleCropComplete}
             />
+
+            {userProfile?.role === 'admin' && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+                    <button
+                        onClick={() => setIsDebugOpen(true)}
+                        className="pointer-events-auto px-4 py-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors text-[10px] uppercase font-bold tracking-widest"
+                    >
+                        Debug
+                    </button>
+                </div>
+            )}
+
+            {selectedImage && (
+                <DebugModal
+                    isOpen={isDebugOpen}
+                    onClose={() => setIsDebugOpen(false)}
+                    image={selectedImage}
+                    prompt={prompt}
+                    t={t}
+                />
+            )}
         </>
     );
 };
