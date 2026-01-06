@@ -14,11 +14,13 @@ interface ObjectsTabProps {
     onAddUserItem: (catId: string, label: string, icon?: string) => Promise<void>;
     onDeleteUserItem: (catId: string, itemId: string) => void;
     onBack?: () => void;
+    scrollable?: boolean;
 }
 
 export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     onAddObject, t, currentLang, library,
-    onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onBack
+    onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onBack,
+    scrollable = true
 }) => {
     const [isAdding, setIsAdding] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -66,10 +68,10 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className={`flex flex-col ${scrollable ? 'h-full overflow-hidden' : ''}`}>
 
             {/* Header with Headline and Icons */}
-            <div className="px-6 pt-3 pb-3">
+            <div className={`px-6 pt-3 pb-3 ${!scrollable ? 'sticky top-0 bg-inherit z-10' : ''}`}>
                 <div className="flex items-center justify-between">
                     <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px]`}>
                         {currentLang === 'de' ? 'Stempel' : 'Stamps'}
@@ -91,7 +93,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar pb-6 px-1">
+            <div className={`flex-1 ${scrollable ? 'overflow-y-auto no-scrollbar' : ''} pb-6 px-1`}>
                 <div className="flex flex-col">
                     {/* Inline Adding Row at the TOP */}
                     {isAdding && (

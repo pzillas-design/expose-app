@@ -251,27 +251,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
 
-        // Handle SHAPES
-        if (itemId.startsWith('shape:')) {
-            const shapeType = itemId.split(':')[1] as 'rect' | 'circle';
-            const cx = selectedImage.width / 2;
-            const cy = selectedImage.height / 2;
-            const size = Math.min(selectedImage.width, selectedImage.height) * 0.3;
 
-            // Suggested default emojis for shapes
-            const shapeEmoji = shapeType === 'rect' ? '📦' : '⭕';
-
-            const newShape: AnnotationObject = {
-                id: generateId(), type: 'shape', shapeType: shapeType,
-                x: cx - size / 2, y: cy - size / 2, width: size, height: size,
-                points: [],
-                strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
-            };
-
-            onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
-            onMaskToolChange('select');
-            return;
-        }
 
         // Handle REMOVE stamp
         if (itemId === 'util:remove') {
@@ -316,6 +296,71 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         };
 
         onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+        onMaskToolChange('select');
+    };
+
+    const handleAddShape = (shape: 'rect' | 'circle' | 'line') => {
+        if (!selectedImage) return;
+        const currentAnns = selectedImage.annotations || [];
+        const cx = selectedImage.width / 2;
+        const cy = selectedImage.height / 2;
+        const size = Math.min(selectedImage.width, selectedImage.height) * 0.3;
+
+        let newShape: AnnotationObject;
+
+        if (shape === 'line') {
+            const half = size / 2;
+            newShape = {
+                id: generateId(),
+                type: 'shape',
+                shapeType: 'line',
+                points: [
+                    { x: cx - half, y: cy },
+                    { x: cx + half, y: cy }
+                ],
+                strokeWidth: 4,
+                color: '#fff',
+                emoji: '➖',
+                createdAt: Date.now()
+            };
+        } else if (shape === 'rect') {
+            const half = size / 2;
+            const x = cx - half;
+            const y = cy - half;
+            newShape = {
+                id: generateId(),
+                type: 'shape',
+                shapeType: 'rect',
+                x, y, width: size, height: size,
+                // Poly-rect points
+                points: [
+                    { x, y },
+                    { x: x + size, y },
+                    { x: x + size, y: y + size },
+                    { x, y: y + size }
+                ],
+                strokeWidth: 4,
+                color: '#fff',
+                emoji: '📦',
+                createdAt: Date.now()
+            };
+        } else {
+            // Circle
+            const half = size / 2;
+            newShape = {
+                id: generateId(),
+                type: 'shape',
+                shapeType: 'circle',
+                x: cx - half, y: cy - half, width: size, height: size,
+                points: [],
+                strokeWidth: 4,
+                color: '#fff',
+                emoji: '⭕',
+                createdAt: Date.now()
+            };
+        }
+
+        onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
         onMaskToolChange('select');
     };
 
@@ -533,6 +578,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
+                                onAddShape={handleAddShape}
                             />
                         </div>
                         <DoneButton />

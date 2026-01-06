@@ -573,7 +573,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
                                         >
-                                            <span className="flex items-center gap-2 text-[13px] font-bold tracking-wide">
+                                            <span className={`flex items-center gap-2 ${Typo.ButtonLabel}`}>
                                                 {selectedImage.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
@@ -805,6 +805,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </span>
                                     </Button>
                                 )}
+
+                                {userProfile?.role === 'admin' && (
+                                    <div className="w-full flex justify-center py-4 bg-transparent outline-none">
+                                        <button
+                                            onClick={() => setIsDebugOpen(true)}
+                                            className="text-zinc-300 dark:text-zinc-600 hover:text-blue-500 text-[10px] font-mono tracking-widest uppercase transition-colors"
+                                        >
+                                            Debug
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -831,17 +842,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         </div>
                     )}
 
-                    {/* Debug Button - Bottom Centered */}
-                    {userProfile?.role === 'admin' && (
-                        <div className="w-full flex justify-center py-4 bg-transparent">
-                            <button
-                                onClick={() => setIsDebugOpen(true)}
-                                className="text-zinc-300 dark:text-zinc-600 hover:text-blue-500 text-[10px] font-mono tracking-widest uppercase transition-colors"
-                            >
-                                Debug
-                            </button>
-                        </div>
-                    )}
+
                 </div>
             </div>
 

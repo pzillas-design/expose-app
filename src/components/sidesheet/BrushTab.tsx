@@ -22,6 +22,7 @@ interface BrushTabProps {
     onAddUserItem: (catId: string, label: string, icon?: string) => Promise<void>;
     onDeleteUserItem: (catId: string, itemId: string) => void;
     onAddObject: (label: string, itemId: string, icon?: string) => void;
+    onAddShape?: (shape: 'rect' | 'circle' | 'line') => void;
     onBack?: () => void;
 }
 
@@ -34,7 +35,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     onMaskToolChange,
     activeShape = 'rect',
     onActiveShapeChange,
-    t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject
+    t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject,
+    onAddShape
 }) => {
 
     const objectLibrary = useMemo(() => {
@@ -92,8 +94,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     );
 
     return (
-        <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            <div className="px-4 py-6 space-y-6 shrink-0 overflow-y-auto no-scrollbar">
+        <div className={`flex flex-col h-full overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
+            <div className="px-4 py-6 space-y-6 shrink-0">
 
                 {/* Tools Section */}
                 <div className="flex flex-col gap-1">
@@ -124,9 +126,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 min="10" max="400"
                                 value={brushSize}
                                 onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
-                                onPointerDown={onBrushResizeStart}
-                                onPointerUp={onBrushResizeEnd}
-                                onPointerLeave={onBrushResizeEnd}
+                                onMouseDown={onBrushResizeStart}
+                                onMouseUp={onBrushResizeEnd}
                                 className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
                             />
 
@@ -148,29 +149,29 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         icon={Shapes}
                         label={currentLang === 'de' ? 'Formen' : 'Shapes'}
                         toolId="shape"
-                        active={maskTool === 'shape'}
+                        active={maskTool === 'shape' || maskTool === 'select'}
                     >
                         <div className="gap-2 grid grid-cols-3 pt-1">
                             <ShapeOption
                                 icon={Square}
                                 label="Box"
                                 id="rect"
-                                active={activeShape === 'rect'}
-                                onClick={() => onActiveShapeChange?.('rect')}
+                                active={false}
+                                onClick={() => onAddShape?.('rect')}
                             />
                             <ShapeOption
                                 icon={Circle}
                                 label="Kreis"
                                 id="circle"
-                                active={activeShape === 'circle'}
-                                onClick={() => onActiveShapeChange?.('circle')}
+                                active={false}
+                                onClick={() => onAddShape?.('circle')}
                             />
                             <ShapeOption
                                 icon={Minus}
                                 label="Linie"
                                 id="line"
-                                active={activeShape === 'line'}
-                                onClick={() => onActiveShapeChange?.('line')}
+                                active={false}
+                                onClick={() => onAddShape?.('line')}
                             />
                         </div>
                     </ToolCard>
@@ -187,19 +188,18 @@ export const BrushTab: React.FC<BrushTabProps> = ({
             </div>
 
             {/* Stamps Library */}
-            <div className="flex-1 min-h-0 flex flex-col pt-2 bg-zinc-50/50 dark:bg-zinc-900/20 border-t border-zinc-200/50 dark:border-white/5">
-                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                    <ObjectsTab
-                        t={t}
-                        currentLang={currentLang}
-                        library={objectLibrary}
-                        onAddUserCategory={onAddUserCategory}
-                        onDeleteUserCategory={onDeleteUserCategory}
-                        onAddUserItem={onAddUserItem}
-                        onDeleteUserItem={onDeleteUserItem}
-                        onAddObject={onAddObject}
-                    />
-                </div>
+            <div className="flex flex-col pt-2 bg-zinc-50/50 dark:bg-zinc-900/20 border-t border-zinc-200/50 dark:border-white/5">
+                <ObjectsTab
+                    t={t}
+                    currentLang={currentLang}
+                    library={objectLibrary}
+                    onAddUserCategory={onAddUserCategory}
+                    onDeleteUserCategory={onDeleteUserCategory}
+                    onAddUserItem={onAddUserItem}
+                    onDeleteUserItem={onDeleteUserItem}
+                    onAddObject={onAddObject}
+                    scrollable={false}
+                />
             </div>
         </div>
     );
