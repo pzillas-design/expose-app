@@ -28,12 +28,11 @@ export const useBoards = (userId: string | undefined) => {
         fetchBoards();
     }, [fetchBoards]);
 
-    const getNextBoardName = () => {
+    const getNextBoardName = useCallback(() => {
         const now = new Date();
         const day = now.getDate().toString().padStart(2, '0');
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
 
-        // DE: 04.01. | EN: 01-04
         const dateStr = currentLang === 'de' ? `${day}.${month}.` : `${month}-${day}`;
         const base = t('default_project_name' as any).replace('{{date}}', dateStr);
 
@@ -44,9 +43,9 @@ export const useBoards = (userId: string | undefined) => {
             i++;
         }
         return `${base} #${i}`;
-    };
+    }, [boards, currentLang, t]);
 
-    const createBoard = async (name?: string) => {
+    const createBoard = useCallback(async (name?: string) => {
         if (!userId) return null;
         const finalName = name || getNextBoardName();
         try {
@@ -59,50 +58,46 @@ export const useBoards = (userId: string | undefined) => {
             showToast(t('failed_create_board'), 'error');
         }
         return null;
-    };
+    }, [userId, getNextBoardName, showToast, t]);
 
-    const initializeNewBoard = () => {
+    const initializeNewBoard = useCallback(() => {
         if (!userId) return null;
         const id = generateId();
         const name = getNextBoardName();
         return { id, name };
-    };
+    }, [userId, getNextBoardName]);
 
-    const deleteBoard = async (boardId: string) => {
+    const deleteBoard = useCallback(async (boardId: string) => {
         try {
             await boardService.deleteBoard(boardId);
             setBoards(prev => prev.filter(b => b.id !== boardId));
         } catch (error) {
             showToast(t('failed_delete_board'), 'error');
         }
-    };
+    }, [showToast, t]);
 
-    const updateBoard = async (boardId: string, updates: Partial<Board>) => {
+    const updateBoard = useCallback(async (boardId: string, updates: Partial<Board>) => {
         try {
             await boardService.updateBoard(boardId, updates);
             setBoards(prev => prev.map(b => b.id === boardId ? { ...b, ...updates } : b));
         } catch (error) {
             showToast(t('failed_update_board'), 'error');
         }
-    };
+    }, [showToast, t]);
 
-    const resolveBoardIdentifier = async (identifier: string): Promise<Board | null> => {
+    const resolveBoardIdentifier = useCallback(async (identifier: string): Promise<Board | null> => {
         if (!userId) return null;
 
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
         if (isUUID) {
             const found = boards.find(b => b.id === identifier);
             if (found) return found;
-            // If strictly UUID but not found in current list, it might be a valid ID anyway 
-            // (e.g. initial load). We'll trust the ID if it looks like a UUID for simplicity,
-            // or we could fetch specifically. For now, rely on UUID format.
             return { id: identifier, name: 'Loading...', userId, createdAt: 0, updatedAt: 0 } as Board;
         }
 
-        // It's a name
         return await boardService.getBoardByName(userId, decodeURIComponent(identifier));
-    };
+    }, [userId, boards]);
 
     return {
         boards,

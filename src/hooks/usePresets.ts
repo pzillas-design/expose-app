@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PromptTemplate } from '../types';
 import { adminService } from '../services/adminService';
 import { DEFAULT_TEMPLATES } from '../data/promptTemplates';
@@ -7,7 +7,7 @@ export const usePresets = () => {
     const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
     const [isLoading, setIsLoading] = useState(false);
 
-    const fetchTemplates = async () => {
+    const fetchTemplates = useCallback(async () => {
         setIsLoading(true);
         try {
             const globalPresets = await adminService.getGlobalPresets();
@@ -23,7 +23,7 @@ export const usePresets = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchTemplates();

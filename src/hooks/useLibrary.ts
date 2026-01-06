@@ -121,7 +121,7 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
         }
     }, [lang]);
 
-    const addUserCategory = (label: string) => {
+    const addUserCategory = useCallback((label: string) => {
         const newCat: LibraryCategory = {
             id: generateId(),
             label,
@@ -131,13 +131,13 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
             isUserCreated: true
         };
         setUserLibrary(prev => [newCat, ...prev]);
-    };
+    }, [currentLang]);
 
-    const deleteUserCategory = (id: string) => {
+    const deleteUserCategory = useCallback((id: string) => {
         setUserLibrary(prev => prev.filter(c => c.id !== id));
-    };
+    }, []);
 
-    const addUserItem = async (catId: string, label: string, icon: string = '📦') => {
+    const addUserItem = useCallback(async (catId: string, label: string, icon: string = '📦') => {
         let newItem: LibraryItem;
 
         if (user && user.id !== 'guest') {
@@ -173,9 +173,9 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
                 }];
             }
         });
-    };
+    }, [user, currentLang]);
 
-    const deleteUserItem = async (catId: string, itemId: string) => {
+    const deleteUserItem = useCallback(async (catId: string, itemId: string) => {
         if (user && user.id !== 'guest') {
             try {
                 const isCustom = userLibrary.some(c => c.items.some(i => i.id === itemId));
@@ -198,7 +198,7 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
             }
             return cat;
         }));
-    };
+    }, [user, userLibrary]);
 
     return {
         userLibrary,
