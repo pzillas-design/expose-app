@@ -70,9 +70,10 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
     }
 };
 
-const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void }) => {
+const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     // Priority: Mask (Editing) > Direct Src (Pre-signed/Blob) > Thumb (Skeleton/Initial)
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
+    const [isLoaded, setIsLoaded] = useState(false);
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
@@ -80,6 +81,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
+            setIsLoaded(false);
             setCurrentSrc(maskSrc || src || thumbSrc || null);
             setIsHighRes(!!src && !thumbSrc);
             lastPath.current = path;
@@ -106,6 +108,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 // Standard: 1200px. HQ: Original.
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
+                    setIsLoaded(false);
                     setCurrentSrc(url);
                     if (needsHQ) setIsHighRes(true);
                     lastPath.current = path;
@@ -135,10 +138,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 if (img.naturalWidth && img.naturalHeight) {
                     onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
                 }
+                setIsLoaded(true);
+                onLoaded?.();
             }}
             style={{
                 imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
-                opacity: currentSrc ? 1 : 0,
+                opacity: (currentSrc && isLoaded) ? 1 : 0,
                 transition: 'opacity 0.4s ease-out'
             }}
         />
@@ -162,6 +167,14 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
+    const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
+
+    // Reset ready state when a NEW generation starts for this item
+    useEffect(() => {
+        if (image.isGenerating) {
+            setIsImageReady(false);
+        }
+    }, [image.isGenerating, image.id]);
 
     // Use aspect ratio for stable Layout - minimal reflows
     const ratio = naturalAspectRatio || (image.width / image.height);
@@ -224,6 +237,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         isSelected={isSelected}
                         title={image.title}
                         onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
+                        onLoaded={() => setIsImageReady(true)}
                     />
                 </div>
 
@@ -246,7 +260,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {image.isGenerating && (
+                {(image.isGenerating || !isImageReady) && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
                         duration={image.estimatedDuration || getDurationForQuality(image.quality)}

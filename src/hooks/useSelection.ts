@@ -3,7 +3,7 @@ import { ImageRow } from '../types';
 
 interface UseSelectionProps {
     rows: ImageRow[];
-    snapToItem: (id: string) => void;
+    snapToItem: (id: string, instant?: boolean) => void;
     fitSelectionToView: () => void;
     scrollContainerRef: React.RefObject<HTMLDivElement>;
     zoom: number;
@@ -42,12 +42,12 @@ export const useSelection = ({
 
     // --- Selection Logic ---
 
-    const selectAndSnap = useCallback((id: string) => {
+    const selectAndSnap = useCallback((id: string, instant = false) => {
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
         isSnapEnabledRef.current = true;
         lastSelectedIdRef.current = id;
         setSelectedIds([id]);
-        snapToItem(id);
+        snapToItem(id, instant);
     }, [snapToItem, setSelectedIds]);
 
     const selectMultiple = useCallback((ids: string[]) => {

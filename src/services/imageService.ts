@@ -233,7 +233,9 @@ export const imageService = {
             generationStartTime: undefined,
             generationPrompt: prompt,
             quality: qualityMode,
-            userDraftPrompt: '',
+            userDraftPrompt: sourceImage.userDraftPrompt || '',
+            activeTemplateId: sourceImage.activeTemplateId,
+            variableValues: sourceImage.variableValues,
             version: targetVersion || (sourceImage.version || 1) + 1,
             title: targetTitle || (sourceImage.title.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`

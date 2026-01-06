@@ -244,16 +244,16 @@ export const useCanvasNavigation = ({
     }, [zoom, smoothZoomTo, scrollContainerRef]);
 
     // Snap to single item logic
-    const snapToItem = useCallback((id: string) => {
+    const snapToItem = useCallback((id: string, instant = false) => {
         setIsAutoScrolling(true);
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
-        autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, 800);
+        autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, instant ? 100 : 800);
 
         // Simple scroll into view
         setTimeout(() => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
             if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                el.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'center', inline: 'center' });
             }
         }, 50);
     }, [setIsAutoScrolling]);

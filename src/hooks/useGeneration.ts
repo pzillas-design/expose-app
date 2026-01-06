@@ -14,7 +14,7 @@ interface UseGenerationProps {
     setCredits: React.Dispatch<React.SetStateAction<number>>;
     qualityMode: GenerationQuality;
     isAuthDisabled: boolean;
-    selectAndSnap: (id: string) => void;
+    selectAndSnap: (id: string, instant?: boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
     showToast: (msg: string, type: "success" | "error", duration?: number) => void;
     currentBoardId: string | null;
@@ -117,7 +117,15 @@ export const useGeneration = ({
         });
     }, [rows, pollForJob]);
 
-    const performGeneration = async (sourceImage: CanvasImage, prompt: string, batchSize: number = 1, shouldSnap: boolean = true) => {
+    const performGeneration = async (
+        sourceImage: CanvasImage,
+        prompt: string,
+        batchSize: number = 1,
+        shouldSnap: boolean = true,
+        draftPrompt?: string,
+        activeTemplateId?: string,
+        variableValues?: Record<string, string[]>
+    ) => {
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
 
@@ -165,7 +173,9 @@ export const useGeneration = ({
             annotations: sourceImage.annotations || [],
             parentId: sourceImage.id,
             generationPrompt: prompt,
-            userDraftPrompt: '',
+            userDraftPrompt: draftPrompt !== undefined ? draftPrompt : (sourceImage.userDraftPrompt || ''),
+            activeTemplateId: activeTemplateId !== undefined ? activeTemplateId : sourceImage.activeTemplateId,
+            variableValues: variableValues !== undefined ? variableValues : sourceImage.variableValues,
             quality: qualityMode,
             estimatedDuration,
             createdAt: Date.now(),

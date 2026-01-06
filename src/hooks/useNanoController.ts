@@ -154,7 +154,7 @@ export const useNanoController = () => {
                     if (newest) {
                         // Small delay to ensure canvas items are rendered before snapping
                         setTimeout(() => {
-                            selectAndSnap(newest.id);
+                            selectAndSnap(newest.id, true);
                         }, 500);
                     }
                 }
@@ -241,16 +241,21 @@ export const useNanoController = () => {
         }
     }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav]);
 
-    const handleGenerate = useCallback((prompt?: string) => {
+    const handleGenerate = useCallback((
+        prompt?: string,
+        draftPrompt?: string,
+        activeTemplateId?: string,
+        variableValues?: Record<string, string[]>
+    ) => {
         if (selectedImages.length > 1) {
             selectedImages.forEach((img, index) => {
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
                 // Snap only to the first generated image in the batch
-                performGeneration(img, finalPrompt, 1, index === 0);
+                performGeneration(img, finalPrompt, 1, index === 0, draftPrompt, activeTemplateId, variableValues);
             });
         } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
-            performGeneration(selectedImage, finalPrompt);
+            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
     }, [selectedImage, selectedImages, performGeneration]);
 

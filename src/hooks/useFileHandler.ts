@@ -9,7 +9,7 @@ interface UseFileHandlerProps {
     isAuthDisabled: boolean;
     setRows: React.Dispatch<React.SetStateAction<ImageRow[]>>;
     selectMultiple: (ids: string[]) => void;
-    snapToItem: (id: string) => void;
+    snapToItem: (id: string, instant?: boolean) => void;
     showToast: (msg: string, type: "success" | "error") => void;
     currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;

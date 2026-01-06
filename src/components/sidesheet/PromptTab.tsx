@@ -252,7 +252,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     };
 
     const handleDoGenerate = () => {
-        onGenerate(getFinalPrompt());
+        onGenerate(getFinalPrompt(), prompt, activeTemplate?.id, controlValues);
     };
 
     const openCreatePreset = () => {
