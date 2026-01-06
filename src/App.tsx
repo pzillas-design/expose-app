@@ -35,7 +35,7 @@ export function App() {
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
         currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
-        currentBoardId, boards, isBoardsLoading, isCanvasLoading
+        currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates
     } = state;
 
     const {
@@ -47,7 +47,7 @@ export function App() {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
-        handleModeChange
+        handleModeChange, handleUpdateVariables, refreshTemplates
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -457,7 +457,41 @@ export function App() {
                 </div>
             </div>
 
-            <SideSheet editorActions={actions} editorState={editorState} />
+            <SideSheet
+                selectedImage={selectedImage}
+                selectedImages={selectedImages}
+                sideSheetMode={sideSheetMode}
+                onModeChange={handleModeChange}
+                brushSize={brushSize}
+                onBrushSizeChange={setBrushSize}
+                onGenerate={handleGenerate}
+                onUpdateAnnotations={handleUpdateAnnotations}
+                onUpdatePrompt={handleUpdatePrompt}
+                onUpdateVariables={handleUpdateVariables}
+                onDeleteImage={handleDeleteImage}
+                onGenerateMore={handleGenerateMore}
+                onNavigateParent={handleNavigateParent}
+                isGlobalDragOver={isDragOver}
+                onGlobalDragLeave={() => setIsDragOver(false)}
+                t={t}
+                lang={lang}
+                fullLibrary={fullLibrary}
+                onAddUserCategory={addUserCategory}
+                onDeleteUserCategory={deleteUserCategory}
+                onDeleteUserItem={deleteUserItem}
+                maskTool={maskTool}
+                onMaskToolChange={setMaskTool}
+                activeShape={activeShape}
+                onActiveShapeChange={setActiveShape}
+                onUpload={() => processFile()}
+                onCreateNew={() => setIsCreationModalOpen(true)}
+                isBoardEmpty={rows.length === 0}
+                qualityMode={qualityMode}
+                onQualityModeChange={setQualityMode}
+                templates={templates}
+                onRefreshTemplates={refreshTemplates}
+                userProfile={userProfile}
+            />
 
             {contextMenu && (
                 <ContextMenu
