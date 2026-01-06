@@ -27,7 +27,9 @@ export const useNanoController = () => {
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
+    const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(null);
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true';
@@ -127,7 +129,20 @@ export const useNanoController = () => {
     React.useEffect(() => {
         if (user && currentBoardId) {
             setIsCanvasLoading(true);
+            setLoadingProgress(10);
+
+            const progressInterval = setInterval(() => {
+                setLoadingProgress(prev => {
+                    if (prev >= 90) return 90;
+                    return prev + (90 - prev) * 0.1;
+                });
+            }, 200);
+
             imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
+                clearInterval(progressInterval);
+                setLoadingProgress(100);
+                setTimeout(() => setLoadingProgress(0), 500);
+
                 setRows(loadedRows);
                 setIsCanvasLoading(false);
 
@@ -286,6 +301,8 @@ export const useNanoController = () => {
             currentLang,
             sideSheetMode,
             isCanvasLoading,
+            resolvingBoardId,
+            loadingProgress,
             brushSize,
             maskTool,
             activeShape,
@@ -361,6 +378,7 @@ export const useNanoController = () => {
             updateBoard,
             fetchBoards,
             resolveBoardIdentifier,
+            setResolvingBoardId,
             handleCreateNew,
             refreshTemplates
         },

@@ -530,13 +530,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             <div className="flex flex-col">
                                 {/* Tools Buttons */}
-                                <div className="flex items-center justify-center gap-3 py-6">
+                                <div className="grid grid-cols-2 gap-2 py-4">
                                     <Button
                                         variant="secondary"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
-                                        className="!w-auto px-5 !py-3 !text-[11px] font-bold text-zinc-700 dark:text-zinc-300"
+                                        className="w-full"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
@@ -546,7 +546,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
                                         icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
-                                        className="!w-auto px-5 !py-3 !text-[11px] font-bold text-zinc-700 dark:text-zinc-300"
+                                        className="w-full"
                                         tooltip={t('upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
@@ -609,9 +609,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <>
                                             <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
                                             <div className={`
-                                                absolute bottom-full right-0 mb-2 w-64 p-1.5
+                                                absolute top-full right-0 mt-2 w-64 p-1.5
                                                 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-                                                shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-bottom-2 duration-200 z-50
+                                                shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50
                                             `}>
                                                 {MODES.map((m) => (
                                                     <button

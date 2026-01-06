@@ -56,16 +56,8 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
         if (search.trim()) {
             const lower = search.toLowerCase();
             result = result.filter(t =>
-                t.title.toLowerCase().includes(lower) ||
-                t.prompt.toLowerCase().includes(lower)
-            );
-        }
-
-        if (search.trim()) {
-            const lower = search.toLowerCase();
-            result = result.filter(t =>
-                t.title.toLowerCase().includes(lower) ||
-                t.prompt.toLowerCase().includes(lower)
+                (t.title && t.title.toLowerCase().includes(lower)) ||
+                (t.prompt && t.prompt.toLowerCase().includes(lower))
             );
         }
 
@@ -76,7 +68,6 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
 
     const closeSearch = () => {
         setIsSearchActive(false);
-        setSearch('');
         setSearch('');
     };
 

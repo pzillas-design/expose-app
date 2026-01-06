@@ -16,6 +16,7 @@ import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
+import { ProgressBar } from '@/components/ui/DesignSystem';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 
 const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -35,7 +36,8 @@ export function App() {
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
         currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
-        currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates
+        currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
+        resolvingBoardId, loadingProgress
     } = state;
 
     const {
@@ -46,7 +48,7 @@ export function App() {
         setQualityMode, setThemeMode, setLang, handleSelection, selectMultiple,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
-        setMaskTool, setActiveShape, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
+        setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, refreshTemplates
     } = actions;
 
@@ -70,19 +72,29 @@ export function App() {
             const pathParts = location.pathname.split('/');
             if (pathParts[1] === 'projects' && pathParts[2]) {
                 const identifier = decodeURIComponent(pathParts[2]);
+
+                // If it's a different board than current, start loading state immediately
+                if (identifier !== currentBoardId && identifier !== resolvingBoardId) {
+                    setResolvingBoardId(identifier);
+                    // Clear rows to trigger skeleton immediately
+                    setRows([]);
+                }
+
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
                 if (resolved && resolved.id !== currentBoardId) {
                     setCurrentBoardId(resolved.id);
                 }
+                setResolvingBoardId(null);
             } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
                 if (currentBoardId !== null) {
                     setCurrentBoardId(null);
+                    setRows([]);
                 }
             }
         };
         syncUrl();
-    }, [location.pathname, actions, currentBoardId]);
+    }, [location.pathname, actions, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId]);
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
@@ -301,7 +313,12 @@ export function App() {
     const handleSelectBoard = (id: string | null) => {
         if (id) {
             const b = boards.find(board => board.id === id);
-            navigate(`/projects/${b ? b.id : id}`);
+            const targetId = b ? b.id : id;
+            if (targetId !== currentBoardId) {
+                setResolvingBoardId(targetId);
+                setRows([]); // Clear current view
+            }
+            navigate(`/projects/${targetId}`);
         } else {
             navigate('/projects');
         }
@@ -350,6 +367,7 @@ export function App() {
             onMouseUp={handleBackgroundMouseUp}
             onContextMenu={handleContextMenu}
         >
+            <ProgressBar isVisible={isCanvasLoading || !!resolvingBoardId} progress={loadingProgress || (resolvingBoardId ? 30 : 0)} />
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
                 <CommandDock
                     zoom={zoom}
@@ -409,7 +427,7 @@ export function App() {
                             gap: `${12 * zoom}rem`,
                         }}
                     >
-                        {isCanvasLoading && rows.length === 0 ? (
+                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 ? (
                             <CanvasSkeleton zoom={zoom} />
                         ) : (
                             rows.map((row) => (

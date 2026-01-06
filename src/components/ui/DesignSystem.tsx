@@ -292,3 +292,13 @@ export const Card: React.FC<{ children: React.ReactNode, className?: string, onC
         {children}
     </div>
 );
+
+// -- Progress Bar (Global Loader) --
+export const ProgressBar: React.FC<{ progress: number, isVisible: boolean }> = ({ progress, isVisible }) => (
+    <div className={`fixed top-0 left-0 right-0 z-[200] h-0.5 pointer-events-none transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <div
+            className="h-full bg-zinc-900 dark:bg-white transition-all duration-300 ease-out"
+            style={{ width: `${progress}%` }}
+        />
+    </div>
+);
