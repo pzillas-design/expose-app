@@ -28,7 +28,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     width,
     height,
     zoom,
-    annotations,
+    annotations = [],
     onChange,
     brushSize,
     activeTab,

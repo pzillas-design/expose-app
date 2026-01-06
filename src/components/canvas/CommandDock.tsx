@@ -125,7 +125,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
               ${Typo.Mono}
             `}
           >
-            {credits.toFixed(2)} €
+            {(credits || 0).toFixed(2)} €
           </button>
         </Tooltip>
       </div>

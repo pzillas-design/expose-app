@@ -36,8 +36,8 @@ export const boardService = {
                 thumbnail: b.thumbnail,
                 previewImages: previewImages.filter(Boolean) as string[],
                 itemCount: b.canvas_images?.length || 0,
-                createdAt: new Date(b.created_at).getTime(),
-                updatedAt: new Date(b.updated_at).getTime()
+                createdAt: b.created_at ? new Date(b.created_at).getTime() : Date.now(),
+                updatedAt: b.updated_at ? new Date(b.updated_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : Date.now())
             };
         }));
 
@@ -63,8 +63,8 @@ export const boardService = {
             userId: data.user_id,
             name: data.name,
             thumbnail: data.thumbnail,
-            createdAt: new Date(data.created_at).getTime(),
-            updatedAt: new Date(data.updated_at).getTime()
+            createdAt: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
+            updatedAt: data.updated_at ? new Date(data.updated_at).getTime() : (data.created_at ? new Date(data.created_at).getTime() : Date.now())
         };
     },
 
@@ -89,8 +89,8 @@ export const boardService = {
             userId: data.user_id,
             name: data.name,
             thumbnail: data.thumbnail,
-            createdAt: new Date(data.created_at).getTime(),
-            updatedAt: new Date(data.updated_at).getTime()
+            createdAt: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
+            updatedAt: data.updated_at ? new Date(data.updated_at).getTime() : (data.created_at ? new Date(data.created_at).getTime() : Date.now())
         };
     },
 
