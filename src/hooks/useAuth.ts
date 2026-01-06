@@ -148,7 +148,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         }
     }, [showToast, t]);
 
-    const handleAddFunds = async (amount: number) => {
+    const handleAddFunds = useCallback(async (amount: number) => {
         if (isAuthDisabled) {
             setCredits(prev => prev + amount);
             setUserProfile((prev: any) => ({ ...prev, credits: (prev?.credits || 0) + amount }));
@@ -181,9 +181,10 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         } catch (err: any) {
             showToast(err.message || t('payment_failed'), "error");
         }
-    };
+    }, [isAuthDisabled, showToast, t]);
 
-    const updateProfile = async (updates: { full_name?: string }) => {
+
+    const updateProfile = useCallback(async (updates: { full_name?: string }) => {
         if (!user || isAuthDisabled) return;
         try {
             const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
@@ -193,12 +194,14 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         } catch (err: any) {
             showToast(err.message || t('failed_update_profile'), "error");
         }
-    };
+    }, [user, isAuthDisabled, showToast, t]);
 
-    const handleSignOut = async () => {
+
+    const handleSignOut = useCallback(async () => {
         await supabase.auth.signOut();
         window.location.reload();
-    };
+    }, []);
+
 
     return {
         user,

@@ -117,7 +117,7 @@ export const useGeneration = ({
         });
     }, [rows, pollForJob]);
 
-    const performGeneration = async (
+    const performGeneration = useCallback(async (
         sourceImage: CanvasImage,
         prompt: string,
         batchSize: number = 1,
@@ -290,9 +290,10 @@ export const useGeneration = ({
                 });
             }
         }
-    };
+    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t]);
 
-    const performNewGeneration = async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
+
+    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
         const cost = COSTS[modelId] || 0;
         const isPro = userProfile?.role === 'pro';
 
@@ -426,7 +427,8 @@ export const useGeneration = ({
                 setCredits(prev => prev + cost);
             }
         }
-    };
+    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t]);
+
 
     return { performGeneration, performNewGeneration };
 };

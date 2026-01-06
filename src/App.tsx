@@ -94,7 +94,8 @@ export function App() {
             }
         };
         syncUrl();
-    }, [location.pathname, actions, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId]);
+    }, [location.pathname, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId]);
+
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
