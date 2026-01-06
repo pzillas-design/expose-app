@@ -300,7 +300,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
                             <div className="flex flex-col mb-8 gap-4">
                                 {/* UNIFIED BOX: Prompt + Chips */}
-                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600 overflow-hidden`}>
+                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} bg-white dark:bg-zinc-950/50 shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600 overflow-hidden`}>
                                     <Tooltip text={t('tt_prompt')} side="top">
                                         <textarea
                                             ref={textAreaRef}
@@ -332,8 +332,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         <div key={ann.id} className="relative">
                                                             <div
                                                                 className={`
-                                                                    flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] transition-all
-                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                    flex items-center gap-2 px-2.5 py-1 rounded-full text-[12px] transition-all
+                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
                                                                 `}
                                                             >
                                                                 {isRefType && ann.referenceImage ? (
@@ -444,10 +444,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         key={opt.id}
                                                                         onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
                                                                         className={`
-                                                                            px-2.5 py-1 rounded-full text-[11px] transition-all
+                                                                            px-2.5 py-1 rounded-full text-[12px] transition-all
                                                                             ${isSelected
                                                                                 ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                                : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                                : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
                                                                         `}
                                                                     >
                                                                         {opt.label}
