@@ -316,7 +316,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {annotations.length > 0 && (
                                         <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-[11px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
+                                                <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500 uppercase">
                                                     Anmerkungen
                                                 </span>
                                             </div>
@@ -332,8 +332,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         <div key={ann.id} className="relative">
                                                             <div
                                                                 className={`
-                                                                    flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
-                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
+                                                                    flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] transition-all
+                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
                                                                 `}
                                                             >
                                                                 {isRefType && ann.referenceImage ? (
@@ -361,8 +361,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         onChange={(e) => setEditValue(e.target.value)}
                                                                         onBlur={saveEditing}
                                                                         onKeyDown={handleKeyDown}
-                                                                        className="bg-transparent border-none outline-none text-[13px] font-medium text-black dark:text-white p-0 min-w-[50px]"
-                                                                        style={{ width: `${Math.max(5, editValue.length) + 1}ch` }}
+                                                                        className="bg-transparent border-none outline-none text-[11px] text-zinc-900 dark:text-white p-0 min-w-[40px]"
+                                                                        style={{ width: `${Math.max(4, editValue.length) + 1}ch` }}
                                                                     />
                                                                 ) : (
                                                                     <span
@@ -425,7 +425,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2 group">
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="text-[11px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
+                                                            <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500 uppercase">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
@@ -444,10 +444,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         key={opt.id}
                                                                         onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
                                                                         className={`
-                                                                            px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
+                                                                            px-2.5 py-1 rounded-full text-[11px] transition-all
                                                                             ${isSelected
-                                                                                ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm scale-105 z-10'
-                                                                                : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
+                                                                                ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                                                                                : 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
                                                                         `}
                                                                     >
                                                                         {opt.label}
