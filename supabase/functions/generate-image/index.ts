@@ -339,23 +339,9 @@ Deno.serve(async (req) => {
 
         const finalUrl = signedUrlData?.signedUrl || `data:image/jpeg;base64,${generatedBase64}`;
 
-        // 5. Final Check: Did the user delete the job while we were generating?
-        const { data: jobStillExists } = await supabaseAdmin
-            .from('generation_jobs')
-            .select('id')
-            .eq('id', newId)
-            .single()
-
-        if (!jobStillExists) {
-            console.log(`Job ${newId} was deleted during generation. Aborting DB insert.`);
-            return new Response(JSON.stringify({
-                success: false,
-                error: 'Job was cancelled/deleted'
-            }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200, // Status 200 but success: false
-            })
-        }
+        // 5. Insert into DB (Canvas Images)
+        // We do NOT check for job existence anymore to avoid race conditions.
+        // If the frontend cleaned up the job row, we still want to save the result so it appears on reload.
 
         // Determine Final Title
         // If it's a "New Generation" (no source ID or just placeholders), use the AI title.
