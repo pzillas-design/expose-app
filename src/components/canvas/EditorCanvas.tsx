@@ -8,6 +8,7 @@ import { generateId } from '@/utils/ids';
 interface EditorCanvasProps {
     width: number;
     height: number;
+    zoom: number; // New: zoom for scaling
     annotations: AnnotationObject[];
     onChange: (newAnnotations: AnnotationObject[]) => void;
     brushSize: number;
@@ -22,17 +23,10 @@ interface EditorCanvasProps {
 
 const RES_SCALE = 3;
 
-const OVERLAY_STYLES = {
-    ChipContainer: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} hover:border-zinc-500 group/chip shadow-sm`,
-    ChipContainerActive: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} p-1.5 min-w-[120px] z-30 shadow-md`,
-    ActionBtn: `flex items-center justify-center w-5 h-5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-black dark:hover:text-white transition-all shrink-0`,
-    RefImage: `w-full h-full object-cover rounded border border-zinc-200 dark:border-zinc-700`,
-    Arrow: `absolute w-0 h-0 border-[6px] border-transparent pointer-events-none`
-};
-
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     width,
     height,
+    zoom,
     annotations,
     onChange,
     brushSize,
@@ -112,13 +106,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         ctx.closePath();
                         ctx.fill();
                     }
-                } else if (ann.type === 'stamp' || ann.type === 'reference_image') {
-                    // Circles removed as requested - we rely on the UI chips or direct text rendering
-                    /* 
-                    ctx.beginPath();
-                    ctx.arc(ann.x || 0, ann.y || 0, 15, 0, Math.PI * 2);
-                    ctx.fill();
-                    */
                 }
             }
         });
@@ -316,6 +303,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             {annotations.map(ann => {
                 const isEditMode = activeTab === 'brush' || activeTab === 'objects';
                 const active = activeMaskId === ann.id;
+
+                // Common scaling factors
+                // Base size at 1.0 zoom - using proportionality to image width
+                const baseSizeFactor = width * 0.012;
+                const currentFontSize = Math.max(10, baseSizeFactor * zoom);
+                const currentPaddingH = 10 * zoom;
+                const currentPaddingV = 6 * zoom;
+                const currentRadius = 6 * zoom;
+                const currentGap = 8 * zoom;
+
                 if (ann.type === 'shape') {
                     if (ann.shapeType === 'polygon') {
                         const pts = ann.points;
@@ -384,13 +381,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }
 
                 let left = 0, top = 0;
-                if (ann.type === 'stamp') { left = (ann.x / width) * 100; top = (ann.y / height) * 100; }
-                else if (ann.type === 'mask_path' && ann.points.length) { left = (ann.points[0].x / width) * 100; top = (ann.points[0].y / height) * 100; }
+                if (ann.type === 'stamp') {
+                    left = (ann.x / width) * 100;
+                    top = (ann.y / height) * 100;
+                } else {
+                    return null; // Skip rendering text chips for brush paths
+                }
 
                 return (
                     <div
                         key={ann.id}
-                        className="absolute annotation-ui z-20"
+                        className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`}
                         style={{ left: `${left}%`, top: `${top}%` }}
                         onMouseDown={(e) => {
                             if (!isEditMode) {
@@ -403,19 +404,44 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         }}
                     >
                         <div
-                            className={`relative px-2.5 py-1.5 rounded-lg shadow-md transition-all cursor-pointer ${active ? 'bg-primary text-white scale-105' : 'bg-black text-white'}`}
+                            className={`relative flex items-center bg-black text-white shadow-xl transition-all duration-300 origin-bottom`}
                             style={{
-                                fontSize: Math.max(11, width * 0.015),
+                                fontSize: currentFontSize,
+                                paddingLeft: currentPaddingH,
+                                paddingRight: active && isEditMode ? currentPaddingH / 2 : currentPaddingH,
+                                paddingTop: currentPaddingV,
+                                paddingBottom: currentPaddingV,
+                                borderRadius: currentRadius,
                                 transform: 'translate(-50%, -100%) translateY(-10px)',
-                                opacity: isEditMode ? 1 : 0.9
+                                minWidth: active ? (100 * zoom) : 'auto',
+                                opacity: isEditMode || active ? 1 : 0.85
                             }}
                         >
                             {active && isEditMode ? (
-                                <div className="flex items-center gap-2">
-                                    <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)} className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 w-24 font-bold" autoFocus onMouseDown={e => e.stopPropagation()} />
-                                    <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-0.5 hover:bg-white/20 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                                <div className="flex items-center gap-1.5" style={{ gap: currentGap }}>
+                                    <input
+                                        value={ann.text || ''}
+                                        onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                        onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)}
+                                        className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-bold placeholder:text-white/30"
+                                        style={{ width: Math.max(60 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
+                                        placeholder={t ? t('describe_changes') : "Änderung..."}
+                                        autoFocus
+                                        onMouseDown={e => e.stopPropagation()}
+                                    />
+                                    <button
+                                        onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                        className="p-1 hover:bg-white/20 rounded transition-colors group/trash"
+                                        style={{ padding: 4 * zoom }}
+                                    >
+                                        <Trash2 className="text-white/60 group-hover/trash:text-red-400" style={{ width: 14 * zoom, height: 14 * zoom }} />
+                                    </button>
                                 </div>
-                            ) : (<span>{ann.text || (ann.type === 'mask_path' ? "Beschreibe..." : "Text")}</span>)}
+                            ) : (
+                                <span className="whitespace-nowrap font-medium">
+                                    {ann.text || (ann.type === 'mask_path' ? "Beschreibe..." : (t ? t('untitled') : "Text"))}
+                                </span>
+                            )}
                         </div>
                     </div>
                 );

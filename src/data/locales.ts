@@ -131,6 +131,10 @@ export const translations = {
     checkout_pay: "Pay {{amount}} €",
     checkout_secure: "Secure by Stripe",
     checkout_btn: "Checkout",
+    mode_light: "Light",
+    mode_dark: "Dark",
+    mode_system: "System",
+    lang_auto: "Auto",
 
     // Admin
     admin_users: "Users",
@@ -467,6 +471,10 @@ export const translations = {
     checkout_pay: "{{amount}} € bezahlen",
     checkout_secure: "Sicher über Stripe",
     checkout_btn: "Kasse",
+    mode_light: "Hell",
+    mode_dark: "Dunkel",
+    mode_system: "System",
+    lang_auto: "Auto",
 
     // Admin
     admin_users: "Benutzer",

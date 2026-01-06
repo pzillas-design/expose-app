@@ -20,6 +20,8 @@ export const useCanvasNavigation = ({
 }: UseCanvasNavigationProps) => {
 
     const [zoom, setZoom] = useState(1.25);
+    const zoomRef = useRef(zoom);
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
     const zoomAnimFrameRef = useRef<number | null>(null);
     const isZoomingRef = useRef(false);
     const [isZooming, setIsZoomingState] = useState(false);
@@ -45,7 +47,7 @@ export const useCanvasNavigation = ({
 
         setIsZooming(true);
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
-        const startZoom = zoom;
+        const startZoom = zoomRef.current;
 
         const containerRect = container.getBoundingClientRect();
         const startScrollX = container.scrollLeft;
@@ -66,8 +68,8 @@ export const useCanvasNavigation = ({
             contentY = (targetScroll.y + centerY - padY) / clampedTargetZoom;
         } else {
             // Default: Zoom around the current visual center
-            contentX = (startScrollX + centerX - padX) / zoom;
-            contentY = (startScrollY + centerY - padY) / zoom;
+            contentX = (startScrollX + centerX - padX) / zoomRef.current;
+            contentY = (startScrollY + centerY - padY) / zoomRef.current;
         }
 
         const startTime = performance.now();
@@ -102,7 +104,7 @@ export const useCanvasNavigation = ({
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
-    }, [zoom, scrollContainerRef, setIsZooming]);
+    }, [scrollContainerRef, setIsZooming]);
 
     // --- Viewport Fitting (Magnetic Group) ---
     const fitSelectionToView = useCallback(() => {
@@ -153,8 +155,8 @@ export const useCanvasNavigation = ({
             const currentCenterY = minTop + currentBoxHeight / 2;
 
             // 2. Base Dimensions (Un-zoomed)
-            const baseBoxWidth = currentBoxWidth / zoom;
-            const baseBoxHeight = currentBoxHeight / zoom;
+            const baseBoxWidth = currentBoxWidth / zoomRef.current;
+            const baseBoxHeight = currentBoxHeight / zoomRef.current;
 
             // 3. Calculate Ideal Zoom
             const padding = 120; // Extra breathing room
@@ -176,7 +178,7 @@ export const useCanvasNavigation = ({
             const contentY = currentCenterY - padTop;
 
             // Scale
-            const ratio = targetZoom / zoom;
+            const ratio = targetZoom / zoomRef.current;
             const newContentX = contentX * ratio;
             const newContentY = contentY * ratio;
 
@@ -192,7 +194,7 @@ export const useCanvasNavigation = ({
             smoothZoomTo(targetZoom, { x: targetScrollLeft, y: targetScrollTop }, 0);
         });
 
-    }, [selectedIds, zoom, smoothZoomTo, scrollContainerRef]);
+    }, [selectedIds, smoothZoomTo, scrollContainerRef]);
 
     const zoomToItem = useCallback((id: string, paddingPercentage = 0.9, sidebarWidth = 0) => {
         if (!scrollContainerRef.current) return;
@@ -209,8 +211,8 @@ export const useCanvasNavigation = ({
         const absLeft = rect.left + currentScrollLeft - containerRect.left;
         const absTop = rect.top + currentScrollTop - containerRect.top;
 
-        const itemWidth = rect.width / zoom;
-        const itemHeight = rect.height / zoom;
+        const itemWidth = rect.width / zoomRef.current;
+        const itemHeight = rect.height / zoomRef.current;
 
         // Calculate Ideal Zoom
         const availableWidth = (containerRect.width - sidebarWidth) * paddingPercentage;
@@ -227,8 +229,8 @@ export const useCanvasNavigation = ({
         const padY = window.innerHeight / 2;
 
         // Point on canvas (unscaled)
-        const contentX = (centerX - padX) / zoom;
-        const contentY = (centerY - padY) / zoom;
+        const contentX = (centerX - padX) / zoomRef.current;
+        const contentY = (centerY - padY) / zoomRef.current;
 
         const viewportCenterX = (containerRect.width - sidebarWidth) / 2;
         const viewportCenterY = containerRect.height / 2;
@@ -236,8 +238,8 @@ export const useCanvasNavigation = ({
         const targetScrollLeft = (padX + (contentX * clampedTargetZoom)) - viewportCenterX;
         const targetScrollTop = (padY + (contentY * clampedTargetZoom)) - viewportCenterY;
 
-        smoothZoomTo(clampedTargetZoom, { x: targetScrollLeft, y: targetScrollTop }, 400);
-    }, [zoom, smoothZoomTo, scrollContainerRef]);
+        smoothZoomTo(clampedTargetZoom, { x: targetScrollLeft, y: targetScrollTop }, 300);
+    }, [smoothZoomTo, scrollContainerRef]);
 
     // Snap to single item logic
     const snapToItem = useCallback((id: string, instant = false) => {

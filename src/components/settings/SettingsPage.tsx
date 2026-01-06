@@ -11,6 +11,7 @@ import { Logo } from '@/components/ui/Logo';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { LocaleKey } from '@/data/locales';
 import { AppNavbar } from '../layout/AppNavbar';
+import { useToast } from '../ui/Toast';
 
 interface SettingsPageProps {
     qualityMode: GenerationQuality;
@@ -45,6 +46,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [name, setName] = useState(userProfile?.full_name || '');
     const [isUpdatingName, setIsUpdatingName] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const { showToast } = useToast();
+
+    const handleUpdateName = async () => {
+        if (!name.trim() || name === userProfile?.full_name) return;
+        setIsUpdatingName(true);
+        try {
+            await updateProfile({ full_name: name });
+            showToast(t('profile_updated') || 'Profile updated', 'success');
+        } catch (err) {
+            showToast(t('failed_update_profile') || 'Failed to update profile', 'error');
+        } finally {
+            setIsUpdatingName(false);
+        }
+    };
 
     useEffect(() => {
         if (tab && (tab === 'account' || tab === 'general' || tab === 'about')) {
@@ -157,9 +172,30 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                             <div className="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-2xl font-bold text-zinc-400 dark:text-zinc-600 shadow-inner overflow-hidden border border-zinc-200 dark:border-zinc-800">
                                                 {userProfile?.full_name ? userProfile.full_name.charAt(0) : user?.email?.charAt(0)?.toUpperCase()}
                                             </div>
-                                            <div className="space-y-1">
-                                                <h2 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-white">{user?.email || ''}</h2>
-                                                <p className="text-sm text-zinc-500">Persönlicher Account</p>
+                                            <div className="space-y-3 flex-1">
+                                                <div className="space-y-1">
+                                                    <h2 className="text-lg font-medium tracking-tight text-zinc-900 dark:text-white">{user?.email || ''}</h2>
+                                                    <p className="text-sm text-zinc-500">Persönlicher Account</p>
+                                                </div>
+
+                                                <div className="flex items-center gap-3 pt-2">
+                                                    <input
+                                                        type="text"
+                                                        value={name}
+                                                        onChange={(e) => setName(e.target.value)}
+                                                        placeholder="Vollständiger Name"
+                                                        className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500/20 w-fit min-w-[200px]"
+                                                    />
+                                                    {name !== (userProfile?.full_name || '') && (
+                                                        <button
+                                                            onClick={handleUpdateName}
+                                                            disabled={isUpdatingName}
+                                                            className="px-4 py-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl text-xs font-semibold hover:opacity-90 transition-all disabled:opacity-50"
+                                                        >
+                                                            {isUpdatingName ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Speichern'}
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 
@@ -256,22 +292,30 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                         key={mode.id}
                                                         onClick={() => onQualityModeChange(mode.id)}
                                                         className={`
-                                                            flex flex-col items-start gap-1 p-5 rounded-2xl border text-left transition-all duration-300
+                                                            group flex flex-col items-start gap-1 p-5 rounded-2xl border text-left transition-all duration-300 relative
                                                             ${isSelected
-                                                                ? 'bg-zinc-900 dark:bg-white border-transparent shadow-lg scale-[1.02]'
-                                                                : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20'
-                                                            }
+                                                                ? 'bg-zinc-900 dark:bg-white border-transparent shadow-xl scale-[1.01] z-10'
+                                                                : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20'}
                                                         `}
                                                     >
                                                         <div className="flex items-center justify-between w-full mb-1">
-                                                            <span className={`font-medium text-sm ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
-                                                                {mode.label}
-                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`font-medium text-sm ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-900 dark:text-white'}`}>
+                                                                    {mode.label}
+                                                                </span>
+                                                                {isSelected && <div className={`w-1 h-1 rounded-full ${isSelected ? 'bg-zinc-400 dark:bg-zinc-500' : ''}`} />}
+                                                            </div>
                                                             <span className={`font-mono text-[10px] ${isSelected ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-500'}`}>
                                                                 {mode.price}
                                                             </span>
                                                         </div>
-                                                        <span className={`text-[11px] font-mono ${isSelected ? 'text-zinc-500' : 'text-zinc-500'}`}>{mode.desc}</span>
+                                                        <span className={`text-[11px] font-mono ${isSelected ? 'text-zinc-500/80 dark:text-zinc-400/80' : 'text-zinc-500'}`}>{mode.desc}</span>
+
+                                                        {isSelected && (
+                                                            <div className="absolute top-4 right-4 text-white dark:text-zinc-900 opacity-20 group-hover:opacity-40 transition-opacity">
+                                                                <Logo className="w-12 h-12 rotate-12 translate-x-4 translate-y-2" />
+                                                            </div>
+                                                        )}
                                                     </button>
                                                 );
                                             })}
@@ -283,12 +327,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                         {/* Appearance */}
                                         <section className="space-y-4">
-                                            <h2 className="text-lg font-medium tracking-tight">{t('app_section')}</h2>
-                                            <div className="grid grid-cols-3 gap-2 p-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-white/5">
+                                            <h2 className="text-sm font-semibold tracking-tight text-zinc-400 uppercase">{t('app_section')}</h2>
+                                            <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5 shadow-inner">
                                                 {[
-                                                    { id: 'light', label: 'Light', icon: Sun },
-                                                    { id: 'dark', label: 'Dark', icon: Moon },
-                                                    { id: 'auto', label: 'System', icon: Monitor }
+                                                    { id: 'light', label: t('mode_light'), icon: Sun },
+                                                    { id: 'dark', label: t('mode_dark'), icon: Moon },
+                                                    { id: 'auto', label: t('mode_system'), icon: Monitor }
                                                 ].map((m) => {
                                                     const isSelected = themeMode === m.id;
                                                     const Icon = m.icon;
@@ -297,9 +341,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                             key={m.id}
                                                             onClick={() => onThemeChange(m.id as any)}
                                                             className={`
-                                                                flex flex-col items-center gap-2 py-2.5 rounded-lg text-[11px] font-medium transition-all duration-300
+                                                                flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[12px] font-medium transition-all duration-300
                                                                 ${isSelected
-                                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5'
+                                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-md ring-1 ring-black/5 dark:ring-white/10'
                                                                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}
                                                             `}
                                                         >
@@ -313,12 +357,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                                         {/* Language */}
                                         <section className="space-y-4">
-                                            <h2 className="text-lg font-medium tracking-tight">{t('lang_section')}</h2>
-                                            <div className="grid grid-cols-3 gap-2 p-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-white/5">
+                                            <h2 className="text-sm font-semibold tracking-tight text-zinc-400 uppercase">{t('lang_section')}</h2>
+                                            <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5 shadow-inner">
                                                 {[
-                                                    { id: 'de', label: 'DE' },
-                                                    { id: 'en', label: 'EN' },
-                                                    { id: 'auto', label: 'Auto' }
+                                                    { id: 'de', label: t('lang_de') },
+                                                    { id: 'en', label: t('lang_en') },
+                                                    { id: 'auto', label: t('lang_auto') }
                                                 ].map((l) => {
                                                     const isSelected = lang === l.id;
                                                     return (
@@ -326,9 +370,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                             key={l.id}
                                                             onClick={() => onLangChange(l.id as any)}
                                                             className={`
-                                                                flex flex-col items-center justify-center py-2.5 rounded-lg text-[11px] font-medium transition-all duration-300
+                                                                flex-1 flex items-center justify-center py-3 rounded-xl text-[12px] font-medium transition-all duration-300
                                                                 ${isSelected
-                                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5'
+                                                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-md ring-1 ring-black/5 dark:ring-white/10'
                                                                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}
                                                             `}
                                                         >

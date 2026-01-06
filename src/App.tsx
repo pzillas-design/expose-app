@@ -548,8 +548,44 @@ export function App() {
         <Routes>
             <Route path="/projects" element={boardsPage} />
             <Route path="/projects/:boardId" element={canvasView} />
-            <Route path="/settings" element={<SettingsPage user={user} profile={userProfile} onUpdateProfile={updateProfile} t={t} currentLang={currentLang} onSignOut={handleSignOut} />} />
-            <Route path="/settings/:tab" element={<SettingsPage user={user} profile={userProfile} onUpdateProfile={updateProfile} t={t} currentLang={currentLang} onSignOut={handleSignOut} />} />
+            <Route path="/settings" element={
+                <SettingsPage
+                    user={user}
+                    userProfile={userProfile}
+                    updateProfile={updateProfile}
+                    t={t}
+                    currentBalance={credits}
+                    onAddFunds={handleAddFunds}
+                    qualityMode={qualityMode}
+                    onQualityModeChange={setQualityMode}
+                    themeMode={themeMode}
+                    onThemeChange={setThemeMode}
+                    lang={lang}
+                    onLangChange={setLang}
+                    onOpenAdmin={() => navigate('/admin')}
+                    onSignOut={handleSignOut}
+                    onCreateBoard={handleCreateBoardAndNavigate}
+                />
+            } />
+            <Route path="/settings/:tab" element={
+                <SettingsPage
+                    user={user}
+                    userProfile={userProfile}
+                    updateProfile={updateProfile}
+                    t={t}
+                    currentBalance={credits}
+                    onAddFunds={handleAddFunds}
+                    qualityMode={qualityMode}
+                    onQualityModeChange={setQualityMode}
+                    themeMode={themeMode}
+                    onThemeChange={setThemeMode}
+                    lang={lang}
+                    onLangChange={setLang}
+                    onOpenAdmin={() => navigate('/admin')}
+                    onSignOut={handleSignOut}
+                    onCreateBoard={handleCreateBoardAndNavigate}
+                />
+            } />
             <Route path="/admin" element={<AdminDashboard user={user} t={t} />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />

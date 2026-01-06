@@ -69,7 +69,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         <div className="flex flex-col h-full overflow-hidden">
 
             {/* Header with Headline and Icons */}
-            <div className="px-6 pt-5 pb-3">
+            <div className="px-6 pt-3 pb-3">
                 <div className="flex items-center justify-between">
                     <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px]`}>
                         {currentLang === 'de' ? 'Stempel' : 'Stamps'}

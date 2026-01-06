@@ -108,7 +108,10 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 // Standard: 1200px. HQ: Original.
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
-                    setIsLoaded(false);
+                    // Only reset isLoaded if we are switching to a DIFFERENT image
+                    if (path !== lastPath.current) {
+                        setIsLoaded(false);
+                    }
                     setCurrentSrc(url);
                     if (needsHQ) setIsHighRes(true);
                     lastPath.current = path;
@@ -246,6 +249,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <EditorCanvas
                             width={finalWidth / zoom}
                             height={finalHeight / zoom}
+                            zoom={zoom}
                             annotations={image.annotations || []}
                             onChange={(anns) => onUpdateAnnotations(image.id, anns)}
                             brushSize={editorState.brushSize}

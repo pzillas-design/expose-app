@@ -289,6 +289,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             return;
         }
 
+        // Handle CLEAR ALL MASKS
+        if (itemId === 'util:clear_masks') {
+            const nonMaskAnns = currentAnns.filter(a => a.type !== 'mask_path');
+            onUpdateAnnotations(selectedImage.id, nonMaskAnns);
+            return;
+        }
+
         const newStamp: AnnotationObject = {
             id: generateId(),
             type: 'stamp',

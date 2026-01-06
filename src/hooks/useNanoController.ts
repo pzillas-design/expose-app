@@ -214,6 +214,18 @@ export const useNanoController = () => {
 
     const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {
         const oldMode = sideSheetMode;
+
+        let targetImg = selectedImage;
+        if (!targetImg && (newMode === 'brush' || newMode === 'objects')) {
+            const mostVisibleId = getMostVisibleItem();
+            if (mostVisibleId) {
+                targetImg = allImages.find(i => i.id === mostVisibleId) || null;
+                if (targetImg) {
+                    selectAndSnap(targetImg.id, true);
+                }
+            }
+        }
+
         setSideSheetMode(newMode);
 
         if ((newMode === 'brush' || newMode === 'objects') && oldMode === 'prompt') {
@@ -226,20 +238,20 @@ export const useNanoController = () => {
                 });
             }
 
-            if (selectedImage) {
+            if (targetImg) {
                 // Smooth zoom into the image (sidebar width 360)
-                zoomToItem(selectedImage.id, 0.9, 360);
+                zoomToItem(targetImg.id, 0.9, 360);
             }
         } else if (newMode === 'prompt' && (oldMode === 'brush' || oldMode === 'objects')) {
             // Leaving annotation mode: Restore previous state
             if (previousNav) {
-                smoothZoomTo(previousNav.zoom, previousNav.scroll, 400);
+                smoothZoomTo(previousNav.zoom, previousNav.scroll, 300);
                 setPreviousNav(null);
             } else {
-                smoothZoomTo(1.0);
+                smoothZoomTo(1.0, undefined, 300);
             }
         }
-    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav]);
+    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav, getMostVisibleItem, selectAndSnap, allImages]);
 
     const handleGenerate = useCallback((
         prompt?: string,

@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
-import { Pen, Type, Square, Circle, MousePointer2, Shapes, Triangle } from 'lucide-react';
+import { Pen, Type, Square, Circle, MousePointer2, Shapes, Triangle, Trash2 } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -132,6 +132,16 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white dark:[&::-webkit-slider-thumb]:bg-black
                                 `}
                             />
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddObject('Clear', 'util:clear_masks');
+                                }}
+                                className="w-full py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-[11px] font-medium hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors flex items-center justify-center gap-2 text-red-500"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
+                            </button>
                             <p className={`${Typo.Micro} opacity-50 text-white dark:text-black leading-relaxed`}>
                                 {currentLang === 'de' ? 'Klicke und ziehe im Bild, um Masken zu malen.' : 'Click and drag on the image to paint masks.'}
                             </p>
@@ -195,10 +205,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
             </div>
 
             {/* Stamps Library */}
-            <div className="flex-1 min-h-0 flex flex-col bg-zinc-50/10 dark:bg-zinc-950/20 border-t border-zinc-100 dark:border-zinc-800/50">
-                <div className="px-5 pt-5">
-                    <SectionHeader label={currentLang === 'de' ? 'Objekt-Bibliothek' : 'Object Library'} />
-                </div>
+            <div className="flex-1 min-h-0 flex flex-col pt-2 bg-zinc-50/10 dark:bg-zinc-950/20 border-t border-zinc-100 dark:border-zinc-800/50">
                 <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                     <ObjectsTab
                         t={t}
