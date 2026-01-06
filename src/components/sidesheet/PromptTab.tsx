@@ -320,7 +320,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 .map((ctrl) => (
                                                     <div key={ctrl.id} className="flex flex-col gap-2 group">
                                                         <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-medium">
+                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                                                                 {ctrl.label}
                                                             </span>
                                                             <button
@@ -354,119 +354,152 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 ))}
                                         </div>
                                     )}
-
-                                    {/* ANNOTATIONS SECTION (Now INSIDE the box) */}
-                                    {annotations.length > 0 && (
-                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-medium">
-                                                    Anmerkungen
-                                                </span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5 pt-1 pb-4">
-                                                {annotations.map((ann) => {
-                                                    const isRefType = ann.type === 'reference_image';
-                                                    const defaultLabel = isRefType ? `${t('image_ref')}` : '';
-                                                    const displayText = ann.text || defaultLabel || t('untitled');
-                                                    const isEditing = editingId === ann.id;
-                                                    const isMenuOpen = menuId === ann.id;
-
-                                                    return (
-                                                        <div key={ann.id} className="relative">
-                                                            <div
-                                                                className={`
-                                                                    flex items-center gap-2 px-2.5 py-1 rounded-full text-[12px] transition-all
-                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
-                                                                `}
-                                                            >
-                                                                {isRefType && ann.referenceImage ? (
-                                                                    <div className="shrink-0 w-4 h-4 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                                                                        <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                        {ann.type === 'stamp' ? (
-                                                                            <span className="text-xs leading-none">{ann.emoji || '🏷️'}</span>
-                                                                        ) : ann.type === 'shape' ? (
-                                                                            ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
-                                                                                ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
-                                                                                    <Square className="w-3.5 h-3.5" />
-                                                                        ) : (
-                                                                            <Pen className="w-3.5 h-3.5" />
-                                                                        )}
-                                                                    </div>
-                                                                )}
-
-                                                                {isEditing ? (
-                                                                    <input
-                                                                        autoFocus
-                                                                        value={editValue}
-                                                                        onChange={(e) => setEditValue(e.target.value)}
-                                                                        onBlur={saveEditing}
-                                                                        onKeyDown={handleKeyDown}
-                                                                        className="bg-transparent border-none outline-none text-[11px] text-zinc-900 dark:text-white p-0 min-w-[40px]"
-                                                                        style={{ width: `${Math.max(4, editValue.length) + 1}ch` }}
-                                                                    />
-                                                                ) : (
-                                                                    <span
-                                                                        onClick={() => startEditing(ann, defaultLabel)}
-                                                                        className={`max-w-[120px] truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : ''}`}
-                                                                    >
-                                                                        {displayText}
-                                                                    </span>
-                                                                )}
-
-                                                                {!isEditing && (
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); setMenuId(isMenuOpen ? null : ann.id); }}
-                                                                        className={`p-1 -mr-1 rounded-full transition-colors ${isMenuOpen ? 'bg-zinc-300 dark:bg-zinc-600 text-black dark:text-white' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-300/50'}`}
-                                                                    >
-                                                                        <MoreHorizontal className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-
-                                                            {/* CONTEXT MENU */}
-                                                            {isMenuOpen && (
-                                                                <>
-                                                                    <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
-                                                                    <div className={`
-                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-50 shadow-xl
-                                                                        ${Theme.Colors.ModalBg} ${Theme.Colors.Border} animate-in fade-in slide-in-from-top-2 duration-150
-                                                                    `}>
-                                                                        {!isRefType && (
-                                                                            <button
-                                                                                onClick={() => { triggerAnnFile(ann.id); setMenuId(null); }}
-                                                                                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-300"
-                                                                            >
-                                                                                <ImageIcon className="w-3.5 h-3.5" />
-                                                                                {t('upload_ref')}
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            onClick={() => { onDeleteAnnotation(ann.id); setMenuId(null); }}
-                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-500"
-                                                                        >
-                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                            {t('delete')}
-                                                                        </button>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
+                                {/* EXTERNAL LIST FOR ANNOTATIONS & REFS */}
+                                {annotations.length > 0 && (
+                                    <div className="flex flex-col gap-6 mt-2">
+                                        {/* GLOBAL REFERENCE IMAGES */}
+                                        {annotations.filter(ann => ann.type === 'reference_image').length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center px-1 text-zinc-500 dark:text-zinc-400">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest">Referenzbilder</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    {annotations
+                                                        .filter(ann => ann.type === 'reference_image')
+                                                        .map((ann) => {
+                                                            const isRefType = ann.type === 'reference_image';
+                                                            const defaultLabel = isRefType ? `${t('image_ref')}` : '';
+                                                            const displayText = ann.text || defaultLabel || t('untitled');
+                                                            const isEditing = editingId === ann.id;
 
+                                                            return (
+                                                                <div key={ann.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                                                                        <div className="shrink-0 w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-200/50 dark:border-zinc-700/50">
+                                                                            {ann.referenceImage ? (
+                                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                                            ) : (
+                                                                                <ImageIcon className="w-4 h-4 text-zinc-400" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0 flex flex-col">
+                                                                            {isEditing ? (
+                                                                                <input
+                                                                                    autoFocus
+                                                                                    value={editValue}
+                                                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                                                    onBlur={saveEditing}
+                                                                                    onKeyDown={handleKeyDown}
+                                                                                    className="bg-transparent border-none outline-none text-xs font-medium text-black dark:text-white p-0 w-full"
+                                                                                />
+                                                                            ) : (
+                                                                                <span
+                                                                                    onClick={() => startEditing(ann, defaultLabel)}
+                                                                                    className={`text-xs font-medium truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-700 dark:text-zinc-300'}`}
+                                                                                >
+                                                                                    {displayText}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <IconButton
+                                                                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                                                                            onClick={() => onDeleteAnnotation(ann.id)}
+                                                                            className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+                                        )}
 
+                                        {/* OTHER ANNOTATIONS */}
+                                        {annotations.filter(ann => ann.type !== 'reference_image').length > 0 && (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center px-1 text-zinc-500 dark:text-zinc-400">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest">Anmerkungen</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    {annotations
+                                                        .filter(ann => ann.type !== 'reference_image')
+                                                        .map((ann) => {
+                                                            const displayText = ann.text || t('untitled');
+                                                            const isEditing = editingId === ann.id;
 
+                                                            return (
+                                                                <div key={ann.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+                                                                        <div className="shrink-0 w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200/50 dark:border-zinc-700/50">
+                                                                            {ann.type === 'stamp' ? (
+                                                                                <span className="text-base leading-none">{ann.emoji || '🏷️'}</span>
+                                                                            ) : ann.type === 'shape' ? (
+                                                                                <div className="text-zinc-500">
+                                                                                    {ann.shapeType === 'circle' ? <Circle className="w-4 h-4" /> :
+                                                                                        ann.shapeType === 'line' ? <Minus className="w-4 h-4" /> :
+                                                                                            <Square className="w-4 h-4" />
+                                                                                    }
+                                                                                </div>
+                                                                            ) : (
+                                                                                <Pen className="w-4 h-4 text-zinc-500" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                                                                            {isEditing ? (
+                                                                                <input
+                                                                                    autoFocus
+                                                                                    value={editValue}
+                                                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                                                    onBlur={saveEditing}
+                                                                                    onKeyDown={handleKeyDown}
+                                                                                    className="bg-transparent border-none outline-none text-xs font-medium text-black dark:text-white p-0 w-full"
+                                                                                />
+                                                                            ) : (
+                                                                                <span
+                                                                                    onClick={() => startEditing(ann, '')}
+                                                                                    className={`text-xs font-medium truncate cursor-text ${!ann.text ? 'text-zinc-400 italic' : 'text-zinc-700 dark:text-zinc-300'}`}
+                                                                                >
+                                                                                    {displayText}
+                                                                                </span>
+                                                                            )}
+                                                                            {ann.referenceImage && (
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <div className="w-3.5 h-3.5 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                                        <img src={ann.referenceImage} className="w-full h-full object-cover" alt="mini ref" />
+                                                                                    </div>
+                                                                                    <span className="text-[10px] text-zinc-400 truncate">{t('ref_attached')}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <IconButton
+                                                                            icon={<Camera className="w-3.5 h-3.5" />}
+                                                                            onClick={() => triggerAnnFile(ann.id)}
+                                                                            className="text-zinc-400 hover:text-black dark:hover:text-white"
+                                                                            tooltip={t('upload_ref')}
+                                                                        />
+                                                                        <IconButton
+                                                                            icon={<Trash2 className="w-3.5 h-3.5" />}
+                                                                            onClick={() => onDeleteAnnotation(ann.id)}
+                                                                            className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex flex-col mb-8">
+                            <div className="flex flex-col mb-8 gap-3">
                                 {/* Tools Buttons */}
                                 <div className="flex items-center justify-center gap-4">
                                     <Button
@@ -577,18 +610,18 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         </>
                                     )}
                                 </div>
-                            </div>
 
-                            <div className="flex flex-col gap-3">
-                                {isMulti && (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={onDeselect}
-                                        className="w-full"
-                                    >
-                                        {t('ctx_deselect')}
-                                    </Button>
-                                )}
+                                <div className="flex flex-col gap-3">
+                                    {isMulti && (
+                                        <Button
+                                            variant="secondary"
+                                            onClick={onDeselect}
+                                            className="w-full"
+                                        >
+                                            {t('ctx_deselect')}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -801,6 +834,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 prompt={getFinalPrompt()}
                 t={t}
             />
-        </div>
+        </div >
     );
 };
