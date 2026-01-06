@@ -56,15 +56,19 @@ BEGIN
     PERFORM public.recreate_optimized_policy('global_presets', 'Admin Presets Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
 
     -- GLOBAL OBJECTS (Overlapping fixes)
-    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Public Categories Read', 'SELECT', ARRAY['public'], 'true');
-    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
-    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
-    PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'global_objects_categories') THEN
+        PERFORM public.recreate_optimized_policy('global_objects_categories', 'Public Categories Read', 'SELECT', ARRAY['public'], 'true');
+        PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
+        PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+        PERFORM public.recreate_optimized_policy('global_objects_categories', 'Admin Categories Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    END IF;
 
-    PERFORM public.recreate_optimized_policy('global_objects_items', 'Public Items Read', 'SELECT', ARRAY['public'], 'true');
-    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
-    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
-    PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'global_objects_items') THEN
+        PERFORM public.recreate_optimized_policy('global_objects_items', 'Public Items Read', 'SELECT', ARRAY['public'], 'true');
+        PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Insert', 'INSERT', ARRAY['authenticated'], '(SELECT public.is_admin())');
+        PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Update', 'UPDATE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+        PERFORM public.recreate_optimized_policy('global_objects_items', 'Admin Items Delete', 'DELETE', ARRAY['authenticated'], '(SELECT public.is_admin())');
+    END IF;
 
     -- TABLES POSSIBLY ADDED VIA UI (mentioned in lint)
     IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'user_presets') THEN

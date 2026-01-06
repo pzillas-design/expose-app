@@ -37,3 +37,19 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Restore Global Presets (Missing table)
+CREATE TABLE IF NOT EXISTS public.global_presets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    label TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    prompt TEXT,
+    params JSONB,
+    image_url TEXT,
+    tags TEXT[],
+    is_public BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.global_presets ENABLE ROW LEVEL SECURITY;
