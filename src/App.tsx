@@ -136,7 +136,8 @@ export function App() {
     };
 
     const handleAnnotationEditStart = useCallback((mode: 'brush' | 'objects') => {
-        setSideSheetMode(mode);
+        // 'objects' mode is now consolidated into 'brush' tab
+        setSideSheetMode('brush');
         smoothZoomTo(1.0);
     }, [setSideSheetMode, smoothZoomTo]);
 

@@ -111,6 +111,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isDebugOpen, setIsDebugOpen] = useState(false);
 
+    useEffect(() => {
+        // Handle legacy/deprecated 'objects' mode redirect safely
+        if (sideSheetMode === 'objects') {
+            onModeChange('brush');
+        }
+    }, [sideSheetMode, onModeChange]);
+
     const { size: width, startResizing } = useResizable({
         initialSize: 360,
         min: 300,
@@ -537,9 +544,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     </div>
                 );
             case 'objects':
-                // Deprecated: Objects tool is now inside 'brush' tab
-                // Redirect to brush just in case
-                if (sideSheetMode === 'objects') onModeChange('brush');
                 return null;
             default:
                 return null;

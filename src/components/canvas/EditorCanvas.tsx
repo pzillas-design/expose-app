@@ -351,6 +351,51 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                             </div>
                         );
                     }
+                    if (ann.shapeType === 'line') {
+                        const pts = ann.points || [];
+                        if (pts.length < 2) return null;
+                        const minX = Math.min(pts[0].x, pts[1].x); const minY = Math.min(pts[0].y, pts[1].y);
+                        const maxX = Math.max(pts[0].x, pts[1].x); const maxY = Math.max(pts[0].y, pts[1].y);
+
+                        const p = 10;
+                        const left = (minX - p) / width * 100; const top = (minY - p) / height * 100;
+                        const w = (maxX - minX + p * 2) / width * 100; const h = (maxY - minY + p * 2) / height * 100;
+
+                        return (
+                            <div
+                                key={ann.id}
+                                className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`}
+                                style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
+                                onMouseDown={(e) => {
+                                    if (!isEditMode) {
+                                        e.stopPropagation();
+                                        onEditStart?.('brush');
+                                        setActiveMaskId(ann.id);
+                                        return;
+                                    }
+                                    startDrag(e, ann.id, 'move', ann);
+                                }}
+                            >
+                                <svg width="100%" height="100%" viewBox={`${minX - p} ${minY - p} ${maxX - minX + p * 2} ${maxY - minY + p * 2}`} className="overflow-visible pointer-events-none">
+                                    <line
+                                        x1={pts[0].x} y1={pts[0].y}
+                                        x2={pts[1].x} y2={pts[1].y}
+                                        stroke={active ? '#3b82f6' : 'white'}
+                                        strokeWidth="8"
+                                        strokeLinecap="round"
+                                        className="pointer-events-auto cursor-move opacity-20 hover:opacity-100 transition-opacity"
+                                    />
+                                </svg>
+                                {active && (
+                                    <>
+                                        <div className="absolute w-3 h-3 bg-primary border border-white rounded-full cursor-pointer z-[60]" style={{ left: `${(pts[0].x - (minX - p)) / (maxX - minX + p * 2) * 100}%`, top: `${(pts[0].y - (minY - p)) / (maxY - minY + p * 2) * 100}%`, transform: 'translate(-50%,-50%)' }} onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
+                                        <div className="absolute w-3 h-3 bg-primary border border-white rounded-full cursor-pointer z-[60]" style={{ left: `${(pts[1].x - (minX - p)) / (maxX - minX + p * 2) * 100}%`, top: `${(pts[1].y - (minY - p)) / (maxY - minY + p * 2) * 100}%`, transform: 'translate(-50%,-50%)' }} onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
+                                        <button className="absolute -top-7 right-0 p-1 bg-red-500 rounded text-white shadow" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-3 h-3" /></button>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    }
                     const left = (ann.x || 0) / width * 100; const top = (ann.y || 0) / height * 100;
                     const w = (ann.width || 0) / width * 100; const h = (ann.height || 0) / height * 100;
                     return (
