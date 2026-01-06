@@ -128,7 +128,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         <img
             src={currentSrc || ''}
             alt={title}
-            className="w-full h-full object-contain pointer-events-none block"
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
             loading="lazy"
             onLoad={(e) => {
                 const img = e.currentTarget;
@@ -139,7 +139,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             style={{
                 imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
                 opacity: currentSrc ? 1 : 0,
-                transition: 'opacity 0.3s ease-in'
+                transition: 'opacity 0.4s ease-out'
             }}
         />
     );
@@ -209,24 +209,26 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             >
                 {/* Skeleton Shimmer */}
                 <div
-                    className={`absolute inset-0 z-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-500`}
+                    className={`absolute inset-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-700 ${image.src ? 'opacity-0' : 'opacity-100'}`}
                 >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                 </div>
 
-                <ImageSource
-                    path={image.storage_path}
-                    src={image.src}
-                    thumbSrc={image.thumbSrc}
-                    maskSrc={image.maskSrc}
-                    zoom={zoom}
-                    isSelected={isSelected}
-                    title={image.title}
-                    onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
-                />
+                <div className="absolute inset-0 z-10">
+                    <ImageSource
+                        path={image.storage_path}
+                        src={image.src}
+                        thumbSrc={image.thumbSrc}
+                        maskSrc={image.maskSrc}
+                        zoom={zoom}
+                        isSelected={isSelected}
+                        title={image.title}
+                        onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
+                    />
+                </div>
 
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
-                    <div className="absolute inset-0 z-10">
+                    <div className="absolute inset-0 z-20">
                         <EditorCanvas
                             width={finalWidth / zoom}
                             height={finalHeight / zoom}
