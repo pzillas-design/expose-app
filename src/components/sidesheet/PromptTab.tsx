@@ -298,9 +298,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <div className="min-h-full flex flex-col">
                     {activeInternalTab === 'prompt' || isMulti ? (
                         <div className="flex-1 flex flex-col px-6 pt-8 pb-6">
-                            <div className="flex flex-col mb-8 gap-4">
+                            <div className="flex flex-col mb-4 gap-4">
                                 {/* UNIFIED BOX: Prompt + Chips */}
-                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600 overflow-hidden`}>
+                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600`}>
                                     <Tooltip text={t('tt_prompt')} side="top">
                                         <textarea
                                             ref={textAreaRef}
@@ -314,7 +314,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     {/* VARIABLE OPTIONS (Now INSIDE the box) */}
                                     {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                        <div className="px-4 pb-4 flex flex-col gap-4 pt-2">
+                                        <div className="px-4 pb-4 flex flex-col gap-4 pt-6">
                                             {activeTemplate.controls
                                                 .filter(c => !hiddenControlIds.includes(c.id))
                                                 .map((ctrl) => (
@@ -357,7 +357,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     {/* REFERENCE IMAGES SECTION */}
                                     {annotations.filter(a => a.type === 'reference_image').length > 0 && (
-                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ref">
+                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ref pt-6">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
                                                     {t('reference_images')}
@@ -419,7 +419,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 <>
                                                                     <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
                                                                     <div className={`
-                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-50 shadow-xl
+                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-[100] shadow-xl
                                                                         ${Theme.Colors.ModalBg} ${Theme.Colors.Border} animate-in fade-in slide-in-from-top-2 duration-150
                                                                     `}>
                                                                         <button
@@ -441,7 +441,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     {/* ANNOTATIONS SECTION (Non-Reference) */}
                                     {annotations.filter(a => a.type !== 'reference_image').length > 0 && (
-                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
+                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann pt-6">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
                                                     {t('annotations')}
@@ -509,7 +509,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 <>
                                                                     <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
                                                                     <div className={`
-                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-50 shadow-xl
+                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-[100] shadow-xl
                                                                         ${Theme.Colors.ModalBg} ${Theme.Colors.Border} animate-in fade-in slide-in-from-top-2 duration-150
                                                                     `}>
                                                                         <button
