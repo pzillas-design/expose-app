@@ -312,11 +312,54 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         />
                                     </Tooltip>
 
+                                    {/* VARIABLE OPTIONS (Now INSIDE the box) */}
+                                    {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
+                                        <div className="px-4 pb-4 flex flex-col gap-4 pt-2">
+                                            {activeTemplate.controls
+                                                .filter(c => !hiddenControlIds.includes(c.id))
+                                                .map((ctrl) => (
+                                                    <div key={ctrl.id} className="flex flex-col gap-2 group">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-medium">
+                                                                {ctrl.label}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleClearControl(ctrl.id)}
+                                                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                                                title="Reset"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {ctrl.options.map((opt) => {
+                                                                const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                        className={`
+                                                                            px-2.5 py-1 rounded-full text-[12px] transition-all
+                                                                            ${isSelected
+                                                                                ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                                                                                : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                        `}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    )}
+
                                     {/* ANNOTATIONS SECTION (Now INSIDE the box) */}
                                     {annotations.length > 0 && (
                                         <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500 uppercase">
+                                                <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-medium">
                                                     Anmerkungen
                                                 </span>
                                             </div>
@@ -414,49 +457,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     );
                                                 })}
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {/* VARIABLE OPTIONS (Now INSIDE the box) */}
-                                    {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                        <div className="px-4 pb-4 flex flex-col gap-4 pt-2">
-                                            {activeTemplate.controls
-                                                .filter(c => !hiddenControlIds.includes(c.id))
-                                                .map((ctrl) => (
-                                                    <div key={ctrl.id} className="flex flex-col gap-2 group">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[10px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500 uppercase">
-                                                                {ctrl.label}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => handleClearControl(ctrl.id)}
-                                                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                                                                title="Reset"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {ctrl.options.map((opt) => {
-                                                                const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                                return (
-                                                                    <button
-                                                                        key={opt.id}
-                                                                        onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                        className={`
-                                                                            px-2.5 py-1 rounded-full text-[12px] transition-all
-                                                                            ${isSelected
-                                                                                ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                                : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
-                                                                        `}
-                                                                    >
-                                                                        {opt.label}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                ))}
                                         </div>
                                     )}
                                 </div>
