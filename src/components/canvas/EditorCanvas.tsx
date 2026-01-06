@@ -367,7 +367,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
                         const p0 = ann.points[0];
                         const p1 = ann.points[1];
-                        // Render UI wrapper covering the line bounding box? No, SVG overlay is better for clicking/interacting
                         const minX = Math.min(p0.x, p1.x) - 10;
                         const minY = Math.min(p0.y, p1.y) - 10;
                         const maxX = Math.max(p0.x, p1.x) + 10;
@@ -380,7 +379,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         return (
                             <div key={ann.id} className="absolute annotation-ui" style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%`, zIndex: active ? 50 : 20 }}>
                                 <svg width="100%" height="100%" viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`} className="overflow-visible pointer-events-none">
-                                    {/* Invisible thicker line for easier hitting */}
                                     <line
                                         x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}
                                         stroke="transparent"
@@ -396,29 +394,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             startDrag(e, ann.id, 'move', ann);
                                         }}
                                     />
-                                    {/* Visible Line */}
                                     <line
                                         x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}
-                                        stroke={active ? '#3b82f6' : 'transparent'} // Only show overlay when active, actual drawing is on canvas
+                                        stroke={active ? '#3b82f6' : 'transparent'}
                                         strokeWidth="2"
                                         strokeDasharray={active ? "4" : "0"}
                                         className="pointer-events-none"
                                     />
                                 </svg>
-
-                                {/* Endpoints handles */}
                                 {active && (
                                     <>
-                                        <div
-                                            className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
+                                        <div className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
                                             style={{ left: `${(p0.x - minX) / (maxX - minX) * 100}%`, top: `${(p0.y - minY) / (maxY - minY) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'line_start', ann)}
-                                        />
-                                        <div
-                                            className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'line_start', ann)} />
+                                        <div className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
                                             style={{ left: `${(p1.x - minX) / (maxX - minX) * 100}%`, top: `${(p1.y - minY) / (maxY - minY) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'line_end', ann)}
-                                        />
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'line_end', ann)} />
                                         <button className="absolute -top-7 right-0 p-1 bg-red-500 rounded text-white shadow" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-3 h-3" /></button>
                                     </>
                                 )}
@@ -427,13 +418,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
 
                     if (ann.shapeType === 'rect') {
-                        // Poly-Rect logic (Trapezoid support)
-                        // If points exist, use them. Else fall back to rect geometry (and maybe upgrade on interaction)
                         const points = ann.points && ann.points.length === 4 ? ann.points : [
-                            { x: ann.x || 0, y: ann.y || 0 }, // tl
-                            { x: (ann.x || 0) + (ann.width || 0), y: ann.y || 0 }, // tr
-                            { x: (ann.x || 0) + (ann.width || 0), y: (ann.y || 0) + (ann.height || 0) }, // br
-                            { x: ann.x || 0, y: (ann.y || 0) + (ann.height || 0) } // bl
+                            { x: ann.x || 0, y: ann.y || 0 },
+                            { x: (ann.x || 0) + (ann.width || 0), y: ann.y || 0 },
+                            { x: (ann.x || 0) + (ann.width || 0), y: (ann.y || 0) + (ann.height || 0) },
+                            { x: ann.x || 0, y: (ann.y || 0) + (ann.height || 0) }
                         ];
 
                         const xs = points.map(p => p.x);
@@ -444,7 +433,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const maxY = Math.max(...ys);
                         const pad = 20;
 
-                        // ViewBox covering the bounding box of polygon
                         const vMinX = minX - pad;
                         const vMinY = minY - pad;
                         const vWidth = (maxX - minX) + pad * 2;
@@ -472,12 +460,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 setActiveMaskId(ann.id);
                                                 return;
                                             }
-                                            // Ensure we have points structure to move
                                             if (!ann.points || ann.points.length !== 4) {
                                                 updateAnnotation(ann.id, { points: points });
-                                                // defer drag to next tick or handle immediately with local scope points?
-                                                // For simplicity, just upgrading structure here might miss this drag frame.
-                                                // Passing the computed points in the drag state payload is safer.
                                                 startDrag(e, ann.id, 'move', { ...ann, points });
                                             } else {
                                                 startDrag(e, ann.id, 'move', ann);
@@ -485,39 +469,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
-
-                                {/* Corner Handles */}
                                 {active && (
                                     <>
                                         {points.map((p, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
-                                                style={{
-                                                    left: `${(p.x - vMinX) / vWidth * 100}%`,
-                                                    top: `${(p.y - vMinY) / vHeight * 100}%`,
-                                                    transform: 'translate(-50%,-50%)'
-                                                }}
+                                            <div key={idx} className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]"
+                                                style={{ left: `${(p.x - vMinX) / vWidth * 100}%`, top: `${(p.y - vMinY) / vHeight * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => {
-                                                    // If legacy rect, upgrade first
                                                     let currentAnn = ann;
                                                     if (!ann.points || ann.points.length !== 4) {
                                                         currentAnn = { ...ann, points: points };
                                                         updateAnnotation(ann.id, { points });
                                                     }
                                                     startDrag(e, ann.id, 'vertex', currentAnn, idx);
-                                                }}
-                                            />
+                                                }} />
                                         ))}
-                                        <button
-                                            className="absolute p-1 bg-red-500 rounded text-white shadow pointer-events-auto"
-                                            style={{
-                                                left: `${(maxX - vMinX) / vWidth * 100}%`,
-                                                top: `${(minY - vMinY) / vHeight * 100}%`,
-                                                transform: 'translate(10px, -20px)'
-                                            }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                        >
+                                        <button className="absolute p-1 bg-red-500 rounded text-white shadow pointer-events-auto"
+                                            style={{ left: `${(maxX - vMinX) / vWidth * 100}%`, top: `${(minY - vMinY) / vHeight * 100}%`, transform: 'translate(10px, -20px)' }}
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash2 className="w-3 h-3" />
                                         </button>
                                     </>
@@ -526,15 +494,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         );
                     }
 
-                    // CIRCLE (Legacy Box Logic for now, or true circle)
                     if (ann.shapeType === 'circle') {
                         const left = (ann.x || 0) / width * 100; const top = (ann.y || 0) / height * 100;
                         const w = (ann.width || 0) / width * 100; const h = (ann.height || 0) / height * 100;
                         return (
-                            <div
-                                key={ann.id}
-                                className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`}
-                                style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
+                            <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
                                 onMouseDown={(e) => {
                                     if (!isEditMode) {
                                         e.stopPropagation();
@@ -543,8 +507,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         return;
                                     }
                                     startDrag(e, ann.id, 'move', ann);
-                                }}
-                            >
+                                }}>
                                 <div className={`w-full h-full border-4 border-white bg-white/10 rounded-full cursor-move ${active ? 'border-primary' : ''}`} />
                                 {active && (
                                     <>
@@ -558,73 +521,63 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                             </div>
                         );
                     }
+                }
 
-                    let left = 0, top = 0;
-                    if (ann.type === 'stamp') {
-                        left = (ann.x / width) * 100;
-                        top = (ann.y / height) * 100;
-                    } else {
-                        return null; // Skip rendering text chips for brush paths
-                    }
+                let left = 0, top = 0;
+                if (ann.type === 'stamp') {
+                    left = (ann.x / width) * 100;
+                    top = (ann.y / height) * 100;
+                } else {
+                    return null;
+                }
 
-                    return (
-                        <div
-                            key={ann.id}
-                            className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`}
-                            style={{ left: `${left}%`, top: `${top}%` }}
-                            onMouseDown={(e) => {
-                                if (!isEditMode) {
-                                    e.stopPropagation();
-                                    onEditStart?.('objects');
-                                    setActiveMaskId(ann.id);
-                                    return;
-                                }
-                                startDrag(e, ann.id, 'move', ann);
-                            }}
-                        >
-                            <div
-                                className={`relative flex items-center bg-black text-white shadow-xl transition-all duration-300 origin-bottom`}
-                                style={{
-                                    fontSize: currentFontSize,
-                                    paddingLeft: currentPaddingH,
-                                    paddingRight: active && isEditMode ? currentPaddingH / 2 : currentPaddingH,
-                                    paddingTop: currentPaddingV,
-                                    paddingBottom: currentPaddingV,
-                                    borderRadius: currentRadius,
-                                    transform: 'translate(-50%, -100%) translateY(-10px)',
-                                    minWidth: active ? (100 * zoom) : 'auto',
-                                    opacity: isEditMode || active ? 1 : 0.85
-                                }}
-                            >
-                                {active && isEditMode ? (
-                                    <div className="flex items-center gap-1.5" style={{ gap: currentGap }}>
-                                        <input
-                                            value={ann.text || ''}
-                                            onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                            onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)}
-                                            className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-bold placeholder:text-white/30"
-                                            style={{ width: Math.max(60 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
-                                            placeholder={t ? t('describe_changes') : "Änderung..."}
-                                            autoFocus
-                                            onMouseDown={e => e.stopPropagation()}
-                                        />
-                                        <button
-                                            onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            className="p-1 hover:bg-white/20 rounded transition-colors group/trash"
-                                            style={{ padding: 4 * zoom }}
-                                        >
-                                            <Trash2 className="text-white/60 group-hover/trash:text-red-400" style={{ width: 14 * zoom, height: 14 * zoom }} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <span className="whitespace-nowrap font-medium">
-                                        {ann.text || (ann.type === 'mask_path' ? "Beschreibe..." : (t ? t('untitled') : "Text"))}
-                                    </span>
-                                )}
-                            </div>
+                return (
+                    <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%` }}
+                        onMouseDown={(e) => {
+                            if (!isEditMode) {
+                                e.stopPropagation();
+                                onEditStart?.('objects');
+                                setActiveMaskId(ann.id);
+                                return;
+                            }
+                            startDrag(e, ann.id, 'move', ann);
+                        }}>
+                        <div className={`relative flex items-center bg-black text-white shadow-xl transition-all duration-300 origin-bottom`}
+                            style={{
+                                fontSize: currentFontSize,
+                                paddingLeft: currentPaddingH,
+                                paddingRight: active && isEditMode ? currentPaddingH / 2 : currentPaddingH,
+                                paddingTop: currentPaddingV,
+                                paddingBottom: currentPaddingV,
+                                borderRadius: currentRadius,
+                                transform: 'translate(-50%, -100%) translateY(-10px)',
+                                minWidth: active ? (100 * zoom) : 'auto',
+                                opacity: isEditMode || active ? 1 : 0.85
+                            }}>
+                            {active && isEditMode ? (
+                                <div className="flex items-center gap-1.5" style={{ gap: currentGap }}>
+                                    <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                        onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)}
+                                        className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-bold placeholder:text-white/30"
+                                        style={{ width: Math.max(60 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
+                                        placeholder={t ? t('describe_changes') : "Änderung..."}
+                                        autoFocus
+                                        onMouseDown={e => e.stopPropagation()} />
+                                    <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                        className="p-1 hover:bg-white/20 rounded transition-colors group/trash"
+                                        style={{ padding: 4 * zoom }}>
+                                        <Trash2 className="text-white/60 group-hover/trash:text-red-400" style={{ width: 14 * zoom, height: 14 * zoom }} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <span className="whitespace-nowrap font-medium">
+                                    {ann.text || (ann.type === 'mask_path' ? "Beschreibe..." : (t ? t('untitled') : "Text"))}
+                                </span>
+                            )}
                         </div>
-                    );
-                })}
+                    </div>
+                );
+            })}
         </div>
     );
 };

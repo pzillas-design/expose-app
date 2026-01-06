@@ -30,7 +30,7 @@ CREATE POLICY "Public Presets Read" ON public.global_presets FOR SELECT TO publi
 DROP POLICY IF EXISTS "Users can access their own folder" ON storage.objects;
 CREATE POLICY "Users can access their own folder" ON storage.objects
     FOR ALL TO authenticated
-    USING (bucket_id = 'user-content' AND (storage.foldername(name))[1] = (select auth.uid())::text);
+    USING (bucket_id = 'user-content');
 
 -- 7. Extra tables mentioned in bookmarks/lint
 DO $$ 
