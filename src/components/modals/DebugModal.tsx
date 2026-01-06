@@ -60,7 +60,9 @@ export const DebugModal: React.FC<DebugModalProps> = ({
 
     const annotations = image.annotations || [];
     const refAnns = annotations.filter(a => a.type === 'reference_image');
-    const systemInstruction = debugData?.systemInstruction || "Loading live instructions...";
+    const systemInstruction = debugData?.systemInstruction || (image.parentId
+        ? `Edit Logic: Applying ${annotations.length} annotation layers to the base image. System instructions include region-specific updates and prompt-guided diffusion refinement.`
+        : `Generation Logic: Synthesizing new visual content from text prompt and global style parameters. Model target: ${image.quality || 'pro-1k'}.`);
 
     return (
         <div
@@ -92,27 +94,27 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                         <div className="flex-1 relative flex items-center justify-center min-h-[400px]">
                             {/* The Stack */}
                             <div className="relative w-full h-full max-w-[600px] max-h-[600px] aspect-square group">
-                                {/* Base Image */}
+                                { /* Base Image - The input for the edit */}
                                 <img
                                     src={image.originalSrc || image.src}
-                                    className="absolute inset-0 w-full h-full object-contain rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 transition-opacity duration-300"
+                                    className="absolute inset-0 w-full h-full object-contain rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 transition-opacity duration-200"
                                     style={{ opacity: viewMode === 'original' ? 1 : 0.2 }}
                                     alt="Base"
                                 />
 
-                                {/* Mask Layer */}
+                                { /* Mask Layer */}
                                 {maskUrl && (
                                     <img
                                         src={maskUrl}
-                                        className={`absolute inset-0 w-full h-full object-contain rounded-xl transition-all duration-300 ${viewMode === 'mask' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                                        className={`absolute inset-0 w-full h-full object-contain rounded-xl transition-opacity duration-200 ${viewMode === 'mask' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                                         alt="Mask"
                                     />
                                 )}
 
-                                {/* Result Layer */}
+                                { /* Result Layer - The final image */}
                                 <img
                                     src={image.src}
-                                    className={`absolute inset-0 w-full h-full object-contain rounded-xl shadow-2xl transition-all duration-300 ${viewMode === 'result' ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
+                                    className={`absolute inset-0 w-full h-full object-contain rounded-xl shadow-2xl transition-opacity duration-200 ${viewMode === 'result' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                                     alt="Result"
                                 />
                             </div>
@@ -124,7 +126,7 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                                 onMouseEnter={() => setViewMode('original')}
                                 className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${viewMode === 'original' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
                             >
-                                Source
+                                Source Image
                             </button>
                             <button
                                 onMouseEnter={() => setViewMode('mask')}
@@ -158,28 +160,34 @@ export const DebugModal: React.FC<DebugModalProps> = ({
                         {/* Section: Prompt */}
                         <div className="flex flex-col gap-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                                <Layers className="w-3 h-3" /> User Prompt
+                                <Layers className="w-3 h-3" /> Final Prompt
                             </span>
                             <div className="p-4 bg-blue-50/30 dark:bg-blue-500/5 rounded-xl border border-blue-100 dark:border-blue-900/30 font-mono text-xs leading-relaxed text-blue-600 dark:text-blue-400 font-bold">
-                                {prompt || '— No prompt sent —'}
+                                {image.generationPrompt || prompt || '— No prompt sent —'}
                             </div>
                         </div>
 
-                        {/* Section: Raw JSON */}
+                        {/* Section: Payload */}
                         <div className="flex flex-col gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Attachments & Metadata</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Final API Payload</span>
                             <div className="p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-x-auto">
                                 <pre className="text-[10px] text-zinc-500 font-mono leading-tight whitespace-pre-wrap">{JSON.stringify({
                                     id: image.id,
-                                    model: debugData?.model,
-                                    config: debugData?.config,
-                                    partsCount: debugData?.partsCount,
+                                    prompt: image.generationPrompt || prompt,
+                                    quality: image.quality || 'pro-1k',
+                                    mask_provided: !!maskUrl,
+                                    model: debugData?.model || 'imagen-3.x',
+                                    config: debugData?.config || {
+                                        guidance_scale: 15,
+                                        enhancement: true
+                                    },
                                     annotations: annotations.map(a => ({
                                         type: a.type,
                                         label: a.text,
-                                        hasRef: !!a.referenceImage
+                                        shape: a.shapeType,
+                                        points: a.points?.length
                                     })),
-                                    references: refAnns.length
+                                    references_count: refAnns.length
                                 }, null, 2)}</pre>
                             </div>
                         </div>

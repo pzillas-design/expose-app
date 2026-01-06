@@ -113,9 +113,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         ctx.fill();
                     }
                 } else if (ann.type === 'stamp' || ann.type === 'reference_image') {
+                    // Circles removed as requested - we rely on the UI chips or direct text rendering
+                    /* 
                     ctx.beginPath();
                     ctx.arc(ann.x || 0, ann.y || 0, 15, 0, Math.PI * 2);
                     ctx.fill();
+                    */
                 }
             }
         });
@@ -192,7 +195,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             // Start click-and-drag for rect/circle
             const newId = generateId();
             const newAnn: AnnotationObject = {
-                id: newId, type: 'shape', shapeType: activeShape, x, y, width: 0, height: 0, points: [], strokeWidth: 4, color: '#fff', createdAt: Date.now()
+                id: newId, type: 'shape', shapeType: activeShape as 'rect' | 'circle', x, y, width: 0, height: 0, points: [], strokeWidth: 4, color: '#fff', createdAt: Date.now()
             };
             onChange([...annotations, newAnn]);
             setDragState({
@@ -291,10 +294,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         currentPathRef.current = [];
     };
 
-    const startDrag = (e: React.MouseEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
+    const startDrag = (e: React.MouseEvent, id: string, mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'vertex', ann: AnnotationObject, vertexIndex?: number) => {
         e.stopPropagation(); e.preventDefault();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? (e as any).touches[0].clientX : (e as any).clientX;
+        const clientY = 'touches' in e ? (e as any).touches[0].clientY : (e as any).clientY;
         const { x, y } = getCoordinates(clientX, clientY);
         setDragState({
             id, mode, vertexIndex, startX: x, startY: y,
@@ -309,7 +312,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
             {activeTab === 'brush' && maskTool === 'brush' && isActive && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize, height: brushSize, left: 0, top: 0 }} />}
 
-            {activeTab === 'brush' && annotations.map(ann => {
+            {/* UI Overlay for Annotations (Visible in both Edit and Prompt modes now) */}
+            {annotations.map(ann => {
+                const isEditMode = activeTab === 'brush' || activeTab === 'objects';
                 const active = activeMaskId === ann.id;
                 if (ann.type === 'shape') {
                     if (ann.shapeType === 'polygon') {
@@ -323,7 +328,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         return (
                             <div key={ann.id} className="absolute annotation-ui" style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%`, zIndex: active ? 50 : 20 }}>
                                 <svg width="100%" height="100%" viewBox={`${minX - p} ${minY - p} ${maxX - minX + p * 2} ${maxY - minY + p * 2}`} className="overflow-visible pointer-events-none">
-                                    <path d={pathData} fill="rgba(255,255,255,0.1)" stroke={active ? '#3b82f6' : 'white'} strokeWidth="4" className="pointer-events-auto cursor-move" onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} />
+                                    <path
+                                        d={pathData}
+                                        fill="rgba(255,255,255,0.1)"
+                                        stroke={active ? '#3b82f6' : 'white'}
+                                        strokeWidth="4"
+                                        className="pointer-events-auto cursor-move"
+                                        onMouseDown={(e) => {
+                                            if (!isEditMode) {
+                                                e.stopPropagation();
+                                                onEditStart?.('objects');
+                                                setActiveMaskId(ann.id);
+                                                return;
+                                            }
+                                            startDrag(e, ann.id, 'move', ann);
+                                        }}
+                                    />
                                 </svg>
                                 {active && pts.map((p, idx) => (
                                     <div key={idx} className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]" style={{ left: `${(p.x - (minX - p)) / (maxX - minX + p * 2) * 100}%`, top: `${(p.y - (minY - p)) / (maxY - minY + p * 2) * 100}%`, transform: 'translate(-50%,-50%)' }} onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
@@ -335,7 +355,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     const left = (ann.x || 0) / width * 100; const top = (ann.y || 0) / height * 100;
                     const w = (ann.width || 0) / width * 100; const h = (ann.height || 0) / height * 100;
                     return (
-                        <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
+                        <div
+                            key={ann.id}
+                            className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`}
+                            style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
+                            onMouseDown={(e) => {
+                                if (!isEditMode) {
+                                    e.stopPropagation();
+                                    onEditStart?.('objects');
+                                    setActiveMaskId(ann.id);
+                                    return;
+                                }
+                                startDrag(e, ann.id, 'move', ann);
+                            }}
+                        >
                             <div className={`w-full h-full border-4 border-white bg-white/10 ${ann.shapeType === 'circle' ? 'rounded-full' : ''} cursor-move ${active ? 'border-primary' : ''}`} />
                             {active && (
                                 <>
@@ -355,9 +388,29 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 else if (ann.type === 'mask_path' && ann.points.length) { left = (ann.points[0].x / width) * 100; top = (ann.points[0].y / height) * 100; }
 
                 return (
-                    <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${left}%`, top: `${top}%` }} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
-                        <div className={`relative px-2.5 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${active ? 'bg-primary text-white scale-105' : 'bg-black/80 text-white'}`} style={{ fontSize: Math.max(11, width * 0.015), transform: 'translate(-50%, -100%) translateY(-10px)' }}>
-                            {active ? (
+                    <div
+                        key={ann.id}
+                        className="absolute annotation-ui z-20"
+                        style={{ left: `${left}%`, top: `${top}%` }}
+                        onMouseDown={(e) => {
+                            if (!isEditMode) {
+                                e.stopPropagation();
+                                onEditStart?.('objects');
+                                setActiveMaskId(ann.id);
+                                return;
+                            }
+                            startDrag(e, ann.id, 'move', ann);
+                        }}
+                    >
+                        <div
+                            className={`relative px-2.5 py-1.5 rounded-lg shadow-md transition-all cursor-pointer ${active ? 'bg-primary text-white scale-105' : 'bg-black text-white'}`}
+                            style={{
+                                fontSize: Math.max(11, width * 0.015),
+                                transform: 'translate(-50%, -100%) translateY(-10px)',
+                                opacity: isEditMode ? 1 : 0.9
+                            }}
+                        >
+                            {active && isEditMode ? (
                                 <div className="flex items-center gap-2">
                                     <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)} className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 w-24 font-bold" autoFocus onMouseDown={e => e.stopPropagation()} />
                                     <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-0.5 hover:bg-white/20 rounded"><Trash2 className="w-3.5 h-3.5" /></button>

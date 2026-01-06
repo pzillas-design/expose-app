@@ -1,5 +1,7 @@
+
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';
+import { CanvasSkeleton } from '@/components/canvas/CanvasSkeleton';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { SettingsPage } from '@/components/settings/SettingsPage';
@@ -33,8 +35,9 @@ export function App() {
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
         currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
-        currentBoardId, boards, isBoardsLoading
+        currentBoardId, boards, isBoardsLoading, isCanvasLoading
     } = state;
+
     const {
         smoothZoomTo, handleScroll, handleFileDrop, processFile, selectAndSnap,
         moveSelection, handleAddFunds, setBrushSize, setSideSheetMode, handleGenerate,
@@ -65,7 +68,6 @@ export function App() {
     useEffect(() => {
         const syncUrl = async () => {
             const pathParts = location.pathname.split('/');
-            // Check for /projects/:boardId (pathParts will be ['', 'projects', ':boardId'])
             if (pathParts[1] === 'projects' && pathParts[2]) {
                 const identifier = decodeURIComponent(pathParts[2]);
                 const resolved = await actions.resolveBoardIdentifier(identifier);
@@ -81,8 +83,6 @@ export function App() {
         };
         syncUrl();
     }, [location.pathname, actions, currentBoardId]);
-
-
 
     useEffect(() => {
         const handleWindowDragEnter = (e: DragEvent) => {
@@ -167,7 +167,6 @@ export function App() {
 
         if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
             if (!panState.current.hasMoved) {
-                // First movement detected: Deselect all and disable snap
                 if (selectedIds.length > 0) {
                     selectMultiple([]);
                 }
@@ -224,9 +223,6 @@ export function App() {
 
     const requestDelete = useCallback(async (idsOrId: string | string[]) => {
         let idsArray = Array.isArray(idsOrId) ? idsOrId : [idsOrId];
-
-        // If we are deleting a single item that is currently part of a larger selection, 
-        // assume the user wants to delete the whole selection
         if (idsArray.length === 1 && selectedIds.length > 1 && selectedIds.includes(idsArray[0])) {
             idsArray = selectedIds;
         }
@@ -298,17 +294,14 @@ export function App() {
     const handleCreateBoardAndNavigate = async () => {
         const newBoard = await createBoard();
         if (newBoard) {
-            navigate(`/projects/${newBoard.id}`); // Use ID by default for stability
+            navigate(`/projects/${newBoard.id}`);
         }
     };
 
     const handleSelectBoard = (id: string | null) => {
         if (id) {
             const b = boards.find(board => board.id === id);
-            // If it has a custom name, use it as a slug-like part (but ID is safer for now)
-            // The user wants expose.ae/projects/projekt-3-1
-            const slug = b ? slugify(b.name) : id;
-            navigate(`/projects/${b ? b.id : id}`); // Keeping ID for now, but path is /projects/
+            navigate(`/projects/${b ? b.id : id}`);
         } else {
             navigate('/projects');
         }
@@ -416,191 +409,98 @@ export function App() {
                             gap: `${12 * zoom}rem`,
                         }}
                     >
-                        {rows.map((row) => (
-                            <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
-                                <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
-                                    {row.items.map((img, imgIndex) => (
-                                        <ImageItem
-                                            key={img.id}
-                                            image={img}
-                                            zoom={zoom}
-                                            isSelected={selectedIds.includes(img.id)}
-                                            hasAnySelection={selectedIds.length > 0}
-                                            onRetry={handleGenerateMore}
-                                            onChangePrompt={handleNavigateParent}
-                                            editorState={editorState}
-                                            onUpdateAnnotations={handleUpdateAnnotations}
-                                            onEditStart={handleAnnotationEditStart}
-                                            editorActions={{
-                                                setMaskTool: actions.setMaskTool,
-                                                setBrushSize: actions.setBrushSize,
-                                                setActiveShape: actions.setActiveShape
-                                            }}
-                                            onNavigate={moveSelection}
-                                            hasLeft={imgIndex > 0}
-                                            hasRight={imgIndex < row.items.length - 1}
-                                            onDelete={requestDelete}
-                                            onContextMenu={handleImageContextMenu}
-                                            t={t}
-                                        />
-                                    ))}
+                        {isCanvasLoading && rows.length === 0 ? (
+                            <CanvasSkeleton zoom={zoom} />
+                        ) : (
+                            rows.map((row) => (
+                                <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
+                                    <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
+                                        {row.items.map((img, imgIndex) => (
+                                            <ImageItem
+                                                key={img.id}
+                                                image={img}
+                                                zoom={zoom}
+                                                isSelected={selectedIds.includes(img.id)}
+                                                hasAnySelection={selectedIds.length > 0}
+                                                onRetry={handleGenerateMore}
+                                                onChangePrompt={handleNavigateParent}
+                                                editorState={editorState}
+                                                onUpdateAnnotations={handleUpdateAnnotations}
+                                                onEditStart={handleAnnotationEditStart}
+                                                editorActions={{
+                                                    setMaskTool: actions.setMaskTool,
+                                                    setBrushSize: actions.setBrushSize,
+                                                    setActiveShape: actions.setActiveShape
+                                                }}
+                                                onNavigate={moveSelection}
+                                                hasLeft={imgIndex > 0}
+                                                hasRight={imgIndex < row.items.length - 1}
+                                                onDelete={requestDelete}
+                                                onContextMenu={handleImageContextMenu}
+                                                t={t}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
 
-                    {rows.length === 0 && !isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <label className="pointer-events-auto flex items-center gap-3 cursor-pointer group p-6 hover:scale-105 transition-transform">
-                                <Plus className={`w-5 h-5 ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white transition-colors`} />
-                                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white`}>{t('create_first')}</span>
-                                <input type="file" accept="image/*" className="hidden" multiple onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }} />
-                            </label>
+                    {rows.length === 0 && !isDragOver && !isCanvasLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="flex flex-col items-center gap-4 text-zinc-100 opacity-20 dark:opacity-10 scale-[2.5]">
+                                <Plus className="w-12 h-12" strokeWidth={1} />
+                                <span className="text-[10px] tracking-[0.3em] font-light uppercase">Drop here</span>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
-            <SideSheet
-                selectedImage={selectedImage}
-                selectedImages={selectedImages}
-                sideSheetMode={sideSheetMode}
-                onModeChange={handleModeChange}
-                brushSize={brushSize}
-                onBrushSizeChange={setBrushSize}
-                onGenerate={handleGenerate}
-                onUpdateAnnotations={handleUpdateAnnotations}
-                onUpdatePrompt={handleUpdatePrompt}
-                onUpdateVariables={actions.handleUpdateVariables}
-                onDeleteImage={requestDelete}
-                onDeselectAllButOne={handleDeselectAllButOne}
-                onDeselectAll={() => selectMultiple([])}
-                onGenerateMore={handleGenerateMore}
-                onNavigateParent={handleNavigateParent}
-                isGlobalDragOver={isDragOver}
-                onGlobalDragLeave={() => setIsDragOver(false)}
-                t={t}
-                lang={currentLang}
-                fullLibrary={fullLibrary}
-                onAddUserCategory={addUserCategory}
-                onDeleteUserCategory={deleteUserCategory}
-                onAddUserItem={addUserItem}
-                onDeleteUserItem={deleteUserItem}
-                maskTool={maskTool}
-                onMaskToolChange={setMaskTool}
-                activeShape={activeShape}
-                onActiveShapeChange={setActiveShape}
+            <SideSheet editorActions={actions} editorState={editorState} />
 
-                onUpload={() => document.getElementById('ctx-upload-input')?.click()}
-                onCreateNew={() => setIsCreationModalOpen(true)}
-                isBoardEmpty={rows.length === 0}
-                qualityMode={qualityMode}
-                onQualityModeChange={setQualityMode}
-                templates={state.templates}
-                onRefreshTemplates={actions.refreshTemplates}
-                userProfile={userProfile}
-            />
-
-            <input
-                id="ctx-upload-input"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                multiple
-                onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }}
-            />
-
-            <ContextMenu
-                menu={contextMenu}
-                images={allImages}
-                onClose={() => setContextMenu(null)}
-                onDownload={handleDownload}
-                onDelete={requestDelete}
-                onSelect={selectAndSnap}
-                onAddToSelection={handleAddToSelection}
-                onRemoveFromSelection={handleRemoveFromSelection}
-                onSelectAll={() => selectMultiple(allImages.map(i => i.id))}
-                onDeselectAll={() => selectMultiple([])}
-                onResetView={() => smoothZoomTo(1.0)}
-                onUpload={handleDockUpload}
-                onCreateNew={() => setIsCreationModalOpen(true)}
-                selectedIds={selectedIds}
-                onDownloadSelected={handleDownloadSelected}
-                onDeleteSelected={() => requestDelete(selectedIds)}
-                onGenerateVariations={handleGenerateVariations}
-                t={t}
-            />
-
-
+            {contextMenu && (
+                <ContextMenu
+                    {...contextMenu}
+                    onClose={() => setContextMenu(null)}
+                    onDownload={handleDownload}
+                    onDelete={requestDelete}
+                    onRetry={handleGenerateVariations}
+                    onDeselectOther={handleDeselectAllButOne}
+                    onAddToSelection={handleAddToSelection}
+                    onRemoveFromSelection={handleRemoveFromSelection}
+                    onDownloadSelected={handleDownloadSelected}
+                    selectionCount={selectedIds.length}
+                    t={t}
+                />
+            )}
 
             <CreationModal
                 isOpen={isCreationModalOpen}
                 onClose={() => setIsCreationModalOpen(false)}
-                onGenerate={(prompt, model, ratio, attachments) => {
-                    handleCreateNew(prompt, model, ratio, attachments);
-                    setIsCreationModalOpen(false);
-                }}
+                onProcess={processFile}
                 t={t}
-                lang={currentLang}
-                onUpload={(files) => Array.from(files).forEach(f => processFile(f))}
             />
 
             <CreditsModal
                 isOpen={isCreditsModalOpen}
                 onClose={() => setIsCreditsModalOpen(false)}
-                currentBalance={credits}
+                credits={credits}
                 onAddFunds={handleAddFunds}
                 t={t}
             />
         </div>
     );
 
-    const adminPage = (
-        <AdminDashboard
-            user={user}
-            userProfile={userProfile}
-            credits={credits}
-            onCreateBoard={handleCreateBoardAndNavigate}
-            t={t}
-        />
-    );
-
-    const settingsPage = (
-        <SettingsPage
-            qualityMode={qualityMode}
-            onQualityModeChange={setQualityMode}
-            themeMode={themeMode}
-            onThemeChange={setThemeMode}
-            currentBalance={credits}
-            lang={lang}
-            onLangChange={setLang}
-            user={user}
-            userProfile={userProfile}
-            onSignOut={handleSignOut}
-            onAddFunds={handleAddFunds}
-            onOpenAdmin={() => navigate('/admin')}
-            t={t}
-            updateProfile={updateProfile}
-            onCreateBoard={handleCreateBoardAndNavigate}
-        />
-    );
-
     return (
         <Routes>
             <Route path="/projects" element={boardsPage} />
             <Route path="/projects/:boardId" element={canvasView} />
-            <Route path="/settings" element={settingsPage} />
-            <Route path="/settings/:tab" element={settingsPage} />
-            <Route path="/admin" element={adminPage} />
-            <Route path="/admin/:tab" element={adminPage} />
-
-            {/* Redirects for clean SEO and legacy links */}
-            <Route path="/boards" element={<Navigate to="/projects" replace />} />
-            <Route path="/projekte" element={<Navigate to="/projects" replace />} />
-            <Route path="/board/:boardId" element={<BoardRedirect />} />
-            <Route path="/project/:boardId" element={<BoardRedirect />} />
-            <Route path="/projekt/:boardId" element={<BoardRedirect />} />
+            <Route path="/settings" element={<SettingsPage user={user} profile={userProfile} onUpdateProfile={updateProfile} t={t} currentLang={currentLang} onSignOut={handleSignOut} />} />
+            <Route path="/settings/:tab" element={<SettingsPage user={user} profile={userProfile} onUpdateProfile={updateProfile} t={t} currentLang={currentLang} onSignOut={handleSignOut} />} />
+            <Route path="/admin" element={<AdminDashboard user={user} t={t} />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
+            <Route path="/v2" element={<Navigate to="/projects" replace />} />
         </Routes>
     );
 }

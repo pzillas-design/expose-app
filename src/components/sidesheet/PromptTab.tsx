@@ -76,13 +76,21 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const isMulti = selectedImages && selectedImages.length > 1;
 
     const lastIdRef = useRef<string>(selectedImage.id);
-    useEffect(() => {
-        if (selectedImage.isGenerating) {
-            setActiveInternalTab('info');
-        }
 
-        // Restore state from selected image or reset
-        if (lastIdRef.current !== selectedImage.id) {
+    useEffect(() => {
+        const idChanged = lastIdRef.current !== selectedImage.id;
+
+        if (idChanged) {
+            // NEW SELECTION
+            if (selectedImage.isGenerating) {
+                // If it's a new generation (skeleton), switch to info
+                setActiveInternalTab('info');
+            } else {
+                // Otherwise, default to Edit tab exactly as requested
+                setActiveInternalTab('prompt');
+            }
+
+            // Sync state for templates/controls
             if (selectedImage.activeTemplateId) {
                 const found = templates.find(t => t.id === selectedImage.activeTemplateId);
                 setActiveTemplate(found || null);
@@ -92,8 +100,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setControlValues(selectedImage.variableValues || {});
             setHiddenControlIds([]);
             lastIdRef.current = selectedImage.id;
+        } else if (selectedImage.isGenerating) {
+            // SAME IMAGE, BUT STARTED GENERATING
+            setActiveInternalTab('info');
         }
-    }, [selectedImage.id, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
+        // Note: We don't have an 'else' for isGenerating becoming false 
+        // because the user wants to keep the Info tab visible once generation is finished.
+    }, [selectedImage.id, selectedImage.isGenerating, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
 
     useLayoutEffect(() => {
         if (textAreaRef.current) {
@@ -517,23 +530,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             <div className="flex flex-col">
                                 {/* Tools Buttons */}
-                                <div className="flex items-center justify-center gap-4 py-8">
+                                <div className="flex items-center justify-center gap-3 py-6">
                                     <Button
-                                        variant="ghost"
+                                        variant="secondary"
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
-                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-400' : 'text-zinc-500'}`} />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                                        icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
+                                        className="!w-auto px-5 !py-3 !text-[11px] font-bold text-zinc-700 dark:text-zinc-300"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
                                     </Button>
                                     <Button
-                                        variant="ghost"
+                                        variant="secondary"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
-                                        icon={<Camera className="w-3.5 h-3.5 text-zinc-500" />}
-                                        className="!w-auto px-4 !py-2.5 !text-xs !font-medium !normal-case !tracking-normal text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white"
+                                        icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
+                                        className="!w-auto px-5 !py-3 !text-[11px] font-bold text-zinc-700 dark:text-zinc-300"
                                         tooltip={t('upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}

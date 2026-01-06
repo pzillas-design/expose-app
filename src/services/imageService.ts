@@ -224,10 +224,10 @@ export const imageService = {
         return {
             ...sourceImage,
             id: newId,
-            src: result.src, // Use the optimized 'src' (URL or base64)
+            src: result.src,
             storage_path: result.storage_path,
             thumbSrc: undefined,
-            originalSrc: result.src,
+            originalSrc: sourceImage.src,
 
             isGenerating: false,
             generationStartTime: undefined,

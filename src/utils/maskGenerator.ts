@@ -66,16 +66,18 @@ export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSr
         }
     });
 
-    // 3. Draw Stamps
+    // 3. Draw Stamps (Circles removed as requested by user - AI now sees the text boxes directly)
+    /* 
     img.annotations.forEach(ann => {
         if (ann.type === 'stamp' && ann.x !== undefined && ann.y !== undefined) {
-            const radius = Math.max(50, img.width * 0.05); // Reduced from 80 / 0.08
+            const radius = Math.max(50, img.width * 0.05);
             ctx.beginPath();
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.arc(ann.x, ann.y, radius, 0, Math.PI * 2);
             ctx.fill();
         }
     });
+    */
 
     // 4. Text (Instagram Story Style)
     ctx.textAlign = 'center';
@@ -120,7 +122,7 @@ export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSr
         const radius = 8 * (img.width / 1000); // Scale radius roughly
 
         // Draw Background Box (Rounded)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 1.0)';
         ctx.beginPath();
         ctx.moveTo(boxX + radius, boxY);
         ctx.lineTo(boxX + boxW - radius, boxY);

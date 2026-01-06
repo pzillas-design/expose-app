@@ -64,9 +64,15 @@ export const useGeneration = ({
 
             if (imgData) {
                 const finalImage = await imageService.resolveImageRecord(imgData);
+                const cacheBuster = `?t=${Date.now()}`;
+                const refreshedImage = {
+                    ...finalImage,
+                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
+                };
+
                 setRows(prev => prev.map(row => ({
                     ...row,
-                    items: row.items.map(item => item.id === jobId ? finalImage : item)
+                    items: row.items.map(item => item.id === jobId ? refreshedImage : item)
                 })));
 
                 // Persist job history for admin dashboard

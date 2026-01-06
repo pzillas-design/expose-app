@@ -71,9 +71,20 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 };
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void }) => {
-    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || null);
-    const [isHighRes, setIsHighRes] = useState(false);
+    // Priority: Mask (Editing) > Direct Src (Pre-signed/Blob) > Thumb (Skeleton/Initial)
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
+    const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
+    const lastPath = useRef(path);
+
+    // Sync state if props change (e.g. after generation completes or when swapping images)
+    useEffect(() => {
+        if (path !== lastPath.current || (src && src !== currentSrc)) {
+            setCurrentSrc(maskSrc || src || thumbSrc || null);
+            setIsHighRes(!!src && !thumbSrc);
+            lastPath.current = path;
+        }
+    }, [path, src, maskSrc, thumbSrc]);
 
     useEffect(() => {
         if (maskSrc) {
@@ -87,30 +98,31 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         const fetchUrl = async () => {
             if (!path || fetchLock.current) return;
 
-            // Sticky LOD: If we already have HighRes, we never go back.
-            if (isHighRes) return;
+            // Only skip if we already have HighRes for THIS specific path
+            if (isHighRes && path === lastPath.current) return;
 
             fetchLock.current = true;
             try {
-                // Standard: 1200px (Sharp but light). HQ: Original.
+                // Standard: 1200px. HQ: Original.
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
                     setCurrentSrc(url);
                     if (needsHQ) setIsHighRes(true);
+                    lastPath.current = path;
                 }
             } finally {
                 fetchLock.current = false;
             }
         };
 
-        const shouldFetch = !currentSrc || (needsHQ && !isHighRes);
+        const shouldFetch = !currentSrc || (needsHQ && !isHighRes) || (path !== lastPath.current);
 
         if (shouldFetch) {
-            const delay = !currentSrc ? 0 : 800;
+            const delay = (!currentSrc || path !== lastPath.current) ? 0 : 800;
             const timeout = setTimeout(fetchUrl, delay);
             return () => clearTimeout(timeout);
         }
-    }, [path, zoom, maskSrc, isSelected, isHighRes]);
+    }, [path, src, zoom, maskSrc, isSelected, isHighRes]);
 
     return (
         <img
@@ -192,9 +204,16 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             <div
-                className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white' : ''}`}
+                className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
                 style={{ height: finalHeight, width: finalWidth }}
             >
+                {/* Skeleton Shimmer */}
+                <div
+                    className={`absolute inset-0 z-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-500`}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
+                </div>
+
                 <ImageSource
                     path={image.storage_path}
                     src={image.src}

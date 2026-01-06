@@ -27,6 +27,7 @@ export const useNanoController = () => {
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
+    const [isCanvasLoading, setIsCanvasLoading] = useState(false);
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true';
@@ -125,8 +126,10 @@ export const useNanoController = () => {
     // --- Board Image Loading ---
     React.useEffect(() => {
         if (user && currentBoardId) {
+            setIsCanvasLoading(true);
             imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
                 setRows(loadedRows);
+                setIsCanvasLoading(false);
 
                 // Auto-select newest image if nothing is selected
                 const allLoaded = loadedRows.flatMap(r => r.items);
@@ -143,6 +146,7 @@ export const useNanoController = () => {
             });
         } else {
             setRows([]);
+            setIsCanvasLoading(false);
         }
     }, [user, currentBoardId, selectAndSnap]);
 
@@ -281,6 +285,7 @@ export const useNanoController = () => {
             lang,
             currentLang,
             sideSheetMode,
+            isCanvasLoading,
             brushSize,
             maskTool,
             activeShape,
