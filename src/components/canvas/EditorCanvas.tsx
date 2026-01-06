@@ -12,8 +12,8 @@ interface EditorCanvasProps {
     onChange: (newAnnotations: AnnotationObject[]) => void;
     brushSize: number;
     activeTab: string;
-    maskTool?: 'brush' | 'text' | 'shape' | 'select';
-    activeShape?: 'rect' | 'circle' | 'line' | 'path';
+    maskTool?: 'brush' | 'text' | 'shape' | 'select' | 'polygon';
+    activeShape?: 'rect' | 'circle';
     isActive: boolean;
     onEditStart?: (mode: 'brush' | 'objects') => void;
     onContextMenu?: (e: React.MouseEvent) => void;
@@ -56,6 +56,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const [activeMaskId, setActiveMaskId] = useState<string | null>(null);
     const [isHovering, setIsHovering] = useState(false);
 
+    useEffect(() => {
+        if (activeMaskId) {
+            // Ensure the input field of the newly active annotation is focused immediately
+            setTimeout(() => {
+                const activeInput = document.querySelector('.annotation-ui input') as HTMLInputElement;
+                if (activeInput) {
+                    activeInput.focus();
+                }
+            }, 50);
+        }
+    }, [activeMaskId]);
+
     // Resizing State
     const [dragState, setDragState] = useState<{
         id: string;
@@ -91,25 +103,46 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
         // Draw existing paths (Brushes)
         annotations.forEach(ann => {
-            if (ann.type !== 'mask_path' || ann.points.length < 1) return;
-            ctx.beginPath();
-            ctx.lineWidth = ann.strokeWidth;
-
-            ctx.strokeStyle = isActive ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.5)';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-
-            ctx.moveTo(ann.points[0].x, ann.points[0].y);
-            for (let i = 1; i < ann.points.length; i++) {
-                ctx.lineTo(ann.points[i].x, ann.points[i].y);
+            if (ann.type === 'mask_path') {
+                if (ann.points.length < 1) return;
+                ctx.beginPath();
+                ctx.lineWidth = ann.strokeWidth;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                for (let i = 1; i < ann.points.length; i++) {
+                    ctx.lineTo(ann.points[i].x, ann.points[i].y);
+                }
+                ctx.stroke();
+            } else if (activeTab !== 'brush') {
+                // Rasterize other annotations as white blobs when not in brush mode (Pixelated Mask Look)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                if (ann.type === 'shape') {
+                    if (ann.shapeType === 'rect') {
+                        ctx.fillRect(ann.x || 0, ann.y || 0, ann.width || 0, ann.height || 0);
+                    } else if (ann.shapeType === 'circle') {
+                        ctx.beginPath();
+                        ctx.arc((ann.x || 0) + (ann.width || 0) / 2, (ann.y || 0) + (ann.height || 0) / 2, (Math.min(ann.width || 0, ann.height || 0)) / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if (ann.shapeType === 'polygon' && ann.points.length > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                        ann.points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                } else if (ann.type === 'stamp' || ann.type === 'reference_image') {
+                    // Small circles for stamps/refs
+                    ctx.beginPath();
+                    ctx.arc(ann.x || 0, ann.y || 0, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
-            ctx.stroke();
         });
 
         // Draw current brush stroke
         if (isDrawing && currentPathRef.current.length > 0) {
             ctx.beginPath();
             ctx.lineWidth = brushSize;
-
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             const pts = currentPathRef.current;
             ctx.moveTo(pts[0].x, pts[0].y);
@@ -118,7 +151,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             }
             ctx.stroke();
         }
-    }, [annotations, isDrawing, activeMaskId, brushSize, isActive, width]);
+    }, [annotations, isDrawing, activeMaskId, brushSize, isActive, width, activeTab]);
 
     useEffect(() => { renderCanvas(); }, [renderCanvas, width, height]);
 
@@ -185,25 +218,21 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             return;
         }
 
-        if (maskTool === 'shape') {
-            if (activeShape === 'path') {
-                if (activeMaskId) {
-                    const activeAnn = annotations.find(a => a.id === activeMaskId);
-                    if (activeAnn && activeAnn.shapeType === 'path') {
-                        const newPoints = [...(activeAnn.points || []), { x, y }];
-                        updateAnnotation(activeMaskId, { points: newPoints });
-                        return;
-                    }
+        if (maskTool === 'polygon') {
+            if (activeMaskId) {
+                const activeAnn = annotations.find(a => a.id === activeMaskId);
+                if (activeAnn && activeAnn.shapeType === 'polygon') {
+                    const newPoints = [...(activeAnn.points || []), { x, y }];
+                    updateAnnotation(activeMaskId, { points: newPoints });
+                    return;
                 }
-                const newId = generateId();
-                const newPath: AnnotationObject = {
-                    id: newId, type: 'shape', shapeType: 'path', points: [{ x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now()
-                };
-                onChange([...cleanedAnnotations, newPath]);
-                setActiveMaskId(newId);
-                return;
             }
-            setActiveMaskId(null);
+            const newId = generateId();
+            const newPolygon: AnnotationObject = {
+                id: newId, type: 'shape', shapeType: 'polygon', points: [{ x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now()
+            };
+            onChange([...cleanedAnnotations, newPolygon]);
+            setActiveMaskId(newId);
             return;
         }
 
@@ -243,7 +272,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                 // Move Entire Shape
                 if (dragState.mode === 'move') {
-                    if (ann.shapeType === 'line' || ann.shapeType === 'path') {
+                    if (ann.shapeType === 'line' || ann.shapeType === 'polygon') {
                         const pts = dragState.initialPoints.map(p => ({
                             x: p.x + dx,
                             y: p.y + dy
@@ -297,7 +326,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     return { ...ann, points: pts };
                 }
 
-                if (ann.shapeType === 'path' && dragState.mode === 'vertex' && dragState.vertexIndex !== undefined) {
+                if (ann.shapeType === 'polygon' && dragState.mode === 'vertex' && dragState.vertexIndex !== undefined) {
                     const newPoints = [...ann.points];
                     newPoints[dragState.vertexIndex] = { x, y };
                     return { ...ann, points: newPoints };
@@ -359,7 +388,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 createdAt: Date.now()
             };
             onChange([...cleanedPrev, newMask]);
-            setActiveMaskId(newId);
+            // setActiveMaskId(newId); // Removed as per request: no text box after brush drawing
         }
         currentPathRef.current = [];
     };
@@ -419,13 +448,53 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     />
                 )}
 
-                {annotations.map(ann => {
+                {/* Summary View (Pixelated Mask Context) */}
+                {activeTab !== 'brush' && annotations.length > 0 && (
+                    <div
+                        className="absolute z-30 cursor-pointer pointer-events-auto"
+                        style={{
+                            left: `${(() => {
+                                let sumX = 0, count = 0;
+                                annotations.forEach(a => {
+                                    if (a.x !== undefined) { sumX += a.x; count++; }
+                                    else if (a.points?.length) a.points.forEach(p => { sumX += p.x; count++; });
+                                });
+                                return count > 0 ? (sumX / count) / width * 100 : 50;
+                            })()}%`,
+                            top: `${(() => {
+                                let sumY = 0, count = 0;
+                                annotations.forEach(a => {
+                                    if (a.y !== undefined) { sumY += a.y; count++; }
+                                    else if (a.points?.length) a.points.forEach(p => { sumY += p.y; count++; });
+                                });
+                                return count > 0 ? (sumY / count) / height * 100 : 50;
+                            })()}%`,
+                            transform: 'translate(-50%, -50%)'
+                        }}
+                        onClick={() => onEditStart?.('brush')}
+                    >
+                        <div
+                            className="bg-black/80 backdrop-blur-md text-white rounded-full border border-white/20 shadow-xl flex items-center gap-2 hover:bg-black transition-all hover:scale-110 active:scale-95"
+                            style={{
+                                padding: `${Math.max(4, width * 0.01)}px ${Math.max(8, width * 0.02)}px`,
+                                fontSize: Math.max(10, width * 0.015)
+                            }}
+                        >
+                            <Pen className="w-3.5 h-3.5" style={{ width: Math.max(10, width * 0.012), height: Math.max(10, width * 0.012) }} />
+                            <span className={`${Typo.Label} whitespace-nowrap`}>
+                                {t?.('annotations_summary')?.replace('{{count}}', String(annotations.length)) || `${annotations.length} Anmerkungen`}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'brush' && annotations.map(ann => {
                     const isActiveItem = activeMaskId === ann.id;
 
                     if (ann.type === 'shape') {
                         let left = 0, top = 0, w = 0, h = 0;
 
-                        if (ann.shapeType === 'path') {
+                        if (ann.shapeType === 'polygon') {
                             if (!ann.points || ann.points.length < 1) return null;
                             const pts = ann.points;
                             const minX = Math.min(...pts.map(p => p.x));
@@ -609,10 +678,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         return (
                             <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${leftPct}%`, top: `${topPct}%` }}>
                                 <div style={{ transform: finalTransform }} className="transition-all duration-200">
-                                    <div className={`${isActiveItem ? OVERLAY_STYLES.ChipContainerActive : OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move`} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
+                                    <div className={`${isActiveItem ? OVERLAY_STYLES.ChipContainerActive : OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move`} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} style={{ fontSize: Math.max(11, width * 0.015) }}>
                                         <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
                                         <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-                                        <div className="relative shrink-0 w-6 h-6 mr-1.5"><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>
+                                        <div className="relative shrink-0 mr-1.5" style={{ width: Math.max(16, width * 0.02), height: Math.max(16, width * 0.02) }}><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>
                                         {isActiveItem ? (
                                             <input
                                                 value={ann.text || ''}
@@ -638,7 +707,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                             <div style={{ transform: finalTransform }} className="transition-transform duration-200">
                                 <div
                                     className={`group/chip relative font-sans font-bold text-white px-2.5 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 scale-105' : 'hover:scale-105'}`}
-                                    style={{ fontSize: Math.max(14, width * 0.02), backgroundColor: 'rgba(0,0,0,0.85)', lineHeight: 1.2 }}
+                                    style={{ fontSize: Math.max(11, width * 0.015), backgroundColor: 'rgba(0,0,0,0.85)', lineHeight: 1.2 }}
                                 >
                                     {isActiveItem ? (
                                         <div className="flex items-center gap-2">

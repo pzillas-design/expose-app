@@ -30,6 +30,12 @@ export const translations = {
     shapes_label: "Shapes",
     utilities_label: "Utilities",
     tools_label: "Tools",
+    polygon_tool: "Polygon",
+    batch_tool: "Batch",
+    box_stamp: "Box",
+    circle_stamp: "Circle",
+    remove_label: "Remove",
+    annotations_summary: "{{count}} Annotations",
 
     // Prompt Tab
     prompt_label: "PROMPT",
@@ -360,6 +366,12 @@ export const translations = {
     shapes_label: "Formen",
     utilities_label: "Utilities",
     tools_label: "Werkzeuge",
+    polygon_tool: "Polygon",
+    batch_tool: "Batch",
+    box_stamp: "Box",
+    circle_stamp: "Kreis",
+    remove_label: "Entfernen",
+    annotations_summary: "{{count}} Anmerkungen",
 
     // Prompt Tab
     prompt_label: "PROMPT",

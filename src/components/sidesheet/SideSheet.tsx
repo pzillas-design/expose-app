@@ -42,10 +42,10 @@ interface SideSheetProps {
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
-    maskTool: 'brush' | 'text' | 'shape' | 'select';
-    onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
-    activeShape: 'rect' | 'circle' | 'line';
-    onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
+    maskTool: 'brush' | 'text' | 'shape' | 'select' | 'polygon';
+    onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select' | 'polygon') => void;
+    activeShape: 'rect' | 'circle';
+    onActiveShapeChange: (shape: 'rect' | 'circle') => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -249,30 +249,21 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
         // Handle SHAPES
         if (itemId.startsWith('shape:')) {
-            const shapeType = itemId.split(':')[1] as 'rect' | 'circle' | 'line';
+            const shapeType = itemId.split(':')[1] as 'rect' | 'circle';
             const cx = selectedImage.width / 2;
             const cy = selectedImage.height / 2;
             const size = Math.min(selectedImage.width, selectedImage.height) * 0.3;
 
             // Suggested default emojis for shapes
-            const shapeEmoji = shapeType === 'rect' ? '📦' : shapeType === 'circle' ? '⭕' : '📏';
+            const shapeEmoji = shapeType === 'rect' ? '📦' : '⭕';
 
-            let newShape: AnnotationObject;
-            if (shapeType === 'line') {
-                newShape = {
-                    id: generateId(), type: 'shape', shapeType: 'line',
-                    x: cx - size / 2, y: cy, width: size, height: size,
-                    points: [{ x: cx - size / 2, y: cy }, { x: cx + size / 2, y: cy }],
-                    strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
-                };
-            } else {
-                newShape = {
-                    id: generateId(), type: 'shape', shapeType: shapeType,
-                    x: cx - size / 2, y: cy - size / 2, width: size, height: size,
-                    points: [],
-                    strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
-                };
-            }
+            const newShape: AnnotationObject = {
+                id: generateId(), type: 'shape', shapeType: shapeType,
+                x: cx - size / 2, y: cy - size / 2, width: size, height: size,
+                points: [],
+                strokeWidth: 4, color: '#fff', emoji: shapeEmoji, createdAt: Date.now()
+            };
+
             onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
             onMaskToolChange('select');
             return;

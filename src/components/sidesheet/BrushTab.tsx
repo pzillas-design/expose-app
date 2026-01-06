@@ -2,16 +2,16 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory } from '@/types';
-import { Pen, Type, Square, Circle, Minus, MousePointer2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, MousePointer2, Layers, Trash2 } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
     brushSize?: number;
     onBrushSizeChange?: (size: number) => void;
-    maskTool?: 'brush' | 'text' | 'shape' | 'select';
-    onMaskToolChange?: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
-    activeShape?: 'rect' | 'circle' | 'line' | 'path';
-    onActiveShapeChange?: (shape: 'rect' | 'circle' | 'line' | 'path') => void;
+    maskTool?: 'brush' | 'text' | 'shape' | 'select' | 'polygon';
+    onMaskToolChange?: (tool: 'brush' | 'text' | 'shape' | 'select' | 'polygon') => void;
+    activeShape?: 'rect' | 'circle';
+    onActiveShapeChange?: (shape: 'rect' | 'circle') => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
     library: LibraryCategory[];
@@ -81,22 +81,18 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
             <div className="px-5 pt-6 pb-6 space-y-8 shrink-0 overflow-y-auto no-scrollbar">
-
-                {/* Selection Tool (Solo) */}
-                <div>
-                    <SectionHeader label={t('selection_tool') || 'Selection'} />
-                    <ToolButton
-                        icon={MousePointer2}
-                        label={t('selection_tool') || 'Selection'}
-                        active={maskTool === 'select'}
-                        onClick={() => onMaskToolChange?.('select')}
-                    />
-                </div>
-
                 {/* Werkzeuge */}
                 <div>
                     <SectionHeader label={t('tools_label') || (currentLang === 'de' ? 'Werkzeuge' : 'Tools')} />
                     <div className="flex flex-col gap-2">
+                        {/* selection_tool */}
+                        <ToolButton
+                            icon={MousePointer2}
+                            label={t('selection_tool') || 'Selection'}
+                            active={maskTool === 'select'}
+                            onClick={() => onMaskToolChange?.('select')}
+                        />
+
                         {/* BRUSH */}
                         <div className="flex flex-col gap-3">
                             <ToolButton
@@ -132,29 +128,44 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                             onClick={() => onMaskToolChange?.('text')}
                         />
 
-                        {/* SHAPES */}
-                        <div className="flex flex-col gap-3">
-                            <ToolButton
-                                icon={Square}
-                                label={t('shapes_label') || (currentLang === 'de' ? 'Formen' : 'Shapes')}
-                                active={maskTool === 'shape'}
-                                onClick={() => onMaskToolChange?.('shape')}
-                            />
-                            {maskTool === 'shape' && (
-                                <div className="grid grid-cols-4 gap-2 animate-in slide-in-from-top-1 duration-200 border-t border-zinc-100 dark:border-zinc-800/50 pt-4">
-                                    <UtilityButton icon={Square} label="Box" onClick={() => onAddObject('Box', 'shape:rect')} />
-                                    <UtilityButton icon={Circle} label="Kreis" onClick={() => onAddObject('Kreis', 'shape:circle')} />
-                                    <UtilityButton icon={Minus} label="Linie" onClick={() => onAddObject('Linie', 'shape:line')} />
-                                    <UtilityButton icon={Pen} label="Path" active={activeShape === 'path'} onClick={() => { onMaskToolChange?.('shape'); onActiveShapeChange?.('path'); }} />
-                                </div>
-                            )}
-                        </div>
+                        {/* POLYGON (Path) */}
+                        <ToolButton
+                            icon={Pen}
+                            label={t('polygon_tool') || 'Polygon'}
+                            active={maskTool === 'polygon'}
+                            onClick={() => onMaskToolChange?.('polygon')}
+                        />
                     </div>
                 </div>
             </div>
 
             {/* Stamps Library (Full Width) */}
             <div className="flex-1 min-h-0 flex flex-col bg-zinc-50/10 dark:bg-zinc-950/20 border-t border-zinc-100 dark:border-zinc-800/50">
+                {/* Utility Row: Box, Circle, Batch, Remove */}
+                <div className="px-5 pt-5 pb-1">
+                    <div className="grid grid-cols-4 gap-2">
+                        <UtilityButton
+                            icon={Square}
+                            label={t('box_stamp') || 'Box'}
+                            onClick={() => onAddObject('Box', 'shape:rect')}
+                        />
+                        <UtilityButton
+                            icon={Circle}
+                            label={t('circle_stamp') || 'Kreis'}
+                            onClick={() => onAddObject('Kreis', 'shape:circle')}
+                        />
+                        <UtilityButton
+                            icon={Layers}
+                            label={t('batch_tool') || 'Batch'}
+                            onClick={() => onAddObject('Batch', 'util:batch', '📦')}
+                        />
+                        <UtilityButton
+                            icon={Trash2}
+                            label={t('remove_label') || 'Entfernen'}
+                            onClick={() => onAddObject('Remove', 'util:remove', '🗑️')}
+                        />
+                    </div>
+                </div>
                 <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                     <ObjectsTab
                         t={t}
