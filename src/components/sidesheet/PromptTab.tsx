@@ -360,7 +360,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <div className="px-4 pb-1.5 flex flex-col gap-2 group/ref">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
-                                                    Referenzbilder
+                                                    {t('reference_images')}
                                                 </span>
                                             </div>
                                             <div className="flex flex-wrap gap-1.5 pt-1 pb-4">
@@ -444,7 +444,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
-                                                    Anmerkungen
+                                                    {t('annotations')}
                                                 </span>
                                             </div>
                                             <div className="flex flex-wrap gap-1.5 pt-1 pb-4">

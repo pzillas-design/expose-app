@@ -30,6 +30,7 @@ export const translations = {
     // Prompt Tab
     prompt_label: "PROMPT",
     context_label: "CONTEXT",
+    annotations: "Annotations",
     reset_tooltip: "Reset Preset",
     describe_changes: "Describe changes...",
     generate: "Generate",
@@ -355,6 +356,7 @@ export const translations = {
     // Prompt Tab
     prompt_label: "PROMPT",
     context_label: "KONTEXT",
+    annotations: "Anmerkungen",
     reset_tooltip: "Vorlage zurücksetzen",
     describe_changes: "Änderungen beschreiben...",
     generate: "Generieren",
