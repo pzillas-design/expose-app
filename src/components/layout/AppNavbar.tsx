@@ -22,12 +22,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     t
 }) => {
     const getInitials = (name?: string, email?: string) => {
-        if (name) {
-            const parts = name.split(' ');
-            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-            return parts[0][0].toUpperCase();
+        if (name && name.trim()) {
+            const parts = name.trim().split(' ');
+            const first = parts[0];
+            const second = parts[1];
+            if (first && second && second[0]) return (first[0] + second[0]).toUpperCase();
+            if (first && first[0]) return first[0].toUpperCase();
         }
-        if (email) return email[0].toUpperCase();
+        if (email && email[0]) return email[0].toUpperCase();
         return '?';
     };
 
