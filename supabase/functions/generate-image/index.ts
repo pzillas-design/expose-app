@@ -47,13 +47,32 @@ Deno.serve(async (req) => {
         };
         const cost = COSTS[qualityMode] || 0;
 
-        const { data: profile } = await supabaseAdmin
+        // 1. Check Credits & Profile
+        let { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('credits, role')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
 
-        if (!profile) throw new Error('Profile not found')
+        if (!profile) {
+            console.log(`Profile not found for user ${user.id}, creating entry...`);
+            const { data: newProfile, error: createError } = await supabaseAdmin
+                .from('profiles')
+                .insert({
+                    id: user.id,
+                    email: user.email,
+                    full_name: user.user_metadata?.full_name || 'New User',
+                    credits: 10.0
+                })
+                .select('credits, role')
+                .single()
+
+            if (createError) {
+                console.error('Error creating profile fallback:', createError);
+                throw new Error('Profile not found and creation failed')
+            }
+            profile = newProfile
+        }
 
         const isPro = profile.role === 'pro'
         if (!isPro && (profile.credits || 0) < cost) {
@@ -101,6 +120,9 @@ Deno.serve(async (req) => {
         }
 
         const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+        if (!GEMINI_API_KEY) {
+            throw new Error('GEMINI_API_KEY environment variable is not set in Supabase')
+        }
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${GEMINI_API_KEY}`
 
         const parts: any[] = []
