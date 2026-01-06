@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -47,7 +47,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [editValue, setEditValue] = useState('');
     const [editEmojiValue, setEditEmojiValue] = useState('');
     const { showToast } = useToast();
-
+    const [menuId, setMenuId] = useState<string | null>(null);
     const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [hiddenControlIds, setHiddenControlIds] = useState<string[]>([]);
@@ -312,35 +312,108 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         />
                                     </Tooltip>
 
-                                    {/* CHIPS AREA: Selected Variables (ONLY) */}
-                                    {activeTemplate && Object.keys(controlValues).length > 0 && (
-                                        <div className="px-4 pb-4 flex flex-wrap gap-2 items-center">
-                                            {activeTemplate.controls.map(ctrl => {
-                                                const selections = controlValues[ctrl.id] || [];
-                                                return selections.map(val => {
-                                                    const opt = ctrl.options.find(o => o.value === val);
-                                                    if (!opt) return null;
+                                    {/* ANNOTATIONS SECTION (Now INSIDE the box) */}
+                                    {annotations.length > 0 && (
+                                        <div className="px-4 pb-1.5 flex flex-col gap-2 group/ann">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[11px] tracking-tight font-mono text-zinc-400 dark:text-zinc-500">
+                                                    Anmerkungen
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5 pt-1 pb-4">
+                                                {annotations.map((ann) => {
+                                                    const isRefType = ann.type === 'reference_image';
+                                                    const defaultLabel = isRefType ? `${t('image_ref')}` : '';
+                                                    const displayText = ann.text || defaultLabel || t('untitled');
+                                                    const isEditing = editingId === ann.id;
+                                                    const isMenuOpen = menuId === ann.id;
+
                                                     return (
-                                                        <div
-                                                            key={`${ctrl.id}-${val}`}
-                                                            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-transparent"
-                                                        >
-                                                            <span className="text-[9px] text-zinc-400 dark:text-zinc-500 uppercase tracking-tight font-mono whitespace-nowrap">
-                                                                {ctrl.label}:
-                                                            </span>
-                                                            <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-                                                                {opt.label}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => handleToggleControlOption(ctrl.id, val)}
-                                                                className="ml-0.5 text-zinc-400 hover:text-red-500 transition-colors"
+                                                        <div key={ann.id} className="relative">
+                                                            <div
+                                                                className={`
+                                                                    flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all font-mono
+                                                                    ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
+                                                                `}
                                                             >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
+                                                                {isRefType && ann.referenceImage ? (
+                                                                    <div className="shrink-0 w-4 h-4 rounded-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                                                                        <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="shrink-0 flex items-center justify-center text-zinc-400">
+                                                                        {ann.type === 'stamp' ? (
+                                                                            <span className="text-xs leading-none">{ann.emoji || '🏷️'}</span>
+                                                                        ) : ann.type === 'shape' ? (
+                                                                            ann.shapeType === 'circle' ? <Circle className="w-3.5 h-3.5" /> :
+                                                                                ann.shapeType === 'line' ? <Minus className="w-3.5 h-3.5" /> :
+                                                                                    <Square className="w-3.5 h-3.5" />
+                                                                        ) : (
+                                                                            <Pen className="w-3.5 h-3.5" />
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {isEditing ? (
+                                                                    <input
+                                                                        autoFocus
+                                                                        value={editValue}
+                                                                        onChange={(e) => setEditValue(e.target.value)}
+                                                                        onBlur={saveEditing}
+                                                                        onKeyDown={handleKeyDown}
+                                                                        className="bg-transparent border-none outline-none text-[13px] font-medium text-black dark:text-white p-0 min-w-[50px]"
+                                                                        style={{ width: `${Math.max(5, editValue.length) + 1}ch` }}
+                                                                    />
+                                                                ) : (
+                                                                    <span
+                                                                        onClick={() => startEditing(ann, defaultLabel)}
+                                                                        className={`max-w-[120px] truncate cursor-text ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : ''}`}
+                                                                    >
+                                                                        {displayText}
+                                                                    </span>
+                                                                )}
+
+                                                                {!isEditing && (
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); setMenuId(isMenuOpen ? null : ann.id); }}
+                                                                        className={`p-1 -mr-1 rounded-full transition-colors ${isMenuOpen ? 'bg-zinc-300 dark:bg-zinc-600 text-black dark:text-white' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-300/50'}`}
+                                                                    >
+                                                                        <MoreHorizontal className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* CONTEXT MENU */}
+                                                            {isMenuOpen && (
+                                                                <>
+                                                                    <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
+                                                                    <div className={`
+                                                                        absolute top-full left-0 mt-2 w-48 p-1 rounded-xl border z-50 shadow-xl
+                                                                        ${Theme.Colors.ModalBg} ${Theme.Colors.Border} animate-in fade-in slide-in-from-top-2 duration-150
+                                                                    `}>
+                                                                        {!isRefType && (
+                                                                            <button
+                                                                                onClick={() => { triggerAnnFile(ann.id); setMenuId(null); }}
+                                                                                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-600 dark:text-zinc-300"
+                                                                            >
+                                                                                <ImageIcon className="w-3.5 h-3.5" />
+                                                                                {t('upload_ref')}
+                                                                            </button>
+                                                                        )}
+                                                                        <button
+                                                                            onClick={() => { onDeleteAnnotation(ann.id); setMenuId(null); }}
+                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-500"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                            {t('delete')}
+                                                                        </button>
+                                                                    </div>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     );
-                                                });
-                                            })}
+                                                })}
+                                            </div>
                                         </div>
                                     )}
 
@@ -388,97 +461,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     )}
                                 </div>
 
-                                {/* ANNOTATIONS LIST (Outside) */}
-                                {annotations.length > 0 && !isMulti && (
-                                    <div className="flex flex-col gap-1 w-full pt-4">
-                                        {annotations.map((ann) => {
-                                            const isRefType = ann.type === 'reference_image';
-                                            const refIndex = annotations.filter(a => a.type === 'reference_image').indexOf(ann);
-                                            const defaultLabel = isRefType ? `${t('image_ref')}` : '';
-                                            const displayText = ann.text || defaultLabel || t('untitled');
-                                            const isEditing = editingId === ann.id;
 
-                                            return (
-                                                <div
-                                                    key={ann.id}
-                                                    className={`
-                                                        group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all
-                                                        ${isEditing ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30'}
-                                                    `}
-                                                >
-                                                    {isRefType && ann.referenceImage ? (
-                                                        <div className="shrink-0 w-8 h-8 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="shrink-0 w-8 h-8 flex items-center justify-center bg-zinc-100/50 dark:bg-zinc-800/50 rounded-lg text-zinc-400">
-                                                            {ann.type === 'stamp' ? (
-                                                                isEditing ? (
-                                                                    <div className="w-6 h-6 flex items-center justify-center">
-                                                                        <input
-                                                                            value={editEmojiValue}
-                                                                            onChange={(e) => setEditEmojiValue(e.target.value)}
-                                                                            className="w-full h-full bg-transparent border-none outline-none text-sm text-center p-0"
-                                                                        />
-                                                                    </div>
-                                                                ) : (
-                                                                    <span className="text-sm leading-none">{ann.emoji || '🏷️'}</span>
-                                                                )
-                                                            ) : ann.type === 'shape' ? (
-                                                                ann.shapeType === 'circle' ? <Circle className="w-4 h-4" /> :
-                                                                    ann.shapeType === 'line' ? <Minus className="w-4 h-4" /> :
-                                                                        <Square className="w-4 h-4" />
-                                                            ) : (
-                                                                <Pen className="w-4 h-4" />
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex-1 min-w-0 flex items-center">
-                                                        {isEditing ? (
-                                                            <input
-                                                                autoFocus
-                                                                value={editValue}
-                                                                onChange={(e) => setEditValue(e.target.value)}
-                                                                onBlur={saveEditing}
-                                                                onKeyDown={handleKeyDown}
-                                                                className="bg-transparent border-none outline-none text-[13px] font-medium text-black dark:text-white p-0 w-full"
-                                                                placeholder={isRefType ? t('describe_style') : t('what_is_this')}
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                onClick={(e) => { e.stopPropagation(); startEditing(ann, defaultLabel); }}
-                                                                className={`text-[13px] font-medium cursor-text truncate ${!ann.text && !defaultLabel ? 'text-zinc-400 italic' : 'text-zinc-700 dark:text-zinc-300'}`}
-                                                            >
-                                                                {displayText}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {!isEditing && (
-                                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
-                                                            {!isRefType && (
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                                                    className="p-1.5 rounded-lg text-zinc-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all"
-                                                                    title={t('upload_ref')}
-                                                                >
-                                                                    <Camera className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            )}
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all"
-                                                            >
-                                                                <X className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
 
 
                             </div>
