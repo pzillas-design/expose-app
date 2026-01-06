@@ -94,16 +94,16 @@ export function App() {
         return () => window.removeEventListener('dragenter', handleWindowDragEnter);
     }, [setIsDragOver, isCreationModalOpen]);
 
-    // Manage Snap State (Restore on selection change)
+    // Manage Snap State: Only snap when exactly one item is selected
     useEffect(() => {
-        if (selectedIds.length <= 1) {
+        if (selectedIds.length === 1) {
             setEnableSnap(true);
             actions.setSnapEnabled(true);
         } else {
             setEnableSnap(false);
             actions.setSnapEnabled(false);
         }
-    }, [selectedIds.length, state.primarySelectedId, actions]);
+    }, [selectedIds.length, actions]);
 
     const handleDragLeave = (e: React.DragEvent) => {
         if (!e.relatedTarget) {
@@ -170,9 +170,9 @@ export function App() {
                 // First movement detected: Deselect all and disable snap
                 if (selectedIds.length > 0) {
                     selectMultiple([]);
-                    setEnableSnap(false);
-                    actions.setSnapEnabled(false);
                 }
+                setEnableSnap(false);
+                actions.setSnapEnabled(false);
                 panState.current.hasMoved = true;
             }
         }
@@ -194,12 +194,6 @@ export function App() {
                 } else {
                     selectMultiple([]);
                 }
-            }
-
-            // Always restore snap if selection count is low enough
-            if (selectedIds.length <= 1) {
-                setEnableSnap(true);
-                actions.setSnapEnabled(true);
             }
 
             panState.current = null;
