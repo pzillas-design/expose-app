@@ -536,7 +536,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={onAddBrush}
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
-                                        className="w-full"
+                                        className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
                                     >
                                         {t('annotate') || 'Annotate'}
@@ -546,7 +546,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={selectedImage.isGenerating}
                                         icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
-                                        className="w-full"
+                                        className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={t('upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}

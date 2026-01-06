@@ -47,30 +47,27 @@ export const useCanvasNavigation = ({
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
         const startZoom = zoom;
 
+        const containerRect = container.getBoundingClientRect();
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
-        let finalTargetScroll = targetScroll;
+        // Visual center of the visible area
+        const centerX = containerRect.width / 2;
+        const centerY = containerRect.height / 2;
 
-        if (!finalTargetScroll) {
-            const containerRect = container.getBoundingClientRect();
+        const padX = window.innerWidth / 2;
+        const padY = window.innerHeight / 2;
 
-            // Zoom around the center of the current viewport
-            const pivotX = startScrollX + (containerRect.width / 2);
-            const pivotY = startScrollY + (containerRect.height / 2);
+        let contentX: number, contentY: number;
 
-            const padX = window.innerWidth / 2;
-            const padY = window.innerHeight / 2;
-
-            // Mapping absolute scroll coord to unscaled content coord
-            const contentX = (pivotX - padX) / zoom;
-            const contentY = (pivotY - padY) / zoom;
-
-            // New scroll position that keeps the pivot point at the center of the viewport
-            finalTargetScroll = {
-                x: (padX + (contentX * clampedTargetZoom)) - (containerRect.width / 2),
-                y: (padY + (contentY * clampedTargetZoom)) - (containerRect.height / 2)
-            };
+        if (targetScroll) {
+            // If explicit target scroll is provided, find the content pivot that results in that scroll at the target zoom
+            contentX = (targetScroll.x + centerX - padX) / clampedTargetZoom;
+            contentY = (targetScroll.y + centerY - padY) / clampedTargetZoom;
+        } else {
+            // Default: Zoom around the current visual center
+            contentX = (startScrollX + centerX - padX) / zoom;
+            contentY = (startScrollY + centerY - padY) / zoom;
         }
 
         const startTime = performance.now();
@@ -84,29 +81,28 @@ export const useCanvasNavigation = ({
             const ease = 1 - Math.pow(1 - progress, 3);
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
-            setZoom(nextZoom);
 
-            if (finalTargetScroll) {
-                const nextScrollX = startScrollX + (finalTargetScroll.x - startScrollX) * ease;
-                const nextScrollY = startScrollY + (finalTargetScroll.y - startScrollY) * ease;
-                container.scrollLeft = nextScrollX;
-                container.scrollTop = nextScrollY;
-            }
+            // Calculate required scroll position to keep the content pivot at the viewport center
+            const nextScrollX = (padX + (contentX * nextZoom)) - centerX;
+            const nextScrollY = (padY + (contentY * nextZoom)) - centerY;
+
+            // Update DOM and state
+            setZoom(nextZoom);
+            container.scrollLeft = nextScrollX;
+            container.scrollTop = nextScrollY;
 
             if (progress < 1) {
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
             } else {
                 setZoom(clampedTargetZoom);
-                if (finalTargetScroll) {
-                    container.scrollLeft = finalTargetScroll.x;
-                    container.scrollTop = finalTargetScroll.y;
-                }
+                container.scrollLeft = (padX + (contentX * clampedTargetZoom)) - centerX;
+                container.scrollTop = (padY + (contentY * clampedTargetZoom)) - centerY;
                 zoomAnimFrameRef.current = null;
                 setIsZooming(false);
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
-    }, [zoom, scrollContainerRef, setIsZooming, primarySelectedId]);
+    }, [zoom, scrollContainerRef, setIsZooming]);
 
     // --- Viewport Fitting (Magnetic Group) ---
     const fitSelectionToView = useCallback(() => {
