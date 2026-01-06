@@ -1,8 +1,8 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnnotationObject, TranslationFunction } from '@/types';
-import { X, Check, Pen, Trash2, GripHorizontal } from 'lucide-react';
-import { Typo, Tooltip, Theme } from '@/components/ui/DesignSystem';
+import { X, Check, Pen, Trash2 } from 'lucide-react';
+import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { generateId } from '@/utils/ids';
 
 interface EditorCanvasProps {
@@ -22,13 +22,10 @@ interface EditorCanvasProps {
 
 const RES_SCALE = 3;
 
-// Styles moved to constants for cleanliness
 const OVERLAY_STYLES = {
     ChipContainer: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} hover:border-zinc-500 group/chip shadow-sm`,
     ChipContainerActive: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} p-1.5 min-w-[120px] z-30 shadow-md`,
     ActionBtn: `flex items-center justify-center w-5 h-5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-black dark:hover:text-white transition-all shrink-0`,
-    SaveBtn: `flex items-center justify-center w-5 h-5 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all shrink-0 ml-1`,
-    RefThumb: `relative group/thumb shrink-0 w-6 h-6 mr-1.5`,
     RefImage: `w-full h-full object-cover rounded border border-zinc-200 dark:border-zinc-700`,
     Arrow: `absolute w-0 h-0 border-[6px] border-transparent pointer-events-none`
 };
@@ -40,7 +37,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     onChange,
     brushSize,
     activeTab,
-    maskTool = 'brush',
+    maskTool = 'select',
     activeShape = 'rect',
     isActive,
     onEditStart,
@@ -51,27 +48,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const cursorRef = useRef<HTMLDivElement>(null);
 
-    // State
     const [isDrawing, setIsDrawing] = useState(false);
     const [activeMaskId, setActiveMaskId] = useState<string | null>(null);
     const [isHovering, setIsHovering] = useState(false);
 
     useEffect(() => {
         if (activeMaskId) {
-            // Ensure the input field of the newly active annotation is focused immediately
             setTimeout(() => {
                 const activeInput = document.querySelector('.annotation-ui input') as HTMLInputElement;
-                if (activeInput) {
-                    activeInput.focus();
-                }
+                if (activeInput) activeInput.focus();
             }, 50);
         }
     }, [activeMaskId]);
 
-    // Resizing State
     const [dragState, setDragState] = useState<{
         id: string;
-        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'p1' | 'p2' | 'vertex';
+        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 't' | 'b' | 'l' | 'r' | 'vertex' | 'draw_shape';
         vertexIndex?: number;
         startX: number;
         startY: number;
@@ -85,23 +77,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const currentPathRef = useRef<{ x: number, y: number }[]>([]);
 
-    // --- Rendering ---
     const renderCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
 
-        // Reset transform to identity then clear
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Apply scaling
         ctx.scale(RES_SCALE, RES_SCALE);
-
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
-        // Draw existing paths (Brushes)
         annotations.forEach(ann => {
             if (ann.type === 'mask_path') {
                 if (ann.points.length < 1) return;
@@ -109,17 +95,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 ctx.lineWidth = ann.strokeWidth;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
                 ctx.moveTo(ann.points[0].x, ann.points[0].y);
-                for (let i = 1; i < ann.points.length; i++) {
-                    ctx.lineTo(ann.points[i].x, ann.points[i].y);
-                }
+                for (let i = 1; i < ann.points.length; i++) ctx.lineTo(ann.points[i].x, ann.points[i].y);
                 ctx.stroke();
             } else if (activeTab !== 'brush') {
-                // Rasterize other annotations as white blobs when not in brush mode (Pixelated Mask Look)
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 if (ann.type === 'shape') {
-                    if (ann.shapeType === 'rect') {
-                        ctx.fillRect(ann.x || 0, ann.y || 0, ann.width || 0, ann.height || 0);
-                    } else if (ann.shapeType === 'circle') {
+                    if (ann.shapeType === 'rect') ctx.fillRect(ann.x || 0, ann.y || 0, ann.width || 0, ann.height || 0);
+                    else if (ann.shapeType === 'circle') {
                         ctx.beginPath();
                         ctx.arc((ann.x || 0) + (ann.width || 0) / 2, (ann.y || 0) + (ann.height || 0) / 2, (Math.min(ann.width || 0, ann.height || 0)) / 2, 0, Math.PI * 2);
                         ctx.fill();
@@ -131,7 +113,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         ctx.fill();
                     }
                 } else if (ann.type === 'stamp' || ann.type === 'reference_image') {
-                    // Small circles for stamps/refs
                     ctx.beginPath();
                     ctx.arc(ann.x || 0, ann.y || 0, 15, 0, Math.PI * 2);
                     ctx.fill();
@@ -139,23 +120,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             }
         });
 
-        // Draw current brush stroke
-        if (isDrawing && currentPathRef.current.length > 0) {
+        if (isDrawing && currentPathRef.current.length > 0 && maskTool === 'brush') {
             ctx.beginPath();
             ctx.lineWidth = brushSize;
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            const pts = currentPathRef.current;
-            ctx.moveTo(pts[0].x, pts[0].y);
-            for (let i = 1; i < pts.length; i++) {
-                ctx.lineTo(pts[i].x, pts[i].y);
-            }
+            ctx.moveTo(currentPathRef.current[0].x, currentPathRef.current[0].y);
+            for (let i = 1; i < currentPathRef.current.length; i++) ctx.lineTo(currentPathRef.current[i].x, currentPathRef.current[i].y);
             ctx.stroke();
         }
-    }, [annotations, isDrawing, activeMaskId, brushSize, isActive, width, activeTab]);
+    }, [annotations, isDrawing, brushSize, width, activeTab, maskTool]);
 
     useEffect(() => { renderCanvas(); }, [renderCanvas, width, height]);
 
-    // Handle Resize
     useEffect(() => {
         if (canvasRef.current) {
             canvasRef.current.width = width * RES_SCALE;
@@ -164,15 +140,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         }
     }, [width, height, renderCanvas]);
 
-
     const getCoordinates = (clientX: number, clientY: number) => {
         if (!canvasRef.current) return { x: 0, y: 0 };
         const rect = canvasRef.current.getBoundingClientRect();
-        const scaleX = width / rect.width;
-        const scaleY = height / rect.height;
         return {
-            x: (clientX - rect.left) * scaleX,
-            y: (clientY - rect.top) * scaleY
+            x: (clientX - rect.left) * (width / rect.width),
+            y: (clientY - rect.top) * (height / rect.height)
         };
     };
 
@@ -190,30 +163,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if ((e.target as HTMLElement).closest('.annotation-ui')) return;
         e.stopPropagation();
 
-        // Clean empty annotations (stamps must have text, mask_paths must have points)
-        const cleanedAnnotations = annotations.filter(a => {
-            if (a.type === 'stamp' && (!a.text || a.text.trim() === '')) return false;
-            if (a.type === 'mask_path' && a.points.length <= 1) return false;
-            return true;
-        });
-
-        if (cleanedAnnotations.length !== annotations.length) {
-            onChange(cleanedAnnotations);
-        }
-
-        // @ts-ignore
-        const clientX = e.touches ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-        // @ts-ignore
-        const clientY = e.touches ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         const { x, y } = getCoordinates(clientX, clientY);
 
         if (maskTool === 'text') {
             const newId = generateId();
-            const newStamp: AnnotationObject = {
-                id: newId, type: 'stamp', points: [], x, y, strokeWidth: 0, color: '#fff', text: '', createdAt: Date.now()
-            };
-            onChange([...cleanedAnnotations, newStamp]);
+            onChange([...annotations, { id: newId, type: 'stamp', points: [], x, y, strokeWidth: 0, color: '#fff', text: '', createdAt: Date.now() }]);
             setActiveMaskId(newId);
             return;
         }
@@ -222,17 +178,26 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             if (activeMaskId) {
                 const activeAnn = annotations.find(a => a.id === activeMaskId);
                 if (activeAnn && activeAnn.shapeType === 'polygon') {
-                    const newPoints = [...(activeAnn.points || []), { x, y }];
-                    updateAnnotation(activeMaskId, { points: newPoints });
+                    updateAnnotation(activeMaskId, { points: [...(activeAnn.points || []), { x, y }] });
                     return;
                 }
             }
             const newId = generateId();
-            const newPolygon: AnnotationObject = {
-                id: newId, type: 'shape', shapeType: 'polygon', points: [{ x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now()
-            };
-            onChange([...cleanedAnnotations, newPolygon]);
+            onChange([...annotations, { id: newId, type: 'shape', shapeType: 'polygon', points: [{ x, y }], strokeWidth: 4, color: '#fff', createdAt: Date.now() }]);
             setActiveMaskId(newId);
+            return;
+        }
+
+        if (maskTool === 'shape') {
+            // Start click-and-drag for rect/circle
+            const newId = generateId();
+            const newAnn: AnnotationObject = {
+                id: newId, type: 'shape', shapeType: activeShape, x, y, width: 0, height: 0, points: [], strokeWidth: 4, color: '#fff', createdAt: Date.now()
+            };
+            onChange([...annotations, newAnn]);
+            setDragState({
+                id: newId, mode: 'draw_shape', startX: x, startY: y, initialX: x, initialY: y, initialW: 0, initialH: 0, initialPoints: [], isMoved: false
+            });
             return;
         }
 
@@ -241,28 +206,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             return;
         }
 
+        // Brush
         setIsDrawing(true);
         currentPathRef.current = [{ x, y }];
         setActiveMaskId(null);
-        renderCanvas();
     };
 
     const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
-        // @ts-ignore
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        // @ts-ignore
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         const { x, y } = getCoordinates(clientX, clientY);
 
-        // --- Drag/Resize Logic ---
         if (dragState) {
-            e.preventDefault();
-            e.stopPropagation();
-
+            e.preventDefault(); e.stopPropagation();
             const dx = x - dragState.startX;
             const dy = y - dragState.startY;
 
-            // Threshold for movement
             if (!dragState.isMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
                 setDragState(prev => prev ? { ...prev, isMoved: true } : null);
             }
@@ -270,90 +229,46 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             const updated = annotations.map(ann => {
                 if (ann.id !== dragState.id) return ann;
 
-                // Move Entire Shape
-                if (dragState.mode === 'move') {
-                    if (ann.shapeType === 'line' || ann.shapeType === 'polygon') {
-                        const pts = dragState.initialPoints.map(p => ({
-                            x: p.x + dx,
-                            y: p.y + dy
-                        }));
-                        return { ...ann, points: pts };
-                    } else {
-                        return { ...ann, x: dragState.initialX + dx, y: dragState.initialY + dy };
-                    }
-                }
-
-                // Resize Rect/Circle
-                if (ann.shapeType === 'rect' || ann.shapeType === 'circle') {
-                    let newX = dragState.initialX;
-                    let newY = dragState.initialY;
-                    let newW = dragState.initialW;
-                    let newH = dragState.initialH;
-
-                    if (dragState.mode === 'tl') {
-                        newX += dx; newY += dy; newW -= dx; newH -= dy;
-                    } else if (dragState.mode === 'tr') {
-                        newY += dy; newW += dx; newH -= dy;
-                    } else if (dragState.mode === 'bl') {
-                        newX += dx; newW -= dx; newH += dy;
-                    } else if (dragState.mode === 'br') {
-                        newW += dx; newH += dy;
-                    } else if (dragState.mode === 't') {
-                        newY += dy; newH -= dy;
-                    } else if (dragState.mode === 'b') {
-                        newH += dy;
-                    } else if (dragState.mode === 'l') {
-                        newX += dx; newW -= dx;
-                    } else if (dragState.mode === 'r') {
-                        newW += dx;
-                    }
-
-                    // Enforce min size
-                    if (newW < 20) newW = 20;
-                    if (newH < 20) newH = 20;
-
+                if (dragState.mode === 'draw_shape') {
+                    const newX = Math.min(dragState.startX, x);
+                    const newY = Math.min(dragState.startY, y);
+                    const newW = Math.abs(x - dragState.startX);
+                    const newH = Math.abs(y - dragState.startY);
                     return { ...ann, x: newX, y: newY, width: newW, height: newH };
                 }
 
-                // Resize Line (Update Endpoints)
-                if (ann.shapeType === 'line') {
-                    const pts = [...ann.points];
-                    if (dragState.mode === 'p1') {
-                        pts[0] = { x: x, y: y };
-                    } else if (dragState.mode === 'p2') {
-                        pts[1] = { x: x, y: y };
-                    }
-                    return { ...ann, points: pts };
+                if (dragState.mode === 'move') {
+                    if (ann.shapeType === 'polygon') return { ...ann, points: dragState.initialPoints.map(p => ({ x: p.x + dx, y: p.y + dy })) };
+                    return { ...ann, x: dragState.initialX + dx, y: dragState.initialY + dy };
+                }
+
+                if (ann.shapeType === 'rect' || ann.shapeType === 'circle') {
+                    let { initialX: iX, initialY: iY, initialW: iW, initialH: iH } = dragState;
+                    let nX = iX, nY = iY, nW = iW, nH = iH;
+                    if (dragState.mode === 'tl') { nX += dx; nY += dy; nW -= dx; nH -= dy; }
+                    else if (dragState.mode === 'tr') { nY += dy; nW += dx; nH -= dy; }
+                    else if (dragState.mode === 'bl') { nX += dx; nW -= dx; nH += dy; }
+                    else if (dragState.mode === 'br') { nW += dx; nH += dy; }
+                    return { ...ann, x: nX, y: nY, width: Math.max(10, nW), height: Math.max(10, nH) };
                 }
 
                 if (ann.shapeType === 'polygon' && dragState.mode === 'vertex' && dragState.vertexIndex !== undefined) {
-                    const newPoints = [...ann.points];
-                    newPoints[dragState.vertexIndex] = { x, y };
-                    return { ...ann, points: newPoints };
+                    const pts = [...ann.points]; pts[dragState.vertexIndex] = { x, y };
+                    return { ...ann, points: pts };
                 }
-
                 return ann;
             });
             onChange(updated);
             return;
         }
 
-        // Cursor Logic
-        if (cursorRef.current && containerRef.current && activeTab === 'brush') {
+        if (cursorRef.current && containerRef.current && activeTab === 'brush' && maskTool === 'brush') {
             const rect = containerRef.current.getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-                const cx = clientX - rect.left;
-                const cy = clientY - rect.top;
-                cursorRef.current.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
-                if (!isHovering) setIsHovering(true);
-            } else {
-                if (isHovering) setIsHovering(false);
-            }
+            const cx = clientX - rect.left; const cy = clientY - rect.top;
+            cursorRef.current.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
         }
 
         if (!isDrawing || maskTool !== 'brush') return;
-        e.stopPropagation();
-
         const last = currentPathRef.current[currentPathRef.current.length - 1];
         if (Math.abs(last.x - x) > 2 || Math.abs(last.y - y) > 2) {
             currentPathRef.current.push({ x, y });
@@ -363,377 +278,95 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
         if (dragState) {
-            if (!dragState.isMoved) {
-                setActiveMaskId(dragState.id);
-            }
+            if (dragState.mode === 'draw_shape') setActiveMaskId(dragState.id);
+            else if (!dragState.isMoved) setActiveMaskId(dragState.id);
             setDragState(null);
             return;
         }
-
-        if (!isDrawing || maskTool === 'text') return;
+        if (!isDrawing) return;
         setIsDrawing(false);
-        e.stopPropagation();
-
         if (currentPathRef.current.length > 1) {
-            const newId = generateId();
-            const cleanedPrev = annotations.filter(a => (a.text && a.text.trim() !== '') || a.referenceImage || a.type === 'shape' || a.type === 'stamp');
-
-            const newMask: AnnotationObject = {
-                id: newId,
-                type: 'mask_path',
-                points: [...currentPathRef.current],
-                strokeWidth: brushSize,
-                color: '#fff',
-                text: '',
-                createdAt: Date.now()
-            };
-            onChange([...cleanedPrev, newMask]);
-            // setActiveMaskId(newId); // Removed as per request: no text box after brush drawing
+            onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSize, color: '#fff', text: '', createdAt: Date.now() }]);
         }
         currentPathRef.current = [];
     };
 
     const startDrag = (e: React.MouseEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        // @ts-ignore
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        // @ts-ignore
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        e.stopPropagation(); e.preventDefault();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         const { x, y } = getCoordinates(clientX, clientY);
-
         setDragState({
-            id,
-            mode,
-            vertexIndex,
-            startX: x,
-            startY: y,
-            initialX: ann.x || 0,
-            initialY: ann.y || 0,
-            initialW: ann.width || 0,
-            initialH: ann.height || 0,
-            initialPoints: ann.points || [],
-            isMoved: false
+            id, mode, vertexIndex, startX: x, startY: y,
+            initialX: ann.x || 0, initialY: ann.y || 0, initialW: ann.width || 0, initialH: ann.height || 0,
+            initialPoints: ann.points || [], isMoved: false
         });
     };
 
     return (
-        <>
-            <div
-                ref={containerRef}
-                className="absolute inset-0 z-10 w-full h-full"
-                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
-                onMouseEnter={() => setIsHovering(true)}
-                onMouseLeave={() => setIsHovering(false)}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onContextMenu={onContextMenu}
-                onMouseUp={handleMouseUp}
-                onTouchStart={handleMouseDown}
-                onTouchMove={handleMouseMove}
-                onTouchEnd={handleMouseUp}
-            >
+        <div ref={containerRef} className="absolute inset-0 z-10 w-full h-full" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+            <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? (maskTool === 'brush' ? 'cursor-none' : 'cursor-default') : 'cursor-default'}`} />
 
-                <canvas
-                    ref={canvasRef}
-                    className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? (maskTool !== 'brush' ? 'cursor-default' : 'cursor-none') : 'cursor-default'}`}
-                />
+            {activeTab === 'brush' && maskTool === 'brush' && isActive && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize, height: brushSize, left: 0, top: 0 }} />}
 
-                {activeTab === 'brush' && maskTool === 'brush' && isActive && !dragState && (
-                    <div
-                        ref={cursorRef}
-                        className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`}
-                        style={{ width: brushSize, height: brushSize, left: 0, top: 0 }}
-                    />
-                )}
-
-                {/* Summary View (Pixelated Mask Context) */}
-                {activeTab !== 'brush' && annotations.length > 0 && (
-                    <div
-                        className="absolute z-30 cursor-pointer pointer-events-auto"
-                        style={{
-                            left: `${(() => {
-                                let sumX = 0, count = 0;
-                                annotations.forEach(a => {
-                                    if (a.x !== undefined) { sumX += a.x; count++; }
-                                    else if (a.points?.length) a.points.forEach(p => { sumX += p.x; count++; });
-                                });
-                                return count > 0 ? (sumX / count) / width * 100 : 50;
-                            })()}%`,
-                            top: `${(() => {
-                                let sumY = 0, count = 0;
-                                annotations.forEach(a => {
-                                    if (a.y !== undefined) { sumY += a.y; count++; }
-                                    else if (a.points?.length) a.points.forEach(p => { sumY += p.y; count++; });
-                                });
-                                return count > 0 ? (sumY / count) / height * 100 : 50;
-                            })()}%`,
-                            transform: 'translate(-50%, -50%)'
-                        }}
-                        onClick={() => onEditStart?.('brush')}
-                    >
-                        <div
-                            className="bg-black/80 backdrop-blur-md text-white rounded-full border border-white/20 shadow-xl flex items-center gap-2 hover:bg-black transition-all hover:scale-110 active:scale-95"
-                            style={{
-                                padding: `${Math.max(4, width * 0.01)}px ${Math.max(8, width * 0.02)}px`,
-                                fontSize: Math.max(10, width * 0.015)
-                            }}
-                        >
-                            <Pen className="w-3.5 h-3.5" style={{ width: Math.max(10, width * 0.012), height: Math.max(10, width * 0.012) }} />
-                            <span className={`${Typo.Label} whitespace-nowrap`}>
-                                {t?.('annotations_summary')?.replace('{{count}}', String(annotations.length)) || `${annotations.length} Anmerkungen`}
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'brush' && annotations.map(ann => {
-                    const isActiveItem = activeMaskId === ann.id;
-
-                    if (ann.type === 'shape') {
-                        let left = 0, top = 0, w = 0, h = 0;
-
-                        if (ann.shapeType === 'polygon') {
-                            if (!ann.points || ann.points.length < 1) return null;
-                            const pts = ann.points;
-                            const minX = Math.min(...pts.map(p => p.x));
-                            const minY = Math.min(...pts.map(p => p.y));
-                            const maxX = Math.max(...pts.map(p => p.x));
-                            const maxY = Math.max(...pts.map(p => p.y));
-                            const pad = 20;
-
-                            left = (minX - pad) / width * 100;
-                            top = (minY - pad) / height * 100;
-                            w = (maxX - minX + pad * 2) / width * 100;
-                            h = (maxY - minY + pad * 2) / height * 100;
-
-                            const pathData = `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ') + ' Z';
-
-                            return (
-                                <div
-                                    key={ann.id}
-                                    className={`absolute group annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`}
-                                    style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
-                                >
-                                    <svg width="100%" height="100%" viewBox={`${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`} className="overflow-visible pointer-events-none">
-                                        <path d={pathData} fill="rgba(255,255,255,0.1)" stroke="white" strokeWidth="4" className={`drop-shadow-md pointer-events-auto cursor-move ${isActiveItem ? 'stroke-blue-400' : ''}`} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} />
-                                    </svg>
-
-                                    {isActiveItem && (
-                                        <>
-                                            {pts.map((p, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer shadow-md hover:scale-125 transition-transform z-[60]"
-                                                    style={{
-                                                        left: `${(p.x - (minX - pad)) / (maxX - minX + pad * 2) * 100}%`,
-                                                        top: `${(p.y - (minY - pad)) / (maxY - minY + pad * 2) * 100}%`,
-                                                        transform: 'translate(-50%, -50%)'
-                                                    }}
-                                                    onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)}
-                                                />
-                                            ))}
-                                            <button
-                                                className="absolute -top-8 right-0 p-1 bg-red-500 rounded text-white shadow"
-                                                onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        if (ann.shapeType === 'line') {
-                            const p1 = ann.points?.[0] || { x: 0, y: 0 };
-                            const p2 = ann.points?.[1] || { x: 0, y: 0 };
-                            const minX = Math.min(p1.x, p2.x);
-                            const minY = Math.min(p1.y, p2.y);
-                            const maxX = Math.max(p1.x, p2.x);
-                            const maxY = Math.max(p1.y, p2.y);
-                            const pad = 15;
-
-                            left = (minX - pad) / width * 100;
-                            top = (minY - pad) / height * 100;
-                            w = (maxX - minX + pad * 2) / width * 100;
-                            h = (maxY - minY + pad * 2) / height * 100;
-
-                            return (
-                                <div
-                                    key={ann.id}
-                                    className={`absolute group annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`}
-                                    style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
-                                >
-                                    <svg width="100%" height="100%" viewBox={`${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`} className="overflow-visible pointer-events-none">
-                                        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="transparent" strokeWidth="20" className="cursor-move pointer-events-auto" onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} />
-                                        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="white" strokeWidth="4" className="drop-shadow-md pointer-events-none" />
-                                    </svg>
-
-                                    {isActiveItem && (
-                                        <>
-                                            <div
-                                                className="absolute w-4 h-4 bg-blue-500 border border-white rounded-full cursor-pointer shadow-md hover:scale-125 transition-transform"
-                                                style={{
-                                                    left: `${(p1.x - (minX - pad)) / (maxX - minX + pad * 2) * 100}%`,
-                                                    top: `${(p1.y - (minY - pad)) / (maxY - minY + pad * 2) * 100}%`,
-                                                    transform: 'translate(-50%, -50%)'
-                                                }}
-                                                onMouseDown={(e) => startDrag(e, ann.id, 'p1', ann)}
-                                            />
-                                            <div
-                                                className="absolute w-4 h-4 bg-blue-500 border border-white rounded-full cursor-pointer shadow-md hover:scale-125 transition-transform"
-                                                style={{
-                                                    left: `${(p2.x - (minX - pad)) / (maxX - minX + pad * 2) * 100}%`,
-                                                    top: `${(p2.y - (minY - pad)) / (maxY - minY + pad * 2) * 100}%`,
-                                                    transform: 'translate(-50%, -50%)'
-                                                }}
-                                                onMouseDown={(e) => startDrag(e, ann.id, 'p2', ann)}
-                                            />
-                                            <button
-                                                className="absolute top-0 right-0 p-1 bg-red-500 rounded text-white shadow pointer-events-auto"
-                                                onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            >
-                                                <Trash2 className="w-3 h-3" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        // Rect/Circle
-                        left = (ann.x || 0) / width * 100;
-                        top = (ann.y || 0) / height * 100;
-                        w = (ann.width || 0) / width * 100;
-                        h = (ann.height || 0) / height * 100;
-
+            {activeTab === 'brush' && annotations.map(ann => {
+                const active = activeMaskId === ann.id;
+                if (ann.type === 'shape') {
+                    if (ann.shapeType === 'polygon') {
+                        const pts = ann.points;
+                        if (!pts || pts.length < 1) return null;
+                        const minX = Math.min(...pts.map(p => p.x)); const minY = Math.min(...pts.map(p => p.y));
+                        const maxX = Math.max(...pts.map(p => p.x)); const maxY = Math.max(...pts.map(p => p.y));
+                        const p = 20; const left = (minX - p) / width * 100; const top = (minY - p) / height * 100;
+                        const w = (maxX - minX + p * 2) / width * 100; const h = (maxY - minY + p * 2) / height * 100;
+                        const pathData = `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ') + ' Z';
                         return (
-                            <div
-                                key={ann.id}
-                                className={`absolute group annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`}
-                                style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }}
-                                onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}
-                            >
-                                {ann.shapeType === 'rect' ? (
-                                    <div className="w-full h-full border-4 border-white bg-white/10 shadow-sm box-border cursor-move" />
-                                ) : (
-                                    <div className="w-full h-full border-4 border-white bg-white/10 shadow-sm rounded-full box-border cursor-move" />
-                                )}
-
-                                {isActiveItem && (
-                                    <>
-                                        <div className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-blue-500 border border-white cursor-nw-resize hover:scale-110" onMouseDown={(e) => startDrag(e, ann.id, 'tl', ann)} />
-                                        <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-blue-500 border border-white cursor-ne-resize hover:scale-110" onMouseDown={(e) => startDrag(e, ann.id, 'tr', ann)} />
-                                        <div className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-blue-500 border border-white cursor-sw-resize hover:scale-110" onMouseDown={(e) => startDrag(e, ann.id, 'bl', ann)} />
-                                        <div className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-blue-500 border border-white cursor-se-resize hover:scale-110" onMouseDown={(e) => startDrag(e, ann.id, 'br', ann)} />
-                                        <button className="absolute -top-8 right-0 p-1 bg-red-500 rounded text-white shadow-md hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-3 h-3" /></button>
-                                    </>
-                                )}
+                            <div key={ann.id} className="absolute annotation-ui" style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%`, zIndex: active ? 50 : 20 }}>
+                                <svg width="100%" height="100%" viewBox={`${minX - p} ${minY - p} ${maxX - minX + p * 2} ${maxY - minY + p * 2}`} className="overflow-visible pointer-events-none">
+                                    <path d={pathData} fill="rgba(255,255,255,0.1)" stroke={active ? '#3b82f6' : 'white'} strokeWidth="4" className="pointer-events-auto cursor-move" onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} />
+                                </svg>
+                                {active && pts.map((p, idx) => (
+                                    <div key={idx} className="absolute w-3.5 h-3.5 bg-white border-2 border-primary rounded-full cursor-pointer z-[60]" style={{ left: `${(p.x - (minX - p)) / (maxX - minX + p * 2) * 100}%`, top: `${(p.y - (minY - p)) / (maxY - minY + p * 2) * 100}%`, transform: 'translate(-50%,-50%)' }} onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
+                                ))}
+                                {active && <button className="absolute -top-7 right-0 p-1 bg-red-500 rounded text-white shadow" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-3 h-3" /></button>}
                             </div>
                         );
                     }
-
-                    let leftPct = 0, topPct = 0, isTopEdge = false;
-                    if (ann.type === 'stamp') {
-                        if (ann.x === undefined || ann.y === undefined) return null;
-                        leftPct = (ann.x / width) * 100;
-                        topPct = (ann.y / height) * 100;
-                    } else if (ann.type === 'mask_path') {
-                        if (ann.points.length < 1) return null;
-                        let minX = Infinity, minY = Infinity;
-                        ann.points.forEach(p => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
-                        leftPct = (minX / width) * 100;
-                        topPct = (minY / height) * 100;
-                        isTopEdge = (minY / height) < 0.1;
-                    }
-
-                    let horizontalAlign: 'left' | 'center' | 'right' = 'center';
-                    if (leftPct < 15) horizontalAlign = 'left';
-                    else if (leftPct > 85) horizontalAlign = 'right';
-
-                    let containerTransform = 'translate(-50%, 0)';
-                    if (horizontalAlign === 'left') containerTransform = 'translate(-10px, 0)';
-                    if (horizontalAlign === 'right') containerTransform = 'translate(calc(-100% + 10px), 0)';
-                    const verticalShift = isTopEdge ? 'translateY(12px)' : 'translateY(calc(-100% - 12px))';
-                    const finalTransform = ann.type === 'stamp' ? `${containerTransform} translateY(-50%)` : `${containerTransform} ${verticalShift}`;
-
-                    const isPointingUp = isTopEdge;
-                    const arrowBaseStyle: React.CSSProperties = {};
-                    if (horizontalAlign === 'left') arrowBaseStyle.left = '10px';
-                    else if (horizontalAlign === 'right') arrowBaseStyle.right = '10px';
-                    else { arrowBaseStyle.left = '50%'; arrowBaseStyle.transform = 'translateX(-50%)'; }
-
-                    const borderArrowClass = isPointingUp ? "border-b-zinc-200 dark:border-b-zinc-800" : "border-t-zinc-200 dark:border-t-zinc-800";
-                    const borderArrowStyle = { ...arrowBaseStyle };
-                    if (isPointingUp) borderArrowStyle.bottom = '100%'; else borderArrowStyle.top = '100%';
-
-                    const fillArrowClass = isPointingUp ? "border-b-white dark:border-b-zinc-900" : "border-t-white dark:border-t-zinc-900";
-                    const fillArrowStyle = { ...arrowBaseStyle };
-                    if (isPointingUp) { fillArrowStyle.bottom = '100%'; fillArrowStyle.marginBottom = '-1px'; }
-                    else { fillArrowStyle.top = '100%'; fillArrowStyle.marginTop = '-1px'; }
-
-                    if (ann.type === 'reference_image') {
-                        return (
-                            <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${leftPct}%`, top: `${topPct}%` }}>
-                                <div style={{ transform: finalTransform }} className="transition-all duration-200">
-                                    <div className={`${isActiveItem ? OVERLAY_STYLES.ChipContainerActive : OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move`} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)} style={{ fontSize: Math.max(11, width * 0.015) }}>
-                                        <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
-                                        <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-                                        <div className="relative shrink-0 mr-1.5" style={{ width: Math.max(16, width * 0.02), height: Math.max(16, width * 0.02) }}><img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" /></div>
-                                        {isActiveItem ? (
-                                            <input
-                                                value={ann.text || ''}
-                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                                placeholder="Describe..."
-                                                className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
-                                                autoFocus
-                                                onMouseDown={(e) => e.stopPropagation()}
-                                            />
-                                        ) : (
-                                            <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>{ann.text || "Ref"}</span>
-                                        )}
-                                        <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}><X className="w-3 h-3" /></button>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-
+                    const left = (ann.x || 0) / width * 100; const top = (ann.y || 0) / height * 100;
+                    const w = (ann.width || 0) / width * 100; const h = (ann.height || 0) / height * 100;
                     return (
-                        <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${leftPct}%`, top: `${topPct}%` }} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
-                            <div style={{ transform: finalTransform }} className="transition-transform duration-200">
-                                <div
-                                    className={`group/chip relative font-sans font-bold text-white px-2.5 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${isActiveItem ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 scale-105' : 'hover:scale-105'}`}
-                                    style={{ fontSize: Math.max(11, width * 0.015), backgroundColor: 'rgba(0,0,0,0.85)', lineHeight: 1.2 }}
-                                >
-                                    {isActiveItem ? (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                value={ann.text || ''}
-                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') { if (!ann.text || ann.text.trim() === '') deleteAnnotation(ann.id); else setActiveMaskId(null); } }}
-                                                className="bg-transparent border-none outline-none text-white placeholder-zinc-500 p-0 focus:ring-0 h-auto font-bold"
-                                                style={{ fontSize: 'inherit', width: `${Math.max(4, (ann.text?.length || 0) + 1)}ch` }}
-                                                autoFocus
-                                                onMouseDown={(e) => e.stopPropagation()}
-                                            />
-                                            <div className="flex items-center gap-0.5 ml-0.5">
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); if (!ann.text || ann.text.trim() === '') deleteAnnotation(ann.id); else setActiveMaskId(null); }} className="p-1 hover:bg-white/20 rounded-md transition-colors text-white"><Check className="w-3.5 h-3.5" /></button>
-                                                <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-1 hover:bg-red-500 rounded-md transition-colors text-white"><X className="w-3.5 h-3.5" /></button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <>{ann.text || ""}</>
-                                    )}
-                                </div>
-                            </div>
+                        <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%` }} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
+                            <div className={`w-full h-full border-4 border-white bg-white/10 ${ann.shapeType === 'circle' ? 'rounded-full' : ''} cursor-move ${active ? 'border-primary' : ''}`} />
+                            {active && (
+                                <>
+                                    <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-primary border border-white cursor-nw-resize" onMouseDown={(e) => startDrag(e, ann.id, 'tl', ann)} />
+                                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-primary border border-white cursor-ne-resize" onMouseDown={(e) => startDrag(e, ann.id, 'tr', ann)} />
+                                    <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-primary border border-white cursor-sw-resize" onMouseDown={(e) => startDrag(e, ann.id, 'bl', ann)} />
+                                    <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-primary border border-white cursor-se-resize" onMouseDown={(e) => startDrag(e, ann.id, 'br', ann)} />
+                                    <button className="absolute -top-7 right-0 p-1 bg-red-500 rounded text-white shadow" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-3 h-3" /></button>
+                                </>
+                            )}
                         </div>
                     );
-                })}
-            </div>
-        </>
+                }
+
+                let left = 0, top = 0;
+                if (ann.type === 'stamp') { left = (ann.x / width) * 100; top = (ann.y / height) * 100; }
+                else if (ann.type === 'mask_path' && ann.points.length) { left = (ann.points[0].x / width) * 100; top = (ann.points[0].y / height) * 100; }
+
+                return (
+                    <div key={ann.id} className="absolute annotation-ui z-20" style={{ left: `${left}%`, top: `${top}%` }} onMouseDown={(e) => startDrag(e, ann.id, 'move', ann)}>
+                        <div className={`relative px-2.5 py-1.5 rounded-lg shadow-md backdrop-blur-sm transition-all cursor-pointer ${active ? 'bg-primary text-white scale-105' : 'bg-black/80 text-white'}`} style={{ fontSize: Math.max(11, width * 0.015), transform: 'translate(-50%, -100%) translateY(-10px)' }}>
+                            {active ? (
+                                <div className="flex items-center gap-2">
+                                    <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)} className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 w-24 font-bold" autoFocus onMouseDown={e => e.stopPropagation()} />
+                                    <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }} className="p-0.5 hover:bg-white/20 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                            ) : (<span>{ann.text || (ann.type === 'mask_path' ? "Beschreibe..." : "Text")}</span>)}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
     );
 };
