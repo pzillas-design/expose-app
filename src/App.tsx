@@ -474,7 +474,7 @@ export function App() {
                 isGlobalDragOver={isDragOver}
                 onGlobalDragLeave={() => setIsDragOver(false)}
                 t={t}
-                lang={lang}
+                lang={currentLang}
                 fullLibrary={fullLibrary}
                 onAddUserCategory={addUserCategory}
                 onDeleteUserCategory={deleteUserCategory}

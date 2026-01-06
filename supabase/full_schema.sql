@@ -144,7 +144,6 @@ ALTER TABLE public.global_objects_items ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
 BEGIN
-  -- Optional: check JWT for speed, but search_path fix is the key for recursion
   IF (auth.jwt() -> 'app_metadata' ->> 'role' = 'admin') THEN
     RETURN true;
   END IF;
@@ -157,45 +156,44 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- PROFILES
-CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING ((SELECT auth.uid()) = id);
-CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING ((SELECT auth.uid()) = id);
--- Consolidate Admin access: Use separate policies for read/write to avoid "Multiple Permissive Policies" warning
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT TO authenticated USING ((select auth.uid()) = id);
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE TO authenticated USING ((select auth.uid()) = id);
+CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT TO authenticated USING ((select public.is_admin()));
+CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING ((select public.is_admin()));
 
 -- BOARDS
-CREATE POLICY "Users can view their own boards" ON public.boards FOR SELECT USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can insert their own boards" ON public.boards FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can update their own boards" ON public.boards FOR UPDATE USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can delete their own boards" ON public.boards FOR DELETE USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can view their own boards" ON public.boards FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can insert their own boards" ON public.boards FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY "Users can update their own boards" ON public.boards FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can delete their own boards" ON public.boards FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- CANVAS IMAGES
-CREATE POLICY "Users can view their own images" ON public.canvas_images FOR SELECT USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can insert their own images" ON public.canvas_images FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can update their own images" ON public.canvas_images FOR UPDATE USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can delete their own images" ON public.canvas_images FOR DELETE USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can view their own images" ON public.canvas_images FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can insert their own images" ON public.canvas_images FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY "Users can update their own images" ON public.canvas_images FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can delete their own images" ON public.canvas_images FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- GENERATION JOBS
-CREATE POLICY "Users can view their own jobs" ON public.generation_jobs FOR SELECT USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can insert their own jobs" ON public.generation_jobs FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can update their own jobs" ON public.generation_jobs FOR UPDATE USING ((SELECT auth.uid()) = user_id);
-CREATE POLICY "Users can delete their own jobs" ON public.generation_jobs FOR DELETE USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "Users can view their own jobs" ON public.generation_jobs FOR SELECT TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can insert their own jobs" ON public.generation_jobs FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = user_id);
+CREATE POLICY "Users can update their own jobs" ON public.generation_jobs FOR UPDATE TO authenticated USING ((select auth.uid()) = user_id);
+CREATE POLICY "Users can delete their own jobs" ON public.generation_jobs FOR DELETE TO authenticated USING ((select auth.uid()) = user_id);
 
 -- GLOBAL PRESETS
-CREATE POLICY "Public Presets Read" ON public.global_presets FOR SELECT USING (true);
-CREATE POLICY "Admin Presets Insert" ON public.global_presets FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
-CREATE POLICY "Admin Presets Update" ON public.global_presets FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admin Presets Delete" ON public.global_presets FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Public Presets Read" ON public.global_presets FOR SELECT TO public USING (true);
+CREATE POLICY "Admin Presets Insert" ON public.global_presets FOR INSERT TO authenticated WITH CHECK ((select public.is_admin()));
+CREATE POLICY "Admin Presets Update" ON public.global_presets FOR UPDATE TO authenticated USING ((select public.is_admin()));
+CREATE POLICY "Admin Presets Delete" ON public.global_presets FOR DELETE TO authenticated USING ((select public.is_admin()));
 
 -- GLOBAL OBJECTS
-CREATE POLICY "Public Categories Read" ON public.global_objects_categories FOR SELECT USING (true);
-CREATE POLICY "Public Items Read" ON public.global_objects_items FOR SELECT USING (true);
-CREATE POLICY "Admin Categories Insert" ON public.global_objects_categories FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
-CREATE POLICY "Admin Categories Update" ON public.global_objects_categories FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admin Categories Delete" ON public.global_objects_categories FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admin Items Insert" ON public.global_objects_items FOR INSERT TO authenticated WITH CHECK ((SELECT public.is_admin()));
-CREATE POLICY "Admin Items Update" ON public.global_objects_items FOR UPDATE TO authenticated USING ((SELECT public.is_admin()));
-CREATE POLICY "Admin Items Delete" ON public.global_objects_items FOR DELETE TO authenticated USING ((SELECT public.is_admin()));
+CREATE POLICY "Public Categories Read" ON public.global_objects_categories FOR SELECT TO public USING (true);
+CREATE POLICY "Public Items Read" ON public.global_objects_items FOR SELECT TO public USING (true);
+CREATE POLICY "Admin Categories Insert" ON public.global_objects_categories FOR INSERT TO authenticated WITH CHECK ((select public.is_admin()));
+CREATE POLICY "Admin Categories Update" ON public.global_objects_categories FOR UPDATE TO authenticated USING ((select public.is_admin()));
+CREATE POLICY "Admin Categories Delete" ON public.global_objects_categories FOR DELETE TO authenticated USING ((select public.is_admin()));
+CREATE POLICY "Admin Items Insert" ON public.global_objects_items FOR INSERT TO authenticated WITH CHECK ((select public.is_admin()));
+CREATE POLICY "Admin Items Update" ON public.global_objects_items FOR UPDATE TO authenticated USING ((select public.is_admin()));
+CREATE POLICY "Admin Items Delete" ON public.global_objects_items FOR DELETE TO authenticated USING ((select public.is_admin()));
 
 -- 5. STORAGE SETUP
 -- Note: Buckets can be tricky via SQL, manual verification in UI is recommended.
@@ -204,7 +202,7 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('user-content', 'user-con
 -- Storage Policies
 CREATE POLICY "Users can access their own folder" ON storage.objects
     FOR ALL TO authenticated
-    USING (bucket_id = 'user-content' AND (storage.foldername(name))[1] = (SELECT auth.uid())::text);
+    USING (bucket_id = 'user-content' AND (storage.foldername(name))[1] = (select auth.uid())::text);
 
 -- 6. TRIGGERS
 -- Automatically create a profile when a new user signs up
