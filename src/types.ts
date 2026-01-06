@@ -12,7 +12,7 @@ export interface AnnotationObject {
   y?: number;
   width?: number;
   height?: number;
-  shapeType?: 'rect' | 'circle' | 'line';
+  shapeType?: 'rect' | 'circle' | 'line' | 'path';
   strokeWidth: number;
   text?: string;
   itemId?: string;

@@ -42,8 +42,8 @@ interface SideSheetProps {
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
-    maskTool: 'brush' | 'text' | 'shape';
-    onMaskToolChange: (tool: 'brush' | 'text' | 'shape') => void;
+    maskTool: 'brush' | 'text' | 'shape' | 'select';
+    onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
     activeShape: 'rect' | 'circle' | 'line';
     onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
     onUpload?: () => void;
@@ -105,6 +105,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [isCropOpen, setIsCropOpen] = useState(false);
     const [pendingFile, setPendingFile] = useState<string | null>(null);
     const [pendingFileName, setPendingFileName] = useState<string>('');
+    const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
 
     const { size: width, startResizing } = useResizable({
@@ -180,7 +181,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         onUpdateAnnotations(selectedImage.id, newAnns);
     };
 
-    const handleAddReferenceImage = (file: File) => {
+    const handleAddReferenceImage = (file: File, annotationId?: string) => {
+        setPendingAnnotationId(annotationId || null);
         const reader = new FileReader();
         reader.onload = (e) => {
             if (typeof e.target?.result === 'string') {
@@ -210,24 +212,35 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const handleCropComplete = (croppedBase64: string) => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
-        const refCount = currentAnns.filter(a => a.type === 'reference_image').length;
 
-        const labelText = pendingFileName || `${t('image_ref')} ${refCount + 1}`;
+        if (pendingAnnotationId) {
+            // Update existing annotation
+            const updatedAnns = currentAnns.map(ann =>
+                ann.id === pendingAnnotationId ? { ...ann, referenceImage: croppedBase64 } : ann
+            );
+            onUpdateAnnotations(selectedImage.id, updatedAnns);
+        } else {
+            // Create new global reference
+            const refCount = currentAnns.filter(a => a.type === 'reference_image').length;
+            const labelText = pendingFileName || `${t('image_ref')} ${refCount + 1}`;
 
-        const newRef: AnnotationObject = {
-            id: generateId(),
-            type: 'reference_image',
-            points: [],
-            strokeWidth: 0,
-            color: '#fff',
-            text: labelText,
-            referenceImage: croppedBase64,
-            createdAt: Date.now()
-        };
+            const newRef: AnnotationObject = {
+                id: generateId(),
+                type: 'reference_image',
+                points: [],
+                strokeWidth: 0,
+                color: '#fff',
+                text: labelText,
+                referenceImage: croppedBase64,
+                createdAt: Date.now()
+            };
 
-        onUpdateAnnotations(selectedImage.id, [...currentAnns, newRef]);
+            onUpdateAnnotations(selectedImage.id, [...currentAnns, newRef]);
+        }
+
         setPendingFile(null);
         setPendingFileName('');
+        setPendingAnnotationId(null);
     };
 
     const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
@@ -261,6 +274,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 };
             }
             onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
+            onMaskToolChange('select');
             return;
         }
 
@@ -280,6 +294,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 createdAt: Date.now()
             };
             onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+            onMaskToolChange('select');
             return;
         }
 
@@ -299,6 +314,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         };
 
         onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+        onMaskToolChange('select');
     };
 
     const handleGenerateWrapper = (p: string) => {

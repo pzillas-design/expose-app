@@ -25,7 +25,11 @@ export const translations = {
     // SideSheet Header
     no_image: "No Image Selected",
     brush_tool: "Brush Tool",
+    selection_tool: "Selection",
     objects_tool: "Objects",
+    shapes_label: "Shapes",
+    utilities_label: "Utilities",
+    tools_label: "Tools",
 
     // Prompt Tab
     prompt_label: "PROMPT",
@@ -351,7 +355,11 @@ export const translations = {
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",
     brush_tool: "Pinsel Werkzeug",
+    selection_tool: "Auswahl",
     objects_tool: "Objekte",
+    shapes_label: "Formen",
+    utilities_label: "Utilities",
+    tools_label: "Werkzeuge",
 
     // Prompt Tab
     prompt_label: "PROMPT",
