@@ -41,7 +41,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
 
     if (displayImages.length === 0) {
         if (thumbnail) {
-            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-contain p-1" />;
+            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-cover" />;
         }
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
@@ -57,7 +57,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50">
             {itemsToShow.map((src, i) => (
                 <div key={i} className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                    <img src={src} onLoad={handleLoad} onError={handleLoad} className="w-full h-full object-contain p-0.5" />
+                    <img src={src} onLoad={handleLoad} onError={handleLoad} className="w-full h-full object-cover" />
                 </div>
             ))}
             {showPlus && (
@@ -126,7 +126,7 @@ export function BoardsPage({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
 
-                        <button onClick={onCreateBoard} className={`group relative flex flex-col items-center justify-center gap-2 transition-all duration-500 outline-none ${Theme.Colors.Surface} border border-dashed ${Theme.Colors.Border} rounded-2xl aspect-[3/4] hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700`}>
+                        <button onClick={onCreateBoard} className={`group relative flex flex-col items-center justify-center gap-2 transition-all duration-500 outline-none ${Theme.Colors.Surface} border border-dashed ${Theme.Colors.Border} rounded-2xl aspect-square hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700`}>
                             <div className="flex items-center justify-center transition-all duration-500 group-hover:scale-110">
                                 <Plus className="w-20 h-20 text-zinc-900 dark:text-white transition-colors" strokeWidth={0.5} />
                             </div>
@@ -135,7 +135,7 @@ export function BoardsPage({
 
                         {isLoading ? (
                             Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className={`aspect-[3/4] bg-zinc-100 dark:bg-zinc-900 animate-pulse rounded-2xl`} />
+                                <div key={i} className={`aspect-square bg-zinc-100 dark:bg-zinc-900 animate-pulse rounded-2xl`} />
                             ))
                         ) : (
                             boards.map((board) => (
@@ -185,7 +185,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
         <>
             <Link
                 to={`/projects/${board.id}`}
-                className={`group flex flex-col aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`}
+                className={`group flex flex-col aspect-square rounded-2xl overflow-hidden cursor-pointer ${Theme.Effects.Shadow} transition-all duration-500 hover:-translate-y-1 ${Theme.Colors.Surface} border ${Theme.Colors.Border}`}
             >
                 {/* Image Grid Section */}
                 <div className="flex-[2.5] relative bg-zinc-100 dark:bg-zinc-900 overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
