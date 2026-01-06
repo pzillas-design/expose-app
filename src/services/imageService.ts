@@ -267,9 +267,8 @@ export const imageService = {
         }
 
         // Use pre-signed 800px version as thumbSrc if available
-        const thumbOptionsKey = '_800xundefined_q75';
-        let thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey]
-            || (record.thumb_storage_path ? preSignedUrls[record.thumb_storage_path] : null);
+        const thumbOptionsKey = `_800xundefined_q75`;
+        let thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
 
         // AUTO-SIGN FALLBACK FOR OPTIMIZED:
         if (!thumbSignedUrl && record.storage_path) {
@@ -462,8 +461,8 @@ export const imageService = {
         const groups = new Map<string, CanvasImage[]>();
 
         loadedImages.forEach(img => {
-            // Filter out broken links, but KEEP skeletons (which have no src)
-            if (!img.src && !img.isGenerating) return;
+            // No longer filtering out images without src - we let the UI component handle the fallback
+            // This prevents the entire row/canvas from being empty if batch signing fails temporarily.
 
             const key = img.baseName || img.title || 'untitled';
             if (!groups.has(key)) groups.set(key, []);

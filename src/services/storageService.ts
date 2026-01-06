@@ -100,7 +100,7 @@ export const storageService = {
             const cacheKey = path + optionsKey;
             const cached = this._urlCache.get(cacheKey);
             if (cached && cached.expires > Date.now()) {
-                results[path] = cached.url;
+                results[cacheKey] = cached.url;
             } else if (path) {
                 toFetch.push(path);
             }
@@ -127,9 +127,13 @@ export const storageService = {
             if (data) {
                 data.forEach((item: any) => {
                     if (item.signedUrl) {
-                        const fullKey = item.path + optionsKey;
-                        results[fullKey] = item.signedUrl;
-                        this._urlCache.set(fullKey, {
+                        const fullKey = (item.path || item.error === null && item.signedUrl ? toFetch[data.indexOf(item)] : item.path) + optionsKey;
+                        // Supabase sometimes returns the path differently in the result, so we fallback to the input path index if needed
+                        const resolvedPath = item.path || toFetch[data.indexOf(item)];
+                        const finalKey = resolvedPath + optionsKey;
+
+                        results[finalKey] = item.signedUrl;
+                        this._urlCache.set(finalKey, {
                             url: item.signedUrl,
                             expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
                         });
