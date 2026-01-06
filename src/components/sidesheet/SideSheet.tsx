@@ -14,7 +14,7 @@ import { CreationModal } from '@/components/modals/CreationModal';
 // Sub Components
 import { PromptTab } from './PromptTab';
 import { BrushTab } from './BrushTab';
-import { DebugModal } from '../modals/DebugModal';
+import { ObjectsTab } from './ObjectsTab';
 
 interface SideSheetProps {
     selectedImage: CanvasImage | null;
@@ -23,6 +23,8 @@ interface SideSheetProps {
     onModeChange: (mode: 'prompt' | 'brush' | 'objects') => void;
     brushSize: number;
     onBrushSizeChange: (size: number) => void;
+    onBrushResizeStart?: () => void;
+    onBrushResizeEnd?: () => void;
     onGenerate: (prompt: string) => void;
     onUpdateAnnotations: (id: string, anns: any[]) => void;
     onUpdatePrompt: (id: string, text: string) => void;
@@ -42,10 +44,10 @@ interface SideSheetProps {
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
-    maskTool: 'brush' | 'text' | 'shape' | 'select' | 'polygon';
-    onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select' | 'polygon') => void;
-    activeShape: 'rect' | 'circle';
-    onActiveShapeChange: (shape: 'rect' | 'circle') => void;
+    maskTool: 'brush' | 'text' | 'shape' | 'select';
+    onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
+    activeShape: 'rect' | 'circle' | 'line';
+    onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -54,7 +56,6 @@ interface SideSheetProps {
     templates: PromptTemplate[];
     onRefreshTemplates?: () => void;
     userProfile: any;
-    onBrushPreviewingChange?: (active: boolean) => void;
 }
 
 export const SideSheet: React.FC<SideSheetProps> = ({
@@ -64,6 +65,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onModeChange,
     brushSize,
     onBrushSizeChange,
+    onBrushResizeStart,
+    onBrushResizeEnd,
     onGenerate,
     onUpdateAnnotations,
     onUpdatePrompt,
@@ -93,8 +96,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onQualityModeChange,
     templates: globalTemplates,
     onRefreshTemplates,
-    userProfile,
-    onBrushPreviewingChange
+    userProfile
 }) => {
     const [prompt, setPrompt] = useState('');
     const [templates, setTemplates] = useState<PromptTemplate[]>(globalTemplates);
@@ -109,14 +111,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [pendingFileName, setPendingFileName] = useState<string>('');
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
-    const [isDebugOpen, setIsDebugOpen] = useState(false);
-
-    useEffect(() => {
-        // Handle legacy/deprecated 'objects' mode redirect safely
-        if (sideSheetMode === 'objects') {
-            onModeChange('brush');
-        }
-    }, [sideSheetMode, onModeChange]);
 
     const { size: width, startResizing } = useResizable({
         initialSize: 360,
@@ -525,9 +519,11 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                             <BrushTab
                                 brushSize={brushSize}
                                 onBrushSizeChange={onBrushSizeChange}
+                                onBrushResizeStart={onBrushResizeStart}
+                                onBrushResizeEnd={onBrushResizeEnd}
                                 maskTool={maskTool}
                                 onMaskToolChange={onMaskToolChange}
-                                activeShape={activeShape as any}
+                                activeShape={activeShape}
                                 onActiveShapeChange={onActiveShapeChange}
                                 t={t}
                                 currentLang={lang}
@@ -537,13 +533,15 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddUserItem={onAddUserItem}
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
-                                onBrushPreviewingChange={onBrushPreviewingChange}
                             />
                         </div>
                         <DoneButton />
                     </div>
                 );
             case 'objects':
+                // Deprecated: Objects tool is now inside 'brush' tab
+                // Redirect to brush just in case
+                if (sideSheetMode === 'objects') onModeChange('brush');
                 return null;
             default:
                 return null;
@@ -592,27 +590,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 imageSrc={pendingFile}
                 onCropComplete={handleCropComplete}
             />
-
-            {userProfile?.role === 'admin' && (
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
-                    <button
-                        onClick={() => setIsDebugOpen(true)}
-                        className="pointer-events-auto px-4 py-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors text-[10px] uppercase font-bold tracking-widest"
-                    >
-                        Debug
-                    </button>
-                </div>
-            )}
-
-            {selectedImage && (
-                <DebugModal
-                    isOpen={isDebugOpen}
-                    onClose={() => setIsDebugOpen(false)}
-                    image={selectedImage}
-                    prompt={prompt}
-                    t={t}
-                />
-            )}
         </>
     );
 };

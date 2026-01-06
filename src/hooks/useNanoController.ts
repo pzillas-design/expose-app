@@ -76,6 +76,7 @@ export const useNanoController = () => {
         isDragOver, setIsDragOver,
         isSettingsOpen, setIsSettingsOpen,
         isAdminOpen, setIsAdminOpen,
+        isBrushResizing, setIsBrushResizing,
         previousNav, setPreviousNav
     } = useUIState();
 
@@ -340,6 +341,7 @@ export const useNanoController = () => {
             currentBoardId,
             boards,
             isBoardsLoading,
+            isBrushResizing,
             templates
         },
         actions: {
@@ -397,6 +399,7 @@ export const useNanoController = () => {
             fetchBoards,
             resolveBoardIdentifier,
             setResolvingBoardId,
+            setIsBrushResizing,
             handleCreateNew,
             refreshTemplates
         },

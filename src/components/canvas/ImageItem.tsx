@@ -17,8 +17,9 @@ interface ImageItemProps {
     editorState?: {
         mode: 'prompt' | 'brush' | 'objects';
         brushSize: number;
-        maskTool: 'brush' | 'text' | 'shape' | 'select' | 'polygon';
-        activeShape?: 'rect' | 'circle';
+        maskTool: 'brush' | 'text' | 'shape' | 'select';
+        activeShape?: 'rect' | 'circle' | 'line';
+        isBrushResizing?: boolean;
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
@@ -28,7 +29,6 @@ interface ImageItemProps {
     onDelete?: (id: string) => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     t: TranslationFunction;
-    isBrushPreviewing?: boolean;
 }
 
 const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
@@ -168,8 +168,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasRight,
     onDelete,
     onContextMenu,
-    t,
-    isBrushPreviewing = false
+    t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
@@ -258,11 +257,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             activeTab={editorState.mode}
                             maskTool={editorState.maskTool}
                             activeShape={editorState.activeShape}
+                            isBrushResizing={editorState.isBrushResizing}
                             isActive={isSelected}
                             onEditStart={onEditStart}
                             onContextMenu={(e) => onContextMenu?.(e, image.id)}
                             t={t}
-                            isBrushPreviewing={isBrushPreviewing}
                         />
                     </div>
                 )}

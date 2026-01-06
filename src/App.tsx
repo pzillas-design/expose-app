@@ -37,7 +37,7 @@ export function App() {
         currentLang, allImages, fullLibrary, user, userProfile,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
-        resolvingBoardId, loadingProgress
+        resolvingBoardId, loadingProgress, isBrushResizing
     } = state;
 
     const {
@@ -49,7 +49,7 @@ export function App() {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
-        handleModeChange, handleUpdateVariables, refreshTemplates
+        handleModeChange, handleUpdateVariables, refreshTemplates, setIsBrushResizing
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -63,11 +63,8 @@ export function App() {
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
-    // Brush Preview State
-    const [isBrushPreviewing, setIsBrushPreviewing] = useState(false);
-
     // Stable Editor State Object to preserve ImageItem memoization during scroll
-    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape }), [sideSheetMode, brushSize, maskTool, activeShape]);
+    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing]);
 
     // URL Routing Sync
     useEffect(() => {
@@ -136,8 +133,7 @@ export function App() {
     };
 
     const handleAnnotationEditStart = useCallback((mode: 'brush' | 'objects') => {
-        // 'objects' mode is now consolidated into 'brush' tab
-        setSideSheetMode('brush');
+        setSideSheetMode(mode);
         smoothZoomTo(1.0);
     }, [setSideSheetMode, smoothZoomTo]);
 
@@ -158,12 +154,13 @@ export function App() {
         if (e.button !== 0) return;
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a') || target.closest('input')) return;
+
+        // Disable panning in annotation mode to prevent conflicts
+        if (sideSheetMode === 'brush' || sideSheetMode === 'objects') return;
+
         e.preventDefault();
 
         if (refs.scrollContainerRef.current) {
-            // Disable hand tool panning when in brush mode to avoid conflicts with drawing
-            if (sideSheetMode === 'brush') return;
-
             panState.current = {
                 isPanning: true,
                 startX: e.clientX,
@@ -462,7 +459,6 @@ export function App() {
                                                 hasRight={imgIndex < row.items.length - 1}
                                                 onDelete={requestDelete}
                                                 onContextMenu={handleImageContextMenu}
-                                                isBrushPreviewing={img.id === selectedIds[0] && isBrushPreviewing}
                                                 t={t}
                                             />
                                         ))}
@@ -490,6 +486,8 @@ export function App() {
                 onModeChange={handleModeChange}
                 brushSize={brushSize}
                 onBrushSizeChange={setBrushSize}
+                onBrushResizeStart={() => setIsBrushResizing(true)}
+                onBrushResizeEnd={() => setIsBrushResizing(false)}
                 onGenerate={handleGenerate}
                 onUpdateAnnotations={handleUpdateAnnotations}
                 onUpdatePrompt={handleUpdatePrompt}
@@ -514,9 +512,9 @@ export function App() {
                 isBoardEmpty={rows.length === 0}
                 qualityMode={qualityMode}
                 onQualityModeChange={setQualityMode}
+                templates={templates}
                 onRefreshTemplates={refreshTemplates}
                 userProfile={userProfile}
-                onBrushPreviewingChange={setIsBrushPreviewing}
             />
 
             {contextMenu && (
