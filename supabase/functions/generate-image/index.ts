@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-3-pro-image-preview'; // Nano Banana Pro
+        let finalModelName = 'gemini-3-pro-image-preview'; // Nano Banana Pro 
         switch (qualityMode) {
             case 'fast':
                 // Nano Banana: Optimiert auf Speed & Effizienz
@@ -196,7 +196,6 @@ Deno.serve(async (req) => {
         else if (qualityMode === 'pro-4k') imageConfig = { imageSize: '4K' }
 
         // ASPECT RATIO LOGIC
-        // Imagen 3 supports specific aspect ratios. We need to map our arbitrary W/H to the closest one.
         if (sourceImage.realWidth && sourceImage.realHeight) {
             const ratio = sourceImage.realWidth / sourceImage.realHeight;
             let closestRatio = '1:1';
@@ -217,8 +216,6 @@ Deno.serve(async (req) => {
                     closestRatio = key;
                 }
             }
-            // Only add aspect ratio for text-to-image (new generation) or when explicitly creating new variations
-            // For editing/masking, the aspect ratio is usually determined by the input image
             if (!finalSourceBase64 || qualityMode === 'fast') {
                 imageConfig.aspectRatio = closestRatio;
             }
@@ -244,8 +241,10 @@ Deno.serve(async (req) => {
         // 3. Call Gemini
         const geminiPayload = {
             contents: [{ parts: parts }],
-            generationConfig: Object.keys(imageConfig).length > 0 ? imageConfig : undefined
+            generationConfig: Object.keys(imageConfig).length > 0 ? { imageConfig: imageConfig } : undefined
         };
+
+
 
         // PARALLEL: Generate a title for the image
         const titlePromise = (async () => {
