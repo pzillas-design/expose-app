@@ -831,7 +831,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
             {/* PRESET LIBRARY - At the absolute bottom of the side sheet, full width */}
             {(activeInternalTab === 'prompt' || isMulti) && (
-                <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-100 dark:border-zinc-800/10`}>
+                <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
                     <PresetLibrary
                         templates={templates}
                         onSelect={handleSelectPreset}
