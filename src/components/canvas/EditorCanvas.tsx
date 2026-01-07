@@ -342,7 +342,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
             {/* UI Overlay for Annotations */}
             {annotations.map(ann => {
-                const isEditMode = activeTab === 'brush' || activeTab === 'objects';
+                const isEditMode = activeTab === 'brush';
                 const active = currentActiveId === ann.id;
 
                 if (ann.type === 'shape') {
@@ -365,7 +365,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         strokeWidth={active ? 2 : 15}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
-                                            if (!isEditMode) { e.stopPropagation(); onEditStart?.('objects'); setActiveMaskId(ann.id); return; }
+                                            e.stopPropagation();
+                                            setActiveMaskId(ann.id);
                                             startDrag(e, ann.id, 'move', ann);
                                         }}
                                     />
@@ -400,7 +401,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         strokeWidth="20"
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
-                                            if (!isEditMode) { e.stopPropagation(); onEditStart?.('objects'); setActiveMaskId(ann.id); return; }
+                                            e.stopPropagation();
+                                            setActiveMaskId(ann.id);
                                             startDrag(e, ann.id, 'move', ann);
                                         }}
                                     />
@@ -436,7 +438,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 <div
                                     className={`w-full h-full border-4 border-white bg-transparent cursor-move ${active ? 'border-primary ring-2 ring-primary/20' : ''}`}
                                     onMouseDown={(e) => {
-                                        if (!isEditMode) { e.stopPropagation(); onEditStart?.('objects'); setActiveMaskId(ann.id); return; }
+                                        e.stopPropagation();
+                                        setActiveMaskId(ann.id);
                                         startDrag(e, ann.id, 'move', ann);
                                     }}
                                 />
@@ -468,7 +471,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     return (
                         <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%` }}
                             onMouseDown={(e) => {
-                                if (!isEditMode) { e.stopPropagation(); onEditStart?.('objects'); setActiveMaskId(ann.id); return; }
+                                e.stopPropagation();
+                                setActiveMaskId(ann.id);
                                 startDrag(e, ann.id, 'move', ann);
                             }}>
                             <div className={`relative flex items-center bg-black text-white shadow-xl transition-all duration-300 origin-bottom`}
