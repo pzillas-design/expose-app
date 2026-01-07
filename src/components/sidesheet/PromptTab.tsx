@@ -284,6 +284,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     return (
         <div className="h-full relative flex flex-col overflow-hidden">
+            {/* Hidden file input for annotation reference images */}
+            <input
+                type="file"
+                ref={annFileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleAnnFileChange}
+            />
+
             {/* Tab Header - Only show if not multiple selection (Info tab only makes sense for single image) */}
             {!isMulti && (
                 <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} relative`}>
@@ -830,27 +839,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         </div>
                     )}
 
-                    {/* Preset Library - Now part of the main scroll flow */}
-                    {(activeInternalTab === 'prompt' || isMulti) && (
-                        <div className={`mt-auto ${Theme.Colors.PanelBg} w-full`}>
-                            <input
-                                type="file"
-                                ref={annFileInputRef}
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleAnnFileChange}
-                            />
-                            <PresetLibrary
-                                templates={templates}
-                                onSelect={handleSelectPreset}
-                                onTogglePin={onTogglePin || (() => { })}
-                                onRequestCreate={openCreatePreset}
-                                onRequestEdit={openEditPreset}
-                                t={t}
-                                currentLang={currentLang}
-                            />
-                        </div>
-                    )}
+
+                    {/* Preset Library removed - now only shown inline above */}
 
 
                 </div>
