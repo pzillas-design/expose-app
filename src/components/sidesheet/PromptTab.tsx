@@ -529,11 +529,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <div className="flex w-full">
                                         <button
                                             onClick={handleDoGenerate}
-                                            disabled={selectedImage.isGenerating}
+                                            disabled={selectedImage.isGenerating || (!prompt?.trim() && annotations.length === 0)}
                                             className={`
-                                                relative flex-1 flex items-center justify-center py-3 rounded-lg transition-all shadow-sm
-                                                ${selectedImage.isGenerating
-                                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
+                                                relative flex-1 flex items-center justify-center py-3.5 rounded-lg transition-all shadow-sm
+                                                ${(selectedImage.isGenerating || (!prompt?.trim() && annotations.length === 0))
+                                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed opacity-50'
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
                                         >

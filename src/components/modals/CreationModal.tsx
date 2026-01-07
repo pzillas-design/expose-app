@@ -344,7 +344,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         variant="primary"
                         onClick={handleGenerate}
                         disabled={!prompt.trim()}
-                        className="w-full h-12"
+                        className="w-full"
                     >
                         {t('generate')}
                     </Button>

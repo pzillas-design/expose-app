@@ -503,7 +503,7 @@ export function App() {
                                     />
                                     <Button
                                         variant="primary"
-                                        className="w-full !py-4"
+                                        className="w-full"
                                         onClick={() => document.getElementById('canvas-welcome-upload')?.click()}
                                         icon={<Upload className="w-5 h-5" />}
                                     >
@@ -512,7 +512,7 @@ export function App() {
 
                                     <Button
                                         variant="secondary"
-                                        className="w-full !py-4"
+                                        className="w-full"
                                         onClick={() => setIsCreationModalOpen(true)}
                                         icon={<Plus className="w-5 h-5" />}
                                     >

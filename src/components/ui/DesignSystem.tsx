@@ -204,11 +204,11 @@ export const Button: React.FC<ButtonProps> = ({
 
     // Aesthetic classes
     const variants = {
-        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3 ${Typo.ButtonLabel}`,
+        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3.5 ${Typo.ButtonLabel}`,
 
-        secondary: `${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Colors.TextPrimary} ${Theme.Colors.SurfaceHover} hover:border-zinc-200 dark:hover:border-zinc-700 py-3 ${Typo.ButtonLabel}`,
+        secondary: `${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Colors.TextPrimary} ${Theme.Colors.SurfaceHover} hover:border-zinc-200 dark:hover:border-zinc-700 py-3.5 ${Typo.ButtonLabel}`,
 
-        danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-3 ${Typo.ButtonLabel}`,
+        danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-3.5 ${Typo.ButtonLabel}`,
 
         ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white py-2 px-3 ${Typo.ButtonLabel}`
     };
