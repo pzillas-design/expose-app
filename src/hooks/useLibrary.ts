@@ -20,7 +20,6 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
 
     // Combine System + Global + User Library
     const fullLibrary = useMemo(() => {
-        // Combine System + Global + User Library
         const mergedItems: Record<string, LibraryItem> = {};
 
         // 1. System & Global items
@@ -120,6 +119,10 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
             console.error("Failed to fetch global library:", err);
         }
     }, [lang]);
+
+    useEffect(() => {
+        syncGlobalItems();
+    }, [syncGlobalItems]);
 
     const addUserCategory = useCallback((label: string) => {
         const newCat: LibraryCategory = {
