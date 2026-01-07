@@ -472,9 +472,9 @@ export function App() {
 
                     {rows.length === 0 && !isDragOver && !isCanvasLoading && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="flex flex-col items-center gap-4 text-zinc-100 opacity-20 dark:opacity-10 scale-[2.5]">
-                                <Plus className="w-12 h-12" strokeWidth={1} />
-                                <span className="text-[10px] tracking-[0.3em] font-light uppercase">Drop here</span>
+                            <div className="flex flex-col items-center gap-2 text-zinc-300 dark:text-zinc-700 opacity-50">
+                                <Plus className="w-8 h-8" strokeWidth={1} />
+                                <span className="text-[10px] tracking-[0.2em] font-medium uppercase">{t('drop_here' as any) || 'Drop images here'}</span>
                             </div>
                         </div>
                     )}

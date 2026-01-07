@@ -166,9 +166,26 @@ export const useNanoController = () => {
         }
     }, [user, currentBoardId, selectAndSnap]);
 
+    // --- Ensure Board ID Helper ---
+    const ensureBoardId = useCallback(async (): Promise<string> => {
+        if (currentBoardId) return currentBoardId;
+
+        // No board active, create one automatically
+        const newBoard = await createBoard();
+        if (newBoard) {
+            setCurrentBoardId(newBoard.id);
+            return newBoard.id;
+        }
+
+        // Fallback: generate a temporary ID (shouldn't happen if createBoard works)
+        const tempId = generateId();
+        setCurrentBoardId(tempId);
+        return tempId;
+    }, [currentBoardId, createBoard, setCurrentBoardId]);
+
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
-        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t
+        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t, ensureBoardId
     });
 
     const { performGeneration, performNewGeneration } = useGeneration({

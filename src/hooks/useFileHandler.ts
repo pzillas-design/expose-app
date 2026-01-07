@@ -4,6 +4,7 @@ import { generateThumbnail } from '@/utils/imageUtils';
 import { imageService } from '@/services/imageService';
 import { CanvasImage, ImageRow } from '@/types';
 
+
 interface UseFileHandlerProps {
     user: any;
     isAuthDisabled: boolean;
@@ -14,6 +15,7 @@ interface UseFileHandlerProps {
     currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;
     t: (key: any) => string;
+    ensureBoardId: () => Promise<string>; // NEW: Function to ensure a board exists
 }
 
 export const useFileHandler = ({
@@ -25,7 +27,8 @@ export const useFileHandler = ({
     showToast,
     currentBoardId,
     setIsSettingsOpen,
-    t
+    t,
+    ensureBoardId
 }: UseFileHandlerProps) => {
 
     const processFiles = useCallback((files: File[]) => {
@@ -45,6 +48,9 @@ export const useFileHandler = ({
                         const baseName = file.name.replace(/\.[^/.]+$/, "");
                         const newId = generateId();
 
+                        // CRITICAL FIX: Ensure we have a board before uploading
+                        const activeBoardId = await ensureBoardId();
+
                         generateThumbnail(event.target!.result as string).then(async (thumbSrc) => {
                             const newImage: CanvasImage = {
                                 id: newId,
@@ -56,7 +62,7 @@ export const useFileHandler = ({
                                 title: baseName, baseName: baseName,
                                 version: 1, isGenerating: false, originalSrc: event.target!.result as string,
                                 userDraftPrompt: '',
-                                boardId: currentBoardId || undefined,
+                                boardId: activeBoardId, // Use the ensured board ID
                                 createdAt: Date.now(),
                                 updatedAt: Date.now()
                             };
@@ -93,7 +99,7 @@ export const useFileHandler = ({
             };
             reader.readAsDataURL(file);
         });
-    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, ensureBoardId]);
 
     const processFile = useCallback((file: File) => processFiles([file]), [processFiles]);
 
