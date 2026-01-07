@@ -94,26 +94,23 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
     // Sync Global Objects
     const syncGlobalItems = useCallback(async () => {
         try {
-            const [cats, items] = await Promise.all([
-                adminService.getObjectCategories(),
-                adminService.getObjectItems()
-            ]);
+            const items = await adminService.getObjectItems();
 
             const resolvedLang = lang === 'auto'
                 ? (navigator.language.split('-')[0] === 'de' ? 'de' : 'en')
                 : lang;
 
-            const grouped: LibraryCategory[] = cats.map(c => ({
-                id: c.id,
-                label: resolvedLang === 'de' ? c.label_de : c.label_en,
+            const grouped: LibraryCategory[] = [{
+                id: 'stamps',
+                label: resolvedLang === 'de' ? 'Stempel' : 'Stamps',
                 icon: '📦',
                 lang: resolvedLang as 'de' | 'en',
-                items: items.filter(i => i.category_id === c.id).map(i => ({
+                items: items.map(i => ({
                     id: i.id,
                     label: resolvedLang === 'de' ? i.label_de : i.label_en,
                     icon: i.icon || '📦'
                 }))
-            }));
+            }];
             setGlobalLibrary(grouped);
         } catch (err) {
             console.error("Failed to fetch global library:", err);

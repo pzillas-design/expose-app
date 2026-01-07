@@ -41,13 +41,11 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
     };
 
     const handleAddItem = async () => {
-        const newItemId = generateId();
         try {
             const newItem = {
-                id: newItemId,
-                category_id: 'basics',
-                label_de: 'Neues Objekt',
-                label_en: 'New Object',
+                id: generateId(),
+                label_de: 'Neuer Stempel',
+                label_en: 'New Stamp',
                 icon: '📦',
                 order: items.length
             };
@@ -100,7 +98,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         const existing = items.find(i => i.id === itemId);
         if (!existing) return;
 
-        const updatedItem = { ...existing, ...updates, category_id: 'basics' };
+        const updatedItem = { ...existing, ...updates };
         setItems(prev => prev.map(i => i.id === itemId ? updatedItem : i));
 
         try {

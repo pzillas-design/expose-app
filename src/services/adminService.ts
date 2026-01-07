@@ -230,37 +230,37 @@ export const adminService = {
     },
 
     /**
-     * Objects Library Management
+     * Objects Library Management (Flat Stamps)
      */
     async getObjectCategories(): Promise<any[]> {
-        const { data, error } = await supabase.from('global_objects_categories').select('*').order('order', { ascending: true });
-        if (error) throw error;
-        return data || [];
+        // Return a virtual 'All' category for backward compatibility if needed, 
+        // or just return empty as we are going flat.
+        return [{ id: 'stamps', label_de: 'Stempel', label_en: 'Stamps', icon: '📦' }];
     },
 
     async getObjectItems(): Promise<any[]> {
-        const { data, error } = await supabase.from('global_objects_items').select('*').order('order', { ascending: true });
+        const { data, error } = await supabase.from('global_stamps').select('*').order('order', { ascending: true });
         if (error) throw error;
         return data || [];
     },
 
-    async updateObjectCategory(category: any): Promise<void> {
-        const { error } = await supabase.from('global_objects_categories').upsert(category);
-        if (error) throw error;
+    async updateObjectCategory(_category: any): Promise<void> {
+        // No-op or handle if needed
     },
 
-    async deleteObjectCategory(id: string): Promise<void> {
-        const { error } = await supabase.from('global_objects_categories').delete().eq('id', id);
-        if (error) throw error;
+    async deleteObjectCategory(_id: string): Promise<void> {
+        // No-op
     },
 
     async updateObjectItem(item: any): Promise<void> {
-        const { error } = await supabase.from('global_objects_items').upsert(item);
+        // Clean up item for flat table (remove category_id)
+        const { category_id, ...flatItem } = item;
+        const { error } = await supabase.from('global_stamps').upsert(flatItem);
         if (error) throw error;
     },
 
     async deleteObjectItem(id: string): Promise<void> {
-        const { error } = await supabase.from('global_objects_items').delete().eq('id', id);
+        const { error } = await supabase.from('global_stamps').delete().eq('id', id);
         if (error) throw error;
     }
 };
