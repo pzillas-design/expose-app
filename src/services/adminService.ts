@@ -119,10 +119,56 @@ export const adminService = {
     /**
      * Preset Management
      */
-    async getGlobalPresets(): Promise<any[]> {
-        const { data, error } = await supabase.from('global_presets').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        return (data || []).map(p => ({
+    /**
+     * Preset Management
+     */
+    async getGlobalPresets(userId?: string): Promise<any[]> {
+        // Fetch all presets
+        const { data: allPresets, error: presetsError } = await supabase
+            .from('global_presets')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (presetsError) throw presetsError;
+
+        if (!userId) {
+            return (allPresets || []).map(p => this._mapDbPreset(p));
+        }
+
+        // Fetch user preferences (hidden presets)
+        const { data: prefs, error: prefsError } = await supabase
+            .from('user_preset_preferences')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (prefsError) throw prefsError;
+
+        const hiddenIds = new Set(prefs?.filter(pr => pr.is_hidden).map(pr => pr.preset_id) || []);
+
+        // Identify forked presets owned by the user
+        const userForks = allPresets?.filter(p => p.user_id === userId && p.original_id !== null) || [];
+        const forkedOriginalIds = new Set(userForks.map(f => f.original_id));
+
+        // Filter:
+        // 1. Keep all user-owned presets
+        // 2. Keep system presets (user_id IS NULL) ONLY IF:
+        //    - Not hidden by user
+        //    - Not forked by user (user has their own version)
+        const filteredPresets = allPresets?.filter(p => {
+            const isSystem = p.user_id === null;
+            if (!isSystem) return p.user_id === userId; // Own presets always shown
+
+            const isHidden = hiddenIds.has(p.id);
+            const isForked = forkedOriginalIds.has(p.id);
+
+            return !isHidden && !isForked;
+        });
+
+        return (filteredPresets || []).map(p => this._mapDbPreset(p));
+    },
+
+    _mapDbPreset(p: any) {
+        return {
             ...p,
             isPinned: p.is_pinned,
             isCustom: p.is_custom,
@@ -130,12 +176,17 @@ export const adminService = {
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
             lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
-        }));
+        };
     },
 
-    async updateGlobalPreset(preset: any): Promise<void> {
+    async updateGlobalPreset(preset: any, userId?: string): Promise<void> {
+        const isSystemPreset = !preset.user_id;
+        const isUserAction = userId && userId !== preset.user_id;
+
+        // FORKING LOGIC: If a user edits a system preset, create a fork
         const dbPreset: any = {
-            id: preset.id,
+            id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : preset.id,
+            original_id: (isSystemPreset && isUserAction) ? preset.id : (preset.original_id || null),
             title: preset.title,
             label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
@@ -146,11 +197,29 @@ export const adminService = {
             lang: preset.lang,
             updated_at: new Date().toISOString(),
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
-            controls: preset.controls
+            controls: preset.controls,
+            user_id: userId || preset.user_id || null // Maintain existing owner or set new one
         };
+
         const { error } = await supabase.from('global_presets').upsert(dbPreset);
         if (error) {
             console.error('AdminService: updateGlobalPreset failed!', error);
+            throw error;
+        }
+    },
+
+    async hideGlobalPreset(presetId: string, userId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_preset_preferences')
+            .upsert({
+                user_id: userId,
+                preset_id: presetId,
+                is_hidden: true,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id,preset_id' });
+
+        if (error) {
+            console.error('AdminService: hideGlobalPreset failed!', error);
             throw error;
         }
     },

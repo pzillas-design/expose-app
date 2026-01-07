@@ -124,7 +124,7 @@ export const useNanoController = () => {
         boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
     } = useBoards(user?.id);
 
-    const { templates, refreshTemplates } = usePresets();
+    const { templates, refreshTemplates, saveTemplate, deleteTemplate } = usePresets(user?.id);
 
     // --- Board Image Loading ---
     React.useEffect(() => {
@@ -407,7 +407,9 @@ export const useNanoController = () => {
         setResolvingBoardId,
         setIsBrushResizing,
         handleCreateNew,
-        refreshTemplates
+        refreshTemplates,
+        savePreset: saveTemplate,
+        deletePreset: deleteTemplate
     }), [
         setRows, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll, getMostVisibleItem, setQualityMode,
         setThemeMode, setLang, handleModeChange, setSideSheetMode, setBrushSize, setMaskTool, setActiveShape,
@@ -418,7 +420,7 @@ export const useNanoController = () => {
         handleUpdateVariables, onAddReference, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
-        refreshTemplates
+        refreshTemplates, saveTemplate, deleteTemplate
     ]);
 
     return React.useMemo(() => ({

@@ -216,46 +216,62 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                     </div>
                 ) : (
                     <>
-                        <div className="flex-1 overflow-y-auto p-8 lg:p-10 w-full mx-auto space-y-12 no-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-12 w-full mx-auto space-y-16 no-scrollbar bg-zinc-50/50 dark:bg-zinc-950/20">
 
-                            {/* Header Info */}
-                            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-8">
+                            {/* Sticky Header with Actions */}
+                            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-8 sticky top-0 bg-transparent backdrop-blur-sm z-10 pt-2">
                                 <div className="space-y-1">
-                                    <span className="text-[9px] uppercase tracking-widest font-black text-zinc-300 dark:text-zinc-600">ID: {selectedId}</span>
-                                    <h1 className={`${Typo.H1} text-2xl font-black`}>{formState.de.title || 'Neuer Preset'}</h1>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full bg-zinc-900 dark:bg-white" />
+                                        <span className="text-[10px] uppercase tracking-widest font-black text-zinc-400 dark:text-zinc-500">ID: {selectedId}</span>
+                                    </div>
+                                    <h1 className={`${Typo.H1} text-3xl font-black tracking-tight`}>{formState.de.title || 'Neue Vorlage'}</h1>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(true)} className="text-zinc-400 hover:text-red-500 h-9 px-3">
+                                <div className="flex items-center gap-3">
+                                    <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(true)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 h-10 w-10 p-0 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-red-200 transition-all">
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
-                                    <Button onClick={handleSave} disabled={isSaving} className="h-9 px-8 shadow-sm" icon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}>
+                                    <Button onClick={handleSave} disabled={isSaving} className="h-10 px-8 rounded-xl shadow-lg shadow-zinc-200/50 dark:shadow-none hover:scale-[1.02] active:scale-[0.98] transition-all" icon={isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}>
                                         {isSaving ? 'Speichert...' : t('save')}
                                     </Button>
                                 </div>
                             </div>
 
-                            {/* Dual Language Form */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                            {/* Dual Language Form Sections */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 
                                 {/* DE Column */}
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black text-amber-600 px-0 py-0.5 rounded uppercase tracking-widest">Deutsch</span>
+                                <div className="space-y-10 group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-4 w-1 rounded-full bg-amber-500" />
+                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.2em]">DEUTSCH</span>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <SectionHeader className="mb-1 text-[9px]">Titel (DE)</SectionHeader>
-                                            <TableInput className="text-lg font-black h-10 px-0 bg-transparent" value={formState.de.title} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, title: e.target.value } }))} placeholder="z.B. Fotos weichzeichnen" />
+                                    <div className="p-8 rounded-3xl bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/20 dark:shadow-none space-y-8 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-1">Titel der Vorlage</label>
+                                            <Input
+                                                className="text-xl font-bold h-12 px-5 bg-zinc-50/50 dark:bg-zinc-950/30 border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-400 rounded-2xl transition-all"
+                                                value={formState.de.title}
+                                                onChange={e => setFormState(s => ({ ...s, de: { ...s.de, title: e.target.value } }))}
+                                                placeholder="z.B. Fotos weichzeichnen"
+                                            />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <SectionHeader className="mb-1 text-[9px]">Prompt (DE)</SectionHeader>
-                                            <TextArea className="min-h-[180px] text-[13px] leading-relaxed p-4 bg-zinc-50 dark:bg-zinc-900/30 border-none text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-900 rounded-2xl" value={formState.de.prompt} onChange={e => setFormState(s => ({ ...s, de: { ...s.de, prompt: e.target.value } }))} placeholder="Prompt-Text hier..." />
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-1">Prompt Instruktion</label>
+                                            <TextArea
+                                                className="min-h-[220px] text-[14px] leading-relaxed p-5 bg-zinc-50/50 dark:bg-zinc-950/30 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-950 focus:ring-1 focus:ring-zinc-400 rounded-2xl transition-all resize-none"
+                                                value={formState.de.prompt}
+                                                onChange={e => setFormState(s => ({ ...s, de: { ...s.de, prompt: e.target.value } }))}
+                                                placeholder="Prompt-Text hier..."
+                                            />
                                         </div>
 
-                                        <div className="pt-4">
-                                            <SectionHeader className="mb-4 text-[9px]">Variablen (DE)</SectionHeader>
+                                        <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                            <div className="flex items-center justify-between mb-5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Variablen Management</label>
+                                            </div>
                                             <ControlsEditor
                                                 controls={formState.de.controls}
                                                 onChange={(ctrls) => setFormState(s => ({ ...s, de: { ...s.de, controls: ctrls } }))}
@@ -265,24 +281,37 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 </div>
 
                                 {/* EN Column */}
-                                <div className="space-y-8">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black text-blue-600 px-0 py-0.5 rounded uppercase tracking-widest">English</span>
+                                <div className="space-y-10 group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-4 w-1 rounded-full bg-blue-500" />
+                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.2em]">ENGLISH</span>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <div className="space-y-2">
-                                            <SectionHeader className="mb-1 text-[9px]">Title (EN)</SectionHeader>
-                                            <TableInput className="text-lg font-black h-10 px-0 bg-transparent" value={formState.en.title} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, title: e.target.value } }))} placeholder="e.g. Blur Photos" />
+                                    <div className="p-8 rounded-3xl bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/20 dark:shadow-none space-y-8 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-1">Template Title</label>
+                                            <Input
+                                                className="text-xl font-bold h-12 px-5 bg-zinc-50/50 dark:bg-zinc-950/30 border-zinc-200 dark:border-zinc-800 focus:ring-1 focus:ring-zinc-400 rounded-2xl transition-all"
+                                                value={formState.en.title}
+                                                onChange={e => setFormState(s => ({ ...s, en: { ...s.en, title: e.target.value } }))}
+                                                placeholder="e.g. Blur Photos"
+                                            />
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <SectionHeader className="mb-1 text-[9px]">Prompt (EN)</SectionHeader>
-                                            <TextArea className="min-h-[180px] text-[13px] leading-relaxed p-4 bg-zinc-50 dark:bg-zinc-900/30 border-none text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-900 rounded-2xl" value={formState.en.prompt} onChange={e => setFormState(s => ({ ...s, en: { ...s.en, prompt: e.target.value } }))} placeholder="Prompt text here..." />
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-1">Prompt Instruction</label>
+                                            <TextArea
+                                                className="min-h-[220px] text-[14px] leading-relaxed p-5 bg-zinc-50/50 dark:bg-zinc-950/30 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 font-mono focus:bg-white dark:focus:bg-zinc-950 focus:ring-1 focus:ring-zinc-400 rounded-2xl transition-all resize-none"
+                                                value={formState.en.prompt}
+                                                onChange={e => setFormState(s => ({ ...s, en: { ...s.en, prompt: e.target.value } }))}
+                                                placeholder="Prompt text here..."
+                                            />
                                         </div>
 
-                                        <div className="pt-4">
-                                            <SectionHeader className="mb-4 text-[9px]">Variables (EN)</SectionHeader>
+                                        <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                            <div className="flex items-center justify-between mb-5">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Variables Management</label>
+                                            </div>
                                             <ControlsEditor
                                                 controls={formState.en.controls}
                                                 onChange={(ctrls) => setFormState(s => ({ ...s, en: { ...s.en, controls: ctrls } }))}
@@ -370,40 +399,40 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
     const grid = "grid-cols-[1fr_2fr_32px]";
 
     return (
-        <div className="border border-zinc-100 dark:border-zinc-800 rounded-2xl overflow-hidden bg-zinc-50/30 dark:bg-zinc-900/10">
+        <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden bg-white dark:bg-zinc-950/20 shadow-sm transition-all shadow-zinc-200/5 dark:shadow-none">
             {/* Header */}
-            <div className={`grid ${grid} bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-100 dark:border-zinc-800 text-[9px] font-black uppercase tracking-wider text-zinc-400`}>
-                <div className="p-2 pl-4">Label</div>
-                <div className="p-2 border-l border-zinc-100 dark:border-zinc-800">Optionen (kommagetrennt)</div>
-                <div className="p-2"></div>
+            <div className={`grid ${grid} bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500`}>
+                <div className="p-3 pl-5">Label</div>
+                <div className="p-3 border-l border-zinc-200 dark:border-zinc-800">Optionen (kommagetrennt)</div>
+                <div className="p-3"></div>
             </div>
 
             {/* Content */}
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
                 {controls.map((ctrl) => (
-                    <div key={ctrl.id} className={`grid ${grid} items-center group hover:bg-white dark:hover:bg-zinc-900 transition-colors`}>
-                        <div className="p-0.5 pl-3">
+                    <div key={ctrl.id} className={`grid ${grid} items-center group hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-all duration-200`}>
+                        <div className="p-1 pl-4">
                             <TableInput
                                 value={localValues[ctrl.id]?.label ?? ctrl.label}
                                 onChange={e => handleLabelChange(ctrl.id, e.target.value)}
-                                className="text-[11px] font-bold border-none h-8"
+                                className="text-[13px] font-bold border-none h-10 bg-transparent focus:bg-white dark:focus:bg-zinc-900 rounded-lg px-2 transition-all placeholder:font-normal placeholder:opacity-30"
                                 placeholder="z.B. Intensität"
                             />
                         </div>
-                        <div className="p-0.5 border-l border-zinc-100 dark:border-zinc-800">
+                        <div className="p-1 border-l border-zinc-100 dark:border-zinc-800/50">
                             <TableInput
                                 value={localValues[ctrl.id]?.options ?? ctrl.options.map(o => o.label).join(', ')}
                                 onChange={e => handleOptionsChange(ctrl.id, e.target.value)}
-                                className="text-[11px] text-zinc-500 border-none h-8"
+                                className="text-[13px] text-zinc-600 dark:text-zinc-400 border-none h-10 bg-transparent focus:bg-white dark:focus:bg-zinc-900 rounded-lg px-2 transition-all placeholder:font-normal placeholder:opacity-30"
                                 placeholder="leicht, mittel, stark"
                             />
                         </div>
-                        <div className="p-1 flex items-center justify-center">
+                        <div className="p-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pr-3">
                             <button
                                 onClick={() => removeRow(ctrl.id)}
-                                className="text-zinc-200 hover:text-red-500 transition-colors p-1"
+                                className="text-zinc-300 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20"
                             >
-                                <Trash2 className="w-3 h-3" />
+                                <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     </div>
@@ -412,9 +441,9 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
                 {/* Add Row Button */}
                 <button
                     onClick={addRow}
-                    className="w-full py-2.5 flex items-center justify-center gap-2 text-[10px] font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-900 transition-all"
+                    className="w-full py-4 flex items-center justify-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-all active:scale-[0.99]"
                 >
-                    <Plus className="w-3.5 h-3.5" /> Variable hinzufügen
+                    <Plus className="w-4 h-4" /> Variable hinzufügen
                 </button>
             </div>
         </div>

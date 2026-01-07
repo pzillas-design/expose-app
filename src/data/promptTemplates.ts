@@ -51,9 +51,9 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         ]
     },
     {
-        id: 'sys-season',
-        title: 'Jahreszeit',
-        prompt: 'Ändere den Look des Bildes, indem du Jahreszeit und Uhrzeit anpasst.',
+        id: 'sys-season-advanced',
+        title: 'Saison & Uhrzeit',
+        prompt: 'Inszeniere das Bild neu indem du die Jahreszeit anpasst.',
         tags: ['Außen', 'Mood'],
         isPinned: true,
         isCustom: false,
@@ -62,10 +62,31 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         controls: [
             {
                 id: 'c-season',
-                label: 'Saison',
+                label: 'SAISON',
                 options: [
-                    { id: 'op-summer', label: 'Hochsommer', value: 'Hochsommer, sattes Grün, strahlender Sonnenschein' },
-                    { id: 'op-winter', label: 'Winterwonderland', value: 'Winterwunderland, alles mit Schnee bedeckt, kalt' },
+                    { id: 'opt-summer', label: 'Sommer', value: 'Sommer' },
+                    { id: 'opt-autumn', label: 'Herbst', value: 'Herbst' },
+                    { id: 'opt-winter', label: 'Winter', value: 'Winter' },
+                    { id: 'opt-spring', label: 'Frühling', value: 'Frühling' }
+                ]
+            },
+            {
+                id: 'c-time',
+                label: 'UHRZEIT',
+                options: [
+                    { id: 'opt-noon', label: 'Mittag', value: 'Mittag' },
+                    { id: 'opt-afternoon', label: 'Nachmittag', value: 'Nachmittag' },
+                    { id: 'opt-golden', label: 'Golden Hour', value: 'Golden Hour' },
+                    { id: 'opt-blue', label: 'Blue Hour', value: 'Blue Hour' },
+                    { id: 'opt-night', label: 'Nacht', value: 'Nacht' }
+                ]
+            },
+            {
+                id: 'c-mood',
+                label: 'MOOD',
+                options: [
+                    { id: 'opt-realistic', label: 'realistisch', value: 'realistisch' },
+                    { id: 'opt-atmos', label: 'atmosphärisch', value: 'atmosphärisch' }
                 ]
             }
         ]
@@ -98,19 +119,65 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
                     { id: 'opt-living', label: 'Living/Dining', value: 'living and dining room area' },
                     { id: 'opt-kitchen', label: 'Kitchen', value: 'kitchen' },
                     { id: 'opt-bedroom', label: 'Bedroom', value: 'bedroom' },
+                    { id: 'opt-kids', label: 'Kids Room', value: 'kids room' },
+                    { id: 'opt-bath', label: 'Bathroom', value: 'bathroom' },
+                    { id: 'opt-hall', label: 'Hallway', value: 'hallway' },
+                    { id: 'opt-office', label: 'Home Office', value: 'home office' },
+                    { id: 'opt-outdoor', label: 'Outdoor/Terrace', value: 'outdoor terrace' },
+                ]
+            },
+            {
+                id: 'c-style',
+                label: 'Style',
+                options: [
+                    { id: 'opt-modern', label: 'Modern', value: 'modern interior design style' },
+                    { id: 'opt-scandi', label: 'Scandinavian', value: 'scandinavian interior design style' },
+                    { id: 'opt-minimal', label: 'Minimalist', value: 'minimalist interior design style' },
+                    { id: 'opt-timeless', label: 'Timeless', value: 'timeless interior design style, classic elegance' },
                 ]
             }
         ]
     },
     {
-        id: 'sys-season-en',
-        title: 'Seasons',
-        prompt: 'Change the look of the image by adjusting season and time of day.',
+        id: 'sys-season-advanced-en',
+        title: 'Season & Time',
+        prompt: 'Re-imagine the image by adjusting the season.',
         tags: ['Exterior', 'Mood'],
         isPinned: true,
         isCustom: false,
         usageCount: 0,
-        lang: 'en'
+        lang: 'en',
+        controls: [
+            {
+                id: 'c-season',
+                label: 'SEASON',
+                options: [
+                    { id: 'opt-summer', label: 'Summer', value: 'Summer' },
+                    { id: 'opt-autumn', label: 'Autumn', value: 'Autumn' },
+                    { id: 'opt-winter', label: 'Winter', value: 'Winter' },
+                    { id: 'opt-spring', label: 'Spring', value: 'Spring' }
+                ]
+            },
+            {
+                id: 'c-time',
+                label: 'TIME',
+                options: [
+                    { id: 'opt-noon', label: 'Noon', value: 'Noon' },
+                    { id: 'opt-afternoon', label: 'Afternoon', value: 'Afternoon' },
+                    { id: 'opt-golden', label: 'Golden Hour', value: 'Golden Hour' },
+                    { id: 'opt-blue', label: 'Blue Hour', value: 'Blue Hour' },
+                    { id: 'opt-night', label: 'Night', value: 'Night' }
+                ]
+            },
+            {
+                id: 'c-mood',
+                label: 'MOOD',
+                options: [
+                    { id: 'opt-realistic', label: 'realistic', value: 'realistic' },
+                    { id: 'opt-atmos', label: 'atmospheric', value: 'atmospheric' }
+                ]
+            }
+        ]
     },
     {
         id: 'sys-clear-room-en',

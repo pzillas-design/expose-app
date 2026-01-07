@@ -232,19 +232,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 const vals = controlValues[c.id];
                 if (vals && vals.length > 0) {
                     if (c.label) {
-                        appendedParts.push(`${c.label}: ${vals.join(", ")}`);
+                        // Title Case for label: SAISON -> Saison, MOOD -> Mood
+                        const label = c.label.charAt(0).toUpperCase() + c.label.slice(1).toLowerCase();
+                        appendedParts.push(`${label}: ${vals.join(", ")}`);
                     } else {
                         appendedParts.push(...vals);
                     }
                 }
             });
             if (appendedParts.length > 0) {
-                // Smart join: add comma if prompt doesn't end with one/colon, but only if prompt isn't empty
                 if (final) {
-                    const needsComma = !final.endsWith(',') && !final.endsWith(':');
-                    final += (needsComma ? ", " : " ") + appendedParts.join(", ");
+                    // Start with a period if missing
+                    if (!final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) {
+                        final += '.';
+                    }
+                    final += " " + appendedParts.join(". ");
                 } else {
-                    final = appendedParts.join(", ");
+                    final = appendedParts.join(". ");
                 }
             }
         }
@@ -380,9 +384,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 </div>
                                                 <div className="flex flex-col gap-1.5 pb-2">
                                                     {annotations.filter(a => a.type === 'reference_image').map((ann) => {
-                                                        const isRefType = true;
-                                                        const defaultLabel = `${t('image_ref')}`;
-                                                        const displayText = ann.text || defaultLabel;
+                                                        const displayText = ann.text || `${t('image_ref')}`;
                                                         const isEditing = editingId === ann.id;
 
                                                         return (
@@ -410,7 +412,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         />
                                                                     ) : (
                                                                         <span
-                                                                            onClick={() => startEditing(ann, defaultLabel)}
+                                                                            onClick={() => startEditing(ann, `${t('image_ref')}`)}
                                                                             className={`flex-1 truncate cursor-text ${!ann.text ? 'text-zinc-400 italic' : ''}`}
                                                                         >
                                                                             {displayText}
@@ -445,8 +447,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 </div>
                                                 <div className="flex flex-col gap-1.5 pb-2">
                                                     {annotations.filter(a => a.type !== 'reference_image').map((ann) => {
-                                                        const isRefType = false;
-                                                        const defaultLabel = '';
                                                         const displayText = ann.text || t('untitled');
                                                         const isEditing = editingId === ann.id;
 
@@ -490,7 +490,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                         />
                                                                     ) : (
                                                                         <span
-                                                                            onClick={() => startEditing(ann, defaultLabel)}
+                                                                            onClick={() => startEditing(ann, '')}
                                                                             className={`flex-1 truncate cursor-text ${!ann.text ? 'text-zinc-400 italic' : ''}`}
                                                                         >
                                                                             {displayText}
@@ -523,10 +523,20 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </div>
                                 </div>
 
-
-
-
+                                {/* PRESET LIBRARY - Integrated flat list */}
+                                <div className="mt-4 flex-1 flex flex-col min-h-0 border-t border-zinc-100 dark:border-zinc-800/50">
+                                    <PresetLibrary
+                                        templates={templates}
+                                        onSelect={handleSelectPreset}
+                                        onTogglePin={onDeleteTemplate || (() => { })}
+                                        onRequestCreate={openCreatePreset}
+                                        onRequestEdit={openEditPreset}
+                                        t={t}
+                                        currentLang={currentLang}
+                                    />
+                                </div>
                             </div>
+
 
                             <div className="flex flex-col">
                                 {/* Tools Buttons */}

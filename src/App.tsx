@@ -49,7 +49,8 @@ export function App() {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
-        handleModeChange, handleUpdateVariables, refreshTemplates, setIsBrushResizing
+        handleModeChange, handleUpdateVariables, refreshTemplates, setIsBrushResizing,
+        savePreset, deletePreset
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');

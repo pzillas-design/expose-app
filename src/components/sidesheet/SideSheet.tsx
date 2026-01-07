@@ -55,6 +55,8 @@ interface SideSheetProps {
     onQualityModeChange: (mode: GenerationQuality) => void;
     templates: PromptTemplate[];
     onRefreshTemplates?: () => void;
+    onSaveTemplate?: (template: any) => Promise<void>;
+    onDeleteTemplate?: (id: string) => Promise<void>;
     userProfile: any;
 }
 
@@ -96,14 +98,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onQualityModeChange,
     templates: globalTemplates,
     onRefreshTemplates,
+    onSaveTemplate,
+    onDeleteTemplate,
     userProfile
 }) => {
     const [prompt, setPrompt] = useState('');
-    const [templates, setTemplates] = useState<PromptTemplate[]>(globalTemplates);
-
-    useEffect(() => {
-        setTemplates(globalTemplates);
-    }, [globalTemplates]);
+    const templates = globalTemplates;
 
     // Crop Modal State
     const [isCropOpen, setIsCropOpen] = useState(false);
@@ -366,52 +366,28 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
     const handleGenerateWrapper = (p: string) => {
         onGenerate(p);
-        if (!p.trim()) return;
-        setTemplates(prev => {
-            const existing = prev.find(t => t.prompt === p);
-            if (existing) {
-                return prev.map(t => t.id === existing.id ? { ...t, lastUsed: Date.now(), usageCount: t.usageCount + 1 } : t);
-            }
-            const newHistoryItem: PromptTemplate = {
-                id: generateId(),
-                title: p.length > 45 ? p.substring(0, 45) + '...' : p,
-                prompt: p,
-                tags: [],
-                isPinned: false,
-                isCustom: false,
-                usageCount: 1,
-                lastUsed: Date.now(),
-                isHistory: true,
-                createdAt: Date.now(),
-                lang: lang
-            };
-            return [...prev, newHistoryItem];
-        });
     };
 
     const handleTogglePin = (id: string) => {
-        setTemplates(prev => prev.map(t => t.id === id ? { ...t, isPinned: !t.isPinned } : t));
+        // In the new logic, TogglePin on a system preset means Hiding it
+        // and on a user preset it might mean deleting or actual pinning.
+        // For now, let's wire it to onDeleteTemplate which handles the logic.
+        onDeleteTemplate?.(id);
     };
 
     const handleDeleteTemplate = (id: string) => {
-        setTemplates(prev => prev.filter(t => t.id !== id));
+        onDeleteTemplate?.(id);
     };
 
     const handleUpdateTemplate = (id: string, updates: Partial<PromptTemplate>) => {
-        setTemplates(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+        const existing = templates.find(t => t.id === id);
+        if (existing) {
+            onSaveTemplate?.({ ...existing, ...updates });
+        }
     };
 
     const handleCreateTemplate = (newT: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => {
-        const template: PromptTemplate = {
-            ...newT,
-            id: generateId(),
-            isPinned: true,
-            isCustom: true,
-            usageCount: 0,
-            lastUsed: Date.now(),
-            createdAt: Date.now()
-        };
-        setTemplates(prev => [...prev, template]);
+        onSaveTemplate?.(newT);
     };
 
     // --- RENDER CONTENT ---
