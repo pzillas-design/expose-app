@@ -251,8 +251,8 @@ export const translations = {
     welcome_empty_desc: "Laden Sie Fotos zum Bearbeiten hoch oder generieren Sie etwas Neues.",
     empty_board_title: "Dein Board ist leer",
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
-    upload_image_edit: "BILD HOCHLADEN & EDITIEREN",
-    generate_new: "NEU GENERIEREN",
+    upload_image_edit: "Hochladen",
+    generate_new: "Bild generieren",
 
     // Settings / User
     login_btn: "Anmelden",
