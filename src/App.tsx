@@ -593,7 +593,24 @@ export function App() {
                     onCreateBoard={handleCreateBoardAndNavigate}
                 />
             } />
-            <Route path="/admin" element={<AdminDashboard user={user} t={t} />} />
+            <Route path="/admin" element={
+                <AdminDashboard
+                    user={user}
+                    userProfile={userProfile}
+                    credits={credits}
+                    onCreateBoard={handleCreateBoardAndNavigate}
+                    t={t}
+                />
+            } />
+            <Route path="/admin/:tab" element={
+                <AdminDashboard
+                    user={user}
+                    userProfile={userProfile}
+                    credits={credits}
+                    onCreateBoard={handleCreateBoardAndNavigate}
+                    t={t}
+                />
+            } />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />
         </Routes>
