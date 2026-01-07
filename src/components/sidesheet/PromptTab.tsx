@@ -657,17 +657,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </Button>
                                 )}
                             </div>
-
-                            {/* PRESET LIBRARY - At the end, full width */}
-                            <PresetLibrary
-                                templates={templates}
-                                onSelect={handleSelectPreset}
-                                onTogglePin={onDeleteTemplate || (() => { })}
-                                onRequestCreate={openCreatePreset}
-                                onRequestEdit={openEditPreset}
-                                t={t}
-                                currentLang={currentLang}
-                            />
                         </div>
                     ) : (
                         /* Info Tab Content */
@@ -837,11 +826,23 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     )}
 
 
-                    {/* Preset Library removed - now only shown inline above */}
-
-
                 </div>
             </div>
+
+            {/* PRESET LIBRARY - At the absolute bottom of the side sheet, full width */}
+            {(activeInternalTab === 'prompt' || isMulti) && (
+                <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-100 dark:border-zinc-800/10`}>
+                    <PresetLibrary
+                        templates={templates}
+                        onSelect={handleSelectPreset}
+                        onTogglePin={onDeleteTemplate || (() => { })}
+                        onRequestCreate={openCreatePreset}
+                        onRequestEdit={openEditPreset}
+                        t={t}
+                        currentLang={currentLang}
+                    />
+                </div>
+            )}
 
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
