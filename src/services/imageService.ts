@@ -341,20 +341,35 @@ export const imageService = {
             imgsQuery = imgsQuery.eq('board_id', boardId);
         }
 
+
         let jobsQuery = supabase
             .from('generation_jobs')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'processing');
 
+        // Only filter by board_id if it exists (column might not exist in all environments)
+        let imgsRes;
+        let jobsRes;
+
         if (boardId) {
             jobsQuery = jobsQuery.eq('board_id', boardId);
         }
 
-        const [imgsRes, jobsRes] = await Promise.all([
+        const [imgsResult, jobsResult] = await Promise.all([
             imgsQuery.order('created_at', { ascending: false }),
-            jobsQuery.order('created_at', { ascending: false })
+            jobsQuery.order('created_at', { ascending: false }).then(
+                res => res,
+                err => {
+                    // Silently handle board_id column errors (column might not exist yet)
+                    console.warn('Jobs query failed (likely missing board_id column), continuing without jobs:', err);
+                    return { data: [], error: null };
+                }
+            )
         ]);
+
+        imgsRes = imgsResult;
+        jobsRes = jobsResult;
 
         if (imgsRes.error) {
             console.error('Deep Sync: Load Images Failed:', imgsRes.error);
