@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pen, ChevronDown, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Plus, Pen, ChevronDown, ChevronRight, MoreVertical, Trash2 } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
 import { Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { createPortal } from 'react-dom';
@@ -96,7 +96,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                             onClick={(e) => handleOpenMenu(e, t.id)}
                                             className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
                                         >
-                                            <MoreHorizontal className="w-4 h-4" />
+                                            <MoreVertical className="w-4 h-4" />
                                         </button>
                                     </button>
                                 ))
@@ -143,7 +143,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                             onClick={(e) => handleOpenMenu(e, t.id)}
                                             className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
                                         >
-                                            <MoreHorizontal className="w-4 h-4" />
+                                            <MoreVertical className="w-4 h-4" />
                                         </button>
                                     </button>
                                 ))
@@ -174,14 +174,13 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                             animate-in fade-in zoom-in-95 duration-100 flex flex-col
                         `}
                         style={{
-                            top: menuState.y,
+                            top: menuState.y + 30, // Position below the button
                             left: menuState.x - 160
                         }}
                     >
                         {(() => {
                             const template = templates.find(t => t.id === menuState.id);
                             if (!template) return null;
-                            const isOwned = template.user_id !== null;
 
                             return (
                                 <>
@@ -199,21 +198,19 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                         </span>
                                     </button>
 
-                                    {isOwned && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onTogglePin(template.id);
-                                                setMenuState(null);
-                                            }}
-                                            className={`flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer w-full ${Theme.Geometry.Radius}`}
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
-                                            <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>
-                                                {t('delete') || 'Delete'}
-                                            </span>
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onTogglePin(template.id);
+                                            setMenuState(null);
+                                        }}
+                                        className={`flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer w-full ${Theme.Geometry.Radius}`}
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
+                                        <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>
+                                            {t('delete') || 'Delete'}
+                                        </span>
+                                    </button>
                                 </>
                             );
                         })()}

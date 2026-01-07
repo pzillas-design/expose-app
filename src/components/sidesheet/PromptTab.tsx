@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
@@ -601,7 +601,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 ${isModelDropdownOpen ? 'bg-black/10' : ''}
                                                             `}
                                                         >
-                                                            <Settings2 className="w-4 h-4" />
+                                                            <MoreVertical className="w-4 h-4" />
                                                         </div>
                                                     </Tooltip>
                                                 </div>
