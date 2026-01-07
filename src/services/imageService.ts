@@ -342,34 +342,18 @@ export const imageService = {
         }
 
 
-        let jobsQuery = supabase
+        // Fetch jobs WITHOUT board_id filter (column might not exist yet)
+        // We'll filter client-side if needed
+        const jobsQuery = supabase
             .from('generation_jobs')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'processing');
 
-        // Only filter by board_id if it exists (column might not exist in all environments)
-        let imgsRes;
-        let jobsRes;
-
-        if (boardId) {
-            jobsQuery = jobsQuery.eq('board_id', boardId);
-        }
-
-        const [imgsResult, jobsResult] = await Promise.all([
+        const [imgsRes, jobsRes] = await Promise.all([
             imgsQuery.order('created_at', { ascending: false }),
-            jobsQuery.order('created_at', { ascending: false }).then(
-                res => res,
-                err => {
-                    // Silently handle board_id column errors (column might not exist yet)
-                    console.warn('Jobs query failed (likely missing board_id column), continuing without jobs:', err);
-                    return { data: [], error: null };
-                }
-            )
+            jobsQuery.order('created_at', { ascending: false })
         ]);
-
-        imgsRes = imgsResult;
-        jobsRes = jobsResult;
 
         if (imgsRes.error) {
             console.error('Deep Sync: Load Images Failed:', imgsRes.error);
@@ -379,7 +363,13 @@ export const imageService = {
         const dbImages = imgsRes.data || [];
 
         // 1.5. Clean up and filter stale jobs (older than 6 minutes)
-        const rawJobs = jobsRes.data || [];
+        let rawJobs = jobsRes.data || [];
+
+        // Client-side filter by board_id if it exists in the jobs
+        if (boardId && rawJobs.length > 0 && 'board_id' in rawJobs[0]) {
+            rawJobs = rawJobs.filter(j => j.board_id === boardId);
+        }
+
         const sixMinutesAgo = Date.now() - (6 * 60 * 1000);
 
         const activeJobs = rawJobs.filter(j => new Date(j.created_at).getTime() >= sixMinutesAgo);
