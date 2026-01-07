@@ -239,7 +239,7 @@ export const adminService = {
     },
 
     async getObjectItems(): Promise<any[]> {
-        const { data, error } = await supabase.from('global_stamps').select('*').order('order', { ascending: true });
+        const { data, error } = await supabase.from('global_objects_items').select('*').order('order', { ascending: true });
         if (error) throw error;
         return data || [];
     },
@@ -255,12 +255,12 @@ export const adminService = {
     async updateObjectItem(item: any): Promise<void> {
         // Clean up item for flat table (remove category_id)
         const { category_id, ...flatItem } = item;
-        const { error } = await supabase.from('global_stamps').upsert(flatItem);
+        const { error } = await supabase.from('global_objects_items').upsert(flatItem);
         if (error) throw error;
     },
 
     async deleteObjectItem(id: string): Promise<void> {
-        const { error } = await supabase.from('global_stamps').delete().eq('id', id);
+        const { error } = await supabase.from('global_objects_items').delete().eq('id', id);
         if (error) throw error;
     }
 };
