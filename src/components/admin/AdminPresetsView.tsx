@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Trash2, Loader2, Bookmark, Check, ArrowRight, GripVertical } from 'lucide-react';
 import { TranslationFunction, PromptTemplate, PresetControl } from '@/types';
 import { Typo, Button, Input, TextArea, SectionHeader, Theme, IconButton, TableInput } from '@/components/ui/DesignSystem';
@@ -190,17 +190,18 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 onClick={() => handleSelect(group.baseId)}
                                 className={`w-full text-left px-5 py-3 flex items-center justify-between group transition-all border-l-2 ${selectedId === group.baseId
                                     ? 'bg-zinc-100/80 dark:bg-zinc-800/50 border-zinc-900 dark:border-white'
-                                    : 'border-transparent hover:bg-zinc-100/30 dark:hover:bg-zinc-800/20'}`}
+                                    : 'border-transparent hover:bg-zinc-100/30 dark:hover:bg-zinc-800/20'
+                                    } `}
                             >
                                 <div className="flex-1 min-w-0">
-                                    <div className={`text-[13px] font-bold truncate ${selectedId === group.baseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                                    <div className={`text-[13px] font-bold truncate ${selectedId === group.baseId ? 'text-zinc-900 dark:text-white' : 'text-zinc-600 dark:text-zinc-400'} `}>
                                         {group.de?.title || group.baseId}
                                     </div>
                                     <div className="text-[9px] text-zinc-400 truncate font-medium opacity-60">
                                         ID: {group.baseId}
                                     </div>
                                 </div>
-                                <ArrowRight className={`w-3 h-3 transition-transform ${selectedId === group.baseId ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0 group-hover:opacity-40'}`} />
+                                <ArrowRight className={`w-3 h-3 transition-transform ${selectedId === group.baseId ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0 group-hover:opacity-40'} `} />
                             </button>
                         ))
                     )}
@@ -228,8 +229,8 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                     <h1 className={`${Typo.H1} text-xl font-black tracking-tight`}>{formState.de.title || 'Neue Vorlage'}</h1>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(true)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 h-8 w-8 p-0 flex items-center justify-center rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 transition-all">
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                    <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(true)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 h-9 w-9 p-0 flex items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 transition-all">
+                                        <Trash2 className="w-5 h-5" />
                                     </Button>
                                     <Button onClick={handleSave} disabled={isSaving} className="h-8 px-5 rounded-md shadow-sm font-bold text-[11px]" icon={isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}>
                                         {isSaving ? 'Speichert...' : t('save').toUpperCase()}
@@ -348,6 +349,17 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
 const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onChange: (c: PresetControl[]) => void }) => {
     // Local state to hold the raw string values for each input to prevent "vanishing spaces" while typing
     const [localValues, setLocalValues] = useState<Record<string, { label: string, options: string }>>({});
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (containerRef.current) {
+            const textareas = containerRef.current.querySelectorAll('textarea');
+            textareas.forEach(ta => {
+                ta.style.height = 'auto';
+                ta.style.height = `${ta.scrollHeight}px`;
+            });
+        }
+    }, [controls]);
 
     const handleUpdate = (id: string, updates: Partial<PresetControl>) => {
         onChange(controls.map(c => c.id === id ? { ...c, ...updates } : c));
@@ -402,7 +414,7 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
     const grid = "grid-cols-[1fr_2fr_32px]";
 
     return (
-        <div className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm transition-all shadow-zinc-200/5 dark:shadow-none">
+        <div ref={containerRef} className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm transition-all shadow-zinc-200/5 dark:shadow-none">
             {/* Header */}
             <div className={`grid ${grid} bg-zinc-50/50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500`}>
                 <div className="p-2.5 pl-4">Label</div>
@@ -413,7 +425,7 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
             {/* Content */}
             <div className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
                 {controls.map((ctrl) => (
-                    <div key={ctrl.id} className={`grid ${grid} items-center group hover:bg-zinc-50/30 dark:hover:bg-zinc-900/30 transition-all duration-200`}>
+                    <div key={ctrl.id} className={`grid ${grid} items-start group hover:bg-zinc-50/30 dark:hover:bg-zinc-900/30 transition-all duration-200`}>
                         <div className="p-0.5">
                             <TableInput
                                 value={localValues[ctrl.id]?.label ?? ctrl.label}
@@ -436,12 +448,12 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
                                 }}
                             />
                         </div>
-                        <div className="p-0.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                        <div className="p-0.5 pt-1.5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pr-2">
                             <button
                                 onClick={() => removeRow(ctrl.id)}
-                                className="text-zinc-300 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
+                                className="text-zinc-300 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
                             >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
