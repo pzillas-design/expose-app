@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info } from 'lucide-react';
+import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, RotateCcw, RotateCw, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { InfoFilled } from '@/components/ui/CustomIcons';
@@ -113,6 +113,45 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
+    const [history, setHistory] = useState<AnnotationObject[][]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    // Initial history when image changes
+    useEffect(() => {
+        if (selectedImage?.id) {
+            const currentAnns = selectedImage.annotations || [];
+            setHistory([currentAnns]);
+            setHistoryIndex(0);
+        }
+    }, [selectedImage?.id]);
+
+    const updateAnnotationsWithHistory = (newAnns: AnnotationObject[]) => {
+        if (!selectedImage) return;
+
+        // Push to undo stack
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newAnns);
+        if (newHistory.length > 50) newHistory.shift();
+
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+
+        onUpdateAnnotations(selectedImage.id, newAnns);
+    };
+
+    const handleUndo = () => {
+        if (!selectedImage || historyIndex <= 0) return;
+        const prevIndex = historyIndex - 1;
+        setHistoryIndex(prevIndex);
+        onUpdateAnnotations(selectedImage.id, history[prevIndex]);
+    };
+
+    const handleRedo = () => {
+        if (!selectedImage || historyIndex >= history.length - 1) return;
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        onUpdateAnnotations(selectedImage.id, history[nextIndex]);
+    };
 
     const { size: width, startResizing } = useResizable({
         initialSize: 360,
@@ -178,13 +217,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const deleteAnnotation = (annId: string) => {
         if (!selectedImage || !selectedImage.annotations) return;
         const newAnns = selectedImage.annotations.filter(a => a.id !== annId);
-        onUpdateAnnotations(selectedImage.id, newAnns);
+        updateAnnotationsWithHistory(newAnns);
     };
 
     const updateAnnotation = (annId: string, patch: Partial<AnnotationObject>) => {
         if (!selectedImage || !selectedImage.annotations) return;
         const newAnns = selectedImage.annotations.map(a => a.id === annId ? { ...a, ...patch } : a);
-        onUpdateAnnotations(selectedImage.id, newAnns);
+        updateAnnotationsWithHistory(newAnns);
     };
 
     const handleAddReferenceImage = (file: File, annotationId?: string) => {
@@ -224,7 +263,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             const updatedAnns = currentAnns.map(ann =>
                 ann.id === pendingAnnotationId ? { ...ann, referenceImage: croppedBase64 } : ann
             );
-            onUpdateAnnotations(selectedImage.id, updatedAnns);
+            updateAnnotationsWithHistory(updatedAnns);
         } else {
             // Create new global reference
             const refCount = currentAnns.filter(a => a.type === 'reference_image').length;
@@ -241,7 +280,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 createdAt: Date.now()
             };
 
-            onUpdateAnnotations(selectedImage.id, [...currentAnns, newRef]);
+            updateAnnotationsWithHistory([...currentAnns, newRef]);
         }
 
         setPendingFile(null);
@@ -270,7 +309,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 itemId: itemId,
                 createdAt: Date.now()
             };
-            onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+            updateAnnotationsWithHistory([...currentAnns, newStamp]);
             onMaskToolChange('select');
             return;
         }
@@ -278,7 +317,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         // Handle CLEAR ALL MASKS
         if (itemId === 'util:clear_masks') {
             const nonMaskAnns = currentAnns.filter(a => a.type !== 'mask_path');
-            onUpdateAnnotations(selectedImage.id, nonMaskAnns);
+            updateAnnotationsWithHistory(nonMaskAnns);
             return;
         }
 
@@ -297,7 +336,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             createdAt: Date.now()
         };
 
-        onUpdateAnnotations(selectedImage.id, [...currentAnns, newStamp]);
+        updateAnnotationsWithHistory([...currentAnns, newStamp]);
         onMaskToolChange('select');
     };
 
@@ -362,7 +401,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             };
         }
 
-        onUpdateAnnotations(selectedImage.id, [...currentAnns, newShape]);
+        updateAnnotationsWithHistory([...currentAnns, newShape]);
         onMaskToolChange('select');
     };
 
@@ -403,7 +442,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     );
 
     const DoneButton = () => (
-        <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg}`}>
+        <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} mt-auto`}>
             <Button
                 variant="primary"
                 onClick={() => onModeChange('prompt')}
@@ -413,6 +452,16 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 {t('done')}
             </Button>
         </div>
+    );
+
+    const ToolSwitcherItem = ({ icon: Icon, active, onClick, tooltip }: { icon: any, active: boolean, onClick: () => void, tooltip?: string }) => (
+        <IconButton
+            icon={<Icon className={`w-4 h-4 ${active ? 'text-zinc-900 dark:text-white' : 'text-zinc-400'}`} />}
+            onClick={onClick}
+            active={active}
+            tooltip={tooltip}
+            className={`flex-1 !rounded-xl h-10 ${active ? 'bg-zinc-100 dark:bg-zinc-800 shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}`}
+        />
     );
 
     const renderSelectedContent = () => {
@@ -484,9 +533,71 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             case 'brush':
                 if (isMulti) return null;
                 return (
-                    <div className="flex flex-col h-full">
-                        <SubHeader title={t('annotate')} />
-                        <div className={`flex-1 overflow-hidden ${Theme.Colors.PanelBg}`}>
+                    <div className="flex flex-col h-full overflow-hidden">
+                        {/* THE NEW NORDIC TOOLBAR */}
+                        <div className={`flex flex-col shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+                            {/* Title & Undo/Redo Row */}
+                            <div className="flex items-center justify-between px-3 h-12">
+                                <IconButton
+                                    icon={<ChevronLeft className="w-4 h-4" />}
+                                    onClick={() => onModeChange('prompt')}
+                                    tooltip={t('back')}
+                                />
+                                <span className={`${Typo.Label} ${Theme.Colors.TextPrimary} text-[11px] tracking-widest uppercase opacity-60`}>
+                                    {t('annotate')}
+                                </span>
+                                <div className="flex items-center gap-0.5">
+                                    <IconButton
+                                        icon={<RotateCcw className="w-3.5 h-3.5" />}
+                                        onClick={handleUndo}
+                                        disabled={historyIndex <= 0}
+                                        tooltip="Undo"
+                                    />
+                                    <IconButton
+                                        icon={<RotateCw className="w-3.5 h-3.5" />}
+                                        onClick={handleRedo}
+                                        disabled={historyIndex >= history.length - 1}
+                                        tooltip="Redo"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Tool Switch Row */}
+                            <div className="flex items-center justify-center gap-1.5 px-4 pb-3">
+                                <ToolSwitcherItem
+                                    icon={MousePointer2}
+                                    active={maskTool === 'select'}
+                                    onClick={() => onMaskToolChange('select')}
+                                    tooltip={t('selection_tool')}
+                                />
+                                <ToolSwitcherItem
+                                    icon={Pen}
+                                    active={maskTool === 'brush'}
+                                    onClick={() => onMaskToolChange('brush')}
+                                    tooltip="Brush"
+                                />
+                                <ToolSwitcherItem
+                                    icon={Shapes}
+                                    active={maskTool === 'shape'}
+                                    onClick={() => onMaskToolChange('shape')}
+                                    tooltip="Shapes"
+                                />
+                                <ToolSwitcherItem
+                                    icon={Package}
+                                    active={maskTool === 'stamps'}
+                                    onClick={() => onMaskToolChange('stamps')}
+                                    tooltip="Stamps"
+                                />
+                                <ToolSwitcherItem
+                                    icon={Type}
+                                    active={maskTool === 'text'}
+                                    onClick={() => onMaskToolChange('text')}
+                                    tooltip="Text"
+                                />
+                            </div>
+                        </div>
+
+                        <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
                                 onBrushSizeChange={onBrushSizeChange}
