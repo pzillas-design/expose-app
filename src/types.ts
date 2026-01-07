@@ -13,6 +13,7 @@ export interface AnnotationObject {
   width?: number;
   height?: number;
   shapeType?: 'rect' | 'circle' | 'line';
+  rotation?: number; // In degrees
   strokeWidth: number;
   text?: string;
   itemId?: string;

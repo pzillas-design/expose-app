@@ -117,6 +117,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [history, setHistory] = useState<AnnotationObject[][]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
+    const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
     const { confirm } = useItemDialog();
 
     // Initial history when image changes
@@ -299,8 +300,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
-
-
+        const cx = selectedImage.width / 2;
+        const cy = selectedImage.height / 2;
 
         // Handle REMOVE stamp
         if (itemId === 'util:remove') {
@@ -308,16 +309,17 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 id: generateId(),
                 type: 'stamp',
                 points: [],
-                x: selectedImage.width / 2,
-                y: selectedImage.height / 2,
+                x: cx,
+                y: cy,
                 strokeWidth: 0,
-                color: '#ef4444', // Red-500
+                color: '#ef4444',
                 text: 'Remove',
                 emoji: '🗑️',
                 itemId: itemId,
                 createdAt: Date.now()
             };
             updateAnnotationsWithHistory([...currentAnns, newStamp]);
+            setActiveAnnotationId(newStamp.id);
             onMaskToolChange('select');
             return;
         }
@@ -329,22 +331,22 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             return;
         }
 
-        const newStamp: AnnotationObject = {
+        const newAnn: AnnotationObject = {
             id: generateId(),
             type: 'stamp',
-            points: [],
-            x: selectedImage.width / 2,
-            y: selectedImage.height / 2,
-            strokeWidth: 0,
-            color: '#fff',
+            x: cx,
+            y: cy,
             text: label,
-            emoji: icon || '🏷️', // Use provided icon or default to label as requested
-            itemId: itemId,
-            variantIndex: 0,
+            itemId,
+            emoji: icon,
+            color: '#fff',
+            strokeWidth: 4,
+            points: [],
             createdAt: Date.now()
         };
 
-        updateAnnotationsWithHistory([...currentAnns, newStamp]);
+        updateAnnotationsWithHistory([...currentAnns, newAnn]);
+        setActiveAnnotationId(newAnn.id);
         onMaskToolChange('select');
     };
 
@@ -369,7 +371,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 ],
                 strokeWidth: 4,
                 color: '#fff',
-                emoji: '➖',
                 createdAt: Date.now()
             };
         } else if (shape === 'rect') {
@@ -380,8 +381,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 id: generateId(),
                 type: 'shape',
                 shapeType: 'rect',
-                x, y, width: size, height: size,
-                // Poly-rect points
                 points: [
                     { x, y },
                     { x: x + size, y },
@@ -390,7 +389,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 ],
                 strokeWidth: 4,
                 color: '#fff',
-                emoji: '📦',
                 createdAt: Date.now()
             };
         } else {
@@ -401,15 +399,16 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 type: 'shape',
                 shapeType: 'circle',
                 x: cx - half, y: cy - half, width: size, height: size,
+                rotation: 0,
                 points: [],
                 strokeWidth: 4,
                 color: '#fff',
-                emoji: '⭕',
                 createdAt: Date.now()
             };
         }
 
         updateAnnotationsWithHistory([...currentAnns, newShape]);
+        setActiveAnnotationId(newShape.id);
         onMaskToolChange('select');
     };
 
@@ -599,9 +598,11 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onBrushResizeStart={onBrushResizeStart}
                                 onBrushResizeEnd={onBrushResizeEnd}
                                 maskTool={maskTool}
-                                onMaskToolChange={onMaskToolChange}
                                 activeShape={activeShape}
-                                onActiveShapeChange={onActiveShapeChange}
+                                isActive={true}
+                                activeAnnotationId={activeAnnotationId}
+                                onActiveAnnotationChange={setActiveAnnotationId}
+                                onEditStart={() => { }}
                                 t={t}
                                 currentLang={lang}
                                 library={fullLibrary}
