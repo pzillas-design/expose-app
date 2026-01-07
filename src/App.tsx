@@ -485,7 +485,7 @@ export function App() {
                                         >
                                             Willkommen bei exposé
                                         </h2>
-                                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full`}>
+                                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full max-w-[320px] mx-auto`}>
                                             {t(allImages.length === 0 ? 'welcome_empty_desc' : 'welcome_desc')}
                                         </p>
                                     </div>
