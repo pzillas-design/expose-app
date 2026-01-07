@@ -11,8 +11,9 @@ import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { useNanoController } from '@/hooks/useNanoController';
-import { Plus, Layout, Home } from 'lucide-react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import { Plus, Layout, Home, Upload } from 'lucide-react';
+import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
+import { Logo } from '@/components/ui/Logo';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
@@ -472,12 +473,53 @@ export function App() {
 
 
                     {rows.length === 0 && !isDragOver && !isCanvasLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                            <label className="pointer-events-auto flex items-center gap-3 cursor-pointer group p-6 hover:scale-105 transition-transform">
-                                <Plus className={`w-5 h-5 ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white transition-colors`} />
-                                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white`}>{t('create_first')}</span>
-                                <input type="file" accept="image/*" className="hidden" multiple onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }} />
-                            </label>
+                        <div className="absolute inset-0 flex items-center justify-center p-8 text-center z-20 overflow-y-auto">
+                            <div className="flex flex-col items-center gap-12 w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-700">
+                                {/* Header */}
+                                <div className="flex flex-col items-center gap-6 w-full">
+                                    <Logo className="w-16 h-16 shrink-0" />
+                                    <div className="flex flex-col gap-6 w-full">
+                                        <h2
+                                            className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
+                                            style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                                        >
+                                            Willkommen bei exposé
+                                        </h2>
+                                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full`}>
+                                            {t(allImages.length === 0 ? 'welcome_empty_desc' : 'welcome_desc')}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Quick Actions */}
+                                <div className="flex flex-col gap-3 w-full max-w-[320px]">
+                                    <input
+                                        type="file"
+                                        id="canvas-welcome-upload"
+                                        className="hidden"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }}
+                                    />
+                                    <Button
+                                        variant="primary"
+                                        className="w-full !py-4"
+                                        onClick={() => document.getElementById('canvas-welcome-upload')?.click()}
+                                        icon={<Upload className="w-5 h-5" />}
+                                    >
+                                        {t('upload_image_edit')}
+                                    </Button>
+
+                                    <Button
+                                        variant="secondary"
+                                        className="w-full !py-4"
+                                        onClick={() => setIsCreationModalOpen(true)}
+                                        icon={<Plus className="w-5 h-5" />}
+                                    >
+                                        {t('generate_new')}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>

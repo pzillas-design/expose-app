@@ -394,64 +394,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
     // --- RENDER CONTENT ---
 
-    // Base State (No Selection)
-    if (!selectedImage) {
-        return (
-            <div
-                className={`${Theme.Colors.PanelBg} border-l ${Theme.Colors.Border} flex flex-col h-full z-20 relative transition-colors duration-200`}
-                style={{ width: width }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => { e.preventDefault(); onGlobalDragLeave(); }}
-                onContextMenu={(e) => e.stopPropagation()}
-            >
-                <div
-                    className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-zinc-400 dark:hover:bg-zinc-700 transition-colors z-50"
-                    onMouseDown={startResizing}
-                />
-
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center overflow-y-auto">
-                    <div className="flex flex-col items-center gap-12 w-full max-w-[400px]">
-                        {/* Header */}
-                        <div className="flex flex-col items-center gap-6 w-full">
-                            <Logo className="w-16 h-16 shrink-0" />
-                            <div className="flex flex-col gap-6 w-full">
-                                <h2
-                                    className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
-                                    style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
-                                >
-                                    Willkommen bei exposé
-                                </h2>
-                                <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full`}>
-                                    {t(isBoardEmpty ? 'welcome_empty_desc' : 'welcome_desc')}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="flex flex-col gap-3 w-full">
-                            <Button
-                                variant="primary"
-                                className="w-full"
-                                onClick={onUpload}
-                                icon={<Upload className="w-5 h-5" />}
-                            >
-                                {t('upload_image_edit')}
-                            </Button>
-
-                            <Button
-                                variant="secondary"
-                                className="w-full"
-                                onClick={onCreateNew}
-                                icon={<Plus className="w-5 h-5" />}
-                            >
-                                {t('generate_new')}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     const SubHeader = ({ title }: { title: string }) => (
         <div className={`h-14 flex items-center gap-2 px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>

@@ -84,11 +84,13 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left`}
         >
-            <div className={`flex-1 min-w-0 flex items-center gap-2`}>
-                <div className="w-3.5 shrink-0 flex items-center justify-center">
-                    {icon}
-                </div>
-                <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal pl-2`}>
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+                {icon && (
+                    <div className="w-3.5 shrink-0 flex items-center justify-center">
+                        {icon}
+                    </div>
+                )}
+                <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
                     {label}
                 </div>
             </div>
