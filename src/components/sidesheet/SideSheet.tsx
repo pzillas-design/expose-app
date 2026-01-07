@@ -497,12 +497,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                             </div>
 
                             {!isMulti && (
-                                <button
+                                <IconButton
+                                    icon={<InfoFilled className="w-4 h-4" />}
+                                    active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
-                                    className={`p-1.5 rounded-md transition-colors shrink-0 ${showInfo ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/10' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                                >
-                                    <InfoFilled className="w-4 h-4" />
-                                </button>
+                                    className="text-zinc-400"
+                                />
                             )}
                         </div>
                         <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
