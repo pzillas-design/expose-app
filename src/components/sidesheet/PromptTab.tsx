@@ -531,21 +531,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         )}
                                     </div>
                                 </div>
-
-                                {/* PRESET LIBRARY - Integrated flat list */}
-                                <div className="mt-4 flex-1 flex flex-col min-h-0 border-t border-zinc-100 dark:border-zinc-800/50">
-                                    <PresetLibrary
-                                        templates={templates}
-                                        onSelect={handleSelectPreset}
-                                        onTogglePin={onDeleteTemplate || (() => { })}
-                                        onRequestCreate={openCreatePreset}
-                                        onRequestEdit={openEditPreset}
-                                        t={t}
-                                        currentLang={currentLang}
-                                    />
-                                </div>
                             </div>
-
 
                             <div className="flex flex-col">
                                 {/* Tools Buttons */}
@@ -670,6 +656,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         {t('ctx_deselect')}
                                     </Button>
                                 )}
+                            </div>
+
+                            {/* PRESET LIBRARY - At the end */}
+                            <div className="mt-auto">
+                                <PresetLibrary
+                                    templates={templates}
+                                    onSelect={handleSelectPreset}
+                                    onTogglePin={onDeleteTemplate || (() => { })}
+                                    onRequestCreate={openCreatePreset}
+                                    onRequestEdit={openEditPreset}
+                                    t={t}
+                                    currentLang={currentLang}
+                                />
                             </div>
                         </div>
                     ) : (
