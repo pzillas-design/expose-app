@@ -501,7 +501,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : (currentLang === 'de' ? 'Bereich einzeichnen / Anmerken' : 'Draw area / Annotate')}
+                                        tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
                                     >
                                         {t('annotate') || 'Annotate'}
                                     </Button>
@@ -511,7 +511,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating}
                                         icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
-                                        tooltip={currentLang === 'de' ? 'Eigenes Referenzbild hochladen' : 'Upload custom reference image'}
+                                        tooltip={t('tt_upload_ref')}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
                                     </Button>
