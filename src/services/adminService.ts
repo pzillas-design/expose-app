@@ -137,6 +137,7 @@ export const adminService = {
         const dbPreset: any = {
             id: preset.id,
             title: preset.title,
+            label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
             tags: [],
             is_pinned: preset.isPinned,
