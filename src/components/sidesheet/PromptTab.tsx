@@ -35,13 +35,15 @@ interface PromptTabProps {
     t: TranslationFunction;
     currentLang: 'de' | 'en';
     userProfile: any;
+    showInfo?: boolean;
 }
 
 export const PromptTab: React.FC<PromptTabProps> = ({
     prompt, setPrompt, selectedImage, selectedImages, onGenerate, onDeselect, templates, onSelectTemplate,
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
     onUpdateAnnotation, onUpdateVariables, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
-    onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile
+    onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile,
+    showInfo = false
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -55,7 +57,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
-    const [activeInternalTab, setActiveInternalTab] = useState<'prompt' | 'info'>('prompt');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const annFileInputRef = useRef<HTMLInputElement>(null);
@@ -81,15 +82,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         const idChanged = lastIdRef.current !== selectedImage.id;
 
         if (idChanged) {
-            // NEW SELECTION
-            if (selectedImage.isGenerating) {
-                // If it's a new generation (skeleton), switch to info
-                setActiveInternalTab('info');
-            } else {
-                // Otherwise, default to Edit tab exactly as requested
-                setActiveInternalTab('prompt');
-            }
-
             // Sync state for templates/controls
             if (selectedImage.activeTemplateId) {
                 const found = templates.find(t => t.id === selectedImage.activeTemplateId);
@@ -100,13 +92,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setControlValues(selectedImage.variableValues || {});
             setHiddenControlIds([]);
             lastIdRef.current = selectedImage.id;
-        } else if (selectedImage.isGenerating) {
-            // SAME IMAGE, BUT STARTED GENERATING
-            setActiveInternalTab('info');
         }
-        // Note: We don't have an 'else' for isGenerating becoming false 
-        // because the user wants to keep the Info tab visible once generation is finished.
-    }, [selectedImage.id, selectedImage.isGenerating, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
+    }, [selectedImage.id, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
 
     useLayoutEffect(() => {
         if (textAreaRef.current) {
@@ -114,7 +101,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             const newHeight = Math.max(textAreaRef.current.scrollHeight, 120);
             textAreaRef.current.style.height = `${newHeight}px`;
         }
-    }, [prompt, activeTemplate, activeInternalTab]);
+    }, [prompt, activeTemplate, showInfo]);
 
     const startEditing = (ann: AnnotationObject, defaultText: string) => {
         setEditingId(ann.id);
@@ -293,36 +280,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 onChange={handleAnnFileChange}
             />
 
-            {/* Tab Header - Only show if not multiple selection (Info tab only makes sense for single image) */}
-            {!isMulti && (
-                <div className={`flex border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} relative`}>
-                    <button
-                        onClick={() => setActiveInternalTab('prompt')}
-                        className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'prompt' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
-                    >
-                        {t('tab_edit')}
-                    </button>
-                    <button
-                        onClick={() => setActiveInternalTab('info')}
-                        className={`flex-1 py-3 ${Typo.Label} transition-colors relative ${activeInternalTab === 'info' ? Theme.Colors.TextPrimary : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'}`}
-                    >
-                        {t('tab_info') || 'Info'}
-                    </button>
-
-                    {/* Animated Underline */}
-                    <div
-                        className="absolute bottom-[-1px] h-[2px] bg-zinc-800 dark:bg-zinc-200 transition-all duration-300 ease-in-out"
-                        style={{
-                            width: '50%',
-                            left: activeInternalTab === 'prompt' ? '0%' : '50%'
-                        }}
-                    />
-                </div>
-            )}
-
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
-                    {activeInternalTab === 'prompt' || isMulti ? (
+                    {!showInfo || isMulti ? (
                         <div className="flex-1 flex flex-col px-6 pt-6 pb-6">
                             <div className="flex flex-col gap-0">
                                 {/* UNIFIED BOX: Prompt + Chips */}
@@ -830,7 +790,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             </div>
 
             {/* PRESET LIBRARY - At the absolute bottom of the side sheet, full width */}
-            {(activeInternalTab === 'prompt' || isMulti) && (
+            {(!showInfo || isMulti) && (
                 <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
                     <PresetLibrary
                         templates={templates}

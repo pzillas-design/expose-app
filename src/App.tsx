@@ -483,43 +483,46 @@ export function App() {
                 </div>
             </div>
 
-            <SideSheet
-                selectedImage={selectedImage}
-                selectedImages={selectedImages}
-                sideSheetMode={sideSheetMode}
-                onModeChange={handleModeChange}
-                brushSize={brushSize}
-                onBrushSizeChange={setBrushSize}
-                onBrushResizeStart={() => setIsBrushResizing(true)}
-                onBrushResizeEnd={() => setIsBrushResizing(false)}
-                onGenerate={handleGenerate}
-                onUpdateAnnotations={handleUpdateAnnotations}
-                onUpdatePrompt={handleUpdatePrompt}
-                onUpdateVariables={handleUpdateVariables}
-                onDeleteImage={handleDeleteImage}
-                onGenerateMore={handleGenerateMore}
-                onNavigateParent={handleNavigateParent}
-                isGlobalDragOver={isDragOver}
-                onGlobalDragLeave={() => setIsDragOver(false)}
-                t={t}
-                lang={currentLang}
-                fullLibrary={fullLibrary}
-                onAddUserCategory={addUserCategory}
-                onDeleteUserCategory={deleteUserCategory}
-                onDeleteUserItem={deleteUserItem}
-                maskTool={maskTool}
-                onMaskToolChange={setMaskTool}
-                activeShape={activeShape}
-                onActiveShapeChange={setActiveShape}
-                onUpload={() => processFile()}
-                onCreateNew={() => setIsCreationModalOpen(true)}
-                isBoardEmpty={rows.length === 0}
-                qualityMode={qualityMode}
-                onQualityModeChange={setQualityMode}
-                templates={templates}
-                onRefreshTemplates={refreshTemplates}
-                userProfile={userProfile}
-            />
+            {selectedIds.length > 0 && (
+                <SideSheet
+                    selectedImage={selectedImage}
+                    selectedImages={selectedImages}
+                    sideSheetMode={sideSheetMode}
+                    onModeChange={handleModeChange}
+                    onDeselectAll={() => handleSelection([])}
+                    brushSize={brushSize}
+                    onBrushSizeChange={setBrushSize}
+                    onBrushResizeStart={() => setIsBrushResizing(true)}
+                    onBrushResizeEnd={() => setIsBrushResizing(false)}
+                    onGenerate={handleGenerate}
+                    onUpdateAnnotations={handleUpdateAnnotations}
+                    onUpdatePrompt={handleUpdatePrompt}
+                    onUpdateVariables={handleUpdateVariables}
+                    onDeleteImage={handleDeleteImage}
+                    onGenerateMore={handleGenerateMore}
+                    onNavigateParent={handleNavigateParent}
+                    isGlobalDragOver={isDragOver}
+                    onGlobalDragLeave={() => setIsDragOver(false)}
+                    t={t}
+                    lang={currentLang}
+                    fullLibrary={fullLibrary}
+                    onAddUserCategory={addUserCategory}
+                    onDeleteUserCategory={deleteUserCategory}
+                    onDeleteUserItem={deleteUserItem}
+                    maskTool={maskTool}
+                    onMaskToolChange={setMaskTool}
+                    activeShape={activeShape}
+                    onActiveShapeChange={setActiveShape}
+                    onUpload={() => processFile()}
+                    onCreateNew={() => setIsCreationModalOpen(true)}
+                    isBoardEmpty={rows.length === 0}
+                    qualityMode={qualityMode}
+                    onQualityModeChange={setQualityMode}
+                    templates={templates}
+                    onRefreshTemplates={refreshTemplates}
+                    userProfile={userProfile}
+                />
+            )}
 
             {contextMenu && (
                 <ContextMenu

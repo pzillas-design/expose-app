@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus } from 'lucide-react';
+import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
@@ -111,6 +111,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [pendingFileName, setPendingFileName] = useState<string>('');
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
 
     const { size: width, startResizing } = useResizable({
         initialSize: 360,
@@ -488,17 +489,21 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                         {selectedImages.length} {t('images_selected')}
                                     </span>
                                 ) : (
-                                    <span className={`${Typo.Label} truncate`}>
+                                    <span className={`${Typo.Label} truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
                                         {selectedImage.title}
                                     </span>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-1">
-                                <IconButton icon={<Download className="w-4 h-4" />} onClick={handleDownload} tooltip={isMulti ? t('download_all') : "Download"} />
-                                <IconButton icon={<Trash2 className="w-4 h-4" />} onClick={handleDelete} className="hover:text-red-400" tooltip={isMulti ? t('delete_all') : t('delete')} />
-                            </div>
-                        </div>
+                            {!isMulti && (
+                                <button
+                                    onClick={() => setShowInfo(!showInfo)}
+                                    className={`p-1.5 rounded-md transition-colors ${showInfo ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/10' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                >
+                                    <Info className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div >
                         <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
                             <PromptTab
                                 prompt={prompt}
@@ -527,6 +532,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 t={t}
                                 currentLang={lang}
                                 userProfile={userProfile}
+                                showInfo={showInfo}
                             />
                         </div>
                     </>
