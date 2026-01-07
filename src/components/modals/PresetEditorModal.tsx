@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
-import { ModalHeader, Button, Input, TextArea, SectionHeader, Theme } from '@/components/ui/DesignSystem';
+import { Button, Input, TextArea, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { Plus, Trash2, Check, X } from 'lucide-react';
 import { generateId } from '@/utils/ids';
 
@@ -11,13 +11,12 @@ interface PresetEditorModalProps {
     scope: 'admin' | 'user';
     currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
-    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility but unused
+    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
     onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
     onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
 
-// Sub-component for a single language form
 const LanguageForm = ({
     lang,
     title, setTitle,
@@ -54,40 +53,46 @@ const LanguageForm = ({
     return (
         <div className="flex flex-col gap-6 h-full">
             {showHeader && (
-                <div className={`px-4 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
+                <div className={`px-6 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>{lang}</span>
                 </div>
             )}
 
-            <div className={`px-4 pb-4 space-y-6 ${!showHeader ? 'pt-6' : ''}`}>
+            <div className={`px-6 pb-6 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
                 {/* Title */}
-                <div>
-                    <SectionHeader>{t('title_label')}</SectionHeader>
+                <div className="flex flex-col gap-2">
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                        {t('title_label')}
+                    </label>
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} />
                 </div>
 
                 {/* Prompt */}
-                <div>
-                    <SectionHeader>{t('prompt_label_editor')}</SectionHeader>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono" />
+                <div className="flex flex-col gap-2">
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                        {t('prompt_label_editor')}
+                    </label>
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide" />
                 </div>
 
                 {/* Controls */}
-                <div>
-                    <SectionHeader>{t('variables_label')}</SectionHeader>
+                <div className="flex flex-col gap-2">
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                        {t('variables_label')}
+                    </label>
                     <div className="space-y-3">
                         {controls.map((ctrl) => (
                             <div key={ctrl.id} className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius}`}>
-                                <div>
-                                    <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1`}>{ctrl.label}</div>
+                                <div className="min-w-0 flex-1">
+                                    <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
                                     <div className="flex flex-wrap gap-1">
                                         {ctrl.options.map(o => (
                                             <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">{o.label}</span>
                                         ))}
                                     </div>
                                 </div>
-                                <button onClick={() => setControls(p => p.filter(c => c.id !== ctrl.id))} className="text-zinc-400 hover:text-red-500 p-1"><X className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => setControls(p => p.filter(c => c.id !== ctrl.id))} className="text-zinc-400 hover:text-red-500 p-1 shrink-0"><X className="w-3.5 h-3.5" /></button>
                             </div>
                         ))}
 
@@ -101,7 +106,7 @@ const LanguageForm = ({
                                 </div>
                             </div>
                         ) : (
-                            <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-300 dark:border-zinc-700 ${Theme.Geometry.Radius} text-zinc-500 text-xs ${Theme.Colors.SurfaceHover}`}>
+                            <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-300 dark:border-zinc-700 ${Theme.Geometry.Radius} text-zinc-500 text-xs ${Theme.Colors.SurfaceHover} transition-colors`}>
                                 <Plus className="w-3.5 h-3.5" /> {t('add_variable')}
                             </button>
                         )}
@@ -124,26 +129,21 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     onDelete,
     t
 }) => {
-    // DE State
     const [titleDe, setTitleDe] = useState('');
     const [promptDe, setPromptDe] = useState('');
     const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
 
-    // EN State
     const [titleEn, setTitleEn] = useState('');
     const [promptEn, setPromptEn] = useState('');
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
 
     useEffect(() => {
         if (isOpen) {
-            // Reset
             setTitleDe(''); setPromptDe(''); setControlsDe([]);
             setTitleEn(''); setPromptEn(''); setControlsEn([]);
 
             if (mode === 'edit' && initialTemplate) {
-                // Load initial template into corresponding side
                 const isEn = initialTemplate.lang === 'en';
-
                 if (isEn) {
                     setTitleEn(initialTemplate.title);
                     setPromptEn(initialTemplate.prompt);
@@ -160,9 +160,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     const handleSave = () => {
         const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
-        // Check scope to determine what to save
         if (scope === 'user') {
-            // Only save the current language form
             if (currentLang === 'de') {
                 if (promptDe.trim()) {
                     results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
@@ -173,28 +171,13 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 }
             }
         } else {
-            // Admin Scope: Check both
             if (promptDe.trim()) {
-                results.push({
-                    title: titleDe.trim() || 'Untitled',
-                    prompt: promptDe,
-                    tags: [],
-                    controls: controlsDe,
-                    lang: 'de'
-                });
+                results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             }
-
             if (promptEn.trim()) {
-                results.push({
-                    title: titleEn.trim() || 'Untitled',
-                    prompt: promptEn,
-                    tags: [],
-                    controls: controlsEn,
-                    lang: 'en'
-                });
+                results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
-
         onSave(results);
     };
 
@@ -202,7 +185,6 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         if (scope === 'user') {
             return currentLang === 'de' ? !promptDe.trim() : !promptEn.trim();
         }
-        // Admin: Disabled if BOTH are empty
         return !promptDe.trim() && !promptEn.trim();
     };
 
@@ -210,23 +192,32 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center animate-in fade-in duration-200 p-4"
+            className="fixed inset-0 z-[100] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
-                className={`w-full ${scope === 'admin' ? 'max-w-7xl' : 'max-w-2xl'} h-[85vh] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col`}
+                className={`
+                    w-full ${scope === 'admin' ? 'max-w-4xl' : 'max-w-lg'} 
+                    ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
+                    shadow-2xl flex flex-col max-h-[90vh]
+                    animate-in zoom-in-95 duration-200
+                `}
                 onClick={(e) => e.stopPropagation()}
             >
-                <ModalHeader
-                    title={mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
-                    onClose={onClose}
-                />
+                {/* Header */}
+                <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
+                    <div className="flex flex-col gap-1">
+                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
+                            {mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
+                        </h2>
+                    </div>
+                    <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+                </div>
 
-                <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x' : 'flex flex-col'} ${Theme.Colors.Border}`}>
-
-                    {/* German Form - Show if Admin OR if User+DE */}
+                <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800' : 'flex flex-col'}`}>
+                    {/* German Form */}
                     {(scope === 'admin' || currentLang === 'de') && (
-                        <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? '' : 'w-full'}`}>
+                        <div className="overflow-y-auto no-scrollbar pt-4">
                             <LanguageForm
                                 lang="de"
                                 title={titleDe} setTitle={setTitleDe}
@@ -238,9 +229,9 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                         </div>
                     )}
 
-                    {/* English Form - Show if Admin OR if User+EN */}
+                    {/* English Form */}
                     {(scope === 'admin' || currentLang === 'en') && (
-                        <div className={`overflow-y-auto no-scrollbar ${scope === 'admin' ? Theme.Colors.SurfaceSubtle : 'w-full'}`}>
+                        <div className={`overflow-y-auto no-scrollbar pt-4 ${scope === 'admin' ? 'bg-zinc-50/50 dark:bg-zinc-900/10' : ''}`}>
                             <LanguageForm
                                 lang="en"
                                 title={titleEn} setTitle={setTitleEn}
@@ -254,22 +245,22 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className={`p-6 pt-4 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} flex justify-between items-center`}>
-                    {mode === 'edit' && onDelete && initialTemplate ? (
+                <div className="p-6 flex items-center gap-3 shrink-0">
+                    {mode === 'edit' && onDelete && initialTemplate && (
                         <Button
-                            variant="danger"
+                            variant="secondary"
                             onClick={() => { onDelete(initialTemplate.id); onClose(); }}
-                            className="w-auto px-4"
+                            className="px-4 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                             icon={<Trash2 className="w-4 h-4" />}
                         >
                             {t('delete')}
                         </Button>
-                    ) : <div />}
-
+                    )}
                     <Button
+                        variant="primary"
                         onClick={handleSave}
                         disabled={isSaveDisabled()}
-                        className="w-48"
+                        className="flex-1 h-12"
                         icon={<Check className="w-4 h-4" />}
                     >
                         {t('save')}
