@@ -194,19 +194,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         const { x, y } = getCoordinates(clientX, clientY);
 
-        if (maskTool === 'text') {
-            const newId = generateId();
-            onChange([...annotations, { id: newId, type: 'stamp', points: [], x, y, strokeWidth: 0, color: '#fff', text: '', createdAt: Date.now() }]);
-            setActiveMaskId(newId);
-            return;
-        }
-
-        if (maskTool === 'select') {
-            setActiveMaskId(null);
-            return;
-        }
-
-        // Brush (Shape handled by SideSheet buttons now as per user request "clicking on button adds shape to center")
+        // Only brush tool works via canvas click now
+        // Text and shapes are placed via buttons in the sidebar
         if (maskTool === 'brush') {
             setIsDrawing(true);
             currentPathRef.current = [{ x, y }];

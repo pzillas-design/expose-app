@@ -350,6 +350,28 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         onMaskToolChange('select');
     };
 
+    const handleAddText = () => {
+        if (!selectedImage) return;
+        const currentAnns = selectedImage.annotations || [];
+        const cx = selectedImage.width / 2;
+        const cy = selectedImage.height / 2;
+
+        const newText: AnnotationObject = {
+            id: generateId(),
+            type: 'stamp',
+            x: cx,
+            y: cy,
+            text: '',
+            color: '#fff',
+            strokeWidth: 4,
+            points: [],
+            createdAt: Date.now()
+        };
+
+        updateAnnotationsWithHistory([...currentAnns, newText]);
+        setActiveAnnotationId(newText.id);
+    };
+
     const handleAddShape = (shape: 'rect' | 'circle' | 'line') => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
@@ -612,6 +634,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onDeleteUserItem={onDeleteUserItem}
                                 onAddObject={handleAddObjectCenter}
                                 onAddShape={handleAddShape}
+                                onAddText={handleAddText}
                             />
                         </div>
                         <DoneButton />

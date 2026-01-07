@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
-import { Pen, Type, Square, Circle, MousePointer2, Shapes, Minus, Trash2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, Minus, Trash2 } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -23,6 +23,7 @@ interface BrushTabProps {
     onDeleteUserItem: (catId: string, itemId: string) => void;
     onAddObject: (label: string, itemId: string, icon?: string) => void;
     onAddShape?: (shape: 'rect' | 'circle' | 'line') => void;
+    onAddText?: () => void;
     onBack?: () => void;
 }
 
@@ -36,7 +37,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     activeShape = 'rect',
     onActiveShapeChange,
     t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject,
-    onAddShape
+    onAddShape,
+    onAddText
 }) => {
 
     const objectLibrary = useMemo(() => {
@@ -44,147 +46,104 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     }, [library]);
 
     const SectionHeader = ({ label }: { label: string }) => (
-        <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px] mb-2 block px-6 opacity-70`}>
+        <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px] mb-3 block px-6 opacity-70`}>
             {label}
         </span>
     );
 
-    const ToolSwitcherItem = ({ icon: Icon, active, onClick, label }: any) => (
+    const ToolButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
         <button
             onClick={onClick}
-            className={`
-                flex-1 flex flex-col items-center justify-center gap-1.5 py-4 transition-all border-r last:border-r-0 ${Theme.Colors.Border}
-                ${active
-                    ? 'bg-zinc-50 dark:bg-zinc-800/40 text-zinc-900 dark:text-white relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-zinc-900 dark:after:bg-white'
-                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50/20 dark:hover:bg-zinc-800/5'
-                }
-            `}
+            className="flex-1 flex flex-col items-center gap-2 py-4 px-3 transition-all border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 active:scale-95"
         >
-            <Icon className="w-4 h-4" />
-            <span className="text-[9px] font-bold tracking-widest uppercase">{label}</span>
-        </button>
-    );
-
-    const ShapeOption = ({ icon: Icon, label, active, onClick }: { icon: any, label: string, active: boolean, onClick: () => void }) => (
-        <button
-            onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className={`
-                flex-1 flex flex-col items-center gap-2 p-4 transition-all border rounded-lg
-                ${active
-                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-900/20 dark:border-white/20 shadow-sm'
-                    : 'bg-transparent border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                }
-            `}
-        >
-            <Icon className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+            <Icon className="w-5 h-5 text-zinc-700 dark:text-zinc-300" />
+            <span className="text-[10px] font-bold uppercase tracking-tight text-zinc-600 dark:text-zinc-400">{label}</span>
         </button>
     );
 
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            {/* 1. HORIZONTAL TOOLBAR */}
-            <div className={`flex items-center shrink-0 border-b ${Theme.Colors.Border} bg-white dark:bg-zinc-900/50`}>
-                <ToolSwitcherItem
-                    icon={Pen}
-                    active={maskTool === 'brush'}
-                    onClick={() => onMaskToolChange?.('brush')}
-                    label={currentLang === 'de' ? 'Pinsel' : 'Brush'}
-                />
-                <ToolSwitcherItem
-                    icon={Shapes}
-                    active={maskTool === 'shape'}
-                    onClick={() => onMaskToolChange?.('shape')}
-                    label={currentLang === 'de' ? 'Formen' : 'Shapes'}
-                />
-                <ToolSwitcherItem
-                    icon={Type}
-                    active={maskTool === 'text'}
-                    onClick={() => onMaskToolChange?.('text')}
-                    label="Text"
-                />
-            </div>
+            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-8 animate-in fade-in duration-300">
 
-            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-10 animate-in fade-in duration-300">
+                {/* 1. BRUSH TOOL - Horizontal Layout */}
+                <div className="space-y-4 px-6">
+                    <SectionHeader label={currentLang === 'de' ? 'Pinsel' : 'Brush'} />
+                    <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/20 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                        <button
+                            onClick={() => onMaskToolChange?.('brush')}
+                            className={`p-3 rounded-lg transition-all ${maskTool === 'brush'
+                                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                                }`}
+                        >
+                            <Pen className="w-5 h-5" />
+                        </button>
 
-                {/* 2. CONTEXT SETTINGS - Normalized layout */}
-                {maskTool === 'brush' && (
-                    <div className="space-y-6">
-                        <SectionHeader label={currentLang === 'de' ? 'Pinsel-Größe' : 'Brush Size'} />
-                        <div className="px-6">
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <span className={`${Typo.Mono} text-sm font-bold text-zinc-900 dark:text-white`}>{brushSize} PX</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="10" max="400"
-                                    value={brushSize}
-                                    onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
-                                    onMouseDown={onBrushResizeStart}
-                                    onMouseUp={onBrushResizeEnd}
-                                    className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
-                                />
+                        <div className="flex-1 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <span className={`${Typo.Mono} text-xs font-bold text-zinc-900 dark:text-white`}>{brushSize} PX</span>
                             </div>
-                        </div>
-
-                        <div className="px-6 pt-2">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onAddObject('Clear', 'util:clear_masks');
-                                }}
-                                className="w-full py-3 px-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {maskTool === 'shape' && (
-                    <div className="space-y-4">
-                        <SectionHeader label={currentLang === 'de' ? 'Form auswählen' : 'Select Shape'} />
-                        <div className="flex px-6 gap-2">
-                            <ShapeOption
-                                icon={Square}
-                                label="Box"
-                                active={activeShape === 'rect'}
-                                onClick={() => { onActiveShapeChange?.('rect'); onAddShape?.('rect'); }}
-                            />
-                            <ShapeOption
-                                icon={Circle}
-                                label="Kreis"
-                                active={activeShape === 'circle'}
-                                onClick={() => { onActiveShapeChange?.('circle'); onAddShape?.('circle'); }}
-                            />
-                            <ShapeOption
-                                icon={Minus}
-                                label="Linie"
-                                active={activeShape === 'line'}
-                                onClick={() => { onActiveShapeChange?.('line'); onAddShape?.('line'); }}
+                            <input
+                                type="range"
+                                min="10" max="400"
+                                value={brushSize}
+                                onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
+                                onMouseDown={onBrushResizeStart}
+                                onMouseUp={onBrushResizeEnd}
+                                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
                             />
                         </div>
                     </div>
-                )}
 
-                {maskTool === 'text' && (
-                    <div className="py-20 text-center px-10">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-6">
-                            <Type className="w-6 h-6 text-zinc-400" />
-                        </div>
-                        <h4 className="text-[14px] font-bold uppercase tracking-tight text-zinc-900 dark:text-white leading-tight">
-                            {currentLang === 'de' ? 'Text Werkzeug' : 'Text Tool'}
-                        </h4>
-                        <p className="text-[12px] text-zinc-400 mt-3">
-                            {currentLang === 'de' ? 'Funktion ist in Kürze verfügbar.' : 'This feature is coming soon.'}
-                        </p>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAddObject('Clear', 'util:clear_masks');
+                        }}
+                        className="w-full py-3 px-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
+                    </button>
+                </div>
+
+                {/* 2. OBJECT TOOLS - Grid Layout */}
+                <div className="space-y-4 px-6">
+                    <SectionHeader label={currentLang === 'de' ? 'Objekte platzieren' : 'Place Objects'} />
+                    <div className="grid grid-cols-2 gap-3">
+                        <ToolButton
+                            icon={Type}
+                            label={currentLang === 'de' ? 'Text' : 'Text'}
+                            onClick={() => {
+                                onAddText?.();
+                            }}
+                        />
+                        <ToolButton
+                            icon={Square}
+                            label={currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
+                            onClick={() => {
+                                onAddShape?.('rect');
+                            }}
+                        />
+                        <ToolButton
+                            icon={Circle}
+                            label={currentLang === 'de' ? 'Kreis' : 'Circle'}
+                            onClick={() => {
+                                onAddShape?.('circle');
+                            }}
+                        />
+                        <ToolButton
+                            icon={Minus}
+                            label={currentLang === 'de' ? 'Linie' : 'Line'}
+                            onClick={() => {
+                                onAddShape?.('line');
+                            }}
+                        />
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* 3. STICKERS - Cleaned up redundant headers */}
+            {/* 3. STICKERS */}
             <div className="flex flex-col bg-zinc-50/50 dark:bg-zinc-900/10 mt-auto border-t border-zinc-200 dark:border-white/5">
                 <ObjectsTab
                     t={t}
