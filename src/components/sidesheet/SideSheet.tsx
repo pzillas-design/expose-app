@@ -3,6 +3,7 @@ import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, Lib
 import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
+import { InfoFilled } from '@/components/ui/CustomIcons';
 import { Logo } from '@/components/ui/Logo';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { useResizable } from '@/hooks/useResizable';
@@ -500,7 +501,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     onClick={() => setShowInfo(!showInfo)}
                                     className={`p-1.5 rounded-md transition-colors shrink-0 ${showInfo ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/10' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
                                 >
-                                    <Info className="w-4 h-4" />
+                                    <InfoFilled className="w-4 h-4" />
                                 </button>
                             )}
                         </div>

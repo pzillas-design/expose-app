@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, MoreVertical, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
+import { TwoDotsVertical } from './CustomIcons';
 
 interface SidebarAccordionProps {
     title: string;
@@ -83,12 +84,13 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
             onClick={onClick}
             className={`w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left`}
         >
-            <div className="flex-1 min-w-0 flex items-center gap-2">
+            <div className={`flex-1 min-w-0 flex items-center gap-3 pl-4`}>
                 {icon && (
                     <div className="w-3.5 shrink-0 flex items-center justify-center">
                         {icon}
                     </div>
                 )}
+                {!icon && <div className="w-3.5 shrink-0" />} {/* Spacer for alignment */}
                 <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
                     {label}
                 </div>
@@ -105,7 +107,7 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
                         onClick={(e) => { e.stopPropagation(); onMenuClick(e); }}
                         className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
                     >
-                        <MoreVertical className="w-3.5 h-3.5" />
+                        <TwoDotsVertical className="w-3.5 h-3.5" />
                     </button>
                 )}
                 {actions}

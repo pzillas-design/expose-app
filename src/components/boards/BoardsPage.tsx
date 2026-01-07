@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Plus, MoreVertical, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import { Plus, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
+import { TwoDotsVertical } from '../ui/CustomIcons';
 import { useItemDialog } from '../ui/Dialog';
 import { Board } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -216,7 +217,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             onClick={handleMenuClick}
                             className="p-1.5 -mr-1 rounded-lg text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all opacity-0 group-hover:opacity-100"
                         >
-                            <MoreVertical className="w-5 h-5" />
+                            <TwoDotsVertical className="w-5 h-5" />
                         </button>
                     </div>
                     <div className="text-zinc-400 dark:text-zinc-600 -mt-[1px]">

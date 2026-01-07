@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pen, MoreVertical, Trash2 } from 'lucide-react';
+import { Plus, Pen, Trash2 } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
 import { Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { SidebarAccordion, SidebarAccordionItem } from '@/components/ui/SidebarAccordion';

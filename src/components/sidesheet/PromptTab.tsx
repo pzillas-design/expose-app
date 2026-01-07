@@ -4,6 +4,7 @@ import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash2, Image as ImageIcon } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
+import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
 import { Bug } from 'lucide-react';
@@ -561,7 +562,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 ${isModelDropdownOpen ? 'bg-black/10' : ''}
                                                             `}
                                                         >
-                                                            <MoreVertical className="w-4 h-4" />
+                                                            <TwoDotsVertical className="w-4 h-4" />
                                                         </div>
                                                     </Tooltip>
                                                 </div>

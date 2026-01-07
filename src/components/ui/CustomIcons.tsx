@@ -1,0 +1,14 @@
+import React from 'react';
+
+export const TwoDotsVertical: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <circle cx="12" cy="9" r="1.5" />
+        <circle cx="12" cy="15" r="1.5" />
+    </svg>
+);
+
+export const InfoFilled: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className={className}>
+        <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11 17V11H13V17H11ZM11 9V7H13V9H11Z" />
+    </svg>
+);
