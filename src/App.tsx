@@ -480,12 +480,12 @@ export function App() {
                                     <Logo className="w-16 h-16 shrink-0" />
                                     <div className="flex flex-col gap-6 w-full">
                                         <h2
-                                            className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
+                                            className={`text-3xl font-medium tracking-tight ${Theme.Colors.TextHighlight} flex items-center justify-center gap-2`}
                                             style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                                         >
                                             Willkommen bei exposé
                                         </h2>
-                                        <p className={`font-mono text-[13px] leading-relaxed ${Theme.Colors.TextSecondary} w-full max-w-[320px] mx-auto`}>
+                                        <p className={`font-mono text-[15px] leading-relaxed ${Theme.Colors.TextSecondary} w-full max-w-[320px] mx-auto`}>
                                             {t(allImages.length === 0 ? 'welcome_empty_desc' : 'welcome_desc')}
                                         </p>
                                     </div>
