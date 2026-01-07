@@ -478,32 +478,31 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 return (
                     <>
                         <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} ${Theme.Colors.Border}`}>
-                            <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                            <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 <IconButton
                                     icon={<ChevronLeft className="w-4 h-4" />}
                                     onClick={() => onDeselectAll?.()}
                                     tooltip={t('tt_deselect')}
                                 />
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    {isMulti && selectedImages ? (
-                                        <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
-                                            {selectedImages.length} {t('images_selected')}
-                                        </span>
-                                    ) : (
-                                        <>
-                                            <span className={`${Typo.Label} truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
-                                                {selectedImage.title}
-                                            </span>
-                                            <button
-                                                onClick={() => setShowInfo(!showInfo)}
-                                                className={`p-1.5 rounded-md transition-colors shrink-0 ${showInfo ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/10' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                                            >
-                                                <Info className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
+                                {isMulti && selectedImages ? (
+                                    <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
+                                        {selectedImages.length} {t('images_selected')}
+                                    </span>
+                                ) : (
+                                    <span className={`${Typo.Label} truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
+                                        {selectedImage.title}
+                                    </span>
+                                )}
                             </div>
+
+                            {!isMulti && (
+                                <button
+                                    onClick={() => setShowInfo(!showInfo)}
+                                    className={`p-1.5 rounded-md transition-colors shrink-0 ${showInfo ? 'text-zinc-900 dark:text-white bg-black/5 dark:bg-white/10' : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                >
+                                    <Info className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
                         <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
                             <PromptTab

@@ -81,7 +81,7 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 px-6 py-2 ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+            className={`w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left`}
         >
             <div className="flex-1 min-w-0 flex items-center gap-2">
                 {icon && (
@@ -103,9 +103,9 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
                 {onMenuClick && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onMenuClick(e); }}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 -mr-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
+                        className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
                     >
-                        <MoreVertical className="w-4 h-4" />
+                        <MoreVertical className="w-3.5 h-3.5" />
                     </button>
                 )}
                 {actions}
