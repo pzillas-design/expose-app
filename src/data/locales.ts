@@ -95,8 +95,8 @@ export const translations = {
     welcome_empty_desc: "Upload your photos or generate something new.",
     empty_board_title: "Your board is empty",
     empty_board_desc: "Upload images or use the generator to get started.",
-    upload_cta: "Upload",
-    generate_cta: "Generate",
+    upload_image_edit: "Upload Image & Edit",
+    generate_new: "Generate New",
 
     // Settings / User
     login_btn: "Login",
@@ -247,12 +247,12 @@ export const translations = {
 
     // Board / Gallery
     welcome_title: "Willkommen bei Exposé",
-    welcome_desc: "Wählen Sie Ihre Fotos aus, um sie zu bearbeiten, oder starten Sie neu",
-    welcome_empty_desc: "Laden Sie Ihre Fotos hoch oder generieren Sie etwas Neues.",
+    welcome_desc: "Fotos auswählen oder generieren Sie etwas Neues.",
+    welcome_empty_desc: "Laden Sie Fotos zum Bearbeiten hoch oder generieren Sie etwas Neues.",
     empty_board_title: "Dein Board ist leer",
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
-    upload_cta: "Hochladen",
-    generate_cta: "Generieren",
+    upload_image_edit: "BILD HOCHLADEN & EDITIEREN",
+    generate_new: "NEU GENERIEREN",
 
     // Settings / User
     login_btn: "Anmelden",
