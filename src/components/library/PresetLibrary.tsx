@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
-import { Plus, Pen, Trash2, MoreHorizontal } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Pen, ChevronDown, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
-import { Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
+import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { createPortal } from 'react-dom';
 
 interface PresetLibraryProps {
@@ -23,24 +23,25 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
     t,
     currentLang
 }) => {
+    const [isPresetsExpanded, setIsPresetsExpanded] = useState(true);
+    const [isRecentExpanded, setIsRecentExpanded] = useState(false);
     const [menuState, setMenuState] = React.useState<{ id: string, x: number, y: number } | null>(null);
 
     // Filter templates by language
-    const filteredTemplates = useMemo(() => {
+    const languageFilteredTemplates = useMemo(() => {
         return templates.filter(t => !t.lang || t.lang === currentLang);
     }, [templates, currentLang]);
 
-    // Split into pinned and recent
     const pinnedTemplates = useMemo(() => {
-        return filteredTemplates.filter(t => t.isPinned || t.isDefault);
-    }, [filteredTemplates]);
+        return languageFilteredTemplates.filter(t => t.isPinned || t.isDefault);
+    }, [languageFilteredTemplates]);
 
     const recentTemplates = useMemo(() => {
-        return filteredTemplates
+        return languageFilteredTemplates
             .filter(t => t.lastUsed && !t.isPinned && !t.isDefault)
             .sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0))
             .slice(0, 5);
-    }, [filteredTemplates]);
+    }, [languageFilteredTemplates]);
 
     const handleOpenMenu = (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -52,60 +53,115 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
         });
     };
 
-    const renderTemplate = (t: PromptTemplate) => (
-        <button
-            key={t.id}
-            onClick={() => onSelect(t)}
-            className={`w-full flex items-center gap-3 px-3 py-2 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
-        >
-            <div className="flex-1 min-w-0">
-                <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                    {t.title}
-                </div>
-            </div>
-            <button
-                onClick={(e) => handleOpenMenu(e, t.id)}
-                className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
-            >
-                <MoreHorizontal className="w-4 h-4" />
-            </button>
-        </button>
-    );
-
     return (
-        <div className={`flex flex-col ${Theme.Colors.PanelBg} w-full`}>
-            {/* Pinned/Default Presets */}
-            {pinnedTemplates.length > 0 && (
-                <div className="px-3 pt-4 pb-2 space-y-1">
-                    {pinnedTemplates.map(renderTemplate)}
-                </div>
-            )}
+        <div className={`flex flex-col ${Theme.Colors.PanelBg} relative transition-colors duration-200 w-full`}>
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* PRESETS SECTION */}
+                <div className="flex flex-col">
+                    <button
+                        onClick={() => setIsPresetsExpanded(!isPresetsExpanded)}
+                        className={`flex items-center gap-2 px-3 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors`}
+                    >
+                        {isPresetsExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                            {t('presets_header')}
+                        </span>
+                    </button>
 
-            {/* Zuletzt / Recent Section */}
-            {recentTemplates.length > 0 && (
-                <div className="border-t border-zinc-100 dark:border-zinc-800/50">
-                    <div className="px-3 pt-4 pb-1">
-                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500 px-3`}>
+                    {isPresetsExpanded && (
+                        <div className="px-3 pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {pinnedTemplates.length > 0 ? (
+                                pinnedTemplates.map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => onSelect(t)}
+                                        className={`w-full flex items-center gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
+                                                {t.title}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleOpenMenu(e, t.id)}
+                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
+                                        >
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="px-6 py-10 text-center animate-in fade-in duration-500">
+                                    <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed w-full`}>
+                                        {currentLang === 'de'
+                                            ? 'Noch keine Vorlagen vorhanden.'
+                                            : 'No presets available yet.'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* RECENT SECTION */}
+                <div className="flex flex-col">
+                    <button
+                        onClick={() => setIsRecentExpanded(!isRecentExpanded)}
+                        className={`flex items-center gap-2 px-3 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors`}
+                    >
+                        {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
                             {currentLang === 'de' ? 'Zuletzt' : 'Recent'}
                         </span>
-                    </div>
-                    <div className="px-3 pb-2 space-y-1">
-                        {recentTemplates.map(renderTemplate)}
-                    </div>
-                </div>
-            )}
+                    </button>
 
-            {/* Create New Button */}
-            <div className="px-3 py-4 border-t border-zinc-100 dark:border-zinc-800/50">
-                <button
-                    onClick={onRequestCreate}
-                    className={`w-full flex items-center gap-3 px-3 py-2 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
-                >
-                    <Plus className="w-4 h-4 text-blue-500" />
-                    <span className={`${Typo.Body} text-blue-500 font-medium`}>
-                        {t('create_preset') || 'Create Preset'}
-                    </span>
-                </button>
+                    {isRecentExpanded && (
+                        <div className="px-3 pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {recentTemplates.length > 0 ? (
+                                recentTemplates.map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => onSelect(t)}
+                                        className={`w-full flex items-center gap-3 px-3 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
+                                                {t.title}
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleOpenMenu(e, t.id)}
+                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
+                                        >
+                                            <MoreHorizontal className="w-4 h-4" />
+                                        </button>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="px-6 py-10 text-center animate-in fade-in duration-500">
+                                    <p className={`${Typo.Body} font-medium text-zinc-400 dark:text-zinc-500 leading-relaxed w-full`}>
+                                        {currentLang === 'de'
+                                            ? 'Ihre zuletzt verwendeten Prompts werden hier gelistet.'
+                                            : 'Your recently used prompts will automatically appear here.'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* CREATE NEW BUTTON */}
+                <div className="border-t border-zinc-100 dark:border-zinc-800/50">
+                    <button
+                        onClick={onRequestCreate}
+                        className={`w-full flex items-center gap-2 px-3 h-14 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group`}
+                    >
+                        <Plus className="w-4 h-4 text-blue-500" />
+                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-blue-500`}>
+                            {t('create_preset') || 'Create Preset'}
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* Context Menu */}
