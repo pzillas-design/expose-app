@@ -287,7 +287,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         <div className="flex-1 flex flex-col px-6 pt-6 pb-6">
                             <div className="flex flex-col gap-0">
                                 {/* UNIFIED BOX: Prompt + Chips */}
-                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600`}>
+                                <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
                                     <Tooltip text={t('tt_prompt')} side="top">
                                         <textarea
                                             ref={textAreaRef}
@@ -331,7 +331,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                                 px-3 py-1.5 rounded-full text-[12px] transition-all
                                                                                 ${isSelected
                                                                                     ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                                    : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                                    : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
                                                                             `}
                                                                         >
                                                                             {opt.label}
@@ -362,7 +362,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 <div
                                                                     className={`
                                                                         flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] transition-all w-full
-                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
                                                                     `}
                                                                 >
                                                                     {ann.referenceImage && (
@@ -425,7 +425,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 <div
                                                                     className={`
                                                                         flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] transition-all w-full
-                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80'}
+                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
                                                                     `}
                                                                 >
                                                                     {ann.referenceImage ? (

@@ -16,7 +16,7 @@ export const Theme = {
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",
         SurfaceSubtle: "bg-zinc-50 dark:bg-zinc-800/50",
-        SurfaceHover: "hover:bg-zinc-100 dark:hover:bg-zinc-800",
+        SurfaceHover: "hover:bg-zinc-50 dark:hover:bg-zinc-800/10",
         SurfaceActive: "bg-zinc-100 dark:bg-zinc-800",
 
         // Borders
@@ -206,7 +206,7 @@ export const Button: React.FC<ButtonProps> = ({
     const variants = {
         primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3 ${Typo.ButtonLabel}`,
 
-        secondary: `${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Colors.TextPrimary} ${Theme.Colors.SurfaceHover} hover:border-zinc-300 dark:hover:border-zinc-600 py-3 ${Typo.ButtonLabel}`,
+        secondary: `${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Colors.TextPrimary} ${Theme.Colors.SurfaceHover} hover:border-zinc-200 dark:hover:border-zinc-700 py-3 ${Typo.ButtonLabel}`,
 
         danger: `${Theme.Colors.DangerBg} border ${Theme.Colors.DangerBorder} ${Theme.Colors.Danger} hover:bg-red-500/20 py-3 ${Typo.ButtonLabel}`,
 
@@ -261,7 +261,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
 export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
     <input
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 border ${Theme.Geometry.Radius} px-3 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 focus:border-zinc-400 dark:focus:border-zinc-500 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} px-3 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
         {...props}
     />
 ));
@@ -278,7 +278,7 @@ export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className = '', ...props }, ref) => (
     <textarea
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 border ${Theme.Geometry.Radius} p-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 focus:border-zinc-400 dark:focus:border-zinc-500 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} p-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
         {...props}
     />
 ));
