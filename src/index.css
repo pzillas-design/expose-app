@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #1e1e1e;
+  color: #e5e5e5;
+  font-family: 'Inter', sans-serif;
+  touch-action: none;
+}
+
+:root {
+  --grid-dot: #52525b;
+}
+
+.dark {
+  --grid-dot: #71717a;
+}
+
+html:not(.dark) {
+  --grid-dot: #52525b;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Fix Autofill colors in dark mode */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #27272a inset !important;
+  -webkit-text-fill-color: #f4f4f5 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+@keyframes loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

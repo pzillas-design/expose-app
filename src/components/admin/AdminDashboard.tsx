@@ -73,7 +73,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
       <main className="flex-1 min-h-0">
         <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-10 h-[calc(100vh-220px)]">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 h-full flex flex-col rounded-[2.5rem] overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 h-full flex flex-col rounded-3xl overflow-hidden shadow-sm">
             {activeTab === 'users' && <AdminUsersView t={t} />}
             {activeTab === 'jobs' && <AdminJobsView t={t} />}
             {activeTab === 'stats' && <AdminStatsView t={t} />}
