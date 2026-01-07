@@ -251,8 +251,8 @@ export const translations = {
 
     // Welcome Screen
     welcome_title: "Welcome to Exposé",
-    welcome_desc: "Select an image to edit or start a new flow.",
-    welcome_empty_desc: "Upload an image or generate something new.",
+    welcome_desc: "Select your photos to edit or start a new flow.",
+    welcome_empty_desc: "Upload your photos or generate something new.",
 
     // Multi Select & Context Menu
     images_selected: "images",
@@ -590,8 +590,8 @@ export const translations = {
 
     // Welcome Screen
     welcome_title: "Willkommen bei Exposé",
-    welcome_desc: "Wählen Sie ein Bild aus, um es zu bearbeiten, oder starten Sie neu",
-    welcome_empty_desc: "Laden Sie ein Bild hoch oder generieren Sie etwas Neues.",
+    welcome_desc: "Wählen Sie Ihre Fotos aus, um sie zu bearbeiten, oder starten Sie neu",
+    welcome_empty_desc: "Laden Sie Ihre Fotos hoch oder generieren Sie etwas Neues.",
 
     // Multi Select & Context Menu
     images_selected: "Bilder",
