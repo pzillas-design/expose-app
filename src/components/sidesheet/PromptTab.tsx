@@ -288,16 +288,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <div className="flex flex-col gap-0">
                                 {/* UNIFIED BOX: Prompt + Chips */}
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
-                                    <Tooltip text={t('tt_prompt')} side="top">
-                                        <textarea
-                                            ref={textAreaRef}
-                                            value={prompt}
-                                            onChange={(e) => setPrompt(e.target.value)}
-                                            placeholder={t('describe_changes')}
-                                            className={`w-full bg-transparent border-none outline-none p-4 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
-                                            disabled={selectedImage.isGenerating}
-                                        />
-                                    </Tooltip>
+                                    <textarea
+                                        ref={textAreaRef}
+                                        value={prompt}
+                                        onChange={(e) => setPrompt(e.target.value)}
+                                        placeholder={t('describe_changes')}
+                                        className={`w-full bg-transparent border-none outline-none p-4 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
+                                        disabled={selectedImage.isGenerating}
+                                    />
 
                                     {/* SECTIONS CONTAINER */}
                                     <div className="p-3 pt-4 flex flex-col gap-2">
@@ -503,7 +501,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
-                                        tooltip={isMulti ? t('tool_disabled_multi') : t('annotate') || 'Annotate'}
+                                        tooltip={isMulti ? t('tool_disabled_multi') : (currentLang === 'de' ? 'Bereich einzeichnen / Anmerken' : 'Draw area / Annotate')}
                                     >
                                         {t('annotate') || 'Annotate'}
                                     </Button>
@@ -513,7 +511,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         disabled={selectedImage.isGenerating}
                                         icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
-                                        tooltip={t('upload_ref')}
+                                        tooltip={currentLang === 'de' ? 'Eigenes Referenzbild hochladen' : 'Upload custom reference image'}
                                     >
                                         {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
                                     </Button>
@@ -550,7 +548,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             {/* ABSOLUTE SETTINGS BUTTON INSIDE GENERATE */}
                                             {!selectedImage.isGenerating && (
                                                 <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
-                                                    <Tooltip text={t('tt_model')} side="top">
+                                                    <Tooltip text={currentLang === 'de' ? 'Modell auswählen' : 'Select model'} side="bottom">
                                                         <div
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

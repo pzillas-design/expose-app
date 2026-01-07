@@ -42,6 +42,7 @@ export const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
                         <IconButton
                             icon={<Plus className="w-3.5 h-3.5" />}
                             onClick={(e) => { e.stopPropagation(); onAdd(); }}
+                            tooltip="Vorlage erstellen"
                         />
                     </div>
                 )}

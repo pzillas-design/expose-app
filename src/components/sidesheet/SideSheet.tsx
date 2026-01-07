@@ -444,6 +444,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
                                     className="text-zinc-400"
+                                    tooltip={lang === 'de' ? 'Details & Hilfe' : 'Details & Help'}
                                 />
                             )}
                         </div>
