@@ -240,7 +240,11 @@ export const adminService = {
 
     async getObjectItems(): Promise<any[]> {
         const { data, error } = await supabase.from('global_objects_items').select('*').order('order', { ascending: true });
-        if (error) throw error;
+        if (error) {
+            console.error('AdminService: Failed to fetch stamps!', error);
+            throw error;
+        }
+        console.log('AdminService: Fetched stamps:', data?.length || 0, data);
         return data || [];
     },
 
