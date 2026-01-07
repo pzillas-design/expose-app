@@ -531,7 +531,7 @@ export function App() {
                     selectedImages={selectedImages}
                     sideSheetMode={sideSheetMode}
                     onModeChange={handleModeChange}
-                    onDeselectAll={() => handleSelection([])}
+                    onDeselectAll={() => selectMultiple([])}
                     brushSize={brushSize}
                     onBrushSizeChange={setBrushSize}
                     onBrushResizeStart={() => setIsBrushResizing(true)}

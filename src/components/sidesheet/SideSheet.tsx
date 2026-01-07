@@ -172,7 +172,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         if (selectedImage && prompt) {
             onUpdatePrompt(selectedImage.id, prompt);
         }
-        onDeselectAllButOne?.();
+        onDeselectAll();
     };
 
     const deleteAnnotation = (annId: string) => {
@@ -444,7 +444,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
                                     className="text-zinc-400"
-                                    tooltip={lang === 'de' ? 'Details & Hilfe' : 'Details & Help'}
+                                    tooltip="Info"
                                 />
                             )}
                         </div>
