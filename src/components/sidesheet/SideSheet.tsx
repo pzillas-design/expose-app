@@ -477,11 +477,10 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
 
     const SubHeader = ({ title, onBack }: { title: string, onBack?: () => void }) => (
-        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
-            <div className="flex items-center gap-2 flex-1">
-                <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={onBack || (() => onModeChange('prompt'))} tooltip={t('back')} />
-                <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>{title}</span>
-            </div>
+        <div className={`h-14 flex items-center gap-1 px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+            <IconButton icon={<ChevronLeft className="w-4 h-4" />} onClick={onBack || (() => onModeChange('prompt'))} tooltip={t('back')} />
+            <span className={`${Typo.Label} ${Theme.Colors.TextPrimary} font-bold`}>{title}</span>
+            <div className="flex-1" />
             <div className="flex items-center gap-0.5">
                 <IconButton
                     icon={<Undo2 className="w-3.5 h-3.5" />}
@@ -592,7 +591,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
-                        <SubHeader title="" onBack={handleExitBrushMode} />
+                        <SubHeader title={t('annotate')} onBack={handleExitBrushMode} />
                         <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}

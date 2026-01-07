@@ -10,8 +10,8 @@ interface BrushTabProps {
     onBrushSizeChange?: (size: number) => void;
     onBrushResizeStart?: () => void;
     onBrushResizeEnd?: () => void;
-    maskTool?: 'brush' | 'text' | 'shape' | 'select' | 'stamps';
-    onMaskToolChange?: (tool: 'brush' | 'text' | 'shape' | 'select' | 'stamps') => void;
+    maskTool?: 'brush' | 'text' | 'shape' | 'stamps';
+    onMaskToolChange?: (tool: 'brush' | 'text' | 'shape' | 'stamps') => void;
     activeShape?: 'rect' | 'circle' | 'line';
     onActiveShapeChange?: (shape: 'rect' | 'circle' | 'line') => void;
     t: TranslationFunction;
@@ -31,7 +31,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     onBrushSizeChange,
     onBrushResizeStart,
     onBrushResizeEnd,
-    maskTool = 'select',
+    maskTool = 'brush',
     onMaskToolChange,
     activeShape = 'rect',
     onActiveShapeChange,
@@ -44,7 +44,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     }, [library]);
 
     const SectionHeader = ({ label }: { label: string }) => (
-        <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px] mb-2 block px-4 opacity-70`}>
+        <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px] mb-2 block px-6 opacity-70`}>
             {label}
         </span>
     );
@@ -55,8 +55,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
             className={`
                 flex-1 flex flex-col items-center justify-center gap-1.5 py-4 transition-all border-r last:border-r-0 ${Theme.Colors.Border}
                 ${active
-                    ? 'bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-zinc-900 dark:after:bg-white'
-                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/10'
+                    ? 'bg-zinc-50 dark:bg-zinc-800/40 text-zinc-900 dark:text-white relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-zinc-900 dark:after:bg-white'
+                    : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-50/20 dark:hover:bg-zinc-800/5'
                 }
             `}
         >
@@ -69,9 +69,9 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         <button
             onClick={(e) => { e.stopPropagation(); onClick(); }}
             className={`
-                flex-1 flex flex-col items-center gap-2 p-4 transition-all border
+                flex-1 flex flex-col items-center gap-2 p-4 transition-all border rounded-lg
                 ${active
-                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-900 dark:border-white shadow-sm'
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border-zinc-900/20 dark:border-white/20 shadow-sm'
                     : 'bg-transparent border-zinc-200 dark:border-white/10 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
                 }
             `}
@@ -83,14 +83,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            {/* 1. HORIZONTAL TOOLBAR - Full Width & Boxy */}
+            {/* 1. HORIZONTAL TOOLBAR */}
             <div className={`flex items-center shrink-0 border-b ${Theme.Colors.Border} bg-white dark:bg-zinc-900/50`}>
-                <ToolSwitcherItem
-                    icon={MousePointer2}
-                    active={maskTool === 'select'}
-                    onClick={() => onMaskToolChange?.('select')}
-                    label={t('selection_tool') || (currentLang === 'de' ? 'Auswahl' : 'Select')}
-                />
                 <ToolSwitcherItem
                     icon={Pen}
                     active={maskTool === 'brush'}
@@ -113,14 +107,14 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
             <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-10 animate-in fade-in duration-300">
 
-                {/* 2. CONTEXT SETTINGS */}
+                {/* 2. CONTEXT SETTINGS - Normalized layout */}
                 {maskTool === 'brush' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <SectionHeader label={currentLang === 'de' ? 'Pinsel-Größe' : 'Brush Size'} />
-                        <div className="px-0">
-                            <div className="p-8 bg-zinc-50 dark:bg-zinc-800/20 border-y border-zinc-200 dark:border-white/5 space-y-8">
+                        <div className="px-6">
+                            <div className="space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <span className={`${Typo.Mono} text-base font-black text-zinc-900 dark:text-white tracking-tighter`}>{brushSize} PX</span>
+                                    <span className={`${Typo.Mono} text-sm font-bold text-zinc-900 dark:text-white`}>{brushSize} PX</span>
                                 </div>
                                 <input
                                     type="range"
@@ -129,18 +123,18 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
                                     onMouseDown={onBrushResizeStart}
                                     onMouseUp={onBrushResizeEnd}
-                                    className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-none appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-none hover:[&::-webkit-slider-thumb]:scale-105 transition-all"
+                                    className="w-full h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
                                 />
                             </div>
                         </div>
 
-                        <div className="px-4 pt-2">
+                        <div className="px-6 pt-2">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onAddObject('Clear', 'util:clear_masks');
                                 }}
-                                className="w-full py-4 px-4 border-2 border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3 px-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
@@ -152,7 +146,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                 {maskTool === 'shape' && (
                     <div className="space-y-4">
                         <SectionHeader label={currentLang === 'de' ? 'Form auswählen' : 'Select Shape'} />
-                        <div className="flex px-0 border-y border-zinc-200 dark:border-white/5 bg-zinc-50 dark:bg-zinc-800/20">
+                        <div className="flex px-6 gap-2">
                             <ShapeOption
                                 icon={Square}
                                 label="Box"
@@ -175,30 +169,23 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     </div>
                 )}
 
-                {(maskTool === 'select' || maskTool === 'text') && (
+                {maskTool === 'text' && (
                     <div className="py-20 text-center px-10">
-                        <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-900 dark:border-white mb-6">
-                            {maskTool === 'select' ? <MousePointer2 className="w-6 h-6" /> : <Type className="w-6 h-6" />}
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 mb-6">
+                            <Type className="w-6 h-6 text-zinc-400" />
                         </div>
-                        <h4 className="text-[14px] font-black uppercase tracking-tighter text-zinc-900 dark:text-white leading-tight">
-                            {maskTool === 'select'
-                                ? (currentLang === 'de' ? 'Element-Auswahl' : 'Selection Mode')
-                                : (currentLang === 'de' ? 'Text Werkzeug' : 'Text Tool')}
+                        <h4 className="text-[14px] font-bold uppercase tracking-tight text-zinc-900 dark:text-white leading-tight">
+                            {currentLang === 'de' ? 'Text Werkzeug' : 'Text Tool'}
                         </h4>
-                        <p className="text-[12px] text-zinc-400 mt-3 font-medium">
-                            {maskTool === 'select'
-                                ? (currentLang === 'de' ? 'Klicken Sie auf Objekte im Bild, um sie zu bearbeiten.' : 'Interact with scene elements to refine.')
-                                : (currentLang === 'de' ? 'Funktion ist in Kürze verfügbar.' : 'This feature is coming soon.')}
+                        <p className="text-[12px] text-zinc-400 mt-3">
+                            {currentLang === 'de' ? 'Funktion ist in Kürze verfügbar.' : 'This feature is coming soon.'}
                         </p>
                     </div>
                 )}
             </div>
 
-            {/* 3. STICKERS (Formerly Stamps) */}
-            <div className="flex flex-col bg-zinc-50 dark:bg-zinc-900/40 mt-auto border-t-2 border-zinc-900 dark:border-zinc-100">
-                <div className="px-4 py-4 border-b border-zinc-200 dark:border-white/5">
-                    <SectionHeader label={t('stamps_label') || (currentLang === 'de' ? 'Sticker' : 'Stickers')} />
-                </div>
+            {/* 3. STICKERS - Cleaned up redundant headers */}
+            <div className="flex flex-col bg-zinc-50/50 dark:bg-zinc-900/10 mt-auto border-t border-zinc-200 dark:border-white/5">
                 <ObjectsTab
                     t={t}
                     currentLang={currentLang}
