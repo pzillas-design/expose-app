@@ -11,6 +11,7 @@ import { CropModal } from '@/components/modals/CropModal';
 import { generateId } from '@/utils/ids';
 import { downloadImage } from '@/utils/imageUtils';
 import { CreationModal } from '@/components/modals/CreationModal';
+import { useItemDialog } from '@/components/ui/Dialog';
 
 // Sub Components
 import { PromptTab } from './PromptTab';
@@ -115,6 +116,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [showInfo, setShowInfo] = useState(false);
     const [history, setHistory] = useState<AnnotationObject[][]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+    const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
+    const { confirm } = useItemDialog();
 
     // Initial history when image changes
     useEffect(() => {
@@ -122,8 +125,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             const currentAnns = selectedImage.annotations || [];
             setHistory([currentAnns]);
             setHistoryIndex(0);
+
+            // Only set initial if we are entering brush mode
+            if (sideSheetMode === 'brush') {
+                setInitialAnns(currentAnns);
+            }
         }
-    }, [selectedImage?.id]);
+    }, [selectedImage?.id, sideSheetMode]);
 
     const updateAnnotationsWithHistory = (newAnns: AnnotationObject[]) => {
         if (!selectedImage) return;
@@ -431,13 +439,47 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         onSaveTemplate?.(newT);
     };
 
+    const handleExitBrushMode = async () => {
+        if (!selectedImage) {
+            onModeChange('prompt');
+            return;
+        }
+
+        const currentAnns = selectedImage.annotations || [];
+        // Basic comparison
+        const hasChanges = JSON.stringify(currentAnns) !== JSON.stringify(initialAnns);
+
+        if (hasChanges) {
+            const result = await confirm({
+                title: lang === 'de' ? 'Änderungen speichern?' : 'Save changes?',
+                description: lang === 'de'
+                    ? 'Möchten Sie Ihre Änderungen an den Anmerkungen speichern oder verwerfen?'
+                    : 'Do you want to save or discard your changes to the annotations?',
+                confirmLabel: lang === 'de' ? 'Speichern' : 'Save',
+                cancelLabel: lang === 'de' ? 'Verwerfen' : 'Discard',
+                variant: 'primary'
+            });
+
+            if (result === true) {
+                // Save is already real-time, just go back
+                onModeChange('prompt');
+            } else if (result === false) {
+                // Discard: Revert to initial
+                onUpdateAnnotations(selectedImage.id, initialAnns);
+                onModeChange('prompt');
+            }
+        } else {
+            onModeChange('prompt');
+        }
+    };
+
     // --- RENDER CONTENT ---
 
 
-    const SubHeader = ({ title }: { title: string }) => (
+    const SubHeader = ({ title, onBack }: { title: string, onBack?: () => void }) => (
         <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
             <div className="flex items-center gap-2 flex-1">
-                <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={() => onModeChange('prompt')} tooltip={t('back')} />
+                <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={onBack || (() => onModeChange('prompt'))} tooltip={t('back')} />
                 <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>{title}</span>
             </div>
             <div className="flex items-center gap-0.5">
@@ -550,7 +592,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
-                        <SubHeader title={t('annotate')} />
+                        <SubHeader title={t('annotate')} onBack={handleExitBrushMode} />
                         <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
