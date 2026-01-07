@@ -94,9 +94,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     );
 
     return (
-        <div className={`flex flex-col h-full overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
-            <div className="px-4 py-6 space-y-6 shrink-0">
-
+        <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-6 space-y-6">
                 {/* Tools Section */}
                 <div className="flex flex-col gap-1">
                     <SectionHeader label={t('tools_label') || (currentLang === 'de' ? 'Werkzeuge' : 'Tools')} />
@@ -184,11 +183,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         active={maskTool === 'text'}
                     />
                 </div>
-
             </div>
 
-            {/* Stamps Library */}
-            <div className="flex flex-col pt-2 bg-zinc-50/50 dark:bg-zinc-900/20 border-t border-zinc-200/50 dark:border-white/5">
+            {/* Stamps Library - Docked at bottom */}
+            <div className="flex flex-col bg-zinc-50/50 dark:bg-zinc-900/20 mt-auto border-t border-zinc-200 dark:border-zinc-800">
                 <ObjectsTab
                     t={t}
                     currentLang={currentLang}
