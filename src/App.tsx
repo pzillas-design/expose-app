@@ -470,12 +470,14 @@ export function App() {
                         )}
                     </div>
 
+
                     {rows.length === 0 && !isDragOver && !isCanvasLoading && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="flex flex-col items-center gap-2 text-zinc-300 dark:text-zinc-700 opacity-50">
-                                <Plus className="w-8 h-8" strokeWidth={1} />
-                                <span className="text-[10px] tracking-[0.2em] font-medium uppercase">{t('drop_here' as any) || 'Drop images here'}</span>
-                            </div>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <label className="pointer-events-auto flex items-center gap-3 cursor-pointer group p-6 hover:scale-105 transition-transform">
+                                <Plus className={`w-5 h-5 ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white transition-colors`} />
+                                <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white`}>{t('create_first')}</span>
+                                <input type="file" accept="image/*" className="hidden" multiple onChange={(e) => { if (e.target.files) Array.from(e.target.files).forEach((f) => processFile(f as File)); }} />
+                            </label>
                         </div>
                     )}
                 </div>
