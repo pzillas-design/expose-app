@@ -658,18 +658,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 )}
                             </div>
 
-                            {/* PRESET LIBRARY - At the end */}
-                            <div className="mt-auto">
-                                <PresetLibrary
-                                    templates={templates}
-                                    onSelect={handleSelectPreset}
-                                    onTogglePin={onDeleteTemplate || (() => { })}
-                                    onRequestCreate={openCreatePreset}
-                                    onRequestEdit={openEditPreset}
-                                    t={t}
-                                    currentLang={currentLang}
-                                />
-                            </div>
+                            {/* PRESET LIBRARY - At the end, full width */}
+                            <PresetLibrary
+                                templates={templates}
+                                onSelect={handleSelectPreset}
+                                onTogglePin={onDeleteTemplate || (() => { })}
+                                onRequestCreate={openCreatePreset}
+                                onRequestEdit={openEditPreset}
+                                t={t}
+                                currentLang={currentLang}
+                            />
                         </div>
                     ) : (
                         /* Info Tab Content */
