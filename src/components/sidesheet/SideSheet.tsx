@@ -435,9 +435,25 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
 
     const SubHeader = ({ title }: { title: string }) => (
-        <div className={`h-14 flex items-center gap-2 px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
-            <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={() => onModeChange('prompt')} tooltip={t('back')} />
-            <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>{title}</span>
+        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+            <div className="flex items-center gap-2 flex-1">
+                <IconButton icon={<ArrowLeft className="w-4 h-4" />} onClick={() => onModeChange('prompt')} tooltip={t('back')} />
+                <span className={`${Typo.Label} ${Theme.Colors.TextPrimary}`}>{title}</span>
+            </div>
+            <div className="flex items-center gap-0.5">
+                <IconButton
+                    icon={<RotateCcw className="w-3.5 h-3.5" />}
+                    onClick={handleUndo}
+                    disabled={historyIndex <= 0}
+                    tooltip="Undo"
+                />
+                <IconButton
+                    icon={<RotateCw className="w-3.5 h-3.5" />}
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    tooltip="Redo"
+                />
+            </div>
         </div>
     );
 
@@ -534,69 +550,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
-                        {/* THE NEW NORDIC TOOLBAR */}
-                        <div className={`flex flex-col shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
-                            {/* Title & Undo/Redo Row */}
-                            <div className="flex items-center justify-between px-3 h-12">
-                                <IconButton
-                                    icon={<ChevronLeft className="w-4 h-4" />}
-                                    onClick={() => onModeChange('prompt')}
-                                    tooltip={t('back')}
-                                />
-                                <span className={`${Typo.Label} ${Theme.Colors.TextPrimary} text-[11px] tracking-widest uppercase opacity-60`}>
-                                    {t('annotate')}
-                                </span>
-                                <div className="flex items-center gap-0.5">
-                                    <IconButton
-                                        icon={<RotateCcw className="w-3.5 h-3.5" />}
-                                        onClick={handleUndo}
-                                        disabled={historyIndex <= 0}
-                                        tooltip="Undo"
-                                    />
-                                    <IconButton
-                                        icon={<RotateCw className="w-3.5 h-3.5" />}
-                                        onClick={handleRedo}
-                                        disabled={historyIndex >= history.length - 1}
-                                        tooltip="Redo"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Tool Switch Row */}
-                            <div className="flex items-center justify-center gap-1.5 px-4 pb-3">
-                                <ToolSwitcherItem
-                                    icon={MousePointer2}
-                                    active={maskTool === 'select'}
-                                    onClick={() => onMaskToolChange('select')}
-                                    tooltip={t('selection_tool')}
-                                />
-                                <ToolSwitcherItem
-                                    icon={Pen}
-                                    active={maskTool === 'brush'}
-                                    onClick={() => onMaskToolChange('brush')}
-                                    tooltip="Brush"
-                                />
-                                <ToolSwitcherItem
-                                    icon={Shapes}
-                                    active={maskTool === 'shape'}
-                                    onClick={() => onMaskToolChange('shape')}
-                                    tooltip="Shapes"
-                                />
-                                <ToolSwitcherItem
-                                    icon={Package}
-                                    active={maskTool === 'stamps'}
-                                    onClick={() => onMaskToolChange('stamps')}
-                                    tooltip="Stamps"
-                                />
-                                <ToolSwitcherItem
-                                    icon={Type}
-                                    active={maskTool === 'text'}
-                                    onClick={() => onMaskToolChange('text')}
-                                    tooltip="Text"
-                                />
-                            </div>
-                        </div>
-
+                        <SubHeader title={t('annotate')} />
                         <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
