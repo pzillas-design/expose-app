@@ -111,20 +111,20 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-center gap-3 w-full">
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleClose(false)}
-                                    className="flex-1"
-                                >
-                                    {options.cancelLabel || 'Abbrechen'}
-                                </Button>
+                            <div className="flex flex-col gap-3 w-full">
                                 <Button
                                     variant={options.variant === 'danger' ? 'danger' : 'primary'}
                                     onClick={() => handleClose(true)}
-                                    className="flex-1"
+                                    className="w-full"
                                 >
                                     {options.confirmLabel || 'Bestätigen'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleClose(false)}
+                                    className="w-full"
+                                >
+                                    {options.cancelLabel || 'Abbrechen'}
                                 </Button>
                             </div>
                         </div>
