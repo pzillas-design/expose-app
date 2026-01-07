@@ -79,22 +79,24 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                     </div>
 
                     {isPresetsExpanded && (
-                        <div className="px-6 pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                             {pinnedTemplates.length > 0 ? (
                                 pinnedTemplates.map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => onSelect(t)}
-                                        className={`w-full flex items-center gap-3 px-6 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                        className={`w-full flex items-center gap-3 px-6 py-2 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
                                     >
-                                        <div className="flex-1 min-w-0">
+                                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                                            {/* Spacer to align text with headline text (Headline has Chevron + Gap) */}
+                                            <div className="w-3.5 shrink-0" />
                                             <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
                                                 {t.title}
                                             </div>
                                         </div>
                                         <button
                                             onClick={(e) => handleOpenMenu(e, t.id)}
-                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
+                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 -mr-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
                                         >
                                             <MoreVertical className="w-4 h-4" />
                                         </button>
@@ -117,31 +119,35 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                 <div className="flex flex-col">
                     <button
                         onClick={() => setIsRecentExpanded(!isRecentExpanded)}
-                        className={`flex items-center gap-2 px-6 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors`}
+                        className={`flex items-center justify-between px-6 h-14 border-t ${Theme.Colors.Border} hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group`}
                     >
-                        {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
-                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
-                            {currentLang === 'de' ? 'Zuletzt' : 'Recent'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            {isRecentExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
+                            <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                                {currentLang === 'de' ? 'Zuletzt' : 'Recent'}
+                            </span>
+                        </div>
                     </button>
 
                     {isRecentExpanded && (
-                        <div className="px-6 pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="pt-0.5 pb-4 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
                             {recentTemplates.length > 0 ? (
                                 recentTemplates.map(t => (
                                     <button
                                         key={t.id}
                                         onClick={() => onSelect(t)}
-                                        className={`w-full flex items-center gap-3 px-6 py-1.5 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
+                                        className={`w-full flex items-center gap-3 px-6 py-2 ${Theme.Geometry.Radius} ${Theme.Colors.SurfaceHover} transition-colors group text-left`}
                                     >
-                                        <div className="flex-1 min-w-0">
+                                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                                            {/* Spacer to align text with headline text */}
+                                            <div className="w-3.5 shrink-0" />
                                             <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
                                                 {t.title}
                                             </div>
                                         </div>
                                         <button
                                             onClick={(e) => handleOpenMenu(e, t.id)}
-                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-1"
+                                            className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 -mr-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
                                         >
                                             <MoreVertical className="w-4 h-4" />
                                         </button>
