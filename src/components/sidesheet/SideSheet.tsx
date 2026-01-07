@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, RotateCcw, RotateCw, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
+import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { InfoFilled } from '@/components/ui/CustomIcons';
@@ -484,13 +484,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             </div>
             <div className="flex items-center gap-0.5">
                 <IconButton
-                    icon={<RotateCcw className="w-3.5 h-3.5" />}
+                    icon={<Undo2 className="w-3.5 h-3.5" />}
                     onClick={handleUndo}
                     disabled={historyIndex <= 0}
                     tooltip="Undo"
                 />
                 <IconButton
-                    icon={<RotateCw className="w-3.5 h-3.5" />}
+                    icon={<Redo2 className="w-3.5 h-3.5" />}
                     onClick={handleRedo}
                     disabled={historyIndex >= history.length - 1}
                     tooltip="Redo"
@@ -592,7 +592,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
-                        <SubHeader title={t('annotate')} onBack={handleExitBrushMode} />
+                        <SubHeader title="" onBack={handleExitBrushMode} />
                         <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}

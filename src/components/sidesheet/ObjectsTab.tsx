@@ -78,12 +78,12 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
     return (
         <div className={`flex flex-col relative w-full`}>
             <SidebarAccordion
-                title={currentLang === 'de' ? 'Stempel' : 'Stamps'}
+                title={t('stamps_label') || (currentLang === 'de' ? 'Sticker' : 'Stickers')}
                 isExpanded={isExpanded}
                 onToggle={() => setIsExpanded(!isExpanded)}
                 onAdd={() => setIsAdding(!isAdding)}
                 isEmpty={allItems.length === 0 && !isAdding}
-                emptyText={currentLang === 'de' ? 'Keine Stempel gefunden' : 'No stamps found'}
+                emptyText={t('no_stamps') || (currentLang === 'de' ? 'Keine Sticker gefunden' : 'No stickers found')}
                 hasTopBorder={false}
             >
                 {/* Inline Adding Row at the TOP */}
@@ -122,7 +122,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                         icon={renderIcon(item.icon)}
                         onClick={() => onAddObject?.(item.label, item.id, item.icon)}
                         onMenuClick={(e) => handleOpenMenu(e, item.catId, item.id)}
-                        rightLabel={currentLang === 'de' ? 'Hinzufügen' : 'Add'}
+                        rightLabel={t('add_sticker')}
                     />
                 ))}
             </SidebarAccordion>

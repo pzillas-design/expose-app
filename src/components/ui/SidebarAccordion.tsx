@@ -98,7 +98,7 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
 
             <div className="flex items-center gap-2">
                 {rightLabel && (
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-medium whitespace-nowrap">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
                         {rightLabel}
                     </span>
                 )}
