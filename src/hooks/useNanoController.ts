@@ -126,8 +126,17 @@ export const useNanoController = () => {
 
     const { templates, refreshTemplates, saveTemplate, deleteTemplate } = usePresets(user?.id);
 
+    // Track if we're currently uploading to prevent unnecessary reloads
+    const isUploadingRef = useRef(false);
+
     // --- Board Image Loading ---
     React.useEffect(() => {
+        // Skip reload if we're in the middle of an upload
+        if (isUploadingRef.current) {
+            console.log('[Canvas] Skipping reload during upload');
+            return;
+        }
+
         if (user && currentBoardId) {
             setIsCanvasLoading(true);
             setLoadingProgress(10);
@@ -173,19 +182,24 @@ export const useNanoController = () => {
         // No board active, create one automatically
         const newBoard = await createBoard();
         if (newBoard) {
-            setCurrentBoardId(newBoard.id);
+            // Only set if it's actually different (prevents unnecessary reload)
+            if (currentBoardId !== newBoard.id) {
+                setCurrentBoardId(newBoard.id);
+            }
             return newBoard.id;
         }
 
         // Fallback: generate a temporary ID (shouldn't happen if createBoard works)
         const tempId = generateId();
-        setCurrentBoardId(tempId);
+        if (currentBoardId !== tempId) {
+            setCurrentBoardId(tempId);
+        }
         return tempId;
     }, [currentBoardId, createBoard, setCurrentBoardId]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
-        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t, ensureBoardId
+        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t, ensureBoardId, isUploadingRef
     });
 
     const { performGeneration, performNewGeneration } = useGeneration({

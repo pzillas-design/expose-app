@@ -15,7 +15,8 @@ interface UseFileHandlerProps {
     currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;
     t: (key: any) => string;
-    ensureBoardId: () => Promise<string>; // NEW: Function to ensure a board exists
+    ensureBoardId: () => Promise<string>;
+    isUploadingRef: React.MutableRefObject<boolean>; // NEW: Track upload state
 }
 
 export const useFileHandler = ({
@@ -28,10 +29,12 @@ export const useFileHandler = ({
     currentBoardId,
     setIsSettingsOpen,
     t,
-    ensureBoardId
+    ensureBoardId,
+    isUploadingRef
 }: UseFileHandlerProps) => {
 
     const processFiles = useCallback((files: File[]) => {
+        isUploadingRef.current = true; // Mark upload as started
         const newImageIds: string[] = [];
         let processedCount = 0;
 
@@ -100,6 +103,17 @@ export const useFileHandler = ({
                                 } catch (err: any) {
                                     console.error('[Upload] Persistence error:', err);
                                     showToast(`${t('save_failed')}: ${err.message}`, "error");
+                                } finally {
+                                    // Reset upload flag after persistence completes (success or failure)
+                                    if (processedCount === files.length) {
+                                        isUploadingRef.current = false;
+                                        console.log('[Upload] Upload complete, re-enabling canvas reload');
+                                    }
+                                }
+                            } else {
+                                // No auth, just reset the flag
+                                if (processedCount === files.length) {
+                                    isUploadingRef.current = false;
                                 }
                             }
                         });
