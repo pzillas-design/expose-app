@@ -49,7 +49,9 @@ export const useFileHandler = ({
                         const newId = generateId();
 
                         // CRITICAL FIX: Ensure we have a board before uploading
+                        console.log('[Upload] Starting upload for:', baseName);
                         const activeBoardId = await ensureBoardId();
+                        console.log('[Upload] Board ID ensured:', activeBoardId);
 
                         generateThumbnail(event.target!.result as string).then(async (thumbSrc) => {
                             const newImage: CanvasImage = {
@@ -67,6 +69,7 @@ export const useFileHandler = ({
                                 updatedAt: Date.now()
                             };
 
+                            console.log('[Upload] Adding image to canvas:', newId);
                             setRows(prev => [...prev, {
                                 id: generateId(),
                                 title: baseName,
@@ -78,18 +81,24 @@ export const useFileHandler = ({
                             processedCount++;
 
                             if (processedCount === files.length) {
+                                console.log('[Upload] All files processed, selecting:', newImageIds);
                                 selectMultiple(newImageIds);
                                 snapToItem(newId);
                             }
 
                             if (user && !isAuthDisabled) {
+                                console.log('[Upload] Starting persistence for:', newId);
                                 try {
                                     const result = await imageService.persistImage(newImage, user.id);
                                     if (!result.success) {
                                         const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
+                                        console.error('[Upload] Persistence failed:', errorMsg);
                                         showToast(`${t('save_failed')}: ${errorMsg}`, "error");
+                                    } else {
+                                        console.log('[Upload] Persistence successful for:', newId);
                                     }
                                 } catch (err: any) {
+                                    console.error('[Upload] Persistence error:', err);
                                     showToast(`${t('save_failed')}: ${err.message}`, "error");
                                 }
                             }
