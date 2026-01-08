@@ -425,7 +425,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         return (
                             <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%`, transform: `rotate(${rot}deg)` }}>
                                 <div
-                                    className={`w-full h-full border-4 border-white bg-transparent cursor-move ${active ? 'border-primary ring-2 ring-primary/20' : ''}`}
+                                    className={`w-full h-full border-4 border-white bg-transparent rounded-full cursor-move ${active ? 'border-primary ring-2 ring-primary/20' : ''}`}
                                     onMouseDown={(e) => {
                                         e.stopPropagation();
                                         setActiveMaskId(ann.id);
