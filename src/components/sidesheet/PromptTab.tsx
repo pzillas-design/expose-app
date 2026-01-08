@@ -576,14 +576,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <span>{t('annotate') || 'Annotate'}</span>
-                                            {annotations.filter(a => a.type !== 'reference_image').length > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-full text-[10px] font-mono leading-none">
-                                                    {annotations.filter(a => a.type !== 'reference_image').length}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <span>{t('annotate') || 'Annotate'}</span>
                                     </Button>
                                     <Button
                                         variant="secondary"
@@ -593,14 +586,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={t('tt_upload_ref')}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <span>{currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}</span>
-                                            {annotations.filter(a => a.type === 'reference_image').length > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-full text-[10px] font-mono leading-none">
-                                                    {annotations.filter(a => a.type === 'reference_image').length}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <span>{currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}</span>
                                     </Button>
                                     <input
                                         type="file"
