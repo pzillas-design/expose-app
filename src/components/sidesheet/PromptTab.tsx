@@ -444,7 +444,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).map((ann) => {
                                             const isEditing = editingId === ann.id;
                                             const defaultLabel = ann.type === 'stamp'
-                                                ? (currentLang === 'de' ? 'Text-Anmerkung' : 'Text Annotation')
+                                                ? (currentLang === 'de' ? 'Befolge die markierten Änderungswünsche' : 'Apply the marked changes')
                                                 : (currentLang === 'de' ? 'Anmerkung' : 'Annotation');
                                             const displayText = ann.text || defaultLabel;
 
