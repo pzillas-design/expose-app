@@ -481,19 +481,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                                 <div className="flex flex-wrap gap-2">
                                                     {maskCount > 0 && (
-                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                        <div className="flex items-center gap-1.5">
                                                             <Pen className="w-3 h-3 text-blue-500" />
                                                             <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
                                                         </div>
                                                     )}
                                                     {stampCount > 0 && (
-                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                        <div className="flex items-center gap-1.5">
                                                             <Type className="w-3 h-3 text-blue-500" />
                                                             <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
                                                         </div>
                                                     )}
                                                     {shapeCount > 0 && (
-                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                        <div className="flex items-center gap-1.5">
                                                             <Square className="w-3 h-3 text-blue-500" />
                                                             <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
                                                         </div>
