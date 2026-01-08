@@ -161,7 +161,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         {isDragging && (
                             <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[3px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-blue-500/50 rounded-xl z-50 animate-in fade-in zoom-in-95 duration-200">
                                 <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-xl">
-                                    <Camera className="w-7 h-7" />
+                                    <Paperclip className="w-7 h-7" />
                                 </div>
                                 <span className={`${Typo.Label} text-blue-600 dark:text-blue-400 font-bold text-base`}>{t('drop_here')}</span>
                             </div>
@@ -197,7 +197,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 <Button
                                     variant="secondary"
                                     className={`w-full transition-colors ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-300 shadow-sm' : ''}`}
-                                    icon={<Camera className="w-4 h-4 text-orange-500" />}
+                                    icon={<Paperclip className="w-4 h-4" />}
                                     onClick={() => document.getElementById('creation-file-upload')?.click()}
                                 >
                                     {t('attach_file')}
