@@ -170,12 +170,12 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
-            annotations: sourceImage.annotations || [],
+            annotations: [], // Clean slate - no inherited annotations in edit mode
             parentId: sourceImage.id,
-            generationPrompt: prompt,
-            userDraftPrompt: draftPrompt !== undefined ? draftPrompt : (sourceImage.userDraftPrompt || ''),
-            activeTemplateId: activeTemplateId !== undefined ? activeTemplateId : sourceImage.activeTemplateId,
-            variableValues: variableValues !== undefined ? variableValues : sourceImage.variableValues,
+            generationPrompt: prompt, // Snapshot for Info tab
+            userDraftPrompt: '', // Clean prompt field
+            activeTemplateId: undefined, // No preset carried over
+            variableValues: undefined, // No variables carried over
             quality: qualityMode,
             estimatedDuration,
             createdAt: Date.now(),

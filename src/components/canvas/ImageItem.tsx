@@ -261,7 +261,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     />
                 </div>
 
-                {!image.isGenerating && !image.parentId && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
+                {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
                     <div className="absolute inset-0 z-20">
                         <EditorCanvas
                             width={finalWidth / zoom}
