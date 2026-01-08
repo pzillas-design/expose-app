@@ -202,30 +202,45 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const getFinalPrompt = () => {
         let final = prompt.trim();
+        const parts: string[] = [];
+
+        // 1. Template Controls
         if (activeTemplate && activeTemplate.controls) {
-            const appendedParts: string[] = [];
             activeTemplate.controls.forEach(c => {
                 const vals = controlValues[c.id];
                 if (vals && vals.length > 0) {
                     if (c.label) {
-                        // Title Case for label: SAISON -> Saison, MOOD -> Mood
-                        const label = c.label.charAt(0).toUpperCase() + c.label.slice(1).toLowerCase();
-                        appendedParts.push(`${label}: ${vals.join(", ")}`);
+                        try {
+                            const label = c.label.charAt(0).toUpperCase() + c.label.slice(1).toLowerCase();
+                            parts.push(`${label}: ${vals.join(", ")}`);
+                        } catch (e) {
+                            parts.push(...vals);
+                        }
                     } else {
-                        appendedParts.push(...vals);
+                        parts.push(...vals);
                     }
                 }
             });
-            if (appendedParts.length > 0) {
-                if (final) {
-                    // Start with a period if missing
-                    if (!final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) {
-                        final += '.';
-                    }
-                    final += " " + appendedParts.join(". ");
-                } else {
-                    final = appendedParts.join(". ");
+        }
+
+        // 2. Reference Image Contexts
+        const refAnns = annotations.filter(a => a.type === 'reference_image');
+        if (refAnns.length > 0) {
+            refAnns.forEach(ann => {
+                if (ann.text) {
+                    parts.push(ann.text);
                 }
+            });
+        }
+
+        if (parts.length > 0) {
+            if (final) {
+                if (!final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) {
+                    final += '.';
+                }
+                final += " " + parts.join(". ");
+            } else {
+                final = parts.join(". ");
             }
         }
         return final;
