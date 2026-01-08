@@ -1,4 +1,6 @@
 
+export type LocaleKey = 'en' | 'de';
+
 export const translations = {
   en: {
     // General
@@ -21,6 +23,8 @@ export const translations = {
     price_free: "Free",
     model_prefix: "Model: ",
     annotate: "Annotation",
+    upload_failed: "Upload failed",
+    image_ref: "Reference image",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -86,6 +90,9 @@ export const translations = {
     add_variable: "Add Variable",
     version_de: "German Version",
     version_en: "English Version",
+    var_name_placeholder: "Variable name...",
+    var_options_placeholder: "Options (comma separated)...",
+    add_btn: "Add",
 
     // Variables
     vars_label: "VARIABLES",
@@ -188,6 +195,8 @@ export const translations = {
     price_free: "Kostenlos",
     model_prefix: "Modell: ",
     annotate: "Anmerkung",
+    upload_failed: "Upload fehlgeschlagen",
+    image_ref: "Referenzbild",
 
     // SideSheet Header
     no_image: "Kein Bild ausgewählt",
@@ -253,6 +262,9 @@ export const translations = {
     add_variable: "Variable hinzufügen",
     version_de: "Deutsche Version",
     version_en: "Englische Version",
+    var_name_placeholder: "Variablenname...",
+    var_options_placeholder: "Optionen (Komma getrennt)...",
+    add_btn: "Hinzufügen",
 
     // Variables
     vars_label: "VARIABLEN",
