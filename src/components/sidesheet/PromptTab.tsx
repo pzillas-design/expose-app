@@ -415,7 +415,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                     key={opt.id}
                                                                     onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
                                                                     className={`
-                                                                        px-3 py-1.5 rounded-full text-[12px] transition-all
+                                                                        px-3 py-1.5 rounded-md text-[12px] transition-all
                                                                         ${isSelected
                                                                             ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
                                                                             : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
