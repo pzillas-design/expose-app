@@ -107,42 +107,43 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 ctx.moveTo(ann.points[0].x, ann.points[0].y);
                 for (let i = 1; i < ann.points.length; i++) ctx.lineTo(ann.points[i].x, ann.points[i].y);
                 ctx.stroke();
-            } else if (activeTab !== 'brush') {
+            }
+
+            // Shapes rendering - always render regardless of activeTab
+            if (ann.type === 'shape') {
                 // Shapes rendering with unified look (filled white, opacity)
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
                 ctx.lineWidth = 2;
 
-                if (ann.type === 'shape') {
-                    if (ann.shapeType === 'rect') {
-                        if (ann.points && ann.points.length >= 3) {
-                            ctx.beginPath();
-                            ctx.moveTo(ann.points[0].x, ann.points[0].y);
-                            for (let i = 1; i < ann.points.length; i++) ctx.lineTo(ann.points[i].x, ann.points[i].y);
-                            ctx.closePath();
-                            ctx.fill();
-                            ctx.stroke();
-                        }
-                    }
-                    else if (ann.shapeType === 'circle') {
-                        ctx.save();
-                        const cx = (ann.x || 0) + (ann.width || 0) / 2;
-                        const cy = (ann.y || 0) + (ann.height || 0) / 2;
-                        ctx.translate(cx, cy);
-                        ctx.rotate(((ann.rotation || 0) * Math.PI) / 180);
+                if (ann.shapeType === 'rect') {
+                    if (ann.points && ann.points.length >= 3) {
                         ctx.beginPath();
-                        ctx.ellipse(0, 0, (ann.width || 0) / 2, (ann.height || 0) / 2, 0, 0, Math.PI * 2);
+                        ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                        for (let i = 1; i < ann.points.length; i++) ctx.lineTo(ann.points[i].x, ann.points[i].y);
+                        ctx.closePath();
                         ctx.fill();
                         ctx.stroke();
-                        ctx.restore();
-                    } else if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
-                        ctx.beginPath();
-                        ctx.lineWidth = ann.strokeWidth || 4;
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                        ctx.moveTo(ann.points[0].x, ann.points[0].y);
-                        ctx.lineTo(ann.points[1].x, ann.points[1].y);
-                        ctx.stroke();
                     }
+                }
+                else if (ann.shapeType === 'circle') {
+                    ctx.save();
+                    const cx = (ann.x || 0) + (ann.width || 0) / 2;
+                    const cy = (ann.y || 0) + (ann.height || 0) / 2;
+                    ctx.translate(cx, cy);
+                    ctx.rotate(((ann.rotation || 0) * Math.PI) / 180);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, (ann.width || 0) / 2, (ann.height || 0) / 2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.restore();
+                } else if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
+                    ctx.beginPath();
+                    ctx.lineWidth = ann.strokeWidth || 4;
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                    ctx.lineTo(ann.points[1].x, ann.points[1].y);
+                    ctx.stroke();
                 }
             }
         });

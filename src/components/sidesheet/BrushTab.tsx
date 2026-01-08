@@ -1,6 +1,6 @@
 
 import React, { useMemo, useEffect } from 'react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
 import { Pen, Type, Square, Circle, Minus } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
@@ -56,31 +56,6 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         </span>
     );
 
-    const SecondaryButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
-        <button
-            onClick={onClick}
-            className="w-full flex items-center gap-3 py-3 px-4 transition-all border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 active:scale-[0.98]"
-        >
-            <Icon className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
-        </button>
-    );
-
-    const BrushButton = ({ isActive }: { isActive: boolean }) => (
-        <button
-            onClick={() => onMaskToolChange?.(isActive ? 'select' : 'brush')}
-            className={`w-full flex items-center gap-3 py-3 px-4 transition-all rounded-lg active:scale-[0.98] ${isActive
-                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border border-zinc-900 dark:border-white'
-                    : 'border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700'
-                }`}
-        >
-            <Pen className={`w-4 h-4 ${isActive ? 'text-white dark:text-zinc-900' : 'text-zinc-600 dark:text-zinc-400'}`} />
-            <span className={`text-xs font-medium ${isActive ? 'text-white dark:text-zinc-900' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                {currentLang === 'de' ? 'Pinsel' : 'Brush'}
-            </span>
-        </button>
-    );
-
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
             <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-6 animate-in fade-in duration-300">
@@ -88,32 +63,51 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                 {/* 1. OBJECT TOOLS - Secondary Buttons Stacked */}
                 <div className="space-y-3 px-6">
                     <SectionHeader label={currentLang === 'de' ? 'Objekte platzieren' : 'Place Objects'} />
-                    <SecondaryButton
-                        icon={Type}
-                        label={currentLang === 'de' ? 'Text' : 'Text'}
+                    <Button
+                        variant="secondary"
+                        icon={<Type className="w-4 h-4" />}
                         onClick={() => onAddText?.()}
-                    />
-                    <SecondaryButton
-                        icon={Square}
-                        label={currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
+                        className="w-full"
+                    >
+                        {currentLang === 'de' ? 'Text einfügen' : 'Insert Text'}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        icon={<Square className="w-4 h-4" />}
                         onClick={() => onAddShape?.('rect')}
-                    />
-                    <SecondaryButton
-                        icon={Circle}
-                        label={currentLang === 'de' ? 'Kreis' : 'Circle'}
+                        className="w-full"
+                    >
+                        {currentLang === 'de' ? 'Rechteck einfügen' : 'Insert Rectangle'}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        icon={<Circle className="w-4 h-4" />}
                         onClick={() => onAddShape?.('circle')}
-                    />
-                    <SecondaryButton
-                        icon={Minus}
-                        label={currentLang === 'de' ? 'Linie' : 'Line'}
+                        className="w-full"
+                    >
+                        {currentLang === 'de' ? 'Kreis einfügen' : 'Insert Circle'}
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        icon={<Minus className="w-4 h-4" />}
                         onClick={() => onAddShape?.('line')}
-                    />
+                        className="w-full"
+                    >
+                        {currentLang === 'de' ? 'Linie einfügen' : 'Insert Line'}
+                    </Button>
                 </div>
 
-                {/* 2. BRUSH TOOL - Stateful Secondary Button */}
+                {/* 2. BRUSH TOOL - Stateful Button */}
                 <div className="space-y-3 px-6">
                     <SectionHeader label={currentLang === 'de' ? 'Werkzeuge' : 'Tools'} />
-                    <BrushButton isActive={maskTool === 'brush'} />
+                    <Button
+                        variant={maskTool === 'brush' ? 'primary' : 'secondary'}
+                        icon={<Pen className="w-4 h-4" />}
+                        onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
+                        className="w-full"
+                    >
+                        {currentLang === 'de' ? 'Pinsel' : 'Brush'}
+                    </Button>
 
                     {/* Brush Size Slider - Only when active */}
                     {maskTool === 'brush' && (
