@@ -210,8 +210,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             const userText = ann.text?.trim();
             // Fallback instruction to help the AI distinguish between source and reference
             const fallback = currentLang === 'de'
-                ? "Nutze dieses Bild ausschließlich als visuelle Referenz für Stil, Licht oder Komposition."
-                : "Use this image only as a visual reference for style, lighting, or composition.";
+                ? "Nutze dieses Bild als Inspiration für ..."
+                : "Use this image as inspiration for ...";
 
             const content = userText || fallback;
             refParts.push(`${currentLang === 'de' ? 'Referenz' : 'Reference'} ${index + 1}: ${content}`);
@@ -324,7 +324,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                         {/* REFERENCE IMAGES (First) */}
                                         {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                                            const defaultText = currentLang === 'de' ? "Referenz für ... :" : "Reference for ... :";
+                                            const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration für ..." : "Use this image as inspiration for ...";
                                             // Explicit content check
                                             const hasText = ann.text && ann.text.trim().length > 0;
                                             const textValue = hasText ? ann.text : defaultText;
