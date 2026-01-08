@@ -682,6 +682,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onBrushResizeStart={onBrushResizeStart}
                                 onBrushResizeEnd={onBrushResizeEnd}
                                 maskTool={maskTool}
+                                onMaskToolChange={onMaskToolChange}
                                 activeShape={activeShape}
                                 isActive={true}
                                 activeAnnotationId={activeAnnotationId}
