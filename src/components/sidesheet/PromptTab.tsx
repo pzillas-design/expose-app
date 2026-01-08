@@ -56,6 +56,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [hiddenControlIds, setHiddenControlIds] = useState<string[]>([]);
 
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
+    const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
+    const [editingControlId, setEditingControlId] = useState<string | null>(null);
+    const [editControlValue, setEditControlValue] = useState("");
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
 
@@ -125,10 +128,24 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            saveEditing();
+            if (editingControlId) saveControlLabel();
+            else saveEditing();
         }
         if (e.key === 'Escape') {
             setEditingId(null);
+            setEditingControlId(null);
+        }
+    };
+
+    const startEditingControl = (id: string, currentLabel: string) => {
+        setEditingControlId(id);
+        setEditControlValue(labelOverrides[id] || currentLabel);
+    };
+
+    const saveControlLabel = () => {
+        if (editingControlId) {
+            setLabelOverrides(prev => ({ ...prev, [editingControlId]: editControlValue }));
+            setEditingControlId(null);
         }
     };
 
@@ -232,9 +249,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             activeTemplate.controls.forEach(c => {
                 const vals = controlValues[c.id];
                 if (vals && vals.length > 0) {
-                    if (c.label) {
+                    const displayLabel = labelOverrides[c.id] || c.label;
+                    if (displayLabel) {
                         try {
-                            const label = c.label.charAt(0).toUpperCase() + c.label.slice(1).toLowerCase();
+                            const label = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1).toLowerCase();
                             varParts.push(`${label}: ${vals.join(", ")}`);
                         } catch (e) {
                             varParts.push(...vals);
@@ -329,38 +347,67 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {/* 2. VARIABLE BLOCKS (Optional) */}
                                 {activeTemplate && activeTemplate.controls && activeTemplate.controls
                                     .filter(c => !hiddenControlIds.includes(c.id))
-                                    .map((ctrl) => (
-                                        <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
-                                            <div className="absolute top-2 right-2">
-                                                <button
-                                                    onClick={() => handleClearControl(ctrl.id)}
-                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                                    title="Remove"
-                                                >
-                                                    <X className="w-3.5 h-3.5" />
-                                                </button>
+                                    .map((ctrl) => {
+                                        const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
+                                        const isEditing = editingControlId === ctrl.id;
+
+                                        return (
+                                            <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                                <div className="absolute top-2 right-2">
+                                                    <button
+                                                        onClick={() => handleClearControl(ctrl.id)}
+                                                        className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                        title="Remove"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="relative w-full pr-8">
+                                                        {isEditing ? (
+                                                            <textarea
+                                                                autoFocus
+                                                                value={editControlValue}
+                                                                onChange={(e) => setEditControlValue(e.target.value)}
+                                                                onBlur={saveControlLabel}
+                                                                onKeyDown={handleKeyDown}
+                                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono font-bold uppercase tracking-widest text-[10px] opacity-70 leading-relaxed resize-none overflow-hidden block`}
+                                                                style={{ minHeight: '1.2em' }}
+                                                            />
+                                                        ) : (
+                                                            <div
+                                                                onClick={() => startEditingControl(ctrl.id, ctrl.label)}
+                                                                className={`w-full ${Typo.Body} font-mono font-bold uppercase tracking-widest text-[10px] opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                            >
+                                                                {displayLabel}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {ctrl.options.map((opt) => {
+                                                            const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                            return (
+                                                                <button
+                                                                    key={opt.id}
+                                                                    onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                                    className={`
+                                                                        px-3 py-1.5 rounded-full text-[12px] transition-all
+                                                                        ${isSelected
+                                                                            ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                                                                            : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
+                                                                    `}
+                                                                >
+                                                                    {opt.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-wrap gap-1.5 pr-8">
-                                                {ctrl.options.map((opt) => {
-                                                    const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                    return (
-                                                        <button
-                                                            key={opt.id}
-                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                            className={`
-                                                                px-3 py-1.5 rounded-full text-[12px] transition-all
-                                                                ${isSelected
-                                                                    ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                    : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
-                                                            `}
-                                                        >
-                                                            {opt.label}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 }
 
                                 {/* 3. ANNOTATIONS BLOCK (Optional) */}
