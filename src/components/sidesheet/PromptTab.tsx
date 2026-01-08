@@ -312,9 +312,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
                     {!showInfo || isMulti ? (
-                        <div className="flex-1 flex flex-col px-6 pt-6 pb-6">
-                            <div className="flex flex-col gap-0">
-                                {/* UNIFIED BOX: Prompt + Chips */}
+                        <div className="flex-1 flex flex-col px-6 pt-6 pb-6 gap-3">
+                            <div className="flex flex-col gap-3">
+                                {/* 1. MAIN PROMPT BLOCK (Always Visible) */}
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
                                     <div className="px-4 pt-3 flex items-center gap-2 opacity-30 select-none">
                                         <div className="uppercase tracking-widest text-[9px] font-bold">
@@ -326,147 +326,132 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder={t('describe_changes')}
-                                        className={`w-full bg-transparent border-none outline-none px-4 py-2 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
+                                        className={`w-full bg-transparent border-none outline-none px-4 py-2 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
                                         disabled={selectedImage.isGenerating}
                                     />
-
-                                    {/* SECTIONS CONTAINER */}
-                                    <div className="p-3 pt-4 flex flex-col gap-4">
-
-                                        {/* Divider Logic: Only if there are sections */}
-                                        {/* 1. REFERENCE IMAGES SECTION */}
-                                        {annotations.some(a => a.type === 'reference_image') && (
-                                            <div className="flex flex-col gap-3">
-                                                <div className="px-1 flex items-center gap-2 opacity-30 select-none">
-                                                    <div className="uppercase tracking-widest text-[9px] font-bold">
-                                                        {currentLang === 'de' ? "Kontext / Referenzen" : "Context / References"}
-                                                    </div>
-                                                    <div className="flex-1 h-px bg-current opacity-20" />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* REFERENCE IMAGES (First) */}
-                                        {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                                            const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration für ..." : "Use this image as inspiration for ...";
-                                            // Explicit content check
-                                            const hasText = ann.text && ann.text.trim().length > 0;
-                                            const textValue = hasText ? ann.text : defaultText;
-                                            const isEditing = editingId === ann.id;
-
-                                            return (
-                                                <React.Fragment key={ann.id}>
-                                                    {index > 0 && (
-                                                        <div className="w-full h-px bg-zinc-100 dark:bg-zinc-800" />
-                                                    )}
-                                                    <div className="flex flex-col gap-2 pt-2 pb-2 group/refItem">
-                                                        {/* Editable Text Area (Monospace, similar to prompt) */}
-                                                        <div className="relative w-full">
-                                                            {isEditing ? (
-                                                                <textarea
-                                                                    autoFocus
-                                                                    value={editValue}
-                                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                                    onBlur={saveEditing}
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                                                            e.preventDefault();
-                                                                            saveEditing();
-                                                                        }
-                                                                        handleKeyDown(e);
-                                                                    }}
-                                                                    className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
-                                                                    style={{ minHeight: '1.5em' }}
-                                                                    onInput={(e) => {
-                                                                        const target = e.target as HTMLTextAreaElement;
-                                                                        target.style.height = 'auto';
-                                                                        target.style.height = target.scrollHeight + 'px';
-                                                                    }}
-                                                                />
-                                                            ) : (
-                                                                <div
-                                                                    onClick={() => startEditing(ann, defaultText)}
-                                                                    className={`w-full ${Typo.Body} font-mono leading-relaxed cursor-text break-words whitespace-pre-wrap ${!hasText ? 'text-zinc-400 opacity-80' : 'text-zinc-900 dark:text-zinc-100'}`}
-                                                                >
-                                                                    {textValue}
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Reference Image Chip */}
-                                                        <div className="relative w-fit group/chip">
-                                                            <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 relative bg-zinc-100 dark:bg-zinc-800 shadow-sm">
-                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                    className="absolute top-0.5 right-0.5 p-0.5 rounded-md bg-black/60 text-white hover:bg-red-500 transition-all opacity-0 group-hover/chip:opacity-100"
-                                                                >
-                                                                    <X className="w-3 h-3" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </React.Fragment>
-                                            );
-                                        })}
-
-                                        {/* Divider between Refs and Vars - now a labeled sectionHeader if needed */}
-                                        {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                            <div className="flex flex-col gap-3 pt-2">
-                                                <div className="px-1 flex items-center gap-2 opacity-30 select-none">
-                                                    <div className="uppercase tracking-widest text-[9px] font-bold">
-                                                        {currentLang === 'de' ? "Stil-Parameter" : "Style Parameters"}
-                                                    </div>
-                                                    <div className="flex-1 h-px bg-current opacity-20" />
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* VARIABLE OPTIONS (Second) */}
-                                        {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
-                                            <div className="flex flex-col gap-4">
-                                                {activeTemplate.controls
-                                                    .filter(c => !hiddenControlIds.includes(c.id))
-                                                    .map((ctrl) => (
-                                                        <div key={ctrl.id} className="flex flex-col gap-2 group">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <span className="text-[11px] tracking-widest text-zinc-400 dark:text-zinc-500 uppercase font-mono font-bold opacity-60">
-                                                                    {ctrl.label}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => handleClearControl(ctrl.id)}
-                                                                    className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                                                                    title="Reset"
-                                                                >
-                                                                    <X className="w-3 h-3" />
-                                                                </button>
-                                                            </div>
-                                                            <div className="flex flex-wrap gap-1.5">
-                                                                {ctrl.options.map((opt) => {
-                                                                    const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                                    return (
-                                                                        <button
-                                                                            key={opt.id}
-                                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
-                                                                            className={`
-                                                                                px-3 py-1.5 rounded-full text-[12px] transition-all
-                                                                                ${isSelected
-                                                                                    ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                                    : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
-                                                                            `}
-                                                                        >
-                                                                            {opt.label}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
+
+                                {/* 2. VARIABLE BLOCKS (Optional) */}
+                                {activeTemplate && activeTemplate.controls && activeTemplate.controls
+                                    .filter(c => !hiddenControlIds.includes(c.id) && (controlValues[c.id] || []).length > 0)
+                                    .map((ctrl) => (
+                                        <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
+                                                    {ctrl.label}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleClearControl(ctrl.id)}
+                                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Remove"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {(controlValues[ctrl.id] || []).map((val) => (
+                                                    <div
+                                                        key={val}
+                                                        className="px-3 py-1.5 rounded-full text-[12px] bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
+                                                    >
+                                                        {val}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                }
+
+                                {/* 3. ANNOTATIONS BLOCK (Optional) */}
+                                {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (
+                                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
+                                                {currentLang === 'de' ? "Anmerkungen" : "Annotations"}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).forEach(a => onDeleteAnnotation(a.id));
+                                                }}
+                                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                title="Clear All"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-6 min-w-[24px] px-2 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-full text-[11px] font-mono font-bold border border-zinc-200 dark:border-zinc-700">
+                                                {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length}
+                                            </span>
+                                            <span className={`${Typo.Body} opacity-60`}>
+                                                {currentLang === 'de' ? "Markierte Bereiche auf dem Bild" : "Marked areas on the image"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
+                                {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
+                                    const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration für ..." : "Use this image as inspiration for ...";
+                                    const hasText = ann.text && ann.text.trim().length > 0;
+                                    const textValue = hasText ? ann.text : defaultText;
+                                    const isEditing = editingId === ann.id;
+
+                                    return (
+                                        <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
+                                            <div className="flex items-center justify-between">
+                                                <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
+                                                    {currentLang === 'de' ? `Referenz ${index + 1}` : `Reference ${index + 1}`}
+                                                </div>
+                                                <button
+                                                    onClick={() => onDeleteAnnotation(ann.id)}
+                                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Remove"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3">
+                                                <div className="relative w-full">
+                                                    {isEditing ? (
+                                                        <textarea
+                                                            autoFocus
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={saveEditing}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                                    e.preventDefault();
+                                                                    saveEditing();
+                                                                }
+                                                                handleKeyDown(e);
+                                                            }}
+                                                            className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                            style={{ minHeight: '1.5em' }}
+                                                            onInput={(e) => {
+                                                                const target = e.target as HTMLTextAreaElement;
+                                                                target.style.height = 'auto';
+                                                                target.style.height = target.scrollHeight + 'px';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            onClick={() => startEditing(ann, defaultText)}
+                                                            className={`w-full ${Typo.Body} font-mono leading-relaxed cursor-text break-words whitespace-pre-wrap ${!hasText ? 'text-zinc-400 opacity-80' : 'text-zinc-900 dark:text-zinc-100'}`}
+                                                        >
+                                                            {textValue}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 shadow-sm shrink-0">
+                                                    <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             <div className="flex flex-col">
@@ -607,7 +592,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </Button>
                                 )}
                             </div>
-                        </div>
+                        </div >
                     ) : (
                         /* Info Tab Content */
                         <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
@@ -776,23 +761,25 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     )}
 
 
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* PRESET LIBRARY - At the absolute bottom of the side sheet, full width */}
-            {(!showInfo || isMulti) && (
-                <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
-                    <PresetLibrary
-                        templates={templates}
-                        onSelect={handleSelectPreset}
-                        onTogglePin={onDeleteTemplate || (() => { })}
-                        onRequestCreate={openCreatePreset}
-                        onRequestEdit={openEditPreset}
-                        t={t}
-                        currentLang={currentLang}
-                    />
-                </div>
-            )}
+            {
+                (!showInfo || isMulti) && (
+                    <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
+                        <PresetLibrary
+                            templates={templates}
+                            onSelect={handleSelectPreset}
+                            onTogglePin={onDeleteTemplate || (() => { })}
+                            onRequestCreate={openCreatePreset}
+                            onRequestEdit={openEditPreset}
+                            t={t}
+                            currentLang={currentLang}
+                        />
+                    </div>
+                )
+            }
 
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
