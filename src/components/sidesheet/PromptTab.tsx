@@ -439,7 +439,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 }
 
                                 {/* 3. ANNOTATIONS (Stamps, Masks, Shapes) - Individual Items */}
-                                {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (
+                                {/* Don't show annotations on generated images (they should start fresh) */}
+                                {!selectedImage.parentId && annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (
                                     <div className="flex flex-col gap-2">
                                         {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).map((ann) => {
                                             const isEditing = editingId === ann.id;
@@ -518,7 +519,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 )}
 
                                 {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
-                                {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
+                                {/* Don't show reference images on generated images (they should start fresh) */}
+                                {!selectedImage.parentId && annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
                                     const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration für ..." : "Use this image as inspiration for ...";
                                     const hasText = ann.text && ann.text.trim().length > 0;
                                     const textValue = hasText ? ann.text : defaultText;
