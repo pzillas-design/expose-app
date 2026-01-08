@@ -146,7 +146,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setIsEditingAnnotationLabel(true);
         const defaultLabel = currentLang === 'de'
             ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
-            : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+            : "Image 2: The annotations on the image show where and what should be changed.";
         setEditAnnotationLabelValue(annotationLabelOverride || defaultLabel);
     };
 
@@ -245,7 +245,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (hasAnnotations) {
             const defaultLabel = currentLang === 'de'
                 ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
-                : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+                : "Image 2: The annotations on the image show where and what should be changed.";
             const displayLabel = annotationLabelOverride || defaultLabel;
             annotationGuide = displayLabel;
         }
@@ -474,7 +474,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         >
                                                             {annotationLabelOverride || (currentLang === 'de'
                                                                 ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
-                                                                : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).")}
+                                                                : "Image 2: The annotations on the image show where and what should be changed.")}
                                                         </div>
                                                     )}
                                                 </div>
