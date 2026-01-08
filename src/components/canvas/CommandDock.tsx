@@ -89,7 +89,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
             </svg>
           )}
           onClick={onHome}
-          tooltip="Home"
+          tooltip={t('home')}
           className="w-8 h-8 flex items-center justify-center p-0"
         />
       </div>

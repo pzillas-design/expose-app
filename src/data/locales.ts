@@ -18,6 +18,7 @@ export const translations = {
     copy: "Copy",
     copied_to_clipboard: "Prompt copied",
     back_to_app: "Back to App",
+    home: "Home",
     added: "added",
     attach_file: "Attach photo",
     new_generation: "New Generation",
@@ -109,6 +110,10 @@ export const translations = {
     tt_delete: "Delete",
     tt_undo: "Undo",
     tt_redo: "Redo",
+    zoom_in: "Zoom In",
+    zoom_out: "Zoom Out",
+    manage_credits: "Manage Credits",
+    create_new: "Create New",
 
     // Board / Gallery
     welcome_title: "Welcome to Exposé",
@@ -200,6 +205,7 @@ export const translations = {
     copy: "Kopieren",
     copied_to_clipboard: "Prompt kopiert",
     back_to_app: "Zurück zur App",
+    home: "Übersicht",
     added: "hinzugefügt",
     attach_file: "Foto anhängen",
     new_generation: "Neue Generation",
@@ -291,6 +297,10 @@ export const translations = {
     tt_delete: "Löschen",
     tt_undo: "Rückgängig",
     tt_redo: "Wiederholen",
+    zoom_in: "Vergrößern",
+    zoom_out: "Verkleinern",
+    manage_credits: "Guthaben verwalten",
+    create_new: "Neu erstellen",
 
     // Board / Gallery
     welcome_title: "Willkommen bei Exposé",
@@ -338,7 +348,7 @@ export const translations = {
     gen_modal_aspect_ratio: "Format",
     gen_modal_quality: "Qualität",
     creation_prompt_label: "Prompt",
-    creation_prompt_placeholder: "Beschreibe, was du generieren möchtest...",
+    creation_prompt_placeholder: "Beschreiben Sie, was Sie generieren möchten...",
     creation_quality_label: "Qualität",
     creation_ratio_label: "Format",
     drop_here: "Hier ablegen",

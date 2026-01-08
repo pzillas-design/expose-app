@@ -866,18 +866,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             {/* Actions Container (No Header) */}
                             <div className="flex flex-col gap-2">
-
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => onGenerateMore(selectedImage.id)}
-                                    disabled={selectedImage.isGenerating}
-                                    className="justify-start px-4 h-11 gap-2"
-                                >
-                                    <RotateCcw className="w-4 h-4 text-zinc-400" />
-                                    <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                        {t('ctx_create_variations')}
-                                    </span>
-                                </Button>
+                                {selectedImage.parentId && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => onGenerateMore(selectedImage.id)}
+                                        disabled={selectedImage.isGenerating}
+                                        className="justify-start px-4 h-11 gap-2"
+                                    >
+                                        <RotateCcw className="w-4 h-4 text-zinc-400" />
+                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                            {t('ctx_create_variations')}
+                                        </span>
+                                    </Button>
+                                )}
 
                                 <Button
                                     variant="secondary"
