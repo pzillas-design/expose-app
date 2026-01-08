@@ -127,16 +127,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
                 }
                 else if (ann.shapeType === 'circle') {
-                    ctx.save();
-                    const cx = (ann.x || 0) + (ann.width || 0) / 2;
-                    const cy = (ann.y || 0) + (ann.height || 0) / 2;
-                    ctx.translate(cx, cy);
-                    ctx.rotate(((ann.rotation || 0) * Math.PI) / 180);
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, (ann.width || 0) / 2, (ann.height || 0) / 2, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                    ctx.restore();
+                    // B-spline with 4 control points
+                    if (ann.points && ann.points.length >= 4) {
+                        ctx.beginPath();
+                        const p = ann.points;
+                        const t = 0.5;
+                        ctx.moveTo(p[0].x, p[0].y);
+                        for (let i = 0; i < 4; i++) {
+                            const p0 = p[i], p1 = p[(i + 1) % 4], p2 = p[(i + 2) % 4], pm = p[(i - 1 + 4) % 4];
+                            const cp1x = p0.x + (p1.x - pm.x) * t, cp1y = p0.y + (p1.y - pm.y) * t;
+                            const cp2x = p1.x - (p2.x - p0.x) * t, cp2y = p1.y - (p2.y - p0.y) * t;
+                            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    }
                 } else if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
                     ctx.beginPath();
                     ctx.lineWidth = ann.strokeWidth || 4;
@@ -244,37 +250,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }
 
                 if (ann.shapeType === 'circle') {
-                    // Free-form resizing - handles move freely in all directions (B-spline-like)
-                    if (['top', 'right', 'bottom', 'left'].includes(dragState.mode)) {
-                        let { initialX: iX, initialY: iY, initialW: iW, initialH: iH } = dragState;
-                        let nX = iX, nY = iY, nW = iW, nH = iH;
-
-                        if (dragState.mode === 'top') {
-                            nY += dy;
-                            nH -= dy;
-                            // Allow horizontal movement too
-                            nX += dx / 2;
-                            nW -= dx;
-                        } else if (dragState.mode === 'bottom') {
-                            nH += dy;
-                            // Allow horizontal movement too
-                            nX += dx / 2;
-                            nW -= dx;
-                        } else if (dragState.mode === 'left') {
-                            nX += dx;
-                            nW -= dx;
-                            // Allow vertical movement too
-                            nY += dy / 2;
-                            nH -= dy;
-                        } else if (dragState.mode === 'right') {
-                            nW += dx;
-                            // Allow vertical movement too
-                            nY += dy / 2;
-                            nH -= dy;
-                        }
-
-                        return { ...ann, x: nX, y: nY, width: Math.max(10, nW), height: Math.max(10, nH) };
-                    }
+                    // B-spline uses vertex dragging for all 4 control points
+                    // No special handling needed - vertex mode handles it
                 }
 
                 return ann;
@@ -442,22 +419,48 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         return (
                             <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
-                                    <ellipse
-                                        cx={cx}
-                                        cy={cy}
-                                        rx={rx}
-                                        ry={ry}
-                                        transform={`rotate(${rot} ${cx} ${cy})`}
-                                        fill="transparent"
-                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
-                                        strokeWidth={active ? 2 : 15}
-                                        className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
-                                    />
+                                    {ann.points && ann.points.length >= 4 ? (
+                                        <path
+                                            d={(() => {
+                                                const p = ann.points;
+                                                const t = 0.5;
+                                                let path = `M ${p[0].x} ${p[0].y}`;
+                                                for (let i = 0; i < 4; i++) {
+                                                    const p0 = p[i], p1 = p[(i + 1) % 4], p2 = p[(i + 2) % 4], pm = p[(i - 1 + 4) % 4];
+                                                    const cp1x = p0.x + (p1.x - pm.x) * t, cp1y = p0.y + (p1.y - pm.y) * t;
+                                                    const cp2x = p1.x - (p2.x - p0.x) * t, cp2y = p1.y - (p2.y - p0.y) * t;
+                                                    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+                                                }
+                                                return path + ' Z';
+                                            })()}
+                                            fill="transparent"
+                                            stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
+                                            strokeWidth={active ? 2 : 15}
+                                            className="pointer-events-auto cursor-move"
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMaskId(ann.id);
+                                                startDrag(e, ann.id, 'move', ann);
+                                            }}
+                                        />
+                                    ) : (
+                                        <ellipse
+                                            cx={cx}
+                                            cy={cy}
+                                            rx={rx}
+                                            ry={ry}
+                                            transform={`rotate(${rot} ${cx} ${cy})`}
+                                            fill="transparent"
+                                            stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
+                                            strokeWidth={active ? 2 : 15}
+                                            className="pointer-events-auto cursor-move"
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMaskId(ann.id);
+                                                startDrag(e, ann.id, 'move', ann);
+                                            }}
+                                        />
+                                    )}
                                 </svg>
                                 {active && (() => {
                                     // 4 handles on the axes (cross pattern) - no rotation needed for circles

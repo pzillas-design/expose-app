@@ -477,15 +477,23 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 createdAt: Date.now()
             };
         } else {
-            // Circle
+            // Circle as B-spline with 4 control points
             const half = size / 2;
             newShape = {
                 id: generateId(),
                 type: 'shape',
                 shapeType: 'circle',
-                x: cx - half, y: cy - half, width: size, height: size,
+                x: cx - half,
+                y: cy - half,
+                width: size,
+                height: size,
                 rotation: 0,
-                points: [],
+                points: [
+                    { x: cx, y: cy - half },        // Top
+                    { x: cx + half, y: cy },        // Right
+                    { x: cx, y: cy + half },        // Bottom
+                    { x: cx - half, y: cy }         // Left
+                ],
                 strokeWidth: 4,
                 color: '#fff',
                 createdAt: Date.now()
