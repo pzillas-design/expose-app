@@ -49,104 +49,112 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            <div className="flex-1 overflow-y-auto no-scrollbar py-6 px-4 animate-in fade-in duration-300">
+            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-2 px-6 animate-in fade-in duration-300">
 
-                {/* 2x2 Grid for Shape Tools */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                    {/* Text */}
-                    <button
-                        onClick={() => {
-                            onMaskToolChange?.('select');
-                            onAddText?.();
-                        }}
-                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
-                    >
-                        <Type className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
-                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
-                            {currentLang === 'de' ? 'Text' : 'Text'}
-                        </span>
-                    </button>
-
-                    {/* Rectangle */}
-                    <button
-                        onClick={() => {
-                            onMaskToolChange?.('select');
-                            onAddShape?.('rect');
-                        }}
-                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
-                    >
-                        <Square className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
-                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
-                            {currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
-                        </span>
-                    </button>
-
-                    {/* Circle */}
-                    <button
-                        onClick={() => {
-                            onMaskToolChange?.('select');
-                            onAddShape?.('circle');
-                        }}
-                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
-                    >
-                        <Circle className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
-                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
-                            {currentLang === 'de' ? 'Kreis' : 'Circle'}
-                        </span>
-                    </button>
-
-                    {/* Line */}
-                    <button
-                        onClick={() => {
-                            onMaskToolChange?.('select');
-                            onAddShape?.('line');
-                        }}
-                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
-                    >
-                        <Minus className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
-                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
-                            {currentLang === 'de' ? 'Linie' : 'Line'}
-                        </span>
-                    </button>
-                </div>
-
-                {/* Brush Tool - Full Width Tile */}
+                {/* Object Buttons */}
                 <button
-                    onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
-                    className={`w-full flex flex-col items-center justify-center rounded-lg transition-all border ${maskTool === 'brush' ? 'bg-zinc-700/70 border-zinc-600 py-4 px-3 gap-3' : 'bg-zinc-800/40 border-zinc-700/50 hover:bg-zinc-700/60 hover:border-zinc-600 py-5 px-3 gap-2'}`}
+                    onClick={() => {
+                        onMaskToolChange?.('select');
+                        onAddText?.();
+                    }}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
                 >
-                    {/* Icon and Label */}
-                    <div className="flex items-center gap-2">
-                        <Pen className="w-5 h-5 text-zinc-300" />
-                        <span className="text-[11px] font-medium text-zinc-200">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                    <div className="flex items-center gap-3">
+                        <Type className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Text' : 'Text'}</span>
                     </div>
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
 
-                    {/* Slider Controls - Only visible when active */}
+                <button
+                    onClick={() => {
+                        onMaskToolChange?.('select');
+                        onAddShape?.('rect');
+                    }}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Square className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Rechteck' : 'Rectangle'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                <button
+                    onClick={() => {
+                        onMaskToolChange?.('select');
+                        onAddShape?.('circle');
+                    }}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Circle className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                <button
+                    onClick={() => {
+                        onMaskToolChange?.('select');
+                        onAddShape?.('line');
+                    }}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Minus className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                {/* Brush Tool */}
+                <div className={`w-full rounded-lg transition-all border ${maskTool === 'brush' ? 'bg-zinc-700 border-zinc-600' : 'bg-zinc-800/50 border-transparent hover:bg-zinc-800 hover:border-zinc-700'}`}>
+                    <button
+                        onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
+                        className="group w-full flex items-center justify-between py-3 px-4"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Pen className="w-4 h-4 text-zinc-100" />
+                            <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${maskTool === 'brush' ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Brush Size Slider - Inside the tile */}
                     {maskTool === 'brush' && (
-                        <div className="w-full flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-[10px] text-zinc-400 font-mono font-bold min-w-[20px]">{brushSize}</span>
-                            <input
-                                type="range"
-                                min="10" max="400"
-                                value={brushSize}
-                                onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
-                                onMouseDown={onBrushResizeStart}
-                                onMouseUp={onBrushResizeEnd}
-                                className="flex-1 h-1 bg-zinc-600 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-300 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-white transition-all"
-                            />
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onClearBrushStrokes?.();
-                                }}
-                                className="p-1 rounded text-zinc-400 hover:bg-zinc-600 hover:text-red-400 transition-all"
-                                title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
-                            >
-                                <Trash className="w-3 h-3" />
-                            </button>
+                        <div className="animate-in slide-in-from-top-2 fade-in duration-200 px-4 pb-3 pt-1 border-t border-zinc-600/50">
+                            <div className="flex items-center gap-3">
+                                <span className="text-[11px] text-zinc-400 font-mono font-bold min-w-[24px]">{brushSize}</span>
+                                <input
+                                    type="range"
+                                    min="10" max="400"
+                                    value={brushSize}
+                                    onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
+                                    onMouseDown={onBrushResizeStart}
+                                    onMouseUp={onBrushResizeEnd}
+                                    className="flex-1 h-1 bg-zinc-600 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-zinc-400 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-zinc-300 transition-all"
+                                />
+                                <button
+                                    onClick={onClearBrushStrokes}
+                                    className="p-1.5 rounded-md text-zinc-400 hover:bg-zinc-600 hover:text-red-400 transition-all"
+                                    title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
+                                >
+                                    <Trash className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
                     )}
-                </button>
+                </div>
+
             </div>
 
             {/* Stickers */}
