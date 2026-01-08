@@ -712,6 +712,39 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <p className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed`}>
                                         {selectedImage.generationPrompt}
                                     </p>
+
+                                    {/* Annotation Badges */}
+                                    {(() => {
+                                        const annotations = selectedImage.annotations || [];
+                                        const maskCount = annotations.filter(a => a.type === 'mask_path').length;
+                                        const stampCount = annotations.filter(a => a.type === 'stamp').length;
+                                        const shapeCount = annotations.filter(a => a.type === 'shape').length;
+
+                                        if (maskCount === 0 && stampCount === 0 && shapeCount === 0) return null;
+
+                                        return (
+                                            <div className="flex flex-wrap gap-2">
+                                                {maskCount > 0 && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                        <Pen className="w-3 h-3 text-blue-500" />
+                                                        <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
+                                                    </div>
+                                                )}
+                                                {stampCount > 0 && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                        <Type className="w-3 h-3 text-blue-500" />
+                                                        <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
+                                                    </div>
+                                                )}
+                                                {shapeCount > 0 && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                        <Square className="w-3 h-3 text-blue-500" />
+                                                        <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
 
