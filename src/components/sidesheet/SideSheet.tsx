@@ -338,16 +338,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             updateAnnotationsWithHistory(updatedAnns);
         } else {
             // Create new global reference
-            const refCount = currentAnns.filter(a => a.type === 'reference_image').length;
-            const labelText = pendingFileName || `${t('image_ref')} ${refCount + 1}`;
-
+            // Create new global reference
             const newRef: AnnotationObject = {
                 id: generateId(),
                 type: 'reference_image',
                 points: [],
                 strokeWidth: 0,
                 color: '#fff',
-                text: labelText,
+                text: '', // Empty text implies using the default placeholder in prompt logic
                 referenceImage: croppedBase64,
                 createdAt: Date.now()
             };
