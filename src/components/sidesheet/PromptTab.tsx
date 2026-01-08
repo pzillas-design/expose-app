@@ -432,6 +432,77 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     })
                                 }
 
+                                {/* 3. ANNOTATIONS BLOCK (Optional) */}
+                                {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (() => {
+                                    const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+                                    const displayLabel = annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
+
+                                    const maskCount = activeAnns.filter(a => a.type === 'mask_path').length;
+                                    const stampCount = activeAnns.filter(a => a.type === 'stamp').length;
+                                    const shapeCount = activeAnns.filter(a => a.type === 'shape').length;
+
+                                    return (
+                                        <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                            <div className="absolute top-2 right-2">
+                                                <button
+                                                    onClick={() => {
+                                                        activeAnns.forEach(a => onDeleteAnnotation(a.id));
+                                                    }}
+                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Clear All"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3">
+                                                <div className="relative w-full pr-8">
+                                                    {isEditingAnnotationLabel ? (
+                                                        <textarea
+                                                            autoFocus
+                                                            value={editAnnotationLabelValue}
+                                                            onChange={(e) => setEditAnnotationLabelValue(e.target.value)}
+                                                            onBlur={saveAnnotationLabel}
+                                                            onKeyDown={handleKeyDown}
+                                                            className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono opacity-70 leading-relaxed resize-none overflow-hidden block`}
+                                                            style={{ minHeight: '1.2em' }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            onClick={startEditingAnnotationLabel}
+                                                            className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                        >
+                                                            {annotationLabelOverride || (currentLang === 'de'
+                                                                ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
+                                                                : "Image 2: The annotations on the image show where and what should be changed.")}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {maskCount > 0 && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Pen className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {stampCount > 0 && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Type className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {shapeCount > 0 && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Square className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
                                 {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
@@ -505,14 +576,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <span>{t('annotate') || 'Annotate'}</span>
-                                            {annotations.filter(a => a.type !== 'reference_image').length > 0 && (
-                                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-full text-[10px] font-mono leading-none">
-                                                    {annotations.filter(a => a.type !== 'reference_image').length}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <span>{t('annotate') || 'Annotate'}</span>
                                     </Button>
                                     <Button
                                         variant="secondary"

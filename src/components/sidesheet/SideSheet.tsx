@@ -654,7 +654,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onDeselect={handleDeselectPreservingPrompt}
                                 templates={templates}
                                 onSelectTemplate={(t) => handlePromptChange(t.prompt)}
-                                onAddBrush={() => onModeChange('brush')}
+                                onAddBrush={() => {
+                                    // Auto-select shape tool if shapes exist
+                                    const hasShapes = (selectedImage.annotations || []).some(a => a.type === 'shape');
+                                    if (hasShapes) {
+                                        onMaskToolChange('shape');
+                                    }
+                                    onModeChange('brush');
+                                }}
                                 onAddObject={() => onModeChange('brush')}
                                 onAddReference={handleAddReferenceImage}
                                 annotations={selectedImage.annotations || []}
