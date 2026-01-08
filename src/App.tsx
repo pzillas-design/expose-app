@@ -92,14 +92,18 @@ export function App() {
                 }
                 setResolvingBoardId(null);
             } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
-                if (currentBoardId !== null) {
+                // Auto-load last board if user lands on home
+                if (user && boards && boards.length > 0 && currentBoardId === null && !resolvingBoardId) {
+                    const lastBoard = boards[boards.length - 1]; // Most recent board
+                    navigate(`/projects/${lastBoard.id}`);
+                } else if (currentBoardId !== null) {
                     setCurrentBoardId(null);
                     setRows([]);
                 }
             }
         };
         syncUrl();
-    }, [location.pathname, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId]);
+    }, [location.pathname, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId, user, boards, navigate]);
 
 
     useEffect(() => {
