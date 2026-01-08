@@ -372,13 +372,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                                 onChange={(e) => setEditControlValue(e.target.value)}
                                                                 onBlur={saveControlLabel}
                                                                 onKeyDown={handleKeyDown}
-                                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono font-bold uppercase tracking-widest text-[10px] opacity-70 leading-relaxed resize-none overflow-hidden block`}
+                                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono opacity-70 leading-relaxed resize-none overflow-hidden block`}
                                                                 style={{ minHeight: '1.2em' }}
                                                             />
                                                         ) : (
                                                             <div
                                                                 onClick={() => startEditingControl(ctrl.id, ctrl.label)}
-                                                                className={`w-full ${Typo.Body} font-mono font-bold uppercase tracking-widest text-[10px] opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                                className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                             >
                                                                 {displayLabel}
                                                             </div>
