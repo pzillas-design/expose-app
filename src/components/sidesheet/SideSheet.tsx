@@ -536,8 +536,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             const result = await confirm({
                 title: lang === 'de' ? 'Änderungen speichern?' : 'Save changes?',
                 description: lang === 'de'
-                    ? 'Möchten Sie Ihre Änderungen an den Anmerkungen speichern oder verwerfen?'
-                    : 'Do you want to save or discard your changes to the annotations?',
+                    ? 'Änderungen speichern oder verwerfen?'
+                    : 'Save or discard changes?',
                 confirmLabel: lang === 'de' ? 'Speichern' : 'Save',
                 cancelLabel: lang === 'de' ? 'Verwerfen' : 'Discard',
                 variant: 'primary'
