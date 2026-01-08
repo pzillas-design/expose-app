@@ -50,6 +50,7 @@ interface SideSheetProps {
     onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
     activeShape: 'rect' | 'circle' | 'line';
     onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
+    onActiveAnnotationChange?: (id: string | null) => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -93,6 +94,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onMaskToolChange,
     activeShape,
     onActiveShapeChange,
+    onActiveAnnotationChange,
     onUpload,
     onCreateNew,
     isBoardEmpty,
@@ -117,8 +119,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [historyMap, setHistoryMap] = useState<Map<string, AnnotationObject[][]>>(new Map());
     const [historyIndexMap, setHistoryIndexMap] = useState<Map<string, number>>(new Map());
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
-    const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+    const [activeAnnotationId, setActiveAnnotationIdInternal] = useState<string | null>(null);
     const { confirm } = useItemDialog();
+
+    const setActiveAnnotationId = (id: string | null) => {
+        setActiveAnnotationIdInternal(id);
+        onActiveAnnotationChange?.(id);
+    };
 
     // Get current image's history
     const history = selectedImage?.id ? (historyMap.get(selectedImage.id) || []) : [];

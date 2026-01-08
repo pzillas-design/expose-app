@@ -20,6 +20,7 @@ interface ImageItemProps {
         maskTool: 'brush' | 'text' | 'shape' | 'select';
         activeShape?: 'rect' | 'circle' | 'line';
         isBrushResizing?: boolean;
+        activeAnnotationId?: string | null;
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
@@ -259,6 +260,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             activeShape={editorState.activeShape}
                             isBrushResizing={editorState.isBrushResizing}
                             isActive={isSelected}
+                            activeAnnotationId={editorState.activeAnnotationId}
                             onEditStart={onEditStart}
                             onContextMenu={(e) => onContextMenu?.(e, image.id)}
                             t={t}

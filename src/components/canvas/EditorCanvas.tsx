@@ -114,7 +114,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 // Shapes rendering with unified look (filled white, opacity)
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = ann.strokeWidth || 4;
 
                 if (ann.shapeType === 'rect') {
                     if (ann.points && ann.points.length >= 3) {

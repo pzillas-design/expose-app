@@ -65,8 +65,11 @@ export function App() {
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
+    // Active Annotation State
+    const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
+
     // Stable Editor State Object to preserve ImageItem memoization during scroll
-    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing]);
+    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId]);
 
     // URL Routing Sync
     useEffect(() => {
@@ -556,6 +559,7 @@ export function App() {
                     onMaskToolChange={setMaskTool}
                     activeShape={activeShape}
                     onActiveShapeChange={setActiveShape}
+                    onActiveAnnotationChange={setActiveAnnotationId}
                     onUpload={() => processFile()}
                     onCreateNew={() => setIsCreationModalOpen(true)}
                     isBoardEmpty={rows.length === 0}
