@@ -75,6 +75,16 @@ export const translations = {
     preset_created: "Preset created",
     preset_updated: "Preset updated",
     preset_deleted: "Preset deleted",
+    new_preset_title: "Create New Preset",
+    edit_preset_title: "Edit Preset",
+    title_label: "TITLE",
+    title_placeholder: "e.g. Modern Architecture",
+    prompt_label_editor: "PROMPT",
+    prompt_placeholder: "Enter the prompt template...",
+    variables_label: "VARIABLES",
+    add_variable: "Add Variable",
+    version_de: "German Version",
+    version_en: "English Version",
 
     // Variables
     vars_label: "VARIABLES",
@@ -231,6 +241,16 @@ export const translations = {
     preset_created: "Preset erstellt",
     preset_updated: "Preset aktualisiert",
     preset_deleted: "Preset gelöscht",
+    new_preset_title: "Neues Preset erstellen",
+    edit_preset_title: "Preset bearbeiten",
+    title_label: "TITEL",
+    title_placeholder: "z.B. Moderne Architektur",
+    prompt_label_editor: "PROMPT",
+    prompt_placeholder: "Geben Sie die Prompt-Vorlage ein...",
+    variables_label: "VARIABLEN",
+    add_variable: "Variable hinzufügen",
+    version_de: "Deutsche Version",
+    version_en: "Englische Version",
 
     // Variables
     vars_label: "VARIABLEN",
