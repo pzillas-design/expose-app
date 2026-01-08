@@ -65,6 +65,7 @@ export const translations = {
 
     // Presets
     no_presets: "No presets found",
+    presets_header: "Presets",
     search_presets: "Search presets...",
     create_preset: "Create Preset",
     update_preset: "Update Preset",
@@ -231,6 +232,7 @@ export const translations = {
 
     // Presets
     no_presets: "Keine Presets gefunden",
+    presets_header: "Vorlagen",
     search_presets: "Presets suchen...",
     create_preset: "Preset erstellen",
     update_preset: "Preset aktualisieren",

@@ -316,47 +316,48 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <div className="flex flex-col gap-3">
                                 {/* 1. MAIN PROMPT BLOCK (Always Visible) */}
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
-                                    <div className="px-4 pt-3 flex items-center gap-2 opacity-30 select-none">
-                                        <div className="uppercase tracking-widest text-[9px] font-bold">
-                                            {currentLang === 'de' ? "Haupt-Anweisung" : "Main Instruction"}
-                                        </div>
-                                    </div>
                                     <textarea
                                         ref={textAreaRef}
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder={t('describe_changes')}
-                                        className={`w-full bg-transparent border-none outline-none px-4 py-2 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
+                                        className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
                                         disabled={selectedImage.isGenerating}
                                     />
                                 </div>
 
                                 {/* 2. VARIABLE BLOCKS (Optional) */}
                                 {activeTemplate && activeTemplate.controls && activeTemplate.controls
-                                    .filter(c => !hiddenControlIds.includes(c.id) && (controlValues[c.id] || []).length > 0)
+                                    .filter(c => !hiddenControlIds.includes(c.id))
                                     .map((ctrl) => (
-                                        <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
-                                            <div className="flex items-center justify-between">
-                                                <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
-                                                    {ctrl.label}
-                                                </div>
+                                        <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                            <div className="absolute top-2 right-2">
                                                 <button
                                                     onClick={() => handleClearControl(ctrl.id)}
-                                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
                                                     title="Remove"
                                                 >
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {(controlValues[ctrl.id] || []).map((val) => (
-                                                    <div
-                                                        key={val}
-                                                        className="px-3 py-1.5 rounded-full text-[12px] bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium"
-                                                    >
-                                                        {val}
-                                                    </div>
-                                                ))}
+                                            <div className="flex flex-wrap gap-1.5 pr-8">
+                                                {ctrl.options.map((opt) => {
+                                                    const isSelected = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                    return (
+                                                        <button
+                                                            key={opt.id}
+                                                            onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
+                                                            className={`
+                                                                px-3 py-1.5 rounded-full text-[12px] transition-all
+                                                                ${isSelected
+                                                                    ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
+                                                                    : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
+                                                            `}
+                                                        >
+                                                            {opt.label}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     ))
@@ -364,16 +365,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                 {/* 3. ANNOTATIONS BLOCK (Optional) */}
                                 {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (
-                                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
-                                                {currentLang === 'de' ? "Anmerkungen" : "Annotations"}
-                                            </div>
+                                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                        <div className="absolute top-2 right-2">
                                             <button
                                                 onClick={() => {
                                                     annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).forEach(a => onDeleteAnnotation(a.id));
                                                 }}
-                                                className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
                                                 title="Clear All"
                                             >
                                                 <X className="w-3.5 h-3.5" />
@@ -398,14 +396,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     const isEditing = editingId === ann.id;
 
                                     return (
-                                        <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-3 gap-3 relative group`}>
-                                            <div className="flex items-center justify-between">
-                                                <div className="uppercase tracking-widest text-[9px] font-bold opacity-30 select-none font-mono">
-                                                    {currentLang === 'de' ? `Referenz ${index + 1}` : `Reference ${index + 1}`}
-                                                </div>
+                                        <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                            <div className="absolute top-2 right-2">
                                                 <button
                                                     onClick={() => onDeleteAnnotation(ann.id)}
-                                                    className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all opacity-0 group-hover:opacity-100"
+                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
                                                     title="Remove"
                                                 >
                                                     <X className="w-3.5 h-3.5" />
@@ -413,7 +408,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             </div>
 
                                             <div className="flex flex-col gap-3">
-                                                <div className="relative w-full">
+                                                <div className="relative w-full pr-8">
                                                     {isEditing ? (
                                                         <textarea
                                                             autoFocus
