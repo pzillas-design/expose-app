@@ -66,7 +66,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <Button
                         variant="secondary"
                         icon={<Type className="w-4 h-4" />}
-                        onClick={() => onAddText?.()}
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddText?.();
+                        }}
                         className="w-full"
                     >
                         {currentLang === 'de' ? 'Text einfügen' : 'Insert Text'}
@@ -74,7 +77,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <Button
                         variant="secondary"
                         icon={<Square className="w-4 h-4" />}
-                        onClick={() => onAddShape?.('rect')}
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('rect');
+                        }}
                         className="w-full"
                     >
                         {currentLang === 'de' ? 'Rechteck einfügen' : 'Insert Rectangle'}
@@ -82,7 +88,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <Button
                         variant="secondary"
                         icon={<Circle className="w-4 h-4" />}
-                        onClick={() => onAddShape?.('circle')}
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('circle');
+                        }}
                         className="w-full"
                     >
                         {currentLang === 'de' ? 'Kreis einfügen' : 'Insert Circle'}
@@ -90,7 +99,10 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <Button
                         variant="secondary"
                         icon={<Minus className="w-4 h-4" />}
-                        onClick={() => onAddShape?.('line')}
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('line');
+                        }}
                         className="w-full"
                     >
                         {currentLang === 'de' ? 'Linie einfügen' : 'Insert Line'}
