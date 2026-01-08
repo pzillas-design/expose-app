@@ -186,7 +186,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     const finalWidth = (image.height * ratio) * zoom;
     const finalHeight = image.height * zoom;
 
-    const navIconBtnClass = `absolute flex items-center justify-center w-10 h-10 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-full hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 pointer-events-auto z-[60]`;
+    const navIconBtnClass = `absolute flex items-center justify-center w-10 h-10 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-md hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 pointer-events-auto z-[60]`;
 
     return (
         <div
@@ -280,12 +280,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {isSelected && zoom > 1.2 && (
                 <div className="absolute inset-0 pointer-events-none">
                     {hasLeft && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} left-0 top-1/2 -translate-y-1/2 -translate-x-14`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-5 top-1/2 -translate-y-1/2`}>
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                     )}
                     {hasRight && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} right-0 top-1/2 -translate-y-1/2 translate-x-14`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-5 top-1/2 -translate-y-1/2`}>
                             <ChevronRight className="w-6 h-6" />
                         </button>
                     )}
