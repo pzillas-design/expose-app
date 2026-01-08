@@ -685,15 +685,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             </div>
 
                             <div className="flex flex-col gap-3">
-                                {isMulti && (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={onDeselect}
-                                        className="w-full"
-                                    >
-                                        {t('ctx_deselect')}
-                                    </Button>
-                                )}
                             </div>
                         </div >
                     ) : (

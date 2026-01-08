@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
 import { Trash, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
@@ -244,6 +244,8 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
     const isMulti = selectedImages && selectedImages.length > 1;
 
+    const lastIsMultiRef = useRef(isMulti);
+
     useEffect(() => {
         if (selectedImage && !isMulti) {
             setPrompt(selectedImage.userDraftPrompt || '');
@@ -253,9 +255,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             if (sideSheetMode !== 'prompt' && !selectedImage.isGenerating) {
                 onModeChange('prompt');
             }
-        } else if (isMulti) {
-            if (!prompt) setPrompt('');
+        } else if (isMulti && !lastIsMultiRef.current) {
+            // Reset prompt when entering multi-select mode
+            setPrompt('');
+            if (sideSheetMode !== 'prompt') onModeChange('prompt');
         }
+        lastIsMultiRef.current = isMulti;
     }, [selectedImage?.id, selectedImage?.userDraftPrompt, isMulti]);
 
     const handlePromptChange = (val: string) => {
