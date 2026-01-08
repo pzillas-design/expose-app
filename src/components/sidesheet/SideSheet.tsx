@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
-import { Trash2, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
+import { Trash, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { InfoFilled } from '@/components/ui/CustomIcons';

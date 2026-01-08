@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, TextArea, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
-import { Plus, Trash2, Check, X } from 'lucide-react';
+import { Plus, Trash, Check, X } from 'lucide-react';
 import { generateId } from '@/utils/ids';
 
 interface PresetEditorModalProps {
@@ -251,7 +251,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                             variant="secondary"
                             onClick={() => { onDelete(initialTemplate.id); onClose(); }}
                             className="px-4 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            icon={<Trash2 className="w-4 h-4" />}
+                            icon={<Trash className="w-4 h-4" />}
                         >
                             {t('delete')}
                         </Button>

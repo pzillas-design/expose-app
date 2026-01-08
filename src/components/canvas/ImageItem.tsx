@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -210,7 +210,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             <Download className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 rounded-md">
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash className="w-3.5 h-3.5" />
                         </button>
                         {image.parentId && (
                             <button onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md">

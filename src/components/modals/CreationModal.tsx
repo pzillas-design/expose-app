@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
-import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash2 } from 'lucide-react';
+import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash } from 'lucide-react';
 
 interface CreationModalProps {
     isOpen: boolean;
@@ -214,7 +214,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                                 onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
                                                 className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
                                             >
-                                                <Trash2 className="w-4 h-4 text-white" />
+                                                <Trash className="w-4 h-4 text-white" />
                                             </button>
                                         </div>
                                     ))}

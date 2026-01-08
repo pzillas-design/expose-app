@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Theme, Button, Typo, Card, Input } from './DesignSystem';
-import { X, AlertTriangle, Trash2, Edit3 } from 'lucide-react';
+import { X, AlertTriangle, Trash, Edit3 } from 'lucide-react';
 
 // --- Context ---
 
@@ -83,7 +83,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         <div className="p-8 flex flex-col items-center text-center">
                             {options.variant === 'danger' && (
                                 <div className="mb-4 text-red-500">
-                                    <Trash2 size={24} strokeWidth={1.5} />
+                                    <Trash size={24} strokeWidth={1.5} />
                                 </div>
                             )}
 

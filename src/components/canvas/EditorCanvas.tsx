@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnnotationObject, TranslationFunction } from '@/types';
-import { X, Check, Pen, Trash2, RotateCw } from 'lucide-react';
+import { X, Check, Pen, Trash, RotateCw } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { generateId } from '@/utils/ids';
 
@@ -373,8 +373,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     <polygon
                                         points={points.map(p => `${p.x},${p.y}`).join(' ')}
                                         fill="transparent"
-                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
-                                        strokeWidth={active ? 2 : 15}
+                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
+                                        strokeWidth={active ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -391,11 +391,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
                                         <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors"
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -430,11 +430,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
                                         <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors"
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -463,8 +463,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         ry={Math.abs(h / 2)}
                                         transform={`rotate(${rotation} ${cx} ${cy})`}
                                         fill="transparent"
-                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
-                                        strokeWidth={active ? 2 : 15}
+                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
+                                        strokeWidth={active ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -495,11 +495,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         ))}
 
                                         <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors z-[60]"
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                         >
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -543,7 +543,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             onMouseDown={e => e.stopPropagation()} />
                                         <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                             className="p-0.5 hover:bg-white/10 rounded transition-colors">
-                                            <Trash2 className="text-zinc-400 hover:text-red-400 transition-colors" style={{ width: 12 * zoom, height: 12 * zoom }} />
+                                            <Trash className="text-zinc-400 hover:text-red-400 transition-colors" style={{ width: 12 * zoom, height: 12 * zoom }} />
                                         </button>
                                     </div>
                                 ) : (

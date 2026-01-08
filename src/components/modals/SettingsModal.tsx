@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    X, Shield, LogOut, Mail, Globe, LayoutDashboard, Trash2, ArrowRight,
+    X, Shield, LogOut, Mail, Globe, LayoutDashboard, Trash, ArrowRight,
     Moon, Sun, Monitor, Loader2
 } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';
@@ -374,7 +374,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     <section>
                                         <button className={`w-full flex items-center justify-between p-4 ${Theme.Geometry.Radius} ${Theme.Colors.DangerBorder} ${Theme.Colors.DangerBg} group text-left hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors`}>
                                             <div className="flex items-center gap-3">
-                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                                <Trash className="w-4 h-4 text-red-500" />
                                                 <span className={`text-sm font-medium ${Theme.Colors.Danger}`}>{t('delete_account')}</span>
                                             </div>
                                             <ArrowRight className="w-4 h-4 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />

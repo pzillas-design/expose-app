@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pen, Trash2 } from 'lucide-react';
+import { Plus, Pen, Trash } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
 import { Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { SidebarAccordion, SidebarAccordionItem } from '@/components/ui/SidebarAccordion';
@@ -139,7 +139,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                         }}
                                         className={`flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer w-full ${Theme.Geometry.Radius}`}
                                     >
-                                        <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
+                                        <Trash className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
                                         <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>
                                             {t('delete') || 'Delete'}
                                         </span>

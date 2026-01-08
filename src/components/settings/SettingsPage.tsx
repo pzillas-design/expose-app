@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Shield, LogOut, Mail, Globe, LayoutDashboard, Trash2, ArrowRight,
+    Shield, LogOut, Mail, Globe, LayoutDashboard, Trash, ArrowRight,
     Moon, Sun, Monitor, Loader2, User, Sliders, Info, X
 } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';

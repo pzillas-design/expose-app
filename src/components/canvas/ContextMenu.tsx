@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Trash2, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload } from 'lucide-react';
+import { Download, Trash, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload } from 'lucide-react';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { TranslationFunction, CanvasImage } from '@/types';
 
@@ -153,7 +153,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                         </button>
 
                                         <button onClick={() => { onDeleteSelected(); onClose(); }} className={dangerClass}>
-                                            <Trash2 className={dangerIconClass} />
+                                            <Trash className={dangerIconClass} />
                                             <span className={dangerTextClass}>{t('ctx_delete_multi').replace('{{n}}', selectedIds.length.toString())}</span>
                                         </button>
                                     </>
@@ -176,7 +176,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                         </button>
 
                                         <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
-                                            <Trash2 className={dangerIconClass} />
+                                            <Trash className={dangerIconClass} />
                                             <span className={dangerTextClass}>{t('ctx_delete_image')}</span>
                                         </button>
                                     </>
@@ -209,7 +209,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 </button>
 
                                 <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
-                                    <Trash2 className={dangerIconClass} />
+                                    <Trash className={dangerIconClass} />
                                     <span className={dangerTextClass}>{t('ctx_delete_image')}</span>
                                 </button>
                             </>

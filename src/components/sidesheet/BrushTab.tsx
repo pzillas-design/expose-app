@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
-import { Pen, Type, Square, Circle, Minus, ChevronDown, Trash2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, Minus, ChevronDown, Trash } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -131,17 +131,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                 {/* Brush Size Slider */}
                 {maskTool === 'brush' && (
                     <div className="animate-in slide-in-from-top-2 fade-in duration-200 pt-2 pb-1">
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between px-1">
-                                <span className="text-[11px] text-zinc-500 dark:text-zinc-500 font-mono">{brushSize}</span>
-                                <button
-                                    onClick={onClearBrushStrokes}
-                                    className="p-1 rounded hover:bg-zinc-800 transition-colors"
-                                    title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5 text-zinc-500 hover:text-red-500 transition-colors" />
-                                </button>
-                            </div>
+                        <div className="flex items-center gap-3 px-1">
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-500 font-mono font-bold min-w-[24px]">{brushSize}</span>
                             <input
                                 type="range"
                                 min="10" max="400"
@@ -149,8 +140,15 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
                                 onMouseDown={onBrushResizeStart}
                                 onMouseUp={onBrushResizeEnd}
-                                className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-zinc-400 dark:[&::-webkit-slider-thumb]:bg-zinc-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-zinc-500 dark:hover:[&::-webkit-slider-thumb]:bg-zinc-500 transition-all"
+                                className="flex-1 h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-zinc-400 dark:[&::-webkit-slider-thumb]:bg-zinc-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-zinc-500 dark:hover:[&::-webkit-slider-thumb]:bg-zinc-500 transition-all"
                             />
+                            <button
+                                onClick={onClearBrushStrokes}
+                                className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                                title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
+                            >
+                                <Trash className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                     </div>
                 )}

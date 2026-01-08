@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Shield, Clock, Lock, ArrowRight, Trash2, Plus, Loader2 } from 'lucide-react';
+import { X, Shield, Clock, Lock, ArrowRight, Trash, Plus, Loader2 } from 'lucide-react';
 import { AdminUser, TranslationFunction } from '@/types';
 import { Typo, IconButton, Button, Input, SectionHeader } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -211,7 +211,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                             className="w-full flex items-center justify-between p-3 rounded-lg border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors text-left group"
                         >
                             <div className="flex items-center gap-3">
-                                <Trash2 className="w-4 h-4 text-red-500" />
+                                <Trash className="w-4 h-4 text-red-500" />
                                 <span className="text-sm text-red-600 dark:text-red-400">{t('admin_delete_user')}</span>
                             </div>
                         </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2 } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { Button, Theme, Typo } from '@/components/ui/DesignSystem';
 
 interface ConfirmDialogProps {
@@ -38,7 +38,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <div className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
-              <Trash2 className="w-5 h-5" />
+              <Trash className="w-5 h-5" />
             </div>
             <h3 className={Typo.H2}>{title}</h3>
           </div>

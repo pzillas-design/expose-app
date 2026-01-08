@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, GripVertical, Loader2, Image as ImageIcon, Check } from 'lucide-react';
+import { Plus, Trash, GripVertical, Loader2, Image as ImageIcon, Check } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -142,7 +142,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                         <Button
                             variant="danger"
                             onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
-                            icon={<Trash2 className="w-4 h-4" />}
+                            icon={<Trash className="w-4 h-4" />}
                             className="px-4"
                         >
                             Auswahl löschen ({selectedIds.size})
@@ -220,7 +220,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
                             <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                 <IconButton
-                                    icon={<Trash2 className="w-4 h-4" />}
+                                    icon={<Trash className="w-4 h-4" />}
                                     onClick={() => setDeleteModal({ isOpen: true, targetId: item.id, isBulk: false })}
                                     className="hover:text-red-500 p-2"
                                 />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import { Plus, Trash, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { TwoDotsVertical } from '../ui/CustomIcons';
 import { useItemDialog } from '../ui/Dialog';
@@ -266,7 +266,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             onClick={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group"
                         >
-                            <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
+                            <Trash className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
                             <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>Löschen</span>
                         </button>
                     </div>
