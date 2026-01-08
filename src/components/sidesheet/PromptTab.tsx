@@ -290,13 +290,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         let finalOutput = "";
 
         if (trimmedPrompt) {
-            const label = currentLang === 'de' ? "HAUPT-ANWEISUNG" : "MAIN INSTRUCTION";
-            finalOutput += `${label}: ${trimmedPrompt}`;
+            finalOutput += trimmedPrompt;
         }
 
         if (annotationGuide) {
             if (finalOutput) finalOutput += "\n\n";
-            finalOutput += `ANNOTATION GUIDE: ${annotationGuide}`;
+            finalOutput += annotationGuide;
         }
 
         if (refParts.length > 0) {
@@ -309,8 +308,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
         if (varParts.length > 0) {
             if (finalOutput) finalOutput += "\n\n";
-            const label = currentLang === 'de' ? "STIL-PARAMETER:" : "STYLE PARAMETERS:";
-            finalOutput += `${label}\n${varParts.join(". ")}`;
+            finalOutput += varParts.join(". ");
         }
 
         // If for some reason the structure is empty, return the raw prompt
