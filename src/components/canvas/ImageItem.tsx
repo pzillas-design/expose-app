@@ -211,7 +211,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }}
                                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
-                                <Download className="w-4 h-4" />
+                                <Download className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
                         <Tooltip text={t('tt_delete')}>
@@ -219,7 +219,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
                                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
-                                <Trash className="w-4 h-4" />
+                                <Trash className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
                         {image.parentId && (
@@ -228,7 +228,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
                                     className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                                 >
-                                    <RotateCcw className="w-4 h-4" />
+                                    <RotateCcw className="w-3.5 h-3.5" />
                                 </button>
                             </Tooltip>
                         )}
