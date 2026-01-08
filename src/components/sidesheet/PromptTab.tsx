@@ -597,7 +597,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 </div>
 
                                 {/* Generate Button with Integrated Settings */}
-                                <div className="mt-3 relative z-20">
+                                <div className="relative z-20">
                                     <div className="flex w-full">
                                         <button
                                             onClick={handleDoGenerate}
