@@ -416,35 +416,59 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
 
                     if (ann.shapeType === 'circle') {
-                        const left = (ann.x || 0) / width * 100;
-                        const top = (ann.y || 0) / height * 100;
-                        const w = (ann.width || 0) / width * 100;
-                        const h = (ann.height || 0) / height * 100;
+                        const cx = (ann.x || 0) + (ann.width || 0) / 2;
+                        const cy = (ann.y || 0) + (ann.height || 0) / 2;
+                        const rx = (ann.width || 0) / 2;
+                        const ry = (ann.height || 0) / 2;
                         const rot = ann.rotation || 0;
 
                         return (
-                            <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%`, width: `${w}%`, height: `${h}%`, transform: `rotate(${rot}deg)` }}>
-                                <div
-                                    className={`w-full h-full border-4 border-white bg-transparent rounded-full cursor-move ${active ? 'border-primary ring-2 ring-primary/20' : ''}`}
-                                    onMouseDown={(e) => {
-                                        e.stopPropagation();
-                                        setActiveMaskId(ann.id);
-                                        startDrag(e, ann.id, 'move', ann);
-                                    }}
-                                />
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                                <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
+                                    <ellipse
+                                        cx={cx}
+                                        cy={cy}
+                                        rx={rx}
+                                        ry={ry}
+                                        transform={`rotate(${rot} ${cx} ${cy})`}
+                                        fill="transparent"
+                                        stroke={active ? '#3b82f6' : 'transparent'}
+                                        strokeWidth={active ? 2 : 15}
+                                        className="pointer-events-auto cursor-move"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMaskId(ann.id);
+                                            startDrag(e, ann.id, 'move', ann);
+                                        }}
+                                    />
+                                </svg>
                                 {active && (
                                     <>
-                                        <div className="absolute -top-2 -left-2 w-4 h-4 bg-white border-2 border-primary rounded-full cursor-nw-resize pointer-events-auto shadow-md" onMouseDown={(e) => startDrag(e, ann.id, 'tl', ann)} />
-                                        <div className="absolute -top-2 -right-2 w-4 h-4 bg-white border-2 border-primary rounded-full cursor-ne-resize pointer-events-auto shadow-md" onMouseDown={(e) => startDrag(e, ann.id, 'tr', ann)} />
-                                        <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-white border-2 border-primary rounded-full cursor-sw-resize pointer-events-auto shadow-md" onMouseDown={(e) => startDrag(e, ann.id, 'bl', ann)} />
-                                        <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-primary rounded-full cursor-se-resize pointer-events-auto shadow-md" onMouseDown={(e) => startDrag(e, ann.id, 'br', ann)} />
+                                        {/* Corner handles for scaling */}
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-nw-resize pointer-events-auto shadow-md z-[60]"
+                                            style={{ left: `${((ann.x || 0) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'tl', ann)} />
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-ne-resize pointer-events-auto shadow-md z-[60]"
+                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'tr', ann)} />
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-sw-resize pointer-events-auto shadow-md z-[60]"
+                                            style={{ left: `${((ann.x || 0) / width) * 100}%`, top: `${(((ann.y || 0) + (ann.height || 0)) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'bl', ann)} />
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-se-resize pointer-events-auto shadow-md z-[60]"
+                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${(((ann.y || 0) + (ann.height || 0)) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'br', ann)} />
 
                                         {/* Rotation Handle */}
-                                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-primary rounded-full cursor-crosshair pointer-events-auto flex items-center justify-center shadow-lg"
+                                        <div className="absolute w-5 h-5 bg-white border-2 border-primary rounded-full cursor-crosshair pointer-events-auto flex items-center justify-center shadow-lg z-[60]"
+                                            style={{ left: `${(cx / width) * 100}%`, top: `${(((ann.y || 0) - 40) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'rotate', ann)}>
-                                            <div className="w-0.5 h-6 bg-primary absolute -bottom-4" />
+                                            <div className="w-0.5 h-6 bg-primary absolute top-full" />
                                         </div>
-                                        <button className="absolute -top-14 -right-6 p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto" onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}><Trash2 className="w-4 h-4" /></button>
+                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </>
                                 )}
                             </div>
