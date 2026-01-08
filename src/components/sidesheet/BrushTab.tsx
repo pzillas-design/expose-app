@@ -45,57 +45,74 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         return library;
     }, [library]);
 
-    // Custom secondary button with left-aligned content and hover text
-    const SecondaryObjectButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
-        <button
-            onClick={onClick}
-            className="w-full flex items-center gap-3 py-3 px-4 transition-all bg-zinc-800/90 dark:bg-zinc-800/90 text-white dark:text-white hover:bg-zinc-700/90 dark:hover:bg-zinc-700/90 rounded-lg active:scale-[0.98] group"
-        >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="text-xs font-medium flex-1 text-left">{label}</span>
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
-                {currentLang === 'de' ? 'einfügen' : 'insert'}
-            </span>
-        </button>
-    );
-
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-3 px-6 animate-in fade-in duration-300">
+            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-2 px-6 animate-in fade-in duration-300">
 
-                {/* Object Buttons - Secondary Style with Left-Aligned Content */}
-                <SecondaryObjectButton
-                    icon={Type}
-                    label={currentLang === 'de' ? 'Text' : 'Text'}
+                {/* Object Buttons */}
+                <button
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddText?.();
                     }}
-                />
-                <SecondaryObjectButton
-                    icon={Square}
-                    label={currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Type className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Text' : 'Text'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                <button
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('rect');
                     }}
-                />
-                <SecondaryObjectButton
-                    icon={Circle}
-                    label={currentLang === 'de' ? 'Kreis' : 'Circle'}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Square className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Rechteck' : 'Rectangle'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                <button
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('circle');
                     }}
-                />
-                <SecondaryObjectButton
-                    icon={Minus}
-                    label={currentLang === 'de' ? 'Linie' : 'Line'}
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Circle className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
+
+                <button
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('line');
                     }}
-                />
+                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                >
+                    <div className="flex items-center gap-3">
+                        <Minus className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
+                    </div>
+                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
+                    </span>
+                </button>
 
                 {/* Brush Tool - Same Secondary Style */}
                 <Button
