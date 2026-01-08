@@ -60,8 +60,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const annFileInputRef = useRef<HTMLInputElement>(null);
-    const targetAnnIdRef = useRef<string | null>(null);
+
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const [isDebugOpen, setIsDebugOpen] = useState(false);
@@ -140,18 +139,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         e.target.value = '';
     };
 
-    const handleAnnFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0] && targetAnnIdRef.current) {
-            onAddReference(e.target.files[0], targetAnnIdRef.current);
-            targetAnnIdRef.current = null;
-        }
-        e.target.value = '';
-    };
 
-    const triggerAnnFile = (annId: string) => {
-        targetAnnIdRef.current = annId;
-        annFileInputRef.current?.click();
-    };
 
     const handleSelectPreset = (t: PromptTemplate) => {
         onSelectTemplate(t);
@@ -273,13 +261,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     return (
         <div className="h-full relative flex flex-col overflow-hidden">
             {/* Hidden file input for annotation reference images */}
-            <input
-                type="file"
-                ref={annFileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleAnnFileChange}
-            />
+
 
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 <div className="min-h-full flex flex-col">
@@ -342,152 +324,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             </div>
                                         )}
 
-                                        {/* REFERENCE IMAGES SECTION */}
-                                        {annotations.filter(a => a.type === 'reference_image').length > 0 && (
-                                            <div className="flex flex-col gap-2 group/ref">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
-                                                        {t('reference_images')}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col gap-1.5 pb-2">
-                                                    {annotations.filter(a => a.type === 'reference_image').map((ann) => {
-                                                        const displayText = ann.text || `${t('image_ref')}`;
-                                                        const isEditing = editingId === ann.id;
 
-                                                        return (
-                                                            <div key={ann.id} className="relative group/chip-container">
-                                                                <div
-                                                                    className={`
-                                                                        flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] transition-all w-full
-                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
-                                                                    `}
-                                                                >
-                                                                    {ann.referenceImage && (
-                                                                        <div className="shrink-0 w-6 h-6 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700">
-                                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isEditing ? (
-                                                                        <input
-                                                                            autoFocus
-                                                                            value={editValue}
-                                                                            onChange={(e) => setEditValue(e.target.value)}
-                                                                            onBlur={saveEditing}
-                                                                            onKeyDown={handleKeyDown}
-                                                                            className="bg-transparent border-none outline-none text-[12px] text-zinc-900 dark:text-white p-0 flex-1"
-                                                                        />
-                                                                    ) : (
-                                                                        <span
-                                                                            onClick={() => startEditing(ann, `${t('image_ref')}`)}
-                                                                            className={`flex-1 truncate cursor-text ${!ann.text ? 'text-zinc-400 italic' : ''}`}
-                                                                        >
-                                                                            {displayText}
-                                                                        </span>
-                                                                    )}
-
-                                                                    {!isEditing && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all opacity-0 group-hover/chip-container:opacity-100"
-                                                                            >
-                                                                                <X className="w-3.5 h-3.5" />
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* ANNOTATIONS SECTION (Non-Reference) */}
-                                        {annotations.filter(a => a.type !== 'reference_image').length > 0 && (
-                                            <div className="flex flex-col gap-2 group/ann">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
-                                                        {t('annotations')}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col gap-1.5 pb-2">
-                                                    {annotations.filter(a => a.type !== 'reference_image').map((ann) => {
-                                                        const displayText = ann.text || t('untitled');
-                                                        const isEditing = editingId === ann.id;
-
-                                                        return (
-                                                            <div key={ann.id} className="relative group/chip-container">
-                                                                <div
-                                                                    className={`
-                                                                        flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] transition-all w-full
-                                                                        ${isEditing ? 'bg-white dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700' : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
-                                                                    `}
-                                                                >
-                                                                    {ann.referenceImage ? (
-                                                                        <div className="shrink-0 w-6 h-6 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 relative">
-                                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                                                            <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
-                                                                                <Camera className="w-3 h-3 text-white drop-shadow-sm" />
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="shrink-0 flex items-center justify-center text-zinc-400">
-                                                                            {ann.type === 'stamp' ? (
-                                                                                <span className="text-sm leading-none">{ann.emoji || '🏷️'}</span>
-                                                                            ) : ann.type === 'shape' ? (
-                                                                                ann.shapeType === 'circle' ? <Circle className="w-4 h-4" /> :
-                                                                                    ann.shapeType === 'line' ? <Minus className="w-4 h-4" /> :
-                                                                                        <Square className="w-4 h-4" />
-                                                                            ) : (
-                                                                                <Pen className="w-4 h-4" />
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isEditing ? (
-                                                                        <input
-                                                                            autoFocus
-                                                                            value={editValue}
-                                                                            onChange={(e) => setEditValue(e.target.value)}
-                                                                            onBlur={saveEditing}
-                                                                            onKeyDown={handleKeyDown}
-                                                                            className="bg-transparent border-none outline-none text-[12px] text-zinc-900 dark:text-white p-0 flex-1"
-                                                                        />
-                                                                    ) : (
-                                                                        <span
-                                                                            onClick={() => startEditing(ann, '')}
-                                                                            className={`flex-1 truncate cursor-text ${!ann.text ? 'text-zinc-400 italic' : ''}`}
-                                                                        >
-                                                                            {displayText}
-                                                                        </span>
-                                                                    )}
-
-                                                                    {!isEditing && (
-                                                                        <div className="flex items-center gap-1">
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); triggerAnnFile(ann.id); }}
-                                                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all opacity-0 group-hover/chip-container:opacity-100"
-                                                                            >
-                                                                                <Camera className="w-3.5 h-3.5" />
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all opacity-0 group-hover/chip-container:opacity-100"
-                                                                            >
-                                                                                <X className="w-3.5 h-3.5" />
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -503,7 +340,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
                                     >
-                                        {t('annotate') || 'Annotate'}
+                                        <div className="flex items-center gap-2">
+                                            <span>{t('annotate') || 'Annotate'}</span>
+                                            {annotations.filter(a => a.type !== 'reference_image').length > 0 && (
+                                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-full text-[10px] font-mono leading-none">
+                                                    {annotations.filter(a => a.type !== 'reference_image').length}
+                                                </span>
+                                            )}
+                                        </div>
                                     </Button>
                                     <Button
                                         variant="secondary"
