@@ -430,6 +430,7 @@ export function App() {
                     onDrop={handleCanvasDrop}
                     onMouseDown={handleBackgroundMouseDown}
                     onMouseMove={handleBackgroundMouseMove}
+                    onContextMenu={handleContextMenu}
                 >
                     <div
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
@@ -574,16 +575,23 @@ export function App() {
 
             {contextMenu && (
                 <ContextMenu
-                    {...contextMenu}
+                    menu={contextMenu}
+                    images={allImages}
                     onClose={() => setContextMenu(null)}
                     onDownload={handleDownload}
                     onDelete={requestDelete}
-                    onRetry={handleGenerateVariations}
-                    onDeselectOther={handleDeselectAllButOne}
+                    onSelect={(id) => selectAndSnap(id)}
                     onAddToSelection={handleAddToSelection}
                     onRemoveFromSelection={handleRemoveFromSelection}
+                    onSelectAll={() => selectMultiple(allImages.map(img => img.id))}
+                    onDeselectAll={() => selectMultiple([])}
+                    onResetView={() => smoothZoomTo(1, 0, 0)}
+                    onUpload={() => processFile()}
+                    onCreateNew={() => setIsCreationModalOpen(true)}
+                    selectedIds={selectedIds}
                     onDownloadSelected={handleDownloadSelected}
-                    selectionCount={selectedIds.length}
+                    onDeleteSelected={() => requestDelete(selectedIds)}
+                    onGenerateVariations={handleGenerateVariations}
                     t={t}
                 />
             )}
