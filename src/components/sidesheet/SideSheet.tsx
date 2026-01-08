@@ -494,7 +494,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
         updateAnnotationsWithHistory([...currentAnns, newShape]);
         setActiveAnnotationId(newShape.id);
-        onMaskToolChange('select');
     };
 
     const handleGenerateWrapper = (p: string) => {
