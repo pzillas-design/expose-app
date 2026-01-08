@@ -244,19 +244,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }
 
                 if (ann.shapeType === 'circle') {
-                    if (dragState.mode === 'rotate') {
-                        const cx = ann.x! + ann.width! / 2;
-                        const cy = ann.y! + ann.height! / 2;
-                        const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI);
-                        return { ...ann, rotation: angle + 90 };
-                    }
-                    if (['tl', 'tr', 'bl', 'br'].includes(dragState.mode)) {
+                    // Axis-based resizing (cross pattern)
+                    if (['top', 'right', 'bottom', 'left'].includes(dragState.mode)) {
                         let { initialX: iX, initialY: iY, initialW: iW, initialH: iH } = dragState;
                         let nX = iX, nY = iY, nW = iW, nH = iH;
-                        if (dragState.mode === 'tl') { nX += dx; nY += dy; nW -= dx; nH -= dy; }
-                        else if (dragState.mode === 'tr') { nY += dy; nW += dx; nH -= dy; }
-                        else if (dragState.mode === 'bl') { nX += dx; nW -= dx; nH += dy; }
-                        else if (dragState.mode === 'br') { nW += dx; nH += dy; }
+
+                        if (dragState.mode === 'top') {
+                            nY += dy;
+                            nH -= dy;
+                        } else if (dragState.mode === 'bottom') {
+                            nH += dy;
+                        } else if (dragState.mode === 'left') {
+                            nX += dx;
+                            nW -= dx;
+                        } else if (dragState.mode === 'right') {
+                            nW += dx;
+                        }
+
                         return { ...ann, x: nX, y: nY, width: Math.max(10, nW), height: Math.max(10, nH) };
                     }
                 }
@@ -444,32 +448,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     />
                                 </svg>
                                 {active && (() => {
-                                    const rot = ann.rotation || 0;
-                                    const radians = (rot * Math.PI) / 180;
-
-                                    // Calculate rotated corner positions
-                                    const corners = [
-                                        { dx: -(ann.width || 0) / 2, dy: -(ann.height || 0) / 2, cursor: 'nw-resize' }, // TL
-                                        { dx: (ann.width || 0) / 2, dy: -(ann.height || 0) / 2, cursor: 'ne-resize' },  // TR
-                                        { dx: -(ann.width || 0) / 2, dy: (ann.height || 0) / 2, cursor: 'sw-resize' },  // BL
-                                        { dx: (ann.width || 0) / 2, dy: (ann.height || 0) / 2, cursor: 'se-resize' }    // BR
+                                    // 4 handles on the axes (cross pattern) - no rotation needed for circles
+                                    const handles = [
+                                        { x: cx, y: (ann.y || 0), cursor: 'n-resize', mode: 'top' },           // Top
+                                        { x: (ann.x || 0) + (ann.width || 0), y: cy, cursor: 'e-resize', mode: 'right' },  // Right
+                                        { x: cx, y: (ann.y || 0) + (ann.height || 0), cursor: 's-resize', mode: 'bottom' }, // Bottom
+                                        { x: (ann.x || 0), y: cy, cursor: 'w-resize', mode: 'left' }          // Left
                                     ];
-
-                                    const rotatedCorners = corners.map(({ dx, dy, cursor }, idx) => {
-                                        const rotatedX = cx + dx * Math.cos(radians) - dy * Math.sin(radians);
-                                        const rotatedY = cy + dx * Math.sin(radians) + dy * Math.cos(radians);
-                                        return { x: rotatedX, y: rotatedY, cursor, mode: ['tl', 'tr', 'bl', 'br'][idx] };
-                                    });
-
-                                    // Rotation handle position (above center)
-                                    const rotHandleDy = -40;
-                                    const rotHandleX = cx + 0 * Math.cos(radians) - rotHandleDy * Math.sin(radians);
-                                    const rotHandleY = cy + 0 * Math.sin(radians) + rotHandleDy * Math.cos(radians);
 
                                     return (
                                         <>
-                                            {/* Corner handles for scaling */}
-                                            {rotatedCorners.map(({ x, y, cursor, mode }, idx) => (
+                                            {/* Axis handles - elegant cross pattern */}
+                                            {handles.map(({ x, y, cursor, mode }, idx) => (
                                                 <div
                                                     key={idx}
                                                     className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto shadow-md z-[60]"
@@ -483,20 +473,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 />
                                             ))}
 
-                                            {/* Rotation Handle */}
-                                            <div className="absolute w-6 h-6 bg-white border-2 border-zinc-900 dark:border-white rounded-full cursor-grab active:cursor-grabbing pointer-events-auto flex items-center justify-center shadow-lg z-[60]"
-                                                style={{ left: `${(rotHandleX / width) * 100}%`, top: `${(rotHandleY / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                                onMouseDown={(e) => startDrag(e, ann.id, 'rotate', ann)}>
-                                                <RotateCw className="w-3 h-3 text-zinc-900 dark:text-white" />
-                                                <div
-                                                    className="w-0.5 h-6 bg-zinc-300 dark:bg-zinc-700 absolute"
-                                                    style={{
-                                                        top: '100%',
-                                                        transform: `rotate(${rot}deg)`,
-                                                        transformOrigin: 'top center'
-                                                    }}
-                                                />
-                                            </div>
+                                            {/* Delete button */}
                                             <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
                                                 style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                                 onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
