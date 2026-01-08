@@ -302,12 +302,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <div className="flex flex-col gap-0">
                                 {/* UNIFIED BOX: Prompt + Chips */}
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
+                                    <div className="px-4 pt-3 flex items-center gap-2 opacity-30 select-none">
+                                        <div className="uppercase tracking-widest text-[9px] font-bold">
+                                            {currentLang === 'de' ? "Haupt-Anweisung" : "Main Instruction"}
+                                        </div>
+                                    </div>
                                     <textarea
                                         ref={textAreaRef}
                                         value={prompt}
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder={t('describe_changes')}
-                                        className={`w-full bg-transparent border-none outline-none p-4 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[100px] overflow-hidden`}
+                                        className={`w-full bg-transparent border-none outline-none px-4 py-2 pb-0 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
                                         disabled={selectedImage.isGenerating}
                                     />
 
@@ -315,12 +320,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <div className="p-3 pt-4 flex flex-col gap-4">
 
                                         {/* Divider Logic: Only if there are sections */}
-                                        {(
-                                            (annotations.some(a => a.type === 'reference_image')) ||
-                                            (activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0)
-                                        ) && (
-                                                <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
-                                            )}
+                                        {/* 1. REFERENCE IMAGES SECTION */}
+                                        {annotations.some(a => a.type === 'reference_image') && (
+                                            <div className="flex flex-col gap-3">
+                                                <div className="px-1 flex items-center gap-2 opacity-30 select-none">
+                                                    <div className="uppercase tracking-widest text-[9px] font-bold">
+                                                        {currentLang === 'de' ? "Kontext / Referenzen" : "Context / References"}
+                                                    </div>
+                                                    <div className="flex-1 h-px bg-current opacity-20" />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* REFERENCE IMAGES (First) */}
                                         {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
@@ -387,11 +397,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             );
                                         })}
 
-                                        {/* Divider between Refs and Vars */}
-                                        {(annotations.some(a => a.type === 'reference_image')) &&
-                                            (activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0) && (
-                                                <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
-                                            )}
+                                        {/* Divider between Refs and Vars - now a labeled sectionHeader if needed */}
+                                        {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
+                                            <div className="flex flex-col gap-3 pt-2">
+                                                <div className="px-1 flex items-center gap-2 opacity-30 select-none">
+                                                    <div className="uppercase tracking-widest text-[9px] font-bold">
+                                                        {currentLang === 'de' ? "Stil-Parameter" : "Style Parameters"}
+                                                    </div>
+                                                    <div className="flex-1 h-px bg-current opacity-20" />
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* VARIABLE OPTIONS (Second) */}
                                         {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
@@ -467,7 +483,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={t('tt_upload_ref')}
                                     >
-                                        {currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}
+                                        <div className="flex items-center gap-2">
+                                            <span>{currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}</span>
+                                            {annotations.filter(a => a.type === 'reference_image').length > 0 && (
+                                                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 rounded-full text-[10px] font-mono leading-none">
+                                                    {annotations.filter(a => a.type === 'reference_image').length}
+                                                </span>
+                                            )}
+                                        </div>
                                     </Button>
                                     <input
                                         type="file"
