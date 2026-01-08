@@ -114,20 +114,32 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
-    const [history, setHistory] = useState<AnnotationObject[][]>([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
+    const [historyMap, setHistoryMap] = useState<Map<string, AnnotationObject[][]>>(new Map());
+    const [historyIndexMap, setHistoryIndexMap] = useState<Map<string, number>>(new Map());
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
     const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
     const { confirm } = useItemDialog();
 
-    // Initial history when image changes
+    // Get current image's history
+    const history = selectedImage?.id ? (historyMap.get(selectedImage.id) || []) : [];
+    const historyIndex = selectedImage?.id ? (historyIndexMap.get(selectedImage.id) ?? -1) : -1;
+
+    // Initialize history when image changes or enters brush mode
     useEffect(() => {
         if (selectedImage?.id) {
             const currentAnns = selectedImage.annotations || [];
-            setHistory([currentAnns]);
-            setHistoryIndex(0);
 
-            // Only set initial if we are entering brush mode
+            // Only initialize if this image doesn't have history yet
+            if (!historyMap.has(selectedImage.id)) {
+                const newHistoryMap = new Map(historyMap);
+                const newIndexMap = new Map(historyIndexMap);
+                newHistoryMap.set(selectedImage.id, [currentAnns]);
+                newIndexMap.set(selectedImage.id, 0);
+                setHistoryMap(newHistoryMap);
+                setHistoryIndexMap(newIndexMap);
+            }
+
+            // Set initial annotations when entering brush mode
             if (sideSheetMode === 'brush') {
                 setInitialAnns(currentAnns);
             }
@@ -137,29 +149,53 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const updateAnnotationsWithHistory = (newAnns: AnnotationObject[]) => {
         if (!selectedImage) return;
 
+        const currentHistory = historyMap.get(selectedImage.id) || [];
+        const currentIndex = historyIndexMap.get(selectedImage.id) ?? -1;
+
         // Push to undo stack
-        const newHistory = history.slice(0, historyIndex + 1);
+        const newHistory = currentHistory.slice(0, currentIndex + 1);
         newHistory.push(newAnns);
         if (newHistory.length > 50) newHistory.shift();
 
-        setHistory(newHistory);
-        setHistoryIndex(newHistory.length - 1);
+        const newHistoryMap = new Map(historyMap);
+        const newIndexMap = new Map(historyIndexMap);
+        newHistoryMap.set(selectedImage.id, newHistory);
+        newIndexMap.set(selectedImage.id, newHistory.length - 1);
+
+        setHistoryMap(newHistoryMap);
+        setHistoryIndexMap(newIndexMap);
 
         onUpdateAnnotations(selectedImage.id, newAnns);
     };
 
     const handleUndo = () => {
-        if (!selectedImage || historyIndex <= 0) return;
-        const prevIndex = historyIndex - 1;
-        setHistoryIndex(prevIndex);
-        onUpdateAnnotations(selectedImage.id, history[prevIndex]);
+        if (!selectedImage) return;
+        const currentHistory = historyMap.get(selectedImage.id) || [];
+        const currentIndex = historyIndexMap.get(selectedImage.id) ?? -1;
+
+        if (currentIndex <= 0) return;
+
+        const prevIndex = currentIndex - 1;
+        const newIndexMap = new Map(historyIndexMap);
+        newIndexMap.set(selectedImage.id, prevIndex);
+        setHistoryIndexMap(newIndexMap);
+
+        onUpdateAnnotations(selectedImage.id, currentHistory[prevIndex]);
     };
 
     const handleRedo = () => {
-        if (!selectedImage || historyIndex >= history.length - 1) return;
-        const nextIndex = historyIndex + 1;
-        setHistoryIndex(nextIndex);
-        onUpdateAnnotations(selectedImage.id, history[nextIndex]);
+        if (!selectedImage) return;
+        const currentHistory = historyMap.get(selectedImage.id) || [];
+        const currentIndex = historyIndexMap.get(selectedImage.id) ?? -1;
+
+        if (currentIndex >= currentHistory.length - 1) return;
+
+        const nextIndex = currentIndex + 1;
+        const newIndexMap = new Map(historyIndexMap);
+        newIndexMap.set(selectedImage.id, nextIndex);
+        setHistoryIndexMap(newIndexMap);
+
+        onUpdateAnnotations(selectedImage.id, currentHistory[nextIndex]);
     };
 
     const { size: width, startResizing } = useResizable({
