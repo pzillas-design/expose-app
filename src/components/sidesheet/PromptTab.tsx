@@ -144,7 +144,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const startEditingAnnotationLabel = () => {
         setIsEditingAnnotationLabel(true);
-        setEditAnnotationLabelValue(annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations"));
+        const defaultLabel = currentLang === 'de'
+            ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
+            : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+        setEditAnnotationLabelValue(annotationLabelOverride || defaultLabel);
     };
 
     const saveAnnotationLabel = () => {
@@ -240,8 +243,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         // 1. Annotation Guide (Technical Label for the AI)
         let annotationGuide = "";
         if (hasAnnotations) {
-            const displayLabel = annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
-            annotationGuide = `Image 2: ${displayLabel} (Muted original + overlays showing where and what to change).`;
+            const defaultLabel = currentLang === 'de'
+                ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
+                : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+            const displayLabel = annotationLabelOverride || defaultLabel;
+            annotationGuide = displayLabel;
         }
 
         // 2. Reference Image Contexts
@@ -466,7 +472,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                             onClick={startEditingAnnotationLabel}
                                                             className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                         >
-                                                            {displayLabel}
+                                                            {annotationLabelOverride || (currentLang === 'de'
+                                                                ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
+                                                                : "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).")}
                                                         </div>
                                                     )}
                                                 </div>
