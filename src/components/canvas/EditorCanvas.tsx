@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnnotationObject, TranslationFunction } from '@/types';
-import { X, Check, Pen, Trash2 } from 'lucide-react';
+import { X, Check, Pen, Trash2, RotateCw } from 'lucide-react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { generateId } from '@/utils/ids';
 
@@ -351,7 +351,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     <polygon
                                         points={points.map(p => `${p.x},${p.y}`).join(' ')}
                                         fill="transparent"
-                                        stroke={active ? '#3b82f6' : 'transparent'}
+                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
                                         strokeWidth={active ? 2 : 15}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
@@ -433,7 +433,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         ry={ry}
                                         transform={`rotate(${rot} ${cx} ${cy})`}
                                         fill="transparent"
-                                        stroke={active ? '#3b82f6' : 'transparent'}
+                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
                                         strokeWidth={active ? 2 : 15}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
@@ -443,35 +443,68 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
-                                {active && (
-                                    <>
-                                        {/* Corner handles for scaling */}
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-nw-resize pointer-events-auto shadow-md z-[60]"
-                                            style={{ left: `${((ann.x || 0) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'tl', ann)} />
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-ne-resize pointer-events-auto shadow-md z-[60]"
-                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'tr', ann)} />
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-sw-resize pointer-events-auto shadow-md z-[60]"
-                                            style={{ left: `${((ann.x || 0) / width) * 100}%`, top: `${(((ann.y || 0) + (ann.height || 0)) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'bl', ann)} />
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-se-resize pointer-events-auto shadow-md z-[60]"
-                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${(((ann.y || 0) + (ann.height || 0)) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'br', ann)} />
+                                {active && (() => {
+                                    const rot = ann.rotation || 0;
+                                    const radians = (rot * Math.PI) / 180;
 
-                                        {/* Rotation Handle */}
-                                        <div className="absolute w-5 h-5 bg-white border-2 border-primary rounded-full cursor-crosshair pointer-events-auto flex items-center justify-center shadow-lg z-[60]"
-                                            style={{ left: `${(cx / width) * 100}%`, top: `${(((ann.y || 0) - 40) / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'rotate', ann)}>
-                                            <div className="w-0.5 h-6 bg-primary absolute top-full" />
-                                        </div>
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
-                                            style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </>
-                                )}
+                                    // Calculate rotated corner positions
+                                    const corners = [
+                                        { dx: -(ann.width || 0) / 2, dy: -(ann.height || 0) / 2, cursor: 'nw-resize' }, // TL
+                                        { dx: (ann.width || 0) / 2, dy: -(ann.height || 0) / 2, cursor: 'ne-resize' },  // TR
+                                        { dx: -(ann.width || 0) / 2, dy: (ann.height || 0) / 2, cursor: 'sw-resize' },  // BL
+                                        { dx: (ann.width || 0) / 2, dy: (ann.height || 0) / 2, cursor: 'se-resize' }    // BR
+                                    ];
+
+                                    const rotatedCorners = corners.map(({ dx, dy, cursor }, idx) => {
+                                        const rotatedX = cx + dx * Math.cos(radians) - dy * Math.sin(radians);
+                                        const rotatedY = cy + dx * Math.sin(radians) + dy * Math.cos(radians);
+                                        return { x: rotatedX, y: rotatedY, cursor, mode: ['tl', 'tr', 'bl', 'br'][idx] };
+                                    });
+
+                                    // Rotation handle position (above center)
+                                    const rotHandleDy = -40;
+                                    const rotHandleX = cx + 0 * Math.cos(radians) - rotHandleDy * Math.sin(radians);
+                                    const rotHandleY = cy + 0 * Math.sin(radians) + rotHandleDy * Math.cos(radians);
+
+                                    return (
+                                        <>
+                                            {/* Corner handles for scaling */}
+                                            {rotatedCorners.map(({ x, y, cursor, mode }, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto shadow-md z-[60]"
+                                                    style={{
+                                                        left: `${(x / width) * 100}%`,
+                                                        top: `${(y / height) * 100}%`,
+                                                        transform: 'translate(-50%, -50%)',
+                                                        cursor
+                                                    }}
+                                                    onMouseDown={(e) => startDrag(e, ann.id, mode as any, ann)}
+                                                />
+                                            ))}
+
+                                            {/* Rotation Handle */}
+                                            <div className="absolute w-6 h-6 bg-white border-2 border-zinc-900 dark:border-white rounded-full cursor-grab active:cursor-grabbing pointer-events-auto flex items-center justify-center shadow-lg z-[60]"
+                                                style={{ left: `${(rotHandleX / width) * 100}%`, top: `${(rotHandleY / height) * 100}%`, transform: 'translate(-50%, -50%)' }}
+                                                onMouseDown={(e) => startDrag(e, ann.id, 'rotate', ann)}>
+                                                <RotateCw className="w-3 h-3 text-zinc-900 dark:text-white" />
+                                                <div
+                                                    className="w-0.5 h-6 bg-zinc-300 dark:bg-zinc-700 absolute"
+                                                    style={{
+                                                        top: '100%',
+                                                        transform: `rotate(${rot}deg)`,
+                                                        transformOrigin: 'top center'
+                                                    }}
+                                                />
+                                            </div>
+                                            <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                                style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
+                                                onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         );
                     }
