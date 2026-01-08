@@ -357,7 +357,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             return (
                                                 <React.Fragment key={ann.id}>
                                                     {index > 0 && (
-                                                        <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
+                                                        <div className="w-full h-px bg-zinc-100 dark:bg-zinc-800" />
                                                     )}
                                                     <div className="flex flex-col gap-2 pt-2 pb-2 group/refItem">
                                                         {/* Editable Text Area (Monospace, similar to prompt) */}
@@ -431,7 +431,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     .map((ctrl) => (
                                                         <div key={ctrl.id} className="flex flex-col gap-2 group">
                                                             <div className="flex items-center gap-1.5">
-                                                                <span className="text-[10px] tracking-tight text-zinc-400 dark:text-zinc-500 uppercase font-sans font-medium">
+                                                                <span className="text-[11px] tracking-widest text-zinc-400 dark:text-zinc-500 uppercase font-mono font-bold opacity-60">
                                                                     {ctrl.label}
                                                                 </span>
                                                                 <button
