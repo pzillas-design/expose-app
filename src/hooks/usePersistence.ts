@@ -50,9 +50,22 @@ export const usePersistence = ({ user, isAuthDisabled, setRows }: UsePersistence
         }
     }, [user, isAuthDisabled, setRows]);
 
+    const handleUpdateImageTitle = useCallback((id: string, title: string) => {
+        setRows(prev => prev.map(row => ({
+            ...row,
+            items: row.items.map(item => item.id === id ? { ...item, title, updatedAt: Date.now() } : item)
+        })));
+
+        if (user && !isAuthDisabled) {
+            imageService.updateImage(id, { title }, user.id)
+                .catch(err => console.error("Failed to save title", err));
+        }
+    }, [user, isAuthDisabled, setRows]);
+
     return {
         handleUpdateAnnotations,
         handleUpdatePrompt,
-        handleUpdateVariables
+        handleUpdateVariables,
+        handleUpdateImageTitle
     };
 };

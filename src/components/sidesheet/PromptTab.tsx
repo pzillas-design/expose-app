@@ -7,7 +7,8 @@ import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/compo
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
 import { DebugModal } from '@/components/modals/DebugModal';
-import { Bug } from 'lucide-react';
+import { Bug, Edit2, Check as CheckIcon } from 'lucide-react';
+import { downloadImage } from '@/utils/imageUtils';
 
 interface PromptTabProps {
     prompt: string;
@@ -38,6 +39,7 @@ interface PromptTabProps {
     userProfile: any;
     showInfo?: boolean;
     onToggleInfo?: (show: boolean) => void;
+    onUpdateImageTitle?: (id: string, title: string) => void;
 }
 
 export const PromptTab: React.FC<PromptTabProps> = ({
@@ -45,7 +47,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
     onUpdateAnnotation, onUpdateVariables, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
     onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile,
-    showInfo = false, onToggleInfo
+    showInfo = false, onToggleInfo, onUpdateImageTitle
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -60,11 +62,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
     const [editingControlId, setEditingControlId] = useState<string | null>(null);
     const [editControlValue, setEditControlValue] = useState("");
-    const [annotationLabelOverride, setAnnotationLabelOverride] = useState<string>("");
-    const [isEditingAnnotationLabel, setIsEditingAnnotationLabel] = useState(false);
-    const [editAnnotationLabelValue, setEditAnnotationLabelValue] = useState("");
+    const [isEditingAnnotationLabel, setIsEditingAnnotationLabel] = useState<string | null>(null);
+    const [annotationLabelValue, setAnnotationLabelValue] = useState('');
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
+
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -139,21 +143,24 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (e.key === 'Escape') {
             setEditingId(null);
             setEditingControlId(null);
-            setIsEditingAnnotationLabel(false);
+            setIsEditingAnnotationLabel(null);
+            setIsEditingTitle(false);
         }
     };
 
-    const startEditingAnnotationLabel = () => {
-        setIsEditingAnnotationLabel(true);
+    const startEditingAnnotationLabel = (annotationId: string) => {
+        setIsEditingAnnotationLabel(annotationId);
         const defaultLabel = currentLang === 'de'
             ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
             : "Image 2: The annotations on the image show where and what should be changed.";
-        setEditAnnotationLabelValue(annotationLabelOverride || defaultLabel);
+        setAnnotationLabelValue(annotationLabelValue || defaultLabel);
     };
 
     const saveAnnotationLabel = () => {
-        setAnnotationLabelOverride(editAnnotationLabelValue);
-        setIsEditingAnnotationLabel(false);
+        if (isEditingAnnotationLabel) {
+            onUpdateAnnotation(isEditingAnnotationLabel, { text: annotationLabelValue });
+            setIsEditingAnnotationLabel(null);
+        }
     };
 
     const startEditingControl = (id: string, currentLabel: string) => {
@@ -247,7 +254,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             const defaultLabel = currentLang === 'de'
                 ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
                 : "Image 2: The annotations on the image show where and what should be changed.";
-            const displayLabel = annotationLabelOverride || defaultLabel;
+            const displayLabel = annotationLabelValue || defaultLabel;
             annotationGuide = displayLabel;
         }
 
@@ -434,7 +441,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {/* 3. ANNOTATIONS BLOCK (Optional) */}
                                 {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (() => {
                                     const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
-                                    const displayLabel = annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
+                                    const displayLabel = annotationLabelValue || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
 
                                     const maskCount = activeAnns.filter(a => a.type === 'mask_path').length;
                                     const stampCount = activeAnns.filter(a => a.type === 'stamp').length;
@@ -456,11 +463,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                             <div className="flex flex-col gap-3">
                                                 <div className="relative w-full pr-8">
-                                                    {isEditingAnnotationLabel ? (
+                                                    {isEditingAnnotationLabel === 'main' ? (
                                                         <textarea
                                                             autoFocus
-                                                            value={editAnnotationLabelValue}
-                                                            onChange={(e) => setEditAnnotationLabelValue(e.target.value)}
+                                                            value={annotationLabelValue}
+                                                            onChange={(e) => setAnnotationLabelValue(e.target.value)}
                                                             onBlur={saveAnnotationLabel}
                                                             onKeyDown={handleKeyDown}
                                                             className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono opacity-70 leading-relaxed resize-none overflow-hidden block`}
@@ -468,10 +475,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         />
                                                     ) : (
                                                         <div
-                                                            onClick={startEditingAnnotationLabel}
+                                                            onClick={() => startEditingAnnotationLabel('main')}
                                                             className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                         >
-                                                            {annotationLabelOverride || (currentLang === 'de'
+                                                            {annotationLabelValue || (currentLang === 'de'
                                                                 ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
                                                                 : "Image 2: The annotations on the image show where and what should be changed.")}
                                                         </div>
@@ -694,24 +701,22 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         <div className="flex-1 flex flex-col gap-8 px-6 pt-8 pb-6">
                             {/* Prompt Section */}
                             {selectedImage.generationPrompt && (
-                                <div className="flex flex-col gap-3 group relative">
-                                    <div className="flex items-start justify-between gap-4">
+                                <div className="flex flex-col gap-3 group">
+                                    <div className="flex items-center justify-between">
                                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                            Prompt
+                                            {t('tt_prompt')}
                                         </span>
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <IconButton
-                                                icon={<Copy className="w-3.5 h-3.5" />}
-                                                tooltip={t('copy')}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (selectedImage.generationPrompt) {
-                                                        navigator.clipboard.writeText(selectedImage.generationPrompt);
-                                                        showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
-                                                    }
-                                                }}
-                                            />
-                                        </div>
+                                        <IconButton
+                                            icon={<Copy className="w-3.5 h-3.5" />}
+                                            tooltip={t('copy')}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (selectedImage.generationPrompt) {
+                                                    navigator.clipboard.writeText(selectedImage.generationPrompt);
+                                                    showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
+                                                }
+                                            }}
+                                        />
                                     </div>
                                     <p className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed`}>
                                         {selectedImage.generationPrompt}
@@ -723,6 +728,52 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             {!selectedImage.isGenerating && (
                                 <div className="flex flex-col gap-8">
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                        {/* Filename/Title */}
+                                        <div className="flex flex-col gap-1.5 col-span-2 group/title">
+                                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                                {t('filename')}
+                                            </span>
+                                            {isEditingTitle ? (
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        autoFocus
+                                                        className={`flex-1 bg-zinc-100 dark:bg-zinc-800 border-none outline-none px-2 py-1 rounded ${Typo.Mono} text-xs text-black dark:text-white`}
+                                                        value={editTitleValue}
+                                                        onChange={(e) => setEditTitleValue(e.target.value)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                onUpdateImageTitle?.(selectedImage.id, editTitleValue);
+                                                                setIsEditingTitle(false);
+                                                            } else if (e.key === 'Escape') {
+                                                                setIsEditingTitle(false);
+                                                            }
+                                                        }}
+                                                    />
+                                                    <IconButton
+                                                        icon={<CheckIcon className="w-3.5 h-3.5" />}
+                                                        onClick={() => {
+                                                            onUpdateImageTitle?.(selectedImage.id, editTitleValue);
+                                                            setIsEditingTitle(false);
+                                                        }}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs truncate`}>
+                                                        {selectedImage.title || (selectedImage.baseName ? `${selectedImage.baseName}_v${selectedImage.version}` : 'Untitled')}
+                                                    </span>
+                                                    <div className="opacity-0 group-hover/title:opacity-100 transition-opacity">
+                                                        <IconButton
+                                                            icon={<Edit2 className="w-3 h-3" />}
+                                                            onClick={() => {
+                                                                setEditTitleValue(selectedImage.title || '');
+                                                                setIsEditingTitle(true);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                         {/* Resolution */}
                                         <div className="flex flex-col gap-1.5">
                                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
@@ -831,11 +882,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 <Button
                                     variant="secondary"
                                     onClick={() => {
-                                        if (selectedImage.url) {
-                                            const link = document.createElement('a');
-                                            link.href = selectedImage.url;
-                                            link.download = `${selectedImage.id}.png`;
-                                            link.click();
+                                        if (selectedImage.src) {
+                                            downloadImage(selectedImage.src, selectedImage.title || selectedImage.id);
                                         }
                                     }}
                                     disabled={selectedImage.isGenerating}

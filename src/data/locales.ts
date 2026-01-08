@@ -181,6 +181,8 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
+    ctx_create_variations: "Create Variations",
+    filename: "Filename",
   },
   de: {
     // General
@@ -361,5 +363,7 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
+    ctx_create_variations: "Variationen erstellen",
+    filename: "Dateiname",
   }
 };

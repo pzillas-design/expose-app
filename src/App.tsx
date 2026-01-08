@@ -50,7 +50,7 @@ export function App() {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
-        handleModeChange, handleUpdateVariables, refreshTemplates, setIsBrushResizing,
+        handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
         savePreset, deletePreset
     } = actions;
 
@@ -544,6 +544,7 @@ export function App() {
                     onUpdateAnnotations={handleUpdateAnnotations}
                     onUpdatePrompt={handleUpdatePrompt}
                     onUpdateVariables={handleUpdateVariables}
+                    onUpdateImageTitle={handleUpdateImageTitle}
                     onDeleteImage={handleDeleteImage}
                     onGenerateMore={handleGenerateMore}
                     onNavigateParent={handleNavigateParent}

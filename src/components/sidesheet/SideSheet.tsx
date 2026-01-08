@@ -60,6 +60,7 @@ interface SideSheetProps {
     onRefreshTemplates?: () => void;
     onSaveTemplate?: (template: any) => Promise<void>;
     onDeleteTemplate?: (id: string) => Promise<void>;
+    onUpdateImageTitle?: (id: string, title: string) => void;
     userProfile: any;
 }
 
@@ -104,6 +105,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     onRefreshTemplates,
     onSaveTemplate,
     onDeleteTemplate,
+    onUpdateImageTitle,
     userProfile
 }) => {
     const [prompt, setPrompt] = useState('');
@@ -682,6 +684,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onNavigateParent={onNavigateParent}
                                 qualityMode={qualityMode}
                                 onQualityModeChange={onQualityModeChange}
+                                onUpdateImageTitle={onUpdateImageTitle}
                                 t={t}
                                 currentLang={lang}
                                 userProfile={userProfile}
