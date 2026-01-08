@@ -127,22 +127,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
                 }
                 else if (ann.shapeType === 'circle') {
-                    // B-spline with 4 control points
-                    if (ann.points && ann.points.length >= 4) {
-                        ctx.beginPath();
-                        const p = ann.points;
-                        const t = 0.5;
-                        ctx.moveTo(p[0].x, p[0].y);
-                        for (let i = 0; i < 4; i++) {
-                            const p0 = p[i], p1 = p[(i + 1) % 4], p2 = p[(i + 2) % 4], pm = p[(i - 1 + 4) % 4];
-                            const cp1x = p0.x + (p1.x - pm.x) * t, cp1y = p0.y + (p1.y - pm.y) * t;
-                            const cp2x = p1.x - (p2.x - p0.x) * t, cp2y = p1.y - (p2.y - p0.y) * t;
-                            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p1.x, p1.y);
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                        ctx.stroke();
-                    }
+                    const cx = (ann.x || 0) + (ann.width || 0) / 2;
+                    const cy = (ann.y || 0) + (ann.height || 0) / 2;
+                    const rx = Math.abs((ann.width || 0) / 2);
+                    const ry = Math.abs((ann.height || 0) / 2);
+                    const rot = (ann.rotation || 0) * Math.PI / 180;
+
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rx, ry, rot, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.stroke();
                 } else if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
                     ctx.beginPath();
                     ctx.lineWidth = ann.strokeWidth || 4;
@@ -410,117 +404,62 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
 
                     if (ann.shapeType === 'circle') {
-                        const cx = (ann.x || 0) + (ann.width || 0) / 2;
-                        const cy = (ann.y || 0) + (ann.height || 0) / 2;
-                        const rx = (ann.width || 0) / 2;
-                        const ry = (ann.height || 0) / 2;
-                        const rot = ann.rotation || 0;
+                        const x = ann.x || 0;
+                        const y = ann.y || 0;
+                        const w = ann.width || 0;
+                        const h = ann.height || 0;
+                        const rotation = ann.rotation || 0;
+                        const cx = x + w / 2;
+                        const cy = y + h / 2;
 
                         return (
                             <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
-                                    {ann.points && ann.points.length >= 4 ? (
-                                        <path
-                                            d={(() => {
-                                                const p = ann.points;
-                                                const t = 0.5;
-                                                let path = `M ${p[0].x} ${p[0].y}`;
-                                                for (let i = 0; i < 4; i++) {
-                                                    const p0 = p[i], p1 = p[(i + 1) % 4], p2 = p[(i + 2) % 4], pm = p[(i - 1 + 4) % 4];
-                                                    const cp1x = p0.x + (p1.x - pm.x) * t, cp1y = p0.y + (p1.y - pm.y) * t;
-                                                    const cp2x = p1.x - (p2.x - p0.x) * t, cp2y = p1.y - (p2.y - p0.y) * t;
-                                                    path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
-                                                }
-                                                return path + ' Z';
-                                            })()}
-                                            fill="transparent"
-                                            stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
-                                            strokeWidth={active ? 2 : 15}
-                                            className="pointer-events-auto cursor-move"
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                setActiveMaskId(ann.id);
-                                                startDrag(e, ann.id, 'move', ann);
-                                            }}
-                                        />
-                                    ) : (
-                                        <ellipse
-                                            cx={cx}
-                                            cy={cy}
-                                            rx={rx}
-                                            ry={ry}
-                                            transform={`rotate(${rot} ${cx} ${cy})`}
-                                            fill="transparent"
-                                            stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
-                                            strokeWidth={active ? 2 : 15}
-                                            className="pointer-events-auto cursor-move"
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                setActiveMaskId(ann.id);
-                                                startDrag(e, ann.id, 'move', ann);
-                                            }}
-                                        />
-                                    )}
+                                    <ellipse
+                                        cx={cx}
+                                        cy={cy}
+                                        rx={Math.abs(w / 2)}
+                                        ry={Math.abs(h / 2)}
+                                        transform={`rotate(${rotation} ${cx} ${cy})`}
+                                        fill="transparent"
+                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'transparent'}
+                                        strokeWidth={active ? 2 : 15}
+                                        className="pointer-events-auto cursor-move"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMaskId(ann.id);
+                                            startDrag(e, ann.id, 'move', ann);
+                                        }}
+                                    />
                                 </svg>
-                                {active && (() => {
-                                    if (ann.points && ann.points.length >= 4) {
-                                        return (
-                                            <>
-                                                {ann.points.map((pt, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto shadow-md z-[60] cursor-move"
-                                                        style={{
-                                                            left: `${(pt.x / width) * 100}%`,
-                                                            top: `${(pt.y / height) * 100}%`,
-                                                            transform: 'translate(-50%, -50%)'
-                                                        }}
-                                                        onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)}
-                                                    />
-                                                ))}
-                                                <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
-                                                    style={{ left: `${((ann.x || 0) + (ann.width || 0)) / width * 100}%`, top: `${(ann.y || 0) / height * 100}%`, transform: 'translate(10px, -30px)' }}
-                                                    onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </>
-                                        );
-                                    }
+                                {active && (
+                                    <>
+                                        {/* 4 Corner Handles for Bounding Box Resize */}
+                                        {[
+                                            { x: x, y: y, cursor: 'nw-resize', mode: 'tl' },
+                                            { x: x + w, y: y, cursor: 'ne-resize', mode: 'tr' },
+                                            { x: x + w, y: y + h, cursor: 'se-resize', mode: 'br' },
+                                            { x: x, y: y + h, cursor: 'sw-resize', mode: 'bl' }
+                                        ].map((h, i) => (
+                                            <div key={i}
+                                                className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full z-[60] pointer-events-auto shadow-md"
+                                                style={{
+                                                    left: `${(h.x / width) * 100}%`,
+                                                    top: `${(h.y / height) * 100}%`,
+                                                    cursor: h.cursor,
+                                                    transform: 'translate(-50%, -50%)'
+                                                }}
+                                                onMouseDown={(e) => startDrag(e, ann.id, h.mode as any, ann)}
+                                            />
+                                        ))}
 
-                                    // 4 handles on the axes (cross pattern) - fallback for old circles
-                                    const handles = [
-                                        { x: cx, y: (ann.y || 0), cursor: 'n-resize', mode: 'top' },           // Top
-                                        { x: (ann.x || 0) + (ann.width || 0), y: cy, cursor: 'e-resize', mode: 'right' },  // Right
-                                        { x: cx, y: (ann.y || 0) + (ann.height || 0), cursor: 's-resize', mode: 'bottom' }, // Bottom
-                                        { x: (ann.x || 0), y: cy, cursor: 'w-resize', mode: 'left' }          // Left
-                                    ];
-
-                                    return (
-                                        <>
-                                            {/* Axis handles - elegant cross pattern */}
-                                            {handles.map(({ x, y, cursor, mode }, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto shadow-md z-[60]"
-                                                    style={{
-                                                        left: `${(x / width) * 100}%`,
-                                                        top: `${(y / height) * 100}%`,
-                                                        transform: 'translate(-50%, -50%)',
-                                                        cursor
-                                                    }}
-                                                    onMouseDown={(e) => startDrag(e, ann.id, mode as any, ann)}
-                                                />
-                                            ))}
-
-                                            {/* Delete button */}
-                                            <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
-                                                style={{ left: `${(((ann.x || 0) + (ann.width || 0)) / width) * 100}%`, top: `${((ann.y || 0) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                                onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    );
-                                })()}
+                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                            style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         );
                     }

@@ -7,7 +7,7 @@ export type TranslationFunction = (key: TranslationKey) => string;
 export interface AnnotationObject {
   id: string;
   type: 'mask_path' | 'stamp' | 'reference_image' | 'shape';
-  points: { x: number, y: number }[];
+  points?: { x: number, y: number }[];
   x?: number;
   y?: number;
   width?: number;
