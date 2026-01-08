@@ -146,6 +146,33 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         }
     }, [selectedImage?.id, sideSheetMode]);
 
+    // Listen for external annotation changes (e.g. Brush strokes from Canvas)
+    useEffect(() => {
+        if (!selectedImage?.id) return;
+
+        const currentHistory = historyMap.get(selectedImage.id);
+        if (!currentHistory) return; // Not initialized yet
+
+        const currentIndex = historyIndexMap.get(selectedImage.id) ?? -1;
+        const historyAnns = currentHistory[currentIndex];
+        const currentAnns = selectedImage.annotations || [];
+
+        // If annotations changed externally (not from our actions), record it
+        if (historyAnns !== currentAnns) {
+            const newHistory = currentHistory.slice(0, currentIndex + 1);
+            newHistory.push(currentAnns);
+            if (newHistory.length > 50) newHistory.shift();
+
+            const newHistoryMap = new Map(historyMap);
+            const newIndexMap = new Map(historyIndexMap);
+            newHistoryMap.set(selectedImage.id, newHistory);
+            newIndexMap.set(selectedImage.id, newHistory.length - 1);
+
+            setHistoryMap(newHistoryMap);
+            setHistoryIndexMap(newIndexMap);
+        }
+    }, [selectedImage?.annotations, selectedImage?.id, historyMap, historyIndexMap]);
+
     const updateAnnotationsWithHistory = (newAnns: AnnotationObject[]) => {
         if (!selectedImage) return;
 

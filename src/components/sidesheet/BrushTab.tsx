@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
 import { Pen, Type, Square, Circle, Minus, ChevronDown, ChevronUp } from 'lucide-react';
@@ -42,6 +42,12 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 }) => {
 
     const [isBrushExpanded, setIsBrushExpanded] = useState(false);
+
+    // Reset brush to 'select' mode when tab mounts (not always active)
+    useEffect(() => {
+        onMaskToolChange?.('select');
+    }, []);
+
     const objectLibrary = useMemo(() => {
         return library;
     }, [library]);
@@ -123,8 +129,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 <button
                                     onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
                                     className={`p-3 rounded-lg transition-all ${maskTool === 'brush'
-                                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                                            : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
                                         }`}
                                 >
                                     <Pen className="w-5 h-5" />

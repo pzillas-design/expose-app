@@ -345,7 +345,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const maxY = Math.max(...ys);
 
                         return (
-                            <div key={ann.id} className={`absolute pointer-events-none ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
                                     <polygon
                                         points={points.map(p => `${p.x},${p.y}`).join(' ')}
@@ -382,7 +382,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const p0 = ann.points[0];
                         const p1 = ann.points[1];
                         return (
-                            <div key={ann.id} className={`absolute pointer-events-none ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
                                     <line
                                         x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}
