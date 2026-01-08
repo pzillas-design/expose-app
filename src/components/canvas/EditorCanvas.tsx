@@ -316,8 +316,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 <div
                     className="absolute z-50 rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.7)] pointer-events-none transition-all duration-75"
                     style={{
-                        width: brushSize,
-                        height: brushSize,
+                        width: brushSize * zoom,
+                        height: brushSize * zoom,
                         left: '50%',
                         top: '50%',
                         transform: 'translate(-50%, -50%)',
@@ -327,7 +327,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             )}
 
             {/* Normal Cursor Brush Preview */}
-            {activeTab === 'brush' && maskTool === 'brush' && isActive && !isBrushResizing && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize, height: brushSize, left: 0, top: 0 }} />}
+            {activeTab === 'brush' && maskTool === 'brush' && isActive && !isBrushResizing && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize * zoom, height: brushSize * zoom, left: 0, top: 0 }} />}
 
             {/* UI Overlay for Annotations */}
             {annotations.map(ann => {

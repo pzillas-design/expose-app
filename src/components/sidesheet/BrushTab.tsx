@@ -1,8 +1,8 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Typo, Theme } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
-import { Pen, Type, Square, Circle, Minus, Trash2 } from 'lucide-react';
+import { Pen, Type, Square, Circle, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -41,6 +41,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     onAddText
 }) => {
 
+    const [isBrushExpanded, setIsBrushExpanded] = useState(false);
     const objectLibrary = useMemo(() => {
         return library;
     }, [library]);
@@ -65,49 +66,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
             <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-8 animate-in fade-in duration-300">
 
-                {/* 1. BRUSH TOOL - Horizontal Layout */}
-                <div className="space-y-4 px-6">
-                    <SectionHeader label={currentLang === 'de' ? 'Pinsel' : 'Brush'} />
-                    <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/20 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                        <button
-                            onClick={() => onMaskToolChange?.('brush')}
-                            className={`p-3 rounded-lg transition-all ${maskTool === 'brush'
-                                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
-                                    : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
-                                }`}
-                        >
-                            <Pen className="w-5 h-5" />
-                        </button>
-
-                        <div className="flex-1 flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
-                                <span className={`${Typo.Mono} text-xs font-bold text-zinc-900 dark:text-white`}>{brushSize} PX</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="10" max="400"
-                                value={brushSize}
-                                onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
-                                onMouseDown={onBrushResizeStart}
-                                onMouseUp={onBrushResizeEnd}
-                                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAddObject('Clear', 'util:clear_masks');
-                        }}
-                        className="w-full py-3 px-4 rounded-xl border border-red-500/10 bg-red-500/5 text-red-500 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        {currentLang === 'de' ? 'Alle Masken löschen' : 'Clear All Masks'}
-                    </button>
-                </div>
-
-                {/* 2. OBJECT TOOLS - Grid Layout */}
+                {/* 1. OBJECT TOOLS - Grid Layout */}
                 <div className="space-y-4 px-6">
                     <SectionHeader label={currentLang === 'de' ? 'Objekte platzieren' : 'Place Objects'} />
                     <div className="grid grid-cols-2 gap-3">
@@ -140,6 +99,54 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                             }}
                         />
                     </div>
+                </div>
+
+                {/* 2. BRUSH TOOL - Collapsible */}
+                <div className="space-y-4 px-6">
+                    <button
+                        onClick={() => setIsBrushExpanded(!isBrushExpanded)}
+                        className="w-full flex items-center justify-between group"
+                    >
+                        <span className={`${Typo.Label} text-zinc-400 uppercase tracking-widest text-[9px] opacity-70 group-hover:opacity-100 transition-opacity`}>
+                            {currentLang === 'de' ? 'Pinsel' : 'Brush'}
+                        </span>
+                        {isBrushExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
+                        ) : (
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
+                        )}
+                    </button>
+
+                    {isBrushExpanded && (
+                        <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+                            <div className="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/20 rounded-xl border border-zinc-200 dark:border-zinc-800">
+                                <button
+                                    onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
+                                    className={`p-3 rounded-lg transition-all ${maskTool === 'brush'
+                                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900'
+                                            : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-600'
+                                        }`}
+                                >
+                                    <Pen className="w-5 h-5" />
+                                </button>
+
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className={`${Typo.Mono} text-xs font-bold text-zinc-900 dark:text-white`}>{brushSize} PX</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="10" max="400"
+                                        value={brushSize}
+                                        onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
+                                        onMouseDown={onBrushResizeStart}
+                                        onMouseUp={onBrushResizeEnd}
+                                        className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-zinc-900 dark:[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
