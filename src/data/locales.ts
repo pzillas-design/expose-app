@@ -188,6 +188,7 @@ export const translations = {
     tab_info: "Info",
     ctx_create_variations: "Create Variations",
     filename: "Filename",
+    reference_images: "Reference Images",
   },
   de: {
     // General
@@ -375,5 +376,6 @@ export const translations = {
     tab_info: "Info",
     ctx_create_variations: "Variationen erstellen",
     filename: "Dateiname",
+    reference_images: "Referenzbilder",
   }
 };

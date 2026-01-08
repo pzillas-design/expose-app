@@ -830,7 +830,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     {/* Reference Images Section - Only in Info tab now */}
                                     {selectedImage.annotations?.some(ann => ann.referenceImage) && (
                                         <div className="flex flex-col gap-3">
-                                            <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                                 {t('reference_images')}
                                             </span>
                                             <div className="grid grid-cols-4 gap-2">
