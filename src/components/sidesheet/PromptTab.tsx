@@ -201,14 +201,20 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     };
 
     const getFinalPrompt = () => {
-        let final = prompt.trim();
+        const trimmedPrompt = prompt.trim();
+        const refs = annotations.filter(a => a.type === 'reference_image');
 
         // 1. Reference Image Contexts
         const refParts: string[] = [];
-        annotations.filter(a => a.type === 'reference_image').forEach(ann => {
-            if (ann.text && ann.text.trim()) {
-                refParts.push(ann.text.trim());
-            }
+        refs.forEach((ann, index) => {
+            const userText = ann.text?.trim();
+            // Fallback instruction to help the AI distinguish between source and reference
+            const fallback = currentLang === 'de'
+                ? "Nutze dieses Bild ausschließlich als visuelle Referenz für Stil, Licht oder Komposition."
+                : "Use this image only as a visual reference for style, lighting, or composition.";
+
+            const content = userText || fallback;
+            refParts.push(`${currentLang === 'de' ? 'Referenz' : 'Reference'} ${index + 1}: ${content}`);
         });
 
         // 2. Template Controls
@@ -231,18 +237,30 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             });
         }
 
-        // Assemble: Prompt -> Ref -> Vars
+        // Assemble with clear semantic markers
+        let finalOutput = "";
+
+        if (trimmedPrompt) {
+            const label = currentLang === 'de' ? "HAUPT-ANWEISUNG" : "MAIN INSTRUCTION";
+            finalOutput += `${label}: ${trimmedPrompt}`;
+        }
+
         if (refParts.length > 0) {
-            if (final && !final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) final += '.';
-            final = final ? final + " " + refParts.join(". ") : refParts.join(". ");
+            if (finalOutput) finalOutput += "\n\n";
+            const label = currentLang === 'de'
+                ? "KONTEXT / REFERENZEN (Nur als Inspiration nutzen, das Hauptbild NICHT ersetzen):"
+                : "CONTEXT / REFERENCES (Use for inspiration only, DO NOT replace the main image):";
+            finalOutput += `${label}\n${refParts.join("\n")}`;
         }
 
         if (varParts.length > 0) {
-            if (final && !final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) final += '.';
-            final = final ? final + " " + varParts.join(". ") : varParts.join(". ");
+            if (finalOutput) finalOutput += "\n\n";
+            const label = currentLang === 'de' ? "STIL-PARAMETER:" : "STYLE PARAMETERS:";
+            finalOutput += `${label}\n${varParts.join(". ")}`;
         }
 
-        return final;
+        // If for some reason the structure is empty, return the raw prompt
+        return finalOutput.trim() || trimmedPrompt;
     };
 
     const handleDoGenerate = () => {
@@ -306,7 +324,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                         {/* REFERENCE IMAGES (First) */}
                                         {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                                            const defaultText = currentLang === 'de' ? "Hier ist ein Referenzbild für ... :" : "Here is a reference image for ... :";
+                                            const defaultText = currentLang === 'de' ? "Referenz für ... :" : "Reference for ... :";
                                             // Explicit content check
                                             const hasText = ann.text && ann.text.trim().length > 0;
                                             const textValue = hasText ? ann.text : defaultText;
