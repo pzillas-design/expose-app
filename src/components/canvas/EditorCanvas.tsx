@@ -243,9 +243,44 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     return { ...ann, points: newPoints };
                 }
 
+                // Resize Logic
+                if (['tl', 'tr', 'bl', 'br'].includes(dragState.mode)) {
+                    const ix = dragState.initialX;
+                    const iy = dragState.initialY;
+                    const iw = dragState.initialW;
+                    const ih = dragState.initialH;
+
+                    let nx = ix, ny = iy, nw = iw, nh = ih;
+                    const dx = x - dragState.startX;
+                    const dy = y - dragState.startY;
+
+                    if (dragState.mode === 'br') {
+                        nw = iw + dx;
+                        nh = ih + dy;
+                    } else if (dragState.mode === 'bl') {
+                        nx = ix + dx;
+                        nw = iw - dx;
+                        nh = ih + dy;
+                    } else if (dragState.mode === 'tr') {
+                        ny = iy + dy;
+                        nh = ih - dy;
+                        nw = iw + dx;
+                    } else if (dragState.mode === 'tl') {
+                        nx = ix + dx;
+                        nw = iw - dx;
+                        ny = iy + dy;
+                        nh = ih - dy;
+                    }
+
+                    // Prevent minimal size issues
+                    if (nw < 10) nw = 10;
+                    if (nh < 10) nh = 10;
+
+                    return { ...ann, x: nx, y: ny, width: nw, height: nh };
+                }
+
                 if (ann.shapeType === 'circle') {
-                    // B-spline uses vertex dragging for all 4 control points
-                    // No special handling needed - vertex mode handles it
+                    // Circle specific logic if needed
                 }
 
                 return ann;

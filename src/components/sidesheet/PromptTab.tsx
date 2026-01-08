@@ -202,9 +202,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const getFinalPrompt = () => {
         let final = prompt.trim();
-        const parts: string[] = [];
 
-        // 1. Template Controls
+        // 1. Reference Image Contexts
+        const refParts: string[] = [];
+        annotations.filter(a => a.type === 'reference_image').forEach(ann => {
+            if (ann.text && ann.text.trim()) {
+                refParts.push(ann.text.trim());
+            }
+        });
+
+        // 2. Template Controls
+        const varParts: string[] = [];
         if (activeTemplate && activeTemplate.controls) {
             activeTemplate.controls.forEach(c => {
                 const vals = controlValues[c.id];
@@ -212,37 +220,28 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     if (c.label) {
                         try {
                             const label = c.label.charAt(0).toUpperCase() + c.label.slice(1).toLowerCase();
-                            parts.push(`${label}: ${vals.join(", ")}`);
+                            varParts.push(`${label}: ${vals.join(", ")}`);
                         } catch (e) {
-                            parts.push(...vals);
+                            varParts.push(...vals);
                         }
                     } else {
-                        parts.push(...vals);
+                        varParts.push(...vals);
                     }
                 }
             });
         }
 
-        // 2. Reference Image Contexts
-        const refAnns = annotations.filter(a => a.type === 'reference_image');
-        if (refAnns.length > 0) {
-            refAnns.forEach(ann => {
-                if (ann.text) {
-                    parts.push(ann.text);
-                }
-            });
+        // Assemble: Prompt -> Ref -> Vars
+        if (refParts.length > 0) {
+            if (final && !final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) final += '.';
+            final = final ? final + " " + refParts.join(". ") : refParts.join(". ");
         }
 
-        if (parts.length > 0) {
-            if (final) {
-                if (!final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) {
-                    final += '.';
-                }
-                final += " " + parts.join(". ");
-            } else {
-                final = parts.join(". ");
-            }
+        if (varParts.length > 0) {
+            if (final && !final.endsWith('.') && !final.endsWith('!') && !final.endsWith('?')) final += '.';
+            final = final ? final + " " + varParts.join(". ") : varParts.join(". ");
         }
+
         return final;
     };
 
@@ -295,8 +294,88 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     />
 
                                     {/* SECTIONS CONTAINER */}
-                                    <div className="p-3 pt-4 flex flex-col gap-2">
-                                        {/* VARIABLE OPTIONS */}
+                                    <div className="p-3 pt-4 flex flex-col gap-4">
+
+                                        {/* Divider Logic: Only if there are sections */}
+                                        {(
+                                            (annotations.some(a => a.type === 'reference_image')) ||
+                                            (activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0)
+                                        ) && (
+                                                <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
+                                            )}
+
+                                        {/* REFERENCE IMAGES (First) */}
+                                        {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
+                                            const defaultText = currentLang === 'de' ? "Hier ist ein Referenzbild für ... :" : "Here is a reference image for ... :";
+                                            // Explicit content check
+                                            const hasText = ann.text && ann.text.trim().length > 0;
+                                            const textValue = hasText ? ann.text : defaultText;
+                                            const isEditing = editingId === ann.id;
+
+                                            return (
+                                                <React.Fragment key={ann.id}>
+                                                    {index > 0 && (
+                                                        <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
+                                                    )}
+                                                    <div className="flex flex-col gap-2 pt-2 pb-2 group/refItem">
+                                                        {/* Editable Text Area (Monospace, similar to prompt) */}
+                                                        <div className="relative w-full">
+                                                            {isEditing ? (
+                                                                <textarea
+                                                                    autoFocus
+                                                                    value={editValue}
+                                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                                    onBlur={saveEditing}
+                                                                    onKeyDown={(e) => {
+                                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                                            e.preventDefault();
+                                                                            saveEditing();
+                                                                        }
+                                                                        handleKeyDown(e);
+                                                                    }}
+                                                                    className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                                    style={{ minHeight: '1.5em' }}
+                                                                    onInput={(e) => {
+                                                                        const target = e.target as HTMLTextAreaElement;
+                                                                        target.style.height = 'auto';
+                                                                        target.style.height = target.scrollHeight + 'px';
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <div
+                                                                    onClick={() => startEditing(ann, defaultText)}
+                                                                    className={`w-full ${Typo.Body} font-mono leading-relaxed cursor-text break-words whitespace-pre-wrap ${!hasText ? 'text-zinc-400 opacity-80' : 'text-zinc-900 dark:text-zinc-100'}`}
+                                                                >
+                                                                    {textValue}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Reference Image Chip */}
+                                                        <div className="relative w-fit group/chip">
+                                                            <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 relative bg-zinc-100 dark:bg-zinc-800 shadow-sm">
+                                                                <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
+
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
+                                                                    className="absolute top-0.5 right-0.5 p-0.5 rounded-md bg-black/60 text-white hover:bg-red-500 transition-all opacity-0 group-hover/chip:opacity-100"
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </React.Fragment>
+                                            );
+                                        })}
+
+                                        {/* Divider between Refs and Vars */}
+                                        {(annotations.some(a => a.type === 'reference_image')) &&
+                                            (activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0) && (
+                                                <div className="w-[90%] mx-auto h-px bg-zinc-100 dark:bg-zinc-800" />
+                                            )}
+
+                                        {/* VARIABLE OPTIONS (Second) */}
                                         {activeTemplate && activeTemplate.controls && activeTemplate.controls.length > 0 && (
                                             <div className="flex flex-col gap-4">
                                                 {activeTemplate.controls
@@ -338,66 +417,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     ))}
                                             </div>
                                         )}
-
-                                        {/* REFERENCE IMAGES (Integrated Style) */}
-                                        {annotations.filter(a => a.type === 'reference_image').map((ann) => {
-                                            const defaultText = currentLang === 'de' ? "Hier ist ein Referenzbild für ... :" : "Here is a reference image for ... :";
-                                            const textValue = ann.text || defaultText;
-                                            const isEditing = editingId === ann.id;
-
-                                            return (
-                                                <div key={ann.id} className="flex flex-col gap-2 pt-2 pb-2 group/refItem">
-                                                    {/* Editable Text Area (Monospace, similar to prompt) */}
-                                                    <div className="relative w-full">
-                                                        {isEditing ? (
-                                                            <textarea
-                                                                autoFocus
-                                                                value={editValue}
-                                                                onChange={(e) => setEditValue(e.target.value)}
-                                                                onBlur={saveEditing}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                                        e.preventDefault();
-                                                                        saveEditing();
-                                                                    }
-                                                                    handleKeyDown(e);
-                                                                }}
-                                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
-                                                                style={{ minHeight: '1.5em' }}
-                                                                onInput={(e) => {
-                                                                    const target = e.target as HTMLTextAreaElement;
-                                                                    target.style.height = 'auto';
-                                                                    target.style.height = target.scrollHeight + 'px';
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <div
-                                                                onClick={() => startEditing(ann, defaultText)}
-                                                                className={`w-full ${Typo.Body} font-mono leading-relaxed cursor-text break-words whitespace-pre-wrap ${!ann.text ? 'text-zinc-400' : 'text-zinc-900 dark:text-zinc-100'}`}
-                                                            >
-                                                                {textValue}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Reference Image Chip */}
-                                                    <div className="relative w-fit group/chip">
-                                                        <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 relative bg-zinc-100 dark:bg-zinc-800 shadow-sm">
-                                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); onDeleteAnnotation(ann.id); }}
-                                                                className="absolute top-0.5 right-0.5 p-0.5 rounded-md bg-black/60 text-white hover:bg-red-500 transition-all opacity-0 group-hover/chip:opacity-100"
-                                                            >
-                                                                <X className="w-3 h-3" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-
-
                                     </div>
                                 </div>
                             </div>
