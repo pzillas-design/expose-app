@@ -45,106 +45,71 @@ export const BrushTab: React.FC<BrushTabProps> = ({
         return library;
     }, [library]);
 
+    // Custom secondary button with left-aligned content and hover text
+    const SecondaryObjectButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
+        <button
+            onClick={onClick}
+            className="w-full flex items-center gap-3 py-3 px-4 transition-all bg-zinc-800/90 dark:bg-zinc-800/90 text-white dark:text-white hover:bg-zinc-700/90 dark:hover:bg-zinc-700/90 rounded-lg active:scale-[0.98] group"
+        >
+            <Icon className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-medium flex-1 text-left">{label}</span>
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
+                {currentLang === 'de' ? 'einfügen' : 'insert'}
+            </span>
+        </button>
+    );
+
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-1 animate-in fade-in duration-300">
+            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-3 px-6 animate-in fade-in duration-300">
 
-                {/* Object Buttons - Sticker Style with Left-Aligned Labels */}
-                <button
+                {/* Object Buttons - Secondary Style with Left-Aligned Content */}
+                <SecondaryObjectButton
+                    icon={Type}
+                    label={currentLang === 'de' ? 'Text' : 'Text'}
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddText?.();
                     }}
-                    className="w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left"
-                >
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <div className="w-3.5 shrink-0 flex items-center justify-center">
-                            <Type className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                        </div>
-                        <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                            {currentLang === 'de' ? 'Text' : 'Text'}
-                        </div>
-                    </div>
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
-                        {currentLang === 'de' ? 'einfügen' : 'insert'}
-                    </span>
-                </button>
-
-                <button
+                />
+                <SecondaryObjectButton
+                    icon={Square}
+                    label={currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('rect');
                     }}
-                    className="w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left"
-                >
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <div className="w-3.5 shrink-0 flex items-center justify-center">
-                            <Square className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                        </div>
-                        <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                            {currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
-                        </div>
-                    </div>
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
-                        {currentLang === 'de' ? 'einfügen' : 'insert'}
-                    </span>
-                </button>
-
-                <button
+                />
+                <SecondaryObjectButton
+                    icon={Circle}
+                    label={currentLang === 'de' ? 'Kreis' : 'Circle'}
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('circle');
                     }}
-                    className="w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left"
-                >
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <div className="w-3.5 shrink-0 flex items-center justify-center">
-                            <Circle className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                        </div>
-                        <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                            {currentLang === 'de' ? 'Kreis' : 'Circle'}
-                        </div>
-                    </div>
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
-                        {currentLang === 'de' ? 'einfügen' : 'insert'}
-                    </span>
-                </button>
-
-                <button
+                />
+                <SecondaryObjectButton
+                    icon={Minus}
+                    label={currentLang === 'de' ? 'Linie' : 'Line'}
                     onClick={() => {
                         onMaskToolChange?.('select');
                         onAddShape?.('line');
                     }}
-                    className="w-full flex items-center gap-3 px-6 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors group text-left"
-                >
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <div className="w-3.5 shrink-0 flex items-center justify-center">
-                            <Minus className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400" />
-                        </div>
-                        <div className={`${Typo.Body} ${Theme.Colors.TextSecondary} group-hover:text-black dark:group-hover:text-white truncate font-normal`}>
-                            {currentLang === 'de' ? 'Linie' : 'Line'}
-                        </div>
-                    </div>
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 dark:text-zinc-500 text-[10px] font-normal whitespace-nowrap">
-                        {currentLang === 'de' ? 'einfügen' : 'insert'}
-                    </span>
-                </button>
+                />
 
-                {/* Brush Tool - Keep as Button with padding */}
-                <div className="pt-2 px-6">
-                    <Button
-                        variant={maskTool === 'brush' ? 'primary' : 'secondary'}
-                        icon={<Pen className="w-4 h-4" />}
-                        onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
-                        className="w-full"
-                    >
-                        {currentLang === 'de' ? 'Pinsel' : 'Brush'}
-                    </Button>
-                </div>
+                {/* Brush Tool - Same Secondary Style */}
+                <Button
+                    variant={maskTool === 'brush' ? 'primary' : 'secondary'}
+                    icon={<Pen className="w-4 h-4" />}
+                    onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
+                    className="w-full"
+                >
+                    {currentLang === 'de' ? 'Pinsel' : 'Brush'}
+                </Button>
 
                 {/* Brush Size Slider - Only when active, no frame, subtle styling */}
                 {maskTool === 'brush' && (
-                    <div className="animate-in slide-in-from-top-2 fade-in duration-200 pt-2 pb-1 px-6">
+                    <div className="animate-in slide-in-from-top-2 fade-in duration-200 pt-2 pb-1">
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between px-1">
                                 <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wide">

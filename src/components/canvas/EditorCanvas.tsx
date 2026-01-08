@@ -244,7 +244,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }
 
                 if (ann.shapeType === 'circle') {
-                    // Axis-based resizing (cross pattern)
+                    // Free-form resizing - handles move freely in all directions (B-spline-like)
                     if (['top', 'right', 'bottom', 'left'].includes(dragState.mode)) {
                         let { initialX: iX, initialY: iY, initialW: iW, initialH: iH } = dragState;
                         let nX = iX, nY = iY, nW = iW, nH = iH;
@@ -252,13 +252,25 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         if (dragState.mode === 'top') {
                             nY += dy;
                             nH -= dy;
+                            // Allow horizontal movement too
+                            nX += dx / 2;
+                            nW -= dx;
                         } else if (dragState.mode === 'bottom') {
                             nH += dy;
+                            // Allow horizontal movement too
+                            nX += dx / 2;
+                            nW -= dx;
                         } else if (dragState.mode === 'left') {
                             nX += dx;
                             nW -= dx;
+                            // Allow vertical movement too
+                            nY += dy / 2;
+                            nH -= dy;
                         } else if (dragState.mode === 'right') {
                             nW += dx;
+                            // Allow vertical movement too
+                            nY += dy / 2;
+                            nH -= dy;
                         }
 
                         return { ...ann, x: nX, y: nY, width: Math.max(10, nW), height: Math.max(10, nH) };
