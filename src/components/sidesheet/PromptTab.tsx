@@ -59,6 +59,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
     const [editingControlId, setEditingControlId] = useState<string | null>(null);
     const [editControlValue, setEditControlValue] = useState("");
+    const [annotationLabelOverride, setAnnotationLabelOverride] = useState<string>("");
+    const [isEditingAnnotationLabel, setIsEditingAnnotationLabel] = useState(false);
+    const [editAnnotationLabelValue, setEditAnnotationLabelValue] = useState("");
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
 
@@ -129,12 +132,24 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (e.key === 'Enter') {
             e.preventDefault();
             if (editingControlId) saveControlLabel();
+            else if (isEditingAnnotationLabel) saveAnnotationLabel();
             else saveEditing();
         }
         if (e.key === 'Escape') {
             setEditingId(null);
             setEditingControlId(null);
+            setIsEditingAnnotationLabel(false);
         }
+    };
+
+    const startEditingAnnotationLabel = () => {
+        setIsEditingAnnotationLabel(true);
+        setEditAnnotationLabelValue(annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations"));
+    };
+
+    const saveAnnotationLabel = () => {
+        setAnnotationLabelOverride(editAnnotationLabelValue);
+        setIsEditingAnnotationLabel(false);
     };
 
     const startEditingControl = (id: string, currentLabel: string) => {
@@ -225,7 +240,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         // 1. Annotation Guide (Technical Label for the AI)
         let annotationGuide = "";
         if (hasAnnotations) {
-            annotationGuide = "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+            const displayLabel = annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
+            annotationGuide = `Image 2: ${displayLabel} (Muted original + overlays showing where and what to change).`;
         }
 
         // 2. Reference Image Contexts
@@ -411,29 +427,74 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 }
 
                                 {/* 3. ANNOTATIONS BLOCK (Optional) */}
-                                {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (
-                                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
-                                        <div className="absolute top-2 right-2">
-                                            <button
-                                                onClick={() => {
-                                                    annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).forEach(a => onDeleteAnnotation(a.id));
-                                                }}
-                                                className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                                title="Clear All"
-                                            >
-                                                <X className="w-3.5 h-3.5" />
-                                            </button>
+                                {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (() => {
+                                    const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+                                    const displayLabel = annotationLabelOverride || (currentLang === 'de' ? "Anmerkungen" : "Annotations");
+
+                                    const maskCount = activeAnns.filter(a => a.type === 'mask_path').length;
+                                    const stampCount = activeAnns.filter(a => a.type === 'stamp').length;
+                                    const shapeCount = activeAnns.filter(a => a.type === 'shape').length;
+
+                                    return (
+                                        <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                            <div className="absolute top-2 right-2">
+                                                <button
+                                                    onClick={() => {
+                                                        activeAnns.forEach(a => onDeleteAnnotation(a.id));
+                                                    }}
+                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Clear All"
+                                                >
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+
+                                            <div className="flex flex-col gap-3">
+                                                <div className="relative w-full pr-8">
+                                                    {isEditingAnnotationLabel ? (
+                                                        <textarea
+                                                            autoFocus
+                                                            value={editAnnotationLabelValue}
+                                                            onChange={(e) => setEditAnnotationLabelValue(e.target.value)}
+                                                            onBlur={saveAnnotationLabel}
+                                                            onKeyDown={handleKeyDown}
+                                                            className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono opacity-70 leading-relaxed resize-none overflow-hidden block`}
+                                                            style={{ minHeight: '1.2em' }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            onClick={startEditingAnnotationLabel}
+                                                            className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                        >
+                                                            {displayLabel}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {maskCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                            <Pen className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {stampCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                            <RotateCcw className="w-3 h-3 text-orange-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {shapeCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-zinc-700/50">
+                                                            <Square className="w-3 h-3 text-emerald-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="h-6 min-w-[24px] px-2 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-full text-[11px] font-mono font-bold border border-zinc-200 dark:border-zinc-700">
-                                                {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length}
-                                            </span>
-                                            <span className={`${Typo.Body} opacity-60`}>
-                                                {currentLang === 'de' ? "Markierte Bereiche auf dem Bild" : "Marked areas on the image"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
+                                    );
+                                })()}
 
                                 {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
                                 {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
