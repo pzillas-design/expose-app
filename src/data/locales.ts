@@ -106,6 +106,8 @@ export const translations = {
     tt_clear: "Clear All",
     tt_download: "Download",
     tt_delete: "Delete",
+    tt_undo: "Undo",
+    tt_redo: "Redo",
 
     // Board / Gallery
     welcome_title: "Welcome to Exposé",
@@ -278,6 +280,8 @@ export const translations = {
     tt_clear: "Alles löschen",
     tt_download: "Herunterladen",
     tt_delete: "Löschen",
+    tt_undo: "Rückgängig",
+    tt_redo: "Wiederholen",
 
     // Board / Gallery
     welcome_title: "Willkommen bei Exposé",

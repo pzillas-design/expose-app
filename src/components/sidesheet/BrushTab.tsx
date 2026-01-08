@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { TranslationFunction, LibraryCategory, AnnotationObject } from '@/types';
-import { Pen, Type, Square, Circle, Minus } from 'lucide-react';
+import { Pen, Type, Square, Circle, Minus, ChevronDown, Trash2 } from 'lucide-react';
 import { ObjectsTab } from './ObjectsTab';
 
 interface BrushTabProps {
@@ -25,6 +25,7 @@ interface BrushTabProps {
     onAddShape?: (shape: 'rect' | 'circle' | 'line') => void;
     onAddText?: () => void;
     onBack?: () => void;
+    onClearBrushStrokes?: () => void;
 }
 
 export const BrushTab: React.FC<BrushTabProps> = ({
@@ -38,7 +39,8 @@ export const BrushTab: React.FC<BrushTabProps> = ({
     onActiveShapeChange,
     t, currentLang, library, onAddUserCategory, onDeleteUserCategory, onAddUserItem, onDeleteUserItem, onAddObject,
     onAddShape,
-    onAddText
+    onAddText,
+    onClearBrushStrokes
 }) => {
 
     const objectLibrary = useMemo(() => {
@@ -123,6 +125,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <Pen className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
                     </div>
+                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${maskTool === 'brush' ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Brush Size Slider */}
@@ -130,10 +133,14 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                     <div className="animate-in slide-in-from-top-2 fade-in duration-200 pt-2 pb-1">
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between px-1">
-                                <span className="text-[10px] text-zinc-500 dark:text-zinc-500 uppercase tracking-wide">
-                                    {currentLang === 'de' ? 'Größe' : 'Size'}
-                                </span>
-                                <span className="text-[10px] text-zinc-500 dark:text-zinc-500 font-mono">{brushSize}px</span>
+                                <span className="text-[11px] text-zinc-500 dark:text-zinc-500 font-mono">{brushSize}</span>
+                                <button
+                                    onClick={onClearBrushStrokes}
+                                    className="p-1 rounded hover:bg-zinc-800 transition-colors"
+                                    title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 text-zinc-500 hover:text-red-500 transition-colors" />
+                                </button>
                             </div>
                             <input
                                 type="range"

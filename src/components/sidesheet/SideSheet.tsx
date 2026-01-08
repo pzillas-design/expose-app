@@ -305,6 +305,12 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         updateAnnotationsWithHistory(newAnns);
     };
 
+    const clearAllBrushStrokes = () => {
+        if (!selectedImage || !selectedImage.annotations) return;
+        const newAnns = selectedImage.annotations.filter(a => a.type !== 'mask_path');
+        updateAnnotationsWithHistory(newAnns);
+    };
+
     const handleAddReferenceImage = (file: File, annotationId?: string) => {
         setPendingAnnotationId(annotationId || null);
         const reader = new FileReader();
@@ -576,13 +582,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                     icon={<Undo2 className="w-3.5 h-3.5" />}
                     onClick={handleUndo}
                     disabled={historyIndex <= 0}
-                    tooltip="Undo"
+                    tooltip={t('tt_undo')}
                 />
                 <IconButton
                     icon={<Redo2 className="w-3.5 h-3.5" />}
                     onClick={handleRedo}
                     disabled={historyIndex >= history.length - 1}
-                    tooltip="Redo"
+                    tooltip={t('tt_redo')}
                 />
             </div>
         </div>
@@ -712,6 +718,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddObject={handleAddObjectCenter}
                                 onAddShape={handleAddShape}
                                 onAddText={handleAddText}
+                                onClearBrushStrokes={clearAllBrushStrokes}
                             />
                         </div>
                         <DoneButton />

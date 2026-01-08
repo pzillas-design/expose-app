@@ -390,10 +390,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 style={{ left: `${(p.x / width) * 100}%`, top: `${(p.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors"
+                                        <button
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                            <Trash2 className="w-4 h-4" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -427,10 +429,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto"
+                                        <button
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                            <Trash2 className="w-4 h-4" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -446,6 +450,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const rotation = ann.rotation || 0;
                         const cx = x + w / 2;
                         const cy = y + h / 2;
+                        const rx = Math.abs(w / 2);
+                        const ry = Math.abs(h / 2);
 
                         return (
                             <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
@@ -469,12 +475,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 </svg>
                                 {active && (
                                     <>
-                                        {/* 4 Corner Handles for Bounding Box Resize */}
+                                        {/* 4 Cardinal Handles for Circle Resize (top, right, bottom, left) */}
                                         {[
-                                            { x: x, y: y, cursor: 'nw-resize', mode: 'tl' },
-                                            { x: x + w, y: y, cursor: 'ne-resize', mode: 'tr' },
-                                            { x: x + w, y: y + h, cursor: 'se-resize', mode: 'br' },
-                                            { x: x, y: y + h, cursor: 'sw-resize', mode: 'bl' }
+                                            { x: cx, y: cy - ry, cursor: 'n-resize', mode: 'tr' },
+                                            { x: cx + rx, y: cy, cursor: 'e-resize', mode: 'br' },
+                                            { x: cx, y: cy + ry, cursor: 's-resize', mode: 'bl' },
+                                            { x: cx - rx, y: cy, cursor: 'w-resize', mode: 'tl' }
                                         ].map((h, i) => (
                                             <div key={i}
                                                 className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full z-[60] pointer-events-auto shadow-md"
@@ -488,10 +494,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             />
                                         ))}
 
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                        <button
+                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 shadow-md pointer-events-auto transition-colors z-[60]"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
-                                            <Trash2 className="w-4 h-4" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </>
                                 )}
@@ -503,7 +511,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 if (ann.type === 'stamp') {
                     const left = (ann.x / width) * 100;
                     const top = (ann.y / height) * 100;
-                    const currentFontSize = Math.max(10, width * 0.012 * zoom);
+                    const currentFontSize = Math.max(8, width * 0.009 * zoom);
 
                     return (
                         <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%` }}
@@ -512,34 +520,34 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 setActiveMaskId(ann.id);
                                 startDrag(e, ann.id, 'move', ann);
                             }}>
-                            <div className={`relative flex items-center bg-black text-white shadow-xl transition-all duration-300 origin-bottom`}
+                            <div className={`relative flex items-center bg-zinc-800 dark:bg-zinc-700 text-white shadow-lg transition-all duration-200 origin-bottom border border-zinc-600 dark:border-zinc-500`}
                                 style={{
                                     fontSize: currentFontSize,
-                                    paddingLeft: 10 * zoom,
-                                    paddingRight: active && isEditMode ? 5 * zoom : 10 * zoom,
-                                    paddingTop: 6 * zoom,
-                                    paddingBottom: 6 * zoom,
-                                    borderRadius: 6 * zoom,
-                                    transform: 'translate(-50%, -100%) translateY(-10px)',
-                                    minWidth: active ? (100 * zoom) : 'auto',
-                                    opacity: isEditMode || active ? 1 : 0.85
+                                    paddingLeft: 8 * zoom,
+                                    paddingRight: active && isEditMode ? 4 * zoom : 8 * zoom,
+                                    paddingTop: 4 * zoom,
+                                    paddingBottom: 4 * zoom,
+                                    borderRadius: 4 * zoom,
+                                    transform: 'translate(-50%, -100%) translateY(-8px)',
+                                    minWidth: active ? (80 * zoom) : 'auto',
+                                    opacity: isEditMode || active ? 1 : 0.9
                                 }}>
                                 {active && isEditMode ? (
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1">
                                         <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
                                             onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)}
-                                            className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-bold placeholder:text-white/30"
-                                            style={{ width: Math.max(60 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
-                                            placeholder={t ? t('describe_changes') : "Änderung..."}
+                                            className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-medium placeholder:text-white/40"
+                                            style={{ width: Math.max(50 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
+                                            placeholder={t ? t('describe_changes') : "Text..."}
                                             autoFocus
                                             onMouseDown={e => e.stopPropagation()} />
                                         <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            className="p-1 hover:bg-white/20 rounded transition-colors group/trash">
-                                            <Trash2 className="text-white/60 group-hover/trash:text-red-400" style={{ width: 14 * zoom, height: 14 * zoom }} />
+                                            className="p-0.5 hover:bg-white/10 rounded transition-colors">
+                                            <Trash2 className="text-zinc-400 hover:text-red-400 transition-colors" style={{ width: 12 * zoom, height: 12 * zoom }} />
                                         </button>
                                     </div>
                                 ) : (
-                                    <span className="whitespace-nowrap font-medium">
+                                    <span className="whitespace-nowrap font-medium text-[0.95em]">
                                         {ann.text || (t ? t('untitled') : "Text")}
                                     </span>
                                 )}
