@@ -186,7 +186,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     const finalWidth = (image.height * ratio) * zoom;
     const finalHeight = image.height * zoom;
 
-    const navIconBtnClass = `absolute flex items-center justify-center w-10 h-10 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-md hover:bg-zinc-100/80 dark:hover:bg-zinc-800/80 pointer-events-auto z-[60]`;
+    const navIconBtnClass = `absolute flex items-center justify-center w-12 h-12 transition-all duration-200 text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md shadow-xl border border-zinc-200 dark:border-zinc-800 pointer-events-auto z-[60]`;
 
     return (
         <div
@@ -201,21 +201,27 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Toolbar */}
             {zoom > 0.4 && (
-                <div className="flex items-center justify-between w-full h-7 mb-2 px-0.5 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate uppercase text-[10px] tracking-wider`}>
                         {image.title}
                     </span>
                     <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        <button onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md">
-                            <Download className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 rounded-md">
-                            <Trash className="w-3.5 h-3.5" />
-                        </button>
-                        {image.parentId && (
-                            <button onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }} className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md">
-                                <RotateCcw className="w-3.5 h-3.5" />
+                        <Tooltip text={t('tt_download')}>
+                            <button onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                                <Download className="w-4 h-4" />
                             </button>
+                        </Tooltip>
+                        <Tooltip text={t('tt_delete')}>
+                            <button onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                                <Trash className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
+                        {image.parentId && (
+                            <Tooltip text={t('ctx_create_variations')}>
+                                <button onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                            </Tooltip>
                         )}
                     </div>
                 </div>
