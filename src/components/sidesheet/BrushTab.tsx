@@ -57,13 +57,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         onMaskToolChange?.('select');
                         onAddText?.();
                     }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                    className="group w-full flex items-center justify-between py-3.5 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         <Type className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Text' : 'Text'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 text-[10px] font-normal whitespace-nowrap">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -73,13 +73,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         onMaskToolChange?.('select');
                         onAddShape?.('rect');
                     }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                    className="group w-full flex items-center justify-between py-3.5 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         <Square className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Rechteck' : 'Rectangle'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 text-[10px] font-normal whitespace-nowrap">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -89,13 +89,13 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         onMaskToolChange?.('select');
                         onAddShape?.('circle');
                     }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                    className="group w-full flex items-center justify-between py-3.5 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         <Circle className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 text-[10px] font-normal whitespace-nowrap">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -105,19 +105,19 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         onMaskToolChange?.('select');
                         onAddShape?.('line');
                     }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
+                    className="group w-full flex items-center justify-between py-3.5 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                 >
                     <div className="flex items-center gap-3">
                         <Minus className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-zinc-400 text-[10px] font-normal whitespace-nowrap">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
 
                 {/* Brush Tool */}
-                <div className={`w-full rounded-lg transition-all border ${maskTool === 'brush' ? 'bg-zinc-700 border-zinc-600' : 'bg-zinc-800/50 border-transparent hover:bg-zinc-800 hover:border-zinc-700'}`}>
+                <div className={`w-full rounded-lg transition-all ${maskTool === 'brush' ? 'bg-zinc-700' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}>
                     <button
                         onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
                         className="group w-full flex items-center justify-between py-3 px-4"
@@ -131,7 +131,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
                     {/* Brush Size Slider - Inside the tile */}
                     {maskTool === 'brush' && (
-                        <div className="animate-in slide-in-from-top-2 fade-in duration-200 px-4 pb-3 pt-1 border-t border-zinc-600/50">
+                        <div className="animate-in slide-in-from-top-2 fade-in duration-200 px-4 pb-4 pt-2">
                             <div className="flex items-center gap-3">
                                 <span className="text-[11px] text-zinc-400 font-mono font-bold min-w-[24px]">{brushSize}</span>
                                 <input
@@ -145,7 +145,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 />
                                 <button
                                     onClick={onClearBrushStrokes}
-                                    className="p-1.5 rounded-md text-zinc-400 hover:bg-zinc-600 hover:text-red-400 transition-all"
+                                    className="p-1.5 w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-600 hover:text-red-400 transition-all"
                                     title={currentLang === 'de' ? 'Alle Pinselstriche löschen' : 'Clear all brush strokes'}
                                 >
                                     <Trash className="w-3.5 h-3.5" />

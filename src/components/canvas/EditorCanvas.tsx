@@ -390,12 +390,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 style={{ left: `${(p.x / width) * 100}%`, top: `${(p.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
-                                        <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
+                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                        >
-                                            <Trash className="w-3.5 h-3.5" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                            <Trash className="w-4 h-4" />
                                         </button>
                                     </>
                                 )}
@@ -429,12 +427,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
-                                        <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
+                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                        >
-                                            <Trash className="w-3.5 h-3.5" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                            <Trash className="w-4 h-4" />
                                         </button>
                                     </>
                                 )}
@@ -494,12 +490,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             />
                                         ))}
 
-                                        <button
-                                            className="absolute p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-red-500 dark:hover:text-red-400 shadow-md pointer-events-auto transition-all z-[60]"
+                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                        >
-                                            <Trash className="w-3.5 h-3.5" />
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                            <Trash className="w-4 h-4" />
                                         </button>
                                     </>
                                 )}
