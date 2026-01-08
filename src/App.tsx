@@ -590,8 +590,9 @@ export function App() {
             <CreationModal
                 isOpen={isCreationModalOpen}
                 onClose={() => setIsCreationModalOpen(false)}
-                onProcess={processFile}
+                onGenerate={handleCreateNew}
                 t={t}
+                lang={lang}
             />
 
             <CreditsModal

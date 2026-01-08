@@ -19,7 +19,8 @@ export const translations = {
     copied_to_clipboard: "Prompt copied",
     back_to_app: "Back to App",
     added: "added",
-    attach_file: "Attach File",
+    attach_file: "Add reference image",
+    new_generation: "New Generation",
     price_free: "Free",
     model_prefix: "Model: ",
     annotate: "Annotation",
@@ -154,6 +155,11 @@ export const translations = {
     gen_modal_submit: "Generate",
     gen_modal_aspect_ratio: "Aspect Ratio",
     gen_modal_quality: "Quality",
+    creation_prompt_label: "Prompt",
+    creation_prompt_placeholder: "Describe what you want to generate...",
+    creation_quality_label: "Quality",
+    creation_ratio_label: "Aspect Ratio",
+    drop_here: "Drop here",
 
     // Admin Panel
     admin_users: "Users",
@@ -193,7 +199,8 @@ export const translations = {
     copied_to_clipboard: "Prompt kopiert",
     back_to_app: "Zurück zur App",
     added: "hinzugefügt",
-    attach_file: "Datei anhängen",
+    attach_file: "Referenzbild hinzufügen",
+    new_generation: "Neue Generation",
     price_free: "Kostenlos",
     model_prefix: "Modell: ",
     annotate: "Anmerkung",
@@ -328,6 +335,11 @@ export const translations = {
     gen_modal_submit: "Generieren",
     gen_modal_aspect_ratio: "Format",
     gen_modal_quality: "Qualität",
+    creation_prompt_label: "Prompt",
+    creation_prompt_placeholder: "Beschreibe, was du generieren möchtest...",
+    creation_quality_label: "Qualität",
+    creation_ratio_label: "Format",
+    drop_here: "Hier ablegen",
 
     // Admin Panel
     admin_users: "Benutzer",
