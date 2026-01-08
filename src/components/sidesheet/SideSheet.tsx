@@ -642,7 +642,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
                             {!isMulti && (
                                 <IconButton
-                                    icon={<InfoFilled className="w-4 h-4" />}
+                                    icon={<InfoFilled className="w-[18px] h-[18px]" />}
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
                                     className="text-zinc-400"
