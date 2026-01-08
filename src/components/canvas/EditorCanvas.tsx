@@ -463,7 +463,31 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     )}
                                 </svg>
                                 {active && (() => {
-                                    // 4 handles on the axes (cross pattern) - no rotation needed for circles
+                                    if (ann.points && ann.points.length >= 4) {
+                                        return (
+                                            <>
+                                                {ann.points.map((pt, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full pointer-events-auto shadow-md z-[60] cursor-move"
+                                                        style={{
+                                                            left: `${(pt.x / width) * 100}%`,
+                                                            top: `${(pt.y / height) * 100}%`,
+                                                            transform: 'translate(-50%, -50%)'
+                                                        }}
+                                                        onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)}
+                                                    />
+                                                ))}
+                                                <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                                    style={{ left: `${((ann.x || 0) + (ann.width || 0)) / width * 100}%`, top: `${(ann.y || 0) / height * 100}%`, transform: 'translate(10px, -30px)' }}
+                                                    onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        );
+                                    }
+
+                                    // 4 handles on the axes (cross pattern) - fallback for old circles
                                     const handles = [
                                         { x: cx, y: (ann.y || 0), cursor: 'n-resize', mode: 'top' },           // Top
                                         { x: (ann.x || 0) + (ann.width || 0), y: cy, cursor: 'e-resize', mode: 'right' },  // Right
