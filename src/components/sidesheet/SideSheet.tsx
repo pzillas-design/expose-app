@@ -726,6 +726,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             >
                 {isGlobalDragOver && (
                     <div
+                        onClick={onGlobalDragLeave}
                         onDrop={handleDrop}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDragEnter={() => setIsSideZoneActive(true)}

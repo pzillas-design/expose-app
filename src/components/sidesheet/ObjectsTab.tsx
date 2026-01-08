@@ -84,6 +84,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                 isEmpty={allItems.length === 0}
                 emptyText={t('no_stamps') || (currentLang === 'de' ? 'Keine Sticker gefunden' : 'No stickers found')}
                 hasTopBorder={false}
+                addTooltip={currentLang === 'de' ? 'Sticker erstellen' : 'Create Sticker'}
             >
 
                 {allItems.map((item, idx) => (
@@ -134,26 +135,25 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             )}
             {isModalOpen && createPortal(
                 <div
-                    className="fixed inset-0 z-[100] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
                     onClick={() => setIsModalOpen(false)}
                 >
                     <div
-                        className={`w-full max-w-sm ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden`}
+                        className={`relative w-[480px] ${Theme.Colors.ModalBg} ${Theme.Colors.Border} border rounded-xl shadow-2xl overflow-hidden flex flex-col items-center justify-center p-12 gap-8 animate-in zoom-in-95 duration-200`}
                         onClick={e => e.stopPropagation()}
                     >
-
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 pt-6 pb-2">
-                            <h2 className={`${Typo.H2} text-lg ${Theme.Colors.TextHighlight}`}>
-                                {currentLang === 'de' ? 'Neuer Sticker' : 'New Sticker'}
+                        <div className="flex flex-col items-center gap-2 text-center">
+                            <h2 className={`text-2xl font-medium tracking-tight text-white`}>
+                                {currentLang === 'de' ? 'Sticker erstellen' : 'Create Sticker'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                                <X className="w-4 h-4" />
-                            </button>
+                            <p className={`text-base text-zinc-400`}>
+                                {currentLang === 'de' ? 'Geben Sie dem Sticker einen Namen und ein Emoji.' : 'Give the sticker a name and an emoji.'}
+                            </p>
                         </div>
 
-                        {/* Body */}
-                        <div className="px-6 py-6 space-y-6">
+                        {/* Inputs */}
+                        <div className="w-full flex flex-col gap-4">
                             <div className="space-y-2">
                                 <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider`}>
                                     {t('enter_sticker_name') || 'Name'}
@@ -163,7 +163,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                     value={stickerName}
                                     onChange={(e) => setStickerName(e.target.value)}
                                     placeholder={t('enter_sticker_name') || (currentLang === 'de' ? 'Name eingeben...' : 'Enter name...')}
-                                    className={`w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border ${Theme.Colors.Border} rounded-md text-sm outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400/20 transition-all placeholder:text-zinc-400`}
+                                    className={`w-full h-12 px-4 bg-zinc-900 border ${Theme.Colors.Border} rounded-lg text-base outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400/20 transition-all placeholder:text-zinc-600 text-white`}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                                 />
                             </div>
@@ -171,30 +171,31 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                             <div className="space-y-2">
                                 <label className={`${Typo.Label} text-zinc-500 uppercase tracking-wider`}>Icon (Emoji)</label>
                                 <div className="flex gap-4">
-                                    <div className={`relative w-14 h-12 flex items-center justify-center border ${Theme.Colors.Border} rounded-md bg-zinc-50/50 dark:bg-zinc-900/30 overflow-hidden shrink-0`}>
+                                    <div className={`relative w-16 h-12 flex items-center justify-center border ${Theme.Colors.Border} rounded-lg bg-zinc-900 overflow-hidden shrink-0`}>
                                         <input
                                             value={stickerEmoji}
                                             onChange={(e) => setStickerEmoji(e.target.value.slice(0, 2))}
                                             placeholder="☺"
-                                            className="w-full h-full text-center bg-transparent border-none outline-none text-2xl p-0 focus:ring-0 cursor-text"
+                                            className="w-full h-full text-center bg-transparent border-none outline-none text-2xl p-0 focus:ring-0 cursor-text text-white placeholder:text-zinc-700"
                                         />
                                     </div>
-                                    <div className="flex-1 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed py-0.5">
+                                    <div className="flex-1 text-sm text-zinc-500 leading-relaxed py-1">
                                         {currentLang === 'de'
-                                            ? 'Wähle ein Emoji für den Sticker. Wenn leer, wird ein Standard-Punkt angezeigt.'
-                                            : 'Choose an emoji for the sticker. If empty, a default dot will be shown.'}
+                                            ? 'Optional: Ein Emoji für den Sticker.'
+                                            : 'Optional: An emoji for the sticker.'}
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="flex justify-end gap-3 pt-2">
-                                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-                                    {t('cancel') || 'Cancel'}
-                                </Button>
-                                <Button variant="primary" onClick={handleCreate} disabled={!stickerName.trim() || isSubmitting}>
-                                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (currentLang === 'de' ? 'Erstellen' : 'Create')}
-                                </Button>
-                            </div>
+                        {/* Buttons */}
+                        <div className="flex flex-col gap-3 w-full pt-2">
+                            <Button variant="primary" onClick={handleCreate} disabled={!stickerName.trim() || isSubmitting} className="w-full h-12 text-base font-medium tracking-wide">
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (currentLang === 'de' ? 'ERSTELLEN' : 'CREATE')}
+                            </Button>
+                            <Button variant="secondary" onClick={() => setIsModalOpen(false)} className="w-full h-12 text-base font-medium tracking-wide bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">
+                                {currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL'}
+                            </Button>
                         </div>
                     </div>
                 </div>,

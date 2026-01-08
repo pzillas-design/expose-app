@@ -8,6 +8,7 @@ interface SidebarAccordionProps {
     isExpanded: boolean;
     onToggle: () => void;
     onAdd?: () => void;
+    addTooltip?: string;
     children: React.ReactNode;
     isEmpty?: boolean;
     emptyText?: string;
@@ -19,6 +20,7 @@ export const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
     isExpanded,
     onToggle,
     onAdd,
+    addTooltip,
     children,
     isEmpty,
     emptyText,
@@ -42,7 +44,7 @@ export const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
                         <IconButton
                             icon={<Plus className="w-3.5 h-3.5" />}
                             onClick={(e) => { e.stopPropagation(); onAdd(); }}
-                            tooltip="Vorlage erstellen"
+                            tooltip={addTooltip || "Hinzufügen"}
                         />
                     </div>
                 )}

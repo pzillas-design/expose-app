@@ -400,6 +400,7 @@ export function App() {
             <div className="flex-1 relative h-full overflow-hidden">
                 {isDragOver && (
                     <div
+                        onClick={() => { setIsDragOver(false); setIsCanvasZoneActive(false); }}
                         onDrop={handleCanvasDrop}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDragEnter={() => setIsCanvasZoneActive(true)}

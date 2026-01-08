@@ -61,7 +61,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <Type className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Text' : 'Text'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -77,7 +77,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <Square className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Rechteck' : 'Rectangle'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -93,7 +93,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <Circle className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
@@ -109,22 +109,23 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                         <Minus className="w-4 h-4 text-zinc-100" />
                         <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
                     </div>
-                    <span className="text-[10px] font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors uppercase tracking-wider">
+                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
                         {currentLang === 'de' ? 'Einfügen' : 'Insert'}
                     </span>
                 </button>
 
-                {/* Brush Tool - Same Secondary Style */}
-                <Button
-                    variant={maskTool === 'brush' ? 'primary' : 'secondary'}
-                    icon={<Pen className="w-4 h-4" />}
+                {/* Brush Tool */}
+                <button
                     onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
-                    className="w-full"
+                    className={`group w-full flex items-center justify-between py-3 px-4 rounded-lg transition-colors border ${maskTool === 'brush' ? 'bg-zinc-700 border-zinc-600' : 'bg-zinc-800/50 border-transparent hover:bg-zinc-800 hover:border-zinc-700'}`}
                 >
-                    {currentLang === 'de' ? 'Pinsel' : 'Brush'}
-                </Button>
+                    <div className="flex items-center gap-3">
+                        <Pen className="w-4 h-4 text-zinc-100" />
+                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                    </div>
+                </button>
 
-                {/* Brush Size Slider - Only when active, no frame, subtle styling */}
+                {/* Brush Size Slider */}
                 {maskTool === 'brush' && (
                     <div className="animate-in slide-in-from-top-2 fade-in duration-200 pt-2 pb-1">
                         <div className="flex flex-col gap-2">
@@ -141,7 +142,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 onChange={(e) => onBrushSizeChange?.(Number(e.target.value))}
                                 onMouseDown={onBrushResizeStart}
                                 onMouseUp={onBrushResizeEnd}
-                                className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-zinc-400 dark:[&::-webkit-slider-thumb]:bg-zinc-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-zinc-500 dark:hover:[&::-webkit-slider-thumb]:bg-zinc-500 transition-all"
+                                className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-zinc-400 dark:[&::-webkit-slider-thumb]:bg-zinc-600 [&::-webkit-slider-thumb]:rounded-full hover:[&::-webkit-slider-thumb]:bg-zinc-500 dark:hover:[&::-webkit-slider-thumb]:bg-zinc-500 transition-all"
                             />
                         </div>
                     </div>
