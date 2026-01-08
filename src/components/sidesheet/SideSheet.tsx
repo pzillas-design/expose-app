@@ -686,6 +686,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 currentLang={lang}
                                 userProfile={userProfile}
                                 showInfo={showInfo}
+                                onToggleInfo={setShowInfo}
                             />
                         </div>
                     </>

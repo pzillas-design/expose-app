@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
@@ -37,6 +37,7 @@ interface PromptTabProps {
     currentLang: 'de' | 'en';
     userProfile: any;
     showInfo?: boolean;
+    onToggleInfo?: (show: boolean) => void;
 }
 
 export const PromptTab: React.FC<PromptTabProps> = ({
@@ -44,7 +45,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
     onUpdateAnnotation, onUpdateVariables, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
     onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile,
-    showInfo = false
+    showInfo = false, onToggleInfo
 }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -373,11 +374,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                         return (
                                             <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
-                                                <div className="absolute top-2 right-2">
+                                                <div className="absolute top-2 right-2 z-10">
                                                     <button
                                                         onClick={() => handleClearControl(ctrl.id)}
                                                         className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                                        title="Remove"
+                                                        title={t('tt_delete')}
                                                     >
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
@@ -511,11 +512,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                                     return (
                                         <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
-                                            <div className="absolute top-2 right-2">
+                                            <div className="absolute top-2 right-2 z-10">
                                                 <button
                                                     onClick={() => onDeleteAnnotation(ann.id)}
                                                     className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                                    title="Remove"
+                                                    title={t('tt_delete')}
                                                 >
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
@@ -694,8 +695,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             {/* Prompt Section */}
                             {selectedImage.generationPrompt && (
                                 <div className="flex flex-col gap-3 group relative">
-                                    <div className="flex items-center justify-between">
-                                        <span className={`${Typo.Label} text-zinc-400 text-[10px] uppercase tracking-widest`}>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                             Prompt
                                         </span>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -712,7 +713,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             />
                                         </div>
                                     </div>
-                                    <p className={`font-mono text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed`}>
+                                    <p className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed`}>
                                         {selectedImage.generationPrompt}
                                     </p>
                                 </div>
@@ -727,7 +728,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                                 {t('resolution')}
                                             </span>
-                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                            <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                                                 {(() => {
                                                     if (selectedImage.realWidth && selectedImage.realHeight) {
                                                         return `${selectedImage.realWidth} × ${selectedImage.realHeight}px`;
@@ -745,7 +746,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                                 {t('created_at')}
                                             </span>
-                                            <span className={`${Typo.Mono} text-xs text-zinc-500 dark:text-zinc-400`}>
+                                            <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                                                 {selectedImage.createdAt ? (() => {
                                                     const d = new Date(selectedImage.createdAt);
                                                     const day = String(d.getDate()).padStart(2, '0');
@@ -763,7 +764,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                                     {t('model')}
                                                 </span>
-                                                <span className={`${Typo.Body} text-xs text-zinc-500 dark:text-zinc-400 capitalize`}>
+                                                <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                                                     {(() => {
                                                         // 1. Map to friendly branded names based on recorded quality
                                                         const q = selectedImage.quality;
@@ -827,19 +828,24 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     </span>
                                 </Button>
 
-                                {selectedImage.parentId && (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => selectedImage.parentId && onNavigateParent(selectedImage.parentId)}
-                                        disabled={selectedImage.isGenerating}
-                                        className="justify-start px-4 h-11 gap-2"
-                                    >
-                                        <ArrowLeft className="w-4 h-4 text-zinc-400" />
-                                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                            {currentLang === 'de' ? 'Zum Original' : 'Top Parent'}
-                                        </span>
-                                    </Button>
-                                )}
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => {
+                                        if (selectedImage.url) {
+                                            const link = document.createElement('a');
+                                            link.href = selectedImage.url;
+                                            link.download = `${selectedImage.id}.png`;
+                                            link.click();
+                                        }
+                                    }}
+                                    disabled={selectedImage.isGenerating}
+                                    className="justify-start px-4 h-11 gap-2"
+                                >
+                                    <Download className="w-4 h-4 text-zinc-400" />
+                                    <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                        {t('tt_download')}
+                                    </span>
+                                </Button>
 
                                 {userProfile?.role === 'admin' && (
                                     <div className="w-full flex justify-center py-4 bg-transparent outline-none">
