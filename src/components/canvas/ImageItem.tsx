@@ -186,7 +186,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     const finalWidth = (image.height * ratio) * zoom;
     const finalHeight = image.height * zoom;
 
-    const navIconBtnClass = `absolute flex items-center justify-center w-12 h-12 transition-all duration-200 text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md shadow-xl border border-zinc-200 dark:border-zinc-800 pointer-events-auto z-[60]`;
+    const navIconBtnClass = `absolute flex items-center justify-center w-12 h-12 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-full hover:bg-white/90 dark:hover:bg-zinc-900/90 hover:backdrop-blur-md hover:shadow-xl pointer-events-auto z-[60]`;
 
     return (
         <div
@@ -207,18 +207,27 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </span>
                     <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <Tooltip text={t('tt_download')}>
-                            <button onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }}
+                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                            >
                                 <Download className="w-4 h-4" />
                             </button>
                         </Tooltip>
                         <Tooltip text={t('tt_delete')}>
-                            <button onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
+                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                            >
                                 <Trash className="w-4 h-4" />
                             </button>
                         </Tooltip>
                         {image.parentId && (
                             <Tooltip text={t('ctx_create_variations')}>
-                                <button onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
+                                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                                >
                                     <RotateCcw className="w-4 h-4" />
                                 </button>
                             </Tooltip>
@@ -286,12 +295,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {isSelected && zoom > 1.2 && (
                 <div className="absolute inset-0 pointer-events-none">
                     {hasLeft && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-5 top-1/2 -translate-y-1/2`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-10 top-1/2 -translate-y-1/2`}>
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                     )}
                     {hasRight && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-5 top-1/2 -translate-y-1/2`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-10 top-1/2 -translate-y-1/2`}>
                             <ChevronRight className="w-6 h-6" />
                         </button>
                     )}
