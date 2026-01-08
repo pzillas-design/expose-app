@@ -49,81 +49,75 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
     return (
         <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`}>
-            <div className="flex-1 overflow-y-auto no-scrollbar py-8 space-y-2 px-6 animate-in fade-in duration-300">
+            <div className="flex-1 overflow-y-auto no-scrollbar py-6 px-4 animate-in fade-in duration-300">
 
-                {/* Object Buttons */}
-                <button
-                    onClick={() => {
-                        onMaskToolChange?.('select');
-                        onAddText?.();
-                    }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
-                >
-                    <div className="flex items-center gap-3">
-                        <Type className="w-4 h-4 text-zinc-100" />
-                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Text' : 'Text'}</span>
-                    </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
-                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
-                    </span>
-                </button>
+                {/* 2x2 Grid for Shape Tools */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    {/* Text */}
+                    <button
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddText?.();
+                        }}
+                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
+                    >
+                        <Type className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
+                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                            {currentLang === 'de' ? 'Text' : 'Text'}
+                        </span>
+                    </button>
 
-                <button
-                    onClick={() => {
-                        onMaskToolChange?.('select');
-                        onAddShape?.('rect');
-                    }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
-                >
-                    <div className="flex items-center gap-3">
-                        <Square className="w-4 h-4 text-zinc-100" />
-                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Rechteck' : 'Rectangle'}</span>
-                    </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
-                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
-                    </span>
-                </button>
+                    {/* Rectangle */}
+                    <button
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('rect');
+                        }}
+                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
+                    >
+                        <Square className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
+                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                            {currentLang === 'de' ? 'Rechteck' : 'Rectangle'}
+                        </span>
+                    </button>
 
-                <button
-                    onClick={() => {
-                        onMaskToolChange?.('select');
-                        onAddShape?.('circle');
-                    }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
-                >
-                    <div className="flex items-center gap-3">
-                        <Circle className="w-4 h-4 text-zinc-100" />
-                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
-                    </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
-                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
-                    </span>
-                </button>
+                    {/* Circle */}
+                    <button
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('circle');
+                        }}
+                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
+                    >
+                        <Circle className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
+                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                            {currentLang === 'de' ? 'Kreis' : 'Circle'}
+                        </span>
+                    </button>
 
-                <button
-                    onClick={() => {
-                        onMaskToolChange?.('select');
-                        onAddShape?.('line');
-                    }}
-                    className="group w-full flex items-center justify-between py-3 px-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors border border-transparent hover:border-zinc-700"
-                >
-                    <div className="flex items-center gap-3">
-                        <Minus className="w-4 h-4 text-zinc-100" />
-                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
-                    </div>
-                    <span className="text-[10px] font-medium text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-wider">
-                        {currentLang === 'de' ? 'Einfügen' : 'Insert'}
-                    </span>
-                </button>
+                    {/* Line */}
+                    <button
+                        onClick={() => {
+                            onMaskToolChange?.('select');
+                            onAddShape?.('line');
+                        }}
+                        className="group flex flex-col items-center justify-center gap-2 py-5 px-3 rounded-lg bg-zinc-800/40 hover:bg-zinc-700/60 transition-all border border-zinc-700/50 hover:border-zinc-600"
+                    >
+                        <Minus className="w-5 h-5 text-zinc-300 group-hover:text-white transition-colors" />
+                        <span className="text-[11px] font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                            {currentLang === 'de' ? 'Linie' : 'Line'}
+                        </span>
+                    </button>
+                </div>
 
-                {/* Brush Tool */}
+                {/* Brush Tool - Full Width */}
                 <button
                     onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
-                    className={`group w-full flex items-center justify-between py-3 px-4 rounded-lg transition-colors border ${maskTool === 'brush' ? 'bg-zinc-700 border-zinc-600' : 'bg-zinc-800/50 border-transparent hover:bg-zinc-800 hover:border-zinc-700'}`}
+                    className={`w-full flex items-center justify-between py-3 px-4 rounded-lg transition-all border ${maskTool === 'brush' ? 'bg-zinc-700/70 border-zinc-600' : 'bg-zinc-800/40 border-zinc-700/50 hover:bg-zinc-700/60 hover:border-zinc-600'}`}
                 >
                     <div className="flex items-center gap-3">
-                        <Pen className="w-4 h-4 text-zinc-100" />
-                        <span className="text-sm font-medium text-zinc-100">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                        <Pen className="w-4 h-4 text-zinc-300" />
+                        <span className="text-sm font-medium text-zinc-200">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${maskTool === 'brush' ? 'rotate-180' : ''}`} />
                 </button>
