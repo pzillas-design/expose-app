@@ -203,21 +203,30 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const getFinalPrompt = () => {
         const trimmedPrompt = prompt.trim();
         const refs = annotations.filter(a => a.type === 'reference_image');
+        const hasAnnotations = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
 
-        // 1. Reference Image Contexts
+        // 1. Annotation Guide (Technical Label for the AI)
+        let annotationGuide = "";
+        if (hasAnnotations) {
+            annotationGuide = "Image 2: The Annotation Image (Muted original + overlays showing where and what to change).";
+        }
+
+        // 2. Reference Image Contexts
         const refParts: string[] = [];
+        // If we have an annotation image, it is Image 2, so references start at Image 3
+        const refStartIndex = hasAnnotations ? 3 : 2;
+
         refs.forEach((ann, index) => {
             const userText = ann.text?.trim();
-            // Fallback instruction to help the AI distinguish between source and reference
             const fallback = currentLang === 'de'
                 ? "Nutze dieses Bild als Inspiration für ..."
                 : "Use this image as inspiration for ...";
 
             const content = userText || fallback;
-            refParts.push(`${currentLang === 'de' ? 'Referenz' : 'Reference'} ${index + 1}: ${content}`);
+            refParts.push(`Image ${refStartIndex + index}: ${content}`);
         });
 
-        // 2. Template Controls
+        // 3. Template Controls
         const varParts: string[] = [];
         if (activeTemplate && activeTemplate.controls) {
             activeTemplate.controls.forEach(c => {
@@ -243,6 +252,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         if (trimmedPrompt) {
             const label = currentLang === 'de' ? "HAUPT-ANWEISUNG" : "MAIN INSTRUCTION";
             finalOutput += `${label}: ${trimmedPrompt}`;
+        }
+
+        if (annotationGuide) {
+            if (finalOutput) finalOutput += "\n\n";
+            finalOutput += `ANNOTATION GUIDE: ${annotationGuide}`;
         }
 
         if (refParts.length > 0) {
