@@ -328,7 +328,7 @@ export const imageService = {
      * Converts them back into the ImageRow structure used by the app.
      */
     async loadUserImages(userId: string, boardId?: string): Promise<ImageRow[]> {
-        console.log(`Deep Sync: Loading user history for board ${boardId || 'all'}...`);
+        console.log(`[DEBUG] loadUserImages: boardId=${boardId}, userId=${userId}`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
         // 1. Get Completed Images & Active Jobs in parallel
