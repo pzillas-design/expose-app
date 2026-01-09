@@ -42,7 +42,7 @@ export const useFileHandler = ({
                         const targetHeight = 512;
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
-                        const baseName = file.name.replace(/\.[^/.]+$/, "");
+                        const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
                         const newId = generateId();
 
                         generateThumbnail(event.target!.result as string).then(async (thumbSrc) => {

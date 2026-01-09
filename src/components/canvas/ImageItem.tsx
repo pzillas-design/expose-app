@@ -203,12 +203,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {zoom > 0.4 && (
                 <div className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
                     <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate uppercase text-[10px] tracking-wider`}>
-                        {image.title}
+                        {image.title || 'Untitled'}
                     </span>
                     <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <Tooltip text={t('tt_download')}>
                             <button
-                                onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title); }}
+                                onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title || 'image'); }}
                                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
                                 <Download className="w-3.5 h-3.5" />
@@ -255,7 +255,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         maskSrc={image.maskSrc}
                         zoom={zoom}
                         isSelected={isSelected}
-                        title={image.title}
+                        title={image.title || 'Image'}
                         onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
                         onLoaded={() => setIsImageReady(true)}
                     />
