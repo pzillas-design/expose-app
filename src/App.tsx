@@ -341,6 +341,9 @@ export function App() {
             navigate(`/projects/${targetId}`);
         } else {
             console.log('[DEBUG] Navigating to /projects');
+            // Clear state immediately when going home
+            setCurrentBoardId(null);
+            setRows([]);
             navigate('/projects');
         }
     };
