@@ -93,7 +93,7 @@ export const useFileHandler = ({
             };
             reader.readAsDataURL(file);
         });
-    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, t]);
 
     const processFile = useCallback((file: File) => processFiles([file]), [processFiles]);
 
