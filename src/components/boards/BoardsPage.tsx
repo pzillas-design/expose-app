@@ -44,7 +44,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
 
     if (displayImages.length === 0) {
         if (thumbnail) {
-            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-cover" />;
+            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-contain bg-zinc-100/30 dark:bg-zinc-900/10" />;
         }
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
@@ -60,7 +60,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50">
             {itemsToShow.map((src, i) => (
                 <div key={i} className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                    <img src={src} onLoad={handleLoad} onError={handleLoad} className="w-full h-full object-cover" />
+                    <img src={src} onLoad={handleLoad} onError={handleLoad} className="w-full h-full object-contain" />
                 </div>
             ))}
             {showPlus && (

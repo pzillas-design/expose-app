@@ -393,8 +393,6 @@ export const imageService = {
             const allPathsToSign = new Set<string>();
             dbImages.forEach(rec => {
                 if (rec.storage_path) allPathsToSign.add(rec.storage_path);
-                if (rec.thumb_storage_path) allPathsToSign.add(rec.thumb_storage_path);
-
                 // Add reference images from annotations
                 const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
                 rawAnns.forEach((ann: any) => {

@@ -327,6 +327,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     };
 
     const handleDoGenerate = () => {
+        if (!prompt?.trim() && annotations.length === 0) {
+            showToast(currentLang === 'de' ? 'Bitte gib einen Prompt ein.' : 'Please enter a prompt.', 'error');
+            return;
+        }
         onGenerate(getFinalPrompt(), prompt, activeTemplate?.id, controlValues);
     };
 
@@ -618,10 +622,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <div className="flex w-full">
                                         <button
                                             onClick={handleDoGenerate}
-                                            disabled={selectedImage.isGenerating || (!prompt?.trim() && annotations.length === 0)}
+                                            disabled={selectedImage.isGenerating}
                                             className={`
                                                 relative flex-1 flex items-center justify-center py-3.5 rounded-lg transition-all shadow-sm
-                                                ${(selectedImage?.isGenerating || (!prompt?.trim() && annotations.length === 0))
+                                                ${selectedImage?.isGenerating
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed opacity-50'
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
