@@ -85,11 +85,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
 
+    if (!selectedImage) return null;
+
     const isMulti = selectedImages && selectedImages.length > 1;
 
-    const lastIdRef = useRef<string>(selectedImage.id);
+    const lastIdRef = useRef<string | null>(selectedImage?.id || null);
 
     useEffect(() => {
+        if (!selectedImage) return;
         const idChanged = lastIdRef.current !== selectedImage.id;
 
         if (idChanged) {
@@ -104,7 +107,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             setHiddenControlIds([]);
             lastIdRef.current = selectedImage.id;
         }
-    }, [selectedImage.id, selectedImage.activeTemplateId, selectedImage.variableValues, templates]);
+    }, [selectedImage?.id, selectedImage?.activeTemplateId, selectedImage?.variableValues, templates]);
 
     useLayoutEffect(() => {
         if (textAreaRef.current) {

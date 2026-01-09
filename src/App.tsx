@@ -337,7 +337,7 @@ export function App() {
             if (targetId !== currentBoardId) {
                 setResolvingBoardId(targetId);
                 // Also set currentBoardId immediately if it's already a UUID
-                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
                     setCurrentBoardId(targetId);
                 }
                 setRows([]); // Clear current view
@@ -548,7 +548,7 @@ export function App() {
                 </div>
             </div>
 
-            {selectedIds.length > 0 && (
+            {selectedIds.length > 0 && selectedImage && (
                 <SideSheet
                     selectedImage={selectedImage}
                     selectedImages={selectedImages}
