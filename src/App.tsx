@@ -72,6 +72,12 @@ export function App() {
     // Stable Editor State Object to preserve ImageItem memoization during scroll
     const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId]);
 
+    // Track currentBoardId in a ref so we can read it without triggering re-renders
+    const currentBoardIdRef = useRef(currentBoardId);
+    useEffect(() => {
+        currentBoardIdRef.current = currentBoardId;
+    }, [currentBoardId]);
+
     // URL Routing Sync
     useEffect(() => {
         const syncUrl = async () => {
@@ -80,7 +86,7 @@ export function App() {
                 const identifier = decodeURIComponent(pathParts[2]);
 
                 // If it's a different board than current, start loading state immediately
-                if (identifier !== currentBoardId && identifier !== resolvingBoardId) {
+                if (identifier !== currentBoardIdRef.current && identifier !== resolvingBoardId) {
                     setResolvingBoardId(identifier);
                     // Clear rows to trigger skeleton immediately
                     setRows([]);
@@ -88,13 +94,13 @@ export function App() {
 
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
-                if (resolved && resolved.id !== currentBoardId) {
+                if (resolved && resolved.id !== currentBoardIdRef.current) {
                     setCurrentBoardId(resolved.id);
                 }
                 setResolvingBoardId(null);
             } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
                 // Only update state if we're actually changing from a board to null
-                if (currentBoardId !== null) {
+                if (currentBoardIdRef.current !== null) {
                     console.log('[DEBUG] Clearing board state for /projects');
                     setCurrentBoardId(null);
                     setRows([]);
