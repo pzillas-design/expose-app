@@ -92,14 +92,16 @@ export function App() {
                 }
                 setResolvingBoardId(null);
             } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
+                // Only update state if we're actually changing from a board to null
                 if (currentBoardId !== null) {
+                    console.log('[DEBUG] Clearing board state for /projects');
                     setCurrentBoardId(null);
                     setRows([]);
                 }
             }
         };
         syncUrl();
-    }, [location.pathname, currentBoardId, resolvingBoardId, setCurrentBoardId, setRows, setResolvingBoardId]);
+    }, [location.pathname, resolvingBoardId]);
 
 
     useEffect(() => {
