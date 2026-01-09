@@ -233,9 +233,9 @@ export const imageService = {
             generationStartTime: undefined,
             generationPrompt: prompt,
             quality: qualityMode,
-            userDraftPrompt: sourceImage.userDraftPrompt || '',
-            activeTemplateId: sourceImage.activeTemplateId,
-            variableValues: sourceImage.variableValues,
+            userDraftPrompt: '', // Clean prompt field for generated images
+            activeTemplateId: undefined, // No preset carried over
+            variableValues: undefined, // No variables carried over,
             version: targetVersion || (sourceImage.version || 1) + 1,
             title: targetTitle || (sourceImage.title.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
@@ -243,7 +243,7 @@ export const imageService = {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             modelVersion: result.modelVersion,
-            annotations: sourceImage.annotations || [],
+            annotations: [], // Clean slate - no inherited annotations
             maskSrc: undefined,
             // Keep canvas dimensions consistent with the row height to prevent "huge" images
             // while storing the actual high-res pixels in realWidth/Height
