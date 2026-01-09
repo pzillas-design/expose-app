@@ -321,6 +321,7 @@ export function App() {
     };
 
     const handleSelectBoard = (id: string | null) => {
+        console.log('[DEBUG] handleSelectBoard called with id:', id);
         if (id) {
             const b = boards.find(board => board.id === id);
             const targetId = b ? b.id : id;
@@ -330,6 +331,7 @@ export function App() {
             }
             navigate(`/projects/${targetId}`);
         } else {
+            console.log('[DEBUG] Navigating to /projects');
             navigate('/projects');
         }
     };
