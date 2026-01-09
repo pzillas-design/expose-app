@@ -336,14 +336,18 @@ export function App() {
             const targetId = b ? b.id : id;
             if (targetId !== currentBoardId) {
                 setResolvingBoardId(targetId);
+                // Also set currentBoardId immediately if it's already a UUID
+                if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
+                    setCurrentBoardId(targetId);
+                }
                 setRows([]); // Clear current view
             }
             navigate(`/projects/${targetId}`);
         } else {
-            console.log('[DEBUG] Navigating to /projects');
             // Clear state immediately when going home
             setCurrentBoardId(null);
             setRows([]);
+            selectMultiple([]); // Clear selection to prevent crashes in SideSheet/Canvas
             navigate('/projects');
         }
     };

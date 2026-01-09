@@ -265,7 +265,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
     const handlePromptChange = (val: string) => {
         setPrompt(val);
-        if (selectedImage && !isMulti) {
+        if (selectedImage && selectedImage.id && !isMulti) {
             onUpdatePrompt(selectedImage.id, val);
         }
     };
@@ -280,7 +280,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 }
             }
         } else if (selectedImage && selectedImage.src) {
-            await downloadImage(selectedImage.src, selectedImage.title || 'image');
+            await downloadImage(selectedImage.src, selectedImage?.title || 'image');
         }
     };
 
@@ -288,20 +288,20 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         if (isMulti && selectedImages) {
             const ids = selectedImages.map(i => i.id);
             onDeleteImage(ids);
-        } else if (selectedImage) {
+        } else if (selectedImage && selectedImage.id) {
             onDeleteImage(selectedImage.id);
         }
     }
 
     const handleDeselectPreservingPrompt = () => {
-        if (selectedImage && prompt) {
+        if (selectedImage && selectedImage.id && prompt) {
             onUpdatePrompt(selectedImage.id, prompt);
         }
         onDeselectAll();
     };
 
     const deleteAnnotation = (annId: string) => {
-        if (!selectedImage || !selectedImage.annotations) return;
+        if (!selectedImage || !selectedImage.id || !selectedImage.annotations) return;
         const newAnns = selectedImage.annotations.filter(a => a.id !== annId);
         updateAnnotationsWithHistory(newAnns);
     };
@@ -642,7 +642,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     </span>
                                 ) : (
                                     <span className={`${Typo.Label} truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
-                                        {selectedImage.title || 'Untitled'}
+                                        {selectedImage?.title || 'Untitled'}
                                     </span>
                                 )}
                             </div>

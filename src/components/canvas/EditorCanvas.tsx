@@ -100,7 +100,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
         annotations.forEach(ann => {
             if (ann.type === 'mask_path') {
-                if (ann.points.length < 1) return;
+                if (!ann.points || ann.points.length < 1) return;
                 ctx.beginPath();
                 ctx.lineWidth = ann.strokeWidth;
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';

@@ -368,7 +368,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         onChange={(e) => setPrompt(e.target.value)}
                                         placeholder={t('describe_changes')}
                                         className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
-                                        disabled={selectedImage.isGenerating}
+                                        disabled={selectedImage?.isGenerating}
                                     />
                                 </div>
 
@@ -584,7 +584,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <Button
                                         variant="secondary"
                                         onClick={onAddBrush}
-                                        disabled={selectedImage.isGenerating || isMulti}
+                                        disabled={selectedImage?.isGenerating || isMulti}
                                         icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
@@ -594,7 +594,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <Button
                                         variant="secondary"
                                         onClick={() => fileInputRef.current?.click()}
-                                        disabled={selectedImage.isGenerating}
+                                        disabled={selectedImage?.isGenerating}
                                         icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
                                         className="w-full !normal-case !font-normal !tracking-normal !text-xs"
                                         tooltip={t('tt_upload_ref')}
@@ -618,13 +618,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             disabled={selectedImage.isGenerating || (!prompt?.trim() && annotations.length === 0)}
                                             className={`
                                                 relative flex-1 flex items-center justify-center py-3.5 rounded-lg transition-all shadow-sm
-                                                ${(selectedImage.isGenerating || (!prompt?.trim() && annotations.length === 0))
+                                                ${(selectedImage?.isGenerating || (!prompt?.trim() && annotations.length === 0))
                                                     ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed opacity-50'
                                                     : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
                                             `}
                                         >
                                             <span className={`flex items-center gap-2 ${Typo.ButtonLabel}`}>
-                                                {selectedImage.isGenerating
+                                                {selectedImage?.isGenerating
                                                     ? t('processing')
                                                     : isMulti && selectedImages
                                                         ? `${t('generate_multi')} (${selectedImages.length})`
@@ -791,7 +791,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             ) : (
                                                 <div className="flex items-center justify-between gap-2">
                                                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs truncate`}>
-                                                        {selectedImage.title || (selectedImage.baseName ? `${selectedImage.baseName}_v${selectedImage.version}` : 'Untitled')}
+                                                        {selectedImage?.title || (selectedImage?.baseName ? `${selectedImage.baseName}_v${selectedImage.version}` : 'Untitled')}
                                                     </span>
                                                     <div className="opacity-0 group-hover/title:opacity-100 transition-opacity">
                                                         <IconButton
