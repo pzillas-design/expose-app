@@ -274,13 +274,13 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         if (isMulti && selectedImages) {
             for (const img of selectedImages) {
                 if (img.src) {
-                    await downloadImage(img.src, img.title);
+                    await downloadImage(img.src, img.title || 'image');
                     // Small delay to prevent browser blocking multiple downloads
                     await new Promise(r => setTimeout(r, 300));
                 }
             }
         } else if (selectedImage && selectedImage.src) {
-            await downloadImage(selectedImage.src, selectedImage.title);
+            await downloadImage(selectedImage.src, selectedImage.title || 'image');
         }
     };
 
@@ -642,7 +642,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     </span>
                                 ) : (
                                     <span className={`${Typo.Label} truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
-                                        {selectedImage.title}
+                                        {selectedImage.title || 'Untitled'}
                                     </span>
                                 )}
                             </div>
