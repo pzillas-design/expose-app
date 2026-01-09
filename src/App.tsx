@@ -1,3 +1,4 @@
+// Version: 2026-01-09-18:02 - Fixed upload crash and home navigation
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';

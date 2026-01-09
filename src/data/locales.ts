@@ -189,7 +189,7 @@ export const translations = {
     ctx_create_variations: "Create Variations",
     filename: "Filename",
     reference_images: "Reference Images",
-    
+
     // Auth
     auth_email_placeholder: "Email address",
     auth_password_placeholder: "Password",
@@ -244,7 +244,7 @@ export const translations = {
     copy: "Kopieren",
     copied_to_clipboard: "Prompt kopiert",
     back_to_app: "Zurück zur App",
-    home: "Übersicht",
+    home: "Home",
     added: "hinzugefügt",
     attach_file: "Foto anhängen",
     new_generation: "Neue Generation",
@@ -415,7 +415,7 @@ export const translations = {
     ctx_create_variations: "Variationen erstellen",
     filename: "Dateiname",
     reference_images: "Referenzbilder",
-    
+
     // Auth
     auth_email_placeholder: "E-Mail-Adresse",
     auth_password_placeholder: "Passwort",
