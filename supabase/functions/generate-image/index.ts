@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         }
 
         // --- MODEL MAPPING ---
-        let finalModelName = 'gemini-3-pro-image-preview'; // Nano Banana Pro 
+        let finalModelName = 'gemini-2.5-flash-image'; // Default to stable GA model
         switch (qualityMode) {
             case 'fast':
                 // Nano Banana: Optimiert auf Speed & Effizienz
@@ -115,7 +115,8 @@ Deno.serve(async (req) => {
             case 'pro-4k':
             default:
                 // Nano Banana Pro: Für professionelle Assets & High-Fidelity
-                finalModelName = 'gemini-3-pro-image-preview';
+                // Using stable GA model (preview versions deprecated Jan 15, 2026)
+                finalModelName = 'gemini-2.5-flash-image';
                 break;
         }
 

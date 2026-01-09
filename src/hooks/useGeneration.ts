@@ -194,8 +194,7 @@ export const useGeneration = ({
                     status: 'processing',
                     cost: cost,
                     prompt: prompt,
-                    concurrent_jobs: currentConcurrency,
-                    board_id: currentBoardId
+                    concurrent_jobs: currentConcurrency
                 });
                 attachedJobIds.current.add(newId);
             } catch (dbErr) {
@@ -393,8 +392,7 @@ export const useGeneration = ({
                     model: modelId,
                     status: 'processing',
                     cost: cost,
-                    prompt: prompt,
-                    board_id: currentBoardId,
+                    prompt: prompt
                 });
             }
 
