@@ -405,7 +405,7 @@ Deno.serve(async (req) => {
             version: (sourceImage.version || 0) + 1,
             prompt: prompt,
             parent_id: sourceImage.id || null,
-            annotations: sourceImage.annotations ? JSON.stringify(sourceImage.annotations) : null,
+            annotations: '[]', // Generated images start with empty annotations
             generation_params: { quality: qualityMode }
         }
 
