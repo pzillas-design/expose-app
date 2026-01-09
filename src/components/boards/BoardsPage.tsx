@@ -42,10 +42,23 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         });
     };
 
+    // Case 1: Single image (either main thumbnail or exactly one display image)
+    if (displayImages.length === 1 || (displayImages.length === 0 && thumbnail)) {
+        const src = displayImages[0] || thumbnail;
+        return (
+            <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900/50">
+                <img
+                    src={src}
+                    onLoad={handleLoad}
+                    onError={handleLoad}
+                    className="w-full h-full object-cover"
+                />
+            </div>
+        );
+    }
+
+    // Case 2: No images at all
     if (displayImages.length === 0) {
-        if (thumbnail) {
-            return <img src={thumbnail} onLoad={handleLoad} className="absolute inset-0 w-full h-full object-contain bg-zinc-100/30 dark:bg-zinc-900/10" />;
-        }
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
                 <ImageIcon className="w-10 h-10 text-zinc-300 dark:text-zinc-700" strokeWidth={1} />
@@ -53,14 +66,20 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         );
     }
 
+    // Case 3: Grid (2+ images)
     const showPlus = total > 4;
     const itemsToShow = displayImages.slice(0, showPlus ? 3 : 4);
 
     return (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50">
             {itemsToShow.map((src, i) => (
-                <div key={i} className="relative bg-zinc-50 dark:bg-zinc-900/30">
-                    <img src={src} onLoad={handleLoad} onError={handleLoad} className="w-full h-full object-contain" />
+                <div key={i} className="relative bg-zinc-50 dark:bg-zinc-900/30 overflow-hidden">
+                    <img
+                        src={src}
+                        onLoad={handleLoad}
+                        onError={handleLoad}
+                        className="w-full h-full object-cover"
+                    />
                 </div>
             ))}
             {showPlus && (
