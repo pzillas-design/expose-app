@@ -78,21 +78,32 @@ export function App() {
         currentBoardIdRef.current = currentBoardId;
     }, [currentBoardId]);
 
+    // Track if a sync is currently running to prevent race conditions
+    const isSyncingRef = useRef(false);
+
     // URL Routing Sync
     useEffect(() => {
         const syncUrl = async () => {
+            // Prevent multiple parallel syncs
+            if (isSyncingRef.current) {
+                console.log('[DEBUG] Sync already in progress, skipping');
+                return;
+            }
+
             const path = location.pathname;
-            const pathParts = path.split('/').filter(Boolean); // Remove empty parts from slashes
+            const pathParts = path.split('/').filter(Boolean);
 
             if (pathParts[0] === 'projects' && pathParts[1]) {
                 const identifier = decodeURIComponent(pathParts[1]);
 
-                // 1. If we are already resolved or currently resolving THIS identifier, skip
+                // If we are already resolved or currently resolving THIS identifier, skip
                 if (identifier === currentBoardIdRef.current || identifier === resolvingBoardId) {
                     return;
                 }
 
-                // 2. Start resolution
+                isSyncingRef.current = true;
+                console.log(`[DEBUG] Starting sync for board: ${identifier}`);
+
                 setResolvingBoardId(identifier);
 
                 // Clear rows only if we're actually switching to a NEW board (not just initializing)
@@ -113,6 +124,7 @@ export function App() {
                 }
 
                 setResolvingBoardId(null);
+                isSyncingRef.current = false;
             } else if ((pathParts[0] === 'projects' && !pathParts[1]) || path === '/') {
                 // Only update state if we're actually changing from a board to null
                 if (currentBoardIdRef.current !== null) {
@@ -123,7 +135,7 @@ export function App() {
             }
         };
         syncUrl();
-    }, [location.pathname, user, actions]); // Added user and actions, removed resolvingBoardId to prevent loops
+    }, [location.pathname, user, resolvingBoardId, actions.resolveBoardIdentifier, navigate, setResolvingBoardId, setRows, setIsCanvasLoading, setCurrentBoardId]);
 
 
     useEffect(() => {
