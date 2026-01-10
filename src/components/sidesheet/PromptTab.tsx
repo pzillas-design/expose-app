@@ -445,84 +445,86 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     })
                                 }
 
-                                {/* 3. ANNOTATIONS (Stamps, Masks, Shapes) - Individual Items */}
-                                {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (
-                                    <div className="flex flex-col gap-2">
-                                        {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).map((ann) => {
-                                            const isEditing = editingId === ann.id;
-                                            const defaultLabel = ann.type === 'stamp'
-                                                ? (currentLang === 'de' ? 'Befolge die markierten Änderungswünsche' : 'Apply the marked changes')
-                                                : (currentLang === 'de' ? 'Anmerkung' : 'Annotation');
-                                            const displayText = ann.text || defaultLabel;
+                                {/* 3. ANNOTATIONS (Stamps, Masks, Shapes) - Prompt Block Design */}
+                                {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (() => {
+                                    const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+                                    const maskCount = activeAnns.filter(a => a.type === 'mask_path').length;
+                                    const stampCount = activeAnns.filter(a => a.type === 'stamp').length;
+                                    const shapeCount = activeAnns.filter(a => a.type === 'shape').length;
 
-                                            return (
-                                                <div
-                                                    key={ann.id}
-                                                    className={`
-                                                        group relative flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all cursor-move
-                                                        ${isEditing ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'}
-                                                    `}
+                                    const defaultLabel = currentLang === 'de'
+                                        ? "Image 2: Die Anmerkungen auf dem Bild zeigen, wo und was geändert werden soll."
+                                        : "Image 2: The annotations on the image show where and what should be changed.";
+
+                                    return (
+                                        <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
+                                            <div className="absolute top-2 right-2">
+                                                <button
+                                                    onClick={() => {
+                                                        if (confirm(currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?')) {
+                                                            activeAnns.forEach(a => onDeleteAnnotation(a.id));
+                                                        }
+                                                    }}
+                                                    className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                                    title="Clear All"
                                                 >
-                                                    {/* Icon Left */}
-                                                    <div className="shrink-0 flex items-center justify-center text-zinc-500 dark:text-zinc-400">
-                                                        {ann.type === 'stamp' ? <Type className="w-4 h-4 text-blue-500 dark:text-blue-400" /> :
-                                                            ann.type === 'shape' ? <Square className="w-4 h-4 text-blue-500 dark:text-blue-400" /> :
-                                                                <Pen className="w-4 h-4 text-blue-500 dark:text-blue-400" />}
-                                                    </div>
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
 
-                                                    {/* Text / Input */}
-                                                    <div className="flex-1 min-w-0 flex items-center h-8">
-                                                        {isEditing ? (
-                                                            <input
-                                                                autoFocus
-                                                                value={editValue}
-                                                                onChange={(e) => setEditValue(e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter') {
-                                                                        e.preventDefault();
-                                                                        saveEditing();
-                                                                    } else if (e.key === 'Escape') {
-                                                                        setEditingId(null);
-                                                                    }
-                                                                    handleKeyDown(e);
-                                                                }}
-                                                                className={`w-full bg-transparent border-none outline-none ${Typo.Body} text-black dark:text-white placeholder-zinc-400`}
-                                                                placeholder={defaultLabel}
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                onClick={() => startEditing(ann, defaultLabel)}
-                                                                className={`
-                                                                    ${Typo.Body} truncate cursor-text w-full block
-                                                                    ${!ann.text ? 'text-zinc-400 italic' : Theme.Colors.TextPrimary}
-                                                                `}
-                                                            >
-                                                                {displayText}
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Save/Delete Button Right */}
-                                                    {isEditing ? (
-                                                        <button
-                                                            onClick={saveEditing}
-                                                            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
-                                                        >
-                                                            <Check className="w-3.5 h-3.5" />
-                                                        </button>
+                                            <div className="flex flex-col gap-3">
+                                                <div className="relative w-full pr-8">
+                                                    {isEditingAnnotationLabel === 'main' ? (
+                                                        <textarea
+                                                            autoFocus
+                                                            value={annotationLabelValue || defaultLabel}
+                                                            onChange={(e) => setAnnotationLabelValue(e.target.value)}
+                                                            onBlur={() => setIsEditingAnnotationLabel(null)}
+                                                            onKeyDown={handleKeyDown}
+                                                            className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                            onInput={(e) => {
+                                                                const target = e.target as HTMLTextAreaElement;
+                                                                target.style.height = 'auto';
+                                                                target.style.height = target.scrollHeight + 'px';
+                                                            }}
+                                                        />
                                                     ) : (
-                                                        <button
-                                                            onClick={() => onDeleteAnnotation(ann.id)}
-                                                            className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-zinc-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                                                        <div
+                                                            onClick={() => {
+                                                                setAnnotationLabelValue(annotationLabelValue || defaultLabel);
+                                                                setIsEditingAnnotationLabel('main');
+                                                            }}
+                                                            className={`w-full ${Typo.Body} font-mono opacity-60 group-hover:opacity-90 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                         >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
+                                                            {annotationLabelValue || defaultLabel}
+                                                        </div>
                                                     )}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+
+                                                <div className="flex flex-wrap gap-2">
+                                                    {maskCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                            <Pen className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {stampCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                            <Type className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
+                                                        </div>
+                                                    )}
+                                                    {shapeCount > 0 && (
+                                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
+                                                            <Square className="w-3 h-3 text-blue-500" />
+                                                            <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
                                 {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {

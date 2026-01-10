@@ -27,8 +27,19 @@ export const useNanoController = () => {
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
-    const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(null);
-    const [isCanvasLoading, setIsCanvasLoading] = useState(false);
+    const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(() => {
+        const path = window.location.pathname;
+        const parts = path.split('/');
+        if (parts[1] === 'projects' && parts[2]) {
+            return decodeURIComponent(parts[2]);
+        }
+        return null;
+    });
+    const [isCanvasLoading, setIsCanvasLoading] = useState(() => {
+        const path = window.location.pathname;
+        const parts = path.split('/');
+        return !!(parts[1] === 'projects' && parts[2]);
+    });
     const [loadingProgress, setLoadingProgress] = useState(0);
 
     // @ts-ignore
@@ -160,11 +171,19 @@ export const useNanoController = () => {
                     }
                 }
             });
-        } else {
-            setRows([]);
-            setIsCanvasLoading(false);
+        } else if (!resolvingBoardId) {
+            // Only clear loading if we aren't waiting for a board resolution
+            // AND we aren't on a project page (where we might be waiting for the user)
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            const isOnProjectPage = parts[1] === 'projects' && parts[2];
+
+            if (!isOnProjectPage) {
+                setRows([]);
+                setIsCanvasLoading(false);
+            }
         }
-    }, [user, currentBoardId, selectAndSnap]);
+    }, [user, currentBoardId, resolvingBoardId, selectAndSnap]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
