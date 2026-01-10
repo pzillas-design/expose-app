@@ -81,25 +81,39 @@ export function App() {
     // URL Routing Sync
     useEffect(() => {
         const syncUrl = async () => {
-            const pathParts = location.pathname.split('/');
-            if (pathParts[1] === 'projects' && pathParts[2]) {
-                const identifier = decodeURIComponent(pathParts[2]);
+            const path = location.pathname;
+            const pathParts = path.split('/').filter(Boolean); // Remove empty parts from slashes
 
-                // If it's a different board than current, start loading state immediately
-                if (identifier !== currentBoardIdRef.current && identifier !== resolvingBoardId) {
-                    setResolvingBoardId(identifier);
-                    // Clear rows to trigger skeleton immediately
+            if (pathParts[0] === 'projects' && pathParts[1]) {
+                const identifier = decodeURIComponent(pathParts[1]);
+
+                // 1. If we are already resolved or currently resolving THIS identifier, skip
+                if (identifier === currentBoardIdRef.current || identifier === resolvingBoardId) {
+                    return;
+                }
+
+                // 2. Start resolution
+                setResolvingBoardId(identifier);
+
+                // Clear rows only if we're actually switching to a NEW board (not just initializing)
+                if (currentBoardIdRef.current !== null) {
                     setRows([]);
                 }
 
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
-                if (resolved && resolved.id !== currentBoardIdRef.current) {
-                    setIsCanvasLoading(true);
-                    setCurrentBoardId(resolved.id);
+                if (resolved) {
+                    if (resolved.id !== currentBoardIdRef.current) {
+                        setIsCanvasLoading(true);
+                        setCurrentBoardId(resolved.id);
+                    }
+                } else if (user) {
+                    // Only fallback to projects list if we HAVE a user but still couldn't resolve the board
+                    navigate('/projects');
                 }
+
                 setResolvingBoardId(null);
-            } else if ((pathParts[1] === 'projects' && !pathParts[2]) || location.pathname === '/') {
+            } else if ((pathParts[0] === 'projects' && !pathParts[1]) || path === '/') {
                 // Only update state if we're actually changing from a board to null
                 if (currentBoardIdRef.current !== null) {
                     console.log('[DEBUG] Clearing board state for /projects');
@@ -109,7 +123,7 @@ export function App() {
             }
         };
         syncUrl();
-    }, [location.pathname, resolvingBoardId]);
+    }, [location.pathname, user, actions]); // Added user and actions, removed resolvingBoardId to prevent loops
 
 
     useEffect(() => {

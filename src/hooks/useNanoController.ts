@@ -151,6 +151,7 @@ export const useNanoController = () => {
             }, 200);
 
             imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
+                console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows found for board ${currentBoardId}`);
                 clearInterval(progressInterval);
                 setLoadingProgress(100);
                 setTimeout(() => setLoadingProgress(0), 500);
