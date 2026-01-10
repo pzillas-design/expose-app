@@ -135,14 +135,9 @@ export function App() {
                     isSyncingRef.current = false;
                     console.log('[DEBUG] Sync completed, lock released');
                 }
-            } else if ((pathParts[0] === 'projects' && !pathParts[1]) || path === '/') {
-                // Only update state if we're actually changing from a board to null
-                if (currentBoardIdRef.current !== null) {
-                    console.log('[DEBUG] Clearing board state for /projects');
-                    setCurrentBoardId(null);
-                    setRows([]);
-                }
             }
+            // Note: Board clearing is handled by handleSelectBoard(null), not by URL observation.
+            // This prevents race conditions where the board gets cleared after successful data load.
         };
         syncUrl();
     }, [location.pathname, user, resolvingBoardId, resolveBoardIdentifier, navigate, setResolvingBoardId, setRows, setIsCanvasLoading, setCurrentBoardId]);
