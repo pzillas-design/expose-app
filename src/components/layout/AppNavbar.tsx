@@ -86,14 +86,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-6">
-                    {/* Credits Display */}
-                    <div className="hidden sm:flex items-center gap-3 bg-zinc-100/30 dark:bg-zinc-900/30 px-4 py-2 rounded-xl border border-zinc-200/50 dark:border-white/5">
-                        <Wallet className="w-3.5 h-3.5 text-zinc-400" />
-                        <span className="text-[13px] font-mono font-medium text-zinc-500 dark:text-zinc-400">
-                            {(credits || 0).toFixed(2)} €
-                        </span>
-                    </div>
-
                     {/* New Board Button */}
                     <Button
                         onClick={onCreateBoard}
@@ -115,11 +107,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {/* User Profile / Account Link */}
                     <NavLink
                         to="/settings/account"
-                        className="group flex items-center gap-3 pl-3 pr-1 py-1 rounded-2xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all duration-300"
+                        className="group flex items-center p-1 rounded-2xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all duration-300"
                     >
-                        <span className="hidden sm:block text-[13px] font-medium text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
-                            {user?.email?.split('@')[0]}
-                        </span>
                         <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[12px] font-bold text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors shadow-inner overflow-hidden border border-zinc-200 dark:border-zinc-800">
                             {getInitials(userProfile?.full_name, user?.email)}
                         </div>
