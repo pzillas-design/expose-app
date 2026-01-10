@@ -451,15 +451,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
                             return (
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
-                                    <div className="absolute top-2 right-2">
+                                    <div className="absolute top-2 right-2 z-10">
                                         <button
                                             onClick={() => {
-                                                if (confirm(currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?')) {
-                                                    activeAnns.forEach(a => onDeleteAnnotation(a.id));
-                                                }
+                                                activeAnns.forEach(a => onDeleteAnnotation(a.id));
                                             }}
-                                            className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                            title="Clear All"
+                                            className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                                            title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
                                         >
                                             <X className="w-3.5 h-3.5" />
                                         </button>
