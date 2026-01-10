@@ -101,6 +101,12 @@ export function App() {
                     return;
                 }
 
+                // Wait for user to be loaded before attempting resolution
+                if (!user) {
+                    console.log('[DEBUG] Waiting for user to be loaded before syncing board');
+                    return;
+                }
+
                 isSyncingRef.current = true;
                 console.log(`[DEBUG] Starting sync for board: ${identifier}`);
 
