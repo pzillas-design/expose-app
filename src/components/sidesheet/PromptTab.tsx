@@ -154,8 +154,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const startEditingAnnotationLabel = (annotationId: string) => {
         setIsEditingAnnotationLabel(annotationId);
         const defaultLabel = currentLang === 'de'
-            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst."
-            : "Interpret the visual annotations. They show what and where to change in the original image.";
+            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+            : "Interpret the visual annotations. They show what and where to change in the original image ..";
         setAnnotationLabelValue(annotationLabelValue || defaultLabel);
     };
 
@@ -253,8 +253,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         let annotationGuide = "";
         if (hasAnnotations) {
             const defaultLabel = currentLang === 'de'
-                ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst."
-                : "Interpret the visual annotations. They show what and where to change in the original image.";
+                ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+                : "Interpret the visual annotations. They show what and where to change in the original image ..";
             const displayLabel = annotationLabelValue || defaultLabel;
             annotationGuide = displayLabel;
         }
@@ -446,8 +446,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             const shapeCount = activeAnns.filter(a => a.type === 'shape').length;
 
                             const defaultLabel = currentLang === 'de'
-                                ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst."
-                                : "Interpret the visual annotations. They show what and where to change in the original image.";
+                                ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+                                : "Interpret the visual annotations. They show what and where to change in the original image ..";
 
                             return (
                                 <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
