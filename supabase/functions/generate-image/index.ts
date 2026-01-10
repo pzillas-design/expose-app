@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
             case 'pro-2k':
             case 'pro-4k':
                 // Nano Banana Pro: Für professionelle Assets & High-Fidelity
-                // High-fidelity rendering with text support
-                finalModelName = 'gemini-3-pro-image-preview';
+                // Using stable flash-image model which supports configuration
+                finalModelName = 'gemini-2.5-flash-image';
                 break;
             default:
                 finalModelName = 'gemini-2.5-flash-image';
@@ -215,12 +215,12 @@ Deno.serve(async (req) => {
             }
         }));
 
+        // ASPECT RATIO & SIZE LOGIC
         let imageConfig: any = {}
-        if (qualityMode === 'pro-1k') imageConfig = { imageSize: '1K' }
-        else if (qualityMode === 'pro-2k') imageConfig = { imageSize: '2K' }
-        else if (qualityMode === 'pro-4k') imageConfig = { imageSize: '4K' }
+        if (qualityMode === 'pro-1k') imageConfig.imageSize = '1K'
+        else if (qualityMode === 'pro-2k') imageConfig.imageSize = '2K'
+        else if (qualityMode === 'pro-4k') imageConfig.imageSize = '4K'
 
-        // ASPECT RATIO LOGIC
         if (sourceImage.realWidth && sourceImage.realHeight) {
             const ratio = sourceImage.realWidth / sourceImage.realHeight;
             let closestRatio = '1:1';
@@ -264,10 +264,21 @@ Deno.serve(async (req) => {
         }
 
         // 3. Call Gemini
+        const hasConfig = Object.keys(imageConfig).length > 0;
         const geminiPayload = {
             contents: [{ parts: parts }],
-            generationConfig: Object.keys(imageConfig).length > 0 ? { imageConfig: imageConfig } : undefined
+            generationConfig: {
+                ...(hasConfig ? { imageConfig: imageConfig } : {}),
+                responseModalities: ["IMAGE"]
+            }
         };
+
+        console.log(`[DEBUG] Gemini Payload for ${finalModelName}:`, JSON.stringify({
+            model: finalModelName,
+            config: imageConfig,
+            partsCount: parts.length,
+            payloadPreview: JSON.stringify(geminiPayload).substring(0, 500) + "..."
+        }));
 
 
 
@@ -298,6 +309,8 @@ Deno.serve(async (req) => {
         });
 
         const [geminiResponse, generatedTitle] = await Promise.all([geminiResponsePromise, titlePromise]);
+
+        console.log(`[DEBUG] Gemini API Status: ${geminiResponse.status} ${geminiResponse.statusText}`);
 
         if (!geminiResponse.ok) {
             const errText = await geminiResponse.text()
