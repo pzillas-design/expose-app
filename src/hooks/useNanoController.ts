@@ -409,6 +409,7 @@ export const useNanoController = () => {
         handleCreateNew,
         refreshTemplates,
         savePreset: saveTemplate,
+        setIsCanvasLoading,
         deletePreset: deleteTemplate
     }), [
         setRows, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll, getMostVisibleItem, setQualityMode,
@@ -420,7 +421,7 @@ export const useNanoController = () => {
         handleUpdateVariables, onAddReference, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
-        refreshTemplates, saveTemplate, deleteTemplate
+        refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading
     ]);
 
     return React.useMemo(() => ({

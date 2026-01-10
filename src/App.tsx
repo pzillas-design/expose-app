@@ -52,7 +52,7 @@ export function App() {
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
-        savePreset, deletePreset
+        savePreset, deletePreset, setIsCanvasLoading
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -95,6 +95,7 @@ export function App() {
                 const resolved = await actions.resolveBoardIdentifier(identifier);
 
                 if (resolved && resolved.id !== currentBoardIdRef.current) {
+                    setIsCanvasLoading(true);
                     setCurrentBoardId(resolved.id);
                 }
                 setResolvingBoardId(null);
