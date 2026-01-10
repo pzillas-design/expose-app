@@ -105,7 +105,7 @@ export const editImageWithGemini = async (
           mimeType: 'image/png', // Canvas exports usually as PNG
         },
       });
-      parts.push({ text: "Image 2: The Mask. White areas = edit region." });
+      parts.push({ text: "Image 2: The Annotation Image. White markers indicate the edit regions." });
     }
 
     // 4. Reference Images

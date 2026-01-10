@@ -601,18 +601,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         </div>
     );
 
-    const DoneButton = () => (
-        <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} mt-auto`}>
-            <Button
-                variant="primary"
-                onClick={() => onModeChange('prompt')}
-                className="w-full"
-                icon={<Check className="w-4 h-4" />}
-            >
-                {t('done')}
-            </Button>
-        </div>
-    );
 
     const ToolSwitcherItem = ({ icon: Icon, active, onClick, tooltip }: { icon: any, active: boolean, onClick: () => void, tooltip?: string }) => (
         <IconButton
@@ -657,7 +645,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 />
                             )}
                         </div>
-                        <div className={`flex-1 overflow-hidden flex flex-col relative ${Theme.Colors.PanelBg}`}>
+                        <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
                             <PromptTab
                                 prompt={prompt}
                                 setPrompt={handlePromptChange}
@@ -730,7 +718,16 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onClearBrushStrokes={clearAllBrushStrokes}
                             />
                         </div>
-                        <DoneButton />
+                        <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} shrink-0`}>
+                            <Button
+                                variant="primary"
+                                onClick={handleExitBrushMode}
+                                className="w-full"
+                                icon={<Check className="w-4 h-4" />}
+                            >
+                                {t('done')}
+                            </Button>
+                        </div>
                     </div>
                 );
             case 'objects':
