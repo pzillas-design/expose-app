@@ -1,5 +1,6 @@
 
 import React, { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, Pencil } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
@@ -76,8 +77,18 @@ export const CommandDock: React.FC<CommandDockProps> = ({
 
       {/* 1. Home */}
       <div className="flex items-center px-0.5">
-        <IconButton
-          icon={(
+        <Tooltip text={t('home')}>
+          <Link
+            to="/projects"
+            onClick={(e) => {
+              // Only prevent default if NOT using modifier keys (Cmd/Ctrl)
+              if (!e.metaKey && !e.ctrlKey) {
+                e.preventDefault();
+                onHome();
+              }
+            }}
+            className="w-8 h-8 flex items-center justify-center rounded-md transition-all hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white"
+          >
             <svg viewBox="0 0 256 256" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M40,216H216V120a8,8,0,0,0-2.34-5.66l-80-80a8,8,0,0,0-11.32,0l-80,80A8,8,0,0,0,40,120Z"
@@ -87,11 +98,8 @@ export const CommandDock: React.FC<CommandDockProps> = ({
                 strokeWidth="20"
               />
             </svg>
-          )}
-          onClick={onHome}
-          tooltip={t('home')}
-          className="w-8 h-8 flex items-center justify-center p-0"
-        />
+          </Link>
+        </Tooltip>
       </div>
 
 
