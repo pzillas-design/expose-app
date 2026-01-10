@@ -53,23 +53,24 @@ export const useCanvasNavigation = ({
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
-        // Visual center of the visible area
         const centerX = containerRect.width / 2;
         const centerY = containerRect.height / 2;
-
         const padX = window.innerWidth / 2;
         const padY = window.innerHeight / 2;
 
-        let contentX: number, contentY: number;
+        // Two modes:
+        // 1. targetScroll provided: Navigate to a specific position (separate interpolation)
+        // 2. No targetScroll: Zoom around current center (fixed pivot)
 
-        if (targetScroll) {
-            // If explicit target scroll is provided, find the content pivot that results in that scroll at the target zoom
-            contentX = (targetScroll.x + centerX - padX) / clampedTargetZoom;
-            contentY = (targetScroll.y + centerY - padY) / clampedTargetZoom;
-        } else {
-            // Default: Zoom around the current visual center
-            contentX = (startScrollX + centerX - padX) / zoomRef.current;
-            contentY = (startScrollY + centerY - padY) / zoomRef.current;
+        const useDirectInterpolation = !!targetScroll;
+        const targetScrollX = targetScroll?.x ?? startScrollX;
+        const targetScrollY = targetScroll?.y ?? startScrollY;
+
+        // For pivot-based zoom (no targetScroll), calculate the content point that stays centered
+        let contentX = 0, contentY = 0;
+        if (!useDirectInterpolation) {
+            contentX = (startScrollX + centerX - padX) / startZoom;
+            contentY = (startScrollY + centerY - padY) / startZoom;
         }
 
         const startTime = performance.now();
@@ -79,18 +80,25 @@ export const useCanvasNavigation = ({
             const elapsed = time - startTime;
             const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
 
-            // Smoother ease-in-out instead of aggressive ease-out
+            // Smoother ease-in-out
             const ease = progress < 0.5
                 ? 4 * progress * progress * progress
                 : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
 
-            // Calculate required scroll position to keep the content pivot at the viewport center
-            const nextScrollX = (padX + (contentX * nextZoom)) - centerX;
-            const nextScrollY = (padY + (contentY * nextZoom)) - centerY;
+            let nextScrollX: number, nextScrollY: number;
 
-            // Update DOM and state
+            if (useDirectInterpolation) {
+                // Direct interpolation of both zoom and scroll
+                nextScrollX = startScrollX + (targetScrollX - startScrollX) * ease;
+                nextScrollY = startScrollY + (targetScrollY - startScrollY) * ease;
+            } else {
+                // Pivot-based: keep content point centered
+                nextScrollX = (padX + (contentX * nextZoom)) - centerX;
+                nextScrollY = (padY + (contentY * nextZoom)) - centerY;
+            }
+
             setZoom(nextZoom);
             container.scrollLeft = nextScrollX;
             container.scrollTop = nextScrollY;
@@ -99,8 +107,8 @@ export const useCanvasNavigation = ({
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
             } else {
                 setZoom(clampedTargetZoom);
-                container.scrollLeft = (padX + (contentX * clampedTargetZoom)) - centerX;
-                container.scrollTop = (padY + (contentY * clampedTargetZoom)) - centerY;
+                container.scrollLeft = targetScrollX;
+                container.scrollTop = targetScrollY;
                 zoomAnimFrameRef.current = null;
                 setIsZooming(false);
             }
