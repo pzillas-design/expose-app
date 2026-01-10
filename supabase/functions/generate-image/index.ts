@@ -114,8 +114,8 @@ Deno.serve(async (req) => {
             case 'pro-2k':
             case 'pro-4k':
                 // Nano Banana Pro: Für professionelle Assets & High-Fidelity
-                // Using stable flash-image model which supports configuration
-                finalModelName = 'gemini-2.5-flash-image';
+                // Using Gemini 3 Pro for high resolution as requested
+                finalModelName = 'gemini-3-pro-image-preview';
                 break;
             default:
                 finalModelName = 'gemini-2.5-flash-image';
@@ -267,10 +267,7 @@ Deno.serve(async (req) => {
         const hasConfig = Object.keys(imageConfig).length > 0;
         const geminiPayload = {
             contents: [{ parts: parts }],
-            generationConfig: {
-                ...(hasConfig ? { imageConfig: imageConfig } : {}),
-                responseModalities: ["IMAGE"]
-            }
+            generationConfig: hasConfig ? { imageConfig: imageConfig } : undefined
         };
 
         console.log(`[DEBUG] Gemini Payload for ${finalModelName}:`, JSON.stringify({
