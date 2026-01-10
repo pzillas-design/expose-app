@@ -112,11 +112,8 @@ export function App() {
 
                 try {
                     setResolvingBoardId(identifier);
-                    
-                    // Clear rows only if we're actually switching to a NEW board (not just initializing)
-                    if (currentBoardIdRef.current !== null) {
-                        setRows([]);
-                    }
+
+                    // Don't clear rows here - let useNanoController handle it to avoid race conditions
 
                     const resolved = await actions.resolveBoardIdentifier(identifier);
 
