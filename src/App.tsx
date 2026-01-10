@@ -52,7 +52,7 @@ export function App() {
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
-        savePreset, deletePreset, setIsCanvasLoading
+        savePreset, deletePreset, setIsCanvasLoading, resolveBoardIdentifier
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -115,7 +115,7 @@ export function App() {
 
                     // Don't clear rows here - let useNanoController handle it to avoid race conditions
 
-                    const resolved = await actions.resolveBoardIdentifier(identifier);
+                    const resolved = await resolveBoardIdentifier(identifier);
 
                     if (resolved) {
                         if (resolved.id !== currentBoardIdRef.current) {
@@ -145,7 +145,7 @@ export function App() {
             }
         };
         syncUrl();
-    }, [location.pathname, user, resolvingBoardId, actions.resolveBoardIdentifier, navigate, setResolvingBoardId, setRows, setIsCanvasLoading, setCurrentBoardId]);
+    }, [location.pathname, user, resolvingBoardId, resolveBoardIdentifier, navigate, setResolvingBoardId, setRows, setIsCanvasLoading, setCurrentBoardId]);
 
 
     useEffect(() => {
