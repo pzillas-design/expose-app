@@ -267,8 +267,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         refs.forEach((ann, index) => {
             const userText = ann.text?.trim();
             const fallback = currentLang === 'de'
-                ? "Nutze dieses Bild als Inspiration für ..."
-                : "Use this image as inspiration for ...";
+                ? "Nutze dieses Bild als Inspiration .."
+                : "Use this image as inspiration ..";
 
             const content = userText || fallback;
             refParts.push(`Image ${refStartIndex + index}: ${content}`);
@@ -519,9 +519,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             );
                         })()}
 
-                        {/* 4. REFERENCE IMAGE BLOCKS (Optional) */}
                         {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                            const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration für ..." : "Use this image as inspiration for ...";
+                            const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration .." : "Use this image as inspiration ..";
                             const hasText = ann.text && ann.text.trim().length > 0;
                             const textValue = hasText ? ann.text : defaultText;
                             const isEditing = editingId === ann.id;
