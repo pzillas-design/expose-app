@@ -110,27 +110,34 @@ export function App() {
                 isSyncingRef.current = true;
                 console.log(`[DEBUG] Starting sync for board: ${identifier}`);
 
-                setResolvingBoardId(identifier);
-
-                // Clear rows only if we're actually switching to a NEW board (not just initializing)
-                if (currentBoardIdRef.current !== null) {
-                    setRows([]);
-                }
-
-                const resolved = await actions.resolveBoardIdentifier(identifier);
-
-                if (resolved) {
-                    if (resolved.id !== currentBoardIdRef.current) {
-                        setIsCanvasLoading(true);
-                        setCurrentBoardId(resolved.id);
+                try {
+                    setResolvingBoardId(identifier);
+                    
+                    // Clear rows only if we're actually switching to a NEW board (not just initializing)
+                    if (currentBoardIdRef.current !== null) {
+                        setRows([]);
                     }
-                } else if (user) {
-                    // Only fallback to projects list if we HAVE a user but still couldn't resolve the board
-                    navigate('/projects');
-                }
 
-                setResolvingBoardId(null);
-                isSyncingRef.current = false;
+                    const resolved = await actions.resolveBoardIdentifier(identifier);
+
+                    if (resolved) {
+                        if (resolved.id !== currentBoardIdRef.current) {
+                            setIsCanvasLoading(true);
+                            setCurrentBoardId(resolved.id);
+                        }
+                    } else {
+                        // Board not found: redirect to projects list
+                        console.log('[DEBUG] Board not found, redirecting to /projects');
+                        navigate('/projects');
+                    }
+                } catch (error) {
+                    console.error('[DEBUG] Error during board sync:', error);
+                    navigate('/projects');
+                } finally {
+                    setResolvingBoardId(null);
+                    isSyncingRef.current = false;
+                    console.log('[DEBUG] Sync completed, lock released');
+                }
             } else if ((pathParts[0] === 'projects' && !pathParts[1]) || path === '/') {
                 // Only update state if we're actually changing from a board to null
                 if (currentBoardIdRef.current !== null) {
