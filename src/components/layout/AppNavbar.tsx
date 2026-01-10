@@ -104,15 +104,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         <Plus className="w-5 h-5" />
                     </button>
 
-                    {/* User Profile / Account Link */}
-                    <NavLink
-                        to="/settings/account"
-                        className="group flex items-center p-1 rounded-2xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all duration-300"
-                    >
-                        <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[12px] font-bold text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors shadow-inner overflow-hidden border border-zinc-200 dark:border-zinc-800">
-                            {getInitials(userProfile?.full_name, user?.email)}
-                        </div>
-                    </NavLink>
                 </div>
             </div>
         </header>
