@@ -240,11 +240,23 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
                 style={{ height: finalHeight, width: finalWidth }}
             >
-                {/* Skeleton Shimmer */}
+                {/* Loading Skeleton - stays visible until image is ACTUALLY loaded */}
                 <div
-                    className={`absolute inset-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-700 ${image.src ? 'opacity-0' : 'opacity-100'}`}
+                    className={`absolute inset-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
+
+                    {/* Mini progress bar if we have a src (= loading from network) */}
+                    {image.src && !isImageReady && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-24 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-300">
+                                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                    <div className="h-full bg-zinc-400 dark:bg-zinc-500 rounded-full animate-[loading-bar_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="absolute inset-0 z-10">
