@@ -42,23 +42,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         });
     };
 
-    // Case 1: Single image (either main thumbnail or exactly one display image)
-    if (displayImages.length === 1 || (displayImages.length === 0 && thumbnail)) {
-        const src = displayImages[0] || thumbnail;
-        return (
-            <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900/50">
-                <img
-                    src={src}
-                    onLoad={handleLoad}
-                    onError={handleLoad}
-                    className="w-full h-full object-cover"
-                />
-            </div>
-        );
-    }
-
-    // Case 2: No images at all
-    if (displayImages.length === 0) {
+    if (displayImages.length === 0 && !thumbnail) {
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 dark:bg-zinc-900/50">
                 <ImageIcon className="w-10 h-10 text-zinc-300 dark:text-zinc-700" strokeWidth={1} />
@@ -66,9 +50,9 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
         );
     }
 
-    // Case 3: Grid (2+ images)
+    const finalImages = displayImages.length > 0 ? displayImages : (thumbnail ? [thumbnail] : []);
     const showPlus = total > 4;
-    const itemsToShow = displayImages.slice(0, showPlus ? 3 : 4);
+    const itemsToShow = finalImages.slice(0, showPlus ? 3 : 4);
 
     return (
         <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 h-full w-full gap-0 bg-zinc-50 dark:bg-zinc-900/50">
@@ -81,6 +65,10 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                         className="w-full h-full object-cover"
                     />
                 </div>
+            ))}
+            {/* Fill empty cells in the 2x2 grid if less than 4 items */}
+            {Array.from({ length: Math.max(0, 4 - itemsToShow.length - (showPlus ? 1 : 0)) }).map((_, i) => (
+                <div key={`empty-${i}`} className="relative bg-zinc-50 dark:bg-zinc-900/10" />
             ))}
             {showPlus && (
                 <div className="relative bg-zinc-50 dark:bg-zinc-900/30 flex items-center justify-center">
