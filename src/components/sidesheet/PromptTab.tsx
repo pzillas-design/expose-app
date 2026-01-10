@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
@@ -69,6 +70,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
+    const [isClearAnnotationsDialogOpen, setIsClearAnnotationsDialogOpen] = useState(false);
+    const [annotationsToClear, setAnnotationsToClear] = useState<AnnotationObject[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -454,7 +457,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                     <div className="absolute top-2 right-2 z-10">
                                         <button
                                             onClick={() => {
-                                                activeAnns.forEach(a => onDeleteAnnotation(a.id));
+                                                setAnnotationsToClear(activeAnns);
+                                                setIsClearAnnotationsDialogOpen(true);
                                             }}
                                             className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
                                             title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
@@ -972,6 +976,25 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 image={selectedImage}
                 prompt={getFinalPrompt()}
                 t={t}
+            />
+            <ConfirmDialog
+                isOpen={isClearAnnotationsDialogOpen}
+                title={currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?'}
+                description={currentLang === 'de'
+                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
+                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.'}
+                confirmLabel={currentLang === 'de' ? 'Löschen' : 'Delete'}
+                cancelLabel={currentLang === 'de' ? 'Abbrechen' : 'Cancel'}
+                onConfirm={() => {
+                    annotationsToClear.forEach(a => onDeleteAnnotation(a.id));
+                    setIsClearAnnotationsDialogOpen(false);
+                    setAnnotationsToClear([]);
+                }}
+                onCancel={() => {
+                    setIsClearAnnotationsDialogOpen(false);
+                    setAnnotationsToClear([]);
+                }}
+                variant="danger"
             />
         </div>
     );
