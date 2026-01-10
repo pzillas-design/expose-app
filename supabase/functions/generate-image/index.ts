@@ -113,9 +113,11 @@ Deno.serve(async (req) => {
             case 'pro-1k':
             case 'pro-2k':
             case 'pro-4k':
-            default:
                 // Nano Banana Pro: Für professionelle Assets & High-Fidelity
-                // Using stable GA model (preview versions deprecated Jan 15, 2026)
+                // High-fidelity rendering with text support
+                finalModelName = 'gemini-3-pro-image-preview';
+                break;
+            default:
                 finalModelName = 'gemini-2.5-flash-image';
                 break;
         }
@@ -300,21 +302,34 @@ Deno.serve(async (req) => {
         if (!geminiResponse.ok) {
             const errText = await geminiResponse.text()
             console.error("Gemini API Error:", errText)
+
+            let errMsg = errText;
+            try {
+                const errJson = JSON.parse(errText);
+                errMsg = errJson.error?.message || errJson[0]?.error?.message || errText;
+            } catch (e) {
+                // Not JSON, use raw text
+            }
+
             // Refund
             if (!isPro && cost > 0) {
                 await supabaseAdmin.from('profiles').update({ credits: profile.credits }).eq('id', user.id)
             }
-            throw new Error(`Gemini API failed: ${errText}`)
+            throw new Error(`Gemini API: ${errMsg}`)
         }
 
         const resultData = await geminiResponse.json()
         const imagePart = resultData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)
         if (!imagePart) {
+            const finishReason = resultData.candidates?.[0]?.finishReason;
+            const safetyRatings = resultData.candidates?.[0]?.safetyRatings;
+            console.error("No image in response. FinishReason:", finishReason, "Safety:", safetyRatings);
+
             // Refund
             if (!isPro && cost > 0) {
                 await supabaseAdmin.from('profiles').update({ credits: profile.credits }).eq('id', user.id)
             }
-            throw new Error('No image returned from Gemini')
+            throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`)
         }
 
         const generatedBase64 = imagePart.inlineData.data
