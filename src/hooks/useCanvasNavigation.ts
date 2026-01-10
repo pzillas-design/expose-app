@@ -79,8 +79,10 @@ export const useCanvasNavigation = ({
             const elapsed = time - startTime;
             const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
 
-            // Cubic ease out for smoother finish
-            const ease = 1 - Math.pow(1 - progress, 3);
+            // Smoother ease-in-out instead of aggressive ease-out
+            const ease = progress < 0.5
+                ? 4 * progress * progress * progress
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
 
