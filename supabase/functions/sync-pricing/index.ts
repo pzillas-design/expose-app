@@ -8,7 +8,6 @@
  * 
  * It attempts to fetch live pricing from Google Cloud Billing Catalog API
  * and falls back to scraping the public docs if credentials are not configured.
- * Now also fetches live USD/EUR exchange rates.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -50,9 +49,9 @@ Deno.serve(async (req) => {
             throw new Error('Admin access required')
         }
 
-        console.log('Starting sync (Pricing + Currencies)...')
+        console.log('Starting pricing sync...')
 
-        // 1. Fetch Pricing Data
+        // Try to fetch from Google Cloud Billing API if configured
         let pricingData = null
         const hasGcpCredentials = !!Deno.env.get('GCP_SERVICE_ACCOUNT_KEY')
 
@@ -68,37 +67,12 @@ Deno.serve(async (req) => {
             throw new Error('Failed to fetch pricing data from any source')
         }
 
-        // Update database with pricing
+        // Update database
         const { error: upsertError } = await supabaseAdmin
             .from('api_pricing')
             .upsert(pricingData, { onConflict: 'model_name' })
 
         if (upsertError) throw upsertError
-
-        // 2. Fetch Currency Data (USD to EUR)
-        try {
-            console.log('Fetching live USD to EUR rate...');
-            const exchangeResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-            const exchangeData = await exchangeResponse.json();
-            const usdToEur = exchangeData.rates.EUR;
-
-            if (usdToEur) {
-                console.log(`Live rate: 1 USD = ${usdToEur} EUR`);
-                await supabaseAdmin
-                    .from('app_settings')
-                    .upsert({
-                        key: 'currency_rates',
-                        value: {
-                            usd_to_eur: usdToEur,
-                            last_updated: new Date().toISOString(),
-                            source: 'exchangerate-api'
-                        },
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'key' });
-            }
-        } catch (currErr) {
-            console.error('Currency sync failed (non-critical):', currErr.message);
-        }
 
         console.log(`Successfully synced ${pricingData.length} pricing entries`)
 
@@ -106,7 +80,6 @@ Deno.serve(async (req) => {
             success: true,
             source: hasGcpCredentials ? 'google_cloud_billing_api' : 'public_docs',
             models_updated: pricingData.length,
-            currency_synced: true,
             data: pricingData
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -114,7 +87,7 @@ Deno.serve(async (req) => {
         })
 
     } catch (error) {
-        console.error('Sync error:', error.message)
+        console.error('Pricing sync error:', error.message)
         return new Response(JSON.stringify({
             error: error.message,
             success: false

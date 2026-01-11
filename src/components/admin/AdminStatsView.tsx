@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, RefreshCw, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import { Loader2, Coins, TrendingUp, DollarSign, Activity, RefreshCw, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -9,24 +9,18 @@ interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-const DEFAULT_USD_TO_EUR = 0.92;
+const USD_TO_EUR = 0.8621; // Based on 1€ = 1.16$ (Estimation)
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [pricing, setPricing] = useState<any[]>([]);
     const [syncingPricing, setSyncingPricing] = useState(false);
-    const [syncError, setSyncError] = useState<string | null>(null);
     const [isPricingExpanded, setIsPricingExpanded] = useState(false);
-    const [exchangeRate, setExchangeRate] = useState({
-        rate: DEFAULT_USD_TO_EUR,
-        lastUpdated: null as string | null
-    });
 
     useEffect(() => {
         fetchData();
         fetchPricing();
-        fetchExchangeRate();
     }, []);
 
     const fetchData = async () => {
@@ -55,29 +49,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         }
     };
 
-    const fetchExchangeRate = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('app_settings')
-                .select('value')
-                .eq('key', 'currency_rates')
-                .maybeSingle();
-
-            if (error) throw error;
-            if (data?.value) {
-                setExchangeRate({
-                    rate: data.value.usd_to_eur || DEFAULT_USD_TO_EUR,
-                    lastUpdated: data.value.last_updated
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch exchange rate:', error);
-        }
-    };
-
     const handleSyncPricing = async () => {
         setSyncingPricing(true);
-        setSyncError(null);
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('Not authenticated');
@@ -87,15 +60,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             });
 
             if (response.error) throw response.error;
-
-            // Refresh both pricing and exchange rate
-            await Promise.all([
-                fetchPricing(),
-                fetchExchangeRate()
-            ]);
+            await fetchPricing();
         } catch (error: any) {
             console.error('Failed to sync pricing:', error);
-            setSyncError(error.message || 'Sync failed');
         } finally {
             setSyncingPricing(false);
         }
@@ -105,7 +72,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         const completedJobs = jobs.filter(j => j.status === 'completed');
         const revenue = completedJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
         const apiCostUsd = completedJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-        const apiCostEur = apiCostUsd * exchangeRate.rate;
+        const apiCostEur = apiCostUsd * USD_TO_EUR;
         const profit = revenue - apiCostEur;
         const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 
@@ -117,7 +84,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             totalJobs: completedJobs.length,
             totalTokens: completedJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0)
         };
-    }, [jobs, exchangeRate.rate]);
+    }, [jobs]);
 
     const tierStats = React.useMemo(() => {
         const TIERS = [
@@ -140,7 +107,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             const revenue = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
             const apiCostUsd = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-            const apiCostEur = apiCostUsd * exchangeRate.rate;
+            const apiCostEur = apiCostUsd * USD_TO_EUR;
             const profit = revenue - apiCostEur;
             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 
@@ -154,7 +121,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 margin
             };
         });
-    }, [jobs, exchangeRate.rate]);
+    }, [jobs]);
 
     if (loading) {
         return (
@@ -172,10 +139,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard auf Basis echter Gemini-Tokens</p>
                 </div>
                 <div className="flex gap-2">
-                    <div className="hidden md:flex flex-col items-end justify-center mr-2">
-                        <span className="text-[9px] uppercase font-bold text-zinc-400">USD/EUR Kurs</span>
-                        <span className="text-[10px] font-mono font-bold text-blue-500">1.00$ = {exchangeRate.rate.toFixed(4)}€</span>
-                    </div>
                     <button
                         onClick={() => setIsPricingExpanded(!isPricingExpanded)}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
@@ -208,11 +171,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             </div>
                         ))}
                     </div>
-                    {exchangeRate.lastUpdated && (
-                        <div className="mt-4 text-[9px] text-zinc-400 text-center italic">
-                            Preise und Wechselkurse zuletzt aktualisiert: {new Date(exchangeRate.lastUpdated).toLocaleString('de-DE')}
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -228,7 +186,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     title="Google Kosten"
                     value={`$${stats.apiCostUsd.toFixed(4)}`}
                     icon={<DollarSign className="w-4 h-4 text-red-500" />}
-                    sub={`${(stats.apiCostUsd * exchangeRate.rate).toFixed(4)}€ (Live Kurs)`}
+                    sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (Schätzung)`}
                 />
                 <SummaryCard
                     title="Rohertrag"
@@ -317,5 +275,3 @@ const SummaryCard = ({ title, value, icon, sub }: { title: string, value: string
         </div>
     </div>
 );
-
-
