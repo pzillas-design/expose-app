@@ -1,5 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, TrendingUp, DollarSign, Activity, RefreshCw, ChevronDown, ChevronUp, Database } from 'lucide-react';
+import {
+    Loader2,
+    Coins,
+    TrendingUp,
+    DollarSign,
+    Activity,
+    RefreshCw,
+    ChevronDown,
+    ChevronUp,
+    Database
+} from 'lucide-react';
+import {
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    AreaChart,
+    Area
+} from 'recharts';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -84,6 +103,32 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             totalJobs: completedJobs.length,
             totalTokens: completedJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0)
         };
+    }, [jobs]);
+
+    const dailyStats = React.useMemo(() => {
+        const completedJobs = jobs.filter(j => j.status === 'completed');
+        const groups: Record<string, { date: string, revenue: number, cost: number }> = {};
+
+        // Last 14 days
+        const last14Days = Array.from({ length: 14 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (13 - i));
+            return d.toISOString().split('T')[0];
+        });
+
+        last14Days.forEach(date => {
+            groups[date] = { date, revenue: 0, cost: 0 };
+        });
+
+        completedJobs.forEach(job => {
+            const date = new Date(job.createdAt).toISOString().split('T')[0];
+            if (groups[date]) {
+                groups[date].revenue += (job.cost || 0);
+                groups[date].cost += (job.apiCost || 0) * USD_TO_EUR;
+            }
+        });
+
+        return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
     }, [jobs]);
 
     const tierStats = React.useMemo(() => {
@@ -194,6 +239,83 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     icon={<TrendingUp className="w-4 h-4 text-blue-500" />}
                     sub="Dein Profit nach API-Abzug"
                 />
+            </div>
+
+            {/* Chart Section */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className={Typo.H2}>Finanzverlauf (14 Tage)</h3>
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Umsatz</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-red-500" />
+                            <span className="text-[10px] font-bold uppercase text-zinc-400">Kosten</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={dailyStats}>
+                            <defs>
+                                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
+                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E2E2" />
+                            <XAxis
+                                dataKey="date"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
+                                tickFormatter={(str) => {
+                                    const date = new Date(str);
+                                    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                                }}
+                            />
+                            <YAxis
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
+                                tickFormatter={(val) => `${val}€`}
+                            />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: '#FFFFFF',
+                                    border: '1px solid #F1F1F1',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 'bold'
+                                }}
+                                formatter={(value: any) => [`${value.toFixed(2)}€`]}
+                                labelFormatter={(label) => new Date(label).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="revenue"
+                                stroke="#10b981"
+                                strokeWidth={2}
+                                fillOpacity={1}
+                                fill="url(#colorRev)"
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="cost"
+                                stroke="#ef4444"
+                                strokeWidth={2}
+                                fillOpacity={1}
+                                fill="url(#colorCost)"
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
             {/* Performance Table */}
