@@ -175,7 +175,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             )}
 
             {/* Summary Banner */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <SummaryCard
                     title="Gesamtumsatz"
                     value={`${stats.revenue.toFixed(2)}€`}
@@ -189,16 +189,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (Schätzung)`}
                 />
                 <SummaryCard
-                    title="Rohertrag"
+                    title="Gesamtertrag"
                     value={`${stats.profit.toFixed(2)}€`}
                     icon={<TrendingUp className="w-4 h-4 text-blue-500" />}
-                    sub="Revenue - Google Cost"
-                />
-                <SummaryCard
-                    title="Netto Marge"
-                    value={`${stats.margin.toFixed(1)}%`}
-                    icon={<Activity className="w-4 h-4 text-purple-500" />}
-                    sub={`Ø ${stats.totalTokens > 0 ? (stats.totalTokens / stats.totalJobs).toFixed(0) : 0} tokens/job`}
+                    sub="Umsatz - Google Kosten"
                 />
             </div>
 
@@ -240,7 +234,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     <td className="px-6 py-4 text-right font-mono text-xs text-red-500">
                                         ${tier.apiCostUsd.toFixed(4)}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs font-bold">
+                                    <td className="px-6 py-4 text-right font-bold text-base text-zinc-900 dark:text-zinc-100">
                                         {tier.profit.toFixed(2)}€
                                     </td>
                                     <td className="px-6 py-4 text-right">
