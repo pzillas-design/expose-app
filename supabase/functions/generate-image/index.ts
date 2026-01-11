@@ -218,13 +218,13 @@ Deno.serve(async (req) => {
         // ASPECT RATIO & SIZE LOGIC
         let config: any = {}
 
-        // For Gemini 3 Pro Image (pro modes), use outputImageSize
+        // For Gemini 3 Pro Image (pro modes), use imageSize
         if (qualityMode === 'pro-1k') {
-            config.outputOptions = { outputImageSize: '1024' }
+            config.imageSize = '1K'
         } else if (qualityMode === 'pro-2k') {
-            config.outputOptions = { outputImageSize: '2048' }
+            config.imageSize = '2K'
         } else if (qualityMode === 'pro-4k') {
-            config.outputOptions = { outputImageSize: '4096' }
+            config.imageSize = '4K'
         }
 
         if (sourceImage.realWidth && sourceImage.realHeight) {
