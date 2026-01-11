@@ -173,14 +173,17 @@ export const useNanoController = () => {
                 }
             });
         } else if (!resolvingBoardId) {
-            // Only clear loading if we aren't waiting for a board resolution
-            // AND we aren't on a project page (where we might be waiting for the user)
+            // WE REMOVED THE AUTO-CLEAR LOGIC HERE.
+            // Why? Because it caused race conditions on page refresh where the board would be cleared 
+            // even though we were on a valid project URL.
+            // Cleaning up rows is now exclusively handled by explicit navigation actions (handleSelectBoard).
+
+            // Only stop loading if we are NOT on a project page
             const path = window.location.pathname;
             const parts = path.split('/');
             const isOnProjectPage = parts[1] === 'projects' && parts[2];
 
             if (!isOnProjectPage) {
-                setRows([]);
                 setIsCanvasLoading(false);
             }
         }
