@@ -139,6 +139,7 @@ export const useNanoController = () => {
 
     // --- Board Image Loading ---
     React.useEffect(() => {
+        console.log('[DEBUG_SYNC] Controller effect. User:', !!user, 'Board:', currentBoardId, 'Resolving:', resolvingBoardId);
         if (user && currentBoardId) {
             setIsCanvasLoading(true);
             setLoadingProgress(10);

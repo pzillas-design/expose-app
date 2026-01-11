@@ -84,31 +84,34 @@ export function App() {
     // URL Routing Sync
     useEffect(() => {
         const syncUrl = async () => {
-            // Prevent multiple parallel syncs
-            if (isSyncingRef.current) {
-                console.log('[DEBUG] Sync already in progress, skipping');
-                return;
-            }
-
             const path = location.pathname;
             const pathParts = path.split('/').filter(Boolean);
+            console.log('[DEBUG_SYNC] 1. Sync check triggered. Path:', path, 'User:', user?.id, 'Syncing:', isSyncingRef.current);
+            console.log('[DEBUG_SYNC] 1a. Refs - Resolving:', resolvingBoardId, 'CurrentBoard:', currentBoardIdRef.current);
+
+            // Prevent multiple parallel syncs
+            if (isSyncingRef.current) {
+                console.log('[DEBUG_SYNC] Sync already in progress, skipping');
+                return;
+            }
 
             if (pathParts[0] === 'projects' && pathParts[1]) {
                 const identifier = decodeURIComponent(pathParts[1]);
 
                 // If we are already resolved or currently resolving THIS identifier, skip
                 if (identifier === currentBoardIdRef.current || identifier === resolvingBoardId) {
+                    console.log('[DEBUG_SYNC] 2. Skipping sync - already matched. Identifier:', identifier);
                     return;
                 }
 
                 // Wait for user to be loaded before attempting resolution
                 if (!user) {
-                    console.log('[DEBUG] Waiting for user to be loaded before syncing board');
+                    console.log('[DEBUG_SYNC] 2. Waiting for user to be loaded before syncing board');
                     return;
                 }
 
                 isSyncingRef.current = true;
-                console.log(`[DEBUG] Starting sync for board: ${identifier}`);
+                console.log(`[DEBUG_SYNC] 3. Starting sync for board: ${identifier}`);
 
                 try {
                     setResolvingBoardId(identifier);
@@ -116,25 +119,31 @@ export function App() {
                     // Don't clear rows here - let useNanoController handle it to avoid race conditions
 
                     const resolved = await resolveBoardIdentifier(identifier);
+                    console.log('[DEBUG_SYNC] 4. Resolution result:', resolved?.id);
 
                     if (resolved) {
                         if (resolved.id !== currentBoardIdRef.current) {
+                            console.log('[DEBUG_SYNC] 5. Setting new board ID:', resolved.id);
                             setIsCanvasLoading(true);
                             setCurrentBoardId(resolved.id);
+                        } else {
+                            console.log('[DEBUG_SYNC] 5. Board ID matches current, no update needed');
                         }
                     } else {
                         // Board not found: redirect to projects list
-                        console.log('[DEBUG] Board not found, redirecting to /projects');
+                        console.log('[DEBUG_SYNC] 5. Board not found, redirecting to /projects');
                         navigate('/projects');
                     }
                 } catch (error) {
-                    console.error('[DEBUG] Error during board sync:', error);
+                    console.error('[DEBUG_SYNC] Error during board sync:', error);
                     navigate('/projects');
                 } finally {
                     setResolvingBoardId(null);
                     isSyncingRef.current = false;
-                    console.log('[DEBUG] Sync completed, lock released');
+                    console.log('[DEBUG_SYNC] 6. Sync completed, lock released');
                 }
+            } else {
+                console.log('[DEBUG_SYNC] 2. Not a project URL');
             }
             // Note: Board clearing is handled by handleSelectBoard(null), not by URL observation.
             // This prevents race conditions where the board gets cleared after successful data load.
