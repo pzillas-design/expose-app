@@ -12,7 +12,9 @@ interface AdminObjectsViewProps {
 
 export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
     const [items, setItems] = useState<any[]>([]);
+    const [originalItems, setOriginalItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
 
     // Selection State
@@ -33,6 +35,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         try {
             const rawItems = await adminService.getObjectItems();
             setItems(rawItems);
+            setOriginalItems(JSON.parse(JSON.stringify(rawItems)));
         } catch (error) {
             console.error('Failed to fetch objects:', error);
         } finally {
@@ -94,19 +97,38 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
         else setSelectedIds(new Set(items.map(i => i.id)));
     };
 
-    const handleUpdateItem = async (itemId: string, updates: any) => {
-        const existing = items.find(i => i.id === itemId);
-        if (!existing) return;
+    const handleUpdateItem = (itemId: string, updates: any) => {
+        setItems(prev => prev.map(i => i.id === itemId ? { ...i, ...updates } : i));
+    };
 
-        const updatedItem = { ...existing, ...updates };
-        setItems(prev => prev.map(i => i.id === itemId ? updatedItem : i));
-
+    const handleSave = async () => {
+        setSaving(true);
         try {
-            await adminService.updateObjectItem(updatedItem);
+            // Save all items in their current order
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const original = originalItems.find(oi => oi.id === item.id);
+
+                // Also update order based on current index
+                const updatedItem = { ...item, order: i };
+
+                // Only save if it's new or modified
+                if (!original || JSON.stringify(updatedItem) !== JSON.stringify(original)) {
+                    await adminService.updateObjectItem(updatedItem);
+                }
+            }
+
+            setOriginalItems(JSON.parse(JSON.stringify(items)));
+            alert('Änderungen erfolgreich gespeichert!');
         } catch (error) {
-            console.error('Failed to update item:', error);
+            console.error('Failed to save changes:', error);
+            alert('Fehler beim Speichern!');
+        } finally {
+            setSaving(false);
         }
     };
+
+    const hasChanges = JSON.stringify(items) !== JSON.stringify(originalItems);
 
     const onDragStart = (e: React.DragEvent, id: string) => {
         setDraggedItemId(id);
@@ -148,6 +170,15 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                             {t('delete_selected', { count: selectedIds.size })}
                         </Button>
                     )}
+                    <Button
+                        onClick={handleSave}
+                        disabled={!hasChanges || saving}
+                        variant={hasChanges ? 'primary' : 'secondary'}
+                        icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        className="px-6"
+                    >
+                        {saving ? t('saving') || 'Speichern...' : t('save')}
+                    </Button>
                     <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
                         {t('add_stamp')}
                     </Button>
