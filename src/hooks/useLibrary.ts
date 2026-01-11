@@ -18,19 +18,17 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
     const [globalLibrary, setGlobalLibrary] = useState<LibraryCategory[]>([]);
     const [hiddenObjectIds, setHiddenObjectIds] = useState<string[]>([]);
 
-    // Combine System + Global + User Library
+    // Combine Global + User Library
     const fullLibrary = useMemo(() => {
         const mergedItems: Record<string, LibraryItem> = {};
 
-        // 1. System & Global items
-        [...LIBRARY_CATEGORIES, ...globalLibrary].forEach(cat => {
-            if (cat.lang === currentLang || !cat.lang) {
-                cat.items.forEach(item => {
-                    if (!hiddenObjectIds.includes(item.id)) {
-                        mergedItems[item.id] = { ...item };
-                    }
-                });
-            }
+        // 1. Global items (from Admin Panel / DB)
+        globalLibrary.forEach(cat => {
+            cat.items.forEach(item => {
+                if (!hiddenObjectIds.includes(item.id)) {
+                    mergedItems[item.id] = { ...item };
+                }
+            });
         });
 
         // 2. User items (can overwrite or add)

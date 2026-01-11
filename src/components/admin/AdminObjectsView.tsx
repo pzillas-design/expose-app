@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash, GripVertical, Loader2, Image as ImageIcon, Check } from 'lucide-react';
+import { Plus, Trash, GripVertical, Loader2, Image as ImageIcon, Check, Download } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -35,6 +35,39 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             setItems(rawItems);
         } catch (error) {
             console.error('Failed to fetch objects:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMigrateBasics = async () => {
+        const basics = [
+            { id: 'basics_table', label_de: 'Tisch', label_en: 'Table', icon: '🍽️', order: 0 },
+            { id: 'basics_mirror', label_de: 'Spiegel', label_en: 'Mirror', icon: '🪞', order: 1 },
+            { id: 'basics_lamp', label_de: 'Lampe', label_en: 'Lamp', icon: '💡', order: 2 },
+            { id: 'basics_chair', label_de: 'Stuhl', label_en: 'Chair', icon: '🪑', order: 3 },
+            { id: 'basics_armchair', label_de: 'Sessel', label_en: 'Armchair', icon: '🪑', order: 4 },
+            { id: 'basics_sofa', label_de: 'Sofa', label_en: 'Sofa', icon: '🛋️', order: 5 },
+            { id: 'basics_rug', label_de: 'Teppich', label_en: 'Rug', icon: '🧶', order: 6 },
+            { id: 'basics_plant', label_de: 'Pflanze', label_en: 'Plant', icon: '🪴', order: 7 },
+            { id: 'basics_art', label_de: 'Wandbild', label_en: 'Wall Art', icon: '🖼️', order: 8 },
+            { id: 'basics_kitchen', label_de: 'Küche', label_en: 'Kitchen', icon: '🍳', order: 9 },
+            { id: 'basics_tv', label_de: 'TV-Schrank', label_en: 'TV Stand', icon: '📺', order: 10 },
+            { id: 'basics_shelf', label_de: 'Regal', label_en: 'Shelf', icon: '📚', order: 11 }
+        ];
+
+        if (!confirm(`${basics.length} Basis-Sticker importieren?`)) return;
+
+        try {
+            setLoading(true);
+            for (const item of basics) {
+                await adminService.updateObjectItem(item);
+            }
+            await fetchData();
+            alert('Sticker erfolgreich importiert!');
+        } catch (error) {
+            console.error('Migration failed:', error);
+            alert('Fehler beim Import!');
         } finally {
             setLoading(false);
         }
@@ -148,6 +181,14 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                             Auswahl löschen ({selectedIds.size})
                         </Button>
                     )}
+                    <Button
+                        variant="secondary"
+                        onClick={handleMigrateBasics}
+                        icon={<Download className="w-4 h-4" />}
+                        className="shrink-0 whitespace-nowrap px-4"
+                    >
+                        Basics importieren
+                    </Button>
                     <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
                         Stempel hinzufügen
                     </Button>
