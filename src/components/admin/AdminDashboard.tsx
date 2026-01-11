@@ -46,7 +46,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   const navItems = [
     { id: 'users', label: t('admin_users'), icon: <Users /> },
     { id: 'jobs', label: t('admin_jobs'), icon: <Activity /> },
-    { id: 'stats', label: 'Token & Kosten', icon: <BarChart3 /> },
+    { id: 'stats', label: 'Kosten', icon: <BarChart3 /> },
     { id: 'presets', label: t('admin_presets'), icon: <Layers /> },
     { id: 'stamps', label: t('admin_objects'), icon: <Box /> },
   ];

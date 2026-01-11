@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, Newspaper, ExternalLink, Eye, RefreshCw, DollarSign as PricingIcon } from 'lucide-react';
+import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, RefreshCw, DollarSign as PricingIcon } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -100,7 +100,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
     return (
         <div className="p-8 flex-1 min-h-0 space-y-8 overflow-y-auto no-scrollbar">
-            <h2 className={Typo.H1}>Token & Kosten Analyse</h2>
+            <h2 className={Typo.H1}>Kosten Analyse</h2>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -127,71 +127,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     icon={<TrendingUp className="w-5 h-5 text-purple-500" />}
                     desc="Geschätzte Profitabilität"
                 />
-            </div>
-
-            {/* Model Health & News */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-                    <h3 className={`${Typo.H2} mb-4 flex items-center gap-2`}>
-                        <Activity className="w-4 h-4 text-emerald-500" />
-                        Model-Health (API Status)
-                    </h3>
-                    <div className="space-y-4">
-                        <HealthItem
-                            name="Nano Banana"
-                            modelId="gemini-2.5-flash-image"
-                            status="stable"
-                            desc="Optimiert für Speed/Cost. Aktuellste Version Jan 2026."
-                        />
-                        <HealthItem
-                            name="Nano Banana Pro"
-                            modelId="gemini-3-pro-image-preview"
-                            status="preview"
-                            desc="High-Fidelity mit Reasoning. Frontier-Modell."
-                        />
-                        <div className="pt-2">
-                            <a
-                                href="https://ai.google.dev/gemini-api/docs/models"
-                                target="_blank"
-                                className="text-[10px] text-blue-500 hover:underline flex items-center gap-1 font-bold uppercase tracking-wider"
-                            >
-                                <Eye className="w-3 h-3" />
-                                Google Modell-Liste prüfen
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-                    <h3 className={`${Typo.H2} mb-4 flex items-center gap-2`}>
-                        <Newspaper className="w-4 h-4 text-blue-500" />
-                        Gemini API News
-                    </h3>
-                    <div className="space-y-3">
-                        <NewsItem
-                            date="Jan 2026"
-                            tag="NEW"
-                            title="Gemini 3 Pro Image Preview"
-                            desc="Native Image Generation jetzt mit Text-Rendering Support."
-                        />
-                        <NewsItem
-                            date="Dec 2025"
-                            tag="UPDATE"
-                            title="Gemini 2.5 Flash Image"
-                            desc="Standard-Version für Nano Banana released. 40% günstiger."
-                        />
-                        <div className="pt-2">
-                            <a
-                                href="https://ai.google.dev/gemini-api/docs/release-notes"
-                                target="_blank"
-                                className="text-[10px] text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1 font-bold uppercase tracking-wider transition-colors"
-                            >
-                                <ExternalLink className="w-3 h-3" />
-                                Offizielle Release Notes
-                            </a>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             {/* API Pricing Section */}
@@ -283,11 +218,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         });
                     })()}
                 </div>
-
-                <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
-                    <strong>💡 Hinweis:</strong> Preise werden manuell von <a href="https://ai.google.dev/pricing" target="_blank" className="underline hover:text-amber-700">ai.google.dev/pricing</a> synchronisiert.
-                    Klicke "Preise Aktualisieren" um die neuesten Preise zu laden. Nur Modelle die du nutzt werden angezeigt.
-                </div>
             </div>
 
             {/* Usage by Quality Tier */}
@@ -346,12 +276,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     })()}
                 </div>
             </div>
-
-            {/* Hint */}
-            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 text-[11px] text-blue-600 dark:text-blue-400 leading-relaxed">
-                <strong>Hintergrund:</strong> Die API-Kosten werden live auf Basis der von Google zurückgegebenen Tokens berechnet.
-                Die Schätzung nutzt die aktuellen Raten für Gemini 2.5 Flash Image ($0.10/1M input) und Gemini 3 Pro Image Preview ($1.25/1M input).
-            </div>
         </div>
     );
 };
@@ -369,31 +293,3 @@ const StatCard = ({ title, value, icon, desc }: { title: string, value: string, 
     </div>
 );
 
-const HealthItem = ({ name, modelId, status, desc }: { name: string, modelId: string, status: 'stable' | 'preview' | 'deprecated', desc: string }) => (
-    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
-        <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-tight">{name}</span>
-                <span className="text-[9px] font-mono p-0.5 px-1.5 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-500">{modelId}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${status === 'stable' ? 'bg-emerald-500' : status === 'preview' ? 'bg-blue-500' : 'bg-red-500'} animate-pulse`} />
-                <span className="text-[9px] font-bold uppercase text-zinc-400">{status}</span>
-            </div>
-        </div>
-        <div className="text-[10px] text-zinc-500 leading-tight">{desc}</div>
-    </div>
-);
-
-const NewsItem = ({ date, tag, title, desc }: { date: string, tag: string, title: string, desc: string }) => (
-    <div className="flex gap-3">
-        <div className="shrink-0 text-[10px] font-mono text-zinc-400 pt-0.5">{date}</div>
-        <div className="space-y-1">
-            <div className="flex items-center gap-2">
-                <span className="text-[8px] font-bold px-1 rounded bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 uppercase">{tag}</span>
-                <span className="text-xs font-bold tracking-tight">{title}</span>
-            </div>
-            <div className="text-[10px] text-zinc-500 leading-tight">{desc}</div>
-        </div>
-    </div>
-);
