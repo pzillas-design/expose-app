@@ -11,7 +11,7 @@ import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { useNanoController } from '@/hooks/useNanoController';
-import { Plus, Layout, Home, Upload } from 'lucide-react';
+import { Plus, Layout, Home, Upload, Loader2 } from 'lucide-react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -719,8 +719,8 @@ export function App() {
                 />
             } />
             <Route path="/admin" element={
-                <AdminRoute userProfile={userProfile}>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"><div className="text-zinc-400">Loading...</div></div>}>
+                <AdminRoute user={user} userProfile={userProfile}>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
                         <AdminDashboard
                             user={user}
                             userProfile={userProfile}
@@ -732,8 +732,8 @@ export function App() {
                 </AdminRoute>
             } />
             <Route path="/admin/:tab" element={
-                <AdminRoute userProfile={userProfile}>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"><div className="text-zinc-400">Loading...</div></div>}>
+                <AdminRoute user={user} userProfile={userProfile}>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
                         <AdminDashboard
                             user={user}
                             userProfile={userProfile}
