@@ -277,7 +277,9 @@ Deno.serve(async (req) => {
 
         // Add config if present (for Gemini 3 Pro Image)
         if (hasConfig) {
-            geminiPayload.config = config;
+            geminiPayload.generationConfig = {
+                imageConfig: config
+            };
         }
 
         console.log(`[DEBUG] Gemini Payload for ${finalModelName}:`, JSON.stringify({
