@@ -194,8 +194,8 @@ export const useGeneration = ({
                     status: 'processing',
                     cost: cost,
                     prompt: prompt,
-                    concurrent_jobs: currentConcurrency,
-                    board_id: currentBoardId || null
+                    concurrent_jobs: currentConcurrency
+                    // board_id: currentBoardId || null // TODO: Add column to DB first
                 });
                 attachedJobIds.current.add(newId);
             } catch (dbErr) {
@@ -400,8 +400,8 @@ export const useGeneration = ({
                     model: modelId,
                     status: 'processing',
                     cost: cost,
-                    prompt: prompt,
-                    board_id: currentBoardId || null
+                    prompt: prompt
+                    // board_id: currentBoardId || null // TODO: Add column to DB first
                 });
             }
 

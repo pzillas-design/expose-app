@@ -98,9 +98,10 @@ export function App() {
             if (pathParts[0] === 'projects' && pathParts[1]) {
                 const identifier = decodeURIComponent(pathParts[1]);
 
-                // If we are already resolved or currently resolving THIS identifier, skip
-                if (identifier === currentBoardIdRef.current || identifier === resolvingBoardId) {
-                    console.log('[DEBUG_SYNC] 2. Skipping sync - already matched. Identifier:', identifier);
+                // Only skip if we've already loaded this board (currentBoardId matches)
+                // Don't skip if we're just "resolving" - that means we're still loading!
+                if (identifier === currentBoardIdRef.current) {
+                    console.log('[DEBUG_SYNC] 2. Skipping sync - board already loaded. Identifier:', identifier);
                     return;
                 }
 
