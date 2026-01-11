@@ -135,7 +135,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className={Typo.H1}>{t('admin_objects')}</h2>
-                    <p className={Typo.Micro}>Verwalte die Sticker und Symbole für das Anmerkungs-Werkzeug.</p>
+                    <p className={Typo.Micro}>{t('admin_objects_desc')}</p>
                 </div>
                 <div className="flex items-center gap-4">
                     {selectedIds.size > 0 && (
@@ -145,11 +145,11 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                             icon={<Trash className="w-4 h-4" />}
                             className="px-4"
                         >
-                            Auswahl löschen ({selectedIds.size})
+                            {t('delete_selected', { count: selectedIds.size })}
                         </Button>
                     )}
                     <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
-                        Stempel hinzufügen
+                        {t('add_stamp')}
                     </Button>
                 </div>
             </div>
@@ -159,9 +159,9 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-zinc-50/80 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
                         <div className="p-4 text-center"></div>
                         <div className="p-4 flex items-center justify-center">{t('icon_label')}</div>
-                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (DE)</div>
-                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">Name (EN)</div>
-                        <div className="p-4 text-center">Aktionen</div>
+                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">{t('name_de')}</div>
+                        <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">{t('name_en')}</div>
+                        <div className="p-4 text-center">{t('actions')}</div>
                         <div className="p-4 flex items-center justify-center">
                             <button
                                 onClick={toggleSelectAll}

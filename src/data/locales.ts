@@ -27,6 +27,10 @@ export const translations = {
     annotate: "Annotation",
     upload_failed: "Upload failed",
     image_ref: "Reference image",
+    icon_label: "Icon / Symbol",
+    name_de: "Name (DE)",
+    name_en: "Name (EN)",
+    actions: "Actions",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -302,6 +306,10 @@ export const translations = {
     box_stamp: "Box",
     circle_stamp: "Kreis",
     remove_label: "Entfernen",
+    icon_label: "Icon / Symbol",
+    name_de: "Name (DE)",
+    name_en: "Name (EN)",
+    actions: "Aktionen",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
@@ -309,6 +317,9 @@ export const translations = {
     no_stamps: "Keine Sticker gefunden",
     enter_sticker_name: "Name eingeben...",
     add_sticker: "Einfügen",
+    admin_objects_desc: "Verwalte die Sticker und Symbole für das Anmerkungs-Werkzeug.",
+    delete_selected: "Auswahl löschen ({{count}})",
+    add_stamp: "Stempel hinzufügen",
 
     // Prompt Tab
     prompt_label: "PROMPT",
