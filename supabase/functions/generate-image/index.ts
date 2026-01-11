@@ -216,10 +216,16 @@ Deno.serve(async (req) => {
         }));
 
         // ASPECT RATIO & SIZE LOGIC
-        let imageConfig: any = {}
-        if (qualityMode === 'pro-1k') imageConfig.imageSize = '1K'
-        else if (qualityMode === 'pro-2k') imageConfig.imageSize = '2K'
-        else if (qualityMode === 'pro-4k') imageConfig.imageSize = '4K'
+        let config: any = {}
+
+        // For Gemini 3 Pro Image (pro modes), use outputImageSize
+        if (qualityMode === 'pro-1k') {
+            config.outputOptions = { outputImageSize: '1024' }
+        } else if (qualityMode === 'pro-2k') {
+            config.outputOptions = { outputImageSize: '2048' }
+        } else if (qualityMode === 'pro-4k') {
+            config.outputOptions = { outputImageSize: '4096' }
+        }
 
         if (sourceImage.realWidth && sourceImage.realHeight) {
             const ratio = sourceImage.realWidth / sourceImage.realHeight;
@@ -242,7 +248,7 @@ Deno.serve(async (req) => {
                 }
             }
             if (!finalSourceBase64 || qualityMode === 'fast') {
-                imageConfig.aspectRatio = closestRatio;
+                config.aspectRatio = closestRatio;
             }
         }
 
@@ -254,7 +260,7 @@ Deno.serve(async (req) => {
                     systemInstruction,
                     prompt,
                     model: finalModelName,
-                    config: imageConfig,
+                    config: config,
                     partsCount: parts.length
                 }
             }), {
@@ -264,15 +270,19 @@ Deno.serve(async (req) => {
         }
 
         // 3. Call Gemini
-        const hasConfig = Object.keys(imageConfig).length > 0;
-        const geminiPayload = {
-            contents: [{ parts: parts }],
-            generationConfig: hasConfig ? { imageConfig: imageConfig } : undefined
+        const hasConfig = Object.keys(config).length > 0;
+        const geminiPayload: any = {
+            contents: [{ parts: parts }]
         };
+
+        // Add config if present (for Gemini 3 Pro Image)
+        if (hasConfig) {
+            geminiPayload.config = config;
+        }
 
         console.log(`[DEBUG] Gemini Payload for ${finalModelName}:`, JSON.stringify({
             model: finalModelName,
-            config: imageConfig,
+            config: config,
             partsCount: parts.length,
             payloadPreview: JSON.stringify(geminiPayload).substring(0, 500) + "..."
         }));
