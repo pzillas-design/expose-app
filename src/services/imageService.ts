@@ -184,8 +184,15 @@ export const imageService = {
         });
 
         if (error || !data?.success) {
-            console.error("Edge Generation Failed:", error || data?.error);
-            throw new Error(error?.message || data?.error || "Generation error");
+            console.error("Edge Generation Failed:");
+            console.error("  Error object:", error);
+            console.error("  Response data:", data);
+            console.error("  Status:", error?.status);
+            console.error("  Message:", error?.message || data?.error);
+
+            const errorMsg = error?.message || data?.error || "Unknown generation error";
+            const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
+            throw new Error(`${errorMsg}${statusInfo}`);
         }
 
         const result = data.image; // Server returns partially populated CanvasImage
