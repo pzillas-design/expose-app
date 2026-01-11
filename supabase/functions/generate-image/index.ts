@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -126,7 +127,8 @@ Deno.serve(async (req) => {
         if (!GEMINI_API_KEY) {
             throw new Error('GEMINI_API_KEY environment variable is not set in Supabase')
         }
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${finalModelName}:generateContent?key=${GEMINI_API_KEY}`
+
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
         const parts: any[] = []
 
@@ -215,136 +217,52 @@ Deno.serve(async (req) => {
             }
         }));
 
-        // ASPECT RATIO & SIZE LOGIC
-        let config: any = {}
+        // 3. Call Gemini via SDK (same as main branch)
+        const model = genAI.getGenerativeModel({ model: finalModelName })
 
-        // For Gemini 3 Pro Image (pro modes), use imageSize
-        if (qualityMode === 'pro-1k') {
-            config.imageSize = '1K'
-        } else if (qualityMode === 'pro-2k') {
-            config.imageSize = '2K'
-        } else if (qualityMode === 'pro-4k') {
-            config.imageSize = '4K'
-        }
-
-        if (sourceImage.realWidth && sourceImage.realHeight) {
-            const ratio = sourceImage.realWidth / sourceImage.realHeight;
-            let closestRatio = '1:1';
-            let minDiff = Infinity;
-
-            const supportedRatios = {
-                '1:1': 1.0,
-                '3:4': 3 / 4,
-                '4:3': 4 / 3,
-                '9:16': 9 / 16,
-                '16:9': 16 / 9
-            };
-
-            for (const [key, val] of Object.entries(supportedRatios)) {
-                const diff = Math.abs(ratio - val);
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestRatio = key;
-                }
-            }
-            if (!finalSourceBase64 || qualityMode === 'fast') {
-                config.aspectRatio = closestRatio;
+        // Prepare config (nested imageConfig if needed)
+        const generationConfig: any = {}
+        if (qualityMode !== 'fast') {
+            generationConfig.imageConfig = {
+                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : '4K')
             }
         }
 
-        // DEBUG MODE: Return the prepared payload instead of calling Gemini
-        if (payload.debug) {
-            return new Response(JSON.stringify({
-                success: true,
-                debug: {
-                    systemInstruction,
-                    prompt,
-                    model: finalModelName,
-                    config: config,
-                    partsCount: parts.length
-                }
-            }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            });
-        }
-
-        // 3. Call Gemini
-        const hasConfig = Object.keys(config).length > 0;
-        const geminiPayload: any = {
-            contents: [{ parts: parts }]
-        };
-
-        // Add config if present (for Gemini 3 Pro Image)
-        if (hasConfig) {
-            geminiPayload.generationConfig = {
-                imageConfig: config
-            };
-        }
-
-        console.log(`[DEBUG] Gemini Payload for ${finalModelName}:`, JSON.stringify({
-            model: finalModelName,
-            config: config,
-            partsCount: parts.length,
-            payloadPreview: JSON.stringify(geminiPayload).substring(0, 500) + "..."
-        }));
-
-
+        console.log(`[DEBUG] Gemini Call for ${finalModelName} with quality ${qualityMode}`);
 
         // PARALLEL: Generate a title for the image
         const titlePromise = (async () => {
             try {
-                const titleEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                const titleResp = await fetch(titleEndpoint, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `Generate a very short, concise title (2-5 words) for an image based on this prompt: "${prompt}". Return ONLY the title text, no quotes.` }] }],
-                        generationConfig: { maxOutputTokens: 20 }
-                    })
-                });
-                if (titleResp.ok) {
-                    const titleData = await titleResp.json();
-                    return titleData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
-                }
+                const titleModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+                const titleResult = await titleModel.generateContent([
+                    `Generate a very short, concise title (2-5 words) for an image based on this prompt: "${prompt}". Return ONLY the title text, no quotes.`
+                ])
+                return titleResult.response.text().trim().replace(/^"|"$/g, '') || null
             } catch (e) {
-                console.warn("Title generation failed:", e);
+                console.warn("Title generation failed:", e)
+                return null
             }
-            return null;
-        })();
+        })()
 
-        const geminiResponsePromise = fetch(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(geminiPayload)
-        });
+        const geminiResultPromise = model.generateContent({
+            contents: [{ parts: parts }],
+            generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
+        })
 
-        const [geminiResponse, generatedTitle] = await Promise.all([geminiResponsePromise, titlePromise]);
+        const [geminiResult, generatedTitle] = await Promise.all([geminiResultPromise, titlePromise])
+        const geminiResponse = geminiResult.response
 
-        console.log(`[DEBUG] Gemini API Status: ${geminiResponse.status} ${geminiResponse.statusText}`);
+        const candidate = geminiResponse.candidates?.[0]
+        const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData)
 
-        if (!geminiResponse.ok) {
-            const errText = await geminiResponse.text()
-            console.error("Gemini API Error:", errText)
-
-            let errMsg = errText;
-            try {
-                const errJson = JSON.parse(errText);
-                errMsg = errJson.error?.message || errJson[0]?.error?.message || errText;
-            } catch (e) {
-                // Not JSON, use raw text
-            }
-
-            // Refund
-            if (!isPro && cost > 0) {
-                await supabaseAdmin.from('profiles').update({ credits: profile.credits }).eq('id', user.id)
-            }
-            throw new Error(`Gemini API: ${errMsg}`)
+        const resultData = {
+            usageMetadata: geminiResponse.usageMetadata,
+            modelVersion: finalModelName
         }
 
-        const resultData = await geminiResponse.json()
-        const imagePart = resultData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData)
         if (!imagePart) {
-            const finishReason = resultData.candidates?.[0]?.finishReason;
-            const safetyRatings = resultData.candidates?.[0]?.safetyRatings;
+            const finishReason = candidate?.finishReason;
+            const safetyRatings = candidate?.safetyRatings;
             console.error("No image in response. FinishReason:", finishReason, "Safety:", safetyRatings);
 
             // Refund
