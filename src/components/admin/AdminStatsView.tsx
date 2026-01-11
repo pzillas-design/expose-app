@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, Newspaper, ExternalLink, Eye } from 'lucide-react';
+import { Loader2, Coins, BarChart3, TrendingUp, DollarSign, Activity, Newspaper, ExternalLink, Eye, RefreshCw, DollarSign as PricingIcon } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
+import { supabase } from '@/services/supabaseClient';
 
 interface AdminStatsViewProps {
     t: TranslationFunction;
@@ -11,9 +12,13 @@ interface AdminStatsViewProps {
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pricing, setPricing] = useState<any[]>([]);
+    const [syncingPricing, setSyncingPricing] = useState(false);
+    const [syncError, setSyncError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchData();
+        fetchPricing();
     }, []);
 
     const fetchData = async () => {
@@ -25,6 +30,47 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             console.error('Failed to fetch stats:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPricing = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('api_pricing')
+                .select('*')
+                .order('model_name');
+
+            if (error) throw error;
+            setPricing(data || []);
+        } catch (error) {
+            console.error('Failed to fetch pricing:', error);
+        }
+    };
+
+    const handleSyncPricing = async () => {
+        setSyncingPricing(true);
+        setSyncError(null);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Not authenticated');
+
+            const response = await supabase.functions.invoke('sync-pricing', {
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`
+                }
+            });
+
+            if (response.error) throw response.error;
+
+            // Refresh pricing data
+            await fetchPricing();
+
+            console.log('Pricing synced successfully:', response.data);
+        } catch (error: any) {
+            console.error('Failed to sync pricing:', error);
+            setSyncError(error.message || 'Sync failed');
+        } finally {
+            setSyncingPricing(false);
         }
     };
 
@@ -145,6 +191,102 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             </a>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* API Pricing Section */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className={`${Typo.H2} flex items-center gap-2`}>
+                        <PricingIcon className="w-4 h-4 text-amber-500" />
+                        API Pricing (Live Sync)
+                    </h3>
+                    <button
+                        onClick={handleSyncPricing}
+                        disabled={syncingPricing}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all
+                            ${syncingPricing
+                                ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 cursor-not-allowed'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md active:scale-95'
+                            }`}
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${syncingPricing ? 'animate-spin' : ''}`} />
+                        {syncingPricing ? 'Syncing...' : 'Preise Aktualisieren'}
+                    </button>
+                </div>
+
+                {syncError && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+                        <strong>Sync Error:</strong> {syncError}
+                    </div>
+                )}
+
+                <div className="space-y-3">
+                    {(() => {
+                        // Get unique models from jobs
+                        const modelsInUse = new Set(jobs.map(j => j.model).filter(Boolean));
+
+                        // Filter pricing to only models in use
+                        const relevantPricing = pricing.filter(p => modelsInUse.has(p.model_name));
+
+                        if (relevantPricing.length === 0) {
+                            return (
+                                <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/40 text-center text-sm text-zinc-500">
+                                    Keine Pricing-Daten verfügbar. Klicke "Preise Aktualisieren" zum Laden.
+                                </div>
+                            );
+                        }
+
+                        return relevantPricing.map(p => {
+                            const displayName = p.model_name === 'gemini-2.5-flash-image' ? 'Nano Banana' :
+                                p.model_name === 'gemini-3-pro-image-preview' ? 'Nano Banana Pro' :
+                                    p.model_name;
+
+                            const inputCost = parseFloat(p.input_price_per_token);
+                            const outputCost = parseFloat(p.output_price_per_token);
+
+                            return (
+                                <div key={p.model_name} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                                    <div>
+                                        <div className="font-bold text-sm uppercase tracking-tight">{displayName}</div>
+                                        <div className="text-[10px] text-zinc-500 font-medium font-mono">{p.model_name}</div>
+                                        {p.last_updated_at && (
+                                            <div className="text-[9px] text-zinc-400 mt-1">
+                                                Last Update: {new Date(p.last_updated_at).toLocaleString('de-DE')}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-6 text-right">
+                                        <div>
+                                            <div className="text-[10px] text-zinc-400 uppercase">Input</div>
+                                            <div className="font-mono text-xs text-blue-500">
+                                                ${(inputCost * 1000000).toFixed(2)}/1M
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] text-zinc-400 uppercase">Output</div>
+                                            <div className="font-mono text-xs text-amber-500">
+                                                ${(outputCost * 1000000).toFixed(2)}/1M
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] text-zinc-400 uppercase">Source</div>
+                                            <div className="font-mono text-[9px] text-zinc-500">
+                                                {p.source === 'google_cloud_billing_api' ? '🔗 API' :
+                                                    p.source === 'public_docs_manual' ? '📄 Docs' :
+                                                        '💾 Manual'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        });
+                    })()}
+                </div>
+
+                <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                    <strong>💡 Hinweis:</strong> Preise werden manuell von <a href="https://ai.google.dev/pricing" target="_blank" className="underline hover:text-amber-700">ai.google.dev/pricing</a> synchronisiert.
+                    Klicke "Preise Aktualisieren" um die neuesten Preise zu laden. Nur Modelle die du nutzt werden angezeigt.
                 </div>
             </div>
 

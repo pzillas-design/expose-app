@@ -85,7 +85,7 @@ export const adminService = {
     },
 
     /**
-     * Fetch generation jobs with pagination
+     * Fetch generation jobs with pagination  
      */
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
@@ -101,18 +101,42 @@ export const adminService = {
 
         const { data, error } = await query;
         if (error) throw error;
+
+        // Fetch related images for all jobs (if job_id is set)
+        const jobIds = (data || []).map(j => j.id);
+        let imagesMap: Record<string, any> = {};
+
+        if (jobIds.length > 0) {
+            const { data: images } = await supabase
+                .from('canvas_images')
+                .select('job_id, storage_path, width, height')
+                .in('job_id', jobIds);
+
+            // Create a map: job_id -> image
+            if (images) {
+                images.forEach(img => {
+                    if (img.job_id) {
+                        imagesMap[img.job_id] = img;
+                    }
+                });
+            }
+        }
+
         return (data || []).map(job => ({
             id: job.id,
             userName: job.user_name || 'Unknown',
             type: job.type || 'Generation',
+            model: job.model || 'unknown',
             status: job.status || 'completed',
-            promptPreview: job.prompt || '',
+            promptPreview: job.prompt_preview || '',
             cost: job.cost || 0,
             apiCost: job.api_cost || 0,
             tokensPrompt: job.tokens_prompt || 0,
             tokensCompletion: job.tokens_completion || 0,
             tokensTotal: job.tokens_total || 0,
-            createdAt: new Date(job.created_at).getTime()
+            createdAt: new Date(job.created_at).getTime(),
+            resultImage: imagesMap[job.id] || null,  // Attach result image if available
+            requestPayload: job.request_payload || null  // Attach API request for debugging
         }));
     },
 

@@ -244,6 +244,19 @@ Deno.serve(async (req) => {
             }
         })()
 
+        // Store the complete API request for debugging
+        const apiRequestPayload = {
+            model: finalModelName,
+            systemInstruction: systemInstruction || null,
+            userPrompt: prompt,
+            hasSourceImage: !!sourceImageBase64,
+            hasMask: hasMask,
+            hasReferenceImages: hasRefs,
+            referenceImagesCount: allRefs.length,
+            generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : null,
+            timestamp: new Date().toISOString()
+        };
+
         const geminiResultPromise = model.generateContent({
             contents: [{ parts: parts }],
             generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
@@ -350,6 +363,7 @@ Deno.serve(async (req) => {
             id: newId,
             user_id: user.id,
             board_id: boardId,
+            job_id: newId,  // Link to generation job for admin tracking
             storage_path: filePath,
             width: Math.round(sourceImage.width || 512), // Display width (normalized)
             height: Math.round(sourceImage.height || 512), // Display height (normalized)
@@ -374,7 +388,36 @@ Deno.serve(async (req) => {
         const tokensPrompt = usage.promptTokenCount || 0;
         const tokensCompletion = usage.candidatesTokenCount || 0;
         const tokensTotal = usage.totalTokenCount || 0;
-        const estimatedApiCost = (tokensPrompt * 0.0000001) + (tokensCompletion * 0.0000004);
+
+        // Fetch dynamic pricing from database (synced via sync-pricing function)
+        let pricing = null
+        try {
+            const { data: pricingData } = await supabaseAdmin
+                .from('api_pricing')
+                .select('input_price_per_token, output_price_per_token')
+                .eq('model_name', finalModelName)
+                .single()
+
+            if (pricingData) {
+                pricing = {
+                    input: parseFloat(pricingData.input_price_per_token),
+                    output: parseFloat(pricingData.output_price_per_token)
+                }
+                console.log(`Using DB pricing for ${finalModelName}:`, pricing)
+            }
+        } catch (err) {
+            console.warn('Failed to fetch pricing from DB, using fallback:', err.message)
+        }
+
+        // Fallback to hardcoded pricing if DB fetch failed
+        if (!pricing) {
+            pricing = finalModelName === 'gemini-2.5-flash-image'
+                ? { input: 0.0000001, output: 0.0000004 }   // Flash: $0.10/1M input, $0.40/1M output
+                : { input: 0.00000125, output: 0.000005 };  // Pro: $1.25/1M input, $5.00/1M output
+            console.log(`Using fallback pricing for ${finalModelName}:`, pricing)
+        }
+
+        const estimatedApiCost = (tokensPrompt * pricing.input) + (tokensCompletion * pricing.output);
 
         await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
@@ -382,7 +425,8 @@ Deno.serve(async (req) => {
             api_cost: estimatedApiCost,
             tokens_prompt: tokensPrompt,
             tokens_completion: tokensCompletion,
-            tokens_total: tokensTotal
+            tokens_total: tokensTotal,
+            request_payload: apiRequestPayload  // Store complete API request for debugging
         }).eq('id', newId)
 
         console.log(`Generation successful for job ${newId}. Usage: ${tokensTotal} tokens, Cost: $${estimatedApiCost.toFixed(6)}`);

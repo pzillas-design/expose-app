@@ -69,6 +69,39 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({
                     </div>
                 </div>
 
+                {/* Model Info */}
+                <div>
+                    <SectionHeader>Model & Qualität</SectionHeader>
+                    <div className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zi nc-900/50">
+                        {(() => {
+                            const modelName = job.model || 'unknown';
+                            const displayName =
+                                modelName === 'gemini-2.5-flash-image' || modelName === 'fast' ? 'Nano Banana' :
+                                    modelName === 'gemini-3-pro-image-preview' || modelName === 'pro-1k' || modelName === 'pro-2k' || modelName === 'pro-4k' ? 'Nano Banana Pro' :
+                                        modelName;
+
+                            const isPro = modelName.includes('pro') || modelName.includes('3');
+
+                            return (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider 
+                                            ${isPro
+                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                            }`}>
+                                            {displayName}
+                                        </span>
+                                    </div>
+                                    <div className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                                        ID: {modelName}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
                 {/* Resources Used (Chips) */}
                 <div>
                     <SectionHeader>{t('admin_resources_used') || "Resources Used"}</SectionHeader>
@@ -110,6 +143,98 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({
                         <SectionHeader>{t('admin_job_prompt')}</SectionHeader>
                         <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-mono">
                             {job.promptPreview}
+                        </div>
+                    </div>
+                )}
+
+                {/* Result Image */}
+                {job.resultImage && (
+                    <div>
+                        <SectionHeader>Ergebnis</SectionHeader>
+                        <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                            <img
+                                src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/user-content/${job.resultImage.storage_path}`}
+                                alt="Generated Result"
+                                className="w-full rounded-lg"
+                                style={{ maxHeight: '400px', objectFit: 'contain' }}
+                            />
+                            <div className="mt-2 text-[9px] font-mono text-zinc-400">
+                                {job.resultImage.width}×{job.resultImage.height}px
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* API Request Details */}
+                {job.requestPayload && (
+                    <div>
+                        <SectionHeader>API Anfrage</SectionHeader>
+                        <div className="space-y-3">
+                            {/* User Prompt */}
+                            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-2">Dein Prompt</div>
+                                <div className="text-sm text-blue-900 dark:text-blue-100 font-medium leading-relaxed">
+                                    {job.requestPayload.userPrompt || 'Kein Prompt'}
+                                </div>
+                            </div>
+
+                            {/* System Instructions */}
+                            {job.requestPayload.systemInstruction && (
+                                <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-2">System-Anweisungen</div>
+                                    <div className="text-xs text-purple-900 dark:text-purple-100 leading-relaxed opacity-80">
+                                        {job.requestPayload.systemInstruction}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Context Info */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Quellbild</div>
+                                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                        {job.requestPayload.hasSourceImage ? '✓ Ja' : '✗ Nein'}
+                                    </div>
+                                </div>
+                                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Maske</div>
+                                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                        {job.requestPayload.hasMask ? '✓ Ja' : '✗ Nein'}
+                                    </div>
+                                </div>
+                                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Referenzbilder</div>
+                                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                                        {job.requestPayload.referenceImagesCount || 0}
+                                    </div>
+                                </div>
+                                <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700">
+                                    <div className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Model</div>
+                                    <div className="text-[10px] font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                                        {job.requestPayload.model || job.model}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Generation Config */}
+                            {job.requestPayload.generationConfig && (
+                                <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-3">Konfig</div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        {Object.entries(job.requestPayload.generationConfig).map(([key, value]) => (
+                                            <div key={key} className="flex justify-between">
+                                                <span className="text-amber-700 dark:text-amber-300 font-medium">{key}:</span>
+                                                <span className="font-mono text-amber-900 dark:text-amber-100">{JSON.stringify(value)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timestamp */}
+                            <div className="text-[9px] text-zinc-400 text-center font-mono">
+                                Request: {new Date(job.requestPayload.timestamp).toLocaleString('de-DE')}
+                            </div>
                         </div>
                     </div>
                 )}

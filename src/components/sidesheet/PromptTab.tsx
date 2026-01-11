@@ -7,8 +7,7 @@ import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, Che
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
-import { DebugModal } from '@/components/modals/DebugModal';
-import { Bug, Edit2, Check as CheckIcon } from 'lucide-react';
+import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { downloadImage } from '@/utils/imageUtils';
 
 interface PromptTabProps {
@@ -77,7 +76,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-    const [isDebugOpen, setIsDebugOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
         { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: t('price_free') },
@@ -927,16 +925,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             </span>
                         </Button>
 
-                        {userProfile?.role === 'admin' && (
-                            <div className="w-full flex justify-center py-4 bg-transparent outline-none">
-                                <button
-                                    onClick={() => setIsDebugOpen(true)}
-                                    className="text-zinc-300 dark:text-zinc-600 hover:text-blue-500 text-[10px] font-mono tracking-widest uppercase transition-colors"
-                                >
-                                    Debug
-                                </button>
-                            </div>
-                        )}
+
                     </div>
                 </div>
             )}
@@ -970,13 +959,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 onDelete={onDeleteTemplate}
                 t={t}
             />
-            <DebugModal
-                isOpen={isDebugOpen}
-                onClose={() => setIsDebugOpen(false)}
-                image={selectedImage}
-                prompt={getFinalPrompt()}
-                t={t}
-            />
+
             <ConfirmDialog
                 isOpen={isClearAnnotationsDialogOpen}
                 title={currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?'}

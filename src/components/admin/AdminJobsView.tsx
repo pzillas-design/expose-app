@@ -87,6 +87,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">ID</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">Modus</th>
+                                        <th className="px-5 py-4 font-medium">Modell</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
@@ -103,6 +104,27 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
                                             <td className="px-5 py-5 uppercase text-[10px] font-bold text-zinc-400">
                                                 {j.type === 'Edit' || j.type === 'Inpaint' ? 'Bearbeitung' : 'Erstellung'}
+                                            </td>
+                                            <td className="px-5 py-5">
+                                                {(() => {
+                                                    const modelName = j.model || 'unknown';
+                                                    const displayName =
+                                                        modelName === 'gemini-2.5-flash-image' || modelName === 'fast' ? 'Nano Banana' :
+                                                            modelName === 'gemini-3-pro-image-preview' || modelName === 'pro-1k' || modelName === 'pro-2k' || modelName === 'pro-4k' ? 'Nano Banana Pro' :
+                                                                modelName;
+
+                                                    const isPro = modelName.includes('pro') || modelName.includes('3');
+
+                                                    return (
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
+                                                            ${isPro
+                                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                            }`}>
+                                                            {displayName}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-5 py-5">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
