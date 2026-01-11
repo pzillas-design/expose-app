@@ -1,13 +1,12 @@
 // Version: 2026-01-09-18:02 - Fixed upload crash and home navigation
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo, Suspense } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';
 import { CanvasSkeleton } from '@/components/canvas/CanvasSkeleton';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { SettingsPage } from '@/components/settings/SettingsPage';
 import { CreditsModal } from '@/components/modals/CreditsModal';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -20,6 +19,11 @@ import { downloadImage } from '@/utils/imageUtils';
 import { BoardsPage } from '@/components/boards/BoardsPage';
 import { ProgressBar } from '@/components/ui/DesignSystem';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
+
+// Code-split Admin Dashboard (only loads for admins)
+const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+import { AdminRoute } from '@/components/admin/AdminRoute';
+
 
 const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -692,7 +696,6 @@ export function App() {
                     onThemeChange={setThemeMode}
                     lang={lang}
                     onLangChange={setLang}
-                    onOpenAdmin={() => navigate('/admin')}
                     onSignOut={handleSignOut}
                     onCreateBoard={handleCreateBoardAndNavigate}
                 />
@@ -711,28 +714,35 @@ export function App() {
                     onThemeChange={setThemeMode}
                     lang={lang}
                     onLangChange={setLang}
-                    onOpenAdmin={() => navigate('/admin')}
                     onSignOut={handleSignOut}
                     onCreateBoard={handleCreateBoardAndNavigate}
                 />
             } />
             <Route path="/admin" element={
-                <AdminDashboard
-                    user={user}
-                    userProfile={userProfile}
-                    credits={credits}
-                    onCreateBoard={handleCreateBoardAndNavigate}
-                    t={t}
-                />
+                <AdminRoute userProfile={userProfile}>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"><div className="text-zinc-400">Loading...</div></div>}>
+                        <AdminDashboard
+                            user={user}
+                            userProfile={userProfile}
+                            credits={credits}
+                            onCreateBoard={handleCreateBoardAndNavigate}
+                            t={t}
+                        />
+                    </Suspense>
+                </AdminRoute>
             } />
             <Route path="/admin/:tab" element={
-                <AdminDashboard
-                    user={user}
-                    userProfile={userProfile}
-                    credits={credits}
-                    onCreateBoard={handleCreateBoardAndNavigate}
-                    t={t}
-                />
+                <AdminRoute userProfile={userProfile}>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"><div className="text-zinc-400">Loading...</div></div>}>
+                        <AdminDashboard
+                            user={user}
+                            userProfile={userProfile}
+                            credits={credits}
+                            onCreateBoard={handleCreateBoardAndNavigate}
+                            t={t}
+                        />
+                    </Suspense>
+                </AdminRoute>
             } />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />

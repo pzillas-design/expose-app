@@ -22,7 +22,6 @@ interface SettingsPageProps {
     onThemeChange: (mode: 'light' | 'dark' | 'auto') => void;
     lang: LocaleKey | 'auto';
     onLangChange: (lang: LocaleKey | 'auto') => void;
-    onOpenAdmin: () => void;
     onSignOut: () => void;
     updateProfile: (updates: { full_name?: string }) => Promise<void>;
     user: any;
@@ -35,7 +34,7 @@ type TabId = 'account' | 'general' | 'about';
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
-    themeMode, onThemeChange, lang, onLangChange, onOpenAdmin, onSignOut, updateProfile, user, userProfile, t, onCreateBoard
+    themeMode, onThemeChange, lang, onLangChange, onSignOut, updateProfile, user, userProfile, t, onCreateBoard
 }) => {
     const { tab } = useParams<{ tab?: string }>();
     const navigate = useNavigate();
@@ -141,15 +140,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </nav>
 
                         <div className="pt-8 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
-                            {userProfile?.role === 'admin' && (
-                                <button
-                                    onClick={onOpenAdmin}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all w-full"
-                                >
-                                    <LayoutDashboard className="w-4 h-4" />
-                                    {t('admin_dashboard')}
-                                </button>
-                            )}
                             <button
                                 onClick={onSignOut}
                                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all w-full"
