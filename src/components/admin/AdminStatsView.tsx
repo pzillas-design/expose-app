@@ -290,45 +290,60 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 </div>
             </div>
 
-            {/* Detailed Table */}
+            {/* Usage by Quality Tier */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
-                <h3 className={`${Typo.H2} mb-4`}>Verbrauch nach Modell</h3>
+                <h3 className={`${Typo.H2} mb-4`}>Verbrauch nach Qualitätsstufe</h3>
                 <div className="space-y-3">
-                    {['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'fast', 'pro-1k', 'pro-2k', 'pro-4k'].map(modelId => {
-                        const modelJobs = jobs.filter(j => j.model === modelId);
-                        if (modelJobs.length === 0) return null;
+                    {((): React.ReactNode[] => {
+                        const TIERS = [
+                            { id: 'fast', name: 'Nano Banana', cost: 0.0, color: 'text-zinc-500' },
+                            { id: 'pro-1k', name: 'Nano Banana Pro 1K', cost: 0.1, color: 'text-indigo-500' },
+                            { id: 'pro-2k', name: 'Nano Banana Pro 2K', cost: 0.25, color: 'text-purple-500' },
+                            { id: 'pro-4k', name: 'Nano Banana Pro 4K', cost: 0.5, color: 'text-pink-500' }
+                        ];
 
-                        const tokens = modelJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0);
-                        const apiCost = modelJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-                        const userCost = modelJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
+                        return TIERS.map(tier => {
+                            // Filter jobs: 
+                            // 1. If fast, match model 'gemini-2.5-flash-image' or 'fast'
+                            // 2. If pro, match model 'gemini-3-pro-image-preview' AND specific credit cost
+                            const tierJobs = jobs.filter(j => {
+                                if (tier.id === 'fast') {
+                                    return (j.model === 'gemini-2.5-flash-image' || j.model === 'fast');
+                                } else {
+                                    // Match by typical credit cost (allowing for small rounding diffs)
+                                    return (j.model === 'gemini-3-pro-image-preview' || j.model?.startsWith('pro-')) &&
+                                        Math.abs((j.cost || 0) - tier.cost) < 0.01;
+                                }
+                            });
 
-                        let displayName = modelId;
-                        if (modelId === 'gemini-2.5-flash-image' || modelId === 'fast') displayName = 'Nano Banana';
-                        if (modelId === 'gemini-3-pro-image-preview' || modelId === 'pro-1k') displayName = 'Nano Banana Pro';
+                            const tokens = tierJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0);
+                            const apiCost = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
+                            const userCredits = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
 
-                        return (
-                            <div key={modelId} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
-                                <div>
-                                    <div className="font-bold text-sm uppercase tracking-tight">{displayName}</div>
-                                    <div className="text-[10px] text-zinc-500 font-medium">{modelJobs.length} Generations</div>
+                            return (
+                                <div key={tier.id} className="flex items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                                    <div className="flex flex-col">
+                                        <div className={`font-bold text-sm uppercase tracking-tight ${tier.color}`}>{tier.name}</div>
+                                        <div className="text-[10px] text-zinc-500 font-medium">{tierJobs.length} Generationen</div>
+                                    </div>
+                                    <div className="flex gap-8 text-right">
+                                        <div className="min-w-[80px]">
+                                            <div className="text-[10px] text-zinc-400 uppercase">Tokens</div>
+                                            <div className="font-mono text-xs">{tokens.toLocaleString()}</div>
+                                        </div>
+                                        <div className="min-w-[90px]">
+                                            <div className="text-[10px] text-zinc-400 uppercase">Echtkosten</div>
+                                            <div className="font-mono text-xs text-red-500">${apiCost.toFixed(5)}</div>
+                                        </div>
+                                        <div className="min-w-[80px]">
+                                            <div className="text-[10px] text-zinc-400 uppercase">Credits</div>
+                                            <div className="font-mono text-xs text-emerald-500">{userCredits.toFixed(2)} €</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex gap-8 text-right">
-                                    <div>
-                                        <div className="text-[10px] text-zinc-400 uppercase">Tokens</div>
-                                        <div className="font-mono text-xs">{tokens.toLocaleString()}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-[10px] text-zinc-400 uppercase">Echtkosten</div>
-                                        <div className="font-mono text-xs text-red-500">${apiCost.toFixed(4)}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-[10px] text-zinc-400 uppercase">Credits</div>
-                                        <div className="font-mono text-xs text-emerald-500">{userCost.toFixed(2)} €</div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        });
+                    })()}
                 </div>
             </div>
 
