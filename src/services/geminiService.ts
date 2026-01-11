@@ -152,13 +152,13 @@ export const editImageWithGemini = async (
 
 
     // Determine Model and Config based on Quality Mode
-    // Fast: Gemini 2.0 Flash (free, ~1024px)
+    // Fast: Gemini 2.5 Flash Image (free/cheap, ~1024px) - GA model
     // Pro: Gemini 3 Pro Image aka "Nano Banana Pro" (paid, up to 4K)
-    let modelName = 'gemini-2.0-flash-exp';
+    let modelName = 'gemini-2.5-flash-image';
     let config: any = {};
 
     if (qualityMode === 'fast') {
-      modelName = 'gemini-2.0-flash-exp';
+      modelName = 'gemini-2.5-flash-image'; // GA model (replaces 2.0-flash-exp)
       // No config needed - output matches input resolution
     } else {
       // Pro modes use Gemini 3 Pro Image (Nano Banana Pro)
