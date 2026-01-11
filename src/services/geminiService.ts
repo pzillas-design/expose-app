@@ -151,18 +151,46 @@ export const editImageWithGemini = async (
 
 
 
-    // Determine Model based on Quality Mode
-    // NOTE: Gemini 2.0 Flash does NOT support imageSize config for image editing.
-    // The output resolution matches the input image resolution.
-    // Quality mode is used for billing/tracking purposes only.
-    const modelName = 'gemini-2.0-flash-exp';
+    // Determine Model and Config based on Quality Mode
+    // Fast: Gemini 2.0 Flash (free, ~1024px)
+    // Pro: Gemini 3 Pro Image aka "Nano Banana Pro" (paid, up to 4K)
+    let modelName = 'gemini-2.0-flash-exp';
+    let config: any = {};
+
+    if (qualityMode === 'fast') {
+      modelName = 'gemini-2.0-flash-exp';
+      // No config needed - output matches input resolution
+    } else {
+      // Pro modes use Gemini 3 Pro Image (Nano Banana Pro)
+      modelName = 'gemini-3-pro-image-preview';
+
+      // Set output image size for Gemini 3 Pro Image
+      let outputSize = '1024';
+      switch (qualityMode) {
+        case 'pro-1k':
+          outputSize = '1024';
+          break;
+        case 'pro-2k':
+          outputSize = '2048';
+          break;
+        case 'pro-4k':
+          outputSize = '4096';
+          break;
+      }
+
+      config = {
+        outputOptions: {
+          outputImageSize: outputSize
+        }
+      };
+    }
 
     const response = await ai.models.generateContent({
       model: modelName,
       contents: {
         parts: parts,
-      }
-      // No config needed for image editing - output matches input resolution
+      },
+      ...(Object.keys(config).length > 0 ? { config } : {})
     });
 
     // Iterate through parts to find the image output
