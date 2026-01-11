@@ -9,7 +9,7 @@ interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-const USD_TO_EUR = 0.92; // Approx conversion for margin calculation
+const DEFAULT_USD_TO_EUR = 0.92;
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
@@ -18,10 +18,15 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [syncingPricing, setSyncingPricing] = useState(false);
     const [syncError, setSyncError] = useState<string | null>(null);
     const [isPricingExpanded, setIsPricingExpanded] = useState(false);
+    const [exchangeRate, setExchangeRate] = useState({
+        rate: DEFAULT_USD_TO_EUR,
+        lastUpdated: null as string | null
+    });
 
     useEffect(() => {
         fetchData();
         fetchPricing();
+        fetchExchangeRate();
     }, []);
 
     const fetchData = async () => {
@@ -50,6 +55,26 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         }
     };
 
+    const fetchExchangeRate = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('app_settings')
+                .select('value')
+                .eq('key', 'currency_rates')
+                .maybeSingle();
+
+            if (error) throw error;
+            if (data?.value) {
+                setExchangeRate({
+                    rate: data.value.usd_to_eur || DEFAULT_USD_TO_EUR,
+                    lastUpdated: data.value.last_updated
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch exchange rate:', error);
+        }
+    };
+
     const handleSyncPricing = async () => {
         setSyncingPricing(true);
         setSyncError(null);
@@ -62,7 +87,12 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             });
 
             if (response.error) throw response.error;
-            await fetchPricing();
+
+            // Refresh both pricing and exchange rate
+            await Promise.all([
+                fetchPricing(),
+                fetchExchangeRate()
+            ]);
         } catch (error: any) {
             console.error('Failed to sync pricing:', error);
             setSyncError(error.message || 'Sync failed');
@@ -75,7 +105,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         const completedJobs = jobs.filter(j => j.status === 'completed');
         const revenue = completedJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
         const apiCostUsd = completedJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-        const apiCostEur = apiCostUsd * USD_TO_EUR;
+        const apiCostEur = apiCostUsd * exchangeRate.rate;
         const profit = revenue - apiCostEur;
         const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 
@@ -87,7 +117,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             totalJobs: completedJobs.length,
             totalTokens: completedJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0)
         };
-    }, [jobs]);
+    }, [jobs, exchangeRate.rate]);
 
     const tierStats = React.useMemo(() => {
         const TIERS = [
@@ -110,7 +140,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             const revenue = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
             const apiCostUsd = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-            const apiCostEur = apiCostUsd * USD_TO_EUR;
+            const apiCostEur = apiCostUsd * exchangeRate.rate;
             const profit = revenue - apiCostEur;
             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 
@@ -124,7 +154,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 margin
             };
         });
-    }, [jobs]);
+    }, [jobs, exchangeRate.rate]);
 
     if (loading) {
         return (
@@ -142,6 +172,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard auf Basis echter Gemini-Tokens</p>
                 </div>
                 <div className="flex gap-2">
+                    <div className="hidden md:flex flex-col items-end justify-center mr-2">
+                        <span className="text-[9px] uppercase font-bold text-zinc-400">USD/EUR Kurs</span>
+                        <span className="text-[10px] font-mono font-bold text-blue-500">1.00$ = {exchangeRate.rate.toFixed(4)}€</span>
+                    </div>
                     <button
                         onClick={() => setIsPricingExpanded(!isPricingExpanded)}
                         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
@@ -174,6 +208,11 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             </div>
                         ))}
                     </div>
+                    {exchangeRate.lastUpdated && (
+                        <div className="mt-4 text-[9px] text-zinc-400 text-center italic">
+                            Preise und Wechselkurse zuletzt aktualisiert: {new Date(exchangeRate.lastUpdated).toLocaleString('de-DE')}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -189,7 +228,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     title="Google Kosten"
                     value={`$${stats.apiCostUsd.toFixed(4)}`}
                     icon={<DollarSign className="w-4 h-4 text-red-500" />}
-                    sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (est.)`}
+                    sub={`${(stats.apiCostUsd * exchangeRate.rate).toFixed(4)}€ (Live Kurs)`}
                 />
                 <SummaryCard
                     title="Rohertrag"
@@ -248,8 +287,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${tier.margin > 50 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                                tier.margin > 20 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                                                    'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
+                                            tier.margin > 20 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
                                             }`}>
                                             {tier.margin.toFixed(0)}%
                                         </span>
