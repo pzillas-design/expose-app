@@ -53,52 +53,55 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-      {/* Admin Header */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-        <div className="max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 h-16 flex items-center justify-between">
-          {/* Left: Logo + Admin Label */}
+      {/* Admin Navbar - Single Row Design matching Home */}
+      <header className="sticky top-0 z-50 w-full backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/70 dark:bg-zinc-950/70">
+        <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-20 flex items-center justify-between">
+
+          {/* Left: Branding */}
           <div className="flex items-center gap-4">
-            <Logo className="w-8 h-8" />
+            <Logo className="w-10 h-10" />
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800" />
-            <span className="text-sm font-bold uppercase tracking-widest text-zinc-400">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
               Admin
             </span>
           </div>
 
+          {/* Center: Navigation Tabs (Pill Design) */}
+          <nav className="hidden md:flex items-center gap-1.5 bg-zinc-100/50 dark:bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5">
+            {navItems.map((item) => {
+              const isActive = activeTab === item.id || (item.id === 'stamps' && activeTab as string === 'objects');
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(`/admin/${item.id}`)}
+                  className={`
+                    flex items-center gap-2.5 px-5 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 whitespace-nowrap
+                    ${isActive
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                      : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
+                  `}
+                >
+                  {React.cloneElement(item.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
           {/* Right: Home Button */}
           <button
             onClick={() => navigate('/projects')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-white/5"
           >
-            <Home className="w-4 h-4" />
-            <span>Zurück zur App</span>
+            <Home className="w-3.5 h-3.5" />
+            <span>App</span>
           </button>
         </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-        <div className="max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id || (item.id === 'stamps' && activeTab as string === 'objects');
-            return (
-              <button
-                key={item.id}
-                onClick={() => navigate(`/admin/${item.id}`)}
-                className={`flex items-center gap-2 px-5 py-3 text-[13px] font-bold whitespace-nowrap transition-all border-b-2 ${isActive
-                  ? 'border-black dark:border-white text-black dark:text-white'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`}
-              >
-                {React.cloneElement(item.icon as React.ReactElement, { className: 'w-3.5 h-3.5' })}
-                {item.label}
-              </button>
-            );
-          })}</div>
-      </div>
+      </header>
 
       {/* Main Content */}
       <main className="flex-1 min-h-0">
-        <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-10 h-[calc(100vh-160px)]">
+        <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 py-10 h-[calc(100vh-80px)]">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 h-full flex flex-col rounded-3xl overflow-hidden shadow-sm">
             {activeTab === 'users' && <AdminUsersView t={t} />}
             {activeTab === 'jobs' && <AdminJobsView t={t} />}
