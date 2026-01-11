@@ -151,37 +151,18 @@ export const editImageWithGemini = async (
 
 
 
-    // Determine Model and Config based on Quality Mode
-    let modelName = 'gemini-2.0-flash-exp'; // Default to cutting-edge preview
-    let imageConfig: any = {};
-
-    switch (qualityMode) {
-      case 'fast':
-        modelName = 'gemini-2.0-flash-exp';
-        // No specific imageSize config for flash-image
-        break;
-      case 'pro-1k':
-        modelName = 'gemini-2.0-flash-exp';
-        imageConfig = { imageSize: '1K' };
-        break;
-      case 'pro-2k':
-        modelName = 'gemini-2.0-flash-exp';
-        imageConfig = { imageSize: '2K' };
-        break;
-      case 'pro-4k':
-        modelName = 'gemini-2.0-flash-exp';
-        imageConfig = { imageSize: '4K' };
-        break;
-    }
+    // Determine Model based on Quality Mode
+    // NOTE: Gemini 2.0 Flash does NOT support imageSize config for image editing.
+    // The output resolution matches the input image resolution.
+    // Quality mode is used for billing/tracking purposes only.
+    const modelName = 'gemini-2.0-flash-exp';
 
     const response = await ai.models.generateContent({
       model: modelName,
       contents: {
         parts: parts,
-      },
-      config: {
-        imageConfig: Object.keys(imageConfig).length > 0 ? imageConfig : undefined
       }
+      // No config needed for image editing - output matches input resolution
     });
 
     // Iterate through parts to find the image output
