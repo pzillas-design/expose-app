@@ -180,19 +180,19 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     title="Gesamtumsatz"
                     value={`${stats.revenue.toFixed(2)}€`}
                     icon={<Coins className="w-4 h-4 text-emerald-500" />}
-                    sub="Einlösete Credits"
+                    sub="Verrechneter Credit-Gegenwert"
                 />
                 <SummaryCard
                     title="Google Kosten"
                     value={`$${stats.apiCostUsd.toFixed(4)}`}
                     icon={<DollarSign className="w-4 h-4 text-red-500" />}
-                    sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (Schätzung)`}
+                    sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (ca. Umrechnung)`}
                 />
                 <SummaryCard
                     title="Gesamtertrag"
                     value={`${stats.profit.toFixed(2)}€`}
                     icon={<TrendingUp className="w-4 h-4 text-blue-500" />}
-                    sub="Umsatz - Google Kosten"
+                    sub="Dein Profit nach API-Abzug"
                 />
             </div>
 
