@@ -349,19 +349,16 @@ export const imageService = {
         }
 
 
-        // Fetch jobs WITHOUT board_id filter for now
-        // TODO: Add board_id column to generation_jobs table in Supabase, then uncomment filter
-        // SQL: ALTER TABLE generation_jobs ADD COLUMN board_id UUID REFERENCES boards(id);
-        const jobsQuery = supabase
+        // Fetch jobs WITH board_id filter to ensure board isolation
+        let jobsQuery = supabase
             .from('generation_jobs')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'processing');
 
-        // Temporarily disabled until database migration:
-        // if (boardId) {
-        //     jobsQuery = jobsQuery.eq('board_id', boardId);
-        // }
+        if (boardId) {
+            jobsQuery = jobsQuery.eq('board_id', boardId);
+        }
 
         const [imgsRes, jobsRes] = await Promise.all([
             imgsQuery.order('created_at', { ascending: false }),
