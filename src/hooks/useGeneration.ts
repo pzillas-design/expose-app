@@ -194,7 +194,8 @@ export const useGeneration = ({
                     status: 'processing',
                     cost: cost,
                     prompt: prompt,
-                    concurrent_jobs: currentConcurrency
+                    concurrent_jobs: currentConcurrency,
+                    board_id: currentBoardId || null
                 });
                 attachedJobIds.current.add(newId);
             } catch (dbErr) {
@@ -219,18 +220,25 @@ export const useGeneration = ({
             }, 150);
         }
 
+        // Wrap generation in a timeout to prevent hanging skeletons
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
+        });
+
         try {
-            const finalImage = await imageService.processGeneration({
-                sourceImage,
-                prompt,
-                qualityMode,
-                maskDataUrl: maskDataUrl || undefined,
-                newId,
-                boardId: currentBoardId || undefined,
-                targetVersion: newVersion,
-                targetTitle: placeholder.title
-                // modelName removed as server handles mapping
-            });
+            const finalImage = await Promise.race([
+                imageService.processGeneration({
+                    sourceImage,
+                    prompt,
+                    qualityMode,
+                    maskDataUrl: maskDataUrl || undefined,
+                    newId,
+                    boardId: currentBoardId || undefined,
+                    targetVersion: newVersion,
+                    targetTitle: placeholder.title
+                }),
+                timeoutPromise
+            ]) as CanvasImage;
 
             if (finalImage) {
                 // Add cache busting to ensure the new image loads immediately
@@ -392,18 +400,27 @@ export const useGeneration = ({
                     model: modelId,
                     status: 'processing',
                     cost: cost,
-                    prompt: prompt
+                    prompt: prompt,
+                    board_id: currentBoardId || null
                 });
             }
 
-            const finalImage = await imageService.processGeneration({
-                sourceImage: placeholder,
-                prompt,
-                qualityMode: modelId,
-                newId,
-                boardId: currentBoardId || undefined,
-                attachments
+            // Wrap generation in a timeout to prevent hanging skeletons
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
             });
+
+            const finalImage = await Promise.race([
+                imageService.processGeneration({
+                    sourceImage: placeholder,
+                    prompt,
+                    qualityMode: modelId,
+                    newId,
+                    boardId: currentBoardId || undefined,
+                    attachments
+                }),
+                timeoutPromise
+            ]) as CanvasImage;
 
             if (finalImage) {
                 setRows(prev => {
