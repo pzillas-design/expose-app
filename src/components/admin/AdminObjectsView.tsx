@@ -42,18 +42,18 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
     const handleMigrateBasics = async () => {
         const basics = [
-            { id: 'basics_table', label_de: 'Tisch', label_en: 'Table', icon: '🍽️', order: 0 },
-            { id: 'basics_mirror', label_de: 'Spiegel', label_en: 'Mirror', icon: '🪞', order: 1 },
-            { id: 'basics_lamp', label_de: 'Lampe', label_en: 'Lamp', icon: '💡', order: 2 },
-            { id: 'basics_chair', label_de: 'Stuhl', label_en: 'Chair', icon: '🪑', order: 3 },
-            { id: 'basics_armchair', label_de: 'Sessel', label_en: 'Armchair', icon: '🪑', order: 4 },
-            { id: 'basics_sofa', label_de: 'Sofa', label_en: 'Sofa', icon: '🛋️', order: 5 },
-            { id: 'basics_rug', label_de: 'Teppich', label_en: 'Rug', icon: '🧶', order: 6 },
-            { id: 'basics_plant', label_de: 'Pflanze', label_en: 'Plant', icon: '🪴', order: 7 },
-            { id: 'basics_art', label_de: 'Wandbild', label_en: 'Wall Art', icon: '🖼️', order: 8 },
-            { id: 'basics_kitchen', label_de: 'Küche', label_en: 'Kitchen', icon: '🍳', order: 9 },
-            { id: 'basics_tv', label_de: 'TV-Schrank', label_en: 'TV Stand', icon: '📺', order: 10 },
-            { id: 'basics_shelf', label_de: 'Regal', label_en: 'Shelf', icon: '📚', order: 11 }
+            { id: '369e43eb-8f74-4f96-857e-3ce804100401', label_de: 'Tisch', label_en: 'Table', icon: '🍽️', order: 0 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100402', label_de: 'Spiegel', label_en: 'Mirror', icon: '🪞', order: 1 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100403', label_de: 'Lampe', label_en: 'Lamp', icon: '💡', order: 2 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100404', label_de: 'Stuhl', label_en: 'Chair', icon: '🪑', order: 3 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100405', label_de: 'Sessel', label_en: 'Armchair', icon: '🪑', order: 4 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100406', label_de: 'Sofa', label_en: 'Sofa', icon: '🛋️', order: 5 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100407', label_de: 'Teppich', label_en: 'Rug', icon: '🧶', order: 6 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100408', label_de: 'Pflanze', label_en: 'Plant', icon: '🪴', order: 7 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100409', label_de: 'Wandbild', label_en: 'Wall Art', icon: '🖼️', order: 8 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100410', label_de: 'Küche', label_en: 'Kitchen', icon: '🍳', order: 9 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100411', label_de: 'TV-Schrank', label_en: 'TV Stand', icon: '📺', order: 10 },
+            { id: '369e43eb-8f74-4f96-857e-3ce804100412', label_de: 'Regal', label_en: 'Shelf', icon: '📚', order: 11 }
         ];
 
         if (!confirm(`${basics.length} Basis-Sticker importieren?`)) return;
@@ -65,9 +65,9 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             }
             await fetchData();
             alert('Sticker erfolgreich importiert!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Migration failed:', error);
-            alert('Fehler beim Import!');
+            alert(`Fehler beim Import: ${error.message || 'Unbekannter Fehler'}`);
         } finally {
             setLoading(false);
         }
