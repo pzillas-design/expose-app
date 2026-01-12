@@ -321,7 +321,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
         if (varParts.length > 0) {
             if (finalOutput) finalOutput += "\n\n";
-            finalOutput += varParts.join("; ");
+            finalOutput += varParts.join(". ");
         }
 
         // If for some reason the structure is empty, return the raw prompt
