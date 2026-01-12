@@ -40,41 +40,24 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-14 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 right-0 left-0 px-2.5 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
-            <div className="absolute -top-1.5 right-[32px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            <div className="absolute -top-1.5 right-[22px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900 
                 border border-zinc-200 dark:border-zinc-800 
-                rounded-xl shadow-2xl overflow-hidden flex flex-col gap-8 p-6
+                rounded-md shadow-2xl overflow-hidden flex flex-col gap-8 p-6
             `}>
                 {/* 0. Section Title: Info */}
                 <span className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
                     Info
                 </span>
 
-                {/* 1. Prompt Section */}
-                {image.generationPrompt && (
-                    <div className="flex flex-col gap-1.5 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                            {t('tt_prompt')}
-                        </span>
-                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
-                            <p
-                                onClick={handleCopyPrompt}
-                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
-                            >
-                                {image.generationPrompt}
-                            </p>
-                        </Tooltip>
-                    </div>
-                )}
-
-                {/* 2. Filename/Title (Editable Input) */}
+                {/* 1. Filename/Title (Editable Input) */}
                 <div className="flex flex-col gap-1.5 col-span-2 group/title">
                     <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
                         {t('filename')}
@@ -99,6 +82,23 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         />
                     </div>
                 </div>
+
+                {/* 2. Prompt Section */}
+                {image.generationPrompt && (
+                    <div className="flex flex-col gap-1.5 group">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('tt_prompt')}
+                        </span>
+                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
+                            <p
+                                onClick={handleCopyPrompt}
+                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
+                            >
+                                {image.generationPrompt}
+                            </p>
+                        </Tooltip>
+                    </div>
+                )}
 
                 {/* Metadata Grid */}
                 <div className="grid grid-cols-2 gap-x-8 gap-y-8">
@@ -150,23 +150,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         </div>
                     )}
 
-                    {/* Original Section */}
-                    {image.parentId && (
-                        <div className="flex flex-col gap-1.5">
-                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                {currentLang === 'de' ? 'Original' : 'Original'}
-                            </span>
-                            <div
-                                onClick={() => onNavigateParent?.(image.id)}
-                                className="flex items-center gap-1 group/orig cursor-pointer hover:opacity-80 transition-opacity"
-                            >
-                                <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs max-w-[100px] truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
-                                    {image.baseName || 'image.jpg'}
-                                </span>
-                                <ChevronRight className="w-3 h-3 text-zinc-400 group-hover/orig:translate-x-0.5 transition-transform" />
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Actions */}
