@@ -236,11 +236,18 @@ Deno.serve(async (req) => {
         const model = genAI.getGenerativeModel({ model: finalModelName })
 
         // Prepare config (nested imageConfig if needed)
-        const generationConfig: any = {
-            imageConfig: {
-                // mimeType: 'image/jpeg', // Invalid field for this API
+        const generationConfig: any = {};
+
+        if (finalModelName === 'gemini-2.5-flash-image') {
+            // Flash Image supports functionality via aspectRatio, not explicit imageSize
+            generationConfig.imageConfig = {
+                aspectRatio: '1:1' // Defaulting to square, as requested by UI usually
+            };
+        } else {
+            // Pro model supports explicit sizing
+            generationConfig.imageConfig = {
                 imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K'))
-            }
+            };
         }
 
         console.log(`[DEBUG] Gemini Call for ${finalModelName} with quality ${qualityMode}`);
