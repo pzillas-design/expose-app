@@ -11,6 +11,7 @@ import { de, enUS } from 'date-fns/locale';
 import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
 import { AppNavbar } from '../layout/AppNavbar';
+import { GlobalFooter } from '../layout/GlobalFooter';
 
 const getInitials = (name?: string, email?: string) => {
     if (name && name.trim()) {
@@ -130,8 +131,8 @@ export function BoardsPage({
                 <main className="pb-32 flex-1 flex flex-col">
 
                     <div className="mb-12">
-                        <h1 className="text-xl font-medium tracking-tight">Meine Projekte</h1>
-                        <p className="text-sm text-zinc-500 mt-1">Überblick über all deine Projekte.</p>
+                        <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
+                        <p className="text-sm text-zinc-500 mt-1">{t('overview_desc')}</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
@@ -143,7 +144,7 @@ export function BoardsPage({
                             <div className="flex items-center justify-center transition-all duration-500 group-hover:scale-110">
                                 <Plus className="w-16 h-16 text-zinc-900 dark:text-white transition-colors" strokeWidth={0.5} />
                             </div>
-                            <span className={`${Typo.ButtonLabel} text-zinc-900 dark:text-white transition-all`}>Neues Projekt</span>
+                            <span className={`${Typo.ButtonLabel} text-zinc-900 dark:text-white transition-all`}>{t('default_project_name')}</span>
                         </button>
 
                         {isLoading ? (
@@ -166,6 +167,7 @@ export function BoardsPage({
                     </div>
                 </main>
             </div>
+            <GlobalFooter t={t} />
         </div>
     );
 }
@@ -257,10 +259,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                 e.stopPropagation();
                                 setMenuOpen(false); // Close menu first
                                 const newName = await prompt({
-                                    title: t('rename_board' as any) || 'Projekt umbenennen',
+                                    title: t('rename_board') || 'Projekt umbenennen',
                                     value: board.name,
-                                    confirmLabel: 'Speichern',
-                                    placeholder: 'Projektname'
+                                    confirmLabel: t('save'),
+                                    placeholder: t('tab_projects')
                                 });
                                 if (newName && newName !== board.name) {
                                     onRename(newName);
@@ -269,7 +271,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >
                             <Edit3 className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>Umbenennen</span>
+                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>{t('edit')}</span>
                         </button>
                         <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
                         <button
@@ -277,7 +279,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group"
                         >
                             <Trash className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
-                            <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>Löschen</span>
+                            <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>{t('delete')}</span>
                         </button>
                     </div>
                 </>,

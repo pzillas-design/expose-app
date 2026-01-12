@@ -54,7 +54,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         `}
                     >
                         <LayoutGrid className="w-4 h-4" />
-                        Projekte
+                        {t('tab_projects')}
                     </NavLink>
 
                     <NavLink
@@ -67,7 +67,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         `}
                     >
                         <Settings className="w-4 h-4" />
-                        Einstellungen
+                        {t('tab_settings')}
                     </NavLink>
                 </nav>
 
@@ -80,7 +80,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         icon={<Plus className="w-4 h-4" />}
                         className="px-6 h-11 hidden lg:flex"
                     >
-                        Neues Projekt
+                        {t('default_project_name')}
                     </Button>
 
                     {/* Compact New Board for small screens */}
