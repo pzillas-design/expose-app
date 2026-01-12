@@ -5,9 +5,11 @@
 body {
   margin: 0;
   overflow: auto;
-  background-color: #1e1e1e;
-  color: #e5e5e5;
   font-family: 'Inter', sans-serif;
+}
+
+body {
+  @apply bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
 }
 
 :root {

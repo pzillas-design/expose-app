@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Globe, Info } from 'lucide-react';
+import { Mail, Globe, Info, ExternalLink } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { TranslationFunction } from '@/types';
@@ -10,72 +10,56 @@ interface GlobalFooterProps {
 
 export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
     return (
-        <footer className="w-full bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 py-12 px-6 mt-auto">
-            <div className="max-w-7xl mx-auto space-y-12">
-                {/* Brand & Mission */}
-                <div className="flex flex-col items-center justify-center space-y-6">
-                    <div className="flex items-center gap-3">
-                        <Logo className="w-10 h-10" />
-                        <Wordmark className="h-6 text-zinc-900 dark:text-white" />
+        <footer className="w-full bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900/50 py-16 px-8 mt-auto">
+            <div className="max-w-[1700px] mx-auto flex flex-col items-center gap-12">
+
+                {/* Brand Section - More minimal */}
+                <div className="flex flex-col items-center justify-center gap-4 group opacity-80 hover:opacity-100 transition-opacity duration-500">
+                    <div className="flex items-center gap-2.5">
+                        <Logo className="w-6 h-6 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500" />
+                        <Wordmark className="h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors duration-500" />
                     </div>
-                    <p className="max-w-md text-center text-sm text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">
-                        Exposé ist die Plattform für professionelle Bildgenerierung und kreative Workflows.
-                        Entwickelt für Designer, Developer und Visionäre.
-                    </p>
                 </div>
 
-                {/* Footer Links & Navigation */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto w-full">
+                {/* Navigation - No thick buttons, just clean rows */}
+                <nav className="flex flex-wrap justify-center gap-x-12 gap-y-6">
                     <a
                         href="/about"
-                        className="group flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20 transition-all"
+                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                                <Info className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Über Exposé</span>
-                        </div>
-                        <div className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 transition-all group-hover:bg-zinc-900 dark:group-hover:bg-white" />
+                        <span>Über Exposé</span>
                     </a>
-
                     <a
                         href="https://pzillas.com"
                         target="_blank"
                         rel="noreferrer"
-                        className="group flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20 transition-all"
+                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                                <Globe className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Unsere Website</span>
-                        </div>
-                        <div className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 transition-all group-hover:bg-zinc-900 dark:group-hover:bg-white" />
+                        <span>Unsere Website</span>
+                        <ExternalLink className="w-3 h-3 opacity-50" />
                     </a>
-
                     <a
                         href="mailto:hello@expose.ae"
-                        className="group flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/50 dark:border-white/5 hover:border-zinc-300 dark:hover:border-white/20 transition-all"
+                        className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                                <Mail className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Direkter Support</span>
-                        </div>
-                        <div className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 transition-all group-hover:bg-zinc-900 dark:group-hover:bg-white" />
+                        <span>Direkter Support</span>
                     </a>
-                </div>
+                </nav>
 
-                {/* Bottom Legal & Copyright */}
-                <div className="pt-8 border-t border-zinc-100 dark:border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-xs font-medium text-zinc-400 dark:text-zinc-600 tracking-wide">
-                        &copy; 2026 Exposé. All rights reserved. Made by pzillas.
-                    </p>
-                    <div className="flex gap-6">
-                        <a href="/legal" className="text-xs font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">Impressum</a>
-                        <a href="/privacy" className="text-xs font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">Datenschutz</a>
+                {/* Legal & Copyright - Even more subtle */}
+                <div className="w-full max-w-2xl pt-12 border-t border-zinc-100 dark:border-zinc-900/50 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex flex-col items-center sm:items-start gap-1">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300 dark:text-zinc-800">
+                            &copy; 2026 Exposé
+                        </p>
+                        <p className="text-[10px] font-bold text-zinc-300 dark:text-zinc-800">
+                            PART OF PZILLAS DESIGN
+                        </p>
+                    </div>
+
+                    <div className="flex gap-8">
+                        <a href="/legal" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300 dark:text-zinc-700 hover:text-zinc-900 dark:hover:text-white transition-colors">Impressum</a>
+                        <a href="/privacy" className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300 dark:text-zinc-700 hover:text-zinc-900 dark:hover:text-white transition-colors">Datenschutz</a>
                     </div>
                 </div>
             </div>
