@@ -46,12 +46,15 @@ interface SideSheetProps {
     fullLibrary: LibraryCategory[];
     onAddUserCategory: (label: string) => void;
     onDeleteUserCategory: (id: string) => void;
+    onAddUserItem: (catId: string, item: LibraryItem) => void;
     onDeleteUserItem: (catId: string, itemId: string) => void;
     maskTool: 'brush' | 'text' | 'shape' | 'select';
     onMaskToolChange: (tool: 'brush' | 'text' | 'shape' | 'select') => void;
     activeShape: 'rect' | 'circle' | 'line';
     onActiveShapeChange: (shape: 'rect' | 'circle' | 'line') => void;
     onActiveAnnotationChange?: (id: string | null) => void;
+    onInteractionStart: () => void; // New
+    onInteractionEnd: () => void;   // New
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -65,50 +68,54 @@ interface SideSheetProps {
     userProfile: any;
 }
 
-export const SideSheet: React.FC<SideSheetProps> = ({
-    selectedImage,
-    selectedImages,
-    sideSheetMode,
-    onModeChange,
-    brushSize,
-    onBrushSizeChange,
-    onBrushResizeStart,
-    onBrushResizeEnd,
-    onGenerate,
-    onUpdateAnnotations,
-    onUpdatePrompt,
-    onUpdateVariables,
-    onDeleteImage,
-    onDeselectAllButOne,
-    onDeselectAll,
-    onGenerateMore,
-    onNavigateParent,
-    isGlobalDragOver,
-    onGlobalDragLeave,
-    t,
-    lang,
-    fullLibrary,
-    onAddUserCategory,
-    onDeleteUserCategory,
-    onAddUserItem,
-    onDeleteUserItem,
-    maskTool,
-    onMaskToolChange,
-    activeShape,
-    onActiveShapeChange,
-    onActiveAnnotationChange,
-    onUpload,
-    onCreateNew,
-    isBoardEmpty,
-    qualityMode,
-    onQualityModeChange,
-    templates: globalTemplates,
-    onRefreshTemplates,
-    onSaveTemplate,
-    onDeleteTemplate,
-    onUpdateImageTitle,
-    userProfile
-}) => {
+export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
+    const {
+        selectedImage,
+        selectedImages,
+        sideSheetMode,
+        onModeChange,
+        brushSize,
+        onBrushSizeChange,
+        onBrushResizeStart,
+        onBrushResizeEnd,
+        onGenerate,
+        onUpdateAnnotations,
+        onUpdatePrompt,
+        onUpdateVariables,
+        onDeleteImage,
+        onDeselectAllButOne,
+        onDeselectAll,
+        onGenerateMore,
+        onNavigateParent,
+        isGlobalDragOver,
+        onGlobalDragLeave,
+        t,
+        lang,
+        fullLibrary,
+        onAddUserCategory,
+        onDeleteUserCategory,
+        onAddUserItem,
+        onDeleteUserItem,
+        maskTool,
+        onMaskToolChange,
+        activeShape,
+        onActiveShapeChange,
+        onActiveAnnotationChange,
+        onInteractionStart: onInteractionStartExternal, // Rename to avoid conflict
+        onInteractionEnd: onInteractionEndExternal,     // Rename to avoid conflict
+        onUpload,
+        onCreateNew,
+        isBoardEmpty,
+        qualityMode,
+        onQualityModeChange,
+        templates: globalTemplates,
+        onRefreshTemplates,
+        onSaveTemplate,
+        onDeleteTemplate,
+        onUpdateImageTitle,
+        userProfile
+    } = props;
+
     const [prompt, setPrompt] = useState('');
     const templates = globalTemplates;
 
@@ -125,6 +132,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [activeAnnotationId, setActiveAnnotationIdInternal] = useState<string | null>(null);
     const { confirm } = useItemDialog();
     const lastAutoOpenedId = useRef<string | null>(null);
+    const isInteracting = useRef(false);
 
     const setActiveAnnotationId = (id: string | null) => {
         setActiveAnnotationIdInternal(id);
@@ -184,8 +192,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         }
     }, [selectedImage?.annotations, selectedImage?.id, historyMap, historyIndexMap]);
 
-    const updateAnnotationsWithHistory = (newAnns: AnnotationObject[]) => {
+    const updateAnnotationsWithHistory = (newAnns: AnnotationObject[], forceHistory: boolean = false) => {
         if (!selectedImage) return;
+
+        if (isInteracting.current && !forceHistory) {
+            // Just update live without pushing to history stack
+            onUpdateAnnotations(selectedImage.id, newAnns);
+            return;
+        }
 
         const currentHistory = historyMap.get(selectedImage.id) || [];
         const currentIndex = historyIndexMap.get(selectedImage.id) ?? -1;
@@ -205,6 +219,25 @@ export const SideSheet: React.FC<SideSheetProps> = ({
 
         onUpdateAnnotations(selectedImage.id, newAnns);
     };
+
+    const handleInteractionStart = () => {
+        isInteracting.current = true;
+        onInteractionStartExternal?.();
+    };
+
+    const handleInteractionEnd = () => {
+        if (!selectedImage || !isInteracting.current) return;
+        isInteracting.current = false;
+        // Push the FINAL state to history
+        const currentAnns = selectedImage.annotations || [];
+        updateAnnotationsWithHistory(currentAnns, true);
+        onInteractionEndExternal?.();
+    };
+
+    React.useImperativeHandle(ref, () => ({
+        handleInteractionStart,
+        handleInteractionEnd
+    }));
 
     const handleUndo = () => {
         if (!selectedImage) return;
@@ -822,4 +855,4 @@ export const SideSheet: React.FC<SideSheetProps> = ({
             />
         </>
     );
-};
+});

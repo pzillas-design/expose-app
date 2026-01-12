@@ -70,12 +70,21 @@ export function App() {
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+    const sideSheetHandlersRef = useRef<{ onStart: () => void, onEnd: () => void } | null>(null);
 
     // Active Annotation State
     const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null);
 
     // Stable Editor State Object to preserve ImageItem memoization during scroll
-    const editorState = useMemo(() => ({ mode: sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId]);
+    const editorState = useMemo(() => ({
+        mode: sideSheetMode,
+        brushSize,
+        maskTool,
+        activeShape,
+        isBrushResizing,
+        activeAnnotationId,
+        onActiveAnnotationChange: setActiveAnnotationId
+    }), [sideSheetMode, brushSize, maskTool, activeShape, isBrushResizing, activeAnnotationId]);
 
     // Track currentBoardId in a ref so we can read it without triggering re-renders
     const currentBoardIdRef = useRef(currentBoardId);
@@ -527,6 +536,8 @@ export function App() {
                                                     setBrushSize: actions.setBrushSize,
                                                     setActiveShape: actions.setActiveShape
                                                 }}
+                                                onInteractionStart={() => sideSheetHandlersRef.current?.onStart()}
+                                                onInteractionEnd={() => sideSheetHandlersRef.current?.onEnd()}
                                                 onNavigate={moveSelection}
                                                 hasLeft={imgIndex > 0}
                                                 hasRight={imgIndex < row.items.length - 1}
@@ -627,6 +638,8 @@ export function App() {
                     activeShape={activeShape}
                     onActiveShapeChange={setActiveShape}
                     onActiveAnnotationChange={setActiveAnnotationId}
+                    onInteractionStart={() => { /* Handled via ref below */ }}
+                    onInteractionEnd={() => { /* Handled via ref below */ }}
                     onUpload={() => processFile()}
                     onCreateNew={() => setIsCreationModalOpen(true)}
                     isBoardEmpty={rows.length === 0}
@@ -635,6 +648,15 @@ export function App() {
                     templates={templates}
                     onRefreshTemplates={refreshTemplates}
                     userProfile={userProfile}
+                    // Hack to bridge handlers without exposing them as public state
+                    ref={(el: any) => {
+                        if (el) {
+                            sideSheetHandlersRef.current = {
+                                onStart: el.handleInteractionStart,
+                                onEnd: el.handleInteractionEnd
+                            };
+                        }
+                    }}
                 />
             )}
 

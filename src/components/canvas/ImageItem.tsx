@@ -28,6 +28,8 @@ interface ImageItemProps {
     hasLeft?: boolean,
     hasRight?: boolean,
     onDelete?: (id: string) => void;
+    onInteractionStart?: () => void;
+    onInteractionEnd?: () => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     t: TranslationFunction;
 }
@@ -168,6 +170,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasLeft,
     hasRight,
     onDelete,
+    onInteractionStart,
+    onInteractionEnd,
     onContextMenu,
     t
 }) => {
@@ -288,6 +292,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             isBrushResizing={editorState.isBrushResizing}
                             isActive={isSelected}
                             activeAnnotationId={editorState.activeAnnotationId}
+                            onActiveAnnotationChange={editorState.onActiveAnnotationChange}
+                            onInteractionStart={onInteractionStart}
+                            onInteractionEnd={onInteractionEnd}
                             onEditStart={onEditStart}
                             onContextMenu={(e) => onContextMenu?.(e, image.id)}
                             t={t}

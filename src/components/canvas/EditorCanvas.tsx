@@ -19,6 +19,8 @@ export interface EditorCanvasProps {
     isBrushResizing?: boolean;
     activeAnnotationId?: string | null;
     onActiveAnnotationChange?: (id: string | null) => void;
+    onInteractionStart?: () => void; // New: signal start of move/resize
+    onInteractionEnd?: () => void;   // New: signal end of move/resize
     onEditStart?: (mode: 'brush' | 'objects') => void;
     onContextMenu?: (e: React.MouseEvent) => void;
     t?: TranslationFunction;
@@ -54,6 +56,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     isBrushResizing = false,
     activeAnnotationId,
     onActiveAnnotationChange,
+    onInteractionStart,
+    onInteractionEnd,
     onEditStart,
     onContextMenu,
     t
@@ -321,6 +325,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if (dragState) {
             if (!dragState.isMoved) setActiveMaskId(dragState.id);
             setDragState(null);
+            onInteractionEnd?.();
             return;
         }
         if (!isDrawing) return;
@@ -329,10 +334,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSize, color: '#fff', text: '', createdAt: Date.now() }]);
         }
         currentPathRef.current = [];
+        onInteractionEnd?.();
     };
 
     const startDrag = (e: React.MouseEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
         e.stopPropagation(); e.preventDefault();
+        onInteractionStart?.();
         const clientX = 'touches' in e ? (e as any).touches[0].clientX : (e as any).clientX;
         const clientY = 'touches' in e ? (e as any).touches[0].clientY : (e as any).clientY;
         const { x, y } = getCoordinates(clientX, clientY);
@@ -635,10 +642,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 </div>
                             ) : (
                                 <div
-                                    className={`${OVERLAY_STYLES.ChipContainer} p-1.5 ${ann.type === 'stamp' ? 'cursor-move' : 'cursor-default'} hover:scale-105 group/chip`}
+                                    className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move hover:scale-105 group/chip`}
                                     onMouseDown={(e) => {
                                         e.stopPropagation();
-                                        setActiveMaskId(ann.id);
+                                        // Support move on chip
+                                        startDrag(e, ann.id, 'move', ann);
                                     }}
                                 >
                                     {/* Double Arrow */}
