@@ -40,17 +40,17 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-0 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
-            <div className="absolute -top-1.5 right-[24px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            <div className="absolute -top-1.5 right-[27px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900 
                 border-b border-zinc-200 dark:border-zinc-800 
-                shadow-2xl overflow-hidden flex flex-col gap-6 p-6
+                shadow-2xl overflow-hidden flex flex-col gap-8 p-6
             `}>
                 {/* 1. Header: Filename/Title (Editable Input) */}
                 <div className="flex flex-col gap-2 col-span-2 group/title">
@@ -79,7 +79,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 </div>
                 {/* Prompt Section */}
                 {image.generationPrompt && (
-                    <div className="flex flex-col gap-3 group">
+                    <div className="flex flex-col gap-4 group">
                         <div className="flex items-center justify-between">
                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                                 {t('tt_prompt')}
@@ -97,7 +97,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 )}
 
                 {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-8">
 
                     {/* Resolution */}
                     <div className="flex flex-col gap-1.5">
@@ -166,7 +166,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-2">
+                <div className="flex flex-col gap-2 pt-4">
                     {image.parentId && (
                         <Button
                             variant="secondary"
