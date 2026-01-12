@@ -365,7 +365,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={t('describe_changes')}
-                            className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden`}
+                            className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 placeholder:opacity-80`}
                             disabled={selectedImage?.isGenerating}
                         />
                     </div>
@@ -404,7 +404,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             ) : (
                                                 <div
                                                     onClick={() => startEditingControl(ctrl.id, ctrl.label)}
-                                                    className={`w-full ${Typo.Body} font-mono opacity-30 group-hover:opacity-60 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                    className={`w-full ${Typo.Body} font-mono text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                 >
                                                     {displayLabel}
                                                 </div>
