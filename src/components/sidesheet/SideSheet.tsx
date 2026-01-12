@@ -640,7 +640,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         {/* BACKDROP for Info Modal - Covers the whole SideSheet area including header */}
                         {showInfo && !isMulti && (
                             <div
-                                className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[2px] z-30 animate-in fade-in duration-200"
+                                className="absolute inset-0 bg-white/60 dark:bg-black/60 z-30 animate-in fade-in duration-200"
                                 onClick={() => setShowInfo(false)}
                             />
                         )}

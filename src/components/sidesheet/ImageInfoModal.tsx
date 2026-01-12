@@ -40,11 +40,11 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-14 right-0 left-0 px-2.5 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
-            <div className="absolute -top-1.5 right-[22px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            <div className="absolute -top-1.5 right-[32px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
@@ -57,30 +57,58 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     Info
                 </span>
 
-                {/* 1. Filename/Title (Editable Input) */}
+                {/* 1. Filename/Title (Conditional Edit Mode) */}
                 <div className="flex flex-col gap-1.5 col-span-2 group/title">
                     <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
                         {t('filename')}
                     </span>
-                    <div className="flex items-center gap-2">
-                        <input
-                            className={`
-                                flex-1 bg-zinc-50 dark:bg-zinc-800/50 
-                                border border-zinc-200 dark:border-zinc-700 
-                                rounded-lg px-3 py-2
-                                outline-none 
-                                ${Typo.Mono} text-sm text-black dark:text-white 
-                                focus:border-zinc-400 dark:focus:border-zinc-500
-                                transition-colors
-                            `}
-                            value={editTitleValue}
-                            onChange={(e) => {
-                                setEditTitleValue(e.target.value);
-                                onUpdateImageTitle?.(image.id, e.target.value);
-                            }}
-                            placeholder="Untitled"
-                        />
-                    </div>
+
+                    {!isEditingTitle ? (
+                        <div
+                            className="flex items-center gap-2 cursor-pointer group/text"
+                            onClick={() => setIsEditingTitle(true)}
+                        >
+                            <span className={`${Typo.Mono} text-sm text-black dark:text-white truncate`}>
+                                {editTitleValue || 'Untitled'}
+                            </span>
+                            <Edit2 className="w-3.5 h-3.5 text-zinc-400 opacity-0 group-hover/text:opacity-100 transition-opacity" />
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <input
+                                autoFocus
+                                className={`
+                                    flex-1 bg-zinc-50 dark:bg-zinc-800/50 
+                                    border border-zinc-200 dark:border-zinc-700 
+                                    rounded-lg px-3 py-2
+                                    outline-none 
+                                    ${Typo.Mono} text-sm text-black dark:text-white 
+                                    focus:border-zinc-400 dark:focus:border-zinc-500
+                                    transition-colors
+                                `}
+                                value={editTitleValue}
+                                onChange={(e) => setEditTitleValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        onUpdateImageTitle?.(image.id, editTitleValue);
+                                        setIsEditingTitle(false);
+                                    }
+                                    if (e.key === 'Escape') {
+                                        setEditTitleValue(image.title || '');
+                                        setIsEditingTitle(false);
+                                    }
+                                }}
+                            />
+                            <IconButton
+                                icon={<CheckIcon className="w-4 h-4" />}
+                                onClick={() => {
+                                    onUpdateImageTitle?.(image.id, editTitleValue);
+                                    setIsEditingTitle(false);
+                                }}
+                                className="bg-zinc-100 dark:bg-zinc-800"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* 2. Prompt Section */}
