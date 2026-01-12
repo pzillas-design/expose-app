@@ -485,6 +485,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 onBlur={() => setIsEditingAnnotationLabel(null)}
                                                 onKeyDown={handleKeyDown}
                                                 className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                ref={(el) => {
+                                                    if (el) {
+                                                        el.style.height = 'auto';
+                                                        el.style.height = el.scrollHeight + 'px';
+                                                    }
+                                                }}
                                                 onInput={(e) => {
                                                     const target = e.target as HTMLTextAreaElement;
                                                     target.style.height = 'auto';
