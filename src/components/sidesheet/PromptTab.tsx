@@ -422,7 +422,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         px-3 py-1.5 rounded-md text-[12px] transition-all
                                                         ${isSelected
                                                                 ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
-                                                                : 'bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/10'}
+                                                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
                                                     `}
                                                     >
                                                         {opt.label}
@@ -504,8 +504,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             onClick={onAddBrush}
                                             className={`
                                                 flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all
-                                                bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 
-                                                border border-zinc-200 dark:border-zinc-700
+                                                bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700
                                             `}
                                         >
                                             <span className="font-medium">
