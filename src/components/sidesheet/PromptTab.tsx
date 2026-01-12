@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
+import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
 import { Edit2, Check as CheckIcon } from 'lucide-react';
@@ -22,6 +22,7 @@ interface PromptTabProps {
     onAddBrush: () => void;
     onAddObject: () => void;
     onDeleteAnnotation: (id: string) => void;
+    onClearAnnotations: (ids: string[]) => void;
     onUpdateAnnotation: (id: string, patch: Partial<AnnotationObject>) => void;
     annotations: AnnotationObject[];
     onUpdateVariables: (id: string, templateId: string | undefined, vars: Record<string, string[]>) => void;
@@ -42,11 +43,12 @@ interface PromptTabProps {
 
 export const PromptTab: React.FC<PromptTabProps> = ({
     prompt, setPrompt, selectedImage, selectedImages, onGenerate, onDeselect, templates, onSelectTemplate,
-    onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation,
+    onAddBrush, onAddObject, onAddReference, annotations, onDeleteAnnotation, onClearAnnotations,
     onUpdateAnnotation, onUpdateVariables, onTogglePin, onDeleteTemplate, onCreateTemplate, onUpdateTemplate,
     onGenerateMore, onNavigateParent, qualityMode, onQualityModeChange, t, currentLang, userProfile,
     onUpdateImageTitle
 }) => {
+    const { confirm } = useItemDialog();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState('');
     const [editEmojiValue, setEditEmojiValue] = useState('');
@@ -67,8 +69,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
-    const [isClearAnnotationsDialogOpen, setIsClearAnnotationsDialogOpen] = useState(false);
-    const [annotationsToClear, setAnnotationsToClear] = useState<AnnotationObject[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -451,9 +451,19 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
                                 <div className="absolute top-2 right-2 z-10">
                                     <button
-                                        onClick={() => {
-                                            setAnnotationsToClear(activeAnns);
-                                            setIsClearAnnotationsDialogOpen(true);
+                                        onClick={async () => {
+                                            const result = await confirm({
+                                                title: currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?',
+                                                description: currentLang === 'de'
+                                                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
+                                                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
+                                                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
+                                                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
+                                                variant: 'danger'
+                                            });
+                                            if (result) {
+                                                onClearAnnotations(activeAnns.map(a => a.id));
+                                            }
                                         }}
                                         className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
                                         title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
@@ -718,25 +728,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 t={t}
             />
 
-            <ConfirmDialog
-                isOpen={isClearAnnotationsDialogOpen}
-                title={currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?'}
-                description={currentLang === 'de'
-                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
-                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.'}
-                confirmLabel={currentLang === 'de' ? 'Löschen' : 'Delete'}
-                cancelLabel={currentLang === 'de' ? 'Abbrechen' : 'Cancel'}
-                onConfirm={() => {
-                    annotationsToClear.forEach(a => onDeleteAnnotation(a.id));
-                    setIsClearAnnotationsDialogOpen(false);
-                    setAnnotationsToClear([]);
-                }}
-                onCancel={() => {
-                    setIsClearAnnotationsDialogOpen(false);
-                    setAnnotationsToClear([]);
-                }}
-                variant="danger"
-            />
         </div>
     );
 };

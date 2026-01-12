@@ -504,10 +504,31 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 color: '#fff',
                 createdAt: Date.now()
             };
+        } else if (shape === 'circle') {
+            const half = size / 2;
+            const x = cx - half;
+            const y = cy - half;
+            newShape = {
+                id: generateId(),
+                type: 'shape',
+                shapeType: 'circle',
+                points: [
+                    { x, y },
+                    { x: x + size, y: y + size }
+                ],
+                strokeWidth: 4,
+                color: '#fff',
+                createdAt: Date.now()
+            };
+        } else {
+            return; // Safety fallback
         }
-        updateAnnotationsWithHistory([...currentAnns, newShape]);
-        setActiveAnnotationId(newShape.id);
-        onMaskToolChange('select');
+
+        if (newShape) {
+            updateAnnotationsWithHistory([...currentAnns, newShape]);
+            setActiveAnnotationId(newShape.id);
+            onMaskToolChange('select');
+        }
     };
 
     const handleGenerateWrapper = (p?: string, dp?: string, tid?: string, vars?: Record<string, string[]>) => {
@@ -680,6 +701,11 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 onAddReference={handleAddReferenceImage}
                                 annotations={selectedImage.annotations || []}
                                 onDeleteAnnotation={deleteAnnotation}
+                                onClearAnnotations={(ids) => {
+                                    if (!selectedImage || !selectedImage.annotations) return;
+                                    const newAnns = selectedImage.annotations.filter(a => !ids.includes(a.id));
+                                    updateAnnotationsWithHistory(newAnns);
+                                }}
                                 onUpdateAnnotation={updateAnnotation}
                                 onUpdateVariables={onUpdateVariables}
                                 onTogglePin={handleTogglePin}

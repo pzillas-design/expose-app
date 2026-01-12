@@ -76,7 +76,7 @@ export const useNanoController = () => {
     const {
         userLibrary, globalLibrary, fullLibrary,
         addUserCategory, deleteUserCategory,
-        addUserItem, deleteUserItem
+        addUserItem, deleteUserItem, syncGlobalItems
     } = useLibrary({ lang, currentLang, user });
 
     const {
@@ -254,7 +254,10 @@ export const useNanoController = () => {
         setSideSheetMode(newMode);
 
         if ((newMode === 'brush' || newMode === 'objects') && oldMode === 'prompt') {
-            // Entering annotation mode: Store current state
+            // Entering annotation mode: Refresh global library items to pick up any changes from Admin
+            syncGlobalItems();
+
+            // Store current state
             const container = scrollContainerRef.current;
             if (container) {
                 setPreviousNav({
@@ -276,7 +279,7 @@ export const useNanoController = () => {
                 smoothZoomTo(1.0, undefined, 300);
             }
         }
-    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav, getMostVisibleItem, selectAndSnap, allImages]);
+    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav, getMostVisibleItem, selectAndSnap, allImages, syncGlobalItems]);
 
     const handleGenerate = useCallback((
         prompt?: string,
