@@ -48,9 +48,9 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
             {/* Modal Body */}
             <div className={`
-                relative bg-white dark:bg-zinc-900 
-                border border-zinc-200 dark:border-zinc-800 
-                rounded-md shadow-2xl overflow-hidden flex flex-col gap-8 p-6
+                relative bg-white dark:bg-zinc-900
+                border border-zinc-200 dark:border-zinc-800
+                shadow-2xl flex flex-col gap-8 p-6
             `}>
                 {/* 0. Section Title: Info */}
                 <span className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
@@ -209,6 +209,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

@@ -661,7 +661,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             case 'prompt':
                 return (
                     <>
-                        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+                        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border} relative z-40`}>
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 <IconButton
                                     icon={<ChevronLeft className="w-4 h-4" />}

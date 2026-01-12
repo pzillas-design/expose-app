@@ -236,18 +236,11 @@ Deno.serve(async (req) => {
         const model = genAI.getGenerativeModel({ model: finalModelName })
 
         // Prepare config (nested imageConfig if needed)
-        const generationConfig: any = {};
-
-        if (finalModelName === 'gemini-2.5-flash-image') {
-            // Flash Image supports functionality via aspectRatio, not explicit imageSize
-            generationConfig.imageConfig = {
-                aspectRatio: '1:1' // Defaulting to square, as requested by UI usually
-            };
-        } else {
-            // Pro model supports explicit sizing
-            generationConfig.imageConfig = {
+        const generationConfig: any = {
+            imageConfig: {
+                mimeType: 'image/jpeg',
                 imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K'))
-            };
+            }
         }
 
         console.log(`[DEBUG] Gemini Call for ${finalModelName} with quality ${qualityMode}`);
@@ -380,24 +373,9 @@ Deno.serve(async (req) => {
             generation_params: { quality: qualityMode }
         }
 
-        // 6. Insert Record (Safe handling for missing jobs)
-        let dbError: any = null;
-        try {
-            const { error } = await supabaseAdmin.from('canvas_images').insert(newImage);
-            dbError = error;
-        } catch (e) {
-            dbError = e;
-        }
-
-        // Retry with job_id: null if foreign key constraint fails
-        if (dbError && dbError.message && dbError.message.includes('foreign key constraint')) {
-            console.warn(`Job ${newId} missing, saving image without job link.`);
-            newImage.job_id = null;
-            const { error: retryError } = await supabaseAdmin.from('canvas_images').insert(newImage);
-            if (retryError) throw retryError;
-        } else if (dbError) {
-            throw dbError;
-        }
+        // 6. Insert Record
+        const { error: dbError } = await supabaseAdmin.from('canvas_images').insert(newImage)
+        if (dbError) throw dbError
 
         // 7. Update Job Status & Usage Tracking
         const usage = resultData.usageMetadata || {};
