@@ -235,11 +235,39 @@ Deno.serve(async (req) => {
         // 3. Call Gemini via SDK (same as main branch)
         const model = genAI.getGenerativeModel({ model: finalModelName })
 
+        // Helper to find closest supported aspect ratio
+        const getClosestAspectRatio = (width: number, height: number): string => {
+            const targetRatio = width / height;
+            const supportedRatios = [
+                { str: '1:1', val: 1.0 },
+                { str: '9:16', val: 9 / 16 },
+                { str: '16:9', val: 16 / 9 },
+                { str: '3:4', val: 3 / 4 },
+                { str: '4:3', val: 4 / 3 },
+                { str: '2:3', val: 2 / 3 },
+                { str: '3:2', val: 3 / 2 },
+                { str: '4:5', val: 4 / 5 },
+                { str: '5:4', val: 5 / 4 },
+                { str: '21:9', val: 21 / 9 },
+                { str: '9:21', val: 9 / 21 }
+            ];
+
+            return supportedRatios.reduce((prev, curr) => {
+                return (Math.abs(curr.val - targetRatio) < Math.abs(prev.val - targetRatio) ? curr : prev);
+            }).str;
+        };
+
+        const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
+        const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
+        const bestRatio = getClosestAspectRatio(sourceW, sourceH);
+        console.log(`[DEBUG] Calculated aspect ratio for ${sourceW}x${sourceH}: ${bestRatio}`);
+
         // Prepare config (nested imageConfig if needed)
         const generationConfig: any = {
             imageConfig: {
                 mimeType: 'image/jpeg',
-                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K'))
+                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K')),
+                aspectRatio: bestRatio
             }
         }
 
