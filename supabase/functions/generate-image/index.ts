@@ -245,26 +245,12 @@ Deno.serve(async (req) => {
 
         console.log(`[DEBUG] Gemini Call for ${finalModelName} with quality ${qualityMode}`);
 
-        // PARALLEL: Generate a title for the image
-        const titlePromise = (async () => {
-            try {
-                const titleModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-                const titleResult = await titleModel.generateContent([
-                    `Generate a very short, concise title (2-5 words) for an image based on this prompt: "${prompt}". Return ONLY the title text, no quotes.`
-                ])
-                return titleResult.response.text().trim().replace(/^"|"$/g, '') || null
-            } catch (e) {
-                console.warn("Title generation failed:", e)
-                return null
-            }
-        })()
-
         // Store the complete API request for debugging
         const apiRequestPayload = {
             model: finalModelName,
             systemInstruction: systemInstruction || null,
             userPrompt: prompt,
-            hasSourceImage: !!sourceImageBase64,
+            hasSourceImage: !!finalSourceBase64,
             hasMask: hasMask,
             hasReferenceImages: hasRefs,
             referenceImagesCount: allRefs.length,
@@ -272,12 +258,10 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString()
         };
 
-        const geminiResultPromise = model.generateContent({
+        const geminiResult = await model.generateContent({
             contents: [{ parts: parts }],
             generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
         })
-
-        const [geminiResult, generatedTitle] = await Promise.all([geminiResultPromise, titlePromise])
         const geminiResponse = geminiResult.response
 
         const candidate = geminiResponse.candidates?.[0]
@@ -315,8 +299,33 @@ Deno.serve(async (req) => {
             }
         }
 
-        const titleSlug = slugify(dbTitle || 'image');
-        const filename = `${titleSlug}_v${(sourceImage.version || 0) + 1}_${newId.substring(0, 8)}.jpg`;
+        // 5. Determine Final Title & Naming
+        // Logic:
+        // - If it's a variation (sourceImage.version > 0), inherit the base name and increment version.
+        // - If it's a new generation, use a snippet of the prompt as title.
+
+        let dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
+        let dbTitle = dbBaseName;
+        const currentVersion = (sourceImage.version || 0) + 1;
+
+        if (sourceImage.version && sourceImage.version > 0) {
+            // Variation: Keep base name, append version
+            dbTitle = `${dbBaseName}_v${currentVersion}`;
+        } else {
+            // New Generation: Create title from prompt if simple, or use "Generation"
+            if (dbBaseName === 'Generation' || dbBaseName === 'New Generation' || !dbBaseName) {
+                const promptSnippet = prompt.substring(0, 25).trim().replace(/\s+/g, '_');
+                dbBaseName = promptSnippet || 'Image';
+                dbTitle = dbBaseName;
+            } else {
+                // Respect frontend targetTitle if it's already specific
+                dbTitle = payload.targetTitle || dbBaseName;
+                dbBaseName = dbTitle;
+            }
+        }
+
+        const titleSlug = slugify(dbBaseName);
+        const filename = `${titleSlug}_v${currentVersion}_${newId.substring(0, 8)}.jpg`;
         const filePath = `${user.id}/${subfolder}/${filename}`;
 
         const binaryData = Uint8Array.from(atob(generatedBase64), c => c.charCodeAt(0))
@@ -327,13 +336,13 @@ Deno.serve(async (req) => {
 
         if (uploadError) throw uploadError
 
-        // NEW: Get a signed URL for the newly uploaded image instead of returning huge base64
+        // NEW: Get a signed URL
         const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
             .from('user-content')
-            .createSignedUrl(filePath, 3600) // 1 hour expiry
+            .createSignedUrl(filePath, 3600)
 
         if (signedUrlError) {
-            console.warn("Failed to create signed URL, falling back to base64 (risky for 4k):", signedUrlError);
+            console.warn("Failed to create signed URL:", signedUrlError);
         }
 
         const finalUrl = signedUrlData?.signedUrl || `data:image/jpeg;base64,${generatedBase64}`;
@@ -342,52 +351,7 @@ Deno.serve(async (req) => {
         // We do NOT check for job existence anymore to avoid race conditions.
         // If the frontend cleaned up the job row, we still want to save the result so it appears on reload.
 
-        // Determine Final Title
-        // If it's a "New Generation" (no source ID or just placeholders), use the AI title.
-        // If it's a variation, keep the parent name + version, unless the user specifically asked for a rename (not implemented yet).
-        // Actually, user request: "können wir dabei noch ein titel geneieren lassen? für dateinamen?" implies they want it for new stuff.
-        let finalTitle = "";
-        if (payload.targetTitle && !payload.targetTitle.includes('Generation')) {
-            // If the frontend sent a specific target title (e.g. variation), respect it logic partially
-            // But if we have a generatedTitle and the base was generic, maybe swap?
-            // Let's stick to: New Gen = AI Title. Variation = Parent Title + vX.
-            finalTitle = payload.targetTitle;
-        } else {
-            // It's likely a new generation or the frontend sent a generic title
-            finalTitle = generatedTitle || (sourceImage.title || "Image");
-            // Cleanup if it has quotes
-            finalTitle = finalTitle.replace(/^"|"$/g, '');
-        }
-
-        // If it IS a version (payload.targetVersion > 1), we should probably append _vX to the AI title if we use it
-        // Or just stick to the requested behavior of "generating a title".
-        // Let's apply the AI title if available, otherwise fallback.
-
-        let dbTitle = generatedTitle ? generatedTitle.replace(/^"|"$/g, '') : (sourceImage.title || "Image");
-        let dbBaseName = dbTitle;
-
-        // If this is a variation (proven by newId != sourceImage.id usually, or just logic), we might want to respect the series.
-        // But for "New Generation", we definitely want the AI title.
-        if (sourceImage.version && sourceImage.version > 0) {
-            // It's a variation.
-            // If we generated a title, do we overwrite the series name? 
-            // Ideally: Series Name remains, but maybe update if it was generic?
-            // Let's keep it safe: If it's a variation, stick to the series.
-            // The user asked "can we generate a title", probably for the first one.
-            if (sourceImage.title === 'Generation' || sourceImage.title === 'New Generation') {
-                // The parent was generic, so we can adopt the new title for this child!
-                dbTitle = dbTitle + `_v${(sourceImage.version || 0) + 1}`;
-                dbBaseName = generatedTitle || dbBaseName; // Start a new series name?
-            } else {
-                // Parent had a name, keep it.
-                dbTitle = (sourceImage.title || "Image") + "_v" + ((sourceImage.version || 0) + 1);
-                dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
-            }
-        } else {
-            // It's a root generation (v1)
-            dbTitle = generatedTitle ? generatedTitle.replace(/^"|"$/g, '') : (sourceImage.title || "Image");
-            dbBaseName = dbTitle;
-        }
+        // (Namin logic moved above for filePath consistency)
 
         const newImage: any = {
             id: newId,
