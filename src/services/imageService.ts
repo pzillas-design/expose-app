@@ -299,7 +299,12 @@ export const imageService = {
         const aspectRatio = record.width / record.height;
         const normalizedWidth = aspectRatio * targetHeight;
 
-        const rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
+        let rawAnns = [];
+        try {
+            rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
+        } catch (e) {
+            console.warn(`Failed to parse annotations for image ${record.id}:`, e);
+        }
 
         // Resolve reference image paths in annotations from the provided pre-signed map
         const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
@@ -411,7 +416,12 @@ export const imageService = {
             dbImages.forEach(rec => {
                 if (rec.storage_path) allPathsToSign.add(rec.storage_path);
                 // Add reference images from annotations
-                const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
+                let rawAnns = [];
+                try {
+                    rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
+                } catch (e) {
+                    console.warn(`Failed to parse annotations for image ${rec.id} during pre-sign:`, e);
+                }
                 rawAnns.forEach((ann: any) => {
                     if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
                         allPathsToSign.add(ann.referenceImage);
@@ -435,8 +445,18 @@ export const imageService = {
                 Object.assign(signedUrlMap, optResults);
             }
 
-            // Transform records using the map
-            const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
+            // Transform records using the map - skip any that fail
+            const transformationResults = await Promise.all(
+                dbImages.map(async (rec) => {
+                    try {
+                        return await this.resolveImageRecord(rec, signedUrlMap);
+                    } catch (e) {
+                        console.error(`Failed to resolve image record ${rec.id}:`, e);
+                        return null;
+                    }
+                })
+            );
+            const transformed = transformationResults.filter((img): img is CanvasImage => img !== null);
             loadedImages.push(...transformed);
         }
 
