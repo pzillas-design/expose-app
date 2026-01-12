@@ -40,7 +40,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-14 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 -mt-px right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
