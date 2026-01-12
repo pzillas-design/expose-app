@@ -373,9 +373,24 @@ Deno.serve(async (req) => {
             generation_params: { quality: qualityMode }
         }
 
-        // 6. Insert Record
-        const { error: dbError } = await supabaseAdmin.from('canvas_images').insert(newImage)
-        if (dbError) throw dbError
+        // 6. Insert Record (Safe handling for missing jobs)
+        let dbError: any = null;
+        try {
+            const { error } = await supabaseAdmin.from('canvas_images').insert(newImage);
+            dbError = error;
+        } catch (e) {
+            dbError = e;
+        }
+
+        // Retry with job_id: null if foreign key constraint fails
+        if (dbError && dbError.message && dbError.message.includes('foreign key constraint')) {
+            console.warn(`Job ${newId} missing, saving image without job link.`);
+            newImage.job_id = null;
+            const { error: retryError } = await supabaseAdmin.from('canvas_images').insert(newImage);
+            if (retryError) throw retryError;
+        } else if (dbError) {
+            throw dbError;
+        }
 
         // 7. Update Job Status & Usage Tracking
         const usage = resultData.usageMetadata || {};
