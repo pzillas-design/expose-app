@@ -533,7 +533,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         onSaveTemplate?.(newT);
     };
 
-    const handleExitBrushMode = async () => {
+    const handleExitBrushMode = async (forceSave: boolean = false) => {
         if (!selectedImage) {
             onModeChange('prompt');
             return;
@@ -543,7 +543,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         // Basic comparison
         const hasChanges = JSON.stringify(currentAnns) !== JSON.stringify(initialAnns);
 
-        if (hasChanges) {
+        if (hasChanges && !forceSave) {
             const result = await confirm({
                 title: lang === 'de' ? 'Anmerkungen speichern?' : 'Save annotations?',
                 description: lang === 'de'
@@ -702,7 +702,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 if (isMulti) return null;
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
-                        <SubHeader title={t('annotate')} onBack={handleExitBrushMode} />
+                        <SubHeader title={t('annotate')} onBack={() => handleExitBrushMode(false)} />
                         <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
                             <BrushTab
                                 brushSize={brushSize}
@@ -732,7 +732,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                         <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} shrink-0`}>
                             <Button
                                 variant="primary"
-                                onClick={handleExitBrushMode}
+                                onClick={() => handleExitBrushMode(true)}
                                 className="w-full"
                                 icon={<Check className="w-4 h-4" />}
                             >
