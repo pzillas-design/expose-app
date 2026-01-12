@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
         }
 
         systemInstruction += `Apply the edits to the ORIGINAL image based on the user prompt${hasMask ? ', following the visual cues in the ANNOTATION image' : ''}${hasRefs ? ' and using the REFERENCE images as a basis for style or objects' : ''}. `
+        systemInstruction += "CRITICAL: Ensure the output image strictly maintains the aspect ratio of the provided ORIGINAL source image."
 
         if (hasMask) {
             systemInstruction += "CRITICAL: The generated image must NEVER include any of the text, lines, or markings shown in the ANNOTATION image. Those elements are strictly for your instructions and should be removed/replaced with realistic image content."
