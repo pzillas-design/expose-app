@@ -248,12 +248,23 @@ export const imageService = {
 
         if (error || !data?.success) {
             console.error("Edge Generation Failed:");
+            let detailedMsg = '';
+
+            // Attempt to parse body from FunctionsHttpError if available
+            if (error && (error as any).context && typeof (error as any).context.json === 'function') {
+                try {
+                    const body = await (error as any).context.json();
+                    if (body && body.error) {
+                        detailedMsg = body.error;
+                        console.error("  Edge Response Body Error:", detailedMsg);
+                    }
+                } catch (e) { /* ignore json parse fail */ }
+            }
+
             console.error("  Error object:", error);
             console.error("  Response data:", data);
-            console.error("  Status:", error?.status);
-            console.error("  Message:", error?.message || data?.error);
 
-            const errorMsg = error?.message || data?.error || "Unknown generation error";
+            const errorMsg = detailedMsg || error?.message || data?.error || "Unknown generation error";
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
             throw new Error(`${errorMsg}${statusInfo}`);
         }

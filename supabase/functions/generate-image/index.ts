@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
         // Prepare config (nested imageConfig if needed)
         const generationConfig: any = {
             imageConfig: {
-                mimeType: 'image/jpeg',
+                // mimeType: 'image/jpeg', // Invalid field for this API
                 imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K'))
             }
         }
