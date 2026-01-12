@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, Check, Settings2, Square, Circle, Minus, Type, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
@@ -436,92 +436,26 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         })
                     }
 
-                    {/* 3. ANNOTATIONS (Stamps, Masks, Shapes) - Prompt Block Design */}
-                    {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (() => {
+                    {/* 3. ANNOTATIONS SUMMARY CHIP */}
+                    {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (() => {
                         const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
-                        const maskCount = activeAnns.filter(a => a.type === 'mask_path').length;
-                        const stampCount = activeAnns.filter(a => a.type === 'stamp').length;
-                        const shapeCount = activeAnns.filter(a => a.type === 'shape').length;
-
-                        const defaultLabel = currentLang === 'de'
-                            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
-                            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+                        const count = activeAnns.length;
 
                         return (
-                            <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
-                                <div className="absolute top-2 right-2 z-10">
-                                    <button
-                                        onClick={async () => {
-                                            const result = await confirm({
-                                                title: currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?',
-                                                description: currentLang === 'de'
-                                                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
-                                                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
-                                                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
-                                                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
-                                                variant: 'danger'
-                                            });
-                                            if (result) {
-                                                onClearAnnotations(activeAnns.map(a => a.id));
-                                            }
-                                        }}
-                                        className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
-                                        title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-
-                                <div className="flex flex-col gap-3">
-                                    <div className="relative w-full pr-8">
-                                        {isEditingAnnotationLabel === 'main' ? (
-                                            <textarea
-                                                autoFocus
-                                                value={annotationLabelValue || defaultLabel}
-                                                onChange={(e) => setAnnotationLabelValue(e.target.value)}
-                                                onBlur={() => setIsEditingAnnotationLabel(null)}
-                                                onKeyDown={handleKeyDown}
-                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
-                                                onInput={(e) => {
-                                                    const target = e.target as HTMLTextAreaElement;
-                                                    target.style.height = 'auto';
-                                                    target.style.height = target.scrollHeight + 'px';
-                                                }}
-                                            />
-                                        ) : (
-                                            <div
-                                                onClick={() => {
-                                                    setAnnotationLabelValue(annotationLabelValue || defaultLabel);
-                                                    setIsEditingAnnotationLabel('main');
-                                                }}
-                                                className={`w-full ${Typo.Body} font-mono opacity-60 group-hover:opacity-90 transition-opacity cursor-text break-words whitespace-pre-wrap`}
-                                            >
-                                                {annotationLabelValue || defaultLabel}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        {maskCount > 0 && (
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
-                                                <Pen className="w-3 h-3 text-blue-500" />
-                                                <span className="text-[11px] font-mono font-bold text-zinc-500">{maskCount}</span>
-                                            </div>
-                                        )}
-                                        {stampCount > 0 && (
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
-                                                <Type className="w-3 h-3 text-blue-500" />
-                                                <span className="text-[11px] font-mono font-bold text-zinc-500">{stampCount}</span>
-                                            </div>
-                                        )}
-                                        {shapeCount > 0 && (
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100/80 dark:bg-zinc-800/50">
-                                                <Square className="w-3 h-3 text-blue-500" />
-                                                <span className="text-[11px] font-mono font-bold text-zinc-500">{shapeCount}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={onAddBrush}
+                                    className={`
+                                        flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all
+                                        bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 
+                                        border border-zinc-200 dark:border-zinc-700
+                                    `}
+                                >
+                                    <span className="font-medium">
+                                        {count} {currentLang === 'de' ? 'Anmerkungen' : 'Annotations'}
+                                    </span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                                </button>
                             </div>
                         );
                     })()}
