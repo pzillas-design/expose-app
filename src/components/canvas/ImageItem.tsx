@@ -318,12 +318,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {isSelected && zoom > 1.2 && (
                 <div className="absolute inset-0 pointer-events-none">
                     {hasLeft && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-10 top-1/2 -translate-y-1/2`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-16 top-1/2 -translate-y-1/2`}>
                             <ChevronLeft className="w-6 h-6" />
                         </button>
                     )}
                     {hasRight && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-10 top-1/2 -translate-y-1/2`}>
+                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-16 top-1/2 -translate-y-1/2`}>
                             <ChevronRight className="w-6 h-6" />
                         </button>
                     )}
