@@ -44,6 +44,25 @@ export const boardService = {
         return boardsWithImages;
     },
 
+    async getBoard(boardId: string): Promise<Board | null> {
+        const { data, error } = await supabase
+            .from('boards')
+            .select('*')
+            .eq('id', boardId)
+            .maybeSingle();
+
+        if (error || !data) return null;
+
+        return {
+            id: data.id,
+            userId: data.user_id,
+            name: data.name,
+            thumbnail: data.thumbnail,
+            createdAt: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
+            updatedAt: data.created_at ? new Date(data.created_at).getTime() : Date.now()
+        };
+    },
+
     async getBoardByName(userId: string, name: string): Promise<Board | null> {
         // Try to verify if we have a match by name
         // We use order by updated_at desc to get the most recent one if duplicates exist

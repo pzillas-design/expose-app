@@ -7,7 +7,7 @@ export const storageService = {
      * @param userId User ID
      * @returns The storage path (e.g. 'user_123/img_456.png')
      */
-    async uploadImage(imageSrc: string, userId: string, customFileName?: string): Promise<string | null> {
+    async uploadImage(imageSrc: string, userId: string, customFileName?: string, subfolder?: string): Promise<string | null> {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
@@ -22,7 +22,8 @@ export const storageService = {
 
             // 2. Generate Path
             const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
-            const filePath = `${userId}/${fileName}`;
+            const folderPath = subfolder ? `${userId}/${subfolder}` : userId;
+            const filePath = `${folderPath}/${fileName}`;
 
             // 3. Upload
             const { data, error } = await supabase.storage

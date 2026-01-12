@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { boardService } from './boardService';
+import { slugify } from '../utils/stringUtils';
 
 export const imageService = {
     /**
@@ -11,13 +12,23 @@ export const imageService = {
     async persistImage(image: CanvasImage, userId: string): Promise<{ success: boolean; error?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
+        // 1. Determine Path & Filename
         const boardId = (image as any).boardId;
+        let subfolder = boardId;
+
         if (boardId) {
             await boardService.ensureBoardExists(userId, boardId);
+            const board = await boardService.getBoard(boardId);
+            if (board) {
+                subfolder = `${slugify(board.name)}_${boardId}`;
+            }
         }
 
-        // 1. Upload Full Image (Compressed to 4K max via uploadImage)
-        const path = await storageService.uploadImage(image.src, userId);
+        const titleSlug = slugify(image.title || 'image');
+        const customFileName = `${titleSlug}_v${image.version || 1}_${image.id.substring(0, 8)}.png`;
+
+        // 2. Upload Image (Compressed to 4K max via uploadImage)
+        const path = await storageService.uploadImage(image.src, userId, customFileName, subfolder);
         if (!path) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };

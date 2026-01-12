@@ -9,6 +9,21 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
+/**
+ * Converts a string into a URL-friendly slug.
+ */
+const slugify = (text: string): string => {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')     // Replace spaces with -
+        .replace(/[^\w-]+/g, '')   // Remove all non-word chars
+        .replace(/--+/g, '-')      // Replace multiple - with single -
+        .replace(/^-+/, '')        // Trim - from start of text
+        .replace(/-+$/, '');       // Trim - from end of text
+};
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -233,7 +248,7 @@ Deno.serve(async (req) => {
         // PARALLEL: Generate a title for the image
         const titlePromise = (async () => {
             try {
-                const titleModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+                const titleModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
                 const titleResult = await titleModel.generateContent([
                     `Generate a very short, concise title (2-5 words) for an image based on this prompt: "${prompt}". Return ONLY the title text, no quotes.`
                 ])
@@ -287,8 +302,23 @@ Deno.serve(async (req) => {
 
         const generatedBase64 = imagePart.inlineData.data
 
-        // 4. Save to Storage
-        const filePath = `${user.id}/${newId}.jpg`
+        // 4. Save to Storage (Improved Path Organization)
+        let subfolder = boardId || 'unorganized';
+        if (boardId) {
+            try {
+                const { data: board } = await supabaseAdmin.from('boards').select('name').eq('id', boardId).maybeSingle();
+                if (board) {
+                    subfolder = `${slugify(board.name)}_${boardId}`;
+                }
+            } catch (e) {
+                console.warn("Failed to fetch board name for path:", e);
+            }
+        }
+
+        const titleSlug = slugify(dbTitle || 'image');
+        const filename = `${titleSlug}_v${(sourceImage.version || 0) + 1}_${newId.substring(0, 8)}.jpg`;
+        const filePath = `${user.id}/${subfolder}/${filename}`;
+
         const binaryData = Uint8Array.from(atob(generatedBase64), c => c.charCodeAt(0))
 
         const { error: uploadError } = await supabaseAdmin.storage

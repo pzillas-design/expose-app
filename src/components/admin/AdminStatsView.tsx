@@ -183,29 +183,34 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <h2 className={Typo.H1}>Kosten & Performance</h2>
                     <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard auf Basis echter Gemini-Tokens</p>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setIsPricingExpanded(!isPricingExpanded)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-                    >
-                        {isPricingExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        API Tarife
-                    </button>
-                    <button
-                        onClick={handleSyncPricing}
-                        disabled={syncingPricing}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 transition-colors disabled:opacity-50"
-                    >
-                        <RefreshCw className={`w-3 h-3 ${syncingPricing ? 'animate-spin' : ''}`} />
-                        Sync
-                    </button>
-                </div>
+                <button
+                    onClick={() => setIsPricingExpanded(!isPricingExpanded)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+                >
+                    {isPricingExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    API Tarife
+                </button>
             </div>
 
             {/* API Pricing Section (Collapsible) */}
             {isPricingExpanded && (
-                <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 animate-in slide-in-from-top duration-300">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden animate-in slide-in-from-top duration-300">
+                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">Google API Preise</h3>
+                            <p className="text-[10px] text-zinc-500 mt-0.5">Aktuelle Tarife der Gemini-Modelle</p>
+                        </div>
+                        <button
+                            onClick={handleSyncPricing}
+                            disabled={syncingPricing}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            title="Aktuelle Preise von Google API abrufen"
+                        >
+                            <RefreshCw className={`w-3 h-3 ${syncingPricing ? 'animate-spin' : ''}`} />
+                            Preise Aktualisieren
+                        </button>
+                    </div>
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {pricing.map(p => (
                             <div key={p.model_name} className="p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1">
                                 <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{p.model_name}</div>
@@ -269,7 +274,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E2E2" />
+                            <CartesianGrid strokeDasharray="0" vertical={false} stroke="#F4F4F5" className="dark:stroke-zinc-800" />
                             <XAxis
                                 dataKey="date"
                                 axisLine={false}

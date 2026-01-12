@@ -5,6 +5,7 @@ import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSyst
 import { adminService } from '@/services/adminService';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 
 interface AdminObjectsViewProps {
     t: TranslationFunction;
@@ -16,6 +17,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+    const { showToast } = useToast();
 
     // Selection State
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -119,10 +121,10 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             }
 
             setOriginalItems(JSON.parse(JSON.stringify(items)));
-            alert('Änderungen erfolgreich gespeichert!');
+            showToast('Änderungen erfolgreich gespeichert!', 'success');
         } catch (error) {
             console.error('Failed to save changes:', error);
-            alert('Fehler beim Speichern!');
+            showToast('Fehler beim Speichern!', 'error');
         } finally {
             setSaving(false);
         }
