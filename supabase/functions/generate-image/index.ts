@@ -236,10 +236,10 @@ Deno.serve(async (req) => {
         const model = genAI.getGenerativeModel({ model: finalModelName })
 
         // Prepare config (nested imageConfig if needed)
-        const generationConfig: any = {}
-        if (qualityMode !== 'fast') {
-            generationConfig.imageConfig = {
-                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : '4K')
+        const generationConfig: any = {
+            imageConfig: {
+                mimeType: 'image/jpeg',
+                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K'))
             }
         }
 

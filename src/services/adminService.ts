@@ -254,6 +254,30 @@ export const adminService = {
     },
 
     /**
+     * Update the usage count and last used timestamp for a preset
+     */
+    async updatePresetUsage(id: string): Promise<void> {
+        const { data: preset } = await supabase
+            .from('global_presets')
+            .select('usage_count')
+            .eq('id', id)
+            .single();
+
+        const { error } = await supabase
+            .from('global_presets')
+            .update({
+                usage_count: (preset?.usage_count || 0) + 1,
+                last_used: new Date().toISOString()
+            })
+            .eq('id', id);
+
+        if (error) {
+            console.error('AdminService: updatePresetUsage failed!', error);
+            throw error;
+        }
+    },
+
+    /**
      * Objects Library Management (Flat Stamps)
      */
     async getObjectCategories(): Promise<any[]> {

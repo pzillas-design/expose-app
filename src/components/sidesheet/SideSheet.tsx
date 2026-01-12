@@ -17,6 +17,7 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { PromptTab } from './PromptTab';
 import { BrushTab } from './BrushTab';
 import { ObjectsTab } from './ObjectsTab';
+import { ImageInfoModal } from './ImageInfoModal';
 
 interface SideSheetProps {
     selectedImage: CanvasImage | null;
@@ -123,6 +124,7 @@ export const SideSheet: React.FC<SideSheetProps> = ({
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
     const [activeAnnotationId, setActiveAnnotationIdInternal] = useState<string | null>(null);
     const { confirm } = useItemDialog();
+    const lastAutoOpenedId = useRef<string | null>(null);
 
     const setActiveAnnotationId = (id: string | null) => {
         setActiveAnnotationIdInternal(id);
@@ -262,6 +264,14 @@ export const SideSheet: React.FC<SideSheetProps> = ({
         }
         lastIsMultiRef.current = isMulti;
     }, [selectedImage?.id, selectedImage?.userDraftPrompt, isMulti]);
+
+    // Auto-open Info Modal on new generation
+    useEffect(() => {
+        if (selectedImage && selectedImage.isGenerating && selectedImage.id !== lastAutoOpenedId.current && !isMulti) {
+            setShowInfo(true);
+            lastAutoOpenedId.current = selectedImage.id;
+        }
+    }, [selectedImage?.isGenerating, selectedImage?.id, isMulti]);
 
     const handlePromptChange = (val: string) => {
         setPrompt(val);
@@ -494,36 +504,17 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 color: '#fff',
                 createdAt: Date.now()
             };
-        } else {
-            // Circle (Bounding Box)
-            const half = size / 2;
-            newShape = {
-                id: generateId(),
-                type: 'shape',
-                shapeType: 'circle',
-                x: cx - half,
-                y: cy - half,
-                width: size,
-                height: size,
-                rotation: 0,
-                strokeWidth: 4,
-                color: '#fff',
-                createdAt: Date.now()
-            };
         }
-
         updateAnnotationsWithHistory([...currentAnns, newShape]);
         setActiveAnnotationId(newShape.id);
+        onMaskToolChange('select');
     };
 
-    const handleGenerateWrapper = (p: string) => {
-        onGenerate(p);
+    const handleGenerateWrapper = (p?: string, dp?: string, tid?: string, vars?: Record<string, string[]>) => {
+        onGenerate(p || prompt, dp, tid, vars);
     };
 
     const handleTogglePin = (id: string) => {
-        // In the new logic, TogglePin on a system preset means Hiding it
-        // and on a user preset it might mean deleting or actual pinning.
-        // For now, let's wire it to onDeleteTemplate which handles the logic.
         onDeleteTemplate?.(id);
     };
 
@@ -640,12 +631,32 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                     icon={<InfoFilled className="w-[18px] h-[18px]" />}
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
-                                    className="text-zinc-400"
+                                    className={`transition-colors z-50 ${showInfo ? 'text-black dark:text-white' : 'text-zinc-400'}`}
                                     tooltip="Info"
                                 />
                             )}
                         </div>
                         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
+                            {/* BACKDROP for Info Modal */}
+                            {showInfo && !isMulti && (
+                                <div
+                                    className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[2px] z-30 animate-in fade-in duration-200"
+                                    onClick={() => setShowInfo(false)}
+                                />
+                            )}
+
+                            {showInfo && !isMulti && selectedImage && (
+                                <ImageInfoModal
+                                    image={selectedImage}
+                                    t={t}
+                                    onClose={() => setShowInfo(false)}
+                                    onGenerateMore={onGenerateMore}
+                                    onUpdateImageTitle={onUpdateImageTitle}
+                                    onNavigateParent={onNavigateParent}
+                                    currentLang={lang}
+                                />
+                            )}
+
                             <PromptTab
                                 prompt={prompt}
                                 setPrompt={handlePromptChange}
@@ -681,8 +692,6 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 t={t}
                                 currentLang={lang}
                                 userProfile={userProfile}
-                                showInfo={showInfo}
-                                onToggleInfo={setShowInfo}
                             />
                         </div>
                     </>

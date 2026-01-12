@@ -248,7 +248,7 @@ export const imageService = {
             originalSrc: sourceImage.src,
 
             isGenerating: false,
-            generationStartTime: undefined,
+            generationStartTime: sourceImage.generationStartTime,
             generationPrompt: prompt,
             quality: qualityMode,
             userDraftPrompt: '', // Clean prompt field for generated images
@@ -337,6 +337,7 @@ export const imageService = {
             variableValues: record.generation_params?.variableValues,
             userId: record.user_id,
             createdAt: new Date(record.created_at).getTime(),
+            generationStartTime: new Date(record.created_at).getTime(),
             updatedAt: new Date(record.updated_at).getTime()
         };
     },

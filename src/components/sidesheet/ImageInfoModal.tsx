@@ -1,0 +1,196 @@
+import React, { useState } from 'react';
+import { CanvasImage, TranslationFunction } from '@/types';
+import { Copy, RotateCcw, Download, Edit2, Check as CheckIcon, ChevronRight } from 'lucide-react';
+import { Button, IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
+import { useToast } from '@/components/ui/Toast';
+import { downloadImage } from '@/utils/imageUtils';
+
+interface ImageInfoModalProps {
+    image: CanvasImage;
+    t: TranslationFunction;
+    onClose: () => void;
+    onGenerateMore: (id: string) => void;
+    onUpdateImageTitle?: (id: string, title: string) => void;
+    onNavigateParent?: (id: string) => void;
+    currentLang: 'de' | 'en';
+}
+
+export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
+    image,
+    t,
+    onClose,
+    onGenerateMore,
+    onUpdateImageTitle,
+    onNavigateParent,
+    currentLang
+}) => {
+    const { showToast } = useToast();
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState(image.title || '');
+
+    if (!image) return null;
+
+    const handleCopyPrompt = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (image.generationPrompt) {
+            navigator.clipboard.writeText(image.generationPrompt);
+            showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
+        }
+    };
+
+    return (
+        <div
+            className="absolute top-14 right-0 left-0 z-40 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {/* The "Zipfel" (Arrow) */}
+            <div className="absolute top-2 right-[52px] w-4 h-4 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+
+            {/* Modal Body */}
+            <div className={`
+                relative bg-white dark:bg-zinc-900 
+                border border-zinc-200 dark:border-zinc-800 
+                rounded-xl shadow-2xl overflow-hidden flex flex-col gap-6 p-6
+            `}>
+                {/* 1. Header: Filename/Title (Editable Input) */}
+                <div className="flex flex-col gap-1 col-span-2 group/title">
+                    <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
+                        {t('filename')}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <input
+                            className={`
+                                flex-1 bg-transparent border-none outline-none p-0 
+                                ${Typo.Mono} text-sm text-black dark:text-white 
+                                border-b border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 
+                                transition-colors
+                            `}
+                            value={editTitleValue}
+                            onChange={(e) => {
+                                setEditTitleValue(e.target.value);
+                                onUpdateImageTitle?.(image.id, e.target.value);
+                            }}
+                            placeholder="Untitled"
+                        />
+                    </div>
+                </div>
+                {/* Prompt Section */}
+                {image.generationPrompt && (
+                    <div className="flex flex-col gap-3 group">
+                        <div className="flex items-center justify-between">
+                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                {t('tt_prompt')}
+                            </span>
+                            <IconButton
+                                icon={<Copy className="w-3.5 h-3.5" />}
+                                tooltip={t('copy')}
+                                onClick={handleCopyPrompt}
+                            />
+                        </div>
+                        <p className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar`}>
+                            {image.generationPrompt}
+                        </p>
+                    </div>
+                )}
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+
+                    {/* Resolution */}
+                    <div className="flex flex-col gap-1.5">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('resolution')}
+                        </span>
+                        <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                            {image.realWidth && image.realHeight
+                                ? `${image.realWidth} × ${image.realHeight}px`
+                                : image.quality === 'pro-4k' ? '4096 × 4096px'
+                                    : image.quality === 'pro-2k' ? '2048 × 2048px'
+                                        : '1024 × 1024px'}
+                        </span>
+                    </div>
+
+                    {/* Created At */}
+                    <div className="flex flex-col gap-1.5">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('created_at')}
+                        </span>
+                        <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                            {image.createdAt ? (() => {
+                                const d = new Date(image.createdAt);
+                                return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                            })() : '-'}
+                        </span>
+                    </div>
+
+                    {/* Model */}
+                    {image.quality && (
+                        <div className="flex flex-col gap-1.5">
+                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                {t('model')}
+                            </span>
+                            <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                                {(() => {
+                                    switch (image.quality) {
+                                        case 'pro-4k': return 'Nano Banana Pro 4K';
+                                        case 'pro-2k': return 'Nano Banana Pro 2K';
+                                        case 'pro-1k': return 'Nano Banana Pro 1K';
+                                        case 'fast': return 'Nano Banana (Fast)';
+                                        default: return image.modelVersion || 'Nano Banana';
+                                    }
+                                })()}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Original Section */}
+                    {image.parentId && (
+                        <div className="flex flex-col gap-1.5">
+                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                                {currentLang === 'de' ? 'Original' : 'Original'}
+                            </span>
+                            <div
+                                onClick={() => onNavigateParent?.(image.id)}
+                                className="flex items-center gap-1 group/orig cursor-pointer hover:opacity-80 transition-opacity"
+                            >
+                                <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs max-w-[100px] truncate underline underline-offset-4 decoration-zinc-200 dark:decoration-zinc-800`}>
+                                    {image.baseName || 'image.jpg'}
+                                </span>
+                                <ChevronRight className="w-3 h-3 text-zinc-400 group-hover/orig:translate-x-0.5 transition-transform" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    {image.parentId && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => onGenerateMore(image.id)}
+                            disabled={image.isGenerating}
+                            className="justify-start px-4 h-11 gap-3 !bg-transparent hover:!bg-zinc-50 dark:hover:!bg-zinc-800/50 border-none shadow-none"
+                        >
+                            <RotateCcw className="w-4 h-4 text-zinc-400" />
+                            <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                {t('ctx_create_variations')}
+                            </span>
+                        </Button>
+                    )}
+
+                    <Button
+                        variant="secondary"
+                        onClick={() => image.src && downloadImage(image.src, image.title || image.id)}
+                        disabled={image.isGenerating}
+                        className="justify-start px-4 h-11 gap-3 !bg-transparent hover:!bg-zinc-50 dark:hover:!bg-zinc-800/50 border-none shadow-none"
+                    >
+                        <Download className="w-4 h-4 text-zinc-400" />
+                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                            {t('tt_download')}
+                        </span>
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};

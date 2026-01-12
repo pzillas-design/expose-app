@@ -191,7 +191,7 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
-    ctx_create_variations: "Create Variations",
+    ctx_create_variations: "Retry",
     filename: "Filename",
     reference_images: "Reference Images",
 
@@ -474,7 +474,7 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
-    ctx_create_variations: "Variationen erstellen",
+    ctx_create_variations: "Erneut generieren",
     filename: "Dateiname",
     reference_images: "Referenzbilder",
 

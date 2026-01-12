@@ -56,6 +56,27 @@ export const usePresets = (userId?: string) => {
         }
     }, [userId, templates, fetchTemplates]);
 
+    const recordPresetUsage = useCallback(async (id: string) => {
+        try {
+            // Update local state for immediate feedback
+            setTemplates(prev => prev.map(t => {
+                if (t.id === id) {
+                    return {
+                        ...t,
+                        usageCount: (t.usageCount || 0) + 1,
+                        lastUsed: Date.now()
+                    };
+                }
+                return t;
+            }));
+
+            // Sync with DB
+            await adminService.updatePresetUsage(id);
+        } catch (error) {
+            console.error('Failed to record preset usage:', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchTemplates();
     }, [userId, fetchTemplates]);
@@ -65,6 +86,7 @@ export const usePresets = (userId?: string) => {
         isLoading,
         refreshTemplates: fetchTemplates,
         saveTemplate,
-        deleteTemplate
+        deleteTemplate,
+        recordPresetUsage
     };
 };

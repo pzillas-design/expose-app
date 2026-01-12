@@ -135,7 +135,7 @@ export const useNanoController = () => {
         boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
     } = useBoards(user?.id);
 
-    const { templates, refreshTemplates, saveTemplate, deleteTemplate } = usePresets(user?.id);
+    const { templates, refreshTemplates, saveTemplate, deleteTemplate, recordPresetUsage } = usePresets(user?.id);
 
     // --- Board Image Loading ---
     React.useEffect(() => {
@@ -284,6 +284,10 @@ export const useNanoController = () => {
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>
     ) => {
+        if (activeTemplateId) {
+            recordPresetUsage(activeTemplateId);
+        }
+
         if (selectedImages.length > 1) {
             selectedImages.forEach((img, index) => {
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
@@ -294,7 +298,7 @@ export const useNanoController = () => {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
-    }, [selectedImage, selectedImages, performGeneration]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -431,6 +435,7 @@ export const useNanoController = () => {
         setResolvingBoardId,
         setIsBrushResizing,
         handleCreateNew,
+        recordPresetUsage,
         refreshTemplates,
         savePreset: saveTemplate,
         setIsCanvasLoading,

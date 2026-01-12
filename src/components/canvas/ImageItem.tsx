@@ -50,7 +50,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
     }, [startTime, duration]);
 
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50 bg-white/90 dark:bg-black/50 backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50 bg-white dark:bg-zinc-950">
             <div className="w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500">
                 <div className={`flex items-end justify-between ${Typo.Label}`}>
                     <span className={`${Theme.Colors.TextPrimary}`}>{t('processing')}</span>
@@ -247,8 +247,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
 
-                    {/* Mini progress bar if we have a src (= loading from network) */}
-                    {image.src && !isImageReady && (
+                    {/* Mini progress bar - ONLY show when we are NOT in full processing mode (e.g. on board reload) */}
+                    {image.src && !isImageReady && !image.generationStartTime && (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <div className="w-24 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-300">
                                 <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
