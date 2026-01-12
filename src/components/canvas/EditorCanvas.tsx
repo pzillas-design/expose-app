@@ -411,7 +411,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 style={{ left: `${(p.x / width) * 100}%`, top: `${(p.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -448,7 +448,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -511,7 +511,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             />
                                         ))}
 
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -573,7 +573,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 if (isPointingUp) { fillArrowStyle.bottom = '100%'; fillArrowStyle.marginBottom = '-1px'; } else { fillArrowStyle.top = '100%'; fillArrowStyle.marginTop = '-1px'; }
 
                 const hasText = ann.text && ann.text.trim().length > 0;
-                const showChip = ann.type === 'stamp' || (ann.type === 'mask_path' && (isActiveItem || hasText));
+                const showChip = ann.type === 'stamp';
                 const pathString = ann.type === 'mask_path' ? ann.points?.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') : '';
 
                 return (
@@ -594,6 +594,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
+                                {isActiveItem && (
+                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
+                                        style={{ left: `${leftPct}%`, top: `${topPct}%`, transform: 'translate(10px, -30px)' }}
+                                        onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
+                                        <Trash className="w-4 h-4" />
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -603,7 +610,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 style={{ left: `${leftPct}%`, top: `${topPct}%` }}
                                 onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
                             >
-                                <div style={{ transform: finalTransform }} className="transition-transform duration-200">
+                                <div style={{ transform: finalTransform }} className={`${dragState?.id === ann.id ? '' : 'transition-transform duration-200'}`}>
                                     {isActiveItem ? (
                                         <div className={OVERLAY_STYLES.ChipContainerActive}>
                                             <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
