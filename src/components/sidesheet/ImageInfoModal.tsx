@@ -44,14 +44,19 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
-            <div className="absolute -top-1.5 right-[27px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            <div className="absolute -top-1.5 right-[32px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900 
                 border-b border-zinc-200 dark:border-zinc-800 
-                shadow-2xl overflow-hidden flex flex-col gap-8 p-6
+                rounded-b-xl shadow-2xl overflow-hidden flex flex-col gap-8 p-6
             `}>
+                {/* 0. Section Title: Info */}
+                <span className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
+                    Info
+                </span>
+
                 {/* 1. Header: Filename/Title (Editable Input) */}
                 <div className="flex flex-col gap-2 col-span-2 group/title">
                     <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
