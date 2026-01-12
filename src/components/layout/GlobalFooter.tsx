@@ -16,11 +16,11 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                     <Logo className="w-9 h-9" />
                 </div>
 
-                {/* Navigation - Single line, minimal text, no icons */}
+                {/* Navigation - Single line, minimal text, normal case */}
                 <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
                     <a
                         href="/about"
-                        className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_about')}
                     </a>
@@ -28,32 +28,32 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                         href="https://pzillas.com"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_website')}
                     </a>
                     <a
                         href="mailto:hello@expose.ae"
-                        className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_contact')}
                     </a>
                     <a
                         href="/legal"
-                        className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_legal')}
                     </a>
                     <a
                         href="/privacy"
-                        className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_privacy')}
                     </a>
                 </nav>
 
-                {/* Copyright - Very subtle */}
-                <p className="text-[10px] font-bold text-zinc-300 dark:text-zinc-800 tracking-[0.2em] uppercase">
+                {/* Copyright - Subtle normal case */}
+                <p className="text-[11px] font-medium text-zinc-300 dark:text-zinc-800 tracking-wide">
                     &copy; 2026 Exposé
                 </p>
             </div>
