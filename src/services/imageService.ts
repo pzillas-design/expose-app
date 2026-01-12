@@ -95,6 +95,11 @@ export const imageService = {
             dbUpdates.generation_params = params;
         }
 
+        if (updates.width !== undefined) dbUpdates.width = updates.width;
+        if (updates.height !== undefined) dbUpdates.height = updates.height;
+        if (updates.realWidth !== undefined) dbUpdates.real_width = updates.realWidth;
+        if (updates.realHeight !== undefined) dbUpdates.real_height = updates.realHeight;
+
         // Only proceed if there are actual updates
         if (Object.keys(dbUpdates).length === 0) return;
 
@@ -458,7 +463,7 @@ export const imageService = {
 
             const skeleton: CanvasImage = {
                 id: job.id,
-                src: '', // No image yet
+                src: parent?.src || '', // Use parent image as placeholder if available
                 storage_path: '',
                 width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
                 height: 512,

@@ -299,12 +299,35 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     }, [selectedImage?.id, selectedImage?.userDraftPrompt, isMulti]);
 
     // Auto-open Info Modal on new generation
+    // Verify auto-open logic
     useEffect(() => {
         if (selectedImage && selectedImage.isGenerating && selectedImage.id !== lastAutoOpenedId.current && !isMulti) {
             setShowInfo(true);
             lastAutoOpenedId.current = selectedImage.id;
         }
     }, [selectedImage?.isGenerating, selectedImage?.id, isMulti]);
+
+    // NEW: Global click listener to close Info Modal on outside interaction
+    useEffect(() => {
+        if (!showInfo) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            const modal = document.getElementById('info-modal-container');
+            const headerInfoButton = document.getElementById('header-info-button');
+
+            // Allow clicks inside the modal OR on the toggle button itself
+            if (modal && !modal.contains(event.target as Node) &&
+                headerInfoButton && !headerInfoButton.contains(event.target as Node)) {
+                setShowInfo(false);
+            }
+        };
+
+        // Use mousedown to catch clicks before other handlers might stop propagation
+        window.addEventListener('mousedown', handleClickOutside, true);
+        return () => {
+            window.removeEventListener('mousedown', handleClickOutside, true);
+        };
+    }, [showInfo]);
 
     const handlePromptChange = (val: string) => {
         setPrompt(val);
@@ -684,6 +707,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                             {!isMulti && (
                                 <IconButton
+                                    id="header-info-button"
                                     icon={<InfoFilled className="w-[18px] h-[18px]" />}
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
@@ -702,15 +726,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                         )}
 
                         {showInfo && !isMulti && selectedImage && (
-                            <ImageInfoModal
-                                image={selectedImage}
-                                t={t}
-                                onClose={() => setShowInfo(false)}
-                                onGenerateMore={onGenerateMore}
-                                onUpdateImageTitle={onUpdateImageTitle}
-                                onNavigateParent={onNavigateParent}
-                                currentLang={lang}
-                            />
+                            <div id="info-modal-container" className="contents">
+                                <ImageInfoModal
+                                    image={selectedImage}
+                                    t={t}
+                                    onClose={() => setShowInfo(false)}
+                                    onGenerateMore={onGenerateMore}
+                                    onUpdateImageTitle={onUpdateImageTitle}
+                                    onNavigateParent={onNavigateParent}
+                                    currentLang={lang}
+                                />
+                            </div>
                         )}
 
                         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>

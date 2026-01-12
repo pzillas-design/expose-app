@@ -142,7 +142,11 @@ export const useGeneration = ({
 
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
 
-        const baseName = sourceImage.baseName || sourceImage.title;
+        // CLEAN baseName: Remove any existing version suffix to group siblings correctly
+        // e.g. "Puppy_v2" -> "Puppy". This ensures v2 finds "Puppy" (v1) and correctly increments to v3.
+        const rawBaseName = sourceImage.baseName || sourceImage.title || 'Image';
+        const baseName = rawBaseName.replace(/_v\d+$/, '');
+
         const newId = generateId();
 
         // Debug: Upload mask to storage so user can inspect it later

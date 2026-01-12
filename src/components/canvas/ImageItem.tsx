@@ -34,10 +34,15 @@ interface ImageItemProps {
     t: TranslationFunction;
 }
 
-const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
+const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, isFinished?: boolean, t: TranslationFunction }> = ({ startTime, duration, isFinished, t }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
+        if (isFinished) {
+            setProgress(100);
+            return;
+        }
+
         const start = startTime || Date.now();
         const update = () => {
             const now = Date.now();
@@ -49,16 +54,22 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
         const interval = setInterval(update, 30);
         update();
         return () => clearInterval(interval);
-    }, [startTime, duration]);
+    }, [startTime, duration, isFinished]);
 
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50 bg-white dark:bg-zinc-950">
-            <div className="w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50">
+            {/* Backdrop - only opaque if not finished to allow seeing the result pop in, or if no bg image */}
+            <div className={`absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-300 ${isFinished ? 'opacity-0' : 'opacity-100'}`} />
+
+            <div className="relative w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500 z-10">
                 <div className={`flex items-end justify-between ${Typo.Label}`}>
-                    <span className={`${Theme.Colors.TextPrimary}`}>{t('processing')}</span>
+                    <span className={`${Theme.Colors.TextPrimary} drop-shadow-md`}>{isFinished ? t('finishing') : t('processing')}</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-200 dark:bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-zinc-900 dark:bg-white transition-all duration-75 ease-linear" style={{ width: `${progress}%` }} />
+                <div className="h-0.5 w-full bg-zinc-200/50 dark:bg-white/20 rounded-full overflow-hidden shadow-sm">
+                    <div
+                        className="h-full bg-zinc-900 dark:bg-white transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    />
                 </div>
             </div>
         </div>
@@ -244,23 +255,15 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
                 style={{ height: finalHeight, width: finalWidth }}
             >
-                {/* Loading Skeleton - stays visible until image is ACTUALLY loaded */}
+                {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
-                    className={`absolute inset-0 bg-zinc-100 dark:bg-zinc-800 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    className={`absolute inset-0 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
-                    {/* Shimmer effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-white/10 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
+                    {/* Background: Opaque if no src (fresh gen), semi-transparent if src exists (variation) */}
+                    <div className={`absolute inset-0 ${image.src ? 'bg-white/30 dark:bg-black/30 backdrop-blur-[2px]' : 'bg-zinc-100 dark:bg-zinc-800'}`} />
 
-                    {/* Mini progress bar - ONLY show when we are NOT in full processing mode (e.g. on board reload) */}
-                    {image.src && !isImageReady && !image.generationStartTime && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-24 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-300">
-                                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                    <div className="h-full bg-zinc-400 dark:bg-zinc-500 rounded-full animate-[loading-bar_1.5s_ease-in-out_infinite]" style={{ width: '40%' }} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                 </div>
 
                 <div className="absolute inset-0 z-10">
@@ -306,6 +309,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
                         duration={image.estimatedDuration || getDurationForQuality(image.quality)}
+                        isFinished={!image.isGenerating}
                         t={t}
                     />
                 )}
