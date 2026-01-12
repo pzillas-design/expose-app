@@ -636,26 +636,28 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                                 />
                             )}
                         </div>
-                        <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
-                            {/* BACKDROP for Info Modal */}
-                            {showInfo && !isMulti && (
-                                <div
-                                    className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[2px] z-30 animate-in fade-in duration-200"
-                                    onClick={() => setShowInfo(false)}
-                                />
-                            )}
 
-                            {showInfo && !isMulti && selectedImage && (
-                                <ImageInfoModal
-                                    image={selectedImage}
-                                    t={t}
-                                    onClose={() => setShowInfo(false)}
-                                    onGenerateMore={onGenerateMore}
-                                    onUpdateImageTitle={onUpdateImageTitle}
-                                    onNavigateParent={onNavigateParent}
-                                    currentLang={lang}
-                                />
-                            )}
+                        {/* BACKDROP for Info Modal - Covers the whole content area but below header z-index */}
+                        {showInfo && !isMulti && (
+                            <div
+                                className="absolute inset-x-0 bottom-0 top-14 bg-white/40 dark:bg-black/40 backdrop-blur-[2px] z-30 animate-in fade-in duration-200"
+                                onClick={() => setShowInfo(false)}
+                            />
+                        )}
+
+                        {showInfo && !isMulti && selectedImage && (
+                            <ImageInfoModal
+                                image={selectedImage}
+                                t={t}
+                                onClose={() => setShowInfo(false)}
+                                onGenerateMore={onGenerateMore}
+                                onUpdateImageTitle={onUpdateImageTitle}
+                                onNavigateParent={onNavigateParent}
+                                currentLang={lang}
+                            />
+                        )}
+
+                        <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
 
                             <PromptTab
                                 prompt={prompt}

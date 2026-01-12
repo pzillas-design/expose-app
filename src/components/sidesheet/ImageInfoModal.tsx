@@ -40,29 +40,32 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-14 right-0 left-0 z-40 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-0 right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
-            {/* The "Zipfel" (Arrow) */}
-            <div className="absolute top-2 right-[52px] w-4 h-4 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
+            <div className="absolute -top-1.5 right-[24px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900 
-                border border-zinc-200 dark:border-zinc-800 
-                rounded-xl shadow-2xl overflow-hidden flex flex-col gap-6 p-6
+                border-b border-zinc-200 dark:border-zinc-800 
+                shadow-2xl overflow-hidden flex flex-col gap-6 p-6
             `}>
                 {/* 1. Header: Filename/Title (Editable Input) */}
-                <div className="flex flex-col gap-1 col-span-2 group/title">
-                    <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
+                <div className="flex flex-col gap-2 col-span-2 group/title">
+                    <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
                         {t('filename')}
                     </span>
                     <div className="flex items-center gap-2">
                         <input
                             className={`
-                                flex-1 bg-transparent border-none outline-none p-0 
+                                flex-1 bg-zinc-50 dark:bg-zinc-800/50 
+                                border border-zinc-200 dark:border-zinc-700 
+                                rounded-lg px-3 py-2
+                                outline-none 
                                 ${Typo.Mono} text-sm text-black dark:text-white 
-                                border-b border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 
+                                focus:border-zinc-400 dark:focus:border-zinc-500
                                 transition-colors
                             `}
                             value={editTitleValue}
@@ -163,13 +166,13 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="flex flex-col gap-2 pt-2">
                     {image.parentId && (
                         <Button
                             variant="secondary"
                             onClick={() => onGenerateMore(image.id)}
                             disabled={image.isGenerating}
-                            className="justify-start px-4 h-11 gap-3 !bg-transparent hover:!bg-zinc-50 dark:hover:!bg-zinc-800/50 border-none shadow-none"
+                            className="justify-start px-4 h-11 gap-3 shadow-none"
                         >
                             <RotateCcw className="w-4 h-4 text-zinc-400" />
                             <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
@@ -182,7 +185,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         variant="secondary"
                         onClick={() => image.src && downloadImage(image.src, image.title || image.id)}
                         disabled={image.isGenerating}
-                        className="justify-start px-4 h-11 gap-3 !bg-transparent hover:!bg-zinc-50 dark:hover:!bg-zinc-800/50 border-none shadow-none"
+                        className="justify-start px-4 h-11 gap-3 shadow-none"
                     >
                         <Download className="w-4 h-4 text-zinc-400" />
                         <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
