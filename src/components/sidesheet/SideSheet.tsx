@@ -470,7 +470,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         };
 
         updateAnnotationsWithHistory([...currentAnns, newAnn]);
-        setActiveAnnotationId(newAnn.id);
         onMaskToolChange('select');
     };
 

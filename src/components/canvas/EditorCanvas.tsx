@@ -411,7 +411,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 style={{ left: `${(p.x / width) * 100}%`, top: `${(p.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -448,7 +448,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -511,7 +511,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             />
                                         ))}
 
-                                        <button className="absolute p-2 bg-red-500 rounded-full text-white shadow-xl pointer-events-auto hover:bg-red-600 transition-colors z-[60]"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-all z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -531,160 +531,147 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     leftPct = (ann.x / width) * 100;
                     topPct = (ann.y / height) * 100;
                 } else if (ann.type === 'mask_path') {
-                    // Logic from main: calculate bounding box top-left for mask chips
                     let minX = Infinity, minY = Infinity;
                     if (!ann.points || ann.points.length === 0) return null;
                     ann.points.forEach(p => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
                     leftPct = (minX / width) * 100;
                     topPct = (minY / height) * 100;
                     isTopEdge = (minY / height) < 0.1;
-
-                    // If it's a mask_path but NOT active and has no text, don't show a chip (clean UI)
-                    if (!isActiveItem && (!ann.text || ann.text.trim() === '')) return null;
                 }
 
-                // Determine horizontal alignment based on edge proximity
+                // Determine horizontal alignment
                 let horizontalAlign: 'left' | 'center' | 'right' = 'center';
                 if (leftPct < 15) horizontalAlign = 'left';
                 else if (leftPct > 85) horizontalAlign = 'right';
 
-                // Calculate Transform based on alignment
-                let containerTransform = 'translate(-50%, 0)'; // Default Center
+                // Calculate Transform
+                let containerTransform = 'translate(-50%, 0)';
                 if (horizontalAlign === 'left') containerTransform = 'translate(-10px, 0)';
                 if (horizontalAlign === 'right') containerTransform = 'translate(calc(-100% + 10px), 0)';
 
                 // Vertical Shift
-                const verticalShift = isTopEdge
-                    ? 'translateY(12px)' // Push down if too high
-                    : 'translateY(calc(-100% - 12px))'; // Default above
+                const verticalShift = isTopEdge ? 'translateY(12px)' : 'translateY(calc(-100% - 12px))';
 
                 // Merge transforms
                 const finalTransform = ann.type === 'stamp'
-                    ? `${containerTransform} translateY(-50%)` // Stamp centers vertically
+                    ? `${containerTransform} translateY(-50%)`
                     : `${containerTransform} ${verticalShift}`;
 
-                // --- Double Arrow Logic for Border ---
+                // Arrow Logic
                 const isPointingUp = isTopEdge;
-
-                // Base position for both arrows
                 const arrowBaseStyle: React.CSSProperties = {};
                 if (horizontalAlign === 'left') arrowBaseStyle.left = '10px';
                 else if (horizontalAlign === 'right') arrowBaseStyle.right = '10px';
                 else { arrowBaseStyle.left = '50%'; arrowBaseStyle.transform = 'translateX(-50%)'; }
 
-                // 1. Outer Arrow (Border Color)
-                const borderArrowClass = isPointingUp
-                    ? "border-b-zinc-200 dark:border-b-zinc-800"
-                    : "border-t-zinc-200 dark:border-t-zinc-800";
-
+                const borderArrowClass = isPointingUp ? "border-b-zinc-200 dark:border-b-zinc-800" : "border-t-zinc-200 dark:border-t-zinc-800";
                 const borderArrowStyle = { ...arrowBaseStyle };
-                if (isPointingUp) borderArrowStyle.bottom = '100%';
-                else borderArrowStyle.top = '100%';
+                if (isPointingUp) borderArrowStyle.bottom = '100%'; else borderArrowStyle.top = '100%';
 
-                // 2. Inner Arrow (Fill Color - White in Light Mode)
-                const fillArrowClass = isPointingUp
-                    ? "border-b-white dark:border-b-zinc-900"
-                    : "border-t-white dark:border-t-zinc-900";
-
+                const fillArrowClass = isPointingUp ? "border-b-white dark:border-b-zinc-900" : "border-t-white dark:border-t-zinc-900";
                 const fillArrowStyle = { ...arrowBaseStyle };
-                if (isPointingUp) {
-                    fillArrowStyle.bottom = '100%';
-                    fillArrowStyle.marginBottom = '-1px'; // Shift inwards
-                } else {
-                    fillArrowStyle.top = '100%';
-                    fillArrowStyle.marginTop = '-1px'; // Shift inwards
-                }
+                if (isPointingUp) { fillArrowStyle.bottom = '100%'; fillArrowStyle.marginBottom = '-1px'; } else { fillArrowStyle.top = '100%'; fillArrowStyle.marginTop = '-1px'; }
 
                 const hasText = ann.text && ann.text.trim().length > 0;
-                const isInitial = !hasText; // Proxy for initial creation state
+                const showChip = ann.type === 'stamp' || (ann.type === 'mask_path' && (isActiveItem || hasText));
+                const pathString = ann.type === 'mask_path' ? ann.points?.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') : '';
 
                 return (
-                    <div
-                        key={ann.id}
-                        className={`absolute annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`}
-                        style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                        onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
-                    >
-                        <div style={{ transform: finalTransform }} className="transition-transform duration-200">
-                            {isActiveItem ? (
-                                <div className={OVERLAY_STYLES.ChipContainerActive}>
-                                    {/* Double Arrow */}
-                                    <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
-                                    <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-
-                                    {/* Ref Image */}
-                                    {ann.referenceImage && (
-                                        <div className={OVERLAY_STYLES.RefThumb}>
-                                            <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
-                                        </div>
-                                    )}
-
-                                    <input
-                                        value={ann.text || ''}
-                                        onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                        placeholder={t ? t('describe_changes') : "Describe..."}
-                                        className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
-                                        autoFocus
-                                        onMouseDown={(e) => e.stopPropagation()}
+                    <React.Fragment key={ann.id}>
+                        {ann.type === 'mask_path' && (
+                            <div className={`absolute inset-0 pointer-events-none ${isActiveItem ? 'z-50' : 'z-10'}`}>
+                                <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
+                                    <path
+                                        d={pathString}
+                                        fill="none"
+                                        stroke="transparent"
+                                        strokeWidth={Math.max(20, (ann as any).strokeWidth || 40)}
+                                        className="pointer-events-auto cursor-move"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMaskId(ann.id);
+                                            startDrag(e, ann.id, 'move', ann);
+                                        }}
                                     />
+                                </svg>
+                            </div>
+                        )}
 
-                                    {/* Save/Done Button */}
-                                    <Tooltip text="Save">
-                                        <button
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }}
-                                            className={OVERLAY_STYLES.SaveBtn}
+                        {showChip && (
+                            <div
+                                className={`absolute annotation-ui ${isActiveItem ? 'z-[60]' : 'z-20'}`}
+                                style={{ left: `${leftPct}%`, top: `${topPct}%` }}
+                                onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                            >
+                                <div style={{ transform: finalTransform }} className="transition-transform duration-200">
+                                    {isActiveItem ? (
+                                        <div className={OVERLAY_STYLES.ChipContainerActive}>
+                                            <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
+                                            <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
+                                            {ann.referenceImage && (
+                                                <div className={OVERLAY_STYLES.RefThumb}>
+                                                    <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
+                                                </div>
+                                            )}
+                                            <input
+                                                value={ann.text || ''}
+                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
+                                                placeholder={t ? t('describe_changes') : "Describe..."}
+                                                className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
+                                                autoFocus
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                            />
+                                            <Tooltip text="Save">
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }}
+                                                    className={OVERLAY_STYLES.SaveBtn}
+                                                >
+                                                    <Check className="w-3 h-3" />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move hover:scale-105 group/chip`}
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                startDrag(e, ann.id, 'move', ann);
+                                            }}
                                         >
-                                            <Check className="w-3 h-3" />
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                            ) : (
-                                <div
-                                    className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move hover:scale-105 group/chip`}
-                                    onMouseDown={(e) => {
-                                        e.stopPropagation();
-                                        // Support move on chip
-                                        startDrag(e, ann.id, 'move', ann);
-                                    }}
-                                >
-                                    {/* Double Arrow */}
-                                    <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
-                                    <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
-
-                                    {ann.referenceImage && (
-                                        <div className="relative shrink-0 w-6 h-6 mr-1.5">
-                                            <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
+                                            <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
+                                            <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
+                                            {ann.referenceImage && (
+                                                <div className="relative shrink-0 w-6 h-6 mr-1.5">
+                                                    <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
+                                                </div>
+                                            )}
+                                            <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>
+                                                {ann.text || (t ? t('untitled') : "Edit")}
+                                            </span>
+                                            <div className="flex items-center gap-0.5">
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
+                                                    className={`${OVERLAY_STYLES.ActionBtn} opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
+                                                >
+                                                    <Pen className="w-3 h-3" />
+                                                </button>
+                                                <button
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                                    className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
-
-                                    <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>
-                                        {ann.text || (t ? t('untitled') : "Edit")}
-                                    </span>
-
-                                    {/* Hover actions: Edit & Delete */}
-                                    <div className="flex items-center gap-0.5">
-                                        <button
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
-                                            className={`${OVERLAY_STYLES.ActionBtn} opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
-                                        >
-                                            <Pen className="w-3 h-3" />
-                                        </button>
-
-                                        <button
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
+                        )}
+                    </React.Fragment>
                 );
             })}
         </div>
