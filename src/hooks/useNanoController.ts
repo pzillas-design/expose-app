@@ -160,6 +160,23 @@ export const useNanoController = () => {
                 setRows(loadedRows);
                 setIsCanvasLoading(false);
 
+                // Step 2: Background Fetch Annotations (Lazy Load)
+                // This ensures the board is interactive even if JSON data is huge
+                const imageIds = loadedRows.flatMap(r => r.items).map(i => i.id);
+                if (imageIds.length > 0) {
+                    imageService.loadAnnotationsForImages(imageIds).then(annotationMap => {
+                        if (Object.keys(annotationMap).length > 0) {
+                            setRows(prev => prev.map(row => ({
+                                ...row,
+                                items: row.items.map(item => ({
+                                    ...item,
+                                    annotations: annotationMap[item.id] || item.annotations
+                                }))
+                            })));
+                        }
+                    });
+                }
+
                 // Auto-select newest image if nothing is selected
                 const allLoaded = loadedRows.flatMap(r => r.items);
                 if (allLoaded.length > 0 && selectedIds.length === 0) {

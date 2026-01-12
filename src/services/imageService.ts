@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { storageService } from './storageService';
-import { CanvasImage, ImageRow } from '../types';
+import { CanvasImage, ImageRow, AnnotationObject } from '../types';
 import { boardService } from './boardService';
 import { slugify } from '../utils/stringUtils';
 
@@ -153,6 +153,58 @@ export const imageService = {
     },
 
     /**
+     * Fetch annotations for a set of image IDs.
+     * This is used for lazy-loading heavy data after the board metadata has loaded.
+     */
+    async loadAnnotationsForImages(imageIds: string[]): Promise<Record<string, AnnotationObject[]>> {
+        if (imageIds.length === 0) return {};
+
+        const { data, error } = await supabase
+            .from('canvas_images')
+            .select('id, annotations')
+            .in('id', imageIds);
+
+        if (error) {
+            console.error("Failed to load annotations:", error);
+            return {};
+        }
+
+        const result: Record<string, AnnotationObject[]> = {};
+        for (const rec of (data || [])) {
+            let anns: AnnotationObject[] = [];
+            try {
+                anns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
+            } catch (e) {
+                console.warn(`Failed to parse annotations for image ${rec.id}:`, e);
+            }
+            result[rec.id] = anns;
+        }
+
+        // Also pre-sign any reference images found in these annotations
+        const allPathsToSign = new Set<string>();
+        Object.values(result).flat().forEach((ann: any) => {
+            if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
+                allPathsToSign.add(ann.referenceImage);
+            }
+        });
+
+        if (allPathsToSign.size > 0) {
+            const signedUrls = await storageService.getSignedUrls(Array.from(allPathsToSign));
+            // Update the annotations with signed URLs
+            for (const imgId in result) {
+                result[imgId] = result[imgId].map((ann: any) => {
+                    if (ann.referenceImage && signedUrls[ann.referenceImage]) {
+                        return { ...ann, referenceImage: signedUrls[ann.referenceImage] };
+                    }
+                    return ann;
+                });
+            }
+        }
+
+        return result;
+    },
+
+    /**
      * Handles the complex step of generating an image and returning the final CanvasImage object.
      * NOW: Offloaded to Supabase Edge Function for persistence.
      */
@@ -277,8 +329,10 @@ export const imageService = {
     /**
      * Resolves a single DB record into a CanvasImage object.
      * Uses pre-signed URLs if provided to avoid sequential network requests.
+     * Note: This method now expects 'annotations' to be fetched separately and passed in,
+     * or it will default to an empty array.
      */
-    async resolveImageRecord(record: any, preSignedUrls: Record<string, string> = {}): Promise<CanvasImage> {
+    async resolveImageRecord(record: any, preSignedUrls: Record<string, string> = {}, annotations: AnnotationObject[] = []): Promise<CanvasImage> {
         let signedUrl = preSignedUrls[record.storage_path];
 
         // AUTO-SIGN FALLBACK: If URL is missing (e.g. newly generated), fetch it now
@@ -299,24 +353,9 @@ export const imageService = {
         const aspectRatio = record.width / record.height;
         const normalizedWidth = aspectRatio * targetHeight;
 
-        let rawAnns = [];
-        try {
-            rawAnns = record.annotations ? (typeof record.annotations === 'string' ? JSON.parse(record.annotations) : record.annotations) : [];
-        } catch (e) {
-            console.warn(`Failed to parse annotations for image ${record.id}:`, e);
-        }
-
-        // Resolve reference image paths in annotations from the provided pre-signed map
-        const resolvedAnns = await Promise.all(rawAnns.map(async (ann: any) => {
-            if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                let resolvedUrl = preSignedUrls[ann.referenceImage];
-                if (!resolvedUrl) {
-                    resolvedUrl = await storageService.getSignedUrl(ann.referenceImage);
-                }
-                return { ...ann, referenceImage: resolvedUrl || ann.referenceImage };
-            }
-            return ann;
-        }));
+        // Annotations are now passed in or default to empty
+        // The logic for resolving reference image paths in annotations is now handled in loadAnnotationsForImages
+        const resolvedAnns = annotations;
 
         return {
             id: record.id,
@@ -355,10 +394,14 @@ export const imageService = {
         console.log(`[DEBUG] loadUserImages: boardId=${boardId}, userId=${userId}`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
+        // Step 1: Fetch Metadata only (Exclude heavy JSONB 'annotations')
+        // This prevents 'Statement Timeout' on large boards
+        const metaColumns = 'id, user_id, board_id, storage_path, width, height, real_width, real_height, model_version, title, base_name, version, prompt, user_draft_prompt, parent_id, created_at, updated_at, generation_params';
+
         // 1. Get Completed Images & Active Jobs in parallel
         let imgsQuery = supabase
             .from('canvas_images')
-            .select('*')
+            .select(metaColumns)
             .eq('user_id', userId);
 
         if (boardId) {
@@ -384,13 +427,14 @@ export const imageService = {
 
         if (imgsRes.error) {
             console.error('Deep Sync: Load Images Failed:', imgsRes.error);
-            return [];
+            throw imgsRes.error;
         }
 
         const dbImages = imgsRes.data || [];
+        const dbJobs = jobsRes.data || [];
 
         // 1.5. Clean up and filter stale jobs (older than 6 minutes)
-        let rawJobs = jobsRes.data || [];
+        let rawJobs = dbJobs || [];
 
         const sixMinutesAgo = Date.now() - (6 * 60 * 1000);
 
@@ -411,22 +455,10 @@ export const imageService = {
         const loadedImages: CanvasImage[] = [];
 
         if (dbImages.length > 0) {
-            // Collect ALL paths that need signing
+            // Collect ALL storage_path that need signing
             const allPathsToSign = new Set<string>();
             dbImages.forEach(rec => {
                 if (rec.storage_path) allPathsToSign.add(rec.storage_path);
-                // Add reference images from annotations
-                let rawAnns = [];
-                try {
-                    rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
-                } catch (e) {
-                    console.warn(`Failed to parse annotations for image ${rec.id} during pre-sign:`, e);
-                }
-                rawAnns.forEach((ann: any) => {
-                    if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                        allPathsToSign.add(ann.referenceImage);
-                    }
-                });
             });
 
             // Batch sign 100 paths at a time
@@ -445,7 +477,7 @@ export const imageService = {
                 Object.assign(signedUrlMap, optResults);
             }
 
-            // Transform records using the map - skip any that fail
+            // Transform records using the map - annotations will be empty for now
             const transformationResults = await Promise.all(
                 dbImages.map(async (rec) => {
                     try {
