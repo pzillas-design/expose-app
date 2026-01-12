@@ -66,11 +66,17 @@ export const useCanvasNavigation = ({
         const targetScrollX = targetScroll?.x ?? startScrollX;
         const targetScrollY = targetScroll?.y ?? startScrollY;
 
-        // For pivot-based zoom (no targetScroll), calculate the content point that stays centered
-        let contentX = 0, contentY = 0;
-        if (!useDirectInterpolation) {
-            contentX = (startScrollX + centerX - padX) / startZoom;
-            contentY = (startScrollY + centerY - padY) / startZoom;
+        // Calculate Content Center Points for Interpolation
+        // Formula: ContentX = (ScrollLeft + ViewportCenter - PadX) / Zoom
+        const startContentX = (startScrollX + centerX - padX) / startZoom;
+        const startContentY = (startScrollY + centerY - padY) / startZoom;
+
+        let targetContentX = startContentX;
+        let targetContentY = startContentY;
+
+        if (useDirectInterpolation) {
+            targetContentX = (targetScrollX + centerX - padX) / clampedTargetZoom;
+            targetContentY = (targetScrollY + centerY - padY) / clampedTargetZoom;
         }
 
         const startTime = performance.now();
@@ -86,18 +92,13 @@ export const useCanvasNavigation = ({
                 : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
+            const nextContentX = startContentX + (targetContentX - startContentX) * ease;
+            const nextContentY = startContentY + (targetContentY - startContentY) * ease;
 
-            let nextScrollX: number, nextScrollY: number;
-
-            if (useDirectInterpolation) {
-                // Direct interpolation of both zoom and scroll
-                nextScrollX = startScrollX + (targetScrollX - startScrollX) * ease;
-                nextScrollY = startScrollY + (targetScrollY - startScrollY) * ease;
-            } else {
-                // Pivot-based: keep content point centered
-                nextScrollX = (padX + (contentX * nextZoom)) - centerX;
-                nextScrollY = (padY + (contentY * nextZoom)) - centerY;
-            }
+            // Back-calculate Scroll Position from interpolated Content Center and Zoom
+            // ScrollLeft = (ContentX * Zoom) + PadX - ViewportCenter
+            const nextScrollX = (padX + (nextContentX * nextZoom)) - centerX;
+            const nextScrollY = (padY + (nextContentY * nextZoom)) - centerY;
 
             setZoom(nextZoom);
             container.scrollLeft = nextScrollX;
