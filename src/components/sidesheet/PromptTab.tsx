@@ -54,8 +54,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [editEmojiValue, setEditEmojiValue] = useState('');
     const { showToast } = useToast();
     const [menuId, setMenuId] = useState<string | null>(null);
-    const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(null);
-    const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
+    const [activeTemplate, setActiveTemplate] = useState<PromptTemplate | null>(() => {
+        if (selectedImage?.activeTemplateId) {
+            return templates.find(t => t.id === selectedImage.activeTemplateId) || null;
+        }
+        return null;
+    });
+    const [controlValues, setControlValues] = useState<Record<string, string[]>>(selectedImage?.variableValues || {});
     const [hiddenControlIds, setHiddenControlIds] = useState<string[]>([]);
 
     const [isPresetModalOpen, setIsPresetModalOpen] = useState(false);
