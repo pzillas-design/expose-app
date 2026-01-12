@@ -49,16 +49,33 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900 
-                border-b border-zinc-200 dark:border-zinc-800 
-                rounded-b-xl shadow-2xl overflow-hidden flex flex-col gap-8 p-6
+                border border-zinc-200 dark:border-zinc-800 
+                rounded-xl shadow-2xl overflow-hidden flex flex-col gap-8 p-6
             `}>
                 {/* 0. Section Title: Info */}
                 <span className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
                     Info
                 </span>
 
-                {/* 1. Header: Filename/Title (Editable Input) */}
-                <div className="flex flex-col gap-2 col-span-2 group/title">
+                {/* 1. Prompt Section */}
+                {image.generationPrompt && (
+                    <div className="flex flex-col gap-1.5 group">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('tt_prompt')}
+                        </span>
+                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
+                            <p
+                                onClick={handleCopyPrompt}
+                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
+                            >
+                                {image.generationPrompt}
+                            </p>
+                        </Tooltip>
+                    </div>
+                )}
+
+                {/* 2. Filename/Title (Editable Input) */}
+                <div className="flex flex-col gap-1.5 col-span-2 group/title">
                     <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
                         {t('filename')}
                     </span>
@@ -82,24 +99,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         />
                     </div>
                 </div>
-                {/* Prompt Section */}
-                {image.generationPrompt && (
-                    <div className="flex flex-col gap-4 group">
-                        <div className="flex items-center justify-between">
-                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                {t('tt_prompt')}
-                            </span>
-                            <IconButton
-                                icon={<Copy className="w-3.5 h-3.5" />}
-                                tooltip={t('copy')}
-                                onClick={handleCopyPrompt}
-                            />
-                        </div>
-                        <p className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar`}>
-                            {image.generationPrompt}
-                        </p>
-                    </div>
-                )}
 
                 {/* Metadata Grid */}
                 <div className="grid grid-cols-2 gap-x-8 gap-y-8">
