@@ -512,10 +512,10 @@ export const SideSheet: React.FC<SideSheetProps> = ({
                 id: generateId(),
                 type: 'shape',
                 shapeType: 'circle',
-                points: [
-                    { x, y },
-                    { x: x + size, y: y + size }
-                ],
+                x, y,
+                width: size,
+                height: size,
+                points: [], // Not used for circles in this renderer
                 strokeWidth: 4,
                 color: '#fff',
                 createdAt: Date.now()

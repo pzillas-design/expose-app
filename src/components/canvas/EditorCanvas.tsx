@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnnotationObject, TranslationFunction } from '@/types';
 import { X, Check, Pen, Trash, RotateCw } from 'lucide-react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import { Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { generateId } from '@/utils/ids';
 
 export interface EditorCanvasProps {
@@ -25,6 +25,20 @@ export interface EditorCanvasProps {
 }
 
 const RES_SCALE = 3;
+
+// Styles moved to constants for cleanliness
+const OVERLAY_STYLES = {
+    // No shadows, clean borders
+    ChipContainer: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} hover:border-zinc-500 group/chip shadow-sm`,
+
+    ChipContainerActive: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} p-1.5 min-w-[120px] z-30 shadow-md`,
+
+    ActionBtn: `flex items-center justify-center w-5 h-5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-black dark:hover:text-white transition-all shrink-0`,
+    SaveBtn: `flex items-center justify-center w-5 h-5 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all shrink-0 ml-1`,
+    RefThumb: `relative group/thumb shrink-0 w-6 h-6 mr-1.5`,
+    RefImage: `w-full h-full object-cover rounded border border-zinc-200 dark:border-zinc-700`,
+    Arrow: `absolute w-0 h-0 border-[6px] border-transparent pointer-events-none`
+};
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     width,
@@ -355,7 +369,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             {/* UI Overlay for Annotations */}
             {annotations.map(ann => {
                 const isEditMode = activeTab === 'brush';
-                const active = currentActiveId === ann.id;
+                const isActiveItem = currentActiveId === ann.id;
 
                 if (ann.type === 'shape') {
                     if (ann.shapeType === 'rect') {
@@ -368,13 +382,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const maxY = Math.max(...ys);
 
                         return (
-                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
                                     <polygon
                                         points={points.map(p => `${p.x},${p.y}`).join(' ')}
                                         fill="transparent"
-                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
-                                        strokeWidth={active ? 2 : 1}
+                                        stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
+                                        strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -383,7 +397,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
-                                {active && (
+                                {isActiveItem && (
                                     <>
                                         {points.map((p, idx) => (
                                             <div key={idx} className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
@@ -405,7 +419,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const p0 = ann.points[0];
                         const p1 = ann.points[1];
                         return (
-                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
                                     <line
                                         x1={p0.x} y1={p0.y} x2={p1.x} y2={p1.y}
@@ -419,7 +433,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
-                                {active && (
+                                {isActiveItem && (
                                     <>
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
                                             style={{ left: `${(p0.x / width) * 100}%`, top: `${(p0.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
@@ -450,7 +464,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                         const ry = Math.abs(h / 2);
 
                         return (
-                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
+                            <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible pointer-events-none absolute inset-0">
                                     <ellipse
                                         cx={cx}
@@ -459,8 +473,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         ry={Math.abs(h / 2)}
                                         transform={`rotate(${rotation} ${cx} ${cy})`}
                                         fill="transparent"
-                                        stroke={active ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
-                                        strokeWidth={active ? 2 : 1}
+                                        stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
+                                        strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -469,7 +483,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         }}
                                     />
                                 </svg>
-                                {active && (
+                                {isActiveItem && (
                                     <>
                                         {/* 4 Cardinal Handles for Circle Resize (top, right, bottom, left) */}
                                         {[
@@ -502,54 +516,168 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     }
                 }
 
-                if (ann.type === 'stamp') {
-                    const left = (ann.x / width) * 100;
-                    const top = (ann.y / height) * 100;
-                    const currentFontSize = Math.max(8, width * 0.009 * zoom);
+                // Coordinate Calculation for Chips
+                let leftPct = 0, topPct = 0, isTopEdge = false;
 
-                    return (
-                        <div key={ann.id} className={`absolute annotation-ui ${active ? 'z-50' : 'z-20'}`} style={{ left: `${left}%`, top: `${top}%` }}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setActiveMaskId(ann.id);
-                                startDrag(e, ann.id, 'move', ann);
-                            }}>
-                            <div className={`relative flex items-center bg-zinc-800 dark:bg-zinc-700 text-white shadow-lg transition-all duration-200 origin-bottom border border-zinc-600 dark:border-zinc-500`}
-                                style={{
-                                    fontSize: currentFontSize,
-                                    paddingLeft: 8 * zoom,
-                                    paddingRight: active && isEditMode ? 4 * zoom : 8 * zoom,
-                                    paddingTop: 4 * zoom,
-                                    paddingBottom: 4 * zoom,
-                                    borderRadius: 4 * zoom,
-                                    transform: 'translate(-50%, -100%) translateY(-8px)',
-                                    minWidth: active ? (80 * zoom) : 'auto',
-                                    opacity: isEditMode || active ? 1 : 0.9
-                                }}>
-                                {active && isEditMode ? (
-                                    <div className="flex items-center gap-1">
-                                        <input value={ann.text || ''} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                            onKeyDown={(e) => e.key === 'Enter' && setActiveMaskId(null)}
-                                            className="bg-transparent border-none outline-none text-white p-0 focus:ring-0 font-medium placeholder:text-white/40"
-                                            style={{ width: Math.max(50 * zoom, (ann.text?.length || 0) * currentFontSize * 0.6) }}
-                                            placeholder={t ? t('describe_changes') : "Text..."}
-                                            autoFocus
-                                            onMouseDown={e => e.stopPropagation()} />
-                                        <button onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                            className="p-0.5 hover:bg-white/10 rounded transition-colors">
-                                            <Trash className="text-zinc-400 hover:text-red-400 transition-colors" style={{ width: 12 * zoom, height: 12 * zoom }} />
+                if (ann.type === 'stamp') {
+                    if (ann.x === undefined || ann.y === undefined) return null;
+                    leftPct = (ann.x / width) * 100;
+                    topPct = (ann.y / height) * 100;
+                } else if (ann.type === 'mask_path') {
+                    // Logic from main: calculate bounding box top-left for mask chips
+                    let minX = Infinity, minY = Infinity;
+                    if (!ann.points || ann.points.length === 0) return null;
+                    ann.points.forEach(p => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
+                    leftPct = (minX / width) * 100;
+                    topPct = (minY / height) * 100;
+                    isTopEdge = (minY / height) < 0.1;
+
+                    // If it's a mask_path but NOT active and has no text, don't show a chip (clean UI)
+                    if (!isActiveItem && (!ann.text || ann.text.trim() === '')) return null;
+                }
+
+                // Determine horizontal alignment based on edge proximity
+                let horizontalAlign: 'left' | 'center' | 'right' = 'center';
+                if (leftPct < 15) horizontalAlign = 'left';
+                else if (leftPct > 85) horizontalAlign = 'right';
+
+                // Calculate Transform based on alignment
+                let containerTransform = 'translate(-50%, 0)'; // Default Center
+                if (horizontalAlign === 'left') containerTransform = 'translate(-10px, 0)';
+                if (horizontalAlign === 'right') containerTransform = 'translate(calc(-100% + 10px), 0)';
+
+                // Vertical Shift
+                const verticalShift = isTopEdge
+                    ? 'translateY(12px)' // Push down if too high
+                    : 'translateY(calc(-100% - 12px))'; // Default above
+
+                // Merge transforms
+                const finalTransform = ann.type === 'stamp'
+                    ? `${containerTransform} translateY(-50%)` // Stamp centers vertically
+                    : `${containerTransform} ${verticalShift}`;
+
+                // --- Double Arrow Logic for Border ---
+                const isPointingUp = isTopEdge;
+
+                // Base position for both arrows
+                const arrowBaseStyle: React.CSSProperties = {};
+                if (horizontalAlign === 'left') arrowBaseStyle.left = '10px';
+                else if (horizontalAlign === 'right') arrowBaseStyle.right = '10px';
+                else { arrowBaseStyle.left = '50%'; arrowBaseStyle.transform = 'translateX(-50%)'; }
+
+                // 1. Outer Arrow (Border Color)
+                const borderArrowClass = isPointingUp
+                    ? "border-b-zinc-200 dark:border-b-zinc-800"
+                    : "border-t-zinc-200 dark:border-t-zinc-800";
+
+                const borderArrowStyle = { ...arrowBaseStyle };
+                if (isPointingUp) borderArrowStyle.bottom = '100%';
+                else borderArrowStyle.top = '100%';
+
+                // 2. Inner Arrow (Fill Color - White in Light Mode)
+                const fillArrowClass = isPointingUp
+                    ? "border-b-white dark:border-b-zinc-900"
+                    : "border-t-white dark:border-t-zinc-900";
+
+                const fillArrowStyle = { ...arrowBaseStyle };
+                if (isPointingUp) {
+                    fillArrowStyle.bottom = '100%';
+                    fillArrowStyle.marginBottom = '-1px'; // Shift inwards
+                } else {
+                    fillArrowStyle.top = '100%';
+                    fillArrowStyle.marginTop = '-1px'; // Shift inwards
+                }
+
+                const hasText = ann.text && ann.text.trim().length > 0;
+                const isInitial = !hasText; // Proxy for initial creation state
+
+                return (
+                    <div
+                        key={ann.id}
+                        className={`absolute annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`}
+                        style={{ left: `${leftPct}%`, top: `${topPct}%` }}
+                        onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                    >
+                        <div style={{ transform: finalTransform }} className="transition-transform duration-200">
+                            {isActiveItem ? (
+                                <div className={OVERLAY_STYLES.ChipContainerActive}>
+                                    {/* Double Arrow */}
+                                    <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
+                                    <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
+
+                                    {/* Ref Image */}
+                                    {ann.referenceImage && (
+                                        <div className={OVERLAY_STYLES.RefThumb}>
+                                            <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
+                                        </div>
+                                    )}
+
+                                    <input
+                                        value={ann.text || ''}
+                                        onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
+                                        placeholder={t ? t('describe_changes') : "Describe..."}
+                                        className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
+                                        autoFocus
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                    />
+
+                                    {/* Save/Done Button */}
+                                    <Tooltip text="Save">
+                                        <button
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }}
+                                            className={OVERLAY_STYLES.SaveBtn}
+                                        >
+                                            <Check className="w-3 h-3" />
+                                        </button>
+                                    </Tooltip>
+                                </div>
+                            ) : (
+                                <div
+                                    className={`${OVERLAY_STYLES.ChipContainer} p-1.5 ${ann.type === 'stamp' ? 'cursor-move' : 'cursor-default'} hover:scale-105 group/chip`}
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMaskId(ann.id);
+                                    }}
+                                >
+                                    {/* Double Arrow */}
+                                    <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
+                                    <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
+
+                                    {ann.referenceImage && (
+                                        <div className="relative shrink-0 w-6 h-6 mr-1.5">
+                                            <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
+                                        </div>
+                                    )}
+
+                                    <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>
+                                        {ann.text || (t ? t('untitled') : "Edit")}
+                                    </span>
+
+                                    {/* Hover actions: Edit & Delete */}
+                                    <div className="flex items-center gap-0.5">
+                                        <button
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
+                                            className={`${OVERLAY_STYLES.ActionBtn} opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
+                                        >
+                                            <Pen className="w-3 h-3" />
+                                        </button>
+
+                                        <button
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                            className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}
+                                        >
+                                            <X className="w-3 h-3" />
                                         </button>
                                     </div>
-                                ) : (
-                                    <span className="whitespace-nowrap font-medium text-[0.95em]">
-                                        {ann.text || (t ? t('untitled') : "Text")}
-                                    </span>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
-                    );
-                }
-                return null;
+                    </div>
+                );
             })}
         </div>
     );
