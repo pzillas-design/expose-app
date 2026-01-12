@@ -436,26 +436,85 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         })
                     }
 
-                    {/* 3. ANNOTATIONS SUMMARY CHIP */}
-                    {annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)) && (() => {
+                    {/* 3. ANNOTATIONS (Stamps, Masks, Shapes) - Prompt Block Design */}
+                    {annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type)).length > 0 && (() => {
                         const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
                         const count = activeAnns.length;
 
+                        const defaultLabel = currentLang === 'de'
+                            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+                            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+
                         return (
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    onClick={onAddBrush}
-                                    className={`
-                                        flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all
-                                        bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 
-                                        border border-zinc-200 dark:border-zinc-700
-                                    `}
-                                >
-                                    <span className="font-medium">
-                                        {count} {currentLang === 'de' ? 'Anmerkungen' : 'Annotations'}
-                                    </span>
-                                    <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-                                </button>
+                            <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
+                                <div className="absolute top-2 right-2 z-10">
+                                    <button
+                                        onClick={async () => {
+                                            const result = await confirm({
+                                                title: currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?',
+                                                description: currentLang === 'de'
+                                                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
+                                                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
+                                                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
+                                                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
+                                                variant: 'danger'
+                                            });
+                                            if (result) {
+                                                onClearAnnotations(activeAnns.map(a => a.id));
+                                            }
+                                        }}
+                                        className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                                        title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-col gap-3">
+                                    <div className="relative w-full pr-8">
+                                        {isEditingAnnotationLabel === 'main' ? (
+                                            <textarea
+                                                autoFocus
+                                                value={annotationLabelValue || defaultLabel}
+                                                onChange={(e) => setAnnotationLabelValue(e.target.value)}
+                                                onBlur={() => setIsEditingAnnotationLabel(null)}
+                                                onKeyDown={handleKeyDown}
+                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                onInput={(e) => {
+                                                    const target = e.target as HTMLTextAreaElement;
+                                                    target.style.height = 'auto';
+                                                    target.style.height = target.scrollHeight + 'px';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div
+                                                onClick={() => {
+                                                    setAnnotationLabelValue(annotationLabelValue || defaultLabel);
+                                                    setIsEditingAnnotationLabel('main');
+                                                }}
+                                                className={`w-full ${Typo.Body} font-mono cursor-text break-words whitespace-pre-wrap text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity`}
+                                            >
+                                                {annotationLabelValue || defaultLabel}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            onClick={onAddBrush}
+                                            className={`
+                                                flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all
+                                                bg-zinc-100/50 dark:bg-zinc-800/40 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 
+                                                border border-zinc-200 dark:border-zinc-700
+                                            `}
+                                        >
+                                            <span className="font-medium">
+                                                {count} {currentLang === 'de' ? 'Anmerkungen' : 'Annotations'}
+                                            </span>
+                                            <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         );
                     })()}
