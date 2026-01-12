@@ -276,6 +276,11 @@ export const translations = {
     overview_desc: "Overview of all your projects.",
     rename_board: "Rename project",
     default_project_name: "New Project",
+    footer_about: "About",
+    footer_website: "Website",
+    footer_contact: "Contact",
+    footer_legal: "Legal",
+    footer_privacy: "Privacy",
   },
   de: {
     // General
@@ -554,5 +559,10 @@ export const translations = {
     overview_desc: "Überblick über all deine Projekte.",
     rename_board: "Projekt umbenennen",
     default_project_name: "Neues Projekt",
+    footer_about: "About",
+    footer_website: "Website",
+    footer_contact: "Kontakt",
+    footer_legal: "Impressum",
+    footer_privacy: "Datenschutz",
   }
 };
