@@ -665,8 +665,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 <IconButton
                                     icon={<ChevronLeft className="w-4 h-4" />}
-                                    onClick={() => onDeselectAll?.()}
-                                    tooltip={t('tt_deselect')}
+                                    onClick={() => {
+                                        if (showInfo) setShowInfo(false);
+                                        else onDeselectAll?.();
+                                    }}
+                                    tooltip={showInfo ? t('back') : t('tt_deselect')}
                                 />
                                 {isMulti && selectedImages ? (
                                     <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
