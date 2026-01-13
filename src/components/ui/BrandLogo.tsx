@@ -15,11 +15,13 @@ export const BrandLogo: React.FC<{ className?: string }> = ({ className = "w-32 
             className="fill-black dark:fill-white"
         />
 
-        {/* Brandmark (Icon) - Static colors from gradients */}
-        <path d="M813 522V136.5C661.729 183.099 597.886 215.866 502 280C419.17 221.621 370.705 189.041 190 137V522C313.475 566.83 382.038 601.164 502 696.5C604.794 611.442 668.991 569.691 813 522Z" fill="url(#paint0_linear_253_1024)" />
-        <path fillRule="evenodd" clipRule="evenodd" d="M730.5 430V56C609.051 126.555 552.099 166.489 501 239.5L500 612C595.782 504.409 643.906 477.829 728.813 430.932L730.5 430Z" fill="url(#paint1_radial_253_1024)" />
-        <path fillRule="evenodd" clipRule="evenodd" d="M275 429.5C405.041 501.341 445.124 541.178 500 612L501 239.5C434.715 156.93 383.246 117.956 274 56L275 429.5Z" fill="url(#paint2_radial_253_1024)" />
-        <path fillRule="evenodd" clipRule="evenodd" d="M275 429.5C405.041 501.341 445.124 541.178 500 612L501 239.5C434.715 156.93 383.246 117.956 274 56L275 429.5Z" fill="url(#paint3_radial_253_1024)" fillOpacity="0.6" />
+        {/* Brandmark (Icon) - Static colors from gradients - 15% smaller */}
+        <g transform="translate(500, 415) scale(0.85) translate(-500, -415)">
+            <path d="M813 522V136.5C661.729 183.099 597.886 215.866 502 280C419.17 221.621 370.705 189.041 190 137V522C313.475 566.83 382.038 601.164 502 696.5C604.794 611.442 668.991 569.691 813 522Z" fill="url(#paint0_linear_253_1024)" />
+            <path fillRule="evenodd" clipRule="evenodd" d="M730.5 430V56C609.051 126.555 552.099 166.489 501 239.5L500 612C595.782 504.409 643.906 477.829 728.813 430.932L730.5 430Z" fill="url(#paint1_radial_253_1024)" />
+            <path fillRule="evenodd" clipRule="evenodd" d="M275 429.5C405.041 501.341 445.124 541.178 500 612L501 239.5C434.715 156.93 383.246 117.956 274 56L275 429.5Z" fill="url(#paint2_radial_253_1024)" />
+            <path fillRule="evenodd" clipRule="evenodd" d="M275 429.5C405.041 501.341 445.124 541.178 500 612L501 239.5C434.715 156.93 383.246 117.956 274 56L275 429.5Z" fill="url(#paint3_radial_253_1024)" fillOpacity="0.6" />
+        </g>
 
         <defs>
             <linearGradient id="paint0_linear_253_1024" x1="865.5" y1="94.5" x2="336" y2="593.5" gradientUnits="userSpaceOnUse">

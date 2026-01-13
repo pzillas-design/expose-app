@@ -136,11 +136,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Decorative Background */}
-                <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-orange-500/5 to-transparent pointer-events-none" />
-
                 {/* Header */}
-                <div className="p-8 pt-32 pb-2 flex flex-col items-center text-center relative z-10">
+                <div className="p-8 pt-20 pb-2 flex flex-col items-center text-center relative z-10">
                     <div className="flex flex-col items-center justify-center mb-6">
                         <BrandLogo className="w-36 h-36" />
                     </div>
