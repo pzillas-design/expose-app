@@ -646,6 +646,8 @@ export function App() {
                     onQualityModeChange={setQualityMode}
                     templates={templates}
                     onRefreshTemplates={refreshTemplates}
+                    onSaveTemplate={savePreset}
+                    onDeleteTemplate={deletePreset}
                     userProfile={userProfile}
                     // Hack to bridge handlers without exposing them as public state
                     ref={(el: any) => {
