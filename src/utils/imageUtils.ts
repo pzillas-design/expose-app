@@ -103,10 +103,13 @@ export async function compressImage(src: string, maxDim: number = 4096, quality:
 export async function downloadImage(src: string, filename: string): Promise<void> {
     if (!src) return;
 
-    const finalFilename = filename.toLowerCase().endsWith('.png') ||
-        filename.toLowerCase().endsWith('.jpg') ||
-        filename.toLowerCase().endsWith('.jpeg')
-        ? filename : `${filename}.png`;
+    // Helper to get extension from MIME type
+    const getExt = (mime?: string) => {
+        if (!mime) return 'jpg';
+        if (mime.includes('png')) return 'png';
+        if (mime.includes('webp')) return 'webp';
+        return 'jpg'; // Default to jpg
+    };
 
     try {
         // Try fetching the image as a blob
@@ -119,8 +122,17 @@ export async function downloadImage(src: string, filename: string): Promise<void
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const detectedExt = getExt(blob.type);
 
+        // Clean filename and ensure extension
+        let finalFilename = filename.trim();
+        const hasExtension = /\.(jpg|jpeg|png|webp)$/i.test(finalFilename);
+
+        if (!hasExtension) {
+            finalFilename = `${finalFilename}.${detectedExt}`;
+        }
+
+        const url = window.URL.createObjectURL(blob);
         const link = document.body.appendChild(document.createElement('a'));
         link.style.display = 'none';
         link.href = url;
@@ -137,12 +149,16 @@ export async function downloadImage(src: string, filename: string): Promise<void
         console.error('Download failed via fetch/blob:', error);
 
         // Fallback: Use standard direct link with download attribute
-        // This might open in new tab in some browsers (like Safari) for cross-origin
         const link = document.body.appendChild(document.createElement('a'));
         link.style.display = 'none';
         link.href = src;
+
+        // Simple extension fallback for direct link
+        const finalFilename = /\.(jpg|jpeg|png|webp)$/i.test(filename)
+            ? filename : `${filename}.jpg`;
+
         link.download = finalFilename;
-        link.target = "_blank"; // Mandatory for cross-origin fallback to avoid blocking navigation
+        link.target = "_blank";
         link.click();
 
         setTimeout(() => link.remove(), 200);
