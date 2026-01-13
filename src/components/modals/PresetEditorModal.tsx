@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, TextArea, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
-import { Plus, Trash, Check, X } from 'lucide-react';
+import { Plus, Trash, Check, X, Pencil } from 'lucide-react';
 import { generateId } from '@/utils/ids';
 
 interface PresetEditorModalProps {
@@ -33,21 +33,44 @@ const LanguageForm = ({
     t: TranslationFunction;
 }) => {
     const [isAddingControl, setIsAddingControl] = useState(false);
+    const [editingControlId, setEditingControlId] = useState<string | null>(null);
     const [newControlLabel, setNewControlLabel] = useState('');
     const [newControlOptions, setNewControlOptions] = useState('');
 
-    const handleAddControl = () => {
+    const handleSaveControl = () => {
         if (!newControlLabel.trim()) return;
         const opts = newControlOptions.split(',').map(s => s.trim()).filter(s => s);
-        const newControl: PresetControl = {
-            id: generateId(),
+        const controlData = {
             label: newControlLabel.trim(),
             options: opts.map(o => ({ id: generateId(), label: o, value: o }))
         };
-        setControls(prev => [...prev, newControl]);
+
+        if (editingControlId) {
+            setControls(prev => prev.map(c => c.id === editingControlId ? { ...c, ...controlData } : c));
+        } else {
+            setControls(prev => [...prev, { id: generateId(), ...controlData }]);
+        }
+
+        resetForm();
+    };
+
+    const resetForm = () => {
         setIsAddingControl(false);
+        setEditingControlId(null);
         setNewControlLabel('');
         setNewControlOptions('');
+    };
+
+    const startEditing = (ctrl: PresetControl) => {
+        setEditingControlId(ctrl.id);
+        setNewControlLabel(ctrl.label);
+        setNewControlOptions(ctrl.options.map(o => o.label).join(', '));
+        setIsAddingControl(true);
+    };
+
+    const handleDeleteControl = (id: string) => {
+        setControls(prev => prev.filter(c => c.id !== id));
+        if (editingControlId === id) resetForm();
     };
 
     return (
@@ -94,27 +117,42 @@ const LanguageForm = ({
                                         ))}
                                     </div>
                                 </div>
-                                <button onClick={() => setControls(p => p.filter(c => c.id !== ctrl.id))} className="text-zinc-400 hover:text-red-500 p-1 shrink-0"><X className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => startEditing(ctrl)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2 shrink-0 transition-colors">
+                                    <Pencil className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         ))}
 
                         {isAddingControl ? (
-                            <div className={`p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-3`}>
+                            <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative group/input`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-[9px] font-black`}>
                                         Titel
                                     </label>
                                     <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 text-xs" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-[9px] font-black`}>
                                         Optionen
                                     </label>
                                     <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 text-xs" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="secondary" onClick={() => setIsAddingControl(false)} className="h-9">{t('cancel')}</Button>
-                                    <Button onClick={handleAddControl} disabled={!newControlLabel} className="h-9">{t('add_btn')}</Button>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-9 flex-1 text-[11px] font-bold">
+                                        {editingControlId ? t('save') : t('add_btn')}
+                                    </Button>
+                                    <Button variant="secondary" onClick={resetForm} className="h-9 px-3">
+                                        {t('cancel')}
+                                    </Button>
+                                    {editingControlId && (
+                                        <button
+                                            onClick={() => handleDeleteControl(editingControlId)}
+                                            className="text-zinc-400 hover:text-red-500 p-2 transition-colors ml-auto"
+                                            title={t('delete')}
+                                        >
+                                            <Trash className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ) : (
@@ -257,22 +295,30 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 flex items-center gap-3 shrink-0">
-                    {mode === 'edit' && onDelete && initialTemplate && (
+                <div className="p-6 flex items-center justify-between shrink-0 border-t border-zinc-100 dark:border-zinc-800">
+                    <div className="flex items-center gap-2">
+                        {mode === 'edit' && onDelete && initialTemplate && (
+                            <IconButton
+                                icon={<Trash className="w-4 h-4" />}
+                                onClick={() => { onDelete(initialTemplate.id); onClose(); }}
+                                className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                tooltip={t('delete')}
+                            />
+                        )}
                         <Button
                             variant="secondary"
-                            onClick={() => { onDelete(initialTemplate.id); onClose(); }}
-                            className="px-4 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                            icon={<Trash className="w-4 h-4" />}
+                            onClick={onClose}
+                            className="px-6 h-12 text-xs font-bold"
                         >
-                            {t('delete')}
+                            {t('cancel')}
                         </Button>
-                    )}
+                    </div>
+
                     <Button
                         variant="primary"
                         onClick={handleSave}
                         disabled={isSaveDisabled()}
-                        className="flex-1 h-12"
+                        className="px-10 h-12 text-xs font-bold shadow-lg shadow-black/5"
                         icon={<Check className="w-4 h-4" />}
                     >
                         {t('save')}
