@@ -707,13 +707,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             {!isMulti && (
                                 <IconButton
                                     id="header-info-button"
-                                    icon={<Info className="w-[18px] h-[18px]" />}
+                                    icon={<InfoFilled className="w-[18px] h-[18px]" />}
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
-                                    className={`transition-colors z-50 !rounded-full ${showInfo
-                                            ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white'
-                                            : 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                                        }`}
+                                    className={`transition-colors z-50 ${showInfo ? 'text-black dark:text-white' : 'text-zinc-400'}`}
                                     tooltip="Info"
                                 />
                             )}
