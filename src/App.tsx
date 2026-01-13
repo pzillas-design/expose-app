@@ -498,7 +498,7 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar ${Theme.Colors.CanvasBg} overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling ? 'snap-both snap-mandatory' : ''}`}
+                    className={`w-full h-full overflow-auto no-scrollbar bg-transparent overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling ? 'snap-both snap-mandatory' : ''}`}
                     style={{ overflowAnchor: 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}

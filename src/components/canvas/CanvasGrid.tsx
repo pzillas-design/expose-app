@@ -36,12 +36,12 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) =>
 
     return (
         <div
-            className="fixed inset-0 pointer-events-none z-[5]"
+            className="fixed inset-0 pointer-events-none z-[1]"
             style={{
-                backgroundImage: `radial-gradient(circle, #52525b 1.2px, transparent 1.2px)`,
+                backgroundImage: `radial-gradient(circle, var(--grid-dot) 1.5px, transparent 1.5px)`,
                 backgroundSize: `${gridSize}px ${gridSize}px`,
                 backgroundPosition: `${bgPositionX}px ${bgPositionY}px`,
-                opacity: 0.18, // More visible than before
+                opacity: 0.25,
                 willChange: 'background-position'
             }}
         />
