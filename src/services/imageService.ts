@@ -424,21 +424,26 @@ export const imageService = {
                 });
             });
 
-            // Batch sign 100 paths at a time
+            // Batch sign 100 paths at a time - PARALLELIZED for speed
             const pathsArray = Array.from(allPathsToSign);
             const signedUrlMap: Record<string, string> = {};
 
+            const chunks: string[][] = [];
             for (let i = 0; i < pathsArray.length; i += 100) {
-                const chunk = pathsArray.slice(i, i + 100);
-
-                // 1. Sign original HD versions
-                const hdResults = await storageService.getSignedUrls(chunk);
-                Object.assign(signedUrlMap, hdResults);
-
-                // 2. Pre-sign 800px optimized versions for immediate canvas display
-                const optResults = await storageService.getSignedUrls(chunk, { width: 800, quality: 75 });
-                Object.assign(signedUrlMap, optResults);
+                chunks.push(pathsArray.slice(i, i + 100));
             }
+
+            // Execute all chunks in parallel
+            await Promise.all(chunks.map(async (chunk) => {
+                const [hdResults, optResults] = await Promise.all([
+                    // 1. Sign original HD versions
+                    storageService.getSignedUrls(chunk),
+                    // 2. Pre-sign 800px optimized versions for immediate canvas display
+                    storageService.getSignedUrls(chunk, { width: 800, quality: 75 })
+                ]);
+                Object.assign(signedUrlMap, hdResults);
+                Object.assign(signedUrlMap, optResults);
+            }));
 
             // Transform records using the map
             const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
