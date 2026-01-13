@@ -66,7 +66,7 @@ const LanguageForm = ({
         setEditingControlId(ctrl.id);
         setNewControlLabel(ctrl.label);
         setNewControlOptions(ctrl.options.map(o => o.label).join(', '));
-        setIsAddingControl(true);
+        // Note: isAddingControl stays false to prevent the bottom "Add" box from showing
     };
 
     const handleDeleteControl = (id: string) => {
