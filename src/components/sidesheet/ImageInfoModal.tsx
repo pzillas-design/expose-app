@@ -57,10 +57,27 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     Info
                 </span>
 
-                {/* Metadata Grid - Auto-sized labels via Grid */}
-                <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-8 gap-y-1.5">
+                {/* 1. Prompt Section - Now First */}
+                {image.generationPrompt && (
+                    <div className="flex flex-col gap-1.5 group">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('tt_prompt')}
+                        </span>
+                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
+                            <p
+                                onClick={handleCopyPrompt}
+                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
+                            >
+                                {image.generationPrompt}
+                            </p>
+                        </Tooltip>
+                    </div>
+                )}
 
-                    {/* 1. Filename */}
+                {/* 2. Metadata Grid - Increased gap-y */}
+                <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-8 gap-y-3">
+
+                    {/* Filename */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename')}</span>
                     <div className="group/title min-w-0">
                         {!isEditingTitle ? (
@@ -104,7 +121,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         )}
                     </div>
 
-                    {/* 2. Created At */}
+                    {/* Created At */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created_at')}</span>
                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                         {image.createdAt ? (() => {
@@ -113,7 +130,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         })() : '-'}
                     </span>
 
-                    {/* 3. Model */}
+                    {/* Model */}
                     {image.quality && (
                         <>
                             <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model')}</span>
@@ -131,7 +148,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         </>
                     )}
 
-                    {/* 4. Resolution */}
+                    {/* Resolution */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('resolution')}</span>
                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                         {image.realWidth && image.realHeight
@@ -141,23 +158,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     : '1024 × 1024px'}
                     </span>
                 </div>
-
-                {/* Prompt Section - Separate Block Below */}
-                {image.generationPrompt && (
-                    <div className="flex flex-col gap-1.5 pt-2 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                            {t('tt_prompt')}
-                        </span>
-                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
-                            <p
-                                onClick={handleCopyPrompt}
-                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
-                            >
-                                {image.generationPrompt}
-                            </p>
-                        </Tooltip>
-                    </div>
-                )}
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2 pt-4">
