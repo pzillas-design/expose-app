@@ -3,6 +3,7 @@ import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-r
 import { supabase } from '@/services/supabaseClient';
 import { Button, Theme, Typo, IconButton, Input } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { TranslationFunction } from '@/types';
 
 interface AuthModalProps {
@@ -140,14 +141,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
                 {/* Header */}
                 <div className="p-8 pt-32 pb-2 flex flex-col items-center text-center relative z-10">
-                    <div className="flex flex-col items-center justify-center mb-6 gap-2">
-                        <Logo className="w-12 h-12" />
-                        <h1
-                            className={`text-5xl font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
-                            style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
-                        >
-                            exposé
-                        </h1>
+                    <div className="flex flex-col items-center justify-center mb-6">
+                        <BrandLogo className="w-36 h-36" />
                     </div>
                     <div className="space-y-1">
                         {mode !== 'signin' && (
