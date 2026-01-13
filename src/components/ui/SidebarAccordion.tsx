@@ -107,7 +107,7 @@ export const SidebarAccordionItem: React.FC<SidebarAccordionItemProps> = ({
                     </span>
                 )}
                 {onMenuClick && (
-                    <Tooltip text={menuTooltip} side="left">
+                    <Tooltip text={menuTooltip} side="bottom">
                         <button
                             onClick={(e) => { e.stopPropagation(); onMenuClick(e); }}
                             className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-opacity p-2 rounded-md hover:bg-black/5 dark:hover:bg-white/5"
