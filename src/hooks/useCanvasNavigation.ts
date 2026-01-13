@@ -68,12 +68,19 @@ export const useCanvasNavigation = ({
             setZoom(nextZoom);
 
             // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View)
-            // Otherwise, let the browser/layout handle the scroll position anchor
+            // Or if no target is provided, scale scroll proportionally to keep center (Zoom to Center)
             if (targetScroll) {
                 const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
                 const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
+            } else {
+                // Proportional Scroll Scaling (Zoom to Center)
+                if (startZoom > 0.001) {
+                    const ratio = nextZoom / startZoom;
+                    container.scrollLeft = startScrollX * ratio;
+                    container.scrollTop = startScrollY * ratio;
+                }
             }
 
             if (progress < 1) {
@@ -83,6 +90,13 @@ export const useCanvasNavigation = ({
                 if (targetScroll) {
                     container.scrollLeft = targetScroll.x;
                     container.scrollTop = targetScroll.y;
+                } else {
+                    // Final snap for proportional zoom
+                    if (startZoom > 0.001) {
+                        const ratio = clampedTargetZoom / startZoom;
+                        container.scrollLeft = startScrollX * ratio;
+                        container.scrollTop = startScrollY * ratio;
+                    }
                 }
                 zoomAnimFrameRef.current = null;
                 isZoomingRef.current = false;

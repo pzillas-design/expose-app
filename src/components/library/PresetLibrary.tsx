@@ -72,6 +72,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         label={t.title}
                         onClick={() => onSelect(t)}
                         onMenuClick={(e) => handleOpenMenu(e, t.id)}
+                        menuTooltip={currentLang === 'de' ? 'Vorlage bearbeiten' : 'Edit template'}
                     />
                 ))}
             </SidebarAccordion>
@@ -90,6 +91,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         label={t.title}
                         onClick={() => onSelect(t)}
                         onMenuClick={(e) => handleOpenMenu(e, t.id)}
+                        menuTooltip={currentLang === 'de' ? 'Vorlage bearbeiten' : 'Edit template'}
                     />
                 ))}
             </SidebarAccordion>

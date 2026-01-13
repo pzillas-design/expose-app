@@ -88,7 +88,9 @@ const LanguageForm = ({
                                     <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
                                     <div className="flex flex-wrap gap-1">
                                         {ctrl.options.map(o => (
-                                            <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">{o.label}</span>
+                                            <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                                {o.label}
+                                            </span>
                                         ))}
                                     </div>
                                 </div>
