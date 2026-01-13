@@ -127,7 +127,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     };
 
     return (
-        <div className="fixed inset-0 z-[70] bg-zinc-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] bg-zinc-500/20 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div
                 className={`
                     w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
@@ -139,11 +139,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                 <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-orange-500/5 to-transparent pointer-events-none" />
 
                 {/* Header */}
-                <div className="p-8 pt-10 pb-2 flex flex-col items-center text-center relative z-10">
+                <div className="p-8 pt-16 pb-2 flex flex-col items-center text-center relative z-10">
                     <div className="flex flex-col items-center justify-center mb-6 gap-2">
-                        <Logo className="w-24 h-24" />
+                        <Logo className="w-20 h-20" />
                         <h1
-                            className={`text-2xl font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
+                            className={`text-3xl font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
                             style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
                         >
                             exposé
@@ -271,7 +271,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
                                 </div>
                                 <div className="relative flex justify-center text-xs">
-                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>oder</span>
+                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>oder mit</span>
                                 </div>
                             </div>
 
