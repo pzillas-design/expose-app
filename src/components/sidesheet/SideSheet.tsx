@@ -707,7 +707,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             {!isMulti && (
                                 <IconButton
                                     id="header-info-button"
-                                    icon={<InfoFilled className="w-[18px] h-[18px]" />}
+                                    icon={<Info className="w-[18px] h-[18px]" />}
                                     active={showInfo}
                                     onClick={() => setShowInfo(!showInfo)}
                                     className={`transition-colors z-50 ${showInfo ? 'text-black dark:text-white' : 'text-zinc-400'}`}

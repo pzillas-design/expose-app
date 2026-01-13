@@ -134,7 +134,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             <div
                 className={`
                     w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-md overflow-hidden relative animate-in zoom-in-95 duration-200
+                    shadow-md overflow-hidden relative z-10 animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -262,7 +262,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                         <>
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                                    <span className="w-full border-t border-t-zinc-300 dark:border-t-zinc-700" />
                                 </div>
                                 <div className="relative flex justify-center text-xs">
                                     <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>oder mit</span>
@@ -305,6 +305,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
