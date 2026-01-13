@@ -3,15 +3,15 @@ import React, { useEffect, useState } from 'react';
 
 interface CanvasGridProps {
     zoom: number;
-    containerRef: React.RefObject<HTMLDivElement>;
+    containerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) => {
     const [scrollPos, setScrollPos] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
+        if (!containerRef?.current) return;
         const container = containerRef.current;
-        if (!container) return;
 
         const handleScroll = () => {
             setScrollPos({
@@ -21,14 +21,13 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) =>
         };
 
         container.addEventListener('scroll', handleScroll, { passive: true });
-        // Initial sync
         handleScroll();
 
         return () => container.removeEventListener('scroll', handleScroll);
     }, [containerRef]);
 
-    // Calculate grid visual size based on zoom
-    const gridSize = 32 * zoom; // Slightly larger grid for better aesthetics
+    // Calculate grid visual size based on zoom (20% tighter: 32 * 0.8 = 25.6)
+    const gridSize = 25.5 * zoom;
 
     // Position dots based on scroll
     const bgPositionX = -scrollPos.x;
@@ -38,10 +37,10 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) =>
         <div
             className="fixed inset-0 pointer-events-none z-[1]"
             style={{
-                backgroundImage: `radial-gradient(circle, var(--grid-dot) 1.5px, transparent 1.5px)`,
+                backgroundImage: `radial-gradient(circle, var(--grid-dot) 1px, transparent 1px)`,
                 backgroundSize: `${gridSize}px ${gridSize}px`,
                 backgroundPosition: `${bgPositionX}px ${bgPositionY}px`,
-                opacity: 0.25,
+                opacity: 0.16, // ~35% less than 0.25 (which was 0.7*0.25=0.175)
                 willChange: 'background-position'
             }}
         />

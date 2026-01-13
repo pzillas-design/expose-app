@@ -5,6 +5,7 @@ import { Button, Theme, Typo, IconButton, Input } from '@/components/ui/DesignSy
 import { Logo } from '@/components/ui/Logo';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { TranslationFunction } from '@/types';
+import { CanvasGrid } from '@/components/canvas/CanvasGrid';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -129,6 +130,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
     return (
         <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <CanvasGrid zoom={1} />
             <div
                 className={`
                     w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
