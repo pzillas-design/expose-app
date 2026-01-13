@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
-import { Button, Input, TextArea, SectionHeader, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
+import { IconButton, Button, Input, TextArea, Theme, Typo } from '@/components/ui/DesignSystem';
 import { Plus, Trash, Check, X, Pencil } from 'lucide-react';
 import { generateId } from '@/utils/ids';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
 interface PresetEditorModalProps {
     isOpen: boolean;
@@ -106,7 +107,11 @@ const LanguageForm = ({
                     </label>
                     <div className="space-y-3">
                         {controls.map((ctrl) => (
-                            <div key={ctrl.id} className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius}`}>
+                            <div
+                                key={ctrl.id}
+                                onClick={() => startEditing(ctrl)}
+                                className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
+                            >
                                 <div className="min-w-0 flex-1">
                                     <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
                                     <div className="flex flex-wrap gap-1">
@@ -117,42 +122,43 @@ const LanguageForm = ({
                                         ))}
                                     </div>
                                 </div>
-                                <button onClick={() => startEditing(ctrl)} className="text-zinc-400 hover:text-zinc-900 dark:hover:text-white p-2 shrink-0 transition-colors">
+                                <div className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-all p-2 shrink-0">
                                     <Pencil className="w-3.5 h-3.5" />
-                                </button>
+                                </div>
                             </div>
                         ))}
 
                         {isAddingControl ? (
-                            <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative group/input`}>
+                            <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-[9px] font-black`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 text-xs" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-[9px] font-black`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 text-xs" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-9 flex-1 text-[11px] font-bold">
-                                        {editingControlId ? t('save') : t('add_btn')}
-                                    </Button>
-                                    <Button variant="secondary" onClick={resetForm} className="h-9 px-3">
-                                        {t('cancel')}
-                                    </Button>
+                                <div className="flex items-center gap-2 pt-2">
                                     {editingControlId && (
                                         <button
-                                            onClick={() => handleDeleteControl(editingControlId)}
-                                            className="text-zinc-400 hover:text-red-500 p-2 transition-colors ml-auto"
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteControl(editingControlId); }}
+                                            className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
                                             title={t('delete')}
                                         >
                                             <Trash className="w-4 h-4" />
                                         </button>
                                     )}
+                                    <div className="flex-1" />
+                                    <Button variant="secondary" onClick={resetForm} className="h-10 px-6">
+                                        {t('cancel')}
+                                    </Button>
+                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-10 px-8">
+                                        {editingControlId ? t('save') : t('add_btn')}
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
@@ -186,6 +192,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     const [titleEn, setTitleEn] = useState('');
     const [promptEn, setPromptEn] = useState('');
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -261,7 +268,16 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                             {mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
                         </h2>
                     </div>
-                    <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+                    <div className="flex items-center gap-2">
+                        {mode === 'edit' && onDelete && initialTemplate && (
+                            <IconButton
+                                icon={<Trash className="w-5 h-5" />}
+                                onClick={() => setIsDeleteDialogOpen(true)}
+                                tooltip={t('delete')}
+                            />
+                        )}
+                        <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+                    </div>
                 </div>
 
                 <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800' : 'flex flex-col'}`}>
@@ -295,35 +311,32 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 flex items-center justify-between shrink-0 border-t border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-center gap-2">
-                        {mode === 'edit' && onDelete && initialTemplate && (
-                            <IconButton
-                                icon={<Trash className="w-4 h-4" />}
-                                onClick={() => { onDelete(initialTemplate.id); onClose(); }}
-                                className="text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                tooltip={t('delete')}
-                            />
-                        )}
-                        <Button
-                            variant="secondary"
-                            onClick={onClose}
-                            className="px-6 h-12 text-xs font-bold"
-                        >
-                            {t('cancel')}
-                        </Button>
-                    </div>
-
+                <div className="p-6 flex items-center shrink-0 border-t border-zinc-100 dark:border-zinc-800">
                     <Button
                         variant="primary"
                         onClick={handleSave}
                         disabled={isSaveDisabled()}
-                        className="px-10 h-12 text-xs font-bold shadow-lg shadow-black/5"
+                        className="w-full h-12 text-xs font-bold"
                         icon={<Check className="w-4 h-4" />}
                     >
                         {t('save')}
                     </Button>
                 </div>
+
+                <ConfirmDialog
+                    isOpen={isDeleteDialogOpen}
+                    title={t('confirm_delete_preset')}
+                    description={initialTemplate?.title || ''}
+                    confirmLabel={t('delete')}
+                    cancelLabel={t('cancel')}
+                    onConfirm={() => {
+                        if (initialTemplate) onDelete?.(initialTemplate.id);
+                        setIsDeleteDialogOpen(false);
+                        onClose();
+                    }}
+                    onCancel={() => setIsDeleteDialogOpen(false)}
+                    variant="danger"
+                />
             </div>
         </div>
     );
