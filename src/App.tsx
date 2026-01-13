@@ -22,7 +22,6 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 
 // Code-split Admin Dashboard (only loads for admins)
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
-const PlaygroundPage = React.lazy(() => import('@/components/playground/PlaygroundPage').then(m => ({ default: m.PlaygroundPage })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 
 
@@ -766,11 +765,6 @@ export function App() {
                         />
                     </Suspense>
                 </AdminRoute>
-            } />
-            <Route path="/playground" element={
-                <Suspense fallback={null}>
-                    <PlaygroundPage t={t} />
-                </Suspense>
             } />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />
