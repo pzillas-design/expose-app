@@ -245,15 +245,21 @@ export const useCanvasNavigation = ({
     const snapToItem = useCallback((id: string, instant = false) => {
         setIsAutoScrolling(true);
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
-        autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, instant ? 100 : 800);
+        autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, instant ? 200 : 800);
 
-        // Simple scroll into view
-        setTimeout(() => {
+        const executeSnap = () => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
             if (el) {
                 el.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'center', inline: 'center' });
             }
-        }, 50);
+        };
+
+        if (instant) {
+            // Use requestAnimationFrame to ensure DOM is ready but snap is as fast as possible
+            requestAnimationFrame(executeSnap);
+        } else {
+            setTimeout(executeSnap, 50);
+        }
     }, [setIsAutoScrolling]);
 
     // Wheel Zoom Listener

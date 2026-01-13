@@ -166,10 +166,10 @@ export const useNanoController = () => {
                     // Sort to find newest
                     const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
                     if (newest) {
-                        // Small delay to ensure canvas items are rendered before snapping
-                        setTimeout(() => {
+                        // Use requestAnimationFrame to trigger selection as soon as DOM is ready
+                        requestAnimationFrame(() => {
                             selectAndSnap(newest.id, true);
-                        }, 500);
+                        });
                     }
                 }
             });

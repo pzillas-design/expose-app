@@ -95,6 +95,18 @@ export function App() {
     // Track if a sync is currently running to prevent race conditions
     const isSyncingRef = useRef(false);
 
+    // Initial Scroll Centering to prevent bottom-right jumping on load
+    React.useLayoutEffect(() => {
+        if (currentBoardId && refs.scrollContainerRef.current) {
+            const container = refs.scrollContainerRef.current;
+            // Only set if at 0,0 to avoid fighting with user scroll
+            if (container.scrollLeft === 0 && container.scrollTop === 0) {
+                container.scrollLeft = window.innerWidth * 0.5;
+                container.scrollTop = window.innerHeight * 0.5;
+            }
+        }
+    }, [currentBoardId, refs.scrollContainerRef]);
+
     // URL Routing Sync
     useEffect(() => {
         const syncUrl = async () => {
