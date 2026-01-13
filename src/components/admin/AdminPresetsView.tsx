@@ -44,7 +44,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
     const fetchPresets = async () => {
         setLoading(true);
         try {
-            const data = await adminService.getGlobalPresets();
+            const data = await adminService.getGlobalPresets(undefined, true);
             setAllPresets(data);
 
             // Auto-select first if nothing selected

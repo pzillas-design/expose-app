@@ -146,12 +146,18 @@ export const adminService = {
     /**
      * Preset Management
      */
-    async getGlobalPresets(userId?: string): Promise<any[]> {
+    async getGlobalPresets(userId?: string, systemOnly = false): Promise<any[]> {
         // Fetch all presets
-        const { data: allPresets, error: presetsError } = await supabase
+        let query = supabase
             .from('global_presets')
             .select('*')
             .order('created_at', { ascending: false });
+
+        if (systemOnly) {
+            query = query.is('user_id', null);
+        }
+
+        const { data: allPresets, error: presetsError } = await query;
 
         if (presetsError) throw presetsError;
 
