@@ -452,7 +452,7 @@ export function App() {
             onContextMenu={handleContextMenu}
         >
             <ProgressBar isVisible={isCanvasLoading || !!resolvingBoardId} progress={loadingProgress || (resolvingBoardId ? 30 : 0)} />
-            <CanvasGrid zoom={zoom} scrollPos={refs.scrollContainerRef.current ? { x: refs.scrollContainerRef.current.scrollLeft, y: refs.scrollContainerRef.current.scrollTop } : { x: 0, y: 0 }} />
+            <CanvasGrid zoom={zoom} containerRef={refs.scrollContainerRef} />
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
                 <CommandDock
                     zoom={zoom}

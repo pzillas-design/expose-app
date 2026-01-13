@@ -1,14 +1,34 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface CanvasGridProps {
     zoom: number;
-    scrollPos: { x: number; y: number };
+    containerRef: React.RefObject<HTMLDivElement>;
 }
 
-export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, scrollPos }) => {
+export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) => {
+    const [scrollPos, setScrollPos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            setScrollPos({
+                x: container.scrollLeft,
+                y: container.scrollTop
+            });
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        // Initial sync
+        handleScroll();
+
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [containerRef]);
+
     // Calculate grid visual size based on zoom
-    const gridSize = 24 * zoom; // Smaller grid size for dots
+    const gridSize = 32 * zoom; // Slightly larger grid for better aesthetics
 
     // Position dots based on scroll
     const bgPositionX = -scrollPos.x;
@@ -16,12 +36,13 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, scrollPos }) => {
 
     return (
         <div
-            className="fixed inset-0 pointer-events-none z-0"
+            className="fixed inset-0 pointer-events-none z-[5]"
             style={{
-                backgroundImage: `radial-gradient(circle, var(--grid-dot) 1px, transparent 1px)`,
+                backgroundImage: `radial-gradient(circle, #52525b 1.2px, transparent 1.2px)`,
                 backgroundSize: `${gridSize}px ${gridSize}px`,
                 backgroundPosition: `${bgPositionX}px ${bgPositionY}px`,
-                opacity: 0.15, // Very subtle
+                opacity: 0.18, // More visible than before
+                willChange: 'background-position'
             }}
         />
     );
