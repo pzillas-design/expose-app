@@ -107,28 +107,62 @@ const LanguageForm = ({
                     </label>
                     <div className="space-y-3">
                         {controls.map((ctrl) => (
-                            <div
-                                key={ctrl.id}
-                                onClick={() => startEditing(ctrl)}
-                                className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
-                            >
-                                <div className="min-w-0 flex-1">
-                                    <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
-                                    <div className="flex flex-wrap gap-1">
-                                        {ctrl.options.map(o => (
-                                            <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                                                {o.label}
-                                            </span>
-                                        ))}
+                            <React.Fragment key={ctrl.id}>
+                                {editingControlId === ctrl.id ? (
+                                    <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative`}>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                                Titel
+                                            </label>
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5" autoFocus />
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                                Optionen
+                                            </label>
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5" />
+                                        </div>
+                                        <div className="flex items-center gap-2 pt-2">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteControl(editingControlId); }}
+                                                className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+                                                title={t('delete')}
+                                            >
+                                                <Trash className="w-4 h-4" />
+                                            </button>
+                                            <div className="flex-1" />
+                                            <Button variant="secondary" onClick={resetForm} className="h-10 px-6">
+                                                {t('cancel')}
+                                            </Button>
+                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-10 px-8">
+                                                {t('save')}
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-all p-2 shrink-0">
-                                    <Pencil className="w-3.5 h-3.5" />
-                                </div>
-                            </div>
+                                ) : (
+                                    <div
+                                        onClick={() => startEditing(ctrl)}
+                                        className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {ctrl.options.map(o => (
+                                                    <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                                        {o.label}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-all p-2 shrink-0">
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </div>
+                                    </div>
+                                )}
+                            </React.Fragment>
                         ))}
 
-                        {isAddingControl ? (
+                        {isAddingControl && !editingControlId ? (
                             <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative`}>
                                 <div className="flex flex-col gap-1.5">
                                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
@@ -143,28 +177,21 @@ const LanguageForm = ({
                                     <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-2">
-                                    {editingControlId && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteControl(editingControlId); }}
-                                            className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
-                                            title={t('delete')}
-                                        >
-                                            <Trash className="w-4 h-4" />
-                                        </button>
-                                    )}
                                     <div className="flex-1" />
                                     <Button variant="secondary" onClick={resetForm} className="h-10 px-6">
                                         {t('cancel')}
                                     </Button>
                                     <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-10 px-8">
-                                        {editingControlId ? t('save') : t('add_btn')}
+                                        {t('add_btn')}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
-                            <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-300 dark:border-zinc-700 ${Theme.Geometry.Radius} text-zinc-500 text-xs ${Theme.Colors.SurfaceHover} transition-colors`}>
-                                <Plus className="w-3.5 h-3.5" /> {t('add_variable')}
-                            </button>
+                            !editingControlId && (
+                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-300 dark:border-zinc-700 ${Theme.Geometry.Radius} text-zinc-500 text-xs ${Theme.Colors.SurfaceHover} transition-colors`}>
+                                    <Plus className="w-3.5 h-3.5" /> {t('add_variable')}
+                                </button>
+                            )
                         )}
                     </div>
                 </div>
