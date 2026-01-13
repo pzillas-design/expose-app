@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback, useMemo, Suspense } from 'react';
 import { ImageItem } from '@/components/canvas/ImageItem';
+import { CanvasGrid } from '@/components/canvas/CanvasGrid';
 import { CanvasSkeleton } from '@/components/canvas/CanvasSkeleton';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
@@ -451,6 +452,7 @@ export function App() {
             onContextMenu={handleContextMenu}
         >
             <ProgressBar isVisible={isCanvasLoading || !!resolvingBoardId} progress={loadingProgress || (resolvingBoardId ? 30 : 0)} />
+            <CanvasGrid zoom={zoom} scrollPos={refs.scrollContainerRef.current ? { x: refs.scrollContainerRef.current.scrollLeft, y: refs.scrollContainerRef.current.scrollTop } : { x: 0, y: 0 }} />
             <div className="fixed top-6 left-6 z-50 flex items-center gap-3">
                 <CommandDock
                     zoom={zoom}

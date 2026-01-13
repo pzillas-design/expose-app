@@ -206,7 +206,7 @@ export const Button: React.FC<ButtonProps> = ({
     const variants = {
         primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 h-[42px] px-6 ${Typo.ButtonLabel}`,
 
-        secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 h-[42px] px-6 ${Typo.ButtonLabel}`,
+        secondary: `${Theme.Colors.Surface} border ${Theme.Colors.Border} ${Theme.Colors.TextPrimary} hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 h-[42px] px-6 ${Typo.ButtonLabel}`,
 
         danger: `${Theme.Colors.DangerBg} ${Theme.Colors.Danger} hover:bg-red-500/20 h-[42px] px-6 ${Typo.ButtonLabel}`,
 
