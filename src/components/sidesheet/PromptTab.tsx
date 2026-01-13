@@ -158,7 +158,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const startEditingAnnotationLabel = (annotationId: string) => {
         setIsEditingAnnotationLabel(annotationId);
         const defaultLabel = currentLang === 'de'
-            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+            ? "Setze die Anmerkungen im Bild fotorealistisch um."
             : "Interpret the visual annotations. They show what and where to change in the original image ..";
         setAnnotationLabelValue(annotationLabelValue || defaultLabel);
     };
@@ -257,7 +257,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         let annotationGuide = "";
         if (hasAnnotations) {
             const defaultLabel = currentLang === 'de'
-                ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+                ? "Setze die Anmerkungen im Bild fotorealistisch um."
                 : "Interpret the visual annotations. They show what and where to change in the original image ..";
             const displayLabel = annotationLabelValue || defaultLabel;
             annotationGuide = displayLabel;
@@ -447,7 +447,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         const count = activeAnns.length;
 
                         const defaultLabel = currentLang === 'de'
-                            ? "Interpretiere die visuellen Anmerkungen. Sie zeigen, was und wo du im Originalbild ändern sollst .."
+                            ? "Setze die Anmerkungen im Bild fotorealistisch um."
                             : "Interpret the visual annotations. They show what and where to change in the original image ..";
 
                         return (
