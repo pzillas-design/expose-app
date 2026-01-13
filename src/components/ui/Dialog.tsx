@@ -80,23 +80,17 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             {isOpen && createPortal(
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
                     <div className={`w-full max-w-[400px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
-                        <div className="p-8 flex flex-col items-center text-center">
-                            {options.variant === 'danger' && (
-                                <div className="mb-4 text-red-500">
-                                    <Trash size={24} strokeWidth={1.5} />
-                                </div>
-                            )}
-
-                            <h3 className={`${Typo.H1} mb-2`}>{options.title || 'Bist du sicher?'}</h3>
+                        <div className="p-8 pb-6 flex flex-col items-center text-center">
+                            <h3 className={`${Typo.H1} text-xl mb-3`}>{options.title || 'Bist du sicher?'}</h3>
 
                             {options.description && (
-                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mb-8 max-w-[320px]`}>
+                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-[320px] mb-2`}>
                                     {options.description}
                                 </p>
                             )}
 
                             {mode === 'prompt' && (
-                                <div className="w-full mb-8">
+                                <div className="w-full mt-6 mb-2">
                                     <Input
                                         autoFocus
                                         value={inputValue}
@@ -106,27 +100,27 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                             if (e.key === 'Enter') handleClose(true);
                                             if (e.key === 'Escape') handleClose(false);
                                         }}
-                                        className="text-center"
+                                        className="text-center h-12"
                                     />
                                 </div>
                             )}
+                        </div>
 
-                            <div className="flex flex-col gap-3 w-full">
-                                <Button
-                                    variant={options.variant === 'danger' ? 'danger' : 'primary'}
-                                    onClick={() => handleClose(true)}
-                                    className="w-full"
-                                >
-                                    {options.confirmLabel || 'Bestätigen'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleClose(false)}
-                                    className="w-full"
-                                >
-                                    {options.cancelLabel || 'Abbrechen'}
-                                </Button>
-                            </div>
+                        <div className="p-6 pt-2 flex flex-col gap-3">
+                            <Button
+                                variant={options.variant === 'danger' ? 'primary' : (options.variant || 'primary')}
+                                onClick={() => handleClose(true)}
+                                className={`w-full h-12 text-sm font-bold ${options.variant === 'danger' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : ''}`}
+                            >
+                                {options.confirmLabel || 'Bestätigen'}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => handleClose(false)}
+                                className="w-full h-12 text-sm font-bold border-none bg-transparent hover:bg-zinc-100 dark:hover:bg-white/5"
+                            >
+                                {options.cancelLabel || 'Abbrechen'}
+                            </Button>
                         </div>
                     </div>
                 </div>,

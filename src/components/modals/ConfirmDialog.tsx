@@ -35,28 +35,23 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         className={`w-full max-sm ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
-              <Trash className="w-5 h-5" />
-            </div>
-            <h3 className={Typo.H2}>{title}</h3>
-          </div>
-          <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mt-2 leading-relaxed`}>
+        <div className="p-8 pb-6 flex flex-col items-center text-center">
+          <h3 className={`${Typo.H1} text-xl mb-3`}>{title}</h3>
+          <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-[320px]`}>
             {description}
           </p>
         </div>
 
-        <div className={`p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t ${Theme.Colors.Border} flex justify-end gap-3`}>
-          <Button variant="secondary" onClick={onCancel} className="w-24 text-xs">
-            {cancelLabel}
-          </Button>
+        <div className="p-6 pt-2 flex flex-col gap-3">
           <Button
-            variant={variant}
+            variant={variant === 'danger' ? 'primary' : variant}
             onClick={onConfirm}
-            className="w-24 text-xs"
+            className={`w-full h-12 text-sm font-bold ${variant === 'danger' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : ''}`}
           >
             {confirmLabel}
+          </Button>
+          <Button variant="secondary" onClick={onCancel} className="w-full h-12 text-sm font-bold border-none bg-transparent hover:bg-zinc-100 dark:hover:bg-white/5">
+            {cancelLabel}
           </Button>
         </div>
       </div>

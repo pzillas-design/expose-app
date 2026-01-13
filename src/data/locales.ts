@@ -139,7 +139,9 @@ export const translations = {
     // Image Context Menu
     ctx_edit: "Edit",
     ctx_copy_prompt: "Copy Prompt",
+    copy_image: "Copy",
     ctx_download: "Download",
+    ctx_delete_image: "Delete image",
     ctx_delete: "Delete",
     ctx_set_reference: "Set as Reference",
 
@@ -422,7 +424,9 @@ export const translations = {
     // Image Context Menu
     ctx_edit: "Bearbeiten",
     ctx_copy_prompt: "Prompt kopieren",
+    copy_image: "Kopieren",
     ctx_download: "Herunterladen",
+    ctx_delete_image: "Bild löschen",
     ctx_delete: "Löschen",
     ctx_set_reference: "Als Referenz setzen",
 
