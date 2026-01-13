@@ -515,7 +515,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         };
 
         updateAnnotationsWithHistory([...currentAnns, newText]);
-        setActiveAnnotationId(newText.id);
     };
 
     const handleAddShape = (shape: 'rect' | 'circle' | 'line') => {

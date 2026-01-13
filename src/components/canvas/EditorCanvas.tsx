@@ -624,9 +624,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 value={ann.text || ''}
                                                 onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                                placeholder={t ? t('describe_changes') : "Describe..."}
+                                                placeholder="Text eingeben"
                                                 className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
-                                                autoFocus
                                                 onMouseDown={(e) => e.stopPropagation()}
                                             />
                                             <Tooltip text="Save">
@@ -654,8 +653,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                     <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
                                                 </div>
                                             )}
-                                            <span className={`${Typo.Micro} whitespace-nowrap text-zinc-900 dark:text-zinc-100 mr-1.5 select-none`}>
-                                                {ann.text || (t ? t('untitled') : "Edit")}
+                                            <span className={`${Typo.Micro} whitespace-nowrap mr-1.5 select-none ${ann.text ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                                {ann.text || "Text eingeben"}
                                             </span>
                                             <div className="flex items-center gap-0.5">
                                                 <button
