@@ -140,12 +140,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
                 {/* Header */}
                 <div className="p-8 pt-24 pb-2 flex flex-col items-center text-center relative z-10">
-                    <div className="flex flex-col items-center justify-center mb-6">
-                        <img
-                            src="/logo_full.png"
-                            alt="Exposé"
-                            className="w-32 h-auto object-contain dark:invert-0 invert hue-rotate-180"
-                        />
+                    <div className="flex flex-col items-center justify-center mb-6 gap-2">
+                        <Logo className="w-[54px] h-[54px]" />
+                        <h1
+                            className={`text-[44px] font-medium tracking-tight ${Theme.Colors.TextHighlight}`}
+                            style={{ fontFamily: "'Kumbh Sans', sans-serif" }}
+                        >
+                            exposé
+                        </h1>
                     </div>
                     <div className="space-y-1">
                         {mode !== 'signin' && (
