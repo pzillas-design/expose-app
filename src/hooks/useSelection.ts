@@ -92,11 +92,7 @@ export const useSelection = ({
 
     const handleScroll = useCallback(() => {
         // Allow selection when 0 or 1 items are selected
-        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1 || !isSnapEnabledRef.current) return;
-
-        // Disable auto-select-on-scroll if zoomed in deep (prevents "jumps" when zooming/panning locally)
-        // Increased threshold to 1.8 to allow more flexibility
-        if (zoom > 1.8 && selectedIds.length === 1) return;
+        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1) return;
 
         // Skip if we just finished zooming to let the browser snap settle without switching selection
         if (Date.now() - lastZoomFinishedRef.current < 500) return;

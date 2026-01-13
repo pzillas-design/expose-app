@@ -510,7 +510,7 @@ export function App() {
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                         style={{
                             padding: '50vh 50vw',
-                            gap: `${12 * zoom}rem`,
+                            gap: `${6 * zoom}rem`,
                         }}
                     >
                         {(isCanvasLoading || resolvingBoardId) && rows.length === 0 ? (
