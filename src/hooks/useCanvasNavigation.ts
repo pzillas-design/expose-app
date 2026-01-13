@@ -79,6 +79,17 @@ export const useCanvasNavigation = ({
             targetContentY = (targetScrollY + centerY - padY) / clampedTargetZoom;
         }
 
+        let finalScrollX = targetScrollX;
+        let finalScrollY = targetScrollY;
+
+        if (!useDirectInterpolation) {
+            // Mode 2: Keep the SAME content center, but at the NEW zoom
+            // Scroll = (Content * Zoom) + Pad - ViewportCenter
+            // targetContentX/Y are already set to startContentX/Y above for this case
+            finalScrollX = (padX + (targetContentX * clampedTargetZoom)) - centerX;
+            finalScrollY = (padY + (targetContentY * clampedTargetZoom)) - centerY;
+        }
+
         const startTime = performance.now();
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
 
@@ -108,8 +119,8 @@ export const useCanvasNavigation = ({
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
             } else {
                 setZoom(clampedTargetZoom);
-                container.scrollLeft = targetScrollX;
-                container.scrollTop = targetScrollY;
+                container.scrollLeft = finalScrollX;
+                container.scrollTop = finalScrollY;
                 zoomAnimFrameRef.current = null;
                 setIsZooming(false);
             }
