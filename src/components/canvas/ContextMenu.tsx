@@ -89,7 +89,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     fixed z-[101] min-w-[200px]
                     bg-white dark:bg-zinc-950
                     border border-zinc-200 dark:border-zinc-800
-                    rounded-lg shadow-lg shadow-black/5 ring-1 ring-black/5
+                    rounded-lg shadow-md shadow-black/5 ring-1 ring-black/5
                     overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
                 `}
                 style={{ top: menu.y, left: menu.x }}

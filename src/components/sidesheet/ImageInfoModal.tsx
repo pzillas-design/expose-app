@@ -51,7 +51,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 relative bg-white dark:bg-zinc-900
                 border-x border-b border-zinc-200 dark:border-zinc-800
                 border-t border-t-zinc-300 dark:border-t-zinc-700
-                shadow-2xl flex flex-col gap-8 p-6
+                shadow-lg flex flex-col gap-8 p-6
             `}>
                 {/* 0. Section Title: Info */}
                 <span className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
