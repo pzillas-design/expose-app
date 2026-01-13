@@ -40,7 +40,7 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) =>
                 backgroundImage: `radial-gradient(circle, var(--grid-dot) 1px, transparent 1px)`,
                 backgroundSize: `${gridSize}px ${gridSize}px`,
                 backgroundPosition: `${bgPositionX}px ${bgPositionY}px`,
-                opacity: 0.16, // ~35% less than 0.25 (which was 0.7*0.25=0.175)
+                opacity: 0.22,
                 willChange: 'background-position'
             }}
         />
