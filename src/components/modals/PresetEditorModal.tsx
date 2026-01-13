@@ -73,7 +73,7 @@ const LanguageForm = ({
                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="z.B. Cinematic Light" className="h-32 font-mono scrollbar-hide" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide" />
                 </div>
 
                 {/* Controls */}
@@ -104,13 +104,13 @@ const LanguageForm = ({
                                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder="z.B. Stil," className="py-2 text-xs" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 text-xs" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider text-[10px]`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder="z.B. Modern, Klassisch, ... (durch Komma getrennt)" className="py-2 text-xs" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 text-xs" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button variant="secondary" onClick={() => setIsAddingControl(false)} className="h-9">{t('cancel')}</Button>
