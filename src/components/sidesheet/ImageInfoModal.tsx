@@ -57,63 +57,94 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     Info
                 </span>
 
-                {/* 1. Filename/Title (Conditional Edit Mode) */}
-                <div className="flex flex-col gap-1.5 col-span-2 group/title">
-                    <span className={`${Typo.Body} text-zinc-400 text-[10px]`}>
-                        {t('filename')}
-                    </span>
+                {/* Metadata Grid - Auto-sized labels via Grid */}
+                <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-8 gap-y-1.5">
 
-                    {!isEditingTitle ? (
-                        <div
-                            className="flex items-center gap-2 cursor-pointer group/text"
-                            onClick={() => setIsEditingTitle(true)}
-                        >
-                            <span className={`${Typo.Mono} text-sm text-black dark:text-white truncate`}>
-                                {editTitleValue || 'Untitled'}
-                            </span>
-                            <Edit2 className="w-3.5 h-3.5 text-zinc-400 opacity-0 group-hover/text:opacity-100 transition-opacity" />
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <input
-                                autoFocus
-                                className={`
-                                    flex-1 bg-zinc-50 dark:bg-zinc-800/50 
-                                    border border-zinc-200 dark:border-zinc-700 
-                                    rounded-lg px-3 py-2
-                                    outline-none 
-                                    ${Typo.Mono} text-sm text-black dark:text-white 
-                                    focus:border-zinc-400 dark:focus:border-zinc-500
-                                    transition-colors
-                                `}
-                                value={editTitleValue}
-                                onChange={(e) => setEditTitleValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                    {/* 1. Filename */}
+                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename')}</span>
+                    <div className="group/title min-w-0">
+                        {!isEditingTitle ? (
+                            <div className="flex items-center gap-2 cursor-pointer group/text" onClick={() => setIsEditingTitle(true)}>
+                                <span className={`${Typo.Mono} text-xs text-black dark:text-white truncate`}>
+                                    {editTitleValue || 'Untitled'}
+                                </span>
+                                <Edit2 className="w-3 h-3 text-zinc-400 opacity-0 group-hover/text:opacity-100 transition-opacity" />
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    autoFocus
+                                    className={`
+                                        flex-1 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 
+                                        rounded px-2 py-0.5 outline-none ${Typo.Mono} text-xs text-black dark:text-white 
+                                        focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors
+                                    `}
+                                    value={editTitleValue}
+                                    onChange={(e) => setEditTitleValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            onUpdateImageTitle?.(image.id, editTitleValue);
+                                            setIsEditingTitle(false);
+                                        }
+                                        if (e.key === 'Escape') {
+                                            setEditTitleValue(image.title || '');
+                                            setIsEditingTitle(false);
+                                        }
+                                    }}
+                                />
+                                <IconButton
+                                    icon={<CheckIcon className="w-3 h-3" />}
+                                    onClick={() => {
                                         onUpdateImageTitle?.(image.id, editTitleValue);
                                         setIsEditingTitle(false);
+                                    }}
+                                    className="bg-zinc-100 dark:bg-zinc-800 h-6 w-6"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 2. Created At */}
+                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created_at')}</span>
+                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                        {image.createdAt ? (() => {
+                            const d = new Date(image.createdAt);
+                            return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                        })() : '-'}
+                    </span>
+
+                    {/* 3. Model */}
+                    {image.quality && (
+                        <>
+                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model')}</span>
+                            <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                                {(() => {
+                                    switch (image.quality) {
+                                        case 'pro-4k': return 'Nano Banana Pro 4K';
+                                        case 'pro-2k': return 'Nano Banana Pro 2K';
+                                        case 'pro-1k': return 'Nano Banana Pro 1K';
+                                        case 'fast': return 'Nano Banana (Fast)';
+                                        default: return image.modelVersion || 'Nano Banana';
                                     }
-                                    if (e.key === 'Escape') {
-                                        setEditTitleValue(image.title || '');
-                                        setIsEditingTitle(false);
-                                    }
-                                }}
-                            />
-                            <IconButton
-                                icon={<CheckIcon className="w-4 h-4" />}
-                                onClick={() => {
-                                    onUpdateImageTitle?.(image.id, editTitleValue);
-                                    setIsEditingTitle(false);
-                                }}
-                                className="bg-zinc-100 dark:bg-zinc-800"
-                            />
-                        </div>
+                                })()}
+                            </span>
+                        </>
                     )}
+
+                    {/* 4. Resolution */}
+                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('resolution')}</span>
+                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                        {image.realWidth && image.realHeight
+                            ? `${image.realWidth} × ${image.realHeight}px`
+                            : image.quality === 'pro-4k' ? '4096 × 4096px'
+                                : image.quality === 'pro-2k' ? '2048 × 2048px'
+                                    : '1024 × 1024px'}
+                    </span>
                 </div>
 
-                {/* 2. Prompt Section */}
+                {/* Prompt Section - Separate Block Below */}
                 {image.generationPrompt && (
-                    <div className="flex flex-col gap-1.5 group">
+                    <div className="flex flex-col gap-1.5 pt-2 group">
                         <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                             {t('tt_prompt')}
                         </span>
@@ -127,58 +158,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         </Tooltip>
                     </div>
                 )}
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-8">
-
-                    {/* Resolution */}
-                    <div className="flex flex-col gap-1.5">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                            {t('resolution')}
-                        </span>
-                        <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
-                            {image.realWidth && image.realHeight
-                                ? `${image.realWidth} × ${image.realHeight}px`
-                                : image.quality === 'pro-4k' ? '4096 × 4096px'
-                                    : image.quality === 'pro-2k' ? '2048 × 2048px'
-                                        : '1024 × 1024px'}
-                        </span>
-                    </div>
-
-                    {/* Created At */}
-                    <div className="flex flex-col gap-1.5">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                            {t('created_at')}
-                        </span>
-                        <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
-                            {image.createdAt ? (() => {
-                                const d = new Date(image.createdAt);
-                                return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                            })() : '-'}
-                        </span>
-                    </div>
-
-                    {/* Model */}
-                    {image.quality && (
-                        <div className="flex flex-col gap-1.5">
-                            <span className={`${Typo.Body} text-zinc-400 text-xs`}>
-                                {t('model')}
-                            </span>
-                            <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
-                                {(() => {
-                                    switch (image.quality) {
-                                        case 'pro-4k': return 'Nano Banana Pro 4K';
-                                        case 'pro-2k': return 'Nano Banana Pro 2K';
-                                        case 'pro-1k': return 'Nano Banana Pro 1K';
-                                        case 'fast': return 'Nano Banana (Fast)';
-                                        default: return image.modelVersion || 'Nano Banana';
-                                    }
-                                })()}
-                            </span>
-                        </div>
-                    )}
-
-                </div>
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2 pt-4">
