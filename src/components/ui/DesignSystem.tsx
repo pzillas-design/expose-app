@@ -204,13 +204,13 @@ export const Button: React.FC<ButtonProps> = ({
 
     // Aesthetic classes
     const variants = {
-        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 py-3.5 ${Typo.ButtonLabel}`,
+        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 h-12 px-6 ${Typo.ButtonLabel}`,
 
-        secondary: `bg-zinc-800/90 dark:bg-zinc-800/90 text-white dark:text-white hover:bg-zinc-700/90 dark:hover:bg-zinc-700/90 py-3.5 ${Typo.ButtonLabel}`,
+        secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 h-12 px-6 ${Typo.ButtonLabel}`,
 
-        danger: `${Theme.Colors.DangerBg} ${Theme.Colors.Danger} hover:bg-red-500/20 py-3.5 ${Typo.ButtonLabel}`,
+        danger: `${Theme.Colors.DangerBg} ${Theme.Colors.Danger} hover:bg-red-500/20 h-12 px-6 ${Typo.ButtonLabel}`,
 
-        ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white py-2 px-3 ${Typo.ButtonLabel}`
+        ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white h-10 px-4 ${Typo.ButtonLabel}`
     };
 
     const btn = (
@@ -238,7 +238,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
     const btn = (
         <button
             className={`
-                p-2 ${Theme.Geometry.Radius} ${Theme.Effects.Transition} shrink-0 
+                w-10 h-10 flex items-center justify-center ${Theme.Geometry.Radius} ${Theme.Effects.Transition} shrink-0 
                 ${active
                     ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white'
                     : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white'
@@ -247,7 +247,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
             `}
             {...props}
         >
-            {icon}
+            {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
         </button>
     );
 

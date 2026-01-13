@@ -51,14 +51,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           <Button
             variant={variant === 'danger' ? 'danger' : 'primary'}
             onClick={onConfirm}
-            className="w-full h-12 text-sm font-bold"
+            className="w-full"
           >
             {confirmLabel}
           </Button>
           <Button
             variant="secondary"
             onClick={onCancel}
-            className="w-full h-12 text-sm font-bold border-none bg-transparent hover:bg-zinc-100 dark:hover:bg-white/5"
+            className="w-full"
           >
             {cancelLabel}
           </Button>

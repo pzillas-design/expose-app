@@ -131,10 +131,10 @@ const LanguageForm = ({
                                                 <Trash className="w-4 h-4" />
                                             </button>
                                             <div className="flex-1" />
-                                            <Button variant="secondary" onClick={resetForm} className="h-10 px-6">
+                                            <Button variant="secondary" onClick={resetForm} className="px-6">
                                                 {t('cancel')}
                                             </Button>
-                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-10 px-8">
+                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8">
                                                 {t('save')}
                                             </Button>
                                         </div>
@@ -178,10 +178,10 @@ const LanguageForm = ({
                                 </div>
                                 <div className="flex items-center gap-2 pt-2">
                                     <div className="flex-1" />
-                                    <Button variant="secondary" onClick={resetForm} className="h-10 px-6">
+                                    <Button variant="secondary" onClick={resetForm} className="px-6">
                                         {t('cancel')}
                                     </Button>
-                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="h-10 px-8">
+                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8">
                                         {t('add_btn')}
                                     </Button>
                                 </div>
@@ -343,7 +343,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                         variant="primary"
                         onClick={handleSave}
                         disabled={isSaveDisabled()}
-                        className="w-full h-12 text-xs font-bold"
+                        className="w-full text-xs font-bold"
                         icon={<Check className="w-4 h-4" />}
                     >
                         {t('save')}

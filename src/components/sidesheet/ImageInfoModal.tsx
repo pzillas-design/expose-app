@@ -167,7 +167,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                             variant="secondary"
                             onClick={() => onGenerateMore(image.id)}
                             disabled={image.isGenerating}
-                            className="justify-start px-4 h-11 gap-3 shadow-none"
+                            className="justify-start px-4 gap-3"
                         >
                             <RotateCcw className="w-4 h-4 text-zinc-400" />
                             <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
@@ -180,7 +180,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         variant="secondary"
                         onClick={() => image.src && downloadImage(image.src, image.title || image.id)}
                         disabled={image.isGenerating}
-                        className="justify-start px-4 h-11 gap-3 shadow-none"
+                        className="justify-start px-4 gap-3"
                     >
                         <Download className="w-4 h-4 text-zinc-400" />
                         <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>

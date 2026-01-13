@@ -116,14 +116,14 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             <Button
                                 variant={options.variant === 'danger' ? 'danger' : (options.variant || 'primary')}
                                 onClick={() => handleClose(true)}
-                                className="w-full h-12 text-sm font-bold"
+                                className="w-full"
                             >
                                 {options.confirmLabel || 'Bestätigen'}
                             </Button>
                             <Button
                                 variant="secondary"
                                 onClick={() => handleClose(false)}
-                                className="w-full h-12 text-sm font-bold border-none bg-transparent hover:bg-zinc-100 dark:hover:bg-white/5"
+                                className="w-full"
                             >
                                 {options.cancelLabel || 'Abbrechen'}
                             </Button>
