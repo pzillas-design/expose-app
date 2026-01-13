@@ -40,16 +40,17 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <div
-            className="absolute top-14 -mt-px right-0 left-0 z-40 animate-in fade-in slide-in-from-top-2 duration-200"
+            className="absolute top-14 -mt-px -right-px -left-px z-40 animate-in fade-in slide-in-from-top-2 duration-200"
             onClick={(e) => e.stopPropagation()}
         >
             {/* The "Zipfel" (Arrow) - Positioned to point at the Info icon */}
-            <div className="absolute -top-1.5 right-[32px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-200 dark:border-zinc-800 rotate-45 z-50" />
+            <div className="absolute -top-1.5 right-[27px] w-3 h-3 bg-white dark:bg-zinc-900 border-l border-t border-zinc-300 dark:border-zinc-700 rotate-45 z-50" />
 
             {/* Modal Body */}
             <div className={`
                 relative bg-white dark:bg-zinc-900
-                border border-zinc-200 dark:border-zinc-800
+                border-x border-b border-zinc-200 dark:border-zinc-800
+                border-t border-t-zinc-300 dark:border-t-zinc-700
                 shadow-2xl flex flex-col gap-8 p-6
             `}>
                 {/* 0. Section Title: Info */}
