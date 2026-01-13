@@ -41,54 +41,18 @@ export const useCanvasNavigation = ({
     }, []);
 
     // --- Zoom Logic (Synchronized) ---
-    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration = 300) => {
+    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration = 400) => {
         const container = scrollContainerRef.current;
-        if (!container) return;
+        if (!container) return; // Guard
 
-        setIsZooming(true);
+        isZoomingRef.current = true;
+        setIsZoomingState(true); // Sync state
+
         const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
         const startZoom = zoomRef.current;
 
-        const containerRect = container.getBoundingClientRect();
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
-
-        const centerX = containerRect.width / 2;
-        const centerY = containerRect.height / 2;
-        const padX = window.innerWidth / 2;
-        const padY = window.innerHeight / 2;
-
-        // Two modes:
-        // 1. targetScroll provided: Navigate to a specific position (separate interpolation)
-        // 2. No targetScroll: Zoom around current center (fixed pivot)
-
-        const useDirectInterpolation = !!targetScroll;
-        const targetScrollX = targetScroll?.x ?? startScrollX;
-        const targetScrollY = targetScroll?.y ?? startScrollY;
-
-        // Calculate Content Center Points for Interpolation
-        // Formula: ContentX = (ScrollLeft + ViewportCenter - PadX) / Zoom
-        const startContentX = (startScrollX + centerX - padX) / startZoom;
-        const startContentY = (startScrollY + centerY - padY) / startZoom;
-
-        let targetContentX = startContentX;
-        let targetContentY = startContentY;
-
-        if (useDirectInterpolation) {
-            targetContentX = (targetScrollX + centerX - padX) / clampedTargetZoom;
-            targetContentY = (targetScrollY + centerY - padY) / clampedTargetZoom;
-        }
-
-        let finalScrollX = targetScrollX;
-        let finalScrollY = targetScrollY;
-
-        if (!useDirectInterpolation) {
-            // Mode 2: Keep the SAME content center, but at the NEW zoom
-            // Scroll = (Content * Zoom) + Pad - ViewportCenter
-            // targetContentX/Y are already set to startContentX/Y above for this case
-            finalScrollX = (padX + (targetContentX * clampedTargetZoom)) - centerX;
-            finalScrollY = (padY + (targetContentY * clampedTargetZoom)) - centerY;
-        }
 
         const startTime = performance.now();
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
@@ -97,32 +61,32 @@ export const useCanvasNavigation = ({
             const elapsed = time - startTime;
             const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
 
-            // Smoother ease-in-out
-            const ease = progress < 0.5
-                ? 4 * progress * progress * progress
-                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            // Ease Out Quart (Matching Main Branch)
+            const ease = 1 - Math.pow(1 - progress, 4);
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
-            const nextContentX = startContentX + (targetContentX - startContentX) * ease;
-            const nextContentY = startContentY + (targetContentY - startContentY) * ease;
-
-            // Back-calculate Scroll Position from interpolated Content Center and Zoom
-            // ScrollLeft = (ContentX * Zoom) + PadX - ViewportCenter
-            const nextScrollX = (padX + (nextContentX * nextZoom)) - centerX;
-            const nextScrollY = (padY + (nextContentY * nextZoom)) - centerY;
-
             setZoom(nextZoom);
-            container.scrollLeft = nextScrollX;
-            container.scrollTop = nextScrollY;
+
+            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View)
+            // Otherwise, let the browser/layout handle the scroll position anchor
+            if (targetScroll) {
+                const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
+                const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
+                container.scrollLeft = nextScrollX;
+                container.scrollTop = nextScrollY;
+            }
 
             if (progress < 1) {
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
             } else {
                 setZoom(clampedTargetZoom);
-                container.scrollLeft = finalScrollX;
-                container.scrollTop = finalScrollY;
+                if (targetScroll) {
+                    container.scrollLeft = targetScroll.x;
+                    container.scrollTop = targetScroll.y;
+                }
                 zoomAnimFrameRef.current = null;
-                setIsZooming(false);
+                isZoomingRef.current = false;
+                setIsZoomingState(false);
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
@@ -288,44 +252,20 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                setIsZooming(true);
+                isZoomingRef.current = true;
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
-                    setIsZooming(false);
+                    isZoomingRef.current = false;
                 }, 400);
 
-                if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
-
-                // Calculate new zoom
-                const delta = -e.deltaY;
-                const factor = Math.exp(delta * 0.006); // Slightly slower for more control
-                const targetZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
-
-                // Central Viewport Zoom Logic
-                const rect = container.getBoundingClientRect();
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-
-                const scrollLeft = container.scrollLeft;
-                const scrollTop = container.scrollTop;
-
-                const padX = window.innerWidth / 2;
-                const padY = window.innerHeight / 2;
-
-                // Point on canvas under the center of the viewport
-                const contentX = (scrollLeft + centerX - padX) / zoom;
-                const contentY = (scrollTop + centerY - padY) / zoom;
-
-                try {
-                    flushSync(() => {
-                        setZoom(targetZoom);
-                    });
-                } catch (e) {
-                    setZoom(targetZoom);
+                if (zoomAnimFrameRef.current) {
+                    cancelAnimationFrame(zoomAnimFrameRef.current);
+                    zoomAnimFrameRef.current = null;
                 }
 
-                container.scrollLeft = (padX + (contentX * targetZoom)) - centerX;
-                container.scrollTop = (padY + (contentY * targetZoom)) - centerY;
+                const delta = -e.deltaY;
+                // Match main branch factor (0.008) instead of 0.006
+                setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
