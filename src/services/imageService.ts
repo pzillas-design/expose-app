@@ -171,7 +171,8 @@ export const imageService = {
         boardId,
         attachments,
         targetVersion,
-        targetTitle
+        targetTitle,
+        aspectRatio
     }: {
         sourceImage: CanvasImage;
         prompt: string;
@@ -183,6 +184,7 @@ export const imageService = {
         attachments?: string[];
         targetVersion?: number;
         targetTitle?: string;
+        aspectRatio?: string;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -195,7 +197,8 @@ export const imageService = {
                 newId,
                 modelName,
                 board_id: boardId,
-                attachments
+                attachments,
+                aspectRatio
             }
         });
 

@@ -421,7 +421,8 @@ export const useGeneration = ({
                     qualityMode: modelId,
                     newId,
                     boardId: currentBoardId || undefined,
-                    attachments
+                    attachments,
+                    aspectRatio: ratio // Explicitly pass the user-selected ratio string
                 }),
                 timeoutPromise
             ]) as CanvasImage;
