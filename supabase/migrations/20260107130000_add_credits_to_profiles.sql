@@ -1,7 +1,7 @@
 -- 1. Fix Profiles Table (Critical for Edge Function)
 ALTER TABLE public.profiles 
 ADD COLUMN IF NOT EXISTS email TEXT,
-ADD COLUMN IF NOT EXISTS credits DECIMAL DEFAULT 10.0;
+ADD COLUMN IF NOT EXISTS credits DECIMAL DEFAULT 20.0;
 
 -- 2. Fix Canvas Images Table (Critical for Saving Images)
 ALTER TABLE public.canvas_images

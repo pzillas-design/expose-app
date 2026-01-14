@@ -15,7 +15,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     const { showToast } = useToast();
     const [user, setUser] = useState<any>(isAuthDisabled ? { id: 'guest', email: 'guest@expose.ae' } : null);
     const [userProfile, setUserProfile] = useState<any>(isAuthDisabled ? { credits: 999.00, full_name: 'Guest User' } : null);
-    const [credits, setCredits] = useState<number>(10.00);
+    const [credits, setCredits] = useState<number>(20.00);
     const userRef = useRef<any>(user);
 
     useEffect(() => {
