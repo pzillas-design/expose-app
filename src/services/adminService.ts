@@ -14,7 +14,7 @@ export const adminService = {
         }
 
         return (data || []).map((user: any) => ({
-            id: user.id,
+            id: user.user_id,
             name: user.full_name || 'New User',
             email: user.email,
             role: user.role as 'admin' | 'user' | 'pro',

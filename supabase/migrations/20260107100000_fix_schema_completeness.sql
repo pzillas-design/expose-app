@@ -28,9 +28,13 @@ CREATE TABLE IF NOT EXISTS public.global_objects_categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     label_de TEXT NOT NULL,
     label_en TEXT NOT NULL,
+    icon TEXT DEFAULT '📦',
     "order" INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure icon column exists if table was already created
+ALTER TABLE public.global_objects_categories ADD COLUMN IF NOT EXISTS icon TEXT DEFAULT '📦';
 
 CREATE TABLE IF NOT EXISTS public.global_objects_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

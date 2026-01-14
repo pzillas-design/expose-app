@@ -2,6 +2,26 @@
 -- Populate the global_objects_items table with stamp templates
 
 -- Ensure a default 'basics' category exists
+-- Fix missing icon column if it wasn't created in previous migrations
+ALTER TABLE public.global_objects_categories ADD COLUMN IF NOT EXISTS icon TEXT DEFAULT '📦';
+
+-- Fix ID types: Schema defined them as UUID but seed uses TEXT.
+-- We must convert them to TEXT.
+DO $$ 
+BEGIN
+  -- Drop constraint temporarily if it exists
+  IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'global_objects_items_category_id_fkey') THEN
+    ALTER TABLE public.global_objects_items DROP CONSTRAINT global_objects_items_category_id_fkey;
+  END IF;
+END $$;
+
+ALTER TABLE public.global_objects_categories ALTER COLUMN id TYPE TEXT;
+ALTER TABLE public.global_objects_items ALTER COLUMN id TYPE TEXT;
+ALTER TABLE public.global_objects_items ALTER COLUMN category_id TYPE TEXT;
+
+-- Re-establish FK
+ALTER TABLE public.global_objects_items ADD CONSTRAINT global_objects_items_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.global_objects_categories(id) ON DELETE CASCADE;
+
 INSERT INTO public.global_objects_categories (id, label_de, label_en, icon, "order")
 VALUES ('basics', 'Basis', 'Basics', '📦', 1)
 ON CONFLICT (id) DO NOTHING;

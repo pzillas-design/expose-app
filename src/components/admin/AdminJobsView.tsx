@@ -88,6 +88,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
+                                        <th className="px-5 py-4 font-medium">{t('admin_job_quality') || 'Qualität'}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
                                     </tr>
@@ -131,6 +132,32 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         j.status?.toLowerCase() === 'failed' ? (t('admin_job_failed') || "Failed") :
                                                             (t('admin_job_processing') || "Processing")}
                                                 </span>
+                                            </td>
+                                            <td className="px-5 py-5">
+                                                {(() => {
+                                                    if (!j.model) return <span className="text-zinc-400">-</span>;
+
+                                                    // Derive quality from model name
+                                                    let quality = '-';
+                                                    if (j.model.includes('pro-4k')) quality = '4K';
+                                                    else if (j.model.includes('pro-2k')) quality = '2K';
+                                                    else if (j.model.includes('pro-1k')) quality = '1K';
+                                                    else if (j.model.includes('fast') || j.model.includes('flash')) quality = 'Standard';
+                                                    else if (j.resultImage?.width) {
+                                                        // Fallback to dimensions
+                                                        const { width, height } = j.resultImage;
+                                                        const maxDim = Math.max(width || 0, height || 0);
+                                                        if (maxDim > 3000) quality = '4K';
+                                                        else if (maxDim > 1800) quality = '2K';
+                                                        else if (maxDim > 800) quality = '1K';
+                                                    }
+
+                                                    return (
+                                                        <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
+                                                            {quality}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">
                                                 <div className="flex flex-col items-end">

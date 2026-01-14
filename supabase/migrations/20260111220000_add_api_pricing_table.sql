@@ -23,8 +23,22 @@ ON CONFLICT (model_name) DO NOTHING;
 ALTER TABLE public.api_pricing ENABLE ROW LEVEL SECURITY;
 
 -- Policies: Allow all authenticated users to read (for edge functions)
-CREATE POLICY "Anyone can read pricing" ON public.api_pricing FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Service role can manage pricing" ON public.api_pricing FOR ALL TO service_role USING (true);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'api_pricing' AND policyname = 'Anyone can read pricing'
+    ) THEN
+        CREATE POLICY "Anyone can read pricing" ON public.api_pricing FOR SELECT TO authenticated USING (true);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'api_pricing' AND policyname = 'Service role can manage pricing'
+    ) THEN
+        CREATE POLICY "Service role can manage pricing" ON public.api_pricing FOR ALL TO service_role USING (true);
+    END IF;
+END $$;
 
 -- Create index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_api_pricing_model_name ON public.api_pricing(model_name);
