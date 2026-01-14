@@ -36,7 +36,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
     const handleDelete = async () => {
         const confirmed = await confirm({
-            title: t('admin_delete_user_confirm').replace('{{name}}', user.name),
+            title: t('admin_delete_user_confirm').replace('{{name}}', user.email),
             description: t('admin_delete_user_desc'),
             confirmLabel: t('admin_delete_user'),
             variant: "danger"
@@ -85,11 +85,10 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                 {/* Profile Header */}
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-500">
-                        {user.name.charAt(0)}
+                        {user.email.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium text-black dark:text-white">{user.name}</h3>
-                        <p className="text-zinc-500 text-sm">{user.email}</p>
+                        <h3 className="text-lg font-medium text-black dark:text-white">{user.email}</h3>
                         <div className="flex items-center gap-2 mt-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400`}>
                                 {t('id_label')}: {user.id}

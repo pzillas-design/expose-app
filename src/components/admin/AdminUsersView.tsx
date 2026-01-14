@@ -65,7 +65,6 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     };
 
     const filteredUsers = users.filter(u =>
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
         u.email.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -109,7 +108,6 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-5 py-4 font-medium">{t('admin_user_name')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_user_email')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_role_label')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_last_online')}</th>
@@ -124,8 +122,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         onClick={() => setSelectedUser(u)}
                                         className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-5 py-5 font-medium text-black dark:text-white">{u.name}</td>
-                                        <td className="px-5 py-5 text-zinc-500">{u.email}</td>
+                                        <td className="px-5 py-5 font-medium text-black dark:text-white">{u.email}</td>
                                         <td className="px-5 py-5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                                                 {u.role}
