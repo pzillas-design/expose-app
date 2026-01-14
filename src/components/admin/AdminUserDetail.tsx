@@ -23,15 +23,23 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
     const [isAddingBalance, setIsAddingBalance] = useState(false);
 
     const { showToast } = useToast();
-    const { confirm } = useItemDialog();
+    const { confirm, prompt } = useItemDialog();
 
-    const handleAddCredits = () => {
-        const amount = parseFloat(creditAmount);
-        if (isNaN(amount)) return;
-        onUpdateUser(user.id, { credits: user.credits + amount });
-        setCreditAmount('');
-        setIsAddingBalance(false);
-        showToast(t('admin_add_credits_success').replace('{{amount}}', amount.toFixed(2)), 'success');
+    const handleAddCredits = async () => {
+        const result = await prompt({
+            title: t('admin_add_funds').toUpperCase(),
+            placeholder: '0.00',
+            confirmLabel: t('admin_add_funds').toUpperCase(),
+            suffix: '€'
+        });
+
+        if (result) {
+            const amount = parseFloat(result);
+            if (!isNaN(amount) && amount > 0) {
+                onUpdateUser(user.id, { credits: user.credits + amount });
+                showToast(t('admin_add_credits_success').replace('{{amount}}', amount.toFixed(2)), 'success');
+            }
+        }
     };
 
     const handleDelete = async () => {
@@ -110,7 +118,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                             <div className="flex items-center justify-between">
                                 <span className="text-xl font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toFixed(2)} €</span>
                                 <button
-                                    onClick={() => setIsAddingBalance(true)}
+                                    onClick={handleAddCredits}
                                     className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
                                 >
                                     <Plus className="w-4 h-4" />
@@ -118,45 +126,6 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                             </div>
                         </div>
                     </div>
-
-                    {/* Add Balance Modal */}
-                    {isAddingBalance && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-200">
-                            <div className="w-full max-w-[280px] bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6 animate-in zoom-in-95 duration-200">
-                                <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-4 text-center">{t('admin_add_funds')}</h4>
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <input
-                                            autoFocus
-                                            type="number"
-                                            placeholder="0.00"
-                                            className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-center text-xl font-mono focus:ring-2 ring-emerald-500 outline-none transition-all"
-                                            value={creditAmount}
-                                            onChange={e => setCreditAmount(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && handleAddCredits()}
-                                        />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-mono">€</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="secondary"
-                                            className="flex-1 py-2 text-xs"
-                                            onClick={() => { setIsAddingBalance(false); setCreditAmount(''); }}
-                                        >
-                                            {t('cancel')}
-                                        </Button>
-                                        <Button
-                                            className="flex-1 py-2 text-xs"
-                                            onClick={handleAddCredits}
-                                            disabled={!creditAmount || isNaN(parseFloat(creditAmount))}
-                                        >
-                                            {t('admin_add_funds')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Account Settings */}

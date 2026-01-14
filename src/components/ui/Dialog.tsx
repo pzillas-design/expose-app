@@ -17,6 +17,7 @@ interface ConfirmOptions {
 interface PromptOptions extends ConfirmOptions {
     value?: string;
     placeholder?: string;
+    suffix?: string;
 }
 
 interface DialogContextType {
@@ -96,7 +97,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             )}
 
                             {mode === 'prompt' && (
-                                <div className="w-full mt-6 mb-2">
+                                <div className="w-full mt-6 mb-2 relative">
                                     <Input
                                         autoFocus
                                         value={inputValue}
@@ -106,26 +107,31 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                             if (e.key === 'Enter') handleClose(true);
                                             if (e.key === 'Escape') handleClose(false);
                                         }}
-                                        className="text-center h-12"
+                                        className="text-center h-14 text-xl font-bold border-zinc-200 dark:border-zinc-800 focus:border-emerald-500 ring-0"
                                     />
+                                    {options.suffix && (
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold">
+                                            {options.suffix}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        <div className="px-10 pb-10 flex flex-col gap-3">
-                            <Button
-                                variant={options.variant === 'danger' ? 'secondary' : (options.variant || 'primary')}
-                                onClick={() => handleClose(true)}
-                                className={`w-full h-14 uppercase tracking-widest font-bold ${options.variant === 'danger' ? 'bg-red-50/80 text-red-500 hover:bg-red-100 border-none' : ''}`}
-                            >
-                                {options.confirmLabel || 'Bestätigen'}
-                            </Button>
+                        <div className="px-10 pb-10 flex gap-3">
                             <Button
                                 variant="secondary"
                                 onClick={() => handleClose(false)}
-                                className="w-full h-14 uppercase tracking-widest font-bold bg-zinc-50/80 border-none text-zinc-500 hover:dark:text-white"
+                                className="flex-1 h-14 uppercase tracking-widest font-bold bg-zinc-50/80 border-none text-zinc-500 hover:dark:text-white"
                             >
                                 {options.cancelLabel || 'Abbrechen'}
+                            </Button>
+                            <Button
+                                variant={options.variant === 'danger' ? 'secondary' : (options.variant || 'primary')}
+                                onClick={() => handleClose(true)}
+                                className={`flex-1 h-14 uppercase tracking-widest font-bold ${options.variant === 'danger' ? 'bg-red-50/80 text-red-500 hover:bg-red-100 border-none' : ''}`}
+                            >
+                                {options.confirmLabel || 'Bestätigen'}
                             </Button>
                         </div>
                     </div>
