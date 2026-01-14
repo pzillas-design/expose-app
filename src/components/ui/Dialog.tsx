@@ -79,18 +79,18 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             {children}
             {isOpen && createPortal(
                 <div className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 ${Theme.Effects.Overlay} animate-in fade-in duration-300`}>
-                    <div className={`w-full max-w-[340px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-2xl border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
-                        <div className="p-8 pb-6 flex flex-col items-center text-center">
+                    <div className={`w-full max-w-[340px] ${Theme.Colors.ModalBg} ${Theme.Geometry.RadiusLg} shadow-md border ${Theme.Colors.Border} overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300`}>
+                        <div className="p-10 pb-6 flex flex-col items-center text-center">
                             {options.variant === 'danger' && (
-                                <div className="mb-4 text-red-500">
-                                    <Trash size={28} strokeWidth={1.5} />
+                                <div className="mb-6 text-red-500">
+                                    <Trash size={32} strokeWidth={1} />
                                 </div>
                             )}
 
-                            <h3 className={`${Typo.H1} text-xl mb-3`}>{options.title || 'Bist du sicher?'}</h3>
+                            <h3 className={`${Typo.H1} text-2xl font-bold mb-4`}>{options.title || 'Bist du sicher?'}</h3>
 
                             {options.description && (
-                                <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 leading-relaxed`}>
+                                <p className={`text-base text-zinc-600 dark:text-zinc-400 leading-relaxed`}>
                                     {options.description}
                                 </p>
                             )}
@@ -112,18 +112,18 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             )}
                         </div>
 
-                        <div className="px-6 pb-8 flex flex-col gap-3">
+                        <div className="px-10 pb-10 flex flex-col gap-3">
                             <Button
-                                variant={options.variant === 'danger' ? 'danger' : (options.variant || 'primary')}
+                                variant={options.variant === 'danger' ? 'secondary' : (options.variant || 'primary')}
                                 onClick={() => handleClose(true)}
-                                className="w-full"
+                                className={`w-full h-14 uppercase tracking-widest font-bold ${options.variant === 'danger' ? 'bg-red-50/80 text-red-500 hover:bg-red-100 border-none' : ''}`}
                             >
                                 {options.confirmLabel || 'Bestätigen'}
                             </Button>
                             <Button
                                 variant="secondary"
                                 onClick={() => handleClose(false)}
-                                className="w-full"
+                                className="w-full h-14 uppercase tracking-widest font-bold bg-zinc-50/80 border-none text-zinc-500 hover:dark:text-white"
                             >
                                 {options.cancelLabel || 'Abbrechen'}
                             </Button>

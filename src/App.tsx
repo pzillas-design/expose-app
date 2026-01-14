@@ -53,7 +53,7 @@ export function App() {
         handleGenerateMore, handleNavigateParent,
         handleUpdateAnnotations, handleUpdatePrompt, handleDeleteImage, setIsSettingsOpen, setIsDragOver,
         setQualityMode, setThemeMode, setLang, handleSelection, selectMultiple,
-        addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, updateProfile,
+        addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, handleSignOut, handleDeleteAccount, updateProfile,
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
@@ -735,6 +735,7 @@ export function App() {
                     lang={lang}
                     onLangChange={setLang}
                     onSignOut={handleSignOut}
+                    onDeleteAccount={handleDeleteAccount}
                     onCreateBoard={handleCreateBoardAndNavigate}
                 />
             } />
@@ -753,6 +754,7 @@ export function App() {
                     lang={lang}
                     onLangChange={setLang}
                     onSignOut={handleSignOut}
+                    onDeleteAccount={handleDeleteAccount}
                     onCreateBoard={handleCreateBoardAndNavigate}
                 />
             } />

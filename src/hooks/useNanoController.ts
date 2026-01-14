@@ -66,7 +66,7 @@ export const useNanoController = () => {
         isAuthModalOpen, setIsAuthModalOpen,
         authEmail, setAuthEmail,
         authError, setAuthError,
-        handleAddFunds, handleSignOut, updateProfile
+        handleAddFunds, handleSignOut, updateProfile, deleteAccount
     } = useAuth({
         isAuthDisabled,
         getResolvedLang,
@@ -412,6 +412,7 @@ export const useNanoController = () => {
         setAuthError,
         handleAddFunds,
         handleSignOut,
+        handleDeleteAccount: deleteAccount,
         updateProfile,
         setIsDragOver,
         handleFileDrop,
@@ -448,7 +449,7 @@ export const useNanoController = () => {
         setThemeMode, setLang, handleModeChange, setSideSheetMode, setBrushSize, setMaskTool, setActiveShape,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, selectAndSnap, selectMultiple,
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
-        setAuthError, handleAddFunds, handleSignOut, updateProfile, setIsDragOver, handleFileDrop, setIsSettingsOpen,
+        setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop, setIsSettingsOpen,
         setIsAdminOpen, processFile, handleDeleteImage, handleUpdateAnnotations, handleUpdatePrompt,
         handleUpdateVariables, onAddReference, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,

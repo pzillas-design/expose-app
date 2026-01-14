@@ -5,6 +5,7 @@ import {
 import { TranslationFunction, GenerationQuality } from '@/types';
 import { Button, Theme, Typo, SectionHeader } from '@/components/ui/DesignSystem';
 import { LocaleKey } from '@/data/locales';
+import { useItemDialog } from '@/components/ui/Dialog';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 
@@ -18,6 +19,7 @@ interface SettingsPageProps {
     lang: LocaleKey | 'auto';
     onLangChange: (lang: LocaleKey | 'auto') => void;
     onSignOut: () => void;
+    onDeleteAccount: () => Promise<void>;
     updateProfile: (updates: { full_name?: string }) => Promise<void>;
     user: any;
     userProfile: any;
@@ -27,7 +29,7 @@ interface SettingsPageProps {
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
-    themeMode, onThemeChange, lang, onLangChange, onSignOut, user, userProfile, t, onCreateBoard
+    themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t, onCreateBoard
 }) => {
     const [customAmount, setCustomAmount] = useState('');
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
@@ -36,6 +38,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isQualityDropdownOpen, setIsQualityDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+    const { confirm } = useItemDialog();
 
     const handleAddFundsConfirm = async () => {
         const finalAmount = parseFloat(customAmount);
@@ -117,12 +120,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
 
                         {/* Balance Card */}
-                        <div className="bg-zinc-100/30 dark:bg-zinc-800/20 border border-zinc-200/50 dark:border-white/5 rounded-2xl p-6 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 rounded-2xl p-6 shadow-sm overflow-hidden">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200/50 dark:border-white/5 flex items-center justify-center text-zinc-400">
-                                        <CreditCard className="w-5 h-5" />
-                                    </div>
                                     <div className="flex flex-col gap-0.5">
                                         <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Guthaben</span>
                                         <div className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white flex items-baseline">
@@ -318,20 +318,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
 
                     {/* --- DANGER ZONE (Bottom Link) --- */}
-                    <div className="pt-24 flex flex-col items-center gap-4">
+                    <div className="pt-12 flex flex-col items-center gap-4">
                         <Button
                             variant="secondary"
                             className="w-full text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 border-red-100 dark:border-red-900/30 h-11"
-                            onClick={() => {
-                                if (window.confirm('Möchtest du dein Konto wirklich dauerhaft löschen?')) {
-                                    // Handle delete
+                            onClick={async () => {
+                                const confirmed = await confirm({
+                                    title: 'Löschen',
+                                    description: 'Möchtest du dein Konto wirklich dauerhaft löschen?',
+                                    confirmLabel: 'LÖSCHEN',
+                                    cancelLabel: 'ABBRECHEN',
+                                    variant: 'danger'
+                                });
+                                if (confirmed) {
+                                    onDeleteAccount();
                                 }
                             }}
                             icon={<Trash2 className="w-4 h-4" />}
                         >
                             Konto löschen
                         </Button>
-                        <p className="text-[10px] text-zinc-300 dark:text-zinc-700 font-bold uppercase tracking-[0.2em]">Exposé v5.0.0</p>
                     </div>
                 </div>
             </main>

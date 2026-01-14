@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Plus, Trash, Edit3, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import { Plus, Trash, Pencil, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { TwoDotsVertical } from '../ui/CustomIcons';
 import { useItemDialog } from '../ui/Dialog';
@@ -245,10 +245,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                     <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} onContextMenu={(e) => { e.preventDefault(); setMenuOpen(false); }} />
                     <div
                         className={`
-                            fixed z-[101] min-w-[160px]
+                            fixed z-[101] min-w-[170px]
                             bg-white dark:bg-zinc-950
                             border border-zinc-200 dark:border-zinc-800
-                            rounded-lg shadow-xl ring-1 ring-black/5
+                            rounded-xl shadow-md ring-1 ring-black/5
                             overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
                         `}
                         style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
@@ -270,15 +270,28 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             }}
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >
-                            <Edit3 className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
+                            <Pencil className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
                             <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>{t('edit')}</span>
                         </button>
                         <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
                         <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(); setMenuOpen(false); }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                const confirmed = await confirm({
+                                    title: 'Löschen',
+                                    description: 'Möchtest du dieses Projekt wirklich löschen?',
+                                    confirmLabel: 'LÖSCHEN',
+                                    cancelLabel: 'ABBRECHEN',
+                                    variant: 'danger'
+                                });
+                                setMenuOpen(false);
+                                if (confirmed) {
+                                    onDelete();
+                                }
+                            }}
+                            className="flex items-center gap-3 px-4 py-2.5 bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-900/30 text-left transition-colors group"
                         >
-                            <Trash className="w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors" />
+                            <Trash className="w-4 h-4 text-red-400 group-hover:text-red-500 transition-colors" />
                             <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>{t('delete')}</span>
                         </button>
                     </div>
