@@ -268,10 +268,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                     onRename(newName);
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
                         >
-                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>{t('edit')}</span>
+                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
+                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
                         </button>
                         <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
                         <button
@@ -289,9 +289,9 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                     onDelete();
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
                         >
-                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-red-500 transition-colors" />
+                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
                             <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
                         </button>
                     </div>

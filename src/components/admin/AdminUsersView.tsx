@@ -50,14 +50,17 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         }
     };
 
-    const handleDeleteUser = async () => {
-        if (!userToDelete) return;
+    const handleDeleteUser = async (id?: string) => {
+        const targetId = id || userToDelete;
+        if (!targetId) return;
         try {
-            await adminService.deleteUser(userToDelete);
-            setUsers(prev => prev.filter(u => u.id !== userToDelete));
-            if (selectedUser?.id === userToDelete) setSelectedUser(null);
-        } catch (error) {
-            showToast(t('failed_delete_user'), 'error');
+            await adminService.deleteUser(targetId);
+            setUsers(prev => prev.filter(u => u.id !== targetId));
+            if (selectedUser?.id === targetId) setSelectedUser(null);
+            showToast(t('admin_user_deleted_success'), 'success');
+        } catch (error: any) {
+            console.error('Delete failed:', error);
+            showToast(error.message || t('failed_delete_user'), 'error');
         } finally {
             setIsDeleteModalOpen(false);
             setUserToDelete(null);

@@ -52,8 +52,6 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
         if (confirmed) {
             onDeleteUser(user.id);
-            onClose();
-            showToast(t('admin_user_deleted_success'), 'success');
         }
     };
 
