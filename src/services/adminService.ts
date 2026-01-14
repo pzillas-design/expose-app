@@ -258,6 +258,18 @@ export const adminService = {
     },
 
     /**
+     * Trigger a manual sync of user emails from Auth to Profiles
+     */
+    async syncUsers(): Promise<string> {
+        const { data, error } = await supabase.functions.invoke('sync-users');
+        if (error) {
+            console.error('Error syncing users:', error);
+            throw error;
+        }
+        return data?.message || 'Sync completed';
+    },
+
+    /**
      * Update the usage count and last used timestamp for a preset
      */
     async updatePresetUsage(id: string): Promise<void> {

@@ -92,11 +92,34 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         return t('admin_user_email_missing');
     };
 
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleSyncUsers = async () => {
+        setIsSyncing(true);
+        try {
+            const msg = await adminService.syncUsers();
+            showToast(msg, 'success');
+            fetchUsers(); // Refresh list to show new emails
+        } catch (error) {
+            showToast(t('admin_sync_error') || 'Sync failed', 'error');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     return (
         <div className="flex flex-col flex-1 min-h-0">
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <h2 className={Typo.H1}>{t('admin_users')}</h2>
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleSyncUsers}
+                        disabled={isSyncing}
+                        className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-zinc-600 dark:text-zinc-400 disabled:opacity-50"
+                        title={t('admin_sync_users') || "Sync User Data"}
+                    >
+                        <Loader2 className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </button>
                     <div className="relative w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                         <Input
