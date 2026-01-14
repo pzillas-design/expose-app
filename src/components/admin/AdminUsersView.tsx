@@ -64,9 +64,11 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         }
     };
 
-    const filteredUsers = users.filter(u =>
-        (u.email || '').toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredUsers = users.filter(u => {
+        const searchLower = search.toLowerCase();
+        const ident = (u.email || u.name || u.id).toLowerCase();
+        return ident.includes(searchLower);
+    });
 
     const getRelativeTime = (timestamp: number) => {
         const now = Date.now();
@@ -79,6 +81,12 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         if (minutes < 60) return t('admin_mins_ago').replace('{{n}}', minutes.toString());
         if (hours < 24) return t('admin_hours_ago').replace('{{n}}', hours.toString());
         return t('admin_days_ago').replace('{{n}}', days.toString());
+    };
+
+    const getUserIdentifier = (u: AdminUser) => {
+        if (u.email) return u.email;
+        if (u.name && u.name !== 'New User' && u.name !== t('admin_user_default')) return u.name;
+        return `ID: ${u.id.substring(0, 8)}...`;
     };
 
     return (
@@ -112,6 +120,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                     <th className="px-5 py-4 font-medium">{t('admin_role_label')}</th>
                                     <th className="px-5 py-4 font-medium">{t('admin_last_online')}</th>
                                     <th className="px-5 py-4 font-medium text-right">{t('admin_balance')}</th>
+                                    <th className="px-5 py-4 font-medium text-right">{t('admin_total_spent_header')}</th>
                                     <th className="px-5 py-4 font-medium text-right">{t('admin_user_joined')}</th>
                                 </tr>
                             </thead>
@@ -122,14 +131,17 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         onClick={() => setSelectedUser(u)}
                                         className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-5 py-5 font-medium text-black dark:text-white">{u.email}</td>
+                                        <td className="px-5 py-5 font-medium text-black dark:text-white">
+                                            {getUserIdentifier(u)}
+                                        </td>
                                         <td className="px-5 py-5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
-                                                {u.role === 'admin' ? t('role_admin') : t('role_user')}
+                                                {u.role === 'admin' ? t('role_admin') : (u.role === 'pro' ? t('role_pro') : t('role_user'))}
                                             </span>
                                         </td>
                                         <td className="px-5 py-5 text-zinc-500">{getRelativeTime(u.lastActiveAt)}</td>
                                         <td className="px-5 py-5 text-right font-mono text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
+                                        <td className="px-5 py-5 text-right font-mono text-zinc-900 dark:text-white">{u.totalSpent.toFixed(2)} €</td>
                                         <td className="px-5 py-5 text-right text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}

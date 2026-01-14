@@ -82,6 +82,14 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
         return t('admin_days_ago').replace('{{n}}', days.toString());
     };
 
+    const getUserIdentifier = () => {
+        if (user.email) return user.email;
+        if (user.name && user.name !== 'New User' && user.name !== t('admin_user_default')) return user.name;
+        return `ID: ${user.id.substring(0, 8)}...`;
+    };
+
+    const userIdentifier = getUserIdentifier();
+
     return (
         <div className="absolute top-0 bottom-0 right-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-xl z-20 flex flex-col animate-in slide-in-from-right duration-300">
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
@@ -93,10 +101,10 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
                 {/* Profile Header */}
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xl font-bold text-zinc-500">
-                        {(user.email || '?').charAt(0).toUpperCase()}
+                        {userIdentifier.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <h3 className="text-lg font-medium text-black dark:text-white">{user.email || t('admin_user_details')}</h3>
+                        <h3 className="text-lg font-medium text-black dark:text-white break-all">{userIdentifier}</h3>
                         <div className="flex items-center gap-2 mt-2">
                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400`}>
                                 {t('id_label')}: {user.id}

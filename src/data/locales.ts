@@ -330,6 +330,8 @@ export const translations = {
     discard: "Discard",
     save_success: "Successfully saved",
     delete_success: "Successfully deleted",
+    admin_total_spent_header: 'Total Spent',
+    admin_user_default: 'User',
   },
   de: {
     // General
@@ -662,5 +664,7 @@ export const translations = {
     discard: "Verwerfen",
     save_success: "Erfolgreich gespeichert",
     delete_success: "Erfolgreich gelöscht",
+    admin_total_spent_header: 'Ausgaben gesamt',
+    admin_user_default: 'Benutzer',
   }
 };
