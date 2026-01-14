@@ -107,7 +107,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const modelName = j.model || 'unknown';
                                                     const displayName =
                                                         modelName === 'gemini-2.5-flash-image' || modelName === 'fast' ? 'Nano Banana' :
-                                                            modelName === 'gemini-3-pro-image-preview' || modelName === 'pro-1k' || modelName === 'pro-2k' || modelName === 'pro-4k' ? 'Nano Banana Pro' :
+                                                            modelName === 'gemini-3-pro-image-preview' || modelName.includes('pro-1k') || modelName.includes('pro-2k') || modelName.includes('pro-4k') ? 'Nano Banana Pro' :
                                                                 modelName;
 
                                                     const isPro = modelName.includes('pro') || modelName.includes('3');
@@ -139,14 +139,19 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
 
                                                     // Derive quality from model name
                                                     let quality = '-';
+                                                    // Check explicit variants first
                                                     if (j.model.includes('pro-4k')) quality = '4K';
                                                     else if (j.model.includes('pro-2k')) quality = '2K';
                                                     else if (j.model.includes('pro-1k')) quality = '1K';
                                                     else if (j.model.includes('fast') || j.model.includes('flash')) quality = 'Standard';
-                                                    else if (j.resultImage?.width) {
-                                                        // Fallback to dimensions
+                                                    // Handle raw model names that might default to 1K/Standard
+                                                    else if (j.model === 'gemini-3-pro-image-preview') quality = '1K';
+
+                                                    // Fallback to dimensions if model check didn't catch it OR if we want to confirm
+                                                    if ((quality === '-' || quality === '1K') && j.resultImage?.width) {
                                                         const { width, height } = j.resultImage;
                                                         const maxDim = Math.max(width || 0, height || 0);
+                                                        // Update quality based on actual pixels if available
                                                         if (maxDim > 3000) quality = '4K';
                                                         else if (maxDim > 1800) quality = '2K';
                                                         else if (maxDim > 800) quality = '1K';

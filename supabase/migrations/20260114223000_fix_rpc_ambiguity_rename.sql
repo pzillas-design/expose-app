@@ -29,7 +29,7 @@ BEGIN
   RETURN QUERY
   SELECT 
     p.id as user_id,
-    COALESCE(au.email, p.email) as email, -- Prefer auth email, fallback to profile
+    COALESCE(au.email, p.email)::text as email, -- Explicit cast to text to avoid type mismatch
     p.full_name,
     p.role,
     p.credits,
