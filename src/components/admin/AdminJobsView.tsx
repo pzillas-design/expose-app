@@ -86,7 +86,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     <tr>
                                         <th className="px-5 py-4 font-medium">ID</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
-                                        <th className="px-5 py-4 font-medium">Modus</th>
                                         <th className="px-5 py-4 font-medium">Modell</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_cost')}</th>
@@ -102,9 +101,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         >
                                             <td className="px-5 py-5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
                                             <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
-                                            <td className="px-5 py-5 uppercase text-[10px] font-bold text-zinc-400">
-                                                {j.type === 'Edit' || j.type === 'Inpaint' ? 'Bearbeitung' : 'Erstellung'}
-                                            </td>
                                             <td className="px-5 py-5">
                                                 {(() => {
                                                     const modelName = j.model || 'unknown';
