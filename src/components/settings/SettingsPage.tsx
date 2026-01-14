@@ -316,30 +316,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             </div>
                         </div>
                     </div>
-
-                    {/* --- DANGER ZONE (Bottom Link) --- */}
-                    <div className="pt-12 flex flex-col items-center gap-4">
-                        <Button
-                            variant="secondary"
-                            className="w-full text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 border-red-100 dark:border-red-900/30 h-11"
-                            onClick={async () => {
-                                const confirmed = await confirm({
-                                    title: t('delete'),
-                                    description: t('settings_delete_account_desc'),
-                                    confirmLabel: t('delete').toUpperCase(),
-                                    cancelLabel: t('cancel').toUpperCase(),
-                                    variant: 'danger'
-                                });
-                                if (confirmed) {
-                                    onDeleteAccount();
-                                }
-                            }}
-                            icon={<Trash2 className="w-4 h-4" />}
-                        >
-                            {t('settings_delete_account')}
-                        </Button>
-                    </div>
-                </div>
             </main>
 
             <GlobalFooter t={t} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Plus, Trash, Pencil, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
+import { Plus, Trash, Pen, Clock, Image as ImageIcon, Settings, Wallet } from 'lucide-react';
 import { Theme, Typo, Button, IconButton, Card } from '../ui/DesignSystem';
 import { TwoDotsVertical } from '../ui/CustomIcons';
 import { useItemDialog } from '../ui/Dialog';
@@ -270,7 +270,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             }}
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >
-                            <Pencil className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
+                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
                             <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white font-medium`}>{t('edit')}</span>
                         </button>
                         <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
@@ -289,10 +289,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                     onDelete();
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-900/30 text-left transition-colors group"
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors group"
                         >
-                            <Trash className="w-4 h-4 text-red-400 group-hover:text-red-500 transition-colors" />
-                            <span className={`${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`}>{t('delete')}</span>
+                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-red-500 transition-colors" />
+                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
                         </button>
                     </div>
                 </>,

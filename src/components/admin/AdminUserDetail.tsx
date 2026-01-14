@@ -85,7 +85,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
     const getUserIdentifier = () => {
         if (user.email) return user.email;
         if (user.name && user.name !== 'New User' && user.name !== t('admin_user_default')) return user.name;
-        return `ID: ${user.id.substring(0, 8)}...`;
+        return t('admin_user_email_missing');
     };
 
     const userIdentifier = getUserIdentifier();

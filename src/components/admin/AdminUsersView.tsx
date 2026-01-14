@@ -86,7 +86,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     const getUserIdentifier = (u: AdminUser) => {
         if (u.email) return u.email;
         if (u.name && u.name !== 'New User' && u.name !== t('admin_user_default')) return u.name;
-        return `ID: ${u.id.substring(0, 8)}...`;
+        return t('admin_user_email_missing');
     };
 
     return (

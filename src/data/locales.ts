@@ -332,6 +332,7 @@ export const translations = {
     delete_success: "Successfully deleted",
     admin_total_spent_header: 'Total Spent',
     admin_user_default: 'User',
+    admin_user_email_missing: 'No Email',
   },
   de: {
     // General
@@ -666,5 +667,6 @@ export const translations = {
     delete_success: "Erfolgreich gelöscht",
     admin_total_spent_header: 'Ausgaben gesamt',
     admin_user_default: 'Benutzer',
+    admin_user_email_missing: 'Keine E-Mail',
   }
 };
