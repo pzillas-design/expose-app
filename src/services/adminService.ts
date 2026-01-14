@@ -6,26 +6,23 @@ export const adminService = {
      * Fetch all users/profiles from the database
      */
     async getUsers(): Promise<AdminUser[]> {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.rpc('get_admin_users');
 
         if (error) {
             console.error('Error fetching users:', error);
             throw error;
         }
 
-        return (data || []).map(profile => ({
-            id: profile.id,
-            name: profile.full_name || 'New User',
-            email: profile.email,
-            role: profile.role as 'admin' | 'user' | 'pro',
-            status: 'active', // Derived or hardcoded as per user request (removing status management)
-            credits: profile.credits || 0.0,
-            totalSpent: profile.total_spent || 0.0,
-            joinedAt: new Date(profile.created_at).getTime(),
-            lastActiveAt: new Date(profile.last_active_at).getTime(),
+        return (data || []).map((user: any) => ({
+            id: user.id,
+            name: user.full_name || 'New User',
+            email: user.email,
+            role: user.role as 'admin' | 'user' | 'pro',
+            status: 'active',
+            credits: user.credits || 0.0,
+            totalSpent: user.total_spent || 0.0,
+            joinedAt: new Date(user.created_at).getTime(),
+            lastActiveAt: new Date(user.last_active_at).getTime(),
         }));
     },
 
