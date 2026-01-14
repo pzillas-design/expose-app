@@ -88,8 +88,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
-                                        <th className="px-5 py-4 font-medium">{t('admin_job_quality') || 'Qualität'}</th>
-                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_cost')}</th>
+                                        <th className="px-5 py-4 font-medium">{t('admin_job_quality')}</th>
+                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_api_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
                                     </tr>
                                 </thead>
@@ -143,9 +143,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     if (j.model.includes('pro-4k')) quality = '4K';
                                                     else if (j.model.includes('pro-2k')) quality = '2K';
                                                     else if (j.model.includes('pro-1k')) quality = '1K';
-                                                    else if (j.model.includes('fast') || j.model.includes('flash')) quality = 'Standard';
                                                     // Handle raw model names that might default to 1K/Standard
                                                     else if (j.model === 'gemini-3-pro-image-preview') quality = '1K';
+                                                    else if (j.model.includes('fast') || j.model.includes('flash')) quality = 'Standard';
 
                                                     // Fallback to dimensions if model check didn't catch it OR if we want to confirm
                                                     if ((quality === '-' || quality === '1K') && j.resultImage?.width) {
@@ -166,11 +166,12 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             </td>
                                             <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">
                                                 <div className="flex flex-col items-end">
-                                                    <span>{j.cost.toFixed(2)} €</span>
-                                                    {j.apiCost !== undefined && j.apiCost !== null && (
-                                                        <span className="text-[9px] text-zinc-400 font-sans tracking-tight">
-                                                            ${(j.apiCost).toFixed(6)}
+                                                    {j.apiCost !== undefined && j.apiCost !== null ? (
+                                                        <span className="text-xs font-medium">
+                                                            ${Number(j.apiCost).toFixed(6)}
                                                         </span>
+                                                    ) : (
+                                                        <span className="text-xs text-zinc-400">-</span>
                                                     )}
                                                 </div>
                                             </td>
