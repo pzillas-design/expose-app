@@ -56,18 +56,16 @@ export const adminService = {
      * Delete a user (from profiles - Auth deletion usually requires service role or Edge Function)
      */
     async deleteUser(id: string): Promise<void> {
-        const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', id);
+        // We use an Edge Function to delete from auth.users (which requires service_role)
+        // and it handles the profile cleanup as well.
+        const { error } = await supabase.functions.invoke('delete-user', {
+            body: { userId: id }
+        });
 
         if (error) {
-            console.error('Error deleting user profile:', error);
-            throw error;
+            console.error('Error deleting user:', error);
+            throw new Error(error.message || 'Failed to delete user via Edge Function');
         }
-
-        // Note: To delete from auth.users, we would typically call an Edge Function
-        // for security reasons as anon/auth keys cannot delete other users.
     },
 
     /**
