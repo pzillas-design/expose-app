@@ -56,12 +56,18 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
     };
 
     const handleResetPassword = async () => {
+        if (!user.email) {
+            showToast(t('admin_user_email_missing'), 'error');
+            return;
+        }
+
         setIsResetting(true);
         try {
-            await adminService.resetPassword(user.email || '');
-            showToast(t('admin_pass_reset_success').replace('{{email}}', user.email || ''), 'success');
-        } catch (error) {
-            showToast(t('admin_pass_reset_error'), 'error');
+            await adminService.resetPassword(user.email);
+            showToast(t('admin_pass_reset_success').replace('{{email}}', user.email), 'success');
+        } catch (error: any) {
+            console.error('Reset password error:', error);
+            showToast(error.message || t('admin_pass_reset_error'), 'error');
         } finally {
             setIsResetting(false);
         }
