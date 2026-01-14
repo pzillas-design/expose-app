@@ -51,8 +51,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     };
 
     const filteredJobs = jobs.filter(j =>
-        j.userName.toLowerCase().includes(search.toLowerCase()) ||
-        j.id.toLowerCase().includes(search.toLowerCase())
+        (j.userName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (j.id || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -60,7 +60,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
             <div className="p-8 pb-6 flex items-center justify-between shrink-0">
                 <div>
                     <h2 className={Typo.H1}>{t('admin_jobs')}</h2>
-                    <p className={Typo.Micro}>Historie aller Generierungsprozesse und API-Calls.</p>
+                    <p className={Typo.Micro}>{t('admin_jobs_desc')}</p>
                 </div>
                 <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
@@ -84,9 +84,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-20">
                                     <tr>
-                                        <th className="px-5 py-4 font-medium">ID</th>
+                                        <th className="px-5 py-4 font-medium">{t('id_label')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
-                                        <th className="px-5 py-4 font-medium">Modell</th>
+                                        <th className="px-5 py-4 font-medium">{t('model')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
@@ -159,7 +159,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         className="gap-2"
                                     >
                                         {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
-                                        Mehr laden
+                                        {t('load_more')}
                                     </Button>
                                 </div>
                             )}

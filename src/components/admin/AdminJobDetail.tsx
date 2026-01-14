@@ -33,7 +33,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({
             {/* Header */}
             <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
                 <div className="flex flex-col">
-                    <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest">Job Details</span>
+                    <span className="text-sm font-bold text-zinc-400 uppercase tracking-widest">{t('admin_job_details')}</span>
                     <span className="text-[10px] font-mono text-zinc-400 mt-0.5">{job.id}</span>
                 </div>
                 <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
@@ -43,44 +43,44 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({
                 {/* Basic Info */}
                 <div className="flex flex-col">
                     <InfoRow
-                        label="Status"
+                        label={t('admin_job_status')}
                         value={job.status?.toUpperCase()}
                         color={statusColor}
                     />
                     <InfoRow
-                        label="Typ"
-                        value={job.type === 'Edit' || job.type === 'Inpaint' ? 'Bearbeitung' : 'Erstellung'}
+                        label={t('admin_job_type')}
+                        value={job.type === 'Edit' || job.type === 'Inpaint' ? t('admin_job_edit') : t('admin_job_create')}
                     />
                     <InfoRow
-                        label="Datum"
+                        label={t('admin_job_date')}
                         value={new Date(job.createdAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
                     />
                 </div>
 
                 {/* User Info */}
                 <div className="flex flex-col">
-                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Benutzer</h4>
-                    <InfoRow label="E-Mail" value={job.userName} />
-                    <InfoRow label="User ID" value={<span className="font-mono text-[10px]">{job.userId}</span>} />
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">{t('admin_job_user')}</h4>
+                    <InfoRow label={t('admin_user_email')} value={job.userName} />
+                    <InfoRow label={t('id_label')} value={<span className="font-mono text-[10px]">{job.userId}</span>} />
                 </div>
 
                 {/* Technical Info */}
                 <div className="flex flex-col">
-                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Technische Details</h4>
-                    <InfoRow label="Modell" value={displayName} />
-                    <InfoRow label="Model ID" value={<span className="font-mono text-[10px]">{modelName}</span>} />
-                    <InfoRow label="Kosten" value={`${job.cost.toFixed(2)} €`} />
-                    {job.apiCost && <InfoRow label="API-Kosten" value={`$${job.apiCost.toFixed(6)}`} />}
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">{t('admin_technical_details')}</h4>
+                    <InfoRow label={t('model')} value={displayName} />
+                    <InfoRow label={t('id_label')} value={<span className="font-mono text-[10px]">{modelName}</span>} />
+                    <InfoRow label={t('admin_job_cost')} value={`${job.cost.toFixed(2)} €`} />
+                    {job.apiCost && <InfoRow label={t('admin_job_api_cost')} value={`$${job.apiCost.toFixed(6)}`} />}
                 </div>
 
                 {/* Resources */}
                 <div className="flex flex-col">
-                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Ressourcen</h4>
-                    <InfoRow label="Quellbild verwendet" value={job.requestPayload?.hasSourceImage ? "Ja" : "Nein"} />
-                    <InfoRow label="Maske verwendet" value={job.requestPayload?.hasMask ? "Ja" : "Nein"} />
-                    <InfoRow label="Referenzbilder" value={job.requestPayload?.referenceImagesCount || 0} />
+                    <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">{t('admin_resources_used')}</h4>
+                    <InfoRow label={t('admin_source_image')} value={job.requestPayload?.hasSourceImage ? t('yes') : t('no')} />
+                    <InfoRow label={t('admin_mask')} value={job.requestPayload?.hasMask ? t('yes') : t('no')} />
+                    <InfoRow label={t('reference_images')} value={job.requestPayload?.referenceImagesCount || 0} />
                     {job.resultImage && (
-                        <InfoRow label="Auflösung" value={`${job.resultImage.width} × ${job.resultImage.height} px`} />
+                        <InfoRow label={t('resolution')} value={`${job.resultImage.width} × ${job.resultImage.height} px`} />
                     )}
                 </div>
 

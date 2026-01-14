@@ -65,7 +65,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     };
 
     const filteredUsers = users.filter(u =>
-        u.email.toLowerCase().includes(search.toLowerCase())
+        (u.email || '').toLowerCase().includes(search.toLowerCase())
     );
 
     const getRelativeTime = (timestamp: number) => {
@@ -125,7 +125,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         <td className="px-5 py-5 font-medium text-black dark:text-white">{u.email}</td>
                                         <td className="px-5 py-5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
-                                                {u.role}
+                                                {u.role === 'admin' ? t('role_admin') : t('role_user')}
                                             </span>
                                         </td>
                                         <td className="px-5 py-5 text-zinc-500">{getRelativeTime(u.lastActiveAt)}</td>
@@ -153,8 +153,8 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                 isOpen={isDeleteModalOpen}
                 title={t('admin_delete_user') || "Benutzer löschen"}
                 description={t('admin_delete_user_desc') || "Möchtest du diesen Benutzer wirklich unwiderruflich löschen?"}
-                confirmLabel={t('delete') || "Löschen"}
-                cancelLabel={t('cancel') || "Abbrechen"}
+                confirmLabel={t('delete')}
+                cancelLabel={t('cancel')}
                 onConfirm={handleDeleteUser}
                 onCancel={() => { setIsDeleteModalOpen(false); setUserToDelete(null); }}
                 variant="danger"

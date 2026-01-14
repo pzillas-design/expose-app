@@ -460,8 +460,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 description: currentLang === 'de'
                                                     ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
                                                     : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
-                                                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
-                                                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
+                                                confirmLabel: t('delete'),
+                                                cancelLabel: t('cancel'),
                                                 variant: 'danger'
                                             });
                                             if (result) {

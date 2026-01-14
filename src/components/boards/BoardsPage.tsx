@@ -278,10 +278,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             onClick={async (e) => {
                                 e.stopPropagation();
                                 const confirmed = await confirm({
-                                    title: 'Löschen',
-                                    description: 'Möchtest du dieses Projekt wirklich löschen?',
-                                    confirmLabel: 'LÖSCHEN',
-                                    cancelLabel: 'ABBRECHEN',
+                                    title: t('delete'),
+                                    description: t('delete_confirm_single'),
+                                    confirmLabel: t('delete').toUpperCase(),
+                                    cancelLabel: t('cancel').toUpperCase(),
                                     variant: 'danger'
                                 });
                                 setMenuOpen(false);

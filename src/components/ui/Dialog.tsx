@@ -124,7 +124,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 onClick={() => handleClose(false)}
                                 className="flex-1 h-14 uppercase tracking-widest font-bold bg-zinc-50/80 border-none text-zinc-500 hover:dark:text-white"
                             >
-                                {options.cancelLabel || 'Abbrechen'}
+                                {options.cancelLabel || 'Cancel'}
                             </Button>
                             <Button
                                 variant={options.variant === 'danger' ? 'secondary' : (options.variant || 'primary')}

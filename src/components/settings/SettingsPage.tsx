@@ -88,7 +88,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <main className="max-w-xl mx-auto w-full px-4 sm:px-6 flex-1 py-12 sm:py-24">
                 <div className="mb-12">
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                        Einstellungen
+                        {t('tab_settings')}
                     </h1>
                 </div>
 
@@ -96,7 +96,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                     {/* --- KONTO SECTION --- */}
                     <div className="space-y-4">
-                        <SectionHeader>Konto</SectionHeader>
+                        <SectionHeader>{t('tab_account')}</SectionHeader>
 
                         {/* Profile Info Card */}
                         <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 rounded-2xl p-6 shadow-sm flex flex-col gap-6 group">
@@ -105,7 +105,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     <span className="text-2xl font-bold tracking-tighter">{userInitial}</span>
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                    <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">E-Mail Adresse</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{t('settings_email_label')}</span>
                                     <span className="text-base font-medium text-zinc-900 dark:text-zinc-100">{user?.email}</span>
                                 </div>
                             </div>
@@ -115,7 +115,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 className="w-full h-11"
                                 icon={<LogOut className="w-4 h-4" />}
                             >
-                                Abmelden
+                                {t('logout_btn')}
                             </Button>
                         </div>
 
@@ -124,7 +124,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-5">
                                     <div className="flex flex-col gap-0.5">
-                                        <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Guthaben</span>
+                                        <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{t('balance')}</span>
                                         <div className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-white flex items-baseline">
                                             {(currentBalance || 0).toFixed(2)}
                                             <span className="text-lg text-zinc-400 ml-1 font-medium">€</span>
@@ -140,7 +140,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                         onClick={() => setIsTopUpExpanded(true)}
                                         className="w-full h-11"
                                     >
-                                        Aufladen
+                                        {t('top_up')}
                                     </Button>
                                 ) : (
                                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 border-t border-zinc-200 dark:border-white/5 pt-6">
@@ -176,7 +176,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 onClick={() => setIsTopUpExpanded(false)}
                                                 className="w-full h-11"
                                             >
-                                                Abbrechen
+                                                {t('cancel')}
                                             </Button>
                                         </div>
                                         {showMinError && <p className="text-[10px] text-red-500 text-center font-bold">Minimum 5.00 €</p>}
@@ -188,7 +188,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                     {/* --- ALLGEMEIN SECTION --- */}
                     <div className="space-y-4">
-                        <SectionHeader>Allgemein</SectionHeader>
+                        <SectionHeader>{t('tab_general')}</SectionHeader>
                         <div className="grid grid-cols-1 gap-4">
                             {/* Quality Selection */}
                             <div className="relative group">
@@ -201,7 +201,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                     className="w-full flex items-center justify-between p-5 rounded-2xl border border-zinc-200/50 dark:border-white/5 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-white/20 transition-all shadow-sm"
                                 >
                                     <div className="flex flex-col items-start">
-                                        <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Qualität</span>
+                                        <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">{t('creation_quality_label')}</span>
                                         <span className="text-sm font-bold text-zinc-900 dark:text-white">
                                             {MODES.find(m => m.id === qualityMode)?.label}
                                         </span>
@@ -245,7 +245,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                         className="w-full flex items-center justify-between p-5 rounded-2xl border border-zinc-200/50 dark:border-white/5 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-white/20 transition-all shadow-sm"
                                     >
                                         <div className="flex flex-col items-start">
-                                            <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1 text-left">Design</span>
+                                            <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1 text-left">{t('app_section')}</span>
                                             <span className="text-sm font-bold text-zinc-900 dark:text-white">
                                                 {THEMES.find(t_item => t_item.id === themeMode)?.label}
                                             </span>
@@ -285,7 +285,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                         className="w-full flex items-center justify-between p-5 rounded-2xl border border-zinc-200/50 dark:border-white/5 bg-white dark:border-zinc-900 hover:border-zinc-300 dark:hover:border-white/20 transition-all shadow-sm"
                                     >
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Sprache</span>
+                                            <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400 mb-1">{t('lang_section')}</span>
                                             <span className="text-sm font-bold text-zinc-900 dark:text-white leading-tight">
                                                 {LANGUAGES.find(l => l.id === lang)?.label}
                                             </span>
@@ -324,10 +324,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             className="w-full text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 border-red-100 dark:border-red-900/30 h-11"
                             onClick={async () => {
                                 const confirmed = await confirm({
-                                    title: 'Löschen',
-                                    description: 'Möchtest du dein Konto wirklich dauerhaft löschen?',
-                                    confirmLabel: 'LÖSCHEN',
-                                    cancelLabel: 'ABBRECHEN',
+                                    title: t('delete'),
+                                    description: t('settings_delete_account_desc'),
+                                    confirmLabel: t('delete').toUpperCase(),
+                                    cancelLabel: t('cancel').toUpperCase(),
                                     variant: 'danger'
                                 });
                                 if (confirmed) {
@@ -336,7 +336,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             }}
                             icon={<Trash2 className="w-4 h-4" />}
                         >
-                            Konto löschen
+                            {t('settings_delete_account')}
                         </Button>
                     </div>
                 </div>

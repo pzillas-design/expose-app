@@ -134,10 +134,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             }
 
             await fetchPresets();
-            showToast('Erfolgreich gespeichert', 'success');
+            showToast(t('save_success'), 'success');
         } catch (error: any) {
             console.error('Save failed:', error);
-            showToast(error.message || 'Fehler beim Speichern', 'error');
+            showToast(error.message || t('save_error'), 'error');
         } finally {
             setIsSaving(false);
         }
@@ -150,9 +150,9 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             await adminService.deleteGlobalPreset(selectedId + '-en');
             await fetchPresets();
             setSelectedId(null);
-            showToast('Vorlage gelöscht', 'success');
+            showToast(t('delete_success'), 'success');
         } catch (error) {
-            showToast('Fehler beim Löschen', 'error');
+            showToast(t('delete_error'), 'error');
         } finally {
             setIsDeleteDialogOpen(false);
         }
@@ -333,10 +333,10 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             {/* Dialogs */}
             <ConfirmDialog
                 isOpen={isDeleteDialogOpen}
-                title="Vorlage löschen?"
-                description="Möchtest du diese Vorlage wirklich dauerhaft entfernen?"
-                confirmLabel="Löschen"
-                cancelLabel="Abbrechen"
+                title={t('delete_preset')}
+                description={t('confirm_delete_preset')}
+                confirmLabel={t('delete')}
+                cancelLabel={t('cancel')}
                 onConfirm={handleDelete}
                 onCancel={() => setIsDeleteDialogOpen(false)}
                 variant="danger"

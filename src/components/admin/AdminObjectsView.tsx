@@ -124,7 +124,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
             showToast('Änderungen erfolgreich gespeichert!', 'success');
         } catch (error) {
             console.error('Failed to save changes:', error);
-            showToast('Fehler beim Speichern!', 'error');
+            showToast(t('save_error'), 'error');
         } finally {
             setSaving(false);
         }
@@ -179,7 +179,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                         icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                         className="px-6"
                     >
-                        {saving ? t('saving') || 'Speichern...' : t('save')}
+                        {saving ? t('saving') : t('save')}
                     </Button>
                     <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
                         {t('add_stamp')}
@@ -273,7 +273,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     {!loading && items.length === 0 && (
                         <div className="py-20 text-center text-zinc-400 flex flex-col items-center gap-3">
                             <ImageIcon className="w-10 h-10 opacity-20" />
-                            <span className={Typo.Body}>Keine Objekte vorhanden.</span>
+                            <span className={Typo.Body}>{t('no_entries_found')}</span>
                         </div>
                     )}
                 </div>
@@ -281,12 +281,12 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
             <ConfirmDialog
                 isOpen={deleteModal.isOpen}
-                title={deleteModal.isBulk ? "Auswahl löschen" : "Objekt löschen"}
+                title={deleteModal.isBulk ? t('ctx_delete_selection') : t('delete')}
                 description={deleteModal.isBulk
-                    ? `Möchtest du wirklich ${selectedIds.size} Objekte unwiderruflich löschen?`
-                    : "Möchtest du dieses Objekt wirklich unwiderruflich löschen?"}
-                confirmLabel="Löschen"
-                cancelLabel="Abbrechen"
+                    ? t('delete_confirm_multi').replace('{{count}}', selectedIds.size.toString())
+                    : t('delete_confirm_single')}
+                confirmLabel={t('delete')}
+                cancelLabel={t('cancel')}
                 onConfirm={performDelete}
                 onCancel={() => setDeleteModal({ isOpen: false, isBulk: false })}
                 variant="danger"

@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Check, Crop as CropIcon } from 'lucide-react';
 import { Button, IconButton, Theme, Typo } from '@/components/ui/DesignSystem';
+import { TranslationFunction } from '@/types';
 
 interface CropModalProps {
     isOpen: boolean;
     onClose: () => void;
     imageSrc: string | null;
     onCropComplete: (croppedBase64: string) => void;
+    t: TranslationFunction;
 }
 
 type DragMode = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'w' | 'e' | null;
@@ -16,7 +18,8 @@ export const CropModal: React.FC<CropModalProps> = ({
     isOpen,
     onClose,
     imageSrc,
-    onCropComplete
+    onCropComplete,
+    t
 }) => {
     const imgRef = useRef<HTMLImageElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -161,7 +164,7 @@ export const CropModal: React.FC<CropModalProps> = ({
                             <span className={Typo.Micro}>Passe den Bildausschnitt an.</span>
                         </div>
                     </div>
-                    <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip="Abbrechen" />
+                    <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('cancel')} />
                 </div>
 
                 {/* Main Crop Area */}
@@ -248,8 +251,8 @@ export const CropModal: React.FC<CropModalProps> = ({
 
                 {/* Footer */}
                 <div className={`p-6 border-t ${Theme.Colors.Border} ${Theme.Colors.PanelBg} flex justify-end gap-3 shrink-0`}>
-                    <Button variant="secondary" onClick={onClose} className="w-32">Abbrechen</Button>
-                    <Button onClick={handleDone} className="w-32" icon={<Check className="w-4 h-4" />}>Fertig</Button>
+                    <Button variant="secondary" onClick={onClose} className="w-32">{t('cancel')}</Button>
+                    <Button onClick={handleDone} className="w-32" icon={<Check className="w-4 h-4" />}>{t('done')}</Button>
                 </div>
             </div>
         </div>,

@@ -127,7 +127,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
 
                     <p className="text-[11px] text-zinc-400 text-center leading-relaxed">
                         Die Aufladung erfolgt sicher über Stripe. <br />
-                        Guthaben ist sofort nach Abschluss der Zahlung verfügbar.
+                        {t('credits_payment_note')}
                     </p>
                 </div>
             </div>

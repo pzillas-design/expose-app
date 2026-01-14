@@ -620,12 +620,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
         if (hasChanges && !forceSave) {
             const result = await confirm({
-                title: lang === 'de' ? 'Anmerkungen speichern?' : 'Save annotations?',
-                description: lang === 'de'
-                    ? 'Änderungen speichern oder verwerfen?'
-                    : 'Save or discard changes?',
-                confirmLabel: lang === 'de' ? 'Speichern' : 'Save',
-                cancelLabel: lang === 'de' ? 'Verwerfen' : 'Discard',
+                title: t('save_annotations'),
+                description: t('save_discard_changes'),
+                confirmLabel: t('save'),
+                cancelLabel: t('discard'),
                 variant: 'primary'
             });
 
