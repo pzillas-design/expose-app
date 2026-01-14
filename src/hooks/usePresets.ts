@@ -77,6 +77,49 @@ export const usePresets = (userId?: string) => {
         }
     }, []);
 
+    const saveRecentPrompt = useCallback(async (prompt: string) => {
+        if (!userId || !prompt.trim()) return;
+
+        // Check if an identical preset already exists for this user
+        // We prioritize explicit user presets, then check if we already have a history item
+        const existing = templates.find(t =>
+            t.user_id === userId &&
+            t.prompt.trim() === prompt.trim()
+        );
+
+        if (existing) {
+            await recordPresetUsage(existing.id);
+        } else {
+            // Create a new auto-generated history preset
+            // We use a specific title format or just the beginning of the prompt
+            const title = prompt.length > 30 ? prompt.slice(0, 30) + '...' : prompt;
+
+            const newPreset = {
+                id: crypto.randomUUID(),
+                title: title,
+                label: title,
+                prompt: prompt,
+                tags: ['history'],
+                isPinned: false,
+                isCustom: true,
+                usageCount: 1,
+                lang: 'en', // Default, maybe detect?
+                lastUsed: Date.now(),
+                user_id: userId
+            };
+
+            // Optimistic update
+            setTemplates(prev => [newPreset, ...prev]);
+
+            try {
+                await adminService.updateGlobalPreset(newPreset, userId);
+            } catch (err) {
+                console.error('Failed to save recent prompt history:', err);
+                // Revert on failure? For now just log
+            }
+        }
+    }, [userId, templates, recordPresetUsage]);
+
     useEffect(() => {
         fetchTemplates();
     }, [userId, fetchTemplates]);
@@ -87,6 +130,7 @@ export const usePresets = (userId?: string) => {
         refreshTemplates: fetchTemplates,
         saveTemplate,
         deleteTemplate,
-        recordPresetUsage
+        recordPresetUsage,
+        saveRecentPrompt
     };
 };

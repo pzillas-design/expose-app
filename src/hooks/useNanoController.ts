@@ -135,7 +135,7 @@ export const useNanoController = () => {
         boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
     } = useBoards(user?.id);
 
-    const { templates, refreshTemplates, saveTemplate, deleteTemplate, recordPresetUsage } = usePresets(user?.id);
+    const { templates, refreshTemplates, saveTemplate, deleteTemplate, recordPresetUsage, saveRecentPrompt } = usePresets(user?.id);
 
     // --- Board Image Loading ---
     React.useEffect(() => {
@@ -299,9 +299,12 @@ export const useNanoController = () => {
             });
         } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
+            if (finalPrompt && activeTemplateId === undefined) {
+                saveRecentPrompt(finalPrompt);
+            }
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
-    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, saveRecentPrompt]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -326,8 +329,11 @@ export const useNanoController = () => {
     }, [allImages, performGeneration]);
 
     const handleCreateNew = useCallback((prompt: string, model: string, ratio: string, attachments: string[] = []) => {
+        if (prompt.trim()) {
+            saveRecentPrompt(prompt);
+        }
         performNewGeneration(prompt, model, ratio, attachments);
-    }, [performNewGeneration]);
+    }, [performNewGeneration, saveRecentPrompt]);
 
     const handleNavigateParent = useCallback((parentId: string) => {
         const parent = allImages.find(i => i.id === parentId);
