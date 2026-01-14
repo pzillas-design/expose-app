@@ -102,44 +102,82 @@ Deno.serve(async (req) => {
             finalSourceBase64 = sourceImage.src.split(',')[1] || sourceImage.src;
         }
 
-        // ... (Model Config logic) ... (using ... to skip large blocks)
+        // Determines the Gemini Model to use
+        let finalModelName = 'gemini-3-pro-image-preview'; // Default to Pro (Imagen 3)
 
+        if (qualityMode === 'fast' || modelName === 'fast') {
+            // Flash model for fast/free generations
+            // Note: Update this to 'gemini-2.5-flash' or the correct image-capable flash model identifier
+            finalModelName = 'gemini-2.5-flash-image';
+        } else if (modelName && modelName.startsWith('gemini-')) {
+            // Allow explicit model override
+            finalModelName = modelName;
+        }
 
-        // ... (skipping to aspect ratio calculation block usually around line 260) ...
+        const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY')!)
+
+        const systemInstruction = "You are an expert AI image generator. You interpret prompts to generate high-quality, photorealistic images. You preserve artist intent for style and composition.";
+
+        const model = genAI.getGenerativeModel({
+            model: finalModelName,
+            systemInstruction: systemInstruction
+        });
+
+        // Aspect Ratio Handling for Imagen 3
+        // Supported: "1:1", "3:4", "4:3", "9:16", "16:9"
+        const VALID_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"];
 
         // Helper to find closest supported aspect ratio
-        const getClosestAspectRatio = (width: number, height: number): string => {
-            const targetRatio = width / height;
-            const supportedRatios = [
-                { str: '1:1', val: 1.0 },
-                { str: '9:16', val: 9 / 16 },
-                { str: '16:9', val: 16 / 9 },
-                { str: '3:4', val: 3 / 4 },
-                { str: '4:3', val: 4 / 3 },
-                { str: '2:3', val: 2 / 3 },
-                { str: '3:2', val: 3 / 2 },
-                { str: '4:5', val: 4 / 5 },
-                { str: '5:4', val: 5 / 4 },
-                { str: '21:9', val: 21 / 9 },
-                { str: '9:21', val: 9 / 21 }
-            ];
+        const findClosestValidRatio = (targetRatioStr: string): string => {
+            if (VALID_RATIOS.includes(targetRatioStr)) return targetRatioStr;
 
-            return supportedRatios.reduce((prev, curr) => {
-                return (Math.abs(curr.val - targetRatio) < Math.abs(prev.val - targetRatio) ? curr : prev);
-            }).str;
+            const parseRatio = (s: string) => {
+                const [w, h] = s.split(':').map(Number);
+                return w / h;
+            };
+
+            const targetVal = parseRatio(targetRatioStr);
+            if (isNaN(targetVal)) return '1:1';
+
+            let bestMatch = '1:1';
+            let minDiff = Number.MAX_VALUE;
+
+            for (const r of VALID_RATIOS) {
+                const val = parseRatio(r);
+                const diff = Math.abs(val - targetVal);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestMatch = r;
+                }
+            }
+            return bestMatch;
+        };
+
+        const getClosestAspectRatioFromDims = (width: number, height: number): string => {
+            const val = width / height;
+            // Find closest valid ratio
+            // ... construct string map
+            const ratioMap = VALID_RATIOS.map(r => {
+                const [w, h] = r.split(':').map(Number);
+                return { str: r, val: w / h };
+            });
+
+            return ratioMap.reduce((prev, curr) =>
+                Math.abs(curr.val - val) < Math.abs(prev.val - val) ? curr : prev
+            ).str;
         };
 
         let bestRatio = '1:1';
 
         if (explicitRatio) {
-            // Use user preference if provided
-            bestRatio = explicitRatio;
-            console.log(`[DEBUG] Using explicit aspect ratio: ${bestRatio}`);
+            // Validate user preference
+            bestRatio = findClosestValidRatio(explicitRatio);
+            console.log(`[DEBUG] Explicit ratio '${explicitRatio}' mapped to valid '${bestRatio}'`);
         } else {
             // Fallback to source image dimensions
             const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
             const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-            bestRatio = getClosestAspectRatio(sourceW, sourceH);
+            bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
             console.log(`[DEBUG] Calculated aspect ratio for ${sourceW}x${sourceH}: ${bestRatio}`);
         }
 
