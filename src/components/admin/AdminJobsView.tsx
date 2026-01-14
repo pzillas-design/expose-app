@@ -88,7 +88,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
-                                        <th className="px-5 py-4 font-medium">{t('admin_job_quality')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_api_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
                                     </tr>
@@ -105,20 +104,48 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             <td className="px-5 py-5">
                                                 {(() => {
                                                     const modelName = j.model || 'unknown';
-                                                    const displayName =
-                                                        modelName === 'gemini-2.5-flash-image' || modelName === 'fast' ? 'Nano Banana' :
-                                                            modelName === 'gemini-3-pro-image-preview' || modelName.includes('pro-1k') || modelName.includes('pro-2k') || modelName.includes('pro-4k') ? 'Nano Banana Pro' :
-                                                                modelName;
+                                                    let displayName = 'Nano Banana';
+                                                    let badgeColor = 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
+                                                    let quality = 'Fast';
 
-                                                    const isPro = modelName.includes('pro') || modelName.includes('3');
+                                                    // Determine Quality & Base Name
+                                                    if (modelName.includes('pro') || modelName.includes('3')) {
+                                                        displayName = 'Nano Banana Pro';
+                                                        quality = '1K'; // Default for Pro
+                                                        badgeColor = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+
+                                                        if (modelName.includes('4k')) {
+                                                            quality = '4K';
+                                                            badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
+                                                        } else if (modelName.includes('2k')) {
+                                                            quality = '2K';
+                                                            badgeColor = 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+                                                        } else if (modelName.includes('1k')) {
+                                                            quality = '1K';
+                                                            badgeColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+                                                        }
+
+                                                        // Fallback check dimensions if quality is still default 1K but might be higher
+                                                        if (quality === '1K' && j.resultImage?.width) {
+                                                            const maxDim = Math.max(j.resultImage.width, j.resultImage.height || 0);
+                                                            if (maxDim > 3000) {
+                                                                quality = '4K';
+                                                                badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
+                                                            } else if (maxDim > 1800) {
+                                                                quality = '2K';
+                                                                badgeColor = 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
+                                                            }
+                                                        }
+                                                    } else {
+                                                        // Non-pro / Fast
+                                                        displayName = 'Nano Banana';
+                                                        quality = 'Fast';
+                                                        badgeColor = 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700';
+                                                    }
 
                                                     return (
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
-                                                            ${isPro
-                                                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                                                            }`}>
-                                                            {displayName}
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
+                                                            {displayName} • {quality}
                                                         </span>
                                                     );
                                                 })()}
@@ -132,37 +159,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         j.status?.toLowerCase() === 'failed' ? (t('admin_job_failed') || "Failed") :
                                                             (t('admin_job_processing') || "Processing")}
                                                 </span>
-                                            </td>
-                                            <td className="px-5 py-5">
-                                                {(() => {
-                                                    if (!j.model) return <span className="text-zinc-400">-</span>;
-
-                                                    // Derive quality from model name
-                                                    let quality = '-';
-                                                    // Check explicit variants first
-                                                    if (j.model.includes('pro-4k')) quality = '4K';
-                                                    else if (j.model.includes('pro-2k')) quality = '2K';
-                                                    else if (j.model.includes('pro-1k')) quality = '1K';
-                                                    // Handle raw model names that might default to 1K/Standard
-                                                    else if (j.model === 'gemini-3-pro-image-preview') quality = '1K';
-                                                    else if (j.model.includes('fast') || j.model.includes('flash')) quality = 'Standard';
-
-                                                    // Fallback to dimensions if model check didn't catch it OR if we want to confirm
-                                                    if ((quality === '-' || quality === '1K') && j.resultImage?.width) {
-                                                        const { width, height } = j.resultImage;
-                                                        const maxDim = Math.max(width || 0, height || 0);
-                                                        // Update quality based on actual pixels if available
-                                                        if (maxDim > 3000) quality = '4K';
-                                                        else if (maxDim > 1800) quality = '2K';
-                                                        else if (maxDim > 800) quality = '1K';
-                                                    }
-
-                                                    return (
-                                                        <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                                                            {quality}
-                                                        </span>
-                                                    );
-                                                })()}
                                             </td>
                                             <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">
                                                 <div className="flex flex-col items-end">
