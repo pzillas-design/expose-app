@@ -124,7 +124,7 @@ export const adminService = {
             id: job.id,
             userName: job.user_name || 'Unknown',
             type: job.type || 'Generation',
-            model: job.model || 'unknown',
+            model: job.model || 'unknown', // This already contains 'pro-1k', 'pro-2k' etc from DB
             status: job.status || 'completed',
             promptPreview: job.prompt_preview || '',
             cost: job.cost || 0,
