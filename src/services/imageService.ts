@@ -239,8 +239,8 @@ export const imageService = {
         if (Math.abs(logicalWidth - sourceImage.width) > 1) {
             console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
             this.updateImage(newId, {
-                width: logicalWidth,
-                height: logicalHeight,
+                width: Math.round(logicalWidth),
+                height: Math.round(logicalHeight),
                 realWidth: genWidth,
                 realHeight: genHeight
             } as any, sourceImage.userId || (sourceImage as any).user_id)
