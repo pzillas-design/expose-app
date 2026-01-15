@@ -162,6 +162,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
                 {/* Form */}
                 <div className="p-8 space-y-6">
+                    {/* Beta Version Notice */}
+                    <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-lg">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                            💡 {t('beta_version_notice')}{' '}
+                            <a
+                                href="https://beta.expose.ae"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium underline hover:no-underline"
+                            >
+                                beta.expose.ae
+                            </a>
+                        </p>
+                    </div>
+
                     {/* 1. Email Form */}
                     <form onSubmit={handleEmailAuth} className="space-y-4">
                         {mode !== 'update-password' ? (

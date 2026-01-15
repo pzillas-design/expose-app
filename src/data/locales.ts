@@ -32,6 +32,7 @@ export const translations = {
     name_de: "Name (DE)",
     name_en: "Name (EN)",
     actions: "Actions",
+    beta_version_notice: "Looking for the old version? Visit",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -378,6 +379,7 @@ export const translations = {
     name_de: "Name (DE)",
     name_en: "Name (EN)",
     actions: "Aktionen",
+    beta_version_notice: "Alte Version? Besuche",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
