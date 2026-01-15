@@ -168,17 +168,18 @@ Deno.serve(async (req) => {
         };
 
         let bestRatio = '1:1';
+        let isEditMode = false;
 
         if (explicitRatio) {
             // Validate user preference - this should ALWAYS take priority
             bestRatio = findClosestValidRatio(explicitRatio);
             console.log(`[ASPECT RATIO] Explicit ratio '${explicitRatio}' mapped to valid '${bestRatio}'`);
         } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
-            // Fallback to source image dimensions ONLY if no explicit ratio
+            // EDIT MODE: Preserve exact source dimensions by omitting aspectRatio
+            isEditMode = true;
             const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
             const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-            bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
-            console.log(`[ASPECT RATIO] Calculated from source dimensions ${sourceW}x${sourceH}: ${bestRatio}`);
+            console.log(`[ASPECT RATIO] Edit mode detected - preserving exact source dimensions ${sourceW}x${sourceH}`);
         } else {
             console.log(`[ASPECT RATIO] No explicit ratio or source dimensions, defaulting to 1:1`);
         }
@@ -188,7 +189,8 @@ Deno.serve(async (req) => {
             imageConfig: {
                 mimeType: 'image/jpeg',
                 imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K')),
-                aspectRatio: bestRatio
+                // Only set aspectRatio for new generations, not edits
+                ...(isEditMode ? {} : { aspectRatio: bestRatio })
             }
         }
 
