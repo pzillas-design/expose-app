@@ -248,19 +248,30 @@ export const useCanvasNavigation = ({
         autoScrollTimeoutRef.current = window.setTimeout(() => { setIsAutoScrolling(false); }, instant ? 200 : 800);
 
         const executeSnap = () => {
+            const container = scrollContainerRef.current;
             const el = document.querySelector(`[data-image-id="${id}"]`);
-            if (el) {
-                el.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'center', inline: 'center' });
-            }
+            if (!el || !container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+
+            // Calculate center position
+            const targetScrollLeft = container.scrollLeft + (elRect.left - containerRect.left) - (containerRect.width / 2) + (elRect.width / 2);
+            const targetScrollTop = container.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
+
+            container.scrollTo({
+                left: targetScrollLeft,
+                top: targetScrollTop,
+                behavior: instant ? 'auto' : 'smooth'
+            });
         };
 
         if (instant) {
-            // Use requestAnimationFrame to ensure DOM is ready but snap is as fast as possible
             requestAnimationFrame(executeSnap);
         } else {
             setTimeout(executeSnap, 50);
         }
-    }, [setIsAutoScrolling]);
+    }, [setIsAutoScrolling, scrollContainerRef]);
 
     // Wheel Zoom Listener
     useEffect(() => {
