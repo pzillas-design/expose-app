@@ -43,7 +43,8 @@ export const useNanoController = () => {
     const [loadingProgress, setLoadingProgress] = useState(0);
 
     // @ts-ignore
-    const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true';
+    const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true' ||
+        (typeof window !== 'undefined' && window.location.hostname === 'beta.expose.ae');
 
     // Refs
     const scrollContainerRef = useRef<HTMLDivElement>(null);
