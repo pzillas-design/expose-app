@@ -709,7 +709,7 @@ export function App() {
             <CreditsModal
                 isOpen={isCreditsModalOpen}
                 onClose={() => setIsCreditsModalOpen(false)}
-                credits={credits}
+                currentBalance={credits}
                 onAddFunds={handleAddFunds}
                 t={t}
             />
