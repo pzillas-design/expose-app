@@ -129,8 +129,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     };
 
     return (
-        <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
             <CanvasGrid zoom={1} />
+
+            {/* Beta Version Notice - Top of Screen */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
+                <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-950/90 border border-blue-200 dark:border-blue-900/50 rounded-lg shadow-lg backdrop-blur-sm">
+                    <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
+                        💡 {t('beta_version_notice')}{' '}
+                        <a
+                            href="https://beta.expose.ae"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium underline hover:no-underline"
+                        >
+                            beta.expose.ae
+                        </a>
+                    </p>
+                </div>
+            </div>
+
             <div
                 className={`
                     w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
@@ -162,21 +180,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
                 {/* Form */}
                 <div className="p-8 space-y-6">
-                    {/* Beta Version Notice */}
-                    <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/30 rounded-lg">
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
-                            💡 {t('beta_version_notice')}{' '}
-                            <a
-                                href="https://beta.expose.ae"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium underline hover:no-underline"
-                            >
-                                beta.expose.ae
-                            </a>
-                        </p>
-                    </div>
-
                     {/* 1. Email Form */}
                     <form onSubmit={handleEmailAuth} className="space-y-4">
                         {mode !== 'update-password' ? (
