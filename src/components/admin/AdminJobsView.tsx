@@ -84,7 +84,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-20">
                                     <tr>
-                                        <th className="px-5 py-4 font-medium">Image</th>
                                         <th className="px-5 py-4 font-medium">{t('id_label')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
@@ -100,17 +99,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             onClick={() => setSelectedJob(j)}
                                             className={`cursor-pointer transition-colors ${selectedJob?.id === j.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                         >
-                                            <td className="px-5 py-5">
-                                                {j.resultImage?.storage_path ? (
-                                                    <img
-                                                        src={`https://nwxamngfnysostaefxif.supabase.co/storage/v1/object/public/user-content/${j.resultImage.storage_path}`}
-                                                        alt="Generated"
-                                                        className="w-12 h-12 object-cover rounded border border-zinc-200 dark:border-zinc-700"
-                                                    />
-                                                ) : (
-                                                    <div className="w-12 h-12 rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs text-zinc-400">N/A</div>
-                                                )}
-                                            </td>
                                             <td className="px-5 py-5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
                                             <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
                                             <td className="px-5 py-5">
