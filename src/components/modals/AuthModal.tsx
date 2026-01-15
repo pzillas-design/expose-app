@@ -6,6 +6,7 @@ import { Logo } from '@/components/ui/Logo';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { TranslationFunction } from '@/types';
 import { CanvasGrid } from '@/components/canvas/CanvasGrid';
+import { BetaNotice } from '@/components/ui/BetaNotice';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -134,19 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
             {/* Beta Version Notice - Top of Screen */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
-                <div className="px-4 py-2.5 bg-blue-50 dark:bg-blue-950/90 border border-blue-200 dark:border-blue-900/50 rounded-lg shadow-lg backdrop-blur-sm">
-                    <p className="text-xs text-blue-700 dark:text-blue-300 text-center">
-                        💡 {t('beta_version_notice')}{' '}
-                        <a
-                            href="https://beta.expose.ae"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium underline hover:no-underline"
-                        >
-                            beta.expose.ae
-                        </a>
-                    </p>
-                </div>
+                <BetaNotice t={t} />
             </div>
 
             <div
