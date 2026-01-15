@@ -134,7 +134,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             <CanvasGrid zoom={1} />
 
             {/* Beta Version Notice - Top of Screen */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-md px-4">
+            <div className="absolute top-4 left-0 right-0 z-20 flex justify-center px-4">
                 <BetaNotice t={t} />
             </div>
 

@@ -7,8 +7,8 @@ interface BetaNoticeProps {
 
 export const BetaNotice: React.FC<BetaNoticeProps> = ({ t }) => {
     return (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mt-4">
-            <p className="text-sm text-amber-900 dark:text-amber-100">
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 inline-block">
+            <p className="text-sm text-amber-900 dark:text-amber-100 whitespace-nowrap">
                 {t('beta_notice_text')}{' '}
                 <a
                     href="https://beta.expose.ae"
