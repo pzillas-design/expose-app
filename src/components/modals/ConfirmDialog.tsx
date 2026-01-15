@@ -37,8 +37,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       >
         <div className="p-8 pb-6 flex flex-col items-center text-center">
           {variant === 'danger' && (
-            <div className="mb-4 text-red-500">
-              <Trash size={28} strokeWidth={1.5} />
+            <div className="mb-4 w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+              <Trash size={24} strokeWidth={1.5} className="text-red-500" />
             </div>
           )}
           <h3 className={`${Typo.H1} text-xl mb-3`}>{title}</h3>
