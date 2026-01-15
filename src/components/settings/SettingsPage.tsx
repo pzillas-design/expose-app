@@ -8,6 +8,7 @@ import { LocaleKey } from '@/data/locales';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
+import { CreditsModal } from '../modals/CreditsModal';
 
 interface SettingsPageProps {
     qualityMode: GenerationQuality;
@@ -31,29 +32,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
     themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t, onCreateBoard
 }) => {
-    const [customAmount, setCustomAmount] = useState('');
-    const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
-    const [showMinError, setShowMinError] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const [isQualityDropdownOpen, setIsQualityDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [isDeleteExpanded, setIsDeleteExpanded] = useState(false);
     const { confirm } = useItemDialog();
-
-    const handleAddFundsConfirm = async () => {
-        const finalAmount = parseFloat(customAmount);
-        if (!finalAmount || finalAmount < 5) {
-            setShowMinError(true);
-            return;
-        }
-        setIsProcessing(true);
-        try {
-            await onAddFunds(finalAmount);
-        } finally {
-            setIsProcessing(false);
-        }
-    };
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
         { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: t('price_free') },
@@ -137,54 +121,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             </div>
 
                             <div className="mt-6">
-                                {!isTopUpExpanded ? (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => setIsTopUpExpanded(true)}
-                                        className="w-full h-11"
-                                    >
-                                        {t('top_up')}
-                                    </Button>
-                                ) : (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200 border-t border-zinc-200 dark:border-white/5 pt-6">
-                                        <div className="flex items-center justify-center border border-zinc-200 dark:border-white/10 rounded-xl p-4 bg-white dark:bg-zinc-800 shadow-inner">
-                                            <input
-                                                type="number"
-                                                value={customAmount}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-                                                        setCustomAmount(val);
-                                                        if (showMinError) setShowMinError(false);
-                                                    }
-                                                }}
-                                                placeholder="0.00"
-                                                autoFocus
-                                                className="w-full bg-transparent text-center text-3xl font-bold outline-none placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield]"
-                                            />
-                                            <span className="text-zinc-400 dark:text-zinc-600 ml-2 text-2xl font-bold">€</span>
-                                        </div>
-
-                                        <div className="flex flex-col gap-2">
-                                            <Button
-                                                variant="primary"
-                                                onClick={handleAddFundsConfirm}
-                                                isLoading={isProcessing}
-                                                className="w-full h-11"
-                                            >
-                                                {t('billing_btn')}
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                onClick={() => setIsTopUpExpanded(false)}
-                                                className="w-full h-11"
-                                            >
-                                                {t('cancel')}
-                                            </Button>
-                                        </div>
-                                        {showMinError && <p className="text-[10px] text-red-500 text-center font-bold">Minimum 5.00 €</p>}
-                                    </div>
-                                )}
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setIsCreditsModalOpen(true)}
+                                    className="w-full h-11"
+                                >
+                                    {t('top_up')}
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -346,6 +289,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </main>
 
             <GlobalFooter t={t} />
+
+            <CreditsModal
+                isOpen={isCreditsModalOpen}
+                onClose={() => setIsCreditsModalOpen(false)}
+                currentBalance={currentBalance}
+                onAddFunds={onAddFunds}
+                t={t}
+            />
         </div>
     );
 };
