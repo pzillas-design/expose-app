@@ -131,9 +131,12 @@ export function BoardsPage({
 
                 <main className="pb-32 flex-1 flex flex-col">
 
-                    <div className="mb-12">
-                        <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
-                        <p className="text-sm text-zinc-500 mt-1">{t('overview_desc')}</p>
+                    <div className="mb-12 flex items-center justify-between gap-8">
+                        <div>
+                            <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
+                            <p className="text-sm text-zinc-500 mt-1">{t('overview_desc')}</p>
+                        </div>
+                        <BetaNotice t={t} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
@@ -165,10 +168,6 @@ export function BoardsPage({
                                 />
                             ))
                         )}
-                    </div>
-
-                    <div className="mt-12">
-                        <BetaNotice t={t} />
                     </div>
                 </main>
             </div>
