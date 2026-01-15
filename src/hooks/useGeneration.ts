@@ -174,7 +174,7 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
-            annotations: [], // Clean slate - no inherited annotations in edit mode
+            annotations: sourceImage.annotations || [], // KEEP annotations for reference images
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
             userDraftPrompt: '', // Clean prompt field
