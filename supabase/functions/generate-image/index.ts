@@ -123,6 +123,77 @@ Deno.serve(async (req) => {
             systemInstruction: systemInstruction
         });
 
+        // Build parts array for Gemini API
+        const parts: any[] = [];
+
+        // Add text prompt
+        parts.push({ text: prompt });
+
+        // Add source image if provided
+        if (finalSourceBase64) {
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: finalSourceBase64
+                }
+            });
+        }
+
+        // Add mask if provided
+        const hasMask = !!maskDataUrl;
+        if (hasMask) {
+            const maskBase64 = maskDataUrl.split(',')[1] || maskDataUrl;
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/png',
+                    data: maskBase64
+                }
+            });
+        }
+
+        // Extract reference images from sourceImage.annotations and payloadAttachments
+        const allRefs: string[] = [];
+
+        // From sourceImage annotations
+        if (sourceImage?.annotations) {
+            sourceImage.annotations.forEach((ann: any) => {
+                if (ann.type === 'reference_image' && ann.referenceImage) {
+                    allRefs.push(ann.referenceImage);
+                }
+            });
+        }
+
+        // From payload attachments (for new generations)
+        if (payloadAttachments && Array.isArray(payloadAttachments)) {
+            allRefs.push(...payloadAttachments);
+        }
+
+        const hasRefs = allRefs.length > 0;
+
+        // Add reference images to parts
+        for (const refSrc of allRefs) {
+            let refBase64 = refSrc;
+            if (refSrc.startsWith('http')) {
+                const response = await fetch(refSrc);
+                const blob = await response.arrayBuffer();
+                const uint8 = new Uint8Array(blob);
+                let binary = '';
+                for (let i = 0; i < uint8.length; i += 32768) {
+                    binary += String.fromCharCode.apply(null, uint8.subarray(i, i + 32768) as any);
+                }
+                refBase64 = btoa(binary);
+            } else if (refSrc.startsWith('data:')) {
+                refBase64 = refSrc.split(',')[1] || refSrc;
+            }
+
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: refBase64
+                }
+            });
+        }
+
         // Aspect Ratio Handling for Imagen 3
         // Supported: "1:1", "3:4", "4:3", "9:16", "16:9"
         const VALID_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"];
