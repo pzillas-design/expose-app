@@ -33,7 +33,7 @@ export const translations = {
     name_en: "Name (EN)",
     actions: "Actions",
     beta_version_notice: "Looking for the old version? Visit",
-    beta_notice_text: "💡 Prefer the previous version? You can still access it at",
+    beta_notice_text: "💡 Looking for the old version? Visit",
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -381,7 +381,7 @@ export const translations = {
     name_en: "Name (EN)",
     actions: "Aktionen",
     beta_version_notice: "Alte Version? Besuche",
-    beta_notice_text: "💡 Bevorzugst du die vorherige Version? Du kannst sie weiterhin unter",
+    beta_notice_text: "💡 Suchen Sie die alte Version? Besuchen Sie",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
