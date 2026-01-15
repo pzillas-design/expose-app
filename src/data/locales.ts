@@ -337,7 +337,7 @@ export const translations = {
     admin_total_spent_header: 'Total Spent',
     admin_user_default: 'User',
     admin_user_email_missing: 'No Email',
-    delete_account_section: 'Delete Account',
+    delete_account_section: 'More',
     delete_account_permanently: 'Delete Account Permanently',
   },
   de: {
@@ -678,7 +678,7 @@ export const translations = {
     admin_total_spent_header: 'Ausgaben gesamt',
     admin_user_default: 'Benutzer',
     admin_user_email_missing: 'Keine E-Mail',
-    delete_account_section: 'Konto löschen',
+    delete_account_section: 'Sonstiges',
     delete_account_permanently: 'Konto dauerhaft löschen',
   }
 };
