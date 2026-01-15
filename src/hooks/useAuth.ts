@@ -157,7 +157,14 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         }
 
         try {
+            // Get current session token
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No active session');
+
             const invokePromise = supabase.functions.invoke('stripe-checkout', {
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`
+                },
                 body: {
                     amount,
                     cancel_url: window.location.origin,
