@@ -64,7 +64,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                     <div className="text-center space-y-2">
                         <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{t('current_balance') || 'Aktuelles Guthaben'}</span>
                         <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
-                            {currentBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
+                            {(currentBalance ?? 0).toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                         </div>
                     </div>
 
