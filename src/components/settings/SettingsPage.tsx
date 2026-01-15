@@ -38,6 +38,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isQualityDropdownOpen, setIsQualityDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+    const [isDeleteExpanded, setIsDeleteExpanded] = useState(false);
     const { confirm } = useItemDialog();
 
     const handleAddFundsConfirm = async () => {
@@ -118,25 +119,43 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 >
                                     {t('logout_btn')}
                                 </Button>
-                                <Button
-                                    variant="secondary"
-                                    className="w-full h-11 opacity-60 hover:opacity-100 transition-opacity"
-                                    onClick={async () => {
-                                        const confirmed = await confirm({
-                                            title: t('delete'),
-                                            description: t('settings_delete_account_desc'),
-                                            confirmLabel: t('delete').toUpperCase(),
-                                            cancelLabel: t('cancel').toUpperCase(),
-                                            variant: 'danger'
-                                        });
-                                        if (confirmed) {
-                                            onDeleteAccount();
-                                        }
-                                    }}
-                                    icon={<Trash2 className="w-4 h-4" />}
-                                >
-                                    {t('settings_delete_account')}
-                                </Button>
+
+                                {!isDeleteExpanded ? (
+                                    <button
+                                        onClick={() => setIsDeleteExpanded(true)}
+                                        className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-2"
+                                    >
+                                        {t('more')}...
+                                    </button>
+                                ) : (
+                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+                                        <Button
+                                            variant="secondary"
+                                            className="w-full h-11 opacity-60 hover:opacity-100 transition-opacity"
+                                            onClick={async () => {
+                                                const confirmed = await confirm({
+                                                    title: t('delete'),
+                                                    description: t('settings_delete_account_desc'),
+                                                    confirmLabel: t('delete').toUpperCase(),
+                                                    cancelLabel: t('cancel').toUpperCase(),
+                                                    variant: 'danger'
+                                                });
+                                                if (confirmed) {
+                                                    onDeleteAccount();
+                                                }
+                                            }}
+                                            icon={<Trash2 className="w-4 h-4" />}
+                                        >
+                                            {t('settings_delete_account')}
+                                        </Button>
+                                        <button
+                                            onClick={() => setIsDeleteExpanded(false)}
+                                            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors py-2 w-full"
+                                        >
+                                            {t('close')}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
