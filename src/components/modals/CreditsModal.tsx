@@ -56,12 +56,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             >
                 {/* Header */}
                 <div className="flex items-start justify-between px-6 pt-6 pb-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                            <Wallet className="w-5 h-5 text-zinc-900 dark:text-white" />
-                        </div>
-                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{t('balance') || 'Guthaben'}</h2>
-                    </div>
+                    <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{t('balance') || 'Guthaben'}</h2>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
 
@@ -125,10 +120,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         )}
                     </div>
 
-                    <p className="text-[11px] text-zinc-400 text-center leading-relaxed">
-                        Die Aufladung erfolgt sicher über Stripe. <br />
-                        {t('credits_payment_note')}
-                    </p>
+
                 </div>
             </div>
         </div>
