@@ -323,26 +323,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {/* --- KONTO LÖSCHEN SECTION --- */}
                     <div className="space-y-4">
                         <SectionHeader>{t('delete_account_section')}</SectionHeader>
-                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 rounded-2xl p-6 shadow-sm">
-                            <button
-                                onClick={async () => {
-                                    const confirmed = await confirm({
-                                        title: t('delete'),
-                                        description: t('settings_delete_account_desc'),
-                                        confirmLabel: t('delete').toUpperCase(),
-                                        cancelLabel: t('cancel').toUpperCase(),
-                                        variant: 'danger'
-                                    });
-                                    if (confirmed) {
-                                        onDeleteAccount();
-                                    }
-                                }}
-                                className="w-full h-11 px-4 rounded-xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all text-sm font-medium flex items-center justify-center gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                {t('delete_account_permanently')}
-                            </button>
-                        </div>
+                        <button
+                            onClick={async () => {
+                                const confirmed = await confirm({
+                                    title: t('delete'),
+                                    description: t('settings_delete_account_desc'),
+                                    confirmLabel: t('delete').toUpperCase(),
+                                    cancelLabel: t('cancel').toUpperCase(),
+                                    variant: 'danger'
+                                });
+                                if (confirmed) {
+                                    onDeleteAccount();
+                                }
+                            }}
+                            className="w-full h-11 px-4 rounded-xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all text-sm font-medium flex items-center justify-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            {t('delete_account_permanently')}
+                        </button>
                     </div>
                 </div>
             </main>
