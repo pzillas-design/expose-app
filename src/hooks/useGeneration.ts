@@ -377,7 +377,8 @@ export const useGeneration = ({
             generationPrompt: prompt,
             userDraftPrompt: '',
             annotations: creationAnns,
-            boardId: currentBoardId || undefined
+            boardId: currentBoardId || undefined,
+            userId: user?.id
         };
 
         const newRow: ImageRow = {
