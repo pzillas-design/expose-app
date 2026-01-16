@@ -81,7 +81,6 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
-    const [previousSrc, setPreviousSrc] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
@@ -90,18 +89,15 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
-            // Keep old image visible during transition
-            setPreviousSrc(currentSrc);
             setIsLoaded(false);
             setCurrentSrc(maskSrc || src || thumbSrc || null);
             setIsHighRes(!!src && !thumbSrc);
             lastPath.current = path;
         }
-    }, [path, src, maskSrc, thumbSrc]);
+    }, [path, src, maskSrc, thumbSrc, currentSrc]);
 
     useEffect(() => {
         if (maskSrc) {
-            setPreviousSrc(currentSrc);
             setCurrentSrc(maskSrc);
             setIsHighRes(true);
             return;
@@ -120,9 +116,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 // Standard: 1200px. HQ: Original.
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
-                    // Keep old image during transition
+                    // Reset loaded state when switching images
                     if (path !== lastPath.current) {
-                        setPreviousSrc(currentSrc);
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
@@ -144,42 +139,25 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     }, [path, src, zoom, maskSrc, isSelected, isHighRes, currentSrc]);
 
     return (
-        <>
-            {/* Previous image - fade out */}
-            {previousSrc && (
-                <img
-                    src={previousSrc}
-                    alt={title}
-                    className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
-                    style={{
-                        opacity: isLoaded ? 0 : 1,
-                        transition: 'opacity 0.3s ease-out'
-                    }}
-                />
-            )}
-            {/* Current image - fade in */}
-            <img
-                src={currentSrc || ''}
-                alt={title}
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
-                loading="lazy"
-                onLoad={(e) => {
-                    const img = e.currentTarget;
-                    if (img.naturalWidth && img.naturalHeight) {
-                        onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
-                    }
-                    setIsLoaded(true);
-                    onLoaded?.();
-                    // Clear previous image after transition
-                    setTimeout(() => setPreviousSrc(null), 300);
-                }}
-                style={{
-                    imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
-                    opacity: (currentSrc && isLoaded) ? 1 : 0,
-                    transition: 'opacity 0.3s ease-out'
-                }}
-            />
-        </>
+        <img
+            src={currentSrc || ''}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
+            loading="lazy"
+            onLoad={(e) => {
+                const img = e.currentTarget;
+                if (img.naturalWidth && img.naturalHeight) {
+                    onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
+                }
+                setIsLoaded(true);
+                onLoaded?.();
+            }}
+            style={{
+                imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
+                opacity: (currentSrc && isLoaded) ? 1 : 0,
+                transition: 'opacity 0.3s ease-out'
+            }}
+        />
     );
 });
 
