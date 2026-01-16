@@ -34,15 +34,10 @@ interface ImageItemProps {
     t: TranslationFunction;
 }
 
-const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, isFinished?: boolean, t: TranslationFunction }> = ({ startTime, duration, isFinished, t }) => {
+const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        if (isFinished) {
-            setProgress(100);
-            return;
-        }
-
         const start = startTime || Date.now();
         const update = () => {
             const now = Date.now();
@@ -54,16 +49,15 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, isFini
         const interval = setInterval(update, 30);
         update();
         return () => clearInterval(interval);
-    }, [startTime, duration, isFinished]);
+    }, [startTime, duration]);
 
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50">
-            {/* Backdrop - only opaque if not finished to allow seeing the result pop in, or if no bg image */}
-            <div className={`absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm transition-opacity duration-300 ${isFinished ? 'opacity-0' : 'opacity-100'}`} />
+            <div className="absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm" />
 
             <div className="relative w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500 z-10">
                 <div className={`flex items-end justify-between ${Typo.Label}`}>
-                    <span className={`${Theme.Colors.TextPrimary} drop-shadow-md`}>{isFinished ? t('finishing') : t('processing')}</span>
+                    <span className={`${Theme.Colors.TextPrimary} drop-shadow-md`}>{t('processing')}</span>
                 </div>
                 <div className="h-0.5 w-full bg-zinc-200/50 dark:bg-white/20 rounded-full overflow-hidden shadow-sm">
                     <div
@@ -86,8 +80,8 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 };
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
-    // Priority: Mask (Editing) > Direct Src (Pre-signed/Blob) > Thumb (Skeleton/Initial)
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
+    const [previousSrc, setPreviousSrc] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
@@ -96,6 +90,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
+            // Keep old image visible during transition
+            setPreviousSrc(currentSrc);
             setIsLoaded(false);
             setCurrentSrc(maskSrc || src || thumbSrc || null);
             setIsHighRes(!!src && !thumbSrc);
@@ -105,6 +101,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 
     useEffect(() => {
         if (maskSrc) {
+            setPreviousSrc(currentSrc);
             setCurrentSrc(maskSrc);
             setIsHighRes(true);
             return;
@@ -123,8 +120,9 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 // Standard: 1200px. HQ: Original.
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
-                    // Only reset isLoaded if we are switching to a DIFFERENT image
+                    // Keep old image during transition
                     if (path !== lastPath.current) {
+                        setPreviousSrc(currentSrc);
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
@@ -143,28 +141,45 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             const timeout = setTimeout(fetchUrl, delay);
             return () => clearTimeout(timeout);
         }
-    }, [path, src, zoom, maskSrc, isSelected, isHighRes]);
+    }, [path, src, zoom, maskSrc, isSelected, isHighRes, currentSrc]);
 
     return (
-        <img
-            src={currentSrc || ''}
-            alt={title}
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
-            loading="lazy"
-            onLoad={(e) => {
-                const img = e.currentTarget;
-                if (img.naturalWidth && img.naturalHeight) {
-                    onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
-                }
-                setIsLoaded(true);
-                onLoaded?.();
-            }}
-            style={{
-                imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
-                opacity: (currentSrc && isLoaded) ? 1 : 0,
-                transition: 'opacity 0.4s ease-out'
-            }}
-        />
+        <>
+            {/* Previous image - fade out */}
+            {previousSrc && (
+                <img
+                    src={previousSrc}
+                    alt={title}
+                    className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
+                    style={{
+                        opacity: isLoaded ? 0 : 1,
+                        transition: 'opacity 0.3s ease-out'
+                    }}
+                />
+            )}
+            {/* Current image - fade in */}
+            <img
+                src={currentSrc || ''}
+                alt={title}
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
+                loading="lazy"
+                onLoad={(e) => {
+                    const img = e.currentTarget;
+                    if (img.naturalWidth && img.naturalHeight) {
+                        onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
+                    }
+                    setIsLoaded(true);
+                    onLoaded?.();
+                    // Clear previous image after transition
+                    setTimeout(() => setPreviousSrc(null), 300);
+                }}
+                style={{
+                    imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
+                    opacity: (currentSrc && isLoaded) ? 1 : 0,
+                    transition: 'opacity 0.3s ease-out'
+                }}
+            />
+        </>
     );
 });
 
@@ -305,11 +320,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {(image.isGenerating || !isImageReady) && (
+                {image.isGenerating && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
                         duration={image.estimatedDuration || getDurationForQuality(image.quality)}
-                        isFinished={!image.isGenerating}
                         t={t}
                     />
                 )}
