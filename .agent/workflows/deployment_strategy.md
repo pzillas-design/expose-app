@@ -39,21 +39,6 @@ git checkout main && git pull origin main && git merge staging && git push origi
 
 ---
 
-## Manual Deployment: Staging → Beta (Old Version)
-
-**Only update beta when explicitly requested by user.**
-
-// turbo
-1. Merge `staging` into `beta` and push:
-```bash
-git checkout beta && git pull origin beta && git merge staging && git push origin beta && git checkout staging
-```
-
-> [!CAUTION]
-> Beta is the **old version** for existing users. Only update when necessary and with user approval.
-
----
-
 ## Edge Functions
 
 Edge Functions are shared across all environments (staging, main, beta).
