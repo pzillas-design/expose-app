@@ -81,12 +81,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                 onClick={handleCopyPrompt}
                                 className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
                             >
-                                {image.generationPrompt.split('\n').map((line, i, arr) => (
-                                    <React.Fragment key={i}>
-                                        {line}
-                                        {i < arr.length - 1 && <br />}
-                                    </React.Fragment>
-                                ))}
+                                {image.generationPrompt.replace(/\n/g, '. ')}
                             </p>
                         </Tooltip>
                     </div>
