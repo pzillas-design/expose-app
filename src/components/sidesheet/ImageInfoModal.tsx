@@ -81,7 +81,12 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                 onClick={handleCopyPrompt}
                                 className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
                             >
-                                {image.generationPrompt.replace(/\n/g, '. ')}
+                                {image.generationPrompt.split('\n').map((line, i, arr) => {
+                                    if (i === arr.length - 1) return line; // Last line, no separator
+                                    const trimmed = line.trim();
+                                    const needsPeriod = trimmed && !/[.!?]$/.test(trimmed);
+                                    return line + (needsPeriod ? '. ' : ' ');
+                                }).join('')}
                             </p>
                         </Tooltip>
                     </div>
