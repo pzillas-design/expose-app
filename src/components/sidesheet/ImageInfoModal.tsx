@@ -67,7 +67,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
                             <p
                                 onClick={handleCopyPrompt}
-                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
+                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-pre-wrap`}
                             >
                                 {image.generationPrompt}
                             </p>
