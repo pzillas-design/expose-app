@@ -27,6 +27,18 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     const { showToast } = useToast();
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState(image.title || '');
+    const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
+
+    // Read actual image dimensions from the loaded image
+    React.useEffect(() => {
+        if (image.src) {
+            const img = new Image();
+            img.onload = () => {
+                setActualDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+            };
+            img.src = image.src;
+        }
+    }, [image.src]);
 
     if (!image) return null;
 
@@ -67,7 +79,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
                             <p
                                 onClick={handleCopyPrompt}
-                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors`}
+                                className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs leading-relaxed max-h-32 overflow-y-auto no-scrollbar cursor-pointer hover:text-black dark:hover:text-white transition-colors whitespace-pre-wrap`}
                             >
                                 {image.generationPrompt}
                             </p>
@@ -152,11 +164,13 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     {/* Resolution */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('resolution')}</span>
                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
-                        {image.realWidth && image.realHeight
-                            ? `${image.realWidth} × ${image.realHeight}px`
-                            : image.quality === 'pro-4k' ? '4096 × 4096px'
-                                : image.quality === 'pro-2k' ? '2048 × 2048px'
-                                    : '1024 × 1024px'}
+                        {actualDimensions
+                            ? `${actualDimensions.width} × ${actualDimensions.height}px`
+                            : image.realWidth && image.realHeight
+                                ? `${image.realWidth} × ${image.realHeight}px`
+                                : image.quality === 'pro-4k' ? '4096 × 4096px'
+                                    : image.quality === 'pro-2k' ? '2048 × 2048px'
+                                        : '1024 × 1024px'}
                     </span>
                 </div>
 
