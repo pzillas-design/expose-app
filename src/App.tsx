@@ -526,43 +526,49 @@ export function App() {
                             gap: `${6 * zoom}rem`,
                         }}
                     >
-                        {rows.map((row) => (
-                            <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
-                                <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
-                                    {row.items.map((img, imgIndex) => (
-                                        <ImageItem
-                                            key={img.id}
-                                            image={img}
-                                            zoom={zoom}
-                                            isSelected={selectedIds.includes(img.id)}
-                                            hasAnySelection={selectedIds.length > 0}
-                                            onRetry={handleGenerateMore}
-                                            onChangePrompt={handleNavigateParent}
-                                            editorState={editorState}
-                                            onUpdateAnnotations={handleUpdateAnnotations}
-                                            onEditStart={handleAnnotationEditStart}
-                                            editorActions={{
-                                                setMaskTool: actions.setMaskTool,
-                                                setBrushSize: actions.setBrushSize,
-                                                setActiveShape: actions.setActiveShape
-                                            }}
-                                            onInteractionStart={() => sideSheetHandlersRef.current?.onStart()}
-                                            onInteractionEnd={() => sideSheetHandlersRef.current?.onEnd()}
-                                            onNavigate={moveSelection}
-                                            hasLeft={imgIndex > 0}
-                                            hasRight={imgIndex < row.items.length - 1}
-                                            onDelete={requestDelete}
-                                            onContextMenu={handleImageContextMenu}
-                                            t={t}
-                                        />
-                                    ))}
+                        {/* Show skeletons while loading if we know images exist */}
+                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 && allImages.length > 0 ? (
+                            <CanvasSkeleton zoom={zoom} />
+                        ) : (
+                            rows.map((row) => (
+                                <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
+                                    <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
+                                        {row.items.map((img, imgIndex) => (
+                                            <ImageItem
+                                                key={img.id}
+                                                image={img}
+                                                zoom={zoom}
+                                                isSelected={selectedIds.includes(img.id)}
+                                                hasAnySelection={selectedIds.length > 0}
+                                                onRetry={handleGenerateMore}
+                                                onChangePrompt={handleNavigateParent}
+                                                editorState={editorState}
+                                                onUpdateAnnotations={handleUpdateAnnotations}
+                                                onEditStart={handleAnnotationEditStart}
+                                                editorActions={{
+                                                    setMaskTool: actions.setMaskTool,
+                                                    setBrushSize: actions.setBrushSize,
+                                                    setActiveShape: actions.setActiveShape
+                                                }}
+                                                onInteractionStart={() => sideSheetHandlersRef.current?.onStart()}
+                                                onInteractionEnd={() => sideSheetHandlersRef.current?.onEnd()}
+                                                onNavigate={moveSelection}
+                                                hasLeft={imgIndex > 0}
+                                                hasRight={imgIndex < row.items.length - 1}
+                                                onDelete={requestDelete}
+                                                onContextMenu={handleImageContextMenu}
+                                                t={t}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
 
 
-                    {rows.length === 0 && !isDragOver && (
+                    {/* Only show welcome screen after loading completes and board is empty */}
+                    {rows.length === 0 && !isDragOver && !isCanvasLoading && !resolvingBoardId && (
                         <div className="absolute inset-0 flex items-center justify-center p-8 text-center z-20 overflow-y-auto">
                             <div className="flex flex-col items-center gap-12 w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-700">
                                 {/* Header */}
