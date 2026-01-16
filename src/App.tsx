@@ -526,7 +526,7 @@ export function App() {
                             gap: `${6 * zoom}rem`,
                         }}
                     >
-                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 ? (
+                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 && allImages.length > 0 ? (
                             <CanvasSkeleton zoom={zoom} />
                         ) : (
                             rows.map((row) => (
