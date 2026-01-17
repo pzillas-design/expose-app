@@ -44,9 +44,14 @@ const QUALITY_TO_MODEL: Record<string, string> = {
 };
 
 // Cache for historical durations (simple in-memory cache)
-let historicalDurationsCache: Record<string, number> | null = null;
+let historicalDurationsCache: Record<string, {
+    baseDurationMs: number;
+    concurrencyFactor: number;
+    hourFactors: Record<string, number>;
+    sampleCount: number;
+}> | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 1 * 60 * 1000; // 1 minute for recent data
 
 // Fetch historical average durations from database
 const fetchHistoricalDurations = async (): Promise<Record<string, number>> => {
@@ -173,12 +178,27 @@ export const useGeneration = ({
     }, [setRows, user, t, showToast]);
 
     // Re-attach to orphaned jobs on load/change
-    // Pre-fetch historical durations on mount
+    // Pre-fetch smart estimates on mount
     React.useEffect(() => {
-        fetchHistoricalDurations().then(durations => {
-            historicalDurationsCache = durations;
-            cacheTimestamp = Date.now();
-        });
+        supabase.rpc('get_smart_generation_estimates')
+            .then(({ data }) => {
+                if (data && data.length > 0) {
+                    const estimates: Record<string, any> = {};
+                    data.forEach((row: any) => {
+                        if (row.model) {
+                            estimates[row.model] = {
+                                baseDurationMs: Math.round(row.base_duration_ms || 0),
+                                concurrencyFactor: row.concurrency_factor || 0.3,
+                                hourFactors: row.hour_factors || {},
+                                sampleCount: row.sample_count || 0
+                            };
+                        }
+                    });
+                    historicalDurationsCache = estimates;
+                    cacheTimestamp = Date.now();
+                }
+            })
+            .catch(err => console.warn('Failed to fetch smart estimates:', err));
     }, []);
 
     React.useEffect(() => {
@@ -240,17 +260,31 @@ export const useGeneration = ({
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
 
-        // Try to use historical duration from cache, fallback to hardcoded
-        let baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
-        if (historicalDurationsCache) {
-            const modelName = QUALITY_TO_MODEL[qualityMode];
-            if (modelName && historicalDurationsCache[modelName]) {
-                baseDuration = historicalDurationsCache[modelName];
-            }
-        }
+        // Calculate smart duration estimate
+        const modelName = QUALITY_TO_MODEL[qualityMode];
+        const currentHour = new Date().getHours();
+        let estimatedDuration: number;
 
-        // Scale duration linearly with number of concurrent generations
-        const estimatedDuration = Math.round(baseDuration * currentConcurrency);
+        if (historicalDurationsCache && modelName && historicalDurationsCache[modelName]) {
+            const estimate = historicalDurationsCache[modelName];
+            let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
+
+            // Apply time-of-day factor (calculated from real data)
+            const hourFactor = estimate.hourFactors?.[currentHour.toString()];
+            if (hourFactor && hourFactor > 0) {
+                duration *= hourFactor;
+            }
+
+            // Apply concurrency factor (measured from real data)
+            const concurrencyFactor = estimate.concurrencyFactor || 0.3;
+            duration *= (1 + concurrencyFactor * currentConcurrency);
+
+            estimatedDuration = Math.round(duration);
+        } else {
+            // Fallback to hardcoded estimate with simple linear concurrency
+            const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
+            estimatedDuration = Math.round(baseDuration * (1 + 0.3 * currentConcurrency));
+        }
 
         const placeholder: CanvasImage = {
             ...sourceImage,

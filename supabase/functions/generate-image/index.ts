@@ -209,6 +209,14 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString()
         };
 
+        // Count concurrent jobs for concurrency impact measurement
+        const { count: concurrentJobCount } = await supabaseAdmin
+            .from('generation_jobs')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'processing');
+
+        const concurrentJobs = concurrentJobCount || 0;
+
         // Track generation start time for duration measurement
         const generationStartTime = Date.now();
 
@@ -378,6 +386,7 @@ Deno.serve(async (req) => {
             tokens_completion: tokensCompletion,
             tokens_total: tokensTotal,
             duration_ms: durationMs,
+            concurrent_jobs: concurrentJobs,
             request_payload: apiRequestPayload  // Store complete API request for debugging
         }).eq('id', newId)
 
