@@ -164,7 +164,8 @@ export const useGeneration = ({
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
         const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
-        const estimatedDuration = Math.round(baseDuration * (1 + (currentConcurrency - 1) * 0.3));
+        // Scale duration linearly with number of concurrent generations
+        const estimatedDuration = Math.round(baseDuration * currentConcurrency);
 
         const placeholder: CanvasImage = {
             ...sourceImage,
@@ -225,8 +226,10 @@ export const useGeneration = ({
         }
 
         // Wrap generation in a timeout to prevent hanging skeletons
+        // Use 3min for single, 10min for batch generations
+        const timeoutMs = batchSize > 1 ? 600000 : 180000;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
+            setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
         });
 
         try {
@@ -411,8 +414,10 @@ export const useGeneration = ({
             }
 
             // Wrap generation in a timeout to prevent hanging skeletons
+            // Use 3min for single generation
+            const timeoutMs = 180000;
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
+                setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
             });
 
             const finalImage = await Promise.race([
