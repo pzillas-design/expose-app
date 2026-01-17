@@ -209,6 +209,9 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString()
         };
 
+        // Track generation start time for duration measurement
+        const generationStartTime = Date.now();
+
         const geminiResult = await model.generateContent({
             contents: [{ parts: parts }],
             generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
@@ -364,6 +367,9 @@ Deno.serve(async (req) => {
 
         const estimatedApiCost = (tokensPrompt * pricing.input) + (tokensCompletion * pricing.output);
 
+        // Calculate generation duration
+        const durationMs = Date.now() - generationStartTime;
+
         await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
             model: finalModelName,
@@ -371,10 +377,11 @@ Deno.serve(async (req) => {
             tokens_prompt: tokensPrompt,
             tokens_completion: tokensCompletion,
             tokens_total: tokensTotal,
+            duration_ms: durationMs,
             request_payload: apiRequestPayload  // Store complete API request for debugging
         }).eq('id', newId)
 
-        console.log(`Generation successful for job ${newId}. Usage: ${tokensTotal} tokens, Cost: $${estimatedApiCost.toFixed(6)}`);
+        console.log(`Generation successful for job ${newId}. Duration: ${durationMs}ms, Usage: ${tokensTotal} tokens, Cost: $${estimatedApiCost.toFixed(6)}`);
 
         return new Response(JSON.stringify({
             success: true,

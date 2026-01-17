@@ -35,6 +35,74 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
     'pro-4k': 60000
 };
 
+// Map quality modes to model names for historical lookup
+const QUALITY_TO_MODEL: Record<string, string> = {
+    'fast': 'gemini-2.5-flash-image',
+    'pro-1k': 'gemini-3-pro-image-preview',
+    'pro-2k': 'gemini-3-pro-image-preview',
+    'pro-4k': 'gemini-3-pro-image-preview'
+};
+
+// Cache for historical durations (simple in-memory cache)
+let historicalDurationsCache: Record<string, number> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Fetch historical average durations from database
+const fetchHistoricalDurations = async (): Promise<Record<string, number>> => {
+    try {
+        const { data, error } = await supabase.rpc('get_average_generation_times');
+
+        if (error) {
+            console.warn('Failed to fetch historical durations:', error);
+            return {};
+        }
+
+        if (!data || data.length === 0) {
+            return {};
+        }
+
+        // Convert array to object keyed by model name
+        const durations: Record<string, number> = {};
+        data.forEach((row: any) => {
+            if (row.model && row.avg_duration_ms) {
+                durations[row.model] = Math.round(row.avg_duration_ms);
+            }
+        });
+
+        return durations;
+    } catch (err) {
+        console.warn('Error fetching historical durations:', err);
+        return {};
+    }
+};
+
+// Get duration for a quality mode, using historical data if available
+const getBaseDuration = async (qualityMode: string): Promise<number> => {
+    // Check cache
+    const now = Date.now();
+    if (historicalDurationsCache && (now - cacheTimestamp) < CACHE_TTL) {
+        const modelName = QUALITY_TO_MODEL[qualityMode];
+        if (modelName && historicalDurationsCache[modelName]) {
+            return historicalDurationsCache[modelName];
+        }
+    }
+
+    // Fetch fresh data
+    const historical = await fetchHistoricalDurations();
+    historicalDurationsCache = historical;
+    cacheTimestamp = now;
+
+    // Try to get historical value
+    const modelName = QUALITY_TO_MODEL[qualityMode];
+    if (modelName && historical[modelName]) {
+        return historical[modelName];
+    }
+
+    // Fallback to hardcoded estimate
+    return ESTIMATED_DURATIONS[qualityMode] || 23000;
+};
+
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
     qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
@@ -105,6 +173,14 @@ export const useGeneration = ({
     }, [setRows, user, t, showToast]);
 
     // Re-attach to orphaned jobs on load/change
+    // Pre-fetch historical durations on mount
+    React.useEffect(() => {
+        fetchHistoricalDurations().then(durations => {
+            historicalDurationsCache = durations;
+            cacheTimestamp = Date.now();
+        });
+    }, []);
+
     React.useEffect(() => {
         const generatingIds = rows.flatMap(r => r.items)
             .filter(i => i.isGenerating)
@@ -163,7 +239,16 @@ export const useGeneration = ({
 
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
-        const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
+
+        // Try to use historical duration from cache, fallback to hardcoded
+        let baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
+        if (historicalDurationsCache) {
+            const modelName = QUALITY_TO_MODEL[qualityMode];
+            if (modelName && historicalDurationsCache[modelName]) {
+                baseDuration = historicalDurationsCache[modelName];
+            }
+        }
+
         // Scale duration linearly with number of concurrent generations
         const estimatedDuration = Math.round(baseDuration * currentConcurrency);
 
