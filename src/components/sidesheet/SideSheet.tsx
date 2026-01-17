@@ -64,6 +64,7 @@ interface SideSheetProps {
     onRefreshTemplates?: () => void;
     onSaveTemplate?: (template: any) => Promise<void>;
     onDeleteTemplate?: (id: string) => Promise<void>;
+    onSaveRecentPrompt?: (prompt: string) => Promise<void>;
     onUpdateImageTitle?: (id: string, title: string) => void;
     userProfile: any;
 }
@@ -112,6 +113,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onRefreshTemplates,
         onSaveTemplate,
         onDeleteTemplate,
+        onSaveRecentPrompt,
         onUpdateImageTitle,
         userProfile
     } = props;
@@ -586,6 +588,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleGenerateWrapper = (p?: string, dp?: string, tid?: string, vars?: Record<string, string[]>) => {
+        // Save recent prompt for history
+        if (dp && onSaveRecentPrompt) {
+            onSaveRecentPrompt(dp).catch(err => console.warn('Failed to save recent prompt:', err));
+        }
         onGenerate(p || prompt, dp, tid, vars);
     };
 

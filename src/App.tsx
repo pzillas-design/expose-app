@@ -664,6 +664,7 @@ export function App() {
                     onRefreshTemplates={refreshTemplates}
                     onSaveTemplate={savePreset}
                     onDeleteTemplate={deletePreset}
+                    onSaveRecentPrompt={actions.saveRecentPrompt}
                     userProfile={userProfile}
                     // Hack to bridge handlers without exposing them as public state
                     ref={(el: any) => {
