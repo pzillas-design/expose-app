@@ -95,6 +95,29 @@ export function App() {
     // Track if a sync is currently running to prevent race conditions
     const isSyncingRef = useRef(false);
 
+    // Handle Stripe payment success
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('payment') === 'success') {
+            const amount = params.get('amount');
+            const returnPath = localStorage.getItem('stripe_return_path');
+
+            // Show success toast
+            if (amount) {
+                actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+            }
+
+            // Redirect to original location
+            if (returnPath) {
+                localStorage.removeItem('stripe_return_path');
+                navigate(returnPath, { replace: true });
+            } else {
+                // Fallback: clean URL
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.search, navigate, actions, t]);
+
     // Initial Scroll Centering to prevent bottom-right jumping on load
     React.useLayoutEffect(() => {
         if (currentBoardId && refs.scrollContainerRef.current) {

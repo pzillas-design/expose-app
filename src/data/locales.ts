@@ -34,6 +34,7 @@ export const translations = {
     actions: "Actions",
     beta_version_notice: "Looking for the old version? Visit",
     beta_notice_text: "Looking for the old version? Visit",
+    credits_added_success: "successfully added",
 
     // SideSheet Header
     no_image: "No Image Selected",
