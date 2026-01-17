@@ -43,15 +43,14 @@ const QUALITY_TO_MODEL: Record<string, string> = {
     'pro-4k': 'gemini-3-pro-image-preview'
 };
 
-// Cache for historical durations (simple in-memory cache)
-let historicalDurationsCache: Record<string, {
+// Cache for smart estimates (simple in-memory cache)
+let smartEstimatesCache: Record<string, {
     baseDurationMs: number;
     concurrencyFactor: number;
-    hourFactors: Record<string, number>;
     sampleCount: number;
 }> | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL = 1 * 60 * 1000; // 1 minute for recent data
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Fetch historical average durations from database
 const fetchHistoricalDurations = async (): Promise<Record<string, number>> => {
@@ -185,16 +184,15 @@ export const useGeneration = ({
                 if (data && data.length > 0) {
                     const estimates: Record<string, any> = {};
                     data.forEach((row: any) => {
-                        if (row.model) {
-                            estimates[row.model] = {
+                        if (row.quality_mode) {
+                            estimates[row.quality_mode] = {
                                 baseDurationMs: Math.round(row.base_duration_ms || 0),
                                 concurrencyFactor: row.concurrency_factor || 0.3,
-                                hourFactors: row.hour_factors || {},
                                 sampleCount: row.sample_count || 0
                             };
                         }
                     });
-                    historicalDurationsCache = estimates;
+                    smartEstimatesCache = estimates;
                     cacheTimestamp = Date.now();
                 }
             })

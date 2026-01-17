@@ -1,10 +1,9 @@
--- Smart generation estimates with recent bias, time-of-day, and concurrency impact
+-- Simplified smart generation estimates - only quality_mode and concurrency
 CREATE OR REPLACE FUNCTION get_smart_generation_estimates()
 RETURNS TABLE(
-    model TEXT,
+    quality_mode TEXT,
     base_duration_ms NUMERIC,
     concurrency_factor NUMERIC,
-    hour_factors JSONB,
     sample_count BIGINT
 ) 
 SECURITY DEFINER
@@ -12,12 +11,11 @@ AS $$
 BEGIN
   RETURN QUERY
   WITH recent_data AS (
-    -- Get all completed jobs from last 30 days
+    -- Get completed jobs from last 30 days, weighted by recency
     SELECT 
-      generation_jobs.model,
+      quality_mode,
       duration_ms,
       concurrent_jobs,
-      EXTRACT(HOUR FROM created_at)::INTEGER as hour,
       CASE 
         WHEN created_at > NOW() - INTERVAL '7 days' THEN 0.7
         ELSE 0.3
@@ -28,54 +26,39 @@ BEGIN
       AND duration_ms > 0
       AND duration_ms < 300000  -- Exclude outliers > 5 minutes
       AND created_at > NOW() - INTERVAL '30 days'
+      AND quality_mode IS NOT NULL
   ),
   base_durations AS (
-    -- Calculate weighted average base duration (when concurrent_jobs = 0 or 1)
+    -- Calculate weighted average base duration (solo jobs only)
     SELECT 
-      model,
+      quality_mode,
       SUM(duration_ms * weight) / SUM(weight) as weighted_avg
     FROM recent_data
     WHERE concurrent_jobs <= 1
-    GROUP BY model
+    GROUP BY quality_mode
     HAVING COUNT(*) >= 3
   ),
   concurrency_impact AS (
-    -- Calculate concurrency factor: how much each additional job slows things down
+    -- Calculate concurrency factor from parallel jobs
     SELECT 
-      rd.model,
+      rd.quality_mode,
       CASE 
         WHEN bd.weighted_avg > 0 AND COUNT(*) >= 5 THEN
-          -- Factor = (avg_duration - base_duration) / (concurrent_jobs * base_duration)
           GREATEST(0, (AVG(rd.duration_ms) - bd.weighted_avg) / NULLIF(AVG(rd.concurrent_jobs) * bd.weighted_avg, 0))
         ELSE 0.3  -- Default fallback
       END as factor
     FROM recent_data rd
-    JOIN base_durations bd ON rd.model = bd.model
+    JOIN base_durations bd ON rd.quality_mode = bd.quality_mode
     WHERE rd.concurrent_jobs > 1
-    GROUP BY rd.model, bd.weighted_avg
-  ),
-  hourly_factors AS (
-    -- Calculate time-of-day multipliers
-    SELECT 
-      rd.model,
-      jsonb_object_agg(
-        rd.hour::TEXT,
-        ROUND((AVG(rd.duration_ms) / bd.weighted_avg)::NUMERIC, 3)
-      ) as factors
-    FROM recent_data rd
-    JOIN base_durations bd ON rd.model = bd.model
-    GROUP BY rd.model, bd.weighted_avg
-    HAVING COUNT(*) >= 2
+    GROUP BY rd.quality_mode, bd.weighted_avg
   )
   SELECT 
-    bd.model,
+    bd.quality_mode,
     ROUND(bd.weighted_avg)::NUMERIC as base_duration_ms,
     COALESCE(ROUND(ci.factor::NUMERIC, 3), 0.3) as concurrency_factor,
-    COALESCE(hf.factors, '{}'::JSONB) as hour_factors,
-    (SELECT COUNT(*)::BIGINT FROM recent_data WHERE model = bd.model) as sample_count
+    (SELECT COUNT(*)::BIGINT FROM recent_data WHERE quality_mode = bd.quality_mode) as sample_count
   FROM base_durations bd
-  LEFT JOIN concurrency_impact ci ON bd.model = ci.model
-  LEFT JOIN hourly_factors hf ON bd.model = hf.model;
+  LEFT JOIN concurrency_impact ci ON bd.quality_mode = ci.quality_mode;
 END;
 $$ LANGUAGE plpgsql;
 
