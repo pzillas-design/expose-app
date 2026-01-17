@@ -36,14 +36,14 @@ BEGIN
     FROM recent_data
     WHERE concurrent_jobs <= 1
     GROUP BY quality_mode
-    HAVING COUNT(*) >= 3
+    HAVING COUNT(*) >= 1  -- Start with just 1 sample
   ),
   concurrency_impact AS (
     -- Calculate concurrency factor from parallel jobs
     SELECT 
       rd.quality_mode,
       CASE 
-        WHEN bd.weighted_avg > 0 AND COUNT(*) >= 5 THEN
+        WHEN bd.weighted_avg > 0 AND COUNT(*) >= 2 THEN  -- Just 2 parallel samples
           GREATEST(0, (AVG(rd.duration_ms) - bd.weighted_avg) / NULLIF(AVG(rd.concurrent_jobs) * bd.weighted_avg, 0))
         ELSE 0.3  -- Default fallback
       END as factor
