@@ -138,7 +138,6 @@ Deno.serve(async (req) => {
         // Prepare generation config
         const generationConfig: any = {
             imageConfig: {
-                mimeType: 'image/jpeg',
                 imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K')),
                 ...(isEditMode ? {} : { aspectRatio: bestRatio })
             }

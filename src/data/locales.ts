@@ -36,6 +36,16 @@ export const translations = {
     beta_notice_text: "Looking for the old version? Visit",
     credits_added_success: "successfully added",
 
+    // Error Messages
+    error_generation_failed: "Generation failed",
+    error_insufficient_credits: "Insufficient credits",
+    error_safety_blocked: "Content blocked by safety filters",
+    error_invalid_prompt: "Invalid prompt",
+    error_network_error: "Network error - please try again",
+    error_server_error: "Server error - please try again later",
+    error_unknown: "An unknown error occurred",
+
+
     // SideSheet Header
     no_image: "No Image Selected",
     brush_tool: "Brush Tool",
