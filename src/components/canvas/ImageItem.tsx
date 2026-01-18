@@ -80,7 +80,7 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 };
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
-    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
@@ -90,7 +90,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
             setIsLoaded(false);
-            setCurrentSrc(maskSrc || src || thumbSrc || null);
+            setCurrentSrc(maskSrc || thumbSrc || src || null);
             setIsHighRes(!!src && !thumbSrc);
             lastPath.current = path;
         }
@@ -248,6 +248,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
                 style={{ height: finalHeight, width: finalWidth }}
             >
+                {/* Opaque background to prevent grid bleed-through on transparent images */}
+                <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900" />
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
                     className={`absolute inset-0 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
