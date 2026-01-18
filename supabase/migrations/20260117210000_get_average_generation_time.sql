@@ -56,7 +56,7 @@ BEGIN
     bd.quality_mode,
     ROUND(bd.weighted_avg)::NUMERIC as base_duration_ms,
     COALESCE(ROUND(ci.factor::NUMERIC, 3), 0.3) as concurrency_factor,
-    (SELECT COUNT(*)::BIGINT FROM recent_data WHERE quality_mode = bd.quality_mode) as sample_count
+    (SELECT COUNT(*)::BIGINT FROM recent_data rd2 WHERE rd2.quality_mode = bd.quality_mode) as sample_count
   FROM base_durations bd
   LEFT JOIN concurrency_impact ci ON bd.quality_mode = ci.quality_mode;
 END;
