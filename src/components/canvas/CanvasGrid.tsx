@@ -29,9 +29,14 @@ export const CanvasGrid: React.FC<CanvasGridProps> = ({ zoom, containerRef }) =>
     // Calculate grid visual size based on zoom (20% tighter: 32 * 0.8 = 25.6)
     const gridSize = 25.5 * zoom;
 
-    // Position dots based on scroll
-    const bgPositionX = -scrollPos.x;
-    const bgPositionY = -scrollPos.y;
+    // Calculate viewport center
+    const viewportCenterX = (containerRef?.current?.clientWidth || window.innerWidth) / 2;
+    const viewportCenterY = (containerRef?.current?.clientHeight || window.innerHeight) / 2;
+
+    // Position grid to zoom from viewport center (same focal point as images)
+    // Formula: offset = center - (center + scroll) * zoom
+    const bgPositionX = viewportCenterX - (viewportCenterX + scrollPos.x) * zoom;
+    const bgPositionY = viewportCenterY - (viewportCenterY + scrollPos.y) * zoom;
 
     return (
         <div

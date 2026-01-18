@@ -80,7 +80,7 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 };
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
-    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || src || thumbSrc || null);
+    const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
@@ -90,7 +90,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
             setIsLoaded(false);
-            setCurrentSrc(maskSrc || src || thumbSrc || null);
+            setCurrentSrc(maskSrc || thumbSrc || src || null);
             setIsHighRes(!!src && !thumbSrc);
             lastPath.current = path;
         }
@@ -108,12 +108,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         const fetchUrl = async () => {
             if (!path || fetchLock.current) return;
 
-            // Only skip if we already have HighRes for THIS specific path
-            if (isHighRes && path === lastPath.current) return;
+            // Only skip if we already have HighRes for THIS specific path AND we need HQ
+            if (needsHQ && isHighRes && path === lastPath.current) return;
 
             fetchLock.current = true;
             try {
-                // Standard: 1200px. HQ: Original.
+                // Standard: 1200px. HQ: Original (no transform).
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
                     // Reset loaded state when switching images
@@ -121,7 +121,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
-                    if (needsHQ) setIsHighRes(true);
+                    // Only mark as high-res if we actually requested the original
+                    setIsHighRes(needsHQ);
                     lastPath.current = path;
                 }
             } finally {
@@ -258,6 +259,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                 </div>
+
+                {/* Opaque background to prevent grid bleed-through on transparent images */}
+                <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900 z-[5]" />
 
                 <div className="absolute inset-0 z-10">
                     <ImageSource

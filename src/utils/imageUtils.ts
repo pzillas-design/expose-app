@@ -103,16 +103,34 @@ export async function compressImage(src: string, maxDim: number = 4096, quality:
 export async function downloadImage(src: string, filename: string): Promise<void> {
     if (!src) return;
 
-    // Helper to get extension from MIME type
-    const getExt = (mime?: string) => {
-        if (!mime) return 'jpg';
-        if (mime.includes('png')) return 'png';
-        if (mime.includes('webp')) return 'webp';
-        return 'jpg'; // Default to jpg
-    };
+    // Clean filename and ensure extension
+    let finalFilename = filename.trim();
+    const hasExtension = /\.(jpg|jpeg|png|webp)$/i.test(finalFilename);
 
+    if (!hasExtension) {
+        // Try to detect extension from URL
+        const urlExt = src.match(/\.(jpg|jpeg|png|webp)/i)?.[1];
+        finalFilename = `${finalFilename}.${urlExt || 'jpg'}`;
+    }
+
+    // For Supabase signed URLs, we can download directly without fetching
+    // This makes the download instant instead of waiting for the blob conversion
+    const isSupabaseUrl = src.includes('supabase.co/storage');
+
+    if (isSupabaseUrl || src.startsWith('data:')) {
+        // Direct download - instant!
+        const link = document.body.appendChild(document.createElement('a'));
+        link.style.display = 'none';
+        link.href = src;
+        link.download = finalFilename;
+        link.click();
+
+        setTimeout(() => link.remove(), 200);
+        return;
+    }
+
+    // For other URLs (cross-origin), we need to fetch as blob
     try {
-        // Try fetching the image as a blob
         const response = await fetch(src, {
             method: 'GET',
             mode: 'cors',
@@ -122,16 +140,6 @@ export async function downloadImage(src: string, filename: string): Promise<void
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const blob = await response.blob();
-        const detectedExt = getExt(blob.type);
-
-        // Clean filename and ensure extension
-        let finalFilename = filename.trim();
-        const hasExtension = /\.(jpg|jpeg|png|webp)$/i.test(finalFilename);
-
-        if (!hasExtension) {
-            finalFilename = `${finalFilename}.${detectedExt}`;
-        }
-
         const url = window.URL.createObjectURL(blob);
         const link = document.body.appendChild(document.createElement('a'));
         link.style.display = 'none';
@@ -139,24 +147,18 @@ export async function downloadImage(src: string, filename: string): Promise<void
         link.download = finalFilename;
         link.click();
 
-        // Cleanup
         setTimeout(() => {
             window.URL.revokeObjectURL(url);
             link.remove();
         }, 200);
 
     } catch (error) {
-        console.error('Download failed via fetch/blob:', error);
+        console.error('Download failed:', error);
 
-        // Fallback: Use standard direct link with download attribute
+        // Final fallback
         const link = document.body.appendChild(document.createElement('a'));
         link.style.display = 'none';
         link.href = src;
-
-        // Simple extension fallback for direct link
-        const finalFilename = /\.(jpg|jpeg|png|webp)$/i.test(filename)
-            ? filename : `${filename}.jpg`;
-
         link.download = finalFilename;
         link.target = "_blank";
         link.click();

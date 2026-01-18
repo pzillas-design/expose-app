@@ -156,17 +156,19 @@ export function BoardsPage({
                                 <div key={i} className={`aspect-[3/4] bg-zinc-100 dark:bg-zinc-900 animate-pulse rounded-2xl`} />
                             ))
                         ) : (
-                            boards.map((board) => (
-                                <BoardCard
-                                    key={board.id}
-                                    board={board}
-                                    onSelect={() => onSelectBoard(board.id)}
-                                    onDelete={() => onDeleteBoard(board.id)}
-                                    onRename={(name) => onRenameBoard(board.id, name)}
-                                    locale={locale}
-                                    t={t}
-                                />
-                            ))
+                            boards
+                                .filter(board => (board.itemCount || 0) > 0)
+                                .map((board) => (
+                                    <BoardCard
+                                        key={board.id}
+                                        board={board}
+                                        onSelect={() => onSelectBoard(board.id)}
+                                        onDelete={() => onDeleteBoard(board.id)}
+                                        onRename={(name) => onRenameBoard(board.id, name)}
+                                        locale={locale}
+                                        t={t}
+                                    />
+                                ))
                         )}
                     </div>
                 </main>

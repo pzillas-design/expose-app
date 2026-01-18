@@ -450,7 +450,8 @@ export const useNanoController = () => {
         refreshTemplates,
         savePreset: saveTemplate,
         setIsCanvasLoading,
-        deletePreset: deleteTemplate
+        deletePreset: deleteTemplate,
+        saveRecentPrompt
     }), [
         setRows, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll, getMostVisibleItem, setQualityMode,
         setThemeMode, setLang, handleModeChange, setSideSheetMode, setBrushSize, setMaskTool, setActiveShape,
@@ -461,7 +462,7 @@ export const useNanoController = () => {
         handleUpdateVariables, onAddReference, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
-        refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading
+        refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt
     ]);
 
     return React.useMemo(() => ({

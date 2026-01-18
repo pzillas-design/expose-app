@@ -34,6 +34,17 @@ export const translations = {
     actions: "Actions",
     beta_version_notice: "Looking for the old version? Visit",
     beta_notice_text: "Looking for the old version? Visit",
+    credits_added_success: "successfully added",
+
+    // Error Messages
+    error_generation_failed: "Generation failed",
+    error_insufficient_credits: "Insufficient credits",
+    error_safety_blocked: "Content blocked by safety filters",
+    error_invalid_prompt: "Invalid prompt",
+    error_network_error: "Network error - please try again",
+    error_server_error: "Server error - please try again later",
+    error_unknown: "An unknown error occurred",
+
 
     // SideSheet Header
     no_image: "No Image Selected",
@@ -279,7 +290,7 @@ export const translations = {
     tab_projects: "Projects",
     tab_settings: "Settings",
     overview_desc: "Overview of all your projects.",
-    rename_board: "Rename project",
+    rename_board: "Rename",
     default_project_name: "New Project",
     footer_about: "About",
     footer_website: "Website",
@@ -385,6 +396,16 @@ export const translations = {
     actions: "Aktionen",
     beta_version_notice: "Alte Version? Besuche",
     beta_notice_text: "Suchen Sie die alte Version? Besuchen Sie",
+    credits_added_success: "erfolgreich hinzugefügt",
+
+    // Error Messages
+    error_generation_failed: "Generierung fehlgeschlagen",
+    error_insufficient_credits: "Nicht genügend Credits",
+    error_safety_blocked: "Inhalt durch Sicherheitsfilter blockiert",
+    error_invalid_prompt: "Ungültiger Prompt",
+    error_network_error: "Netzwerkfehler - bitte erneut versuchen",
+    error_server_error: "Serverfehler - bitte später erneut versuchen",
+    error_unknown: "Ein unbekannter Fehler ist aufgetreten",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
@@ -620,7 +641,7 @@ export const translations = {
     tab_projects: "Projekte",
     tab_settings: "Einstellungen",
     overview_desc: "Überblick über all deine Projekte.",
-    rename_board: "Projekt umbenennen",
+    rename_board: "Umbenennen",
     default_project_name: "Neues Projekt",
     footer_about: "About",
     footer_website: "Website",

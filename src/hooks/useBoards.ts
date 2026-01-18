@@ -46,9 +46,22 @@ export const useBoards = (userId: string | undefined) => {
     }, [boards, currentLang, t]);
 
     const createBoard = useCallback(async (name?: string) => {
-        if (!userId) return null;
         const finalName = name || getNextBoardName();
         try {
+            // For guests (no userId), create a local-only board
+            if (!userId) {
+                const localBoard: Board = {
+                    id: generateId(),
+                    name: finalName,
+                    userId: 'guest',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+                setBoards(prev => [localBoard, ...prev]);
+                return localBoard;
+            }
+
+            // For authenticated users, persist to database
             const newBoard = await boardService.createBoard(userId, finalName);
             if (newBoard) {
                 setBoards(prev => [newBoard, ...prev]);
@@ -61,11 +74,10 @@ export const useBoards = (userId: string | undefined) => {
     }, [userId, getNextBoardName, showToast, t]);
 
     const initializeNewBoard = useCallback(() => {
-        if (!userId) return null;
         const id = generateId();
         const name = getNextBoardName();
         return { id, name };
-    }, [userId, getNextBoardName]);
+    }, [getNextBoardName]);
 
     const deleteBoard = useCallback(async (boardId: string) => {
         try {

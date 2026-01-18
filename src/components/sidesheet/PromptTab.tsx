@@ -704,19 +704,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             </div>
 
             {/* PRESET LIBRARY - Inside the scroll flow, at the bottom */}
-            {!isMulti && (
-                <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
-                    <PresetLibrary
-                        templates={templates}
-                        onSelect={handleSelectPreset}
-                        onTogglePin={onDeleteTemplate || (() => { })}
-                        onRequestCreate={openCreatePreset}
-                        onRequestEdit={openEditPreset}
-                        t={t}
-                        currentLang={currentLang}
-                    />
-                </div>
-            )}
+            <div className={`mt-auto ${Theme.Colors.PanelBg} w-full border-t border-zinc-200 dark:border-zinc-800 shrink-0`}>
+                <PresetLibrary
+                    templates={templates}
+                    onSelect={handleSelectPreset}
+                    onTogglePin={onDeleteTemplate || (() => { })}
+                    onRequestCreate={openCreatePreset}
+                    onRequestEdit={openEditPreset}
+                    t={t}
+                    currentLang={currentLang}
+                />
+            </div>
 
             <PresetEditorModal
                 isOpen={isPresetModalOpen}

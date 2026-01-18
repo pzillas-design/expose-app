@@ -95,6 +95,29 @@ export function App() {
     // Track if a sync is currently running to prevent race conditions
     const isSyncingRef = useRef(false);
 
+    // Handle Stripe payment success
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('payment') === 'success') {
+            const amount = params.get('amount');
+            const returnPath = localStorage.getItem('stripe_return_path');
+
+            // Show success toast
+            if (amount) {
+                actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+            }
+
+            // Redirect to original location
+            if (returnPath) {
+                localStorage.removeItem('stripe_return_path');
+                navigate(returnPath, { replace: true });
+            } else {
+                // Fallback: clean URL
+                navigate(location.pathname, { replace: true });
+            }
+        }
+    }, [location.search, navigate, actions, t]);
+
     // Initial Scroll Centering to prevent bottom-right jumping on load
     React.useLayoutEffect(() => {
         if (currentBoardId && refs.scrollContainerRef.current) {
@@ -526,7 +549,8 @@ export function App() {
                             gap: `${6 * zoom}rem`,
                         }}
                     >
-                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 ? (
+                        {/* Show skeletons while loading if we know images exist */}
+                        {(isCanvasLoading || resolvingBoardId) && rows.length === 0 && allImages.length > 0 ? (
                             <CanvasSkeleton zoom={zoom} />
                         ) : (
                             rows.map((row) => (
@@ -566,6 +590,7 @@ export function App() {
                     </div>
 
 
+                    {/* Only show welcome screen after loading completes and board is empty */}
                     {rows.length === 0 && !isDragOver && !isCanvasLoading && !resolvingBoardId && (
                         <div className="absolute inset-0 flex items-center justify-center p-8 text-center z-20 overflow-y-auto">
                             <div className="flex flex-col items-center gap-12 w-full max-w-[440px] animate-in fade-in zoom-in-95 duration-700">
@@ -662,6 +687,7 @@ export function App() {
                     onRefreshTemplates={refreshTemplates}
                     onSaveTemplate={savePreset}
                     onDeleteTemplate={deletePreset}
+                    onSaveRecentPrompt={actions.saveRecentPrompt}
                     userProfile={userProfile}
                     // Hack to bridge handlers without exposing them as public state
                     ref={(el: any) => {

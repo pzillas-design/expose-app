@@ -35,6 +35,24 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
     'pro-4k': 60000
 };
 
+// Map quality modes to model names for historical lookup
+const QUALITY_TO_MODEL: Record<string, string> = {
+    'fast': 'gemini-2.5-flash-image',
+    'pro-1k': 'gemini-3-pro-image-preview',
+    'pro-2k': 'gemini-3-pro-image-preview',
+    'pro-4k': 'gemini-3-pro-image-preview'
+};
+
+// Cache for smart estimates (simple in-memory cache)
+let smartEstimatesCache: Record<string, {
+    baseDurationMs: number;
+    concurrencyFactor: number;
+    sampleCount: number;
+}> | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
     qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
@@ -105,6 +123,28 @@ export const useGeneration = ({
     }, [setRows, user, t, showToast]);
 
     // Re-attach to orphaned jobs on load/change
+    // Pre-fetch smart estimates on mount
+    React.useEffect(() => {
+        supabase.rpc('get_smart_generation_estimates')
+            .then(({ data }) => {
+                if (data && data.length > 0) {
+                    const estimates: Record<string, any> = {};
+                    data.forEach((row: any) => {
+                        if (row.quality_mode) {
+                            estimates[row.quality_mode] = {
+                                baseDurationMs: Math.round(row.base_duration_ms || 0),
+                                concurrencyFactor: row.concurrency_factor || 0.3,
+                                sampleCount: row.sample_count || 0
+                            };
+                        }
+                    });
+                    smartEstimatesCache = estimates;
+                    cacheTimestamp = Date.now();
+                }
+            })
+            .catch(err => console.warn('Failed to fetch smart estimates:', err));
+    }, []);
+
     React.useEffect(() => {
         const generatingIds = rows.flatMap(r => r.items)
             .filter(i => i.isGenerating)
@@ -163,8 +203,26 @@ export const useGeneration = ({
 
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
-        const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
-        const estimatedDuration = Math.round(baseDuration * (1 + (currentConcurrency - 1) * 0.3));
+
+        // Calculate smart duration estimate using cached data
+        let estimatedDuration: number;
+
+        // Check if we have smart estimates for this quality mode
+        const now = Date.now();
+        if (smartEstimatesCache && (now - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
+            const estimate = smartEstimatesCache[qualityMode];
+            let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
+
+            // Apply concurrency factor (measured from real data)
+            const concurrencyFactor = estimate.concurrencyFactor || 0.3;
+            duration *= (1 + concurrencyFactor * currentConcurrency);
+
+            estimatedDuration = Math.round(duration);
+        } else {
+            // Fallback to hardcoded estimate with simple linear concurrency
+            const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
+            estimatedDuration = Math.round(baseDuration * (1 + 0.3 * currentConcurrency));
+        }
 
         const placeholder: CanvasImage = {
             ...sourceImage,
@@ -225,8 +283,10 @@ export const useGeneration = ({
         }
 
         // Wrap generation in a timeout to prevent hanging skeletons
+        // Use 3min for single, 10min for batch generations
+        const timeoutMs = batchSize > 1 ? 600000 : 180000;
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
+            setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
         });
 
         try {
@@ -411,8 +471,10 @@ export const useGeneration = ({
             }
 
             // Wrap generation in a timeout to prevent hanging skeletons
+            // Use 3min for single generation
+            const timeoutMs = 180000;
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Generation timeout (2 minutes)')), 120000);
+                setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
             });
 
             const finalImage = await Promise.race([

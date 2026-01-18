@@ -161,6 +161,10 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No active session');
 
+            // Store current location for post-payment redirect
+            const returnPath = window.location.pathname + window.location.search;
+            localStorage.setItem('stripe_return_path', returnPath);
+
             const invokePromise = supabase.functions.invoke('stripe-checkout', {
                 headers: {
                     Authorization: `Bearer ${session.access_token}`
@@ -168,7 +172,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 body: {
                     amount,
                     cancel_url: window.location.origin,
-                    success_url: `${window.location.origin}?payment=success`
+                    success_url: `${window.location.origin}?payment=success&amount=${amount}`
                 }
             });
 
