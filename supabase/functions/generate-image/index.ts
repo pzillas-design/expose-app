@@ -196,6 +196,78 @@ Deno.serve(async (req) => {
 
         console.log(`[DEBUG] Gemini Call for ${finalModelName} with quality ${qualityMode}`);
 
+        // Prepare parts array for Gemini API
+        const parts: any[] = [];
+
+        // Add source image if available
+        if (finalSourceBase64) {
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: finalSourceBase64
+                }
+            });
+        }
+
+        // Add mask if provided
+        const hasMask = !!maskDataUrl;
+        if (maskDataUrl) {
+            const maskBase64 = maskDataUrl.split(',')[1] || maskDataUrl;
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/png',
+                    data: maskBase64
+                }
+            });
+        }
+
+        // Collect reference images from annotations
+        const allRefs: string[] = [];
+        if (payloadAttachments && Array.isArray(payloadAttachments)) {
+            allRefs.push(...payloadAttachments);
+        }
+        if (sourceImage.annotations && Array.isArray(sourceImage.annotations)) {
+            sourceImage.annotations.forEach((ann: any) => {
+                if (ann.referenceImage && !allRefs.includes(ann.referenceImage)) {
+                    allRefs.push(ann.referenceImage);
+                }
+            });
+        }
+
+        // Add reference images to parts
+        const hasRefs = allRefs.length > 0;
+        for (const refSrc of allRefs) {
+            try {
+                let refBase64 = refSrc;
+                if (refSrc.startsWith('http')) {
+                    const response = await fetch(refSrc);
+                    const blob = await response.arrayBuffer();
+                    const uint8 = new Uint8Array(blob);
+                    let binary = '';
+                    for (let i = 0; i < uint8.length; i += 32768) {
+                        binary += String.fromCharCode.apply(null, uint8.subarray(i, i + 32768) as any);
+                    }
+                    refBase64 = btoa(binary);
+                } else if (refSrc.includes(',')) {
+                    refBase64 = refSrc.split(',')[1];
+                }
+                parts.push({
+                    inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: refBase64
+                    }
+                });
+            } catch (err) {
+                console.warn('Failed to process reference image:', err);
+            }
+        }
+
+        // Add text prompt
+        parts.push({ text: prompt });
+
+        console.log(`[DEBUG] Parts array prepared: ${parts.length} parts (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
+
+
         // Store the complete API request for debugging
         const apiRequestPayload = {
             model: finalModelName,
