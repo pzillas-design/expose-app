@@ -397,6 +397,15 @@ export const translations = {
     beta_version_notice: "Alte Version? Besuche",
     beta_notice_text: "Suchen Sie die alte Version? Besuchen Sie",
     credits_added_success: "erfolgreich hinzugefügt",
+
+    // Error Messages
+    error_generation_failed: "Generierung fehlgeschlagen",
+    error_insufficient_credits: "Nicht genügend Credits",
+    error_safety_blocked: "Inhalt durch Sicherheitsfilter blockiert",
+    error_invalid_prompt: "Ungültiger Prompt",
+    error_network_error: "Netzwerkfehler - bitte erneut versuchen",
+    error_server_error: "Serverfehler - bitte später erneut versuchen",
+    error_unknown: "Ein unbekannter Fehler ist aufgetreten",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
