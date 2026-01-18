@@ -108,28 +108,51 @@ export async function downloadImage(src: string, filename: string): Promise<void
     const hasExtension = /\.(jpg|jpeg|png|webp)$/i.test(finalFilename);
 
     if (!hasExtension) {
-        // Try to detect extension from URL
         const urlExt = src.match(/\.(jpg|jpeg|png|webp)/i)?.[1];
         finalFilename = `${finalFilename}.${urlExt || 'jpg'}`;
     }
 
-    // For Supabase signed URLs, we can download directly without fetching
-    // This makes the download instant instead of waiting for the blob conversion
+    // For Supabase signed URLs, add download parameter to force download
     const isSupabaseUrl = src.includes('supabase.co/storage');
 
-    if (isSupabaseUrl || src.startsWith('data:')) {
-        // Direct download - instant!
+    if (isSupabaseUrl) {
+        // Add download parameter to Supabase URL to force download instead of display
+        const url = new URL(src);
+        url.searchParams.set('download', finalFilename);
+
         const link = document.body.appendChild(document.createElement('a'));
         link.style.display = 'none';
-        link.href = src;
-        link.download = finalFilename;
+        link.href = url.toString();
         link.click();
 
         setTimeout(() => link.remove(), 200);
         return;
     }
 
-    // For other URLs (cross-origin), we need to fetch as blob
+    // For data URLs, convert to blob for proper download
+    if (src.startsWith('data:')) {
+        try {
+            const response = await fetch(src);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.body.appendChild(document.createElement('a'));
+            link.style.display = 'none';
+            link.href = url;
+            link.download = finalFilename;
+            link.click();
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                link.remove();
+            }, 200);
+            return;
+        } catch (err) {
+            console.error('Data URL download failed:', err);
+        }
+    }
+
+    // For other URLs (cross-origin), fetch as blob
     try {
         const response = await fetch(src, {
             method: 'GET',
