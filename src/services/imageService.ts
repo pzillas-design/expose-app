@@ -414,10 +414,15 @@ export const imageService = {
         const loadedImages: CanvasImage[] = [];
 
         if (dbImages.length > 0) {
+            const signStart = performance.now();
             // Collect ALL paths that need signing
             const allPathsToSign = new Set<string>();
             dbImages.forEach(rec => {
-                if (rec.storage_path) allPathsToSign.add(rec.storage_path);
+                if (rec.storage_path) {
+                    allPathsToSign.add(rec.storage_path);
+                    // Add optimized version key for thumbSrc
+                    allPathsToSign.add(rec.storage_path + `_800xundefined_q75`);
+                }
                 // Add reference images from annotations
                 const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
                 rawAnns.forEach((ann: any) => {
@@ -426,6 +431,8 @@ export const imageService = {
                     }
                 });
             });
+            console.log(`[ImageService] Collected ${allPathsToSign.size} paths to sign`);
+
 
             // Batch sign 100 paths at a time - PARALLELIZED for speed
             const pathsArray = Array.from(allPathsToSign);
@@ -436,8 +443,11 @@ export const imageService = {
                 chunks.push(pathsArray.slice(i, i + 100));
             }
 
+            console.log(`[ImageService] Signing ${chunks.length} chunks in parallel...`);
+
             // Execute all chunks in parallel
-            await Promise.all(chunks.map(async (chunk) => {
+            await Promise.all(chunks.map(async (chunk, idx) => {
+                const chunkStart = performance.now();
                 const [hdResults, optResults] = await Promise.all([
                     // 1. Sign original HD versions
                     storageService.getSignedUrls(chunk),
@@ -446,14 +456,20 @@ export const imageService = {
                 ]);
                 Object.assign(signedUrlMap, hdResults);
                 Object.assign(signedUrlMap, optResults);
+                console.log(`[ImageService] Chunk ${idx + 1}/${chunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
             }));
+            console.log(`[ImageService] All URLs signed in ${(performance.now() - signStart).toFixed(2)}ms`);
+
 
             // Transform records using the map
+            const transformStart = performance.now();
             const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
             loadedImages.push(...transformed);
+            console.log(`[ImageService] Records transformed in ${(performance.now() - transformStart).toFixed(2)}ms`);
         }
 
         // 3. Reconstruct Skeleton Placeholders from Active Jobs
+        const jobProcessingStart = performance.now();
         activeJobs.forEach(job => {
             // SKIP if this ID is already loaded as a finished image
             if (loadedImages.some(img => img.id === job.id)) {
