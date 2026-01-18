@@ -248,8 +248,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
                 style={{ height: finalHeight, width: finalWidth }}
             >
-                {/* Opaque background to prevent grid bleed-through on transparent images */}
-                <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900" />
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
                     className={`absolute inset-0 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
@@ -260,6 +258,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {/* Shimmer effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                 </div>
+
+                {/* Opaque background to prevent grid bleed-through on transparent images */}
+                <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-900 z-[5]" />
 
                 <div className="absolute inset-0 z-10">
                     <ImageSource
