@@ -52,60 +52,6 @@ let smartEstimatesCache: Record<string, {
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// Fetch historical average durations from database
-const fetchHistoricalDurations = async (): Promise<Record<string, number>> => {
-    try {
-        const { data, error } = await supabase.rpc('get_average_generation_times');
-
-        if (error) {
-            console.warn('Failed to fetch historical durations:', error);
-            return {};
-        }
-
-        if (!data || data.length === 0) {
-            return {};
-        }
-
-        // Convert array to object keyed by model name
-        const durations: Record<string, number> = {};
-        data.forEach((row: any) => {
-            if (row.model && row.avg_duration_ms) {
-                durations[row.model] = Math.round(row.avg_duration_ms);
-            }
-        });
-
-        return durations;
-    } catch (err) {
-        console.warn('Error fetching historical durations:', err);
-        return {};
-    }
-};
-
-// Get duration for a quality mode, using historical data if available
-const getBaseDuration = async (qualityMode: string): Promise<number> => {
-    // Check cache
-    const now = Date.now();
-    if (historicalDurationsCache && (now - cacheTimestamp) < CACHE_TTL) {
-        const modelName = QUALITY_TO_MODEL[qualityMode];
-        if (modelName && historicalDurationsCache[modelName]) {
-            return historicalDurationsCache[modelName];
-        }
-    }
-
-    // Fetch fresh data
-    const historical = await fetchHistoricalDurations();
-    historicalDurationsCache = historical;
-    cacheTimestamp = now;
-
-    // Try to get historical value
-    const modelName = QUALITY_TO_MODEL[qualityMode];
-    if (modelName && historical[modelName]) {
-        return historical[modelName];
-    }
-
-    // Fallback to hardcoded estimate
-    return ESTIMATED_DURATIONS[qualityMode] || 23000;
-};
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
@@ -258,20 +204,14 @@ export const useGeneration = ({
         const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
 
-        // Calculate smart duration estimate
-        const modelName = QUALITY_TO_MODEL[qualityMode];
-        const currentHour = new Date().getHours();
+        // Calculate smart duration estimate using cached data
         let estimatedDuration: number;
 
-        if (historicalDurationsCache && modelName && historicalDurationsCache[modelName]) {
-            const estimate = historicalDurationsCache[modelName];
+        // Check if we have smart estimates for this quality mode
+        const now = Date.now();
+        if (smartEstimatesCache && (now - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
+            const estimate = smartEstimatesCache[qualityMode];
             let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
-
-            // Apply time-of-day factor (calculated from real data)
-            const hourFactor = estimate.hourFactors?.[currentHour.toString()];
-            if (hourFactor && hourFactor > 0) {
-                duration *= hourFactor;
-            }
 
             // Apply concurrency factor (measured from real data)
             const concurrencyFactor = estimate.concurrencyFactor || 0.3;

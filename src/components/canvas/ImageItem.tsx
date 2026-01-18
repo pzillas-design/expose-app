@@ -108,12 +108,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         const fetchUrl = async () => {
             if (!path || fetchLock.current) return;
 
-            // Only skip if we already have HighRes for THIS specific path
-            if (isHighRes && path === lastPath.current) return;
+            // Only skip if we already have HighRes for THIS specific path AND we need HQ
+            if (needsHQ && isHighRes && path === lastPath.current) return;
 
             fetchLock.current = true;
             try {
-                // Standard: 1200px. HQ: Original.
+                // Standard: 1200px. HQ: Original (no transform).
                 const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
                 if (url) {
                     // Reset loaded state when switching images
@@ -121,7 +121,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
-                    if (needsHQ) setIsHighRes(true);
+                    // Only mark as high-res if we actually requested the original
+                    setIsHighRes(needsHQ);
                     lastPath.current = path;
                 }
             } finally {

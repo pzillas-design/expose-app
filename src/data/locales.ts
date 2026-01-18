@@ -386,6 +386,7 @@ export const translations = {
     actions: "Aktionen",
     beta_version_notice: "Alte Version? Besuche",
     beta_notice_text: "Suchen Sie die alte Version? Besuchen Sie",
+    credits_added_success: "erfolgreich hinzugefügt",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
