@@ -28,19 +28,19 @@ export const imageService = {
         const customFileName = `${titleSlug}_v${image.version || 1}_${image.id.substring(0, 8)}.png`;
 
         // 2. Upload Image (Compressed to 4K max via uploadImage)
-        const path = await storageService.uploadImage(image.src, userId, customFileName, subfolder);
-        if (!path) {
+        const uploadResult = await storageService.uploadImage(image.src, userId, customFileName, subfolder);
+        if (!uploadResult) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };
         }
 
-        // 2. Insert into DB (Thumbnail path is now optional/null as we use dynamic transformations)
+        // 2. Insert into DB with thumbnail path
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,
             board_id: (image as any).boardId, // Use boardId if available
-            storage_path: path,
-            thumb_storage_path: null,
+            storage_path: uploadResult.path,
+            thumb_storage_path: uploadResult.thumbPath || null,
             width: Math.round(image.width),
             height: Math.round(image.height),
             real_width: image.realWidth,
@@ -294,13 +294,23 @@ export const imageService = {
             signedUrl = await storageService.getSignedUrl(record.storage_path);
         }
 
-        // Use pre-signed 800px version as thumbSrc if available
-        const thumbOptionsKey = `_800xundefined_q75`;
-        let thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
+        // PREFER STORED THUMBNAIL if available, otherwise use on-the-fly transformation
+        let thumbSignedUrl: string | undefined;
 
-        // AUTO-SIGN FALLBACK FOR OPTIMIZED:
-        if (!thumbSignedUrl && record.storage_path) {
-            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+        if (record.thumb_storage_path) {
+            // Use stored thumbnail (faster, no pixelation!)
+            thumbSignedUrl = preSignedUrls[record.thumb_storage_path];
+            if (!thumbSignedUrl) {
+                thumbSignedUrl = await storageService.getSignedUrl(record.thumb_storage_path);
+            }
+        } else {
+            // Fallback to on-the-fly 800px transformation
+            const thumbOptionsKey = `_800xundefined_q75`;
+            thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
+
+            if (!thumbSignedUrl && record.storage_path) {
+                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+            }
         }
 
         const targetHeight = 512;
@@ -420,8 +430,14 @@ export const imageService = {
             dbImages.forEach(rec => {
                 if (rec.storage_path) {
                     allPathsToSign.add(rec.storage_path);
-                    // Add optimized version key for thumbSrc
-                    allPathsToSign.add(rec.storage_path + `_800xundefined_q75`);
+
+                    // Add stored thumbnail if available
+                    if (rec.thumb_storage_path) {
+                        allPathsToSign.add(rec.thumb_storage_path);
+                    } else {
+                        // Fallback: Add optimized version key for on-the-fly transformation
+                        allPathsToSign.add(rec.storage_path + `_800xundefined_q75`);
+                    }
                 }
                 // Add reference images from annotations
                 const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];

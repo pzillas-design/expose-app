@@ -7,17 +7,20 @@ export const storageService = {
      * @param userId User ID
      * @returns The storage path (e.g. 'user_123/img_456.png')
      */
-    async uploadImage(imageSrc: string, userId: string, customFileName?: string, subfolder?: string): Promise<string | null> {
+    async uploadImage(imageSrc: string, userId: string, customFileName?: string, subfolder?: string): Promise<{ path: string; thumbPath?: string } | null> {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
             let blob: Blob;
+            let shouldGenerateThumb = false;
+
             if (customFileName?.startsWith('thumb_')) {
                 const response = await fetch(imageSrc);
                 blob = await response.blob();
             } else {
                 const { compressImage } = await import('../utils/imageUtils');
                 blob = await compressImage(imageSrc);
+                shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 
             // 2. Generate Path
@@ -25,7 +28,7 @@ export const storageService = {
             const folderPath = subfolder ? `${userId}/${subfolder}` : userId;
             const filePath = `${folderPath}/${fileName}`;
 
-            // 3. Upload
+            // 3. Upload Main Image
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .upload(filePath, blob, {
@@ -37,7 +40,34 @@ export const storageService = {
                 console.error('Supabase Storage Error:', error);
                 throw error;
             }
-            return data.path;
+
+            // 4. Generate and Upload Thumbnail (800px width)
+            let thumbPath: string | undefined;
+            if (shouldGenerateThumb) {
+                try {
+                    const { generateThumbnail } = await import('../utils/imageUtils');
+                    const thumbBlob = await generateThumbnail(imageSrc, 800);
+                    const thumbFileName = `thumb_${fileName}`;
+                    const thumbFilePath = `${folderPath}/${thumbFileName}`;
+
+                    const { data: thumbData, error: thumbError } = await supabase.storage
+                        .from('user-content')
+                        .upload(thumbFilePath, thumbBlob, {
+                            cacheControl: '3600',
+                            upsert: true
+                        });
+
+                    if (!thumbError && thumbData) {
+                        thumbPath = thumbData.path;
+                        console.log(`[Storage] Thumbnail generated: ${thumbPath}`);
+                    }
+                } catch (thumbErr) {
+                    console.warn('[Storage] Thumbnail generation failed:', thumbErr);
+                    // Continue without thumbnail - not critical
+                }
+            }
+
+            return { path: data.path, thumbPath };
         } catch (error: any) {
             console.error('Storage Upload Failed:', error.message || error, error);
             return null;
