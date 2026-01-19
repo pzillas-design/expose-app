@@ -285,19 +285,46 @@ export const useCanvasNavigation = ({
                     zoomAnimFrameRef.current = null;
                 }
 
+                // Calculate focal point: selected image center, or mouse position, or viewport center
+                const containerRect = container.getBoundingClientRect();
+                let focalX = e.clientX - containerRect.left; // Mouse X relative to container
+                let focalY = e.clientY - containerRect.top;  // Mouse Y relative to container
+
+                // If there's a selected image, use its center as focal point
+                if (primarySelectedId) {
+                    const selectedEl = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
+                    if (selectedEl) {
+                        const selectedRect = selectedEl.getBoundingClientRect();
+                        focalX = selectedRect.left + selectedRect.width / 2 - containerRect.left;
+                        focalY = selectedRect.top + selectedRect.height / 2 - containerRect.top;
+                    }
+                }
+
+                // Calculate the point in content space that should remain fixed
+                const currentZoom = zoomRef.current;
+                const focalPointX = (container.scrollLeft + focalX) / currentZoom;
+                const focalPointY = (container.scrollTop + focalY) / currentZoom;
+
                 const delta = -e.deltaY;
-                setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
+                const newZoom = Math.min(Math.max(currentZoom * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM);
+
+                setZoom(newZoom);
+
+                // Adjust scroll to keep focal point fixed
+                const newScrollX = focalPointX * newZoom - focalX;
+                const newScrollY = focalPointY * newZoom - focalY;
+                container.scrollLeft = newScrollX;
+                container.scrollTop = newScrollY;
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, zoom, selectedIds, setIsZooming]);
+    }, [scrollContainerRef, zoom, selectedIds, setIsZooming, primarySelectedId]);
 
     // Logic to find the most centered item in the viewport (Added for Staging Compatibility)
     const getMostVisibleItem = useCallback(() => {
         if (!scrollContainerRef.current) return null;
         const container = scrollContainerRef.current;
-        const containerRect = container.getBoundingClientRect();
         const viewportCenterX = containerRect.left + (containerRect.width / 2);
         const viewportCenterY = containerRect.top + (containerRect.height / 2);
 
