@@ -53,6 +53,7 @@ export async function generateThumbnail(src: string, maxDim: number = 600): Prom
 
 /**
  * Compresses and resizes an image for storage optimization.
+ * Preserves original format (JPEG/PNG/WebP) from data URL.
  * @param src The source image (Data URL or URL)
  * @param maxDim Maximum dimension for 4K (4096)
  * @param quality JPEG quality (0.85 is a good balance)
@@ -89,10 +90,26 @@ export async function compressImage(src: string, maxDim: number = 4096, quality:
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, w, h);
 
+            // Detect original format from data URL
+            let mimeType = 'image/jpeg'; // Default to JPEG
+            let compressionQuality = quality;
+
+            if (src.startsWith('data:')) {
+                const match = src.match(/^data:(image\/[a-z]+);/);
+                if (match) {
+                    mimeType = match[1];
+                }
+            }
+
+            // PNG doesn't support quality parameter, use 1.0
+            if (mimeType === 'image/png') {
+                compressionQuality = 1.0;
+            }
+
             canvas.toBlob((blob) => {
                 if (blob) resolve(blob);
                 else reject(new Error("Failed to create blob from canvas"));
-            }, 'image/jpeg', quality);
+            }, mimeType, compressionQuality);
         };
         img.onerror = () => reject(new Error("Failed to load image for compression"));
         img.src = src;

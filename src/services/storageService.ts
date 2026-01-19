@@ -23,19 +23,40 @@ export const storageService = {
                 shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 
-            // 2. Generate Path with clean folder structure
-            const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+            // 2. Detect format from blob MIME type
+            const mimeType = blob.type;
+            let extension = '.png'; // Default fallback
+
+            if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+                extension = '.jpg';
+            } else if (mimeType === 'image/png') {
+                extension = '.png';
+            } else if (mimeType === 'image/webp') {
+                extension = '.webp';
+            }
+
+            // 3. Generate Path with clean folder structure and correct extension
+            let fileName: string;
+            if (customFileName) {
+                // If custom filename is provided, ensure it has the correct extension
+                const nameWithoutExt = customFileName.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+                fileName = `${nameWithoutExt}${extension}`;
+            } else {
+                fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
+            }
+
             const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
             const filePath = `${folderPath}/${fileName}`;
 
-            console.log(`[Storage] Uploading to: ${filePath}`);
+            console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);
 
-            // 3. Upload Main Image
+            // 4. Upload Main Image
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .upload(filePath, blob, {
                     cacheControl: '3600',
-                    upsert: true // Allow overwriting if filename is provided
+                    upsert: true, // Allow overwriting if filename is provided
+                    contentType: mimeType
                 });
 
             if (error) {
@@ -43,7 +64,7 @@ export const storageService = {
                 throw error;
             }
 
-            // 4. Generate and Upload Thumbnail (600px width for cost efficiency)
+            // 5. Generate and Upload Thumbnail (600px width for cost efficiency)
             let thumbPath: string | undefined;
             if (shouldGenerateThumb) {
                 try {
@@ -56,7 +77,8 @@ export const storageService = {
                         .from('user-content')
                         .upload(thumbFilePath, thumbBlob, {
                             cacheControl: '3600',
-                            upsert: true
+                            upsert: true,
+                            contentType: 'image/jpeg' // Thumbnails are always JPEG for efficiency
                         });
 
                     if (!thumbError && thumbData) {
