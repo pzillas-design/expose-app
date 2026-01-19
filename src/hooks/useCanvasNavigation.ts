@@ -54,15 +54,6 @@ export const useCanvasNavigation = ({
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
-        // Calculate the focal point (viewport center in content space)
-        const containerRect = container.getBoundingClientRect();
-        const viewportCenterX = containerRect.width / 2;
-        const viewportCenterY = containerRect.height / 2;
-
-        // Point in content space that should remain fixed (viewport center)
-        const focalPointX = (startScrollX + viewportCenterX) / startZoom;
-        const focalPointY = (startScrollY + viewportCenterY) / startZoom;
-
         const startTime = performance.now();
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
 
@@ -76,33 +67,22 @@ export const useCanvasNavigation = ({
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
             setZoom(nextZoom);
 
-            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View)
+            // Interpolate Scroll synchronously
             if (targetScroll) {
                 const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
                 const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
-            } else {
-                // Zoom to center: Keep focal point (viewport center) fixed in content space
-                const newScrollX = focalPointX * nextZoom - viewportCenterX;
-                const newScrollY = focalPointY * nextZoom - viewportCenterY;
-                container.scrollLeft = newScrollX;
-                container.scrollTop = newScrollY;
             }
 
             if (progress < 1) {
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
             } else {
                 setZoom(clampedTargetZoom);
+                // Ensure final position is exact
                 if (targetScroll) {
                     container.scrollLeft = targetScroll.x;
                     container.scrollTop = targetScroll.y;
-                } else {
-                    // Final snap for zoom-to-center
-                    const finalScrollX = focalPointX * clampedTargetZoom - viewportCenterX;
-                    const finalScrollY = focalPointY * clampedTargetZoom - viewportCenterY;
-                    container.scrollLeft = finalScrollX;
-                    container.scrollTop = finalScrollY;
                 }
                 zoomAnimFrameRef.current = null;
                 isZoomingRef.current = false;
