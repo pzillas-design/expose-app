@@ -325,6 +325,7 @@ export const useCanvasNavigation = ({
     const getMostVisibleItem = useCallback(() => {
         if (!scrollContainerRef.current) return null;
         const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
         const viewportCenterX = containerRect.left + (containerRect.width / 2);
         const viewportCenterY = containerRect.top + (containerRect.height / 2);
 
