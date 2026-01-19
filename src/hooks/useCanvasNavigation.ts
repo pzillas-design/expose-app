@@ -18,62 +18,114 @@ export const useCanvasNavigation = ({
     allImages,
     primarySelectedId
 }: UseCanvasNavigationProps) => {
-    
+
     const [zoom, setZoom] = useState(1.25);
-    const zoomAnimFrameRef = useRef<number | null>(null);
+    const zoomRef = useRef(zoom);
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+
     const isZoomingRef = useRef(false);
+    const [isZooming, setIsZoomingState] = useState(false);
     const zoomTimeoutRef = useRef<number | null>(null);
     const isAutoScrollingRef = useRef(false);
+    const [isAutoScrolling, setIsAutoScrollingState] = useState(false);
     const autoScrollTimeoutRef = useRef<number | null>(null);
 
-    // --- Zoom Logic (Synchronized) ---
-    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }) => {
-        isZoomingRef.current = true;
-        const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
-        const startZoom = zoom;
-        
+    // Zoom focal point tracking
+    const focalPointRef = useRef<{
+        worldX: number,
+        worldY: number,
+        screenX: number,
+        screenY: number
+    } | null>(null);
+    const zoomAnimFrameRef = useRef<number | null>(null);
+
+    const setIsZooming = useCallback((val: boolean) => {
+        isZoomingRef.current = val;
+        setIsZoomingState(val);
+    }, []);
+
+    const setIsAutoScrolling = useCallback((val: boolean) => {
+        isAutoScrollingRef.current = val;
+        setIsAutoScrollingState(val);
+    }, []);
+
+    // Sync scroll after zoom changes to prevent flicker
+    useLayoutEffect(() => {
         const container = scrollContainerRef.current;
-        const startScrollX = container?.scrollLeft || 0;
-        const startScrollY = container?.scrollTop || 0;
+        if (!container || !focalPointRef.current) return;
+
+        const { worldX, worldY, screenX, screenY } = focalPointRef.current;
+        const focalX = worldX * zoom;
+        const focalY = worldY * zoom;
+
+        // Position on screen where the focal point was
+        container.scrollLeft = focalX - screenX;
+        container.scrollTop = focalY - screenY;
+    }, [zoom, scrollContainerRef]);
+
+    // --- Zoom Logic (Synchronized) ---
+    const smoothZoomTo = useCallback((targetZoom: number, targetScroll?: { x: number, y: number }, duration = 400) => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        isZoomingRef.current = true;
+        setIsZoomingState(true);
+
+        const clampedTargetZoom = Math.min(Math.max(targetZoom, MIN_ZOOM), MAX_ZOOM);
+        const startZoom = zoomRef.current;
+        const startScrollX = container.scrollLeft;
+        const startScrollY = container.scrollTop;
+
+        // If targetScroll is provided, we don't use focalPointRef pinning
+        if (targetScroll) {
+            focalPointRef.current = null;
+        } else {
+            // Pin the current viewport center
+            const containerRect = container.getBoundingClientRect();
+            const screenX = containerRect.width / 2;
+            const screenY = containerRect.height / 2;
+            focalPointRef.current = {
+                worldX: (startScrollX + screenX) / startZoom,
+                worldY: (startScrollY + screenY) / startZoom,
+                screenX,
+                screenY
+            };
+        }
 
         const startTime = performance.now();
-        const duration = 400; // Smoother transition
-        
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
-        
+
         const animate = (time: number) => {
             const elapsed = time - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            // Ease Out Quart
+            const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
             const ease = 1 - Math.pow(1 - progress, 4);
-            
-            // Interpolate Zoom
+
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
             setZoom(nextZoom);
-            
-            // Interpolate Scroll synchronously
+
             if (targetScroll && container) {
                 const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
                 const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
             }
-            
+
             if (progress < 1) {
                 zoomAnimFrameRef.current = requestAnimationFrame(animate);
-            } else { 
-                setZoom(clampedTargetZoom); 
-                // Ensure final position is exact
+            } else {
+                setZoom(clampedTargetZoom);
                 if (targetScroll && container) {
                     container.scrollLeft = targetScroll.x;
                     container.scrollTop = targetScroll.y;
                 }
                 zoomAnimFrameRef.current = null;
                 isZoomingRef.current = false;
+                setIsZoomingState(false);
+                focalPointRef.current = null;
             }
         };
         zoomAnimFrameRef.current = requestAnimationFrame(animate);
-    }, [zoom, scrollContainerRef]);
+    }, [scrollContainerRef]);
 
     // --- Viewport Fitting (Magnetic Group) ---
     const fitSelectionToView = useCallback(() => {
@@ -82,10 +134,10 @@ export const useCanvasNavigation = ({
         // Wrap in requestAnimationFrame to ensure we measure correctly
         requestAnimationFrame(() => {
             if (!scrollContainerRef.current) return;
-            
+
             const container = scrollContainerRef.current;
             const containerRect = container.getBoundingClientRect();
-            
+
             // Current scroll position
             const currentScrollLeft = container.scrollLeft;
             const currentScrollTop = container.scrollTop;
@@ -100,16 +152,16 @@ export const useCanvasNavigation = ({
                 const el = container.querySelector(`[data-image-id="${id}"]`);
                 if (el) {
                     const rect = el.getBoundingClientRect();
-                    
+
                     // Convert viewport-relative rect to absolute scroll coordinates (current zoom)
                     const absLeft = rect.left + currentScrollLeft - containerRect.left;
                     const absTop = rect.top + currentScrollTop - containerRect.top;
-                    
+
                     if (absLeft < minLeft) minLeft = absLeft;
                     if (absTop < minTop) minTop = absTop;
                     if (absLeft + rect.width > maxRight) maxRight = absLeft + rect.width;
                     if (absTop + rect.height > maxBottom) maxBottom = absTop + rect.height;
-                    
+
                     valid = true;
                 }
             });
@@ -119,14 +171,14 @@ export const useCanvasNavigation = ({
             // 1. Current Box Geometry
             const currentBoxWidth = maxRight - minLeft;
             const currentBoxHeight = maxBottom - minTop;
-            
+
             const currentCenterX = minLeft + currentBoxWidth / 2;
             const currentCenterY = minTop + currentBoxHeight / 2;
 
             // 2. Base Dimensions (Un-zoomed)
             const baseBoxWidth = currentBoxWidth / zoom;
             const baseBoxHeight = currentBoxHeight / zoom;
-            
+
             // 3. Calculate Ideal Zoom
             const padding = 120; // Extra breathing room
             const availableWidth = containerRect.width - (padding * 2);
@@ -134,27 +186,27 @@ export const useCanvasNavigation = ({
 
             const scaleX = availableWidth / baseBoxWidth;
             const scaleY = availableHeight / baseBoxHeight;
-            
+
             // Cap zoom to prevent extreme closeups on small groups
-            const targetZoom = Math.min(Math.max(Math.min(scaleX, scaleY), MIN_ZOOM), 1.2); 
+            const targetZoom = Math.min(Math.max(Math.min(scaleX, scaleY), MIN_ZOOM), 1.2);
 
             // 4. Calculate Target Scroll Position
             const padLeft = window.innerWidth / 2; // 50vw
             const padTop = window.innerHeight / 2; // 50vh
-            
+
             // Relative to content origin
             const contentX = currentCenterX - padLeft;
             const contentY = currentCenterY - padTop;
-            
+
             // Scale
             const ratio = targetZoom / zoom;
             const newContentX = contentX * ratio;
             const newContentY = contentY * ratio;
-            
+
             // Absolute scroll coords
             const newCenterX = newContentX + padLeft;
             const newCenterY = newContentY + padTop;
-            
+
             // Center in viewport
             const targetScrollLeft = newCenterX - (containerRect.width / 2);
             const targetScrollTop = newCenterY - (containerRect.height / 2);
@@ -170,7 +222,7 @@ export const useCanvasNavigation = ({
         isAutoScrollingRef.current = true;
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
         autoScrollTimeoutRef.current = window.setTimeout(() => { isAutoScrollingRef.current = false; }, 800);
-        
+
         // Simple scroll into view
         setTimeout(() => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
@@ -184,25 +236,67 @@ export const useCanvasNavigation = ({
     useEffect(() => {
         const container = scrollContainerRef.current;
         if (!container) return;
-    
+
         const onWheel = (e: WheelEvent) => {
             if (e.ctrlKey || e.metaKey) {
-                e.preventDefault(); 
-                e.stopPropagation(); 
+                e.preventDefault();
+                e.stopPropagation();
+
                 isZoomingRef.current = true;
+                setIsZoomingState(true);
+
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
-                }, 400); 
-    
-                if (zoomAnimFrameRef.current) { cancelAnimationFrame(zoomAnimFrameRef.current); zoomAnimFrameRef.current = null; }
+                    setIsZoomingState(false);
+                    focalPointRef.current = null;
+                }, 400);
+
+                if (zoomAnimFrameRef.current) {
+                    cancelAnimationFrame(zoomAnimFrameRef.current);
+                    zoomAnimFrameRef.current = null;
+                }
+
+                // Calculate Focal Point (Pin the current selection or the viewport center)
+                const containerRect = container.getBoundingClientRect();
+                const currentZoom = zoomRef.current;
+
+                // Default focal point is viewport center
+                let focalX = containerRect.width / 2;
+                let focalY = containerRect.height / 2;
+
+                // Priority 1: Center of Selected Item
+                if (primarySelectedId) {
+                    const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
+                    if (el) {
+                        const rect = el.getBoundingClientRect();
+                        focalX = rect.left + rect.width / 2 - containerRect.left;
+                        focalY = rect.top + rect.height / 2 - containerRect.top;
+                    }
+                } else {
+                    // Fallback: Mouse position if over container
+                    if (e.clientX >= containerRect.left && e.clientX <= containerRect.right &&
+                        e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
+                        focalX = e.clientX - containerRect.left;
+                        focalY = e.clientY - containerRect.top;
+                    }
+                }
+
+                // Map screen coordinates to content coordinates based on current zoom
+                focalPointRef.current = {
+                    worldX: (container.scrollLeft + focalX) / currentZoom,
+                    worldY: (container.scrollTop + focalY) / currentZoom,
+                    screenX: focalX,
+                    screenY: focalY
+                };
+
                 const delta = -e.deltaY;
                 setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef]);
+    }, [scrollContainerRef, primarySelectedId]);
 
     return {
         zoom,

@@ -223,19 +223,19 @@ export const adminService = {
 
         // FORKING LOGIC: If a user edits a system preset, create a fork
         const dbPreset: any = {
-            id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : preset.id,
+            id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : (preset.id || crypto.randomUUID()),
             original_id: (isSystemPreset && isUserAction) ? preset.id : (preset.original_id || null),
             title: preset.title,
             label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
-            tags: [],
-            is_pinned: preset.isPinned,
-            is_custom: preset.isCustom,
-            usage_count: preset.usageCount,
-            lang: preset.lang,
+            tags: preset.tags || [],
+            is_pinned: preset.isPinned ?? false,
+            is_custom: userId ? true : (preset.isCustom ?? false),
+            usage_count: preset.usageCount || 0,
+            lang: preset.lang || 'en',
             updated_at: new Date().toISOString(),
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
-            controls: preset.controls,
+            controls: preset.controls || [],
             user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
             category: category
         };
