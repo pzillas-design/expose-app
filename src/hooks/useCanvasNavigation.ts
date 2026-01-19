@@ -54,15 +54,6 @@ export const useCanvasNavigation = ({
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
-        // Calculate viewport center point in content coordinates (for zoom-to-center)
-        const containerRect = container.getBoundingClientRect();
-        const viewportCenterX = containerRect.width / 2;
-        const viewportCenterY = containerRect.height / 2;
-
-        // Content point at viewport center (before zoom)
-        const contentCenterX = (startScrollX + viewportCenterX) / startZoom;
-        const contentCenterY = (startScrollY + viewportCenterY) / startZoom;
-
         const startTime = performance.now();
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
 
@@ -70,26 +61,19 @@ export const useCanvasNavigation = ({
             const elapsed = time - startTime;
             const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
 
-            // Ease Out Quart (Matching Main Branch)
+            // Ease Out Quart
             const ease = 1 - Math.pow(1 - progress, 4);
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
             setZoom(nextZoom);
 
-            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View)
-            // Or if no target is provided, scale scroll proportionally to keep center (Zoom to Center)
+            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View, Snap to Item)
+            // Otherwise, just zoom without scroll adjustment (beta branch behavior)
             if (targetScroll) {
                 const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
                 const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
-            } else {
-                // Proportional Scroll Scaling (Zoom to Center)
-                if (startZoom > 0.001) {
-                    const ratio = nextZoom / startZoom;
-                    container.scrollLeft = startScrollX * ratio;
-                    container.scrollTop = startScrollY * ratio;
-                }
             }
 
             if (progress < 1) {
@@ -99,13 +83,6 @@ export const useCanvasNavigation = ({
                 if (targetScroll) {
                     container.scrollLeft = targetScroll.x;
                     container.scrollTop = targetScroll.y;
-                } else {
-                    // Final snap for proportional zoom
-                    if (startZoom > 0.001) {
-                        const ratio = clampedTargetZoom / startZoom;
-                        container.scrollLeft = startScrollX * ratio;
-                        container.scrollTop = startScrollY * ratio;
-                    }
                 }
                 zoomAnimFrameRef.current = null;
                 isZoomingRef.current = false;
