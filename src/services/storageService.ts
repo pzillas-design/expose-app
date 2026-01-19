@@ -4,10 +4,10 @@ export const storageService = {
     /**
      * Uploads a base64 image or Blob to Supabase Storage
      * @param imageSrc Base64 string or BlobUrl (we will fetch it to get the blob)
-     * @param userId User ID
-     * @returns The storage path (e.g. 'user_123/img_456.png')
+     * @param userIdentifier User email (preferred) or user ID
+     * @returns The storage path (e.g. 'user@email.com/board-name/img_456.png')
      */
-    async uploadImage(imageSrc: string, userId: string, customFileName?: string, subfolder?: string): Promise<{ path: string; thumbPath?: string } | null> {
+    async uploadImage(imageSrc: string, userIdentifier: string, customFileName?: string, subfolder?: string): Promise<{ path: string; thumbPath?: string } | null> {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
@@ -23,10 +23,12 @@ export const storageService = {
                 shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 
-            // 2. Generate Path
+            // 2. Generate Path with clean folder structure
             const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
-            const folderPath = subfolder ? `${userId}/${subfolder}` : userId;
+            const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
             const filePath = `${folderPath}/${fileName}`;
+
+            console.log(`[Storage] Uploading to: ${filePath}`);
 
             // 3. Upload Main Image
             const { data, error } = await supabase.storage

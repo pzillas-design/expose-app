@@ -223,7 +223,8 @@ export const adminService = {
             updated_at: new Date().toISOString(),
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls,
-            user_id: userId || preset.user_id || null // Maintain existing owner or set new one
+            user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
+            category: preset.category || (isSystemPreset && isUserAction ? 'user' : (preset.user_id ? 'user' : 'system'))
         };
 
         const { error } = await supabase.from('global_presets').upsert(dbPreset);

@@ -9,7 +9,7 @@ export const imageService = {
      * Saves a newly generated image to Storage and DB.
      * This is intended to be called in the background (fire and forget from UI perspective).
      */
-    async persistImage(image: CanvasImage, userId: string): Promise<{ success: boolean; error?: string }> {
+    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
         // 1. Determine Path & Filename
@@ -28,13 +28,15 @@ export const imageService = {
         const customFileName = `${titleSlug}_v${image.version || 1}_${image.id.substring(0, 8)}.png`;
 
         // 2. Upload Image (Compressed to 4K max via uploadImage)
-        const uploadResult = await storageService.uploadImage(image.src, userId, customFileName, subfolder);
+        // Use userEmail for storage path if available, otherwise fall back to userId
+        const storageIdentifier = userEmail || userId;
+        const uploadResult = await storageService.uploadImage(image.src, storageIdentifier, customFileName, subfolder);
         if (!uploadResult) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };
         }
 
-        // 2. Insert into DB with thumbnail path
+        // 3. Insert into DB with thumbnail path (still using userId for database)
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,

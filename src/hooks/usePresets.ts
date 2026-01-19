@@ -100,6 +100,7 @@ export const usePresets = (userId?: string) => {
                 label: title,
                 prompt: prompt,
                 tags: ['history'],
+                category: 'recent',  // ← Set category for recent prompts
                 isPinned: false,
                 isCustom: true,
                 usageCount: 1,
