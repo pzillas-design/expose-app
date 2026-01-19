@@ -208,6 +208,19 @@ export const adminService = {
         const isSystemPreset = !preset.user_id;
         const isUserAction = userId && userId !== preset.user_id;
 
+        // Determine category: system presets stay 'system', user presets are 'user'
+        let category = 'system';
+        if (userId) {
+            // If user is creating/editing, it's a user preset
+            category = 'user';
+        } else if (preset.user_id) {
+            // If preset has a user_id, it's a user preset
+            category = 'user';
+        } else if (preset.category === 'recent') {
+            // Preserve 'recent' category for history
+            category = 'recent';
+        }
+
         // FORKING LOGIC: If a user edits a system preset, create a fork
         const dbPreset: any = {
             id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : preset.id,
@@ -224,7 +237,7 @@ export const adminService = {
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls,
             user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
-            category: preset.category || (isSystemPreset && isUserAction ? 'user' : (preset.user_id ? 'user' : 'system'))
+            category: category
         };
 
         const { error } = await supabase.from('global_presets').upsert(dbPreset);
