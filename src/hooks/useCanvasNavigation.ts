@@ -278,16 +278,39 @@ export const useCanvasNavigation = ({
         const container = scrollContainerRef.current;
         if (!container) return;
 
+        let lastWheelTime = 0;
+        let wheelEventCount = 0;
+
         const onWheel = (e: WheelEvent) => {
-            if (e.ctrlKey || e.metaKey) {
+            const now = performance.now();
+            const timeSinceLastWheel = now - lastWheelTime;
+            lastWheelTime = now;
+
+            // Detect rapid wheel events (likely pinch gesture)
+            if (timeSinceLastWheel < 50) {
+                wheelEventCount++;
+            } else {
+                wheelEventCount = 0;
+            }
+
+            // Pinch-to-zoom detection:
+            // 1. Explicit ctrl/meta key (standard)
+            // 2. Rapid wheel events (trackpad pinch often sends multiple events quickly)
+            const isPinchGesture = e.ctrlKey || e.metaKey || wheelEventCount > 2;
+
+            if (isPinchGesture) {
                 e.preventDefault();
                 e.stopPropagation();
 
                 isZoomingRef.current = true;
+                setIsZoomingState(true);
+
+                // Extended timeout to prevent navigation during zoom
                 if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
                 zoomTimeoutRef.current = window.setTimeout(() => {
                     isZoomingRef.current = false;
-                }, 400);
+                    setIsZoomingState(false);
+                }, 600); // Increased from 400ms to 600ms
 
                 if (zoomAnimFrameRef.current) {
                     cancelAnimationFrame(zoomAnimFrameRef.current);
