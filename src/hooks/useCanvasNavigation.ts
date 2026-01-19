@@ -54,6 +54,15 @@ export const useCanvasNavigation = ({
         const startScrollX = container.scrollLeft;
         const startScrollY = container.scrollTop;
 
+        // Calculate the focal point (viewport center in content space)
+        const containerRect = container.getBoundingClientRect();
+        const viewportCenterX = containerRect.width / 2;
+        const viewportCenterY = containerRect.height / 2;
+
+        // Point in content space that should remain fixed (viewport center)
+        const focalPointX = (startScrollX + viewportCenterX) / startZoom;
+        const focalPointY = (startScrollY + viewportCenterY) / startZoom;
+
         const startTime = performance.now();
         if (zoomAnimFrameRef.current) cancelAnimationFrame(zoomAnimFrameRef.current);
 
@@ -61,19 +70,24 @@ export const useCanvasNavigation = ({
             const elapsed = time - startTime;
             const progress = duration === 0 ? 1 : Math.min(elapsed / duration, 1);
 
-            // Ease Out Quart
+            // Ease Out Quart (Matching Main Branch)
             const ease = 1 - Math.pow(1 - progress, 4);
 
             const nextZoom = startZoom + (clampedTargetZoom - startZoom) * ease;
             setZoom(nextZoom);
 
-            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View, Snap to Item)
-            // Otherwise, just zoom without scroll adjustment (beta branch behavior)
+            // Only interpolate scroll if a target is explicitly provided (e.g. Fit to View)
             if (targetScroll) {
                 const nextScrollX = startScrollX + (targetScroll.x - startScrollX) * ease;
                 const nextScrollY = startScrollY + (targetScroll.y - startScrollY) * ease;
                 container.scrollLeft = nextScrollX;
                 container.scrollTop = nextScrollY;
+            } else {
+                // Zoom to center: Keep focal point (viewport center) fixed in content space
+                const newScrollX = focalPointX * nextZoom - viewportCenterX;
+                const newScrollY = focalPointY * nextZoom - viewportCenterY;
+                container.scrollLeft = newScrollX;
+                container.scrollTop = newScrollY;
             }
 
             if (progress < 1) {
@@ -83,6 +97,12 @@ export const useCanvasNavigation = ({
                 if (targetScroll) {
                     container.scrollLeft = targetScroll.x;
                     container.scrollTop = targetScroll.y;
+                } else {
+                    // Final snap for zoom-to-center
+                    const finalScrollX = focalPointX * clampedTargetZoom - viewportCenterX;
+                    const finalScrollY = focalPointY * clampedTargetZoom - viewportCenterY;
+                    container.scrollLeft = finalScrollX;
+                    container.scrollTop = finalScrollY;
                 }
                 zoomAnimFrameRef.current = null;
                 isZoomingRef.current = false;
