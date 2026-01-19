@@ -309,6 +309,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     }, [selectedImage?.isGenerating, selectedImage?.id, isMulti]);
 
+    // Auto-close Info Modal when navigating to a different image
+    useEffect(() => {
+        if (showInfo && selectedImage && selectedImage.id !== lastAutoOpenedId.current) {
+            setShowInfo(false);
+        }
+    }, [selectedImage?.id]);
+
     // NEW: Global click listener to close Info Modal on outside interaction
     useEffect(() => {
         if (!showInfo) return;
