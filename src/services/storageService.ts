@@ -85,6 +85,8 @@ export const storageService = {
     async getSignedUrls(paths: string[], options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<Record<string, string>> {
         if (!paths || paths.length === 0) return {};
 
+        const perfStart = performance.now();
+
         // 0. Ensure cache is loaded
         if (this._urlCache.size === 0) {
             this._getPersistentCache();
@@ -107,7 +109,13 @@ export const storageService = {
             }
         });
 
-        if (toFetch.length === 0) return results;
+        const cacheHits = paths.length - toFetch.length;
+        console.log(`[StorageService] URL Cache: ${cacheHits}/${paths.length} hits (${((cacheHits / paths.length) * 100).toFixed(1)}%)`);
+
+        if (toFetch.length === 0) {
+            console.log(`[StorageService] All URLs from cache (${(performance.now() - perfStart).toFixed(2)}ms)`);
+            return results;
+        }
 
         try {
             // 2. Fetch missing in one call
@@ -136,13 +144,14 @@ export const storageService = {
                         results[finalKey] = item.signedUrl;
                         this._urlCache.set(finalKey, {
                             url: item.signedUrl,
-                            expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
+                            expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                         });
                     }
                 });
                 this._savePersistentCache();
             }
 
+            console.log(`[StorageService] Batch signed ${toFetch.length} URLs in ${(performance.now() - perfStart).toFixed(2)}ms`);
             return results;
         } catch (error) {
             console.error('Batch Signed URLs Failed:', error);
@@ -182,7 +191,7 @@ export const storageService = {
             if (data?.signedUrl) {
                 this._urlCache.set(path + optionsKey, {
                     url: data.signedUrl,
-                    expires: Date.now() + 1000 * 60 * 60
+                    expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                 });
                 this._savePersistentCache();
                 return data.signedUrl;
