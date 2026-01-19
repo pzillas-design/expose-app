@@ -116,10 +116,17 @@ export const imageService = {
     },
 
     /**
-     * Deletes multiple images from DB.
+     * Deletes multiple images from DB and Storage.
      */
     async deleteImages(imageIds: string[], userId: string): Promise<void> {
         if (imageIds.length === 0) return;
+
+        // 0. Fetch storage paths before deleting from DB
+        const { data: images } = await supabase
+            .from('canvas_images')
+            .select('storage_path, thumb_storage_path')
+            .in('id', imageIds)
+            .eq('user_id', userId);
 
         // 1. Delete from canvas_images
         const { error: imgError } = await supabase
@@ -147,6 +154,34 @@ export const imageService = {
                 .update({ status: 'failed' })
                 .in('id', imageIds)
                 .eq('user_id', userId);
+        }
+
+        // 3. Delete files from Storage (both original and thumbnail)
+        if (images && images.length > 0) {
+            const pathsToDelete: string[] = [];
+
+            images.forEach(img => {
+                if (img.storage_path) {
+                    pathsToDelete.push(img.storage_path);
+                }
+                if (img.thumb_storage_path) {
+                    pathsToDelete.push(img.thumb_storage_path);
+                }
+            });
+
+            if (pathsToDelete.length > 0) {
+                console.log(`[ImageService] Deleting ${pathsToDelete.length} files from storage...`);
+                const { error: storageError } = await supabase.storage
+                    .from('user-content')
+                    .remove(pathsToDelete);
+
+                if (storageError) {
+                    console.error('Storage deletion failed:', storageError);
+                    // Don't throw - DB is already cleaned up
+                } else {
+                    console.log(`[ImageService] Successfully deleted ${pathsToDelete.length} files from storage`);
+                }
+            }
         }
     },
 
