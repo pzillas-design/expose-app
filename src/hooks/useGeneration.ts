@@ -232,6 +232,8 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
+            thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
+            src: sourceImage.src, // Explicitly preserve source for blurry preview
             annotations: sourceImage.annotations || [], // KEEP annotations for reference images
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
