@@ -280,15 +280,10 @@ export const useCanvasNavigation = ({
                     setIsZoomingState(false);
                 }, 600);
 
-                if (zoomAnimFrameRef.current) {
-                    cancelAnimationFrame(zoomAnimFrameRef.current);
-                    zoomAnimFrameRef.current = null;
-                }
-
-                // Calculate focal point: selected image center, or mouse position, or viewport center
+                // Calculate focal point: selected image center, or mouse position
                 const containerRect = container.getBoundingClientRect();
-                let focalX = e.clientX - containerRect.left; // Mouse X relative to container
-                let focalY = e.clientY - containerRect.top;  // Mouse Y relative to container
+                let focalX = e.clientX - containerRect.left;
+                let focalY = e.clientY - containerRect.top;
 
                 // If there's a selected image, use its center as focal point
                 if (primarySelectedId) {
@@ -310,11 +305,18 @@ export const useCanvasNavigation = ({
 
                 setZoom(newZoom);
 
-                // Adjust scroll to keep focal point fixed
-                const newScrollX = focalPointX * newZoom - focalX;
-                const newScrollY = focalPointY * newZoom - focalY;
-                container.scrollLeft = newScrollX;
-                container.scrollTop = newScrollY;
+                // Defer scroll adjustment to next frame to prevent jitter
+                if (zoomAnimFrameRef.current) {
+                    cancelAnimationFrame(zoomAnimFrameRef.current);
+                }
+
+                zoomAnimFrameRef.current = requestAnimationFrame(() => {
+                    const newScrollX = focalPointX * newZoom - focalX;
+                    const newScrollY = focalPointY * newZoom - focalY;
+                    container.scrollLeft = newScrollX;
+                    container.scrollTop = newScrollY;
+                    zoomAnimFrameRef.current = null;
+                });
             }
         };
         container.addEventListener('wheel', onWheel, { passive: false });
