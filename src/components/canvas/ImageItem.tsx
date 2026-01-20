@@ -85,6 +85,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
+    const hasNotifiedLoad = useRef(false);
 
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
@@ -93,6 +94,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             setCurrentSrc(maskSrc || thumbSrc || src || null);
             setIsHighRes(!!src && !thumbSrc);
             lastPath.current = path;
+            hasNotifiedLoad.current = false;
         }
     }, [path, src, maskSrc, thumbSrc, currentSrc]);
 
@@ -152,7 +154,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                     onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
                 }
                 setIsLoaded(true);
-                onLoaded?.();
+
+                // Only notify parent once per image
+                if (!hasNotifiedLoad.current) {
+                    hasNotifiedLoad.current = true;
+                    onLoaded?.();
+                }
             }}
             style={{
                 imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
