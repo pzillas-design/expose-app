@@ -106,21 +106,24 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         const fetchUrl = async () => {
             if (!path || fetchLock.current) return;
 
-            // Skip if we already have the URL for this path
-            if (path === lastPath.current && currentSrc) return;
+            // Determine if we need high resolution
+            const needsHQ = isSelected;
+
+            // Skip if we already have the right quality for this path
+            if (needsHQ && isHighRes && path === lastPath.current) return;
+            if (!needsHQ && !isHighRes && path === lastPath.current && currentSrc) return;
 
             fetchLock.current = true;
             try {
-                // Always load full resolution (no transform)
-                // The browser's lazy loading will handle performance
-                const url = await storageService.getSignedUrl(path, undefined);
+                // Load thumbnail (800px) by default, full resolution only when selected
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 800, quality: 85 });
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
-                    setIsHighRes(true);
+                    setIsHighRes(needsHQ);
                     lastPath.current = path;
                 }
             } finally {
@@ -128,14 +131,14 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             }
         };
 
-        const shouldFetch = !currentSrc || (path !== lastPath.current);
+        const shouldFetch = !currentSrc || (isSelected && !isHighRes) || (path !== lastPath.current);
 
         if (shouldFetch) {
-            const delay = (!currentSrc || path !== lastPath.current) ? 0 : 0;
+            const delay = (!currentSrc || path !== lastPath.current) ? 0 : 200;
             const timeout = setTimeout(fetchUrl, delay);
             return () => clearTimeout(timeout);
         }
-    }, [path, src, maskSrc, currentSrc]);
+    }, [path, src, maskSrc, isSelected, isHighRes, currentSrc]);
 
     return (
         <img
