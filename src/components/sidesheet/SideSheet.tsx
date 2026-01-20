@@ -618,7 +618,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleCreateTemplate = (newT: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => {
-        onSaveTemplate?.({ ...newT, category: 'user' });
+        onSaveTemplate?.({ ...newT, category: 'user', isPinned: true });
     };
 
     const handleExitBrushMode = async (forceSave: boolean = false) => {

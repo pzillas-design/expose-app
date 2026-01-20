@@ -229,7 +229,7 @@ export const adminService = {
             label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
             tags: preset.tags || [],
-            is_pinned: preset.isPinned ?? false,
+            is_pinned: preset.isPinned ?? (category === 'user' ? true : false),
             is_custom: userId ? true : (preset.isCustom ?? false),
             usage_count: preset.usageCount || 0,
             lang: preset.lang || 'en',
