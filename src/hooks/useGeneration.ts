@@ -38,9 +38,9 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
     'fast': 'gemini-2.5-flash-image',
-    'pro-1k': 'gemini-3-pro-image-preview',
-    'pro-2k': 'gemini-3-pro-image-preview',
-    'pro-4k': 'gemini-3-pro-image-preview'
+    'pro-1k': 'fal/fal-ai/flux/dev', // Switch to Flux Dev for Pro
+    'pro-2k': 'fal/fal-ai/flux/dev',
+    'pro-4k': 'fal/fal-ai/flux/dev'
 };
 
 // Cache for smart estimates (simple in-memory cache)

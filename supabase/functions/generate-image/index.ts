@@ -5,6 +5,7 @@ import { slugify } from './utils/slugify.ts';
 import { findClosestValidRatio } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage } from './services/gemini.ts';
+import { generateImageFal } from './services/fal.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -175,35 +176,56 @@ Deno.serve(async (req) => {
         const concurrentJobs = concurrentJobCount || 0;
         const generationStartTime = Date.now();
 
-        // Call Gemini API
-        logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-        const geminiResponse = await generateImage(
-            Deno.env.get('GEMINI_API_KEY')!,
-            finalModelName,
-            parts,
-            generationConfig
-        );
+        // Call AI API (Gemini or Fal.ai)
+        let generatedBase64 = null;
+        let finalOutputModel = finalModelName;
 
-        // Extract result
-        const candidate = geminiResponse.candidates?.[0];
-        const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+        const falApiKey = Deno.env.get('FAL_KEY');
+        const isFalModel = finalModelName.startsWith('fal/');
 
-        if (!imagePart) {
-            const finishReason = candidate?.finishReason;
-            const safetyRatings = candidate?.safetyRatings;
-            logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
+        if (isFalModel && falApiKey) {
+            logInfo('Fal.ai API Call', `Model: ${finalModelName}`);
+            const falModel = finalModelName.replace('fal/', '');
+            const falResult = await generateImageFal(
+                falApiKey,
+                falModel,
+                prompt,
+                {
+                    image_size: qualityMode === 'pro-1k' ? 'square_hd' : (qualityMode === 'pro-2k' ? 'square_hd' : 'square_hd'),
+                    // Add more mappings if needed
+                }
+            );
+            generatedBase64 = falResult.data;
+        } else {
+            // Call Gemini API
+            logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
+            const geminiResponse = await generateImage(
+                Deno.env.get('GEMINI_API_KEY')!,
+                finalModelName,
+                parts,
+                generationConfig
+            );
 
-            // Refund credits
-            if (!isPro && cost > 0) {
-                await supabaseAdmin
-                    .from('profiles')
-                    .update({ credits: profile.credits })
-                    .eq('id', user.id);
+            // Extract result
+            const candidate = geminiResponse.candidates?.[0];
+            const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+
+            if (!imagePart) {
+                const finishReason = candidate?.finishReason;
+                const safetyRatings = candidate?.safetyRatings;
+                logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
+
+                // Refund credits
+                if (!isPro && cost > 0) {
+                    await supabaseAdmin
+                        .from('profiles')
+                        .update({ credits: profile.credits })
+                        .eq('id', user.id);
+                }
+                throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
             }
-            throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
+            generatedBase64 = imagePart.inlineData.data;
         }
-
-        const generatedBase64 = imagePart.inlineData.data;
 
         // Prepare storage path
         let subfolder = board_id || 'unorganized';
@@ -297,7 +319,7 @@ Deno.serve(async (req) => {
         }
 
         // Update job status
-        const usage = geminiResponse.usageMetadata || {};
+        const usage = (isFalModel ? {} : (geminiResponse as any).usageMetadata) || {};
         const tokensPrompt = usage.promptTokenCount || 0;
         const tokensCompletion = usage.candidatesTokenCount || 0;
         const tokensTotal = usage.totalTokenCount || 0;
