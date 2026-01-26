@@ -70,7 +70,8 @@ const translateError = (errorMsg: string): string => {
         return `Fehler: ${errorMsg}`;
     }
 
-    return `${header} (Original: ${errorMsg})`;
+    const cleanOriginal = errorMsg.length > 150 ? errorMsg.substring(0, 150) + "..." : errorMsg;
+    return `${header} (Original: ${cleanOriginal})`;
 };
 
 // Cache for smart estimates (simple in-memory cache)

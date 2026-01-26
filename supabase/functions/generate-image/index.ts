@@ -122,9 +122,10 @@ Deno.serve(async (req) => {
         }
 
         // Prepare source image (base64)
-        let finalSourceBase64 = payloadOriginalImage;
-        if (!finalSourceBase64 && sourceImage?.src) {
-            finalSourceBase64 = await prepareSourceImage(sourceImage.src);
+        let finalSourceBase64 = null;
+        const sourceToProcess = payloadOriginalImage || sourceImage?.src;
+        if (sourceToProcess) {
+            finalSourceBase64 = await prepareSourceImage(sourceToProcess);
         }
 
         // Determine model
