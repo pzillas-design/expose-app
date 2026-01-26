@@ -109,7 +109,7 @@ export const storageService = {
                 // Convert object back to Map
                 Object.keys(parsed).forEach(key => {
                     if (parsed[key].expires > Date.now()) {
-                        this._urlCache.set(key, parsed[key]);
+                        storageService._urlCache.set(key, parsed[key]);
                     }
                 });
             }
@@ -121,7 +121,7 @@ export const storageService = {
     _savePersistentCache() {
         try {
             const obj: any = {};
-            this._urlCache.forEach((val, key) => {
+            storageService._urlCache.forEach((val, key) => {
                 obj[key] = val;
             });
             sessionStorage.setItem('nano_url_cache', JSON.stringify(obj));
@@ -142,8 +142,8 @@ export const storageService = {
         const perfStart = performance.now();
 
         // 0. Ensure cache is loaded
-        if (this._urlCache.size === 0) {
-            this._getPersistentCache();
+        if (storageService._urlCache.size === 0) {
+            storageService._getPersistentCache();
         }
 
         const results: Record<string, string> = {};
@@ -155,7 +155,7 @@ export const storageService = {
         // 1. Check Cache
         paths.forEach(path => {
             const cacheKey = path + optionsKey;
-            const cached = this._urlCache.get(cacheKey);
+            const cached = storageService._urlCache.get(cacheKey);
             if (cached && cached.expires > Date.now()) {
                 results[cacheKey] = cached.url;
             } else if (path) {
@@ -196,13 +196,13 @@ export const storageService = {
                         const finalKey = resolvedPath + optionsKey;
 
                         results[finalKey] = item.signedUrl;
-                        this._urlCache.set(finalKey, {
+                        storageService._urlCache.set(finalKey, {
                             url: item.signedUrl,
                             expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                         });
                     }
                 });
-                this._savePersistentCache();
+                storageService._savePersistentCache();
             }
 
             console.log(`[StorageService] Batch signed ${toFetch.length} URLs in ${(performance.now() - perfStart).toFixed(2)}ms`);
@@ -223,7 +223,7 @@ export const storageService = {
         const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
-        const cached = this._urlCache.get(path + optionsKey);
+        const cached = storageService._urlCache.get(path + optionsKey);
         if (cached && cached.expires > Date.now()) {
             return cached.url;
         }
@@ -243,11 +243,11 @@ export const storageService = {
             if (error) throw error;
 
             if (data?.signedUrl) {
-                this._urlCache.set(path + optionsKey, {
+                storageService._urlCache.set(path + optionsKey, {
                     url: data.signedUrl,
                     expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                 });
-                this._savePersistentCache();
+                storageService._savePersistentCache();
                 return data.signedUrl;
             }
             return null;

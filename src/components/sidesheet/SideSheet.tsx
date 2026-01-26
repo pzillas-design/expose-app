@@ -55,6 +55,7 @@ interface SideSheetProps {
     onActiveAnnotationChange?: (id: string | null) => void;
     onInteractionStart: () => void; // New
     onInteractionEnd: () => void;   // New
+    onAddReference?: (file: File, annotationId?: string) => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -115,6 +116,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onDeleteTemplate,
         onSaveRecentPrompt,
         onUpdateImageTitle,
+        onAddReference: onAddReferenceExternal, // Rename to avoid conflict
         userProfile
     } = props;
 
