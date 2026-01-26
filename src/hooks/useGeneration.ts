@@ -38,14 +38,14 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
-    'fast': 'gemini-2.0-flash',
-    'pro-1k': 'gemini-2.0-flash',
-    'pro-2k': 'gemini-2.0-flash',
-    'pro-4k': 'gemini-2.0-flash'
+    'fast': 'gemini-2.5-flash-image',
+    'pro-1k': 'gemini-3-pro-image-preview',
+    'pro-2k': 'gemini-3-pro-image-preview',
+    'pro-4k': 'gemini-3-pro-image-preview'
 };
 
 const resolveTargetModel = (quality: string): string | undefined => {
-    return undefined; // Reverted to let backend handle everything (Gemini)
+    return QUALITY_TO_MODEL[quality];
 };
 
 // HELPER: Map technical errors to user-friendly German

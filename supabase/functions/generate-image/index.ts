@@ -129,9 +129,9 @@ Deno.serve(async (req) => {
         }
 
         // Determine model
-        let finalModelName = 'gemini-2.0-flash';
+        let finalModelName = 'gemini-3-pro-image-preview';
         if (qualityMode === 'fast' || modelName === 'fast') {
-            finalModelName = 'gemini-2.0-flash';
+            finalModelName = 'gemini-2.5-flash-image';
         } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
             finalModelName = modelName;
         }
@@ -153,12 +153,12 @@ Deno.serve(async (req) => {
             logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio`);
         }
 
-        // Prepare generation config
+        // Prepare generation config (Standard AI Studio format)
         const generationConfig: any = {
-            imageConfig: {
-                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K')),
-                ...(isEditMode ? {} : { aspectRatio: bestRatio })
-            }
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192
         };
 
         // Prepare parts array (Multimodal Interleaving)
