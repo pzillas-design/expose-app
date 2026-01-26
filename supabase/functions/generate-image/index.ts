@@ -267,11 +267,11 @@ Deno.serve(async (req) => {
         }
 
         // Determine title and version
-        let dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
+        let dbBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
         let dbTitle = dbBaseName;
-        const currentVersion = (sourceImage.version || 0) + 1;
+        const currentVersion = (sourceImage?.version || 0) + 1;
 
-        if (sourceImage.version && sourceImage.version > 0) {
+        if (sourceImage?.version && sourceImage.version > 0) {
             dbTitle = `${dbBaseName}_v${currentVersion}`;
         } else {
             if (dbBaseName === 'Generation' || dbBaseName === 'New Generation' || !dbBaseName) {
