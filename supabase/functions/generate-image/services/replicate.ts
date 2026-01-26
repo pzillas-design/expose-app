@@ -2,6 +2,8 @@
  * Service to handle requests to Replicate (Google Nano Banana Models)
  */
 
+import { urlToBase64 } from '../utils/imageProcessing.ts';
+
 export const generateImageReplicate = async (
     apiToken: string,
     model: string,
@@ -74,7 +76,9 @@ export const generateImageReplicate = async (
         // If not, we'd loop here. Let's add a quick polling loop just in case.
         let finalPrediction = prediction;
         let attempts = 0;
-        while (['starting', 'processing'].includes(finalPrediction.status) && attempts < 30) { // Poll for up to 30s more
+        const maxAttempts = 60; // Increase to 60s polling (total potential wait > 2 mins including header)
+
+        while (['starting', 'processing'].includes(finalPrediction.status) && attempts < maxAttempts) {
             await new Promise(r => setTimeout(r, 1000));
             const pollRes = await fetch(finalPrediction.urls.get, {
                 headers: { 'Authorization': `Bearer ${apiToken}` }
@@ -84,6 +88,7 @@ export const generateImageReplicate = async (
         }
 
         if (finalPrediction.status !== 'succeeded') {
+            console.error('Replicate Polling Timeout/Failure:', finalPrediction);
             throw new Error(`Replicate Timeout or Fail: ${finalPrediction.status}`);
         }
 
@@ -94,21 +99,27 @@ export const generateImageReplicate = async (
     // Output is usually an array of URLs
     const outputUrls = prediction.output;
     if (!outputUrls || !Array.isArray(outputUrls) || outputUrls.length === 0) {
+        console.error('Replicate No Output:', prediction);
         throw new Error("Replicate: No output images returned");
     }
 
     const imageUrl = outputUrls[0];
+    console.log('Downloading Replicate Image:', imageUrl);
 
     // 6. Fetch Image to return Base64 (consistent with existing app)
-    const imageRes = await fetch(imageUrl);
-    const blob = await imageRes.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    try {
+        // Use the shared utility to avoid stack overflow on large images
+        const base64 = await urlToBase64(imageUrl);
 
-    return {
-        data: base64,
-        url: imageUrl,
-        predictionId: prediction.id,
-        logs: prediction.logs
-    };
+        return {
+            data: base64,
+            url: imageUrl,
+            predictionId: prediction.id,
+            logs: prediction.logs
+        };
+    } catch (downloadError) {
+        console.error('Failed to download replicate image:', downloadError);
+        // Fallback: If safe download fails, try to return URL? No, index.ts expects data.
+        throw new Error(`Failed to download generated image: ${downloadError.message}`);
+    }
 };
