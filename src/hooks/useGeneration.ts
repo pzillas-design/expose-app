@@ -38,9 +38,27 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
     'fast': 'gemini-2.5-flash-image',
-    'pro-1k': 'fal/fal-ai/flux/dev', // Switch to Flux Dev for Pro
-    'pro-2k': 'fal/fal-ai/flux/dev',
-    'pro-4k': 'fal/fal-ai/flux/dev'
+    'pro-1k': 'gemini-3-pro-image-preview',
+    'pro-2k': 'gemini-3-pro-image-preview',
+    'pro-4k': 'gemini-3-pro-image-preview'
+};
+
+// HELPER: Resolve model based on environment (Staging uses Replicate for Pro)
+const resolveTargetModel = (quality: string): string | undefined => {
+    if (quality === 'fast') return undefined; // Let backend handle fast
+
+    // Check for Staging or Localhost
+    const isStaging = typeof window !== 'undefined' && (
+        window.location.hostname.includes('staging') ||
+        window.location.hostname.includes('localhost')
+    );
+
+    if (isStaging) {
+        // Use Replicate's Nano Banana Pro for all Pro modes on staging
+        return 'replicate/google/nano-banana-pro';
+    }
+
+    return undefined; // Let backend default to Gemini
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -297,6 +315,8 @@ export const useGeneration = ({
                     sourceImage,
                     prompt,
                     qualityMode,
+                    // Inject model override for staging
+                    modelName: resolveTargetModel(qualityMode),
                     maskDataUrl: maskDataUrl || undefined,
                     newId,
                     boardId: currentBoardId || undefined,
@@ -484,6 +504,8 @@ export const useGeneration = ({
                     sourceImage: placeholder,
                     prompt,
                     qualityMode: modelId,
+                    // Inject model override for staging
+                    modelName: resolveTargetModel(modelId),
                     newId,
                     boardId: currentBoardId || undefined,
                     attachments,

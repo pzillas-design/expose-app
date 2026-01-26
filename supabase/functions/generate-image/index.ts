@@ -5,7 +5,7 @@ import { slugify } from './utils/slugify.ts';
 import { findClosestValidRatio } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage } from './services/gemini.ts';
-import { generateImageFal } from './services/fal.ts';
+import { generateImageReplicate } from './services/replicate.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
         let finalModelName = 'gemini-3-pro-image-preview';
         if (qualityMode === 'fast' || modelName === 'fast') {
             finalModelName = 'gemini-2.5-flash-image';
-        } else if (modelName && modelName.startsWith('gemini-')) {
+        } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
             finalModelName = modelName;
         }
 
@@ -176,26 +176,31 @@ Deno.serve(async (req) => {
         const concurrentJobs = concurrentJobCount || 0;
         const generationStartTime = Date.now();
 
-        // Call AI API (Gemini or Fal.ai)
+        // Call AI API (Gemini or Replicate)
         let generatedBase64 = null;
         let finalOutputModel = finalModelName;
 
-        const falApiKey = Deno.env.get('FAL_KEY');
-        const isFalModel = finalModelName.startsWith('fal/');
+        const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN');
+        const isReplicateModel = finalModelName.startsWith('replicate/');
 
-        if (isFalModel && falApiKey) {
-            logInfo('Fal.ai API Call', `Model: ${finalModelName}`);
-            const falModel = finalModelName.replace('fal/', '');
-            const falResult = await generateImageFal(
-                falApiKey,
-                falModel,
-                prompt,
+        if (isReplicateModel && replicateApiToken) {
+            logInfo('Replicate API Call', `Model: ${finalModelName}`);
+            // Remove 'replicate/' prefix to get actual model ID (e.g. google/nano-banana-pro)
+            const replicateModel = finalModelName.replace('replicate/', '');
+
+            const replicateResult = await generateImageReplicate(
+                replicateApiToken,
+                replicateModel,
+                parts, // Pass prepared parts; service extracts text/images
                 {
-                    image_size: qualityMode === 'pro-1k' ? 'square_hd' : (qualityMode === 'pro-2k' ? 'square_hd' : 'square_hd'),
-                    // Add more mappings if needed
+                    resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K')
                 }
             );
-            generatedBase64 = falResult.data;
+            generatedBase64 = replicateResult.data;
+
+            // Log prediction ID for debugging
+            logInfo('Replicate Success', `Prediction ID: ${replicateResult.predictionId}`);
+
         } else {
             // Call Gemini API
             logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
@@ -319,7 +324,7 @@ Deno.serve(async (req) => {
         }
 
         // Update job status
-        const usage = (isFalModel ? {} : (geminiResponse as any).usageMetadata) || {};
+        const usage = (isReplicateModel ? {} : (geminiResponse as any).usageMetadata) || {};
         const tokensPrompt = usage.promptTokenCount || 0;
         const tokensCompletion = usage.candidatesTokenCount || 0;
         const tokensTotal = usage.totalTokenCount || 0;
