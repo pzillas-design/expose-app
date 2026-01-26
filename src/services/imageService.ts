@@ -49,7 +49,7 @@ export const imageService = {
             real_height: image.realHeight,
             model_version: image.modelVersion,
             title: image.title,
-            base_name: image.baseName,
+            base_name: image?.baseName || image?.title || 'Image',
             version: image.version,
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,

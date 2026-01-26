@@ -222,8 +222,7 @@ export const useGeneration = ({
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
 
         // CLEAN baseName: Remove any existing version suffix to group siblings correctly
-        // e.g. "Puppy_v2" -> "Puppy". This ensures v2 finds "Puppy" (v1) and correctly increments to v3.
-        const rawBaseName = sourceImage.baseName || sourceImage.title || 'Image';
+        const rawBaseName = sourceImage?.baseName || sourceImage?.title || 'Image';
         const baseName = rawBaseName.replace(/_v\d+$/, '');
         const newId = generateId();
 
@@ -261,7 +260,7 @@ export const useGeneration = ({
         };
 
         const row = rows[rowIndex];
-        const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
+        const siblings = row.items.filter(i => i && (i.baseName || i.title || '').startsWith(baseName));
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
 
