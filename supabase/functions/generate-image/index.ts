@@ -193,7 +193,8 @@ Deno.serve(async (req) => {
                 replicateModel,
                 parts, // Pass prepared parts; service extracts text/images
                 {
-                    resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K')
+                    resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K'),
+                    aspect_ratio: explicitRatio || (isEditMode ? 'match_input_image' : undefined)
                 }
             );
             generatedBase64 = replicateResult.data;

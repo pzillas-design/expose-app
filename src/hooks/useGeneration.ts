@@ -54,7 +54,11 @@ const resolveTargetModel = (quality: string): string | undefined => {
     );
 
     if (isStaging) {
-        // Use Replicate's Nano Banana Pro for all Pro modes on staging
+        // "1k" uses the standard Nano Banana
+        if (quality === 'pro-1k') {
+            return 'replicate/google/nano-banana';
+        }
+        // Higher resolutions use Nano Banana Pro
         return 'replicate/google/nano-banana-pro';
     }
 
