@@ -401,7 +401,7 @@ Deno.serve(async (req) => {
         }
 
         return new Response(JSON.stringify({
-            error: error.message,
+            error: error.message || "Unknown error occurred",
             jobId: newId,
             timestamp: new Date().toISOString()
         }), {

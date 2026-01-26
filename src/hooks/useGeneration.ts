@@ -43,26 +43,8 @@ const QUALITY_TO_MODEL: Record<string, string> = {
     'pro-4k': 'gemini-3-pro-image-preview'
 };
 
-// HELPER: Resolve model based on environment (Staging uses Replicate for Pro)
 const resolveTargetModel = (quality: string): string | undefined => {
-    // if (quality === 'fast') return undefined; // Commented out to allow 'fast' override on Staging
-
-    // Check for Staging or Localhost
-    const isStaging = typeof window !== 'undefined' && (
-        window.location.hostname.includes('staging') ||
-        window.location.hostname.includes('localhost')
-    );
-
-    if (isStaging) {
-        // "Fast" uses the standard Nano Banana
-        if (quality === 'fast') {
-            return 'replicate/google/nano-banana';
-        }
-        // "Pro" (1k, 2k, 4k) uses Nano Banana Pro
-        return 'replicate/google/nano-banana-pro';
-    }
-
-    return undefined; // Let backend default to Gemini
+    return undefined; // Reverted to let backend handle everything (Gemini)
 };
 
 // HELPER: Map technical errors to user-friendly German
