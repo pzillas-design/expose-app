@@ -3,6 +3,7 @@ import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { boardService } from './boardService';
 import { slugify } from '../utils/stringUtils';
+import { generateId } from '../utils/ids';
 
 export const imageService = {
     /**
@@ -36,15 +37,18 @@ export const imageService = {
             return { success: false, error: 'Upload Failed' };
         }
 
-        // 3. Insert into DB with thumbnail path (still using userId for database)
+        // 3. CLEAN UP ANNOTATIONS: Ensure reference images are storage paths, not signed URLs or Base64
+        const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId);
+
+        // 4. Insert into DB with thumbnail path (still using userId for database)
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,
             board_id: (image as any).boardId, // Use boardId if available
             storage_path: uploadResult.path,
             thumb_storage_path: uploadResult.thumbPath || null,
-            width: Math.round(image.width),
-            height: Math.round(image.height),
+            width: Math.round(image?.width || 512),
+            height: Math.round(image?.height || 512),
             real_width: image.realWidth,
             real_height: image.realHeight,
             model_version: image.modelVersion,
@@ -54,7 +58,7 @@ export const imageService = {
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
-            annotations: image.annotations ? JSON.stringify(image.annotations) : null,
+            annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
             generation_params: { quality: image.quality }
         });
 
@@ -76,7 +80,8 @@ export const imageService = {
 
         // Map fields
         if (updates.annotations !== undefined) {
-            dbUpdates.annotations = JSON.stringify(updates.annotations);
+            const cleaned = await imageService._processAnnotationsForStorage(updates.annotations, userId);
+            dbUpdates.annotations = JSON.stringify(cleaned);
         }
         if (updates.userDraftPrompt !== undefined) {
             dbUpdates.user_draft_prompt = updates.userDraftPrompt;
@@ -279,7 +284,7 @@ export const imageService = {
 
         // NEW: Sync the DB if the returned dimensions differ from the placeholder
         // This prevents "cropping" on reload when the placeholder had the wrong aspect ratio
-        if (Math.abs(logicalWidth - sourceImage.width) > 1) {
+        if (sourceImage?.width && Math.abs(logicalWidth - sourceImage.width) > 1) {
             console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
             imageService.updateImage(newId, {
                 width: Math.round(logicalWidth),
@@ -594,5 +599,54 @@ export const imageService = {
         rows.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
         return rows;
+    },
+
+    /**
+     * Internal helper to prepare annotations for storage by:
+     * 1. Uploading Base64 reference images to Storage
+     * 2. Converting Signed URLs back to Storage Paths
+     */
+    async _processAnnotationsForStorage(annotations: any[], userId: string): Promise<any[]> {
+        if (!annotations) return [];
+
+        return await Promise.all(annotations.map(async (ann) => {
+            if (ann.type === 'reference_image' && ann.referenceImage) {
+                const src = ann.referenceImage;
+
+                // 1. If it's a Base64 string, upload it
+                if (src.startsWith('data:')) {
+                    const fileName = `ref_${generateId().substring(0, 8)}.png`;
+                    const result = await storageService.uploadImage(src, userId, fileName, 'references');
+                    if (result) {
+                        return { ...ann, referenceImage: result.path };
+                    }
+                }
+
+                // 2. If it's a Signed URL, strip it back to a storage path
+                // Supabase signed URLs contain /storage/v1/object/sign/
+                if (src.includes('/storage/v1/object/sign/')) {
+                    // The path is usually between /public-bucket/ and the query params
+                    // But we can just use the storage_path if we had stored it.
+                    // Since we don't have it directly, we have to extract it or 
+                    // ideally we already stored the relative path in the object.
+
+                    // Actually, if it's already a Signed URL, it means it was LOADED.
+                    // When it was loaded, we should have kept the path.
+                    // For now, let's look for known markers to extract the path.
+                    try {
+                        const url = new URL(src);
+                        const pathParts = url.pathname.split('/user-content/');
+                        if (pathParts.length > 1) {
+                            // Extract path and remove any trailing version info if present
+                            const rawPath = pathParts[1].split('?')[0];
+                            return { ...ann, referenceImage: decodeURIComponent(rawPath) };
+                        }
+                    } catch (e) {
+                        console.warn("Failed to extract path from signed URL:", e);
+                    }
+                }
+            }
+            return ann;
+        }));
     }
 };
