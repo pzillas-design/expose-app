@@ -889,9 +889,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
             <CropModal
                 isOpen={isCropOpen}
-                onClose={() => setIsCropOpen(false)}
-                imageSrc={pendingFile}
+                imageSrc={pendingFile || ''}
+                onClose={() => {
+                    setIsCropOpen(false);
+                    setPendingFile(null);
+                }}
                 onCropComplete={handleCropComplete}
+                t={t}
             />
         </>
     );
