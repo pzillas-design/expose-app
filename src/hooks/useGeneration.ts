@@ -204,6 +204,7 @@ export const useGeneration = ({
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>
     ) => {
+        if (!sourceImage) return;
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
 

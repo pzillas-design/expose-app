@@ -21,6 +21,7 @@ interface ImageItemProps {
         activeShape?: 'rect' | 'circle' | 'line';
         isBrushResizing?: boolean;
         activeAnnotationId?: string | null;
+        customReferenceInstructions?: Record<string, string>;
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
@@ -82,7 +83,7 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
+    const [isHighRes, setIsHighRes] = useState(!!src && (!thumbSrc || !path));
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
     const hasNotifiedLoad = useRef(false);
@@ -92,7 +93,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         if (path !== lastPath.current || (src && src !== currentSrc)) {
             setIsLoaded(false);
             setCurrentSrc(maskSrc || thumbSrc || src || null);
-            setIsHighRes(!!src && !thumbSrc);
+            setIsHighRes(!!src && (!thumbSrc || !path));
             lastPath.current = path;
             hasNotifiedLoad.current = false;
         }
