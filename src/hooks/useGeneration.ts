@@ -71,25 +71,23 @@ const translateError = (errorMsg: string): string => {
 
     // Lowercase for easier matching
     const msg = errorMsg.toLowerCase();
+    let header = "";
 
     if (msg.includes("cold start") || msg.includes("timeout")) {
-        return "Die Generierung hat zu lange gedauert (Modell-Kaltstart). Bitte versuch es gleich noch einmal.";
-    }
-    if (msg.includes("nsfw") || msg.includes("safety")) {
-        return "Der Inhalt wurde von den Sicherheitsfiltern abgelehnt. Bitte passe deinen Prompt an.";
-    }
-    if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        return "Nicht genügend Guthaben vorhanden.";
-    }
-    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        return "Verbindung zum Server fehlgeschlagen. Bitte prüfe dein Internet.";
-    }
-    if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
-        return `Fehler in der Anfrage: ${errorMsg}`;
+        header = "Die Generierung hat zu lange gedauert (Modell-Kaltstart). Bitte versuch es gleich noch einmal.";
+    } else if (msg.includes("nsfw") || msg.includes("safety")) {
+        header = "Der Inhalt wurde von den Sicherheitsfiltern abgelehnt. Bitte passe deinen Prompt an.";
+    } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        header = "Nicht genügend Guthaben vorhanden.";
+    } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
+        header = "Verbindung zum Server fehlgeschlagen. Bitte prüfe dein Internet.";
+    } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
+        header = "Fehler in der Anfrage.";
+    } else {
+        return `Fehler: ${errorMsg}`;
     }
 
-    // Fallback: Prefix technical error
-    return `Fehler: ${errorMsg}`;
+    return `${header} (Original: ${errorMsg})`;
 };
 
 // Cache for smart estimates (simple in-memory cache)
