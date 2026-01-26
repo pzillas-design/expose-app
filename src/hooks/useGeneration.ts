@@ -65,6 +65,33 @@ const resolveTargetModel = (quality: string): string | undefined => {
     return undefined; // Let backend default to Gemini
 };
 
+// HELPER: Map technical errors to user-friendly German
+const translateError = (errorMsg: string): string => {
+    if (!errorMsg) return "Ein unbekannter Fehler ist aufgetreten.";
+
+    // Lowercase for easier matching
+    const msg = errorMsg.toLowerCase();
+
+    if (msg.includes("cold start") || msg.includes("timeout")) {
+        return "Die Generierung hat zu lange gedauert (Modell-Kaltstart). Bitte versuch es gleich noch einmal.";
+    }
+    if (msg.includes("nsfw") || msg.includes("safety")) {
+        return "Der Inhalt wurde von den Sicherheitsfiltern abgelehnt. Bitte passe deinen Prompt an.";
+    }
+    if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        return "Nicht genügend Guthaben vorhanden.";
+    }
+    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
+        return "Verbindung zum Server fehlgeschlagen. Bitte prüfe dein Internet.";
+    }
+    if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
+        return `Fehler in der Anfrage: ${errorMsg}`;
+    }
+
+    // Fallback: Prefix technical error
+    return `Fehler: ${errorMsg}`;
+};
+
 // Cache for smart estimates (simple in-memory cache)
 let smartEstimatesCache: Record<string, {
     baseDurationMs: number;
@@ -123,12 +150,14 @@ export const useGeneration = ({
             // 2. Check if job failed
             const { data: jobData } = await supabase
                 .from('generation_jobs')
-                .select('status')
+                .select('status, error')
                 .eq('id', jobId)
                 .maybeSingle();
 
             if (jobData?.status === 'failed') {
-                showToast(t('generation_failed'), "error");
+                const jobError = (jobData as any).error || "";
+                const translated = translateError(jobError);
+                showToast(translated, "error");
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)
@@ -147,8 +176,9 @@ export const useGeneration = ({
     // Re-attach to orphaned jobs on load/change
     // Pre-fetch smart estimates on mount
     React.useEffect(() => {
-        supabase.rpc('get_smart_generation_estimates')
-            .then(({ data }) => {
+        const fetchEstimates = async () => {
+            try {
+                const { data } = await supabase.rpc('get_smart_generation_estimates');
                 if (data && data.length > 0) {
                     const estimates: Record<string, any> = {};
                     data.forEach((row: any) => {
@@ -163,8 +193,11 @@ export const useGeneration = ({
                     smartEstimatesCache = estimates;
                     cacheTimestamp = Date.now();
                 }
-            })
-            .catch(err => console.warn('Failed to fetch smart estimates:', err));
+            } catch (err) {
+                console.warn('Failed to fetch smart estimates:', err);
+            }
+        };
+        fetchEstimates();
     }, []);
 
     React.useEffect(() => {
@@ -351,7 +384,8 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message || error}`, "error");
+            const translated = translateError(error.message || error);
+            showToast(translated, "error");
 
             // Cleanup: remove the failed placeholder from rows
             setRows(prev => {
@@ -530,7 +564,8 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("New Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message}`, "error", 6000);
+            const translated = translateError(error.message || "");
+            showToast(translated, "error", 6000);
 
             setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
