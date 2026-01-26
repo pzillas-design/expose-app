@@ -191,7 +191,7 @@ export const imageService = {
      * Deletes an image from DB and Storage.
      */
     async deleteImage(image: CanvasImage, userId: string): Promise<void> {
-        return this.deleteImages([image.id], userId);
+        return imageService.deleteImages([image.id], userId);
     },
 
     /**
@@ -285,7 +285,7 @@ export const imageService = {
         // This prevents "cropping" on reload when the placeholder had the wrong aspect ratio
         if (Math.abs(logicalWidth - sourceImage.width) > 1) {
             console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
-            this.updateImage(newId, {
+            imageService.updateImage(newId, {
                 width: Math.round(logicalWidth),
                 height: Math.round(logicalHeight),
                 realWidth: genWidth,
@@ -526,7 +526,7 @@ export const imageService = {
 
             // Transform records using the map
             const transformStart = performance.now();
-            const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
+            const transformed = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
             loadedImages.push(...transformed);
             console.log(`[ImageService] Records transformed in ${(performance.now() - transformStart).toFixed(2)}ms`);
         }
