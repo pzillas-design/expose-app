@@ -45,7 +45,7 @@ const QUALITY_TO_MODEL: Record<string, string> = {
 
 // HELPER: Resolve model based on environment (Staging uses Replicate for Pro)
 const resolveTargetModel = (quality: string): string | undefined => {
-    if (quality === 'fast') return undefined; // Let backend handle fast
+    // if (quality === 'fast') return undefined; // Commented out to allow 'fast' override on Staging
 
     // Check for Staging or Localhost
     const isStaging = typeof window !== 'undefined' && (
@@ -54,11 +54,11 @@ const resolveTargetModel = (quality: string): string | undefined => {
     );
 
     if (isStaging) {
-        // "1k" uses the standard Nano Banana
-        if (quality === 'pro-1k') {
+        // "Fast" uses the standard Nano Banana
+        if (quality === 'fast') {
             return 'replicate/google/nano-banana';
         }
-        // Higher resolutions use Nano Banana Pro
+        // "Pro" (1k, 2k, 4k) uses Nano Banana Pro
         return 'replicate/google/nano-banana-pro';
     }
 
