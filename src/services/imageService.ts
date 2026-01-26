@@ -243,10 +243,20 @@ export const imageService = {
             console.error("Edge Generation Failed:");
             console.error("  Error object:", error);
             console.error("  Response data:", data);
-            console.error("  Status:", error?.status);
-            console.error("  Message:", error?.message || data?.error);
 
-            const errorMsg = error?.message || data?.error || "Unknown generation error";
+            let errorMsg = "Unknown generation error";
+            if (error && (error as any).context) {
+                try {
+                    // Try to parse error body if it was a FunctionsHttpError
+                    const errorBody = await (error as any).context.json();
+                    errorMsg = errorBody.error || errorBody.message || JSON.stringify(errorBody);
+                } catch (e) {
+                    errorMsg = error.message;
+                }
+            } else {
+                errorMsg = error?.message || data?.error || errorMsg;
+            }
+
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
             throw new Error(`${errorMsg}${statusInfo}`);
         }
