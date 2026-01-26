@@ -306,9 +306,9 @@ export const imageService = {
             activeTemplateId: undefined, // No preset carried over
             variableValues: undefined, // No variables carried over,
             version: targetVersion || (sourceImage.version || 1) + 1,
-            title: targetTitle || (sourceImage.title.includes('_v')
+            title: targetTitle || (sourceImage.title?.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
-                : `${sourceImage.title}_v2`),
+                : `${sourceImage.title || 'Image'}_v2`),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             modelVersion: result.modelVersion,
@@ -574,7 +574,7 @@ export const imageService = {
             // No longer filtering out images without src - we let the UI component handle the fallback
             // This prevents the entire row/canvas from being empty if batch signing fails temporarily.
 
-            const key = img.baseName || img.title || 'untitled';
+            const key = img?.baseName || img?.title || 'untitled';
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(img);
         });
