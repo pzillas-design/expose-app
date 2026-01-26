@@ -129,9 +129,9 @@ Deno.serve(async (req) => {
         }
 
         // Determine model
-        let finalModelName = 'gemini-3-pro-image-preview';
+        let finalModelName = 'gemini-2.0-flash';
         if (qualityMode === 'fast' || modelName === 'fast') {
-            finalModelName = 'gemini-2.5-flash-image';
+            finalModelName = 'gemini-2.0-flash';
         } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
             finalModelName = modelName;
         }
