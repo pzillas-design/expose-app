@@ -199,23 +199,21 @@ export const imageService = {
      * NOW: Offloaded to Supabase Edge Function for persistence.
      */
     async processGeneration({
-        sourceImage,
-        prompt,
+        payload,
         qualityMode,
-        maskDataUrl,
-        newId,
         modelName,
+        newId,
         boardId,
         attachments,
         targetVersion,
         targetTitle,
-        aspectRatio
+        aspectRatio,
+        sourceImage // Passed for local dimension calculation fallback
     }: {
-        sourceImage: CanvasImage;
-        prompt: string;
+        payload: any; // StructuredGenerationRequest
         qualityMode: any;
-        maskDataUrl?: string;
         newId: string;
+        sourceImage: CanvasImage;
         modelName?: string;
         boardId?: string;
         attachments?: string[];
@@ -227,10 +225,8 @@ export const imageService = {
 
         const { data, error } = await supabase.functions.invoke('generate-image', {
             body: {
-                sourceImage,
-                prompt,
+                ...payload,
                 qualityMode,
-                maskDataUrl,
                 newId,
                 modelName,
                 board_id: boardId,
@@ -304,7 +300,7 @@ export const imageService = {
 
             isGenerating: false,
             generationStartTime: sourceImage.generationStartTime,
-            generationPrompt: prompt,
+            generationPrompt: payload.prompt,
             quality: qualityMode,
             userDraftPrompt: '', // Clean prompt field for generated images
             activeTemplateId: undefined, // No preset carried over

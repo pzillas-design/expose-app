@@ -67,15 +67,25 @@ Deno.serve(async (req) => {
         // Parse payload
         const payload = await req.json();
         newId = payload.newId;
+
+        // New Structured Payload extraction
         const {
-            sourceImage,
+            type: requestType,
             prompt,
+            variables,
+            originalImage: payloadOriginalImage,
+            annotationImage: payloadAnnotationImage,
+            references: payloadReferences,
+
+            // Core metadata
             qualityMode,
-            maskDataUrl,
             modelName,
             board_id,
-            attachments: payloadAttachments,
-            aspectRatio: explicitRatio
+            aspectRatio: explicitRatio,
+
+            // Legacy/Fallback fields
+            sourceImage,
+            attachments: legacyAttachments
         } = payload;
 
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
@@ -111,8 +121,11 @@ Deno.serve(async (req) => {
                 .eq('id', user.id);
         }
 
-        // Prepare source image
-        const finalSourceBase64 = await prepareSourceImage(sourceImage.src);
+        // Prepare source image (base64)
+        let finalSourceBase64 = payloadOriginalImage;
+        if (!finalSourceBase64 && sourceImage?.src) {
+            finalSourceBase64 = await prepareSourceImage(sourceImage.src);
+        }
 
         // Determine model
         let finalModelName = 'gemini-3-pro-image-preview';
@@ -133,7 +146,10 @@ Deno.serve(async (req) => {
             isEditMode = true;
             const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
             const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-            logInfo('Aspect Ratio', `Edit mode - preserving ${sourceW}x${sourceH}`);
+            logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH}`);
+        } else if (requestType === 'edit' || payloadOriginalImage) {
+            isEditMode = true;
+            logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio`);
         }
 
         // Prepare generation config
@@ -144,13 +160,10 @@ Deno.serve(async (req) => {
             }
         };
 
-        // Prepare parts array
+        // Prepare parts array (Multimodal Interleaving)
         const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
-            finalSourceBase64,
-            maskDataUrl,
-            payloadAttachments,
-            sourceImage.annotations,
-            prompt
+            payload,
+            finalSourceBase64
         );
 
         logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
@@ -179,6 +192,7 @@ Deno.serve(async (req) => {
         // Call AI API (Gemini or Replicate)
         let generatedBase64 = null;
         let finalOutputModel = finalModelName;
+        let geminiResponse = null;
 
         const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN');
         const isReplicateModel = finalModelName.startsWith('replicate/');
@@ -205,11 +219,12 @@ Deno.serve(async (req) => {
         } else {
             // Call Gemini API
             logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-            const geminiResponse = await generateImage(
+            geminiResponse = await generateImage(
                 Deno.env.get('GEMINI_API_KEY')!,
                 finalModelName,
                 parts,
-                generationConfig
+                generationConfig,
+                requestType
             );
 
             // Extract result

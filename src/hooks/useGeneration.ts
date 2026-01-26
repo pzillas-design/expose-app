@@ -2,8 +2,9 @@ import React, { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
+import { generateAnnotationImage } from '@/utils/annotationUtils';
 import { generateId } from '@/utils/ids';
-import { CanvasImage, ImageRow, GenerationQuality } from '@/types';
+import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -199,7 +200,8 @@ export const useGeneration = ({
         shouldSnap: boolean = true,
         draftPrompt?: string,
         activeTemplateId?: string,
-        variableValues?: Record<string, string[]>
+        variableValues?: Record<string, string[]>,
+        customReferenceInstructions?: Record<string, string>
     ) => {
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
@@ -221,15 +223,40 @@ export const useGeneration = ({
         // e.g. "Puppy_v2" -> "Puppy". This ensures v2 finds "Puppy" (v1) and correctly increments to v3.
         const rawBaseName = sourceImage.baseName || sourceImage.title || 'Image';
         const baseName = rawBaseName.replace(/_v\d+$/, '');
-
         const newId = generateId();
 
-        // Debug: Upload mask to storage so user can inspect it later
-        if (maskDataUrl && currentUser && !isAuthDisabled) {
-            const { storageService } = await import('@/services/storageService');
-            storageService.uploadImage(maskDataUrl, currentUser.id, `${newId}_mask.png`)
-                .catch(e => console.warn("Debug: Failed to save mask", e));
+        // Create the composite Annotation Image (if markings exist)
+        const annotations = sourceImage.annotations || [];
+        const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+        let annotationImageBase64: string | undefined;
+
+        if (hasMarkings) {
+            try {
+                annotationImageBase64 = await generateAnnotationImage(
+                    sourceImage.src,
+                    annotations,
+                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 }
+                );
+            } catch (err) {
+                console.warn("Failed to generate annotation image:", err);
+            }
         }
+
+        // Prepare structured references
+        const refs = annotations.filter(a => a.type === 'reference_image');
+        const structuredRefs: StructuredReference[] = refs.map(ann => ({
+            src: ann.referenceImage!,
+            instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
+        }));
+
+        const structuredRequest: StructuredGenerationRequest = {
+            type: 'edit',
+            prompt: prompt,
+            variables: variableValues || {},
+            originalImage: sourceImage.src,
+            annotationImage: annotationImageBase64,
+            references: structuredRefs
+        };
 
         const row = rows[rowIndex];
         const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
@@ -329,12 +356,11 @@ export const useGeneration = ({
         try {
             const finalImage = await Promise.race([
                 imageService.processGeneration({
+                    payload: structuredRequest,
                     sourceImage,
-                    prompt,
                     qualityMode,
                     // Inject model override for staging
                     modelName: resolveTargetModel(qualityMode),
-                    maskDataUrl: maskDataUrl || undefined,
                     newId,
                     boardId: currentBoardId || undefined,
                     targetVersion: newVersion,
@@ -517,10 +543,20 @@ export const useGeneration = ({
                 setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
             });
 
+            const structuredRequest: StructuredGenerationRequest = {
+                type: 'create',
+                prompt,
+                variables: {}, // No variables in new generation for now
+                references: creationAnns.map(ann => ({
+                    src: ann.referenceImage!,
+                    instruction: ann.text || ''
+                }))
+            };
+
             const finalImage = await Promise.race([
                 imageService.processGeneration({
+                    payload: structuredRequest,
                     sourceImage: placeholder,
-                    prompt,
                     qualityMode: modelId,
                     // Inject model override for staging
                     modelName: resolveTargetModel(modelId),

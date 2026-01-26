@@ -15,7 +15,7 @@ interface PromptTabProps {
     setPrompt: (s: string) => void;
     selectedImage: CanvasImage;
     selectedImages?: CanvasImage[];
-    onGenerate: (prompt: string) => void;
+    onGenerate: (finalPrompt: string, draftPrompt: string, templateId?: string, variableValues?: Record<string, string[]>) => void;
     onDeselect?: () => void;
     templates: PromptTemplate[];
     onSelectTemplate: (t: PromptTemplate) => void;
@@ -250,37 +250,21 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const getFinalPrompt = () => {
         const trimmedPrompt = prompt.trim();
-        const refs = annotations.filter(a => a.type === 'reference_image');
         const hasAnnotations = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
 
-        // 1. Annotation Guide (Technical Label for the AI)
-        let annotationGuide = "";
+        let finalOutput = trimmedPrompt;
+
         if (hasAnnotations) {
             const defaultLabel = currentLang === 'de'
                 ? "Setze die Anmerkungen im Bild fotorealistisch um."
                 : "Interpret the visual annotations. They show what and where to change in the original image ..";
             const displayLabel = annotationLabelValue || defaultLabel;
-            annotationGuide = displayLabel;
+            if (finalOutput) finalOutput += "\n\n";
+            finalOutput += displayLabel;
         }
 
-        // 2. Reference Image Contexts
-        const refParts: string[] = [];
-        // If we have an annotation image, it is Image 2, so references start at Image 3
-        const refStartIndex = hasAnnotations ? 3 : 2;
-
-        refs.forEach((ann, index) => {
-            const userText = ann.text?.trim();
-            const fallback = currentLang === 'de'
-                ? "Nutze dieses Bild als Inspiration .."
-                : "Use this image as inspiration ..";
-
-            const content = userText || fallback;
-            refParts.push(`Image ${refStartIndex + index}: ${content}`);
-        });
-
-        // 3. Template Controls
-        const varParts: string[] = [];
         if (activeTemplate && activeTemplate.controls) {
+            const varParts: string[] = [];
             activeTemplate.controls.forEach(c => {
                 const vals = controlValues[c.id];
                 if (vals && vals.length > 0) {
@@ -297,34 +281,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     }
                 }
             });
+            if (varParts.length > 0) {
+                if (finalOutput) finalOutput += "\n\n";
+                finalOutput += varParts.join(". ");
+            }
         }
 
-        // Assemble with clear semantic markers
-        let finalOutput = "";
-
-        if (trimmedPrompt) {
-            finalOutput += trimmedPrompt;
-        }
-
-        if (annotationGuide) {
-            if (finalOutput) finalOutput += "\n\n";
-            finalOutput += annotationGuide;
-        }
-
-        if (refParts.length > 0) {
-            if (finalOutput) finalOutput += "\n\n";
-            const label = currentLang === 'de'
-                ? "KONTEXT / REFERENZEN (Nur als Inspiration nutzen, das Hauptbild NICHT ersetzen):"
-                : "CONTEXT / REFERENCES (Use for inspiration only, DO NOT replace the main image):";
-            finalOutput += `${label}\n${refParts.join("\n")}`;
-        }
-
-        if (varParts.length > 0) {
-            if (finalOutput) finalOutput += "\n\n";
-            finalOutput += varParts.join(". ");
-        }
-
-        // If for some reason the structure is empty, return the raw prompt
         return finalOutput.trim() || trimmedPrompt;
     };
 
