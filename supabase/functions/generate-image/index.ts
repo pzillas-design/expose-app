@@ -273,22 +273,21 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Determine title and version
-        let dbBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
-        let dbTitle = dbBaseName;
+        if (!sourceImage?.baseName && !sourceImage?.title) {
+            // NEW GENERATION: Use first 15 chars of prompt as baseName
+            const promptSnippet = prompt.substring(0, 15).trim();
+            dbBaseName = payload.targetTitle || promptSnippet || 'Image';
+            dbTitle = dbBaseName;
+        } else {
+            // EDIT/VERSION: Inherit from source
+            dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
+            dbTitle = dbBaseName;
+        }
+
         const currentVersion = (sourceImage?.version || 0) + 1;
 
         if (sourceImage?.version && sourceImage.version > 0) {
             dbTitle = `${dbBaseName}_v${currentVersion}`;
-        } else {
-            if (dbBaseName === 'Generation' || dbBaseName === 'New Generation' || !dbBaseName) {
-                const promptSnippet = prompt.substring(0, 25).trim().replace(/\s+/g, '_');
-                dbBaseName = promptSnippet || 'Image';
-                dbTitle = dbBaseName;
-            } else {
-                dbTitle = payload.targetTitle || dbBaseName;
-                dbBaseName = dbTitle;
-            }
         }
 
         const titleSlug = slugify(dbBaseName);
