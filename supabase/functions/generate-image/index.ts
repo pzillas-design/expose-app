@@ -273,6 +273,9 @@ Deno.serve(async (req) => {
             }
         }
 
+        let dbBaseName = "";
+        let dbTitle = "";
+
         if (!sourceImage?.baseName && !sourceImage?.title) {
             // NEW GENERATION: Use first 15 chars of prompt as baseName
             const promptSnippet = prompt.substring(0, 15).trim();
