@@ -2,7 +2,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { slugify } from './utils/slugify.ts';
-import { findClosestValidRatio } from './utils/aspectRatio.ts';
+import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage } from './services/gemini.ts';
 import { generateImageReplicate } from './services/replicate.ts';
@@ -147,10 +147,11 @@ Deno.serve(async (req) => {
             isEditMode = true;
             const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
             const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-            logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH}`);
+            bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
+            logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH} (mapped to ${bestRatio})`);
         } else if (requestType === 'edit' || payloadOriginalImage) {
             isEditMode = true;
-            logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio`);
+            logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
         }
 
         // Prepare generation config (Standard AI Studio format)
@@ -160,7 +161,7 @@ Deno.serve(async (req) => {
             topK: 40,
             maxOutputTokens: 8192,
             imageConfig: {
-                aspectRatio: bestRatio,
+                ...(isEditMode ? {} : { aspectRatio: bestRatio }),
                 ...(finalModelName === 'gemini-3-pro-image-preview' ? {
                     imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
                 } : {})
