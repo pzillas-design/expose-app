@@ -88,11 +88,13 @@ export const imageService = {
         }
 
         if (updates.activeTemplateId !== undefined || updates.variableValues !== undefined || updates.quality !== undefined) {
-            const { data: current } = await supabase
+            const { data: results } = await supabase
                 .from('canvas_images')
                 .select('generation_params')
                 .eq('id', imageId)
-                .single();
+                .limit(1);
+
+            const current = results?.[0];
 
             const params = current?.generation_params || {};
             if (updates.activeTemplateId !== undefined) params.activeTemplateId = updates.activeTemplateId;

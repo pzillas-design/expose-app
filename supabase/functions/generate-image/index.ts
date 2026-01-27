@@ -260,16 +260,22 @@ Deno.serve(async (req) => {
         let subfolder = board_id || 'unorganized';
         if (board_id) {
             try {
-                const { data: board } = await supabaseAdmin
+                const { data: boardData, error: boardError } = await supabaseAdmin
                     .from('boards')
                     .select('name')
                     .eq('id', board_id)
-                    .maybeSingle();
-                if (board) {
+                    .limit(1); // Use .limit(1) instead of .maybeSingle() for safer error handling
+
+                if (boardError) {
+                    logError('Board Fetch Error', boardError, { board_id });
+                } else if (boardData && boardData.length > 0) {
+                    const board = boardData[0];
                     subfolder = `${slugify(board.name)}_${board_id}`;
+                } else {
+                    logInfo('Board Not Found', `Board with ID ${board_id} not found, using 'unorganized' subfolder.`);
                 }
             } catch (e) {
-                logError('Board Fetch', e);
+                logError('Board Fetch Exception', e, { board_id });
             }
         }
 
@@ -419,23 +425,31 @@ Deno.serve(async (req) => {
             status: 200,
         });
 
-    } catch (error) {
-        logError('Edge Function', error, { jobId: newId });
+    } catch (error: any) {
+        const errorMsg = error?.message || (typeof error === 'string' ? error : "Unknown error occurred");
+        logError('Edge Function', errorMsg, { jobId: newId });
 
         // Mark job as failed
         if (newId && supabaseAdmin) {
-            await supabaseAdmin
-                .from('generation_jobs')
-                .update({ status: 'failed', error: error.message })
-                .eq('id', newId);
+            try {
+                await supabaseAdmin
+                    .from('generation_jobs')
+                    .update({ status: 'failed', error: errorMsg })
+                    .eq('id', newId);
+            } catch (e) {
+                logError('Job Update Failed', e);
+            }
         }
 
         return new Response(JSON.stringify({
-            error: error.message || "Unknown error occurred",
+            error: errorMsg,
             jobId: newId,
             timestamp: new Date().toISOString()
         }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json'
+            },
             status: 400,
         });
     }
