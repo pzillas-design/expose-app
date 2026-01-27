@@ -314,20 +314,25 @@ Deno.serve(async (req) => {
         const newImage: any = {
             id: newId,
             user_id: user.id,
-            board_id: board_id,
+            board_id: board_id || null,
             job_id: newId,
             storage_path: filePath,
-            width: Math.round(sourceImage.width || 512),
-            height: Math.round(sourceImage.height || 512),
-            real_width: Math.round(sourceImage.realWidth || 1024),
-            real_height: Math.round(sourceImage.realHeight || 1024),
+            width: Math.round(sourceImage?.width || 512),
+            height: Math.round(sourceImage?.height || 512),
+            real_width: Math.round(sourceImage?.realWidth || sourceImage?.width || 1024),
+            real_height: Math.round(sourceImage?.realHeight || sourceImage?.height || 1024),
             model_version: finalModelName,
             title: dbTitle,
             base_name: dbBaseName,
             version: currentVersion,
             prompt: prompt,
-            parent_id: sourceImage.id || null,
-            annotations: '[]',
+            parent_id: sourceImage?.id || null,
+            annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
+                id: crypto.randomUUID(),
+                type: 'reference_image',
+                referenceImage: r.src,
+                text: r.instruction || ''
+            }))) : (sourceImage?.annotations ? JSON.stringify(sourceImage.annotations) : '[]'),
             generation_params: { quality: qualityMode }
         };
 

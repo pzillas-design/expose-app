@@ -286,13 +286,16 @@ export const imageService = {
         // This prevents "cropping" on reload when the placeholder had the wrong aspect ratio
         if (sourceImage?.width && Math.abs(logicalWidth - sourceImage.width) > 1) {
             console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
-            imageService.updateImage(newId, {
-                width: Math.round(logicalWidth),
-                height: Math.round(logicalHeight),
-                realWidth: genWidth,
-                realHeight: genHeight
-            } as any, sourceImage.userId || (sourceImage as any).user_id)
-                .catch(e => console.warn("Failed to sync natural dimensions to DB:", e));
+            const targetUserId = sourceImage.userId || (sourceImage as any).user_id;
+            if (targetUserId) {
+                imageService.updateImage(newId, {
+                    width: Math.round(logicalWidth),
+                    height: Math.round(logicalHeight),
+                    realWidth: genWidth,
+                    realHeight: genHeight
+                } as any, targetUserId)
+                    .catch(e => console.warn("Failed to sync natural dimensions to DB:", e));
+            }
         }
 
         return {
