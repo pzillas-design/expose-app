@@ -158,7 +158,13 @@ Deno.serve(async (req) => {
             temperature: 0.7,
             topP: 0.95,
             topK: 40,
-            maxOutputTokens: 8192
+            maxOutputTokens: 8192,
+            imageConfig: {
+                aspectRatio: bestRatio,
+                ...(finalModelName === 'gemini-3-pro-image-preview' ? {
+                    imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
+                } : {})
+            }
         };
 
         // Prepare parts array (Multimodal Interleaving)
