@@ -574,27 +574,41 @@ export const imageService = {
             loadedImages.push(skeleton);
         });
 
-        // 4. Group into Rows
+        // 4. Group into Rows by Root Ancestry
         const rows: ImageRow[] = [];
+        const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        loadedImages.forEach(img => {
-            // No longer filtering out images without src - we let the UI component handle the fallback
-            // This prevents the entire row/canvas from being empty if batch signing fails temporarily.
+        const getRootId = (img: CanvasImage): string => {
+            let current = img;
+            let depth = 0;
+            // Trace back to the oldest parent available in the current set
+            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
+                current = imageMap.get(current.parentId)!;
+                depth++;
+            }
+            return current.id;
+        };
 
-            const key = img?.baseName || img?.title || 'untitled';
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key)!.push(img);
+        loadedImages.forEach(img => {
+            const rootId = getRootId(img);
+            if (!groups.has(rootId)) groups.set(rootId, []);
+            groups.get(rootId)!.push(img);
         });
 
-        groups.forEach((items, key) => {
+        groups.forEach((items) => {
             // Within a row, we still sort oldest to newest (left to right)
             items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+            // Use the title of the root image as the row title
+            const root = imageMap.get(getRootId(items[0]))!;
+            const rowTitle = root.baseName || root.title || 'untitled';
+
             rows.push({
-                id: items[0].id + '_row',
-                title: key,
+                id: root.id + '_row',
+                title: rowTitle,
                 items: items,
-                createdAt: items[items.length - 1].createdAt || items[0].createdAt // Row date is newest item in row
+                createdAt: root.createdAt || items[0].createdAt // Row date is the birth of the sequence
             });
         });
 
