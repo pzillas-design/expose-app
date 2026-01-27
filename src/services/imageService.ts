@@ -3,13 +3,14 @@ import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { boardService } from './boardService';
 import { slugify } from '../utils/stringUtils';
+import { generateId } from '../utils/ids';
 
 export const imageService = {
     /**
      * Saves a newly generated image to Storage and DB.
      * This is intended to be called in the background (fire and forget from UI perspective).
      */
-    async persistImage(image: CanvasImage, userId: string): Promise<{ success: boolean; error?: string }> {
+    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
         // 1. Determine Path & Filename
@@ -28,31 +29,36 @@ export const imageService = {
         const customFileName = `${titleSlug}_v${image.version || 1}_${image.id.substring(0, 8)}.png`;
 
         // 2. Upload Image (Compressed to 4K max via uploadImage)
-        const path = await storageService.uploadImage(image.src, userId, customFileName, subfolder);
-        if (!path) {
+        // Use userEmail for storage path if available, otherwise fall back to userId
+        const storageIdentifier = userEmail || userId;
+        const uploadResult = await storageService.uploadImage(image.src, storageIdentifier, customFileName, subfolder);
+        if (!uploadResult) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };
         }
 
-        // 2. Insert into DB (Thumbnail path is now optional/null as we use dynamic transformations)
+        // 3. CLEAN UP ANNOTATIONS: Ensure reference images are storage paths, not signed URLs or Base64
+        const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId);
+
+        // 4. Insert into DB with thumbnail path (still using userId for database)
         const { error } = await supabase.from('canvas_images').insert({
             id: image.id,
             user_id: userId,
             board_id: (image as any).boardId, // Use boardId if available
-            storage_path: path,
-            thumb_storage_path: null,
-            width: Math.round(image.width),
-            height: Math.round(image.height),
+            storage_path: uploadResult.path,
+            thumb_storage_path: uploadResult.thumbPath || null,
+            width: Math.round(image?.width || 512),
+            height: Math.round(image?.height || 512),
             real_width: image.realWidth,
             real_height: image.realHeight,
             model_version: image.modelVersion,
             title: image.title,
-            base_name: image.baseName,
+            base_name: image?.baseName || image?.title || 'Image',
             version: image.version,
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
-            annotations: image.annotations ? JSON.stringify(image.annotations) : null,
+            annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
             generation_params: { quality: image.quality }
         });
 
@@ -74,7 +80,8 @@ export const imageService = {
 
         // Map fields
         if (updates.annotations !== undefined) {
-            dbUpdates.annotations = JSON.stringify(updates.annotations);
+            const cleaned = await imageService._processAnnotationsForStorage(updates.annotations, userId);
+            dbUpdates.annotations = JSON.stringify(cleaned);
         }
         if (updates.userDraftPrompt !== undefined) {
             dbUpdates.user_draft_prompt = updates.userDraftPrompt;
@@ -116,10 +123,17 @@ export const imageService = {
     },
 
     /**
-     * Deletes multiple images from DB.
+     * Deletes multiple images from DB and Storage.
      */
     async deleteImages(imageIds: string[], userId: string): Promise<void> {
         if (imageIds.length === 0) return;
+
+        // 0. Fetch storage paths before deleting from DB
+        const { data: images } = await supabase
+            .from('canvas_images')
+            .select('storage_path, thumb_storage_path')
+            .in('id', imageIds)
+            .eq('user_id', userId);
 
         // 1. Delete from canvas_images
         const { error: imgError } = await supabase
@@ -148,13 +162,41 @@ export const imageService = {
                 .in('id', imageIds)
                 .eq('user_id', userId);
         }
+
+        // 3. Delete files from Storage (both original and thumbnail)
+        if (images && images.length > 0) {
+            const pathsToDelete: string[] = [];
+
+            images.forEach(img => {
+                if (img.storage_path) {
+                    pathsToDelete.push(img.storage_path);
+                }
+                if (img.thumb_storage_path) {
+                    pathsToDelete.push(img.thumb_storage_path);
+                }
+            });
+
+            if (pathsToDelete.length > 0) {
+                console.log(`[ImageService] Deleting ${pathsToDelete.length} files from storage...`);
+                const { error: storageError } = await supabase.storage
+                    .from('user-content')
+                    .remove(pathsToDelete);
+
+                if (storageError) {
+                    console.error('Storage deletion failed:', storageError);
+                    // Don't throw - DB is already cleaned up
+                } else {
+                    console.log(`[ImageService] Successfully deleted ${pathsToDelete.length} files from storage`);
+                }
+            }
+        }
     },
 
     /**
      * Deletes an image from DB and Storage.
      */
     async deleteImage(image: CanvasImage, userId: string): Promise<void> {
-        return this.deleteImages([image.id], userId);
+        return imageService.deleteImages([image.id], userId);
     },
 
     /**
@@ -162,23 +204,21 @@ export const imageService = {
      * NOW: Offloaded to Supabase Edge Function for persistence.
      */
     async processGeneration({
-        sourceImage,
-        prompt,
+        payload,
         qualityMode,
-        maskDataUrl,
-        newId,
         modelName,
+        newId,
         boardId,
         attachments,
         targetVersion,
         targetTitle,
-        aspectRatio
+        aspectRatio,
+        sourceImage // Passed for local dimension calculation fallback
     }: {
-        sourceImage: CanvasImage;
-        prompt: string;
+        payload: any; // StructuredGenerationRequest
         qualityMode: any;
-        maskDataUrl?: string;
         newId: string;
+        sourceImage: CanvasImage;
         modelName?: string;
         boardId?: string;
         attachments?: string[];
@@ -190,10 +230,8 @@ export const imageService = {
 
         const { data, error } = await supabase.functions.invoke('generate-image', {
             body: {
-                sourceImage,
-                prompt,
+                ...payload,
                 qualityMode,
-                maskDataUrl,
                 newId,
                 modelName,
                 board_id: boardId,
@@ -206,10 +244,20 @@ export const imageService = {
             console.error("Edge Generation Failed:");
             console.error("  Error object:", error);
             console.error("  Response data:", data);
-            console.error("  Status:", error?.status);
-            console.error("  Message:", error?.message || data?.error);
 
-            const errorMsg = error?.message || data?.error || "Unknown generation error";
+            let errorMsg = "Unknown generation error";
+            if (error && (error as any).context) {
+                try {
+                    // Try to parse error body if it was a FunctionsHttpError
+                    const errorBody = await (error as any).context.json();
+                    errorMsg = errorBody.error || errorBody.message || JSON.stringify(errorBody);
+                } catch (e) {
+                    errorMsg = error.message;
+                }
+            } else {
+                errorMsg = error?.message || data?.error || errorMsg;
+            }
+
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
             throw new Error(`${errorMsg}${statusInfo}`);
         }
@@ -236,15 +284,18 @@ export const imageService = {
 
         // NEW: Sync the DB if the returned dimensions differ from the placeholder
         // This prevents "cropping" on reload when the placeholder had the wrong aspect ratio
-        if (Math.abs(logicalWidth - sourceImage.width) > 1) {
+        if (sourceImage?.width && Math.abs(logicalWidth - sourceImage.width) > 1) {
             console.log(`Generation: Dimension mismatch detected (${genWidth}x${genHeight}). Syncing DB...`);
-            this.updateImage(newId, {
-                width: Math.round(logicalWidth),
-                height: Math.round(logicalHeight),
-                realWidth: genWidth,
-                realHeight: genHeight
-            } as any, sourceImage.userId || (sourceImage as any).user_id)
-                .catch(e => console.warn("Failed to sync natural dimensions to DB:", e));
+            const targetUserId = sourceImage.userId || (sourceImage as any).user_id;
+            if (targetUserId) {
+                imageService.updateImage(newId, {
+                    width: Math.round(logicalWidth),
+                    height: Math.round(logicalHeight),
+                    realWidth: genWidth,
+                    realHeight: genHeight
+                } as any, targetUserId)
+                    .catch(e => console.warn("Failed to sync natural dimensions to DB:", e));
+            }
         }
 
         return {
@@ -257,15 +308,15 @@ export const imageService = {
 
             isGenerating: false,
             generationStartTime: sourceImage.generationStartTime,
-            generationPrompt: prompt,
+            generationPrompt: payload.prompt,
             quality: qualityMode,
             userDraftPrompt: '', // Clean prompt field for generated images
             activeTemplateId: undefined, // No preset carried over
             variableValues: undefined, // No variables carried over,
             version: targetVersion || (sourceImage.version || 1) + 1,
-            title: targetTitle || (sourceImage.title.includes('_v')
+            title: targetTitle || (sourceImage.title?.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
-                : `${sourceImage.title}_v2`),
+                : `${sourceImage.title || 'Image'}_v2`),
             createdAt: Date.now(),
             updatedAt: Date.now(),
             modelVersion: result.modelVersion,
@@ -294,13 +345,23 @@ export const imageService = {
             signedUrl = await storageService.getSignedUrl(record.storage_path);
         }
 
-        // Use pre-signed 800px version as thumbSrc if available
-        const thumbOptionsKey = `_800xundefined_q75`;
-        let thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
+        // PREFER STORED THUMBNAIL if available, otherwise use on-the-fly transformation
+        let thumbSignedUrl: string | undefined;
 
-        // AUTO-SIGN FALLBACK FOR OPTIMIZED:
-        if (!thumbSignedUrl && record.storage_path) {
-            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+        if (record.thumb_storage_path) {
+            // Use stored thumbnail (faster, no pixelation!)
+            thumbSignedUrl = preSignedUrls[record.thumb_storage_path];
+            if (!thumbSignedUrl) {
+                thumbSignedUrl = await storageService.getSignedUrl(record.thumb_storage_path);
+            }
+        } else {
+            // Fallback to on-the-fly 800px transformation
+            const thumbOptionsKey = `_800xundefined_q75`;
+            thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
+
+            if (!thumbSignedUrl && record.storage_path) {
+                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+            }
         }
 
         const targetHeight = 512;
@@ -414,10 +475,21 @@ export const imageService = {
         const loadedImages: CanvasImage[] = [];
 
         if (dbImages.length > 0) {
+            const signStart = performance.now();
             // Collect ALL paths that need signing
             const allPathsToSign = new Set<string>();
             dbImages.forEach(rec => {
-                if (rec.storage_path) allPathsToSign.add(rec.storage_path);
+                if (rec.storage_path) {
+                    allPathsToSign.add(rec.storage_path);
+
+                    // Add stored thumbnail if available
+                    if (rec.thumb_storage_path) {
+                        allPathsToSign.add(rec.thumb_storage_path);
+                    } else {
+                        // Fallback: Add optimized version key for on-the-fly transformation
+                        allPathsToSign.add(rec.storage_path + `_800xundefined_q75`);
+                    }
+                }
                 // Add reference images from annotations
                 const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
                 rawAnns.forEach((ann: any) => {
@@ -426,6 +498,8 @@ export const imageService = {
                     }
                 });
             });
+            console.log(`[ImageService] Collected ${allPathsToSign.size} paths to sign`);
+
 
             // Batch sign 100 paths at a time - PARALLELIZED for speed
             const pathsArray = Array.from(allPathsToSign);
@@ -436,8 +510,11 @@ export const imageService = {
                 chunks.push(pathsArray.slice(i, i + 100));
             }
 
+            console.log(`[ImageService] Signing ${chunks.length} chunks in parallel...`);
+
             // Execute all chunks in parallel
-            await Promise.all(chunks.map(async (chunk) => {
+            await Promise.all(chunks.map(async (chunk, idx) => {
+                const chunkStart = performance.now();
                 const [hdResults, optResults] = await Promise.all([
                     // 1. Sign original HD versions
                     storageService.getSignedUrls(chunk),
@@ -446,14 +523,20 @@ export const imageService = {
                 ]);
                 Object.assign(signedUrlMap, hdResults);
                 Object.assign(signedUrlMap, optResults);
+                console.log(`[ImageService] Chunk ${idx + 1}/${chunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
             }));
+            console.log(`[ImageService] All URLs signed in ${(performance.now() - signStart).toFixed(2)}ms`);
+
 
             // Transform records using the map
-            const transformed = await Promise.all(dbImages.map(rec => this.resolveImageRecord(rec, signedUrlMap)));
+            const transformStart = performance.now();
+            const transformed = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
             loadedImages.push(...transformed);
+            console.log(`[ImageService] Records transformed in ${(performance.now() - transformStart).toFixed(2)}ms`);
         }
 
         // 3. Reconstruct Skeleton Placeholders from Active Jobs
+        const jobProcessingStart = performance.now();
         activeJobs.forEach(job => {
             // SKIP if this ID is already loaded as a finished image
             if (loadedImages.some(img => img.id === job.id)) {
@@ -491,27 +574,41 @@ export const imageService = {
             loadedImages.push(skeleton);
         });
 
-        // 4. Group into Rows
+        // 4. Group into Rows by Root Ancestry
         const rows: ImageRow[] = [];
+        const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        loadedImages.forEach(img => {
-            // No longer filtering out images without src - we let the UI component handle the fallback
-            // This prevents the entire row/canvas from being empty if batch signing fails temporarily.
+        const getRootId = (img: CanvasImage): string => {
+            let current = img;
+            let depth = 0;
+            // Trace back to the oldest parent available in the current set
+            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
+                current = imageMap.get(current.parentId)!;
+                depth++;
+            }
+            return current.id;
+        };
 
-            const key = img.baseName || img.title || 'untitled';
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key)!.push(img);
+        loadedImages.forEach(img => {
+            const rootId = getRootId(img);
+            if (!groups.has(rootId)) groups.set(rootId, []);
+            groups.get(rootId)!.push(img);
         });
 
-        groups.forEach((items, key) => {
+        groups.forEach((items) => {
             // Within a row, we still sort oldest to newest (left to right)
             items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+            // Use the title of the root image as the row title
+            const root = imageMap.get(getRootId(items[0]))!;
+            const rowTitle = root.baseName || root.title || 'untitled';
+
             rows.push({
-                id: items[0].id + '_row',
-                title: key,
+                id: root.id + '_row',
+                title: rowTitle,
                 items: items,
-                createdAt: items[items.length - 1].createdAt || items[0].createdAt // Row date is newest item in row
+                createdAt: root.createdAt || items[0].createdAt // Row date is the birth of the sequence
             });
         });
 
@@ -519,5 +616,54 @@ export const imageService = {
         rows.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
         return rows;
+    },
+
+    /**
+     * Internal helper to prepare annotations for storage by:
+     * 1. Uploading Base64 reference images to Storage
+     * 2. Converting Signed URLs back to Storage Paths
+     */
+    async _processAnnotationsForStorage(annotations: any[], userId: string): Promise<any[]> {
+        if (!annotations) return [];
+
+        return await Promise.all(annotations.map(async (ann) => {
+            if (ann.type === 'reference_image' && ann.referenceImage) {
+                const src = ann.referenceImage;
+
+                // 1. If it's a Base64 string, upload it
+                if (src.startsWith('data:')) {
+                    const fileName = `ref_${generateId().substring(0, 8)}.png`;
+                    const result = await storageService.uploadImage(src, userId, fileName, 'references');
+                    if (result) {
+                        return { ...ann, referenceImage: result.path };
+                    }
+                }
+
+                // 2. If it's a Signed URL, strip it back to a storage path
+                // Supabase signed URLs contain /storage/v1/object/sign/
+                if (src.includes('/storage/v1/object/sign/')) {
+                    // The path is usually between /public-bucket/ and the query params
+                    // But we can just use the storage_path if we had stored it.
+                    // Since we don't have it directly, we have to extract it or 
+                    // ideally we already stored the relative path in the object.
+
+                    // Actually, if it's already a Signed URL, it means it was LOADED.
+                    // When it was loaded, we should have kept the path.
+                    // For now, let's look for known markers to extract the path.
+                    try {
+                        const url = new URL(src);
+                        const pathParts = url.pathname.split('/user-content/');
+                        if (pathParts.length > 1) {
+                            // Extract path and remove any trailing version info if present
+                            const rawPath = pathParts[1].split('?')[0];
+                            return { ...ann, referenceImage: decodeURIComponent(rawPath) };
+                        }
+                    } catch (e) {
+                        console.warn("Failed to extract path from signed URL:", e);
+                    }
+                }
+            }
+            return ann;
+        }));
     }
 };

@@ -33,15 +33,17 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
         return templates.filter(t => !t.lang || t.lang === currentLang);
     }, [templates, currentLang]);
 
-    const pinnedTemplates = useMemo(() => {
-        return languageFilteredTemplates.filter(t => t.isPinned || t.isDefault);
+    const mainTemplates = useMemo(() => {
+        // Show everything except 'recent' category (history) in the main section
+        return languageFilteredTemplates.filter(t => t.category !== 'recent');
     }, [languageFilteredTemplates]);
 
     const recentTemplates = useMemo(() => {
+        // Only show 'recent' category in the recent section
         return languageFilteredTemplates
-            .filter(t => t.lastUsed && !t.isPinned && !t.isDefault)
+            .filter(t => t.category === 'recent')
             .sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0))
-            .slice(0, 5);
+            .slice(0, 10);
     }, [languageFilteredTemplates]);
 
     const handleOpenMenu = (e: React.MouseEvent, id: string) => {
@@ -63,10 +65,10 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                 onToggle={() => setIsPresetsExpanded(!isPresetsExpanded)}
                 hasTopBorder={false}
                 onAdd={onRequestCreate}
-                isEmpty={pinnedTemplates.length === 0}
+                isEmpty={mainTemplates.length === 0}
                 emptyText={currentLang === 'de' ? 'Noch keine Vorlagen vorhanden.' : 'No presets available yet.'}
             >
-                {pinnedTemplates.map(t => (
+                {mainTemplates.map(t => (
                     <SidebarAccordionItem
                         key={t.id}
                         label={t.title}

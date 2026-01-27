@@ -164,3 +164,19 @@ export interface AdminJob {
   thumbnail?: string; // Mock thumbnail url
   promptPreview: string;
 }
+
+// --- GENERATION TYPES ---
+
+export interface StructuredReference {
+  src: string;
+  instruction: string;
+}
+
+export interface StructuredGenerationRequest {
+  type: 'create' | 'edit';
+  prompt: string;
+  variables: Record<string, string[]>;
+  originalImage?: string; // base64
+  annotationImage?: string; // base64
+  references: StructuredReference[];
+}

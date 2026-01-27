@@ -2,8 +2,9 @@ import React, { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
+import { generateAnnotationImage } from '@/utils/annotationUtils';
 import { generateId } from '@/utils/ids';
-import { CanvasImage, ImageRow, GenerationQuality } from '@/types';
+import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -41,6 +42,36 @@ const QUALITY_TO_MODEL: Record<string, string> = {
     'pro-1k': 'gemini-3-pro-image-preview',
     'pro-2k': 'gemini-3-pro-image-preview',
     'pro-4k': 'gemini-3-pro-image-preview'
+};
+
+const resolveTargetModel = (quality: string): string | undefined => {
+    return QUALITY_TO_MODEL[quality];
+};
+
+// HELPER: Map technical errors to user-friendly German
+const translateError = (errorMsg: string): string => {
+    if (!errorMsg) return "Ein unbekannter Fehler ist aufgetreten.";
+
+    // Lowercase for easier matching
+    const msg = errorMsg.toLowerCase();
+    let header = "";
+
+    if (msg.includes("cold start") || msg.includes("timeout")) {
+        header = "Die Generierung hat zu lange gedauert (Modell-Kaltstart). Bitte versuch es gleich noch einmal.";
+    } else if (msg.includes("nsfw") || msg.includes("safety")) {
+        header = "Der Inhalt wurde von den Sicherheitsfiltern abgelehnt. Bitte passe deinen Prompt an.";
+    } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        header = "Nicht genügend Guthaben vorhanden.";
+    } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
+        header = "Verbindung zum Server fehlgeschlagen. Bitte prüfe dein Internet.";
+    } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
+        header = "Fehler in der Anfrage.";
+    } else {
+        return `Fehler: ${errorMsg}`;
+    }
+
+    const cleanOriginal = errorMsg.length > 150 ? errorMsg.substring(0, 150) + "..." : errorMsg;
+    return `${header} (Original: ${cleanOriginal})`;
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -101,12 +132,14 @@ export const useGeneration = ({
             // 2. Check if job failed
             const { data: jobData } = await supabase
                 .from('generation_jobs')
-                .select('status')
+                .select('status, error')
                 .eq('id', jobId)
                 .maybeSingle();
 
             if (jobData?.status === 'failed') {
-                showToast(t('generation_failed'), "error");
+                const jobError = (jobData as any).error || "";
+                const translated = translateError(jobError);
+                showToast(translated, "error");
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)
@@ -125,8 +158,9 @@ export const useGeneration = ({
     // Re-attach to orphaned jobs on load/change
     // Pre-fetch smart estimates on mount
     React.useEffect(() => {
-        supabase.rpc('get_smart_generation_estimates')
-            .then(({ data }) => {
+        const fetchEstimates = async () => {
+            try {
+                const { data } = await supabase.rpc('get_smart_generation_estimates');
                 if (data && data.length > 0) {
                     const estimates: Record<string, any> = {};
                     data.forEach((row: any) => {
@@ -141,8 +175,11 @@ export const useGeneration = ({
                     smartEstimatesCache = estimates;
                     cacheTimestamp = Date.now();
                 }
-            })
-            .catch(err => console.warn('Failed to fetch smart estimates:', err));
+            } catch (err) {
+                console.warn('Failed to fetch smart estimates:', err);
+            }
+        };
+        fetchEstimates();
     }, []);
 
     React.useEffect(() => {
@@ -164,8 +201,10 @@ export const useGeneration = ({
         shouldSnap: boolean = true,
         draftPrompt?: string,
         activeTemplateId?: string,
-        variableValues?: Record<string, string[]>
+        variableValues?: Record<string, string[]>,
+        customReferenceInstructions?: Record<string, string>
     ) => {
+        if (!sourceImage) return;
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro';
 
@@ -183,21 +222,45 @@ export const useGeneration = ({
         const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
 
         // CLEAN baseName: Remove any existing version suffix to group siblings correctly
-        // e.g. "Puppy_v2" -> "Puppy". This ensures v2 finds "Puppy" (v1) and correctly increments to v3.
-        const rawBaseName = sourceImage.baseName || sourceImage.title || 'Image';
+        const rawBaseName = sourceImage?.baseName || sourceImage?.title || 'Image';
         const baseName = rawBaseName.replace(/_v\d+$/, '');
-
         const newId = generateId();
 
-        // Debug: Upload mask to storage so user can inspect it later
-        if (maskDataUrl && currentUser && !isAuthDisabled) {
-            const { storageService } = await import('@/services/storageService');
-            storageService.uploadImage(maskDataUrl, currentUser.id, `${newId}_mask.png`)
-                .catch(e => console.warn("Debug: Failed to save mask", e));
+        // Create the composite Annotation Image (if markings exist)
+        const annotations = sourceImage.annotations || [];
+        const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+        let annotationImageBase64: string | undefined;
+
+        if (hasMarkings) {
+            try {
+                annotationImageBase64 = await generateAnnotationImage(
+                    sourceImage.src,
+                    annotations,
+                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 }
+                );
+            } catch (err) {
+                console.warn("Failed to generate annotation image:", err);
+            }
         }
 
+        // Prepare structured references
+        const refs = annotations.filter(a => a.type === 'reference_image');
+        const structuredRefs: StructuredReference[] = refs.map(ann => ({
+            src: ann.referenceImage!,
+            instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
+        }));
+
+        const structuredRequest: StructuredGenerationRequest = {
+            type: 'edit',
+            prompt: prompt,
+            variables: variableValues || {},
+            originalImage: sourceImage.src,
+            annotationImage: annotationImageBase64,
+            references: structuredRefs
+        };
+
         const row = rows[rowIndex];
-        const siblings = row.items.filter(i => (i.baseName || i.title).startsWith(baseName));
+        const siblings = row.items.filter(i => i && (i.baseName || i.title || '').startsWith(baseName));
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
 
@@ -232,6 +295,8 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
+            thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
+            src: sourceImage.src, // Explicitly preserve source for blurry preview
             annotations: sourceImage.annotations || [], // KEEP annotations for reference images
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
@@ -292,10 +357,11 @@ export const useGeneration = ({
         try {
             const finalImage = await Promise.race([
                 imageService.processGeneration({
+                    payload: structuredRequest,
                     sourceImage,
-                    prompt,
                     qualityMode,
-                    maskDataUrl: maskDataUrl || undefined,
+                    // Inject model override for staging
+                    modelName: resolveTargetModel(qualityMode),
                     newId,
                     boardId: currentBoardId || undefined,
                     targetVersion: newVersion,
@@ -325,7 +391,8 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message || error}`, "error");
+            const translated = translateError(error.message || error);
+            showToast(translated, "error");
 
             // Cleanup: remove the failed placeholder from rows
             setRows(prev => {
@@ -477,11 +544,23 @@ export const useGeneration = ({
                 setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
             });
 
+            const structuredRequest: StructuredGenerationRequest = {
+                type: 'create',
+                prompt,
+                variables: {}, // No variables in new generation for now
+                references: creationAnns.map(ann => ({
+                    src: ann.referenceImage!,
+                    instruction: ann.text || ''
+                }))
+            };
+
             const finalImage = await Promise.race([
                 imageService.processGeneration({
+                    payload: structuredRequest,
                     sourceImage: placeholder,
-                    prompt,
                     qualityMode: modelId,
+                    // Inject model override for staging
+                    modelName: resolveTargetModel(modelId),
                     newId,
                     boardId: currentBoardId || undefined,
                     attachments,
@@ -502,7 +581,8 @@ export const useGeneration = ({
             }
         } catch (error: any) {
             console.error("New Generation failed:", error);
-            showToast(`${t('generation_failed')}: ${error.message}`, "error", 6000);
+            const translated = translateError(error.message || "");
+            showToast(translated, "error", 6000);
 
             setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 

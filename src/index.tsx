@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import { ToastProvider } from './components/ui/Toast';
 import { DialogProvider } from './components/ui/Dialog';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -18,6 +20,8 @@ root.render(
       <ToastProvider>
         <DialogProvider>
           <App />
+          <Analytics />
+          <SpeedInsights />
         </DialogProvider>
       </ToastProvider>
     </BrowserRouter>

@@ -4,40 +4,94 @@ export const storageService = {
     /**
      * Uploads a base64 image or Blob to Supabase Storage
      * @param imageSrc Base64 string or BlobUrl (we will fetch it to get the blob)
-     * @param userId User ID
-     * @returns The storage path (e.g. 'user_123/img_456.png')
+     * @param userIdentifier User email (preferred) or user ID
+     * @returns The storage path (e.g. 'user@email.com/board-name/img_456.png')
      */
-    async uploadImage(imageSrc: string, userId: string, customFileName?: string, subfolder?: string): Promise<string | null> {
+    async uploadImage(imageSrc: string, userIdentifier: string, customFileName?: string, subfolder?: string): Promise<{ path: string; thumbPath?: string } | null> {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
             let blob: Blob;
+            let shouldGenerateThumb = false;
+
             if (customFileName?.startsWith('thumb_')) {
                 const response = await fetch(imageSrc);
                 blob = await response.blob();
             } else {
                 const { compressImage } = await import('../utils/imageUtils');
                 blob = await compressImage(imageSrc);
+                shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 
-            // 2. Generate Path
-            const fileName = customFileName || `${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
-            const folderPath = subfolder ? `${userId}/${subfolder}` : userId;
+            // 2. Detect format from blob MIME type
+            const mimeType = blob.type;
+            let extension = '.png'; // Default fallback
+
+            if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+                extension = '.jpg';
+            } else if (mimeType === 'image/png') {
+                extension = '.png';
+            } else if (mimeType === 'image/webp') {
+                extension = '.webp';
+            }
+
+            // 3. Generate Path with clean folder structure and correct extension
+            let fileName: string;
+            if (customFileName) {
+                // If custom filename is provided, ensure it has the correct extension
+                const nameWithoutExt = customFileName.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+                fileName = `${nameWithoutExt}${extension}`;
+            } else {
+                fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
+            }
+
+            const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
             const filePath = `${folderPath}/${fileName}`;
 
-            // 3. Upload
+            console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);
+
+            // 4. Upload Main Image
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .upload(filePath, blob, {
                     cacheControl: '3600',
-                    upsert: true // Allow overwriting if filename is provided
+                    upsert: true, // Allow overwriting if filename is provided
+                    contentType: mimeType
                 });
 
             if (error) {
                 console.error('Supabase Storage Error:', error);
                 throw error;
             }
-            return data.path;
+
+            // 5. Generate and Upload Thumbnail (800px width for better quality)
+            let thumbPath: string | undefined;
+            if (shouldGenerateThumb) {
+                try {
+                    const { generateThumbnail } = await import('../utils/imageUtils');
+                    const thumbBlob = await generateThumbnail(imageSrc, 800);
+                    const thumbFileName = `thumb_${fileName}`;
+                    const thumbFilePath = `${folderPath}/${thumbFileName}`;
+
+                    const { data: thumbData, error: thumbError } = await supabase.storage
+                        .from('user-content')
+                        .upload(thumbFilePath, thumbBlob, {
+                            cacheControl: '3600',
+                            upsert: true,
+                            contentType: 'image/jpeg' // Thumbnails are always JPEG for efficiency
+                        });
+
+                    if (!thumbError && thumbData) {
+                        thumbPath = thumbData.path;
+                        console.log(`[Storage] Thumbnail generated: ${thumbPath}`);
+                    }
+                } catch (thumbErr) {
+                    console.warn('[Storage] Thumbnail generation failed:', thumbErr);
+                    // Continue without thumbnail - not critical
+                }
+            }
+
+            return { path: data.path, thumbPath };
         } catch (error: any) {
             console.error('Storage Upload Failed:', error.message || error, error);
             return null;
@@ -55,7 +109,7 @@ export const storageService = {
                 // Convert object back to Map
                 Object.keys(parsed).forEach(key => {
                     if (parsed[key].expires > Date.now()) {
-                        this._urlCache.set(key, parsed[key]);
+                        storageService._urlCache.set(key, parsed[key]);
                     }
                 });
             }
@@ -67,7 +121,7 @@ export const storageService = {
     _savePersistentCache() {
         try {
             const obj: any = {};
-            this._urlCache.forEach((val, key) => {
+            storageService._urlCache.forEach((val, key) => {
                 obj[key] = val;
             });
             sessionStorage.setItem('nano_url_cache', JSON.stringify(obj));
@@ -85,9 +139,11 @@ export const storageService = {
     async getSignedUrls(paths: string[], options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<Record<string, string>> {
         if (!paths || paths.length === 0) return {};
 
+        const perfStart = performance.now();
+
         // 0. Ensure cache is loaded
-        if (this._urlCache.size === 0) {
-            this._getPersistentCache();
+        if (storageService._urlCache.size === 0) {
+            storageService._getPersistentCache();
         }
 
         const results: Record<string, string> = {};
@@ -99,7 +155,7 @@ export const storageService = {
         // 1. Check Cache
         paths.forEach(path => {
             const cacheKey = path + optionsKey;
-            const cached = this._urlCache.get(cacheKey);
+            const cached = storageService._urlCache.get(cacheKey);
             if (cached && cached.expires > Date.now()) {
                 results[cacheKey] = cached.url;
             } else if (path) {
@@ -107,7 +163,13 @@ export const storageService = {
             }
         });
 
-        if (toFetch.length === 0) return results;
+        const cacheHits = paths.length - toFetch.length;
+        console.log(`[StorageService] URL Cache: ${cacheHits}/${paths.length} hits (${((cacheHits / paths.length) * 100).toFixed(1)}%)`);
+
+        if (toFetch.length === 0) {
+            console.log(`[StorageService] All URLs from cache (${(performance.now() - perfStart).toFixed(2)}ms)`);
+            return results;
+        }
 
         try {
             // 2. Fetch missing in one call
@@ -134,15 +196,16 @@ export const storageService = {
                         const finalKey = resolvedPath + optionsKey;
 
                         results[finalKey] = item.signedUrl;
-                        this._urlCache.set(finalKey, {
+                        storageService._urlCache.set(finalKey, {
                             url: item.signedUrl,
-                            expires: Date.now() + 1000 * 60 * 60 // Cache locally for 1 hour
+                            expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                         });
                     }
                 });
-                this._savePersistentCache();
+                storageService._savePersistentCache();
             }
 
+            console.log(`[StorageService] Batch signed ${toFetch.length} URLs in ${(performance.now() - perfStart).toFixed(2)}ms`);
             return results;
         } catch (error) {
             console.error('Batch Signed URLs Failed:', error);
@@ -160,7 +223,7 @@ export const storageService = {
         const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
-        const cached = this._urlCache.get(path + optionsKey);
+        const cached = storageService._urlCache.get(path + optionsKey);
         if (cached && cached.expires > Date.now()) {
             return cached.url;
         }
@@ -180,11 +243,11 @@ export const storageService = {
             if (error) throw error;
 
             if (data?.signedUrl) {
-                this._urlCache.set(path + optionsKey, {
+                storageService._urlCache.set(path + optionsKey, {
                     url: data.signedUrl,
-                    expires: Date.now() + 1000 * 60 * 60
+                    expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
                 });
-                this._savePersistentCache();
+                storageService._savePersistentCache();
                 return data.signedUrl;
             }
             return null;

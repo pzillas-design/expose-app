@@ -2,9 +2,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { slugify } from './utils/slugify.ts';
-import { findClosestValidRatio } from './utils/aspectRatio.ts';
+import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage } from './services/gemini.ts';
+import { generateImageReplicate } from './services/replicate.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -66,15 +67,25 @@ Deno.serve(async (req) => {
         // Parse payload
         const payload = await req.json();
         newId = payload.newId;
+
+        // New Structured Payload extraction
         const {
-            sourceImage,
+            type: requestType,
             prompt,
+            variables,
+            originalImage: payloadOriginalImage,
+            annotationImage: payloadAnnotationImage,
+            references: payloadReferences,
+
+            // Core metadata
             qualityMode,
-            maskDataUrl,
             modelName,
             board_id,
-            attachments: payloadAttachments,
-            aspectRatio: explicitRatio
+            aspectRatio: explicitRatio,
+
+            // Legacy/Fallback fields
+            sourceImage,
+            attachments: legacyAttachments
         } = payload;
 
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
@@ -110,14 +121,18 @@ Deno.serve(async (req) => {
                 .eq('id', user.id);
         }
 
-        // Prepare source image
-        const finalSourceBase64 = await prepareSourceImage(sourceImage.src);
+        // Prepare source image (base64)
+        let finalSourceBase64 = null;
+        const sourceToProcess = payloadOriginalImage || sourceImage?.src;
+        if (sourceToProcess) {
+            finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+        }
 
         // Determine model
         let finalModelName = 'gemini-3-pro-image-preview';
         if (qualityMode === 'fast' || modelName === 'fast') {
             finalModelName = 'gemini-2.5-flash-image';
-        } else if (modelName && modelName.startsWith('gemini-')) {
+        } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
             finalModelName = modelName;
         }
 
@@ -132,24 +147,31 @@ Deno.serve(async (req) => {
             isEditMode = true;
             const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
             const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-            logInfo('Aspect Ratio', `Edit mode - preserving ${sourceW}x${sourceH}`);
+            bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
+            logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH} (mapped to ${bestRatio})`);
+        } else if (requestType === 'edit' || payloadOriginalImage) {
+            isEditMode = true;
+            logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
         }
 
-        // Prepare generation config
+        // Prepare generation config (Standard AI Studio format)
         const generationConfig: any = {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192,
             imageConfig: {
-                imageSize: qualityMode === 'pro-1k' ? '1K' : (qualityMode === 'pro-2k' ? '2K' : (qualityMode === 'pro-4k' ? '4K' : '1K')),
-                ...(isEditMode ? {} : { aspectRatio: bestRatio })
+                ...(isEditMode ? {} : { aspectRatio: bestRatio }),
+                ...(finalModelName === 'gemini-3-pro-image-preview' ? {
+                    imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
+                } : {})
             }
         };
 
-        // Prepare parts array
+        // Prepare parts array (Multimodal Interleaving)
         const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
-            finalSourceBase64,
-            maskDataUrl,
-            payloadAttachments,
-            sourceImage.annotations,
-            prompt
+            payload,
+            finalSourceBase64
         );
 
         logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
@@ -175,35 +197,64 @@ Deno.serve(async (req) => {
         const concurrentJobs = concurrentJobCount || 0;
         const generationStartTime = Date.now();
 
-        // Call Gemini API
-        logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-        const geminiResponse = await generateImage(
-            Deno.env.get('GEMINI_API_KEY')!,
-            finalModelName,
-            parts,
-            generationConfig
-        );
+        // Call AI API (Gemini or Replicate)
+        let generatedBase64 = null;
+        let finalOutputModel = finalModelName;
+        let geminiResponse = null;
 
-        // Extract result
-        const candidate = geminiResponse.candidates?.[0];
-        const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+        const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN');
+        const isReplicateModel = finalModelName.startsWith('replicate/');
 
-        if (!imagePart) {
-            const finishReason = candidate?.finishReason;
-            const safetyRatings = candidate?.safetyRatings;
-            logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
+        if (isReplicateModel && replicateApiToken) {
+            logInfo('Replicate API Call', `Model: ${finalModelName}`);
+            // Remove 'replicate/' prefix to get actual model ID (e.g. google/nano-banana-pro)
+            const replicateModel = finalModelName.replace('replicate/', '');
 
-            // Refund credits
-            if (!isPro && cost > 0) {
-                await supabaseAdmin
-                    .from('profiles')
-                    .update({ credits: profile.credits })
-                    .eq('id', user.id);
+            const replicateResult = await generateImageReplicate(
+                replicateApiToken,
+                replicateModel,
+                parts, // Pass prepared parts; service extracts text/images
+                {
+                    resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K'),
+                    aspect_ratio: explicitRatio || (isEditMode ? 'match_input_image' : undefined)
+                }
+            );
+            generatedBase64 = replicateResult.data;
+
+            // Log prediction ID for debugging
+            logInfo('Replicate Success', `Prediction ID: ${replicateResult.predictionId}`);
+
+        } else {
+            // Call Gemini API
+            logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
+            geminiResponse = await generateImage(
+                Deno.env.get('GEMINI_API_KEY')!,
+                finalModelName,
+                parts,
+                generationConfig,
+                requestType
+            );
+
+            // Extract result
+            const candidate = geminiResponse.candidates?.[0];
+            const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+
+            if (!imagePart) {
+                const finishReason = candidate?.finishReason;
+                const safetyRatings = candidate?.safetyRatings;
+                logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
+
+                // Refund credits
+                if (!isPro && cost > 0) {
+                    await supabaseAdmin
+                        .from('profiles')
+                        .update({ credits: profile.credits })
+                        .eq('id', user.id);
+                }
+                throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
             }
-            throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
+            generatedBase64 = imagePart.inlineData.data;
         }
-
-        const generatedBase64 = imagePart.inlineData.data;
 
         // Prepare storage path
         let subfolder = board_id || 'unorganized';
@@ -222,22 +273,24 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Determine title and version
-        let dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
-        let dbTitle = dbBaseName;
-        const currentVersion = (sourceImage.version || 0) + 1;
+        let dbBaseName = "";
+        let dbTitle = "";
 
-        if (sourceImage.version && sourceImage.version > 0) {
-            dbTitle = `${dbBaseName}_v${currentVersion}`;
+        if (!sourceImage?.baseName && !sourceImage?.title) {
+            // NEW GENERATION: Use first 15 chars of prompt as baseName
+            const promptSnippet = prompt.substring(0, 15).trim();
+            dbBaseName = payload.targetTitle || promptSnippet || 'Image';
+            dbTitle = dbBaseName;
         } else {
-            if (dbBaseName === 'Generation' || dbBaseName === 'New Generation' || !dbBaseName) {
-                const promptSnippet = prompt.substring(0, 25).trim().replace(/\s+/g, '_');
-                dbBaseName = promptSnippet || 'Image';
-                dbTitle = dbBaseName;
-            } else {
-                dbTitle = payload.targetTitle || dbBaseName;
-                dbBaseName = dbTitle;
-            }
+            // EDIT/VERSION: Inherit from source
+            dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
+            dbTitle = dbBaseName;
+        }
+
+        const currentVersion = (sourceImage?.version || 0) + 1;
+
+        if (sourceImage?.version && sourceImage.version > 0) {
+            dbTitle = `${dbBaseName}_v${currentVersion}`;
         }
 
         const titleSlug = slugify(dbBaseName);
@@ -270,20 +323,25 @@ Deno.serve(async (req) => {
         const newImage: any = {
             id: newId,
             user_id: user.id,
-            board_id: board_id,
+            board_id: board_id || null,
             job_id: newId,
             storage_path: filePath,
-            width: Math.round(sourceImage.width || 512),
-            height: Math.round(sourceImage.height || 512),
-            real_width: Math.round(sourceImage.realWidth || 1024),
-            real_height: Math.round(sourceImage.realHeight || 1024),
+            width: Math.round(sourceImage?.width || 512),
+            height: Math.round(sourceImage?.height || 512),
+            real_width: Math.round(sourceImage?.realWidth || sourceImage?.width || 1024),
+            real_height: Math.round(sourceImage?.realHeight || sourceImage?.height || 1024),
             model_version: finalModelName,
             title: dbTitle,
             base_name: dbBaseName,
             version: currentVersion,
             prompt: prompt,
-            parent_id: sourceImage.id || null,
-            annotations: '[]',
+            parent_id: sourceImage?.id || null,
+            annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
+                id: crypto.randomUUID(),
+                type: 'reference_image',
+                referenceImage: r.src,
+                text: r.instruction || ''
+            }))) : (sourceImage?.annotations ? JSON.stringify(sourceImage.annotations) : '[]'),
             generation_params: { quality: qualityMode }
         };
 
@@ -297,7 +355,7 @@ Deno.serve(async (req) => {
         }
 
         // Update job status
-        const usage = geminiResponse.usageMetadata || {};
+        const usage = (isReplicateModel ? {} : (geminiResponse as any).usageMetadata) || {};
         const tokensPrompt = usage.promptTokenCount || 0;
         const tokensCompletion = usage.candidatesTokenCount || 0;
         const tokensTotal = usage.totalTokenCount || 0;
@@ -373,7 +431,7 @@ Deno.serve(async (req) => {
         }
 
         return new Response(JSON.stringify({
-            error: error.message,
+            error: error.message || "Unknown error occurred",
             jobId: newId,
             timestamp: new Date().toISOString()
         }), {

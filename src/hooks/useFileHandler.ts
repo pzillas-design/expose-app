@@ -45,7 +45,10 @@ export const useFileHandler = ({
                         const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
                         const newId = generateId();
 
-                        generateThumbnail(event.target!.result as string).then(async (thumbSrc) => {
+                        generateThumbnail(event.target!.result as string).then(async (thumbBlob) => {
+                            // Convert Blob to Blob URL for display
+                            const thumbSrc = URL.createObjectURL(thumbBlob);
+
                             const newImage: CanvasImage = {
                                 id: newId,
                                 src: event.target!.result as string,
@@ -78,7 +81,7 @@ export const useFileHandler = ({
 
                             if (user && !isAuthDisabled) {
                                 try {
-                                    const result = await imageService.persistImage(newImage, user.id);
+                                    const result = await imageService.persistImage(newImage, user.id, user.email);
                                     if (!result.success) {
                                         const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
                                         showToast(`${t('save_failed')}: ${errorMsg}`, "error");

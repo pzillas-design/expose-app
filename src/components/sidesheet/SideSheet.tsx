@@ -55,6 +55,7 @@ interface SideSheetProps {
     onActiveAnnotationChange?: (id: string | null) => void;
     onInteractionStart: () => void; // New
     onInteractionEnd: () => void;   // New
+    onAddReference?: (file: File, annotationId?: string) => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     isBoardEmpty?: boolean;
@@ -115,6 +116,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onDeleteTemplate,
         onSaveRecentPrompt,
         onUpdateImageTitle,
+        onAddReference: onAddReferenceExternal, // Rename to avoid conflict
         userProfile
     } = props;
 
@@ -308,6 +310,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             lastAutoOpenedId.current = selectedImage.id;
         }
     }, [selectedImage?.isGenerating, selectedImage?.id, isMulti]);
+
+    // Auto-close Info Modal when navigating to a different image
+    useEffect(() => {
+        if (showInfo && selectedImage && selectedImage.id !== lastAutoOpenedId.current) {
+            setShowInfo(false);
+        }
+    }, [selectedImage?.id]);
 
     // NEW: Global click listener to close Info Modal on outside interaction
     useEffect(() => {
@@ -611,7 +620,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleCreateTemplate = (newT: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => {
-        onSaveTemplate?.(newT);
+        onSaveTemplate?.({ ...newT, category: 'user', isPinned: true });
     };
 
     const handleExitBrushMode = async (forceSave: boolean = false) => {
@@ -880,9 +889,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
             <CropModal
                 isOpen={isCropOpen}
-                onClose={() => setIsCropOpen(false)}
-                imageSrc={pendingFile}
+                imageSrc={pendingFile || ''}
+                onClose={() => {
+                    setIsCropOpen(false);
+                    setPendingFile(null);
+                }}
                 onCropComplete={handleCropComplete}
+                t={t}
             />
         </>
     );

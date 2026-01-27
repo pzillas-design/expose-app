@@ -21,6 +21,7 @@ interface ImageItemProps {
         activeShape?: 'rect' | 'circle' | 'line';
         isBrushResizing?: boolean;
         activeAnnotationId?: string | null;
+        customReferenceInstructions?: Record<string, string>;
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
@@ -82,17 +83,19 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isHighRes, setIsHighRes] = useState(!!src && !thumbSrc);
+    const [isHighRes, setIsHighRes] = useState(!!src && (!thumbSrc || !path));
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
+    const hasNotifiedLoad = useRef(false);
 
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
             setIsLoaded(false);
             setCurrentSrc(maskSrc || thumbSrc || src || null);
-            setIsHighRes(!!src && !thumbSrc);
+            setIsHighRes(!!src && (!thumbSrc || !path));
             lastPath.current = path;
+            hasNotifiedLoad.current = false;
         }
     }, [path, src, maskSrc, thumbSrc, currentSrc]);
 
@@ -103,25 +106,26 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             return;
         }
 
-        const needsHQ = isSelected && zoom > 1.8;
-
         const fetchUrl = async () => {
             if (!path || fetchLock.current) return;
 
-            // Only skip if we already have HighRes for THIS specific path AND we need HQ
+            // Determine if we need high resolution
+            const needsHQ = isSelected;
+
+            // Skip if we already have the right quality for this path
             if (needsHQ && isHighRes && path === lastPath.current) return;
+            if (!needsHQ && !isHighRes && path === lastPath.current && currentSrc) return;
 
             fetchLock.current = true;
             try {
-                // Standard: 1200px. HQ: Original (no transform).
-                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 1200, quality: 80 });
+                // Load thumbnail (800px) by default, full resolution only when selected
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 800, quality: 85 });
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {
                         setIsLoaded(false);
                     }
                     setCurrentSrc(url);
-                    // Only mark as high-res if we actually requested the original
                     setIsHighRes(needsHQ);
                     lastPath.current = path;
                 }
@@ -130,14 +134,14 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             }
         };
 
-        const shouldFetch = !currentSrc || (needsHQ && !isHighRes) || (path !== lastPath.current);
+        const shouldFetch = !currentSrc || (isSelected && !isHighRes) || (path !== lastPath.current);
 
         if (shouldFetch) {
-            const delay = (!currentSrc || path !== lastPath.current) ? 0 : 800;
+            const delay = (!currentSrc || path !== lastPath.current) ? 0 : 200;
             const timeout = setTimeout(fetchUrl, delay);
             return () => clearTimeout(timeout);
         }
-    }, [path, src, zoom, maskSrc, isSelected, isHighRes, currentSrc]);
+    }, [path, src, maskSrc, isSelected, isHighRes, currentSrc]);
 
     return (
         <img
@@ -151,7 +155,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                     onDimensionsDetected?.(img.naturalWidth, img.naturalHeight);
                 }
                 setIsLoaded(true);
-                onLoaded?.();
+
+                // Only notify parent once per image
+                if (!hasNotifiedLoad.current) {
+                    hasNotifiedLoad.current = true;
+                    onLoaded?.();
+                }
             }}
             style={{
                 imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',

@@ -15,7 +15,6 @@ import { useUIState } from './useUIState';
 import { useFileHandler } from './useFileHandler';
 import { useGeneration } from './useGeneration';
 import { usePersistence } from './usePersistence';
-import { useAnnotationHandler } from './useAnnotationHandler';
 import { useBoards } from './useBoards';
 import { usePresets } from './usePresets';
 
@@ -104,7 +103,7 @@ export const useNanoController = () => {
         zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
         isZooming, isAutoScrolling,
         isZoomingRef, isAutoScrollingRef, getMostVisibleItem, zoomToItem
-    } = canvasNav;
+    } = canvasNav as any; // Cast as ANY temporarily to bypass incorrect inference while structural changes are finishing
 
     // --- Selection ---
     const {
@@ -203,10 +202,6 @@ export const useNanoController = () => {
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
         user, isAuthDisabled, setRows
-    });
-
-    const { onAddReference } = useAnnotationHandler({
-        selectedImage, handleUpdateAnnotations, showToast, t, user
     });
 
     // --- Actions --- (Integrated via Hooks above)
@@ -430,7 +425,6 @@ export const useNanoController = () => {
         handleUpdateAnnotations,
         handleUpdatePrompt,
         handleUpdateVariables,
-        onAddReference,
         performGeneration,
         handleGenerate,
         handleGenerateMore,
@@ -459,7 +453,7 @@ export const useNanoController = () => {
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
         setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop, setIsSettingsOpen,
         setIsAdminOpen, processFile, handleDeleteImage, handleUpdateAnnotations, handleUpdatePrompt,
-        handleUpdateVariables, onAddReference, performGeneration, handleGenerate, handleGenerateMore,
+        handleUpdateVariables, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt

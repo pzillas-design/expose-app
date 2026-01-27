@@ -2,18 +2,30 @@ import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai';
 import { urlToBase64, extractBase64FromDataUrl } from '../utils/imageProcessing.ts';
 
 /**
- * Prepares the parts array for Gemini API request
+ * Prepares the parts array for Gemini API request with structured interleaving.
+ * Sequence: Prompt -> Variables -> Original -> Annotation -> References
  */
 export const prepareParts = async (
-    sourceBase64: string,
-    maskDataUrl: string | undefined,
-    payloadAttachments: string[] | undefined,
-    sourceAnnotations: any[] | undefined,
-    prompt: string
+    payload: any,
+    sourceBase64?: string
 ): Promise<{ parts: any[], hasMask: boolean, hasRefs: boolean, allRefs: string[] }> => {
     const parts: any[] = [];
+    const { prompt, variables, annotationImage, references } = payload;
 
-    // Add source image if available
+    // 1. User Prompt
+    if (prompt) {
+        parts.push({ text: `User Prompt: ${prompt}` });
+    }
+
+    // 2. Design Variables
+    if (variables && Object.keys(variables).length > 0) {
+        const varString = Object.entries(variables)
+            .map(([key, vals]) => `${key}: ${(vals as string[]).join(', ')}`)
+            .join('; ');
+        parts.push({ text: varString });
+    }
+
+    // 3. Image 1: Original Image
     if (sourceBase64) {
         parts.push({
             inlineData: {
@@ -21,56 +33,54 @@ export const prepareParts = async (
                 data: sourceBase64
             }
         });
+        parts.push({ text: "Image 1: The Original Image" });
     }
 
-    // Add mask if provided
-    const hasMask = !!maskDataUrl;
-    if (maskDataUrl) {
-        const maskBase64 = extractBase64FromDataUrl(maskDataUrl);
+    // 4. Image 2: Annotation Image
+    let hasMask = false;
+    if (annotationImage) {
+        hasMask = true;
+        const maskBase64 = extractBase64FromDataUrl(annotationImage);
         parts.push({
             inlineData: {
                 mimeType: 'image/png',
                 data: maskBase64
             }
         });
+        parts.push({ text: "Image 2: The Annotation Image (Muted original + high-contrast overlays/labels showing where and what to change)." });
     }
 
-    // Collect reference images from annotations
+    // 5. Reference Images
     const allRefs: string[] = [];
-    if (payloadAttachments && Array.isArray(payloadAttachments)) {
-        allRefs.push(...payloadAttachments);
-    }
-    if (sourceAnnotations && Array.isArray(sourceAnnotations)) {
-        sourceAnnotations.forEach((ann: any) => {
-            if (ann.referenceImage && !allRefs.includes(ann.referenceImage)) {
-                allRefs.push(ann.referenceImage);
-            }
-        });
-    }
-
-    // Add reference images to parts
-    const hasRefs = allRefs.length > 0;
-    for (const refSrc of allRefs) {
-        try {
-            let refBase64 = refSrc;
-            if (refSrc.startsWith('http')) {
-                refBase64 = await urlToBase64(refSrc);
-            } else if (refSrc.includes(',')) {
-                refBase64 = extractBase64FromDataUrl(refSrc);
-            }
-            parts.push({
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: refBase64
+    let hasRefs = false;
+    if (references && Array.isArray(references)) {
+        hasRefs = true;
+        for (let i = 0; i < references.length; i++) {
+            const ref = references[i];
+            try {
+                let refBase64 = ref.src;
+                if (ref.src.startsWith('http')) {
+                    refBase64 = await urlToBase64(ref.src);
+                } else if (ref.src.includes(',')) {
+                    refBase64 = extractBase64FromDataUrl(ref.src);
                 }
-            });
-        } catch (err) {
-            console.warn('Failed to process reference image:', err);
+
+                parts.push({
+                    inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: refBase64
+                    }
+                });
+
+                // Simplified reference labeling as requested
+                const label = ref.instruction || "Reference Image";
+                parts.push({ text: `${label} (Image ${i + 3 + (hasMask ? 0 : -1)})` });
+                allRefs.push(ref.src);
+            } catch (err) {
+                console.warn(`Failed to process reference image ${i}:`, err);
+            }
         }
     }
-
-    // Add text prompt
-    parts.push({ text: prompt });
 
     return { parts, hasMask, hasRefs, allRefs };
 };
@@ -82,11 +92,18 @@ export const generateImage = async (
     apiKey: string,
     modelName: string,
     parts: any[],
-    generationConfig: any
+    generationConfig: any,
+    requestType: 'create' | 'edit' = 'edit'
 ) => {
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    const systemInstruction = "You are an expert AI image generator. You interpret prompts to generate high-quality, photorealistic images. You preserve artist intent for style and composition.";
+    let systemInstruction = "You are an expert AI designer. You interpret prompts and visual context to generate high-quality, photorealistic images.";
+
+    if (requestType === 'edit') {
+        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification using high-contrast overlays or labels. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise.";
+    } else {
+        systemInstruction += " Create a brand new image from scratch based on the User Prompt and Design Parameters provided.";
+    }
 
     const model = genAI.getGenerativeModel({
         model: modelName,
