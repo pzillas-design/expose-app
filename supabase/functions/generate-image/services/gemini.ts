@@ -47,7 +47,7 @@ export const prepareParts = async (
                 data: maskBase64
             }
         });
-        parts.push({ text: "Image 2: The Annotation Image (Muted original + annotations showing where and what to change)." });
+        parts.push({ text: "Image 2: The Annotation Image (Muted original + annotations showing where and what to change. Do not include the annotations themselves in the output; strictly interpret them as instructions for modification)." });
     }
 
     // 5. Reference Images
@@ -100,7 +100,7 @@ export const generateImage = async (
     let systemInstruction = "You are an expert AI designer. You interpret prompts and visual context to generate high-quality, photorealistic images.";
 
     if (requestType === 'edit') {
-        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification using high-contrast overlays or labels. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise.";
+        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification using high-contrast overlays or labels. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise. IMPORTANT: The annotations in Image 2 are only logical guides and instructions; do not include or render any of the annotation markings (like brush strokes, chips, or labels) in the final generated image.";
     } else {
         systemInstruction += " Create a brand new image from scratch based on the User Prompt and Design Parameters provided.";
     }
@@ -110,10 +110,27 @@ export const generateImage = async (
         systemInstruction: systemInstruction
     });
 
-    const geminiResult = await model.generateContent({
-        contents: [{ parts: parts }],
-        generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
-    });
+    // Implement simple retry for transient 500/503 errors
+    let lastError: any;
+    for (let i = 0; i < 2; i++) {
+        try {
+            const geminiResult = await model.generateContent({
+                contents: [{ parts: parts }],
+                generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
+            });
 
-    return geminiResult.response;
+            return geminiResult.response;
+        } catch (err: any) {
+            lastError = err;
+            const status = err.status || (err.message?.match(/\[(\d+)\]/)?.[1]);
+            if (status === '500' || status === '503' || status === '429' || err.message?.includes('fetch failed')) {
+                console.warn(`Gemini API transient error (${status}), retrying ${i + 1}/2...`);
+                await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+                continue;
+            }
+            throw err;
+        }
+    }
+
+    throw lastError;
 };

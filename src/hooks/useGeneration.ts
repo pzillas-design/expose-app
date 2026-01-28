@@ -297,7 +297,7 @@ export const useGeneration = ({
             maskSrc: undefined,
             thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
             src: sourceImage.src, // Explicitly preserve source for blurry preview
-            annotations: sourceImage.annotations || [], // KEEP annotations for reference images
+            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
             userDraftPrompt: '', // Clean prompt field
