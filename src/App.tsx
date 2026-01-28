@@ -99,21 +99,14 @@ export function App() {
         const params = new URLSearchParams(location.search);
         if (params.get('payment') === 'success') {
             const amount = params.get('amount');
-            const returnPath = localStorage.getItem('stripe_return_path');
 
             // Show success toast
             if (amount) {
                 actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
             }
 
-            // Redirect to original location
-            if (returnPath) {
-                localStorage.removeItem('stripe_return_path');
-                navigate(returnPath, { replace: true });
-            } else {
-                // Fallback: clean URL
-                navigate(location.pathname, { replace: true });
-            }
+            // Clean URL
+            navigate(location.pathname, { replace: true });
         }
     }, [location.search, navigate, actions, t]);
 
@@ -810,6 +803,7 @@ export function App() {
             } />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />
+            <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
     );
 }

@@ -161,18 +161,14 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No active session');
 
-            // Store current location for post-payment redirect
-            const returnPath = window.location.pathname + window.location.search;
-            localStorage.setItem('stripe_return_path', returnPath);
-
             const invokePromise = supabase.functions.invoke('stripe-checkout', {
                 headers: {
                     Authorization: `Bearer ${session.access_token}`
                 },
                 body: {
                     amount,
-                    cancel_url: window.location.origin,
-                    success_url: `${window.location.origin}?payment=success&amount=${amount}`
+                    cancel_url: `${window.location.origin}/projects`,
+                    success_url: `${window.location.origin}/projects?payment=success&amount=${amount}`
                 }
             });
 
@@ -185,7 +181,12 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             if (error) throw error;
 
             if (data?.url) {
-                window.location.href = data.url;
+                // Open Stripe checkout in a new tab to preserve current canvas state
+                const checkoutWindow = window.open(data.url, '_blank');
+                if (!checkoutWindow) {
+                    // Fallback if popup blocked: redirect in same window
+                    window.location.href = data.url;
+                }
             } else {
                 throw new Error("No checkout URL received from server.");
             }
