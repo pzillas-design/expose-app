@@ -360,12 +360,12 @@ export const imageService = {
                 thumbSignedUrl = await storageService.getSignedUrl(record.thumb_storage_path);
             }
         } else {
-            // Fallback to on-the-fly 800px transformation
-            const thumbOptionsKey = `_800xundefined_q75`;
+            // Fallback to on-the-fly 600px transformation
+            const thumbOptionsKey = `_600xundefined_q75`;
             thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
 
             if (!thumbSignedUrl && record.storage_path) {
-                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 800, quality: 75 });
+                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 600, quality: 75 });
             }
         }
 
@@ -523,8 +523,8 @@ export const imageService = {
                 const [hdResults, optResults] = await Promise.all([
                     // 1. Sign original HD versions
                     storageService.getSignedUrls(chunk),
-                    // 2. Pre-sign 800px optimized versions for immediate canvas display
-                    storageService.getSignedUrls(chunk, { width: 800, quality: 75 })
+                    // 2. Pre-sign 600px optimized versions for immediate canvas display
+                    storageService.getSignedUrls(chunk, { width: 600, quality: 75 })
                 ]);
                 Object.assign(signedUrlMap, hdResults);
                 Object.assign(signedUrlMap, optResults);
