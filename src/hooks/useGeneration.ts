@@ -322,7 +322,8 @@ export const useGeneration = ({
                     cost: cost,
                     prompt: prompt,
                     concurrent_jobs: currentConcurrency,
-                    board_id: currentBoardId || null
+                    board_id: currentBoardId || null,
+                    parent_id: sourceImage.id // Map lineage
                 });
                 attachedJobIds.current.add(newId);
             } catch (dbErr) {

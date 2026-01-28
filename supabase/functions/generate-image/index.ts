@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
             modelName,
             board_id,
             aspectRatio: explicitRatio,
+            targetTitle,
 
             // Legacy/Fallback fields
             sourceImage,
@@ -89,6 +90,14 @@ Deno.serve(async (req) => {
         } = payload;
 
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
+        console.log(`[DEBUG] Request Type: ${requestType}`);
+        console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
+        console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
+        if (sourceImage) {
+            console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
+            console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
+            console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
+        }
 
         // Check credits and profile
         const cost = COSTS[qualityMode] || 0;
@@ -260,37 +269,40 @@ Deno.serve(async (req) => {
         let subfolder = board_id || 'unorganized';
         if (board_id) {
             try {
-                const { data: board } = await supabaseAdmin
+                const { data: boardData, error: boardError } = await supabaseAdmin
                     .from('boards')
                     .select('name')
                     .eq('id', board_id)
-                    .maybeSingle();
-                if (board) {
+                    .limit(1); // Use .limit(1) instead of .maybeSingle() for safer error handling
+
+                if (boardError) {
+                    logError('Board Fetch Error', boardError, { board_id });
+                } else if (boardData && boardData.length > 0) {
+                    const board = boardData[0];
                     subfolder = `${slugify(board.name)}_${board_id}`;
+                } else {
+                    logInfo('Board Not Found', `Board with ID ${board_id} not found, using 'unorganized' subfolder.`);
                 }
             } catch (e) {
-                logError('Board Fetch', e);
+                logError('Board Fetch Exception', e, { board_id });
             }
         }
 
         let dbBaseName = "";
         let dbTitle = "";
+        let currentVersion = 1;
 
-        if (!sourceImage?.baseName && !sourceImage?.title) {
+        if (requestType === 'create') {
             // NEW GENERATION: Use first 15 chars of prompt as baseName
             const promptSnippet = prompt.substring(0, 15).trim();
-            dbBaseName = payload.targetTitle || promptSnippet || 'Image';
+            dbBaseName = targetTitle || promptSnippet || 'Image';
             dbTitle = dbBaseName;
+            currentVersion = 1;
         } else {
             // EDIT/VERSION: Inherit from source
-            dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
-            dbTitle = dbBaseName;
-        }
-
-        const currentVersion = (sourceImage?.version || 0) + 1;
-
-        if (sourceImage?.version && sourceImage.version > 0) {
-            dbTitle = `${dbBaseName}_v${currentVersion}`;
+            dbBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
+            currentVersion = (sourceImage?.version || 0) + 1;
+            dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
         }
 
         const titleSlug = slugify(dbBaseName);
@@ -335,7 +347,7 @@ Deno.serve(async (req) => {
             base_name: dbBaseName,
             version: currentVersion,
             prompt: prompt,
-            parent_id: sourceImage?.id || null,
+            parent_id: (requestType === 'edit' || payloadOriginalImage) ? (sourceImage?.id || null) : null,
             annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
                 id: crypto.randomUUID(),
                 type: 'reference_image',
@@ -419,23 +431,31 @@ Deno.serve(async (req) => {
             status: 200,
         });
 
-    } catch (error) {
-        logError('Edge Function', error, { jobId: newId });
+    } catch (error: any) {
+        const errorMsg = error?.message || (typeof error === 'string' ? error : "Unknown error occurred");
+        logError('Edge Function', errorMsg, { jobId: newId });
 
         // Mark job as failed
         if (newId && supabaseAdmin) {
-            await supabaseAdmin
-                .from('generation_jobs')
-                .update({ status: 'failed', error: error.message })
-                .eq('id', newId);
+            try {
+                await supabaseAdmin
+                    .from('generation_jobs')
+                    .update({ status: 'failed', error: errorMsg })
+                    .eq('id', newId);
+            } catch (e) {
+                logError('Job Update Failed', e);
+            }
         }
 
         return new Response(JSON.stringify({
-            error: error.message || "Unknown error occurred",
+            error: errorMsg,
             jobId: newId,
             timestamp: new Date().toISOString()
         }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json'
+            },
             status: 400,
         });
     }

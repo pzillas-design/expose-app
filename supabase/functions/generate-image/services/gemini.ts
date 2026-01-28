@@ -47,7 +47,7 @@ export const prepareParts = async (
                 data: maskBase64
             }
         });
-        parts.push({ text: "Image 2: The Annotation Image (Muted original + high-contrast overlays/labels showing where and what to change)." });
+        parts.push({ text: "Image 2: The Annotation Image (Muted original + annotations showing where and what to change)." });
     }
 
     // 5. Reference Images
