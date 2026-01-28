@@ -24,6 +24,12 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 
+// Import new pages
+import { AboutPage } from '@/components/pages/AboutPage';
+import { ContactPage } from '@/components/pages/ContactPage';
+import { ImpressumPage } from '@/components/pages/ImpressumPage';
+import { DatenschutzPage } from '@/components/pages/DatenschutzPage';
+
 
 const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -827,6 +833,10 @@ export function App() {
                     </Suspense>
                 </AdminRoute>
             } />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/impressum" element={<ImpressumPage />} />
+            <Route path="/datenschutz" element={<DatenschutzPage />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />
             <Route path="*" element={<Navigate to="/projects" replace />} />
