@@ -238,7 +238,9 @@ export const imageService = {
                 modelName,
                 board_id: boardId,
                 attachments,
-                aspectRatio
+                aspectRatio,
+                targetTitle,
+                sourceImage
             }
         });
 
@@ -315,13 +317,14 @@ export const imageService = {
             userDraftPrompt: '', // Clean prompt field for generated images
             activeTemplateId: undefined, // No preset carried over
             variableValues: undefined, // No variables carried over,
-            version: targetVersion || (sourceImage.version || 1) + 1,
-            title: targetTitle || (sourceImage.title?.includes('_v')
+            version: result.version || targetVersion || (sourceImage.version || 1) + 1,
+            title: result.title || targetTitle || (sourceImage.title?.includes('_v')
                 ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
                 : `${sourceImage.title || 'Image'}_v2`),
+            baseName: result.base_name || sourceImage.baseName || sourceImage.title,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            modelVersion: result.modelVersion,
+            modelVersion: result.modelVersion || result.model_version,
             annotations: [], // Clean slate - no inherited annotations
             maskSrc: undefined,
             // Keep canvas dimensions consistent with the row height to prevent "huge" images
@@ -331,7 +334,7 @@ export const imageService = {
             realWidth: genWidth,
             realHeight: genHeight,
             boardId: boardId,
-            parentId: sourceImage.id
+            parentId: result.parent_id || (sourceImage.id !== newId ? sourceImage.id : sourceImage.parentId)
         };
     },
 
@@ -565,13 +568,14 @@ export const imageService = {
                 version: 0, // Will be updated on completion
                 isGenerating: true,
                 generationStartTime: startTime,
-                parentId: job.parent_id,
+                parentId: job.parent_id, // Map persistent lineage from DB
                 generationPrompt: job.prompt,
                 quality: job.model as any,
                 createdAt: startTime,
                 updatedAt: startTime,
                 annotations: [],
-                boardId: job.board_id
+                boardId: job.board_id,
+                userId: userId
             };
             loadedImages.push(skeleton);
         });
@@ -593,24 +597,44 @@ export const imageService = {
         };
 
         loadedImages.forEach(img => {
-            const rootId = getRootId(img);
-            if (!groups.has(rootId)) groups.set(rootId, []);
-            groups.get(rootId)!.push(img);
+            let groupId = getRootId(img);
+
+            // RESILIENCE FALLBACK: If the root is NOT in our local set (e.g. parent is on another board or deleted),
+            // group by baseName to keep versions of the same image together regardless of lineage chain breaks.
+            const root = imageMap.get(groupId);
+            if (!root && img.baseName) {
+                groupId = `baseName_${img.baseName}`;
+            }
+
+            if (!groups.has(groupId)) groups.set(groupId, []);
+            groups.get(groupId)!.push(img);
         });
 
-        groups.forEach((items) => {
-            // Within a row, we still sort oldest to newest (left to right)
+        groups.forEach((items, groupId) => {
+            // Within a row, sort oldest to newest
             items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-            // Use the title of the root image as the row title
-            const root = imageMap.get(getRootId(items[0]))!;
-            const rowTitle = root.baseName || root.title || 'untitled';
+            // Determine row title
+            let rowTitle = 'untitled';
+            let rowCreatedAt = items[0].createdAt;
+
+            if (groupId.startsWith('baseName_')) {
+                rowTitle = items[0].baseName || items[0].title || 'untitled';
+            } else {
+                const root = imageMap.get(groupId);
+                if (root) {
+                    rowTitle = root.baseName || root.title || 'untitled';
+                    rowCreatedAt = root.createdAt;
+                } else {
+                    rowTitle = items[0].baseName || items[0].title || 'untitled';
+                }
+            }
 
             rows.push({
-                id: root.id + '_row',
+                id: groupId + '_row',
                 title: rowTitle,
                 items: items,
-                createdAt: root.createdAt || items[0].createdAt // Row date is the birth of the sequence
+                createdAt: rowCreatedAt // Row date is the emergence of the root or oldest visible version
             });
         });
 

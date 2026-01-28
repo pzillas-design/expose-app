@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
             modelName,
             board_id,
             aspectRatio: explicitRatio,
+            targetTitle,
 
             // Legacy/Fallback fields
             sourceImage,
@@ -89,6 +90,14 @@ Deno.serve(async (req) => {
         } = payload;
 
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
+        console.log(`[DEBUG] Request Type: ${requestType}`);
+        console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
+        console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
+        if (sourceImage) {
+            console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
+            console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
+            console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
+        }
 
         // Check credits and profile
         const cost = COSTS[qualityMode] || 0;
@@ -281,22 +290,19 @@ Deno.serve(async (req) => {
 
         let dbBaseName = "";
         let dbTitle = "";
+        let currentVersion = 1;
 
-        if (!sourceImage?.baseName && !sourceImage?.title) {
+        if (requestType === 'create') {
             // NEW GENERATION: Use first 15 chars of prompt as baseName
             const promptSnippet = prompt.substring(0, 15).trim();
-            dbBaseName = payload.targetTitle || promptSnippet || 'Image';
+            dbBaseName = targetTitle || promptSnippet || 'Image';
             dbTitle = dbBaseName;
+            currentVersion = 1;
         } else {
             // EDIT/VERSION: Inherit from source
-            dbBaseName = sourceImage.baseName || sourceImage.title || "Image";
-            dbTitle = dbBaseName;
-        }
-
-        const currentVersion = (sourceImage?.version || 0) + 1;
-
-        if (sourceImage?.version && sourceImage.version > 0) {
-            dbTitle = `${dbBaseName}_v${currentVersion}`;
+            dbBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
+            currentVersion = (sourceImage?.version || 0) + 1;
+            dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
         }
 
         const titleSlug = slugify(dbBaseName);
@@ -341,7 +347,7 @@ Deno.serve(async (req) => {
             base_name: dbBaseName,
             version: currentVersion,
             prompt: prompt,
-            parent_id: sourceImage?.id || null,
+            parent_id: (requestType === 'edit' || payloadOriginalImage) ? (sourceImage?.id || null) : null,
             annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
                 id: crypto.randomUUID(),
                 type: 'reference_image',
