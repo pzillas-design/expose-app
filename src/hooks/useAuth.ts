@@ -113,6 +113,43 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => subscription.unsubscribe();
     }, [isAuthDisabled, fetchProfile]);
 
+    // Refresh credits when tab becomes visible (e.g., returning from Stripe checkout)
+    useEffect(() => {
+        if (isAuthDisabled || !user) return;
+
+        const handleVisibilityChange = async () => {
+            if (!document.hidden) {
+                // Tab became visible - refresh profile to get latest credits
+                try {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile) {
+                        const oldCredits = credits;
+                        const newCredits = profile.credits ?? 0;
+
+                        setCredits(newCredits);
+                        setUserProfile(profile);
+
+                        // Show toast if credits increased
+                        if (newCredits > oldCredits) {
+                            const amount = (newCredits - oldCredits).toFixed(2);
+                            showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to refresh credits:', err);
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isAuthDisabled, user, credits, showToast, t]);
+
     // Real-time Credit Updates
     useEffect(() => {
         if (!user || isAuthDisabled) return;
@@ -126,8 +163,17 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 filter: `id=eq.${user.id}`
             }, (payload) => {
                 if (payload.new && typeof payload.new.credits === 'number') {
-                    setCredits(payload.new.credits);
+                    const oldCredits = credits;
+                    const newCredits = payload.new.credits;
+
+                    setCredits(newCredits);
                     setUserProfile(payload.new);
+
+                    // Show toast if credits increased (payment received)
+                    if (newCredits > oldCredits) {
+                        const amount = (newCredits - oldCredits).toFixed(2);
+                        showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                    }
                 }
             })
             .subscribe();
@@ -135,7 +181,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user, isAuthDisabled]);
+    }, [user, isAuthDisabled, credits, showToast, t]);
 
     // Payment Success Redirect
     useEffect(() => {
@@ -161,18 +207,14 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No active session');
 
-            // Store current location for post-payment redirect
-            const returnPath = window.location.pathname + window.location.search;
-            localStorage.setItem('stripe_return_path', returnPath);
-
             const invokePromise = supabase.functions.invoke('stripe-checkout', {
                 headers: {
                     Authorization: `Bearer ${session.access_token}`
                 },
                 body: {
                     amount,
-                    cancel_url: window.location.origin,
-                    success_url: `${window.location.origin}?payment=success&amount=${amount}`
+                    cancel_url: `${window.location.origin}/projects`,
+                    success_url: `${window.location.origin}/projects?payment=success&amount=${amount}`
                 }
             });
 
@@ -185,7 +227,12 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             if (error) throw error;
 
             if (data?.url) {
-                window.location.href = data.url;
+                // Open Stripe checkout in a new tab to preserve current canvas state
+                const checkoutWindow = window.open(data.url, '_blank');
+                if (!checkoutWindow) {
+                    // Fallback if popup blocked: redirect in same window
+                    window.location.href = data.url;
+                }
             } else {
                 throw new Error("No checkout URL received from server.");
             }

@@ -26,7 +26,7 @@ export const boardService = {
                 .map((img: any) => img.thumb_storage_path || img.storage_path);
 
             const previewImages = await Promise.all(
-                imagePaths.map(path => storageService.getSignedUrl(path, { width: 300, height: 300, resize: 'contain', quality: 85 }))
+                imagePaths.map(path => storageService.getSignedUrl(path))
             );
 
             return {

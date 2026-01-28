@@ -1,11 +1,11 @@
 /**
  * Generates a cost-optimized thumbnail from an image source (Base64 or URL).
- * Uses 600px max dimension and 0.6 JPEG quality for ~50% smaller file size.
+ * Uses 600px max dimension and 0.8 JPEG quality for optimal quality/size balance.
  * @param src The source image (Data URL or static URL)
  * @param maxDim Maximum dimension (width or height) for the thumbnail
  * @returns A promise resolving to a Blob of the thumbnail
  */
-export async function generateThumbnail(src: string, maxDim: number = 800): Promise<Blob> {
+export async function generateThumbnail(src: string, maxDim: number = 600): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "anonymous"; // Handle remote URLs if necessary

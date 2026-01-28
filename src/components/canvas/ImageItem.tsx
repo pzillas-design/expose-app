@@ -135,8 +135,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 
             fetchLock.current = true;
             try {
-                // Load thumbnail (800px) by default, full resolution only when selected
-                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 800, quality: 85 });
+                // Load thumbnail (600px) by default, full resolution only when selected
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75 });
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {
