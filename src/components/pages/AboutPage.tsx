@@ -61,50 +61,71 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     </div>
                 </section>
 
-                {/* Narrative Sections */}
-                <section className="py-40 bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-100">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-                            <div className="lg:col-span-5 sticky top-32">
-                                <span className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-6 block">01 / Der Ursprung</span>
-                                <h2 className="text-5xl font-bold tracking-tighter mb-8 leading-tight">
-                                    Wo Vision auf <br />Materie trifft.
-                                </h2>
-                                <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-[1.6]">
-                                    Expose entstand aus dem Wunsch, die Lücke zwischen Gedanke und Visualisierung zu schließen. In einer Welt, die sich immer schneller dreht, geben wir Ihnen den Raum, innezuhalten und zu erschaffen.
-                                </p>
-                            </div>
-                            <div className="lg:col-span-7">
-                                <div className="aspect-[4/5] bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl relative group">
-                                    <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 m-8 rounded-xl group-hover:border-zinc-300 dark:group-hover:border-zinc-700 transition-colors">
-                                        <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400">Cinematic Fragment I</span>
-                                    </div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                                </div>
+                {/* USP 1: Iterativ + Parallel */}
+                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
+                    <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        <div className="z-10 order-2 lg:order-1">
+                            <h2 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                                <span className="text-orange-500">Iterativ</span> + parallel <br />
+                                arbeiten.
+                            </h2>
+                            <p className="text-zinc-400 text-xl leading-relaxed max-w-md">
+                                Unser einzigartiger Canvas erlaubt es Ihnen, ganze Variantenreihen gleichzeitig zu generieren und im direkten Vergleich zu verfeinern.
+                            </p>
+                        </div>
+                        <div className="relative order-1 lg:order-2">
+                            <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(249,115,22,0.1)] border border-zinc-800/50 bg-zinc-900 group">
+                                <img
+                                    src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_0_1769643498884.png"
+                                    alt="Parallel Workflow"
+                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
+                                />
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <section className="py-40 bg-zinc-50 dark:bg-zinc-900/30">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-end">
-                            <div className="lg:col-span-7 order-2 lg:order-1">
-                                <div className="aspect-[16/9] bg-zinc-200 dark:bg-zinc-800 rounded-2xl overflow-hidden shadow-2xl relative group">
-                                    <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-zinc-300 dark:border-zinc-700 m-8 rounded-xl group-hover:border-zinc-400 dark:group-hover:border-zinc-600 transition-colors">
-                                        <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-400">Cinematic Fragment II</span>
-                                    </div>
-                                </div>
+                {/* USP 2: Vorlagen */}
+                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950/50 overflow-hidden">
+                    <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                        <div className="relative">
+                            <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.05)] border border-zinc-800/50 bg-zinc-900 group">
+                                <img
+                                    src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_1_1769643498884.png"
+                                    alt="Templates and Variables"
+                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
+                                />
                             </div>
-                            <div className="lg:col-span-5 order-1 lg:order-2 pb-12">
-                                <span className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-6 block">02 / Die Philosophie</span>
-                                <h2 className="text-5xl font-bold tracking-tighter mb-8 leading-tight">
-                                    Weniger ist <br />Alles.
-                                </h2>
-                                <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-[1.6]">
-                                    Wir kuratieren Pixel, damit Sie Welten erschaffen können. Unser Fokus liegt auf der Essenz der Kreation – ohne Rauschen, ohne Komplexität. Nur Sie und Ihre Idee.
-                                </p>
-                            </div>
+                        </div>
+                        <div className="z-10 text-right flex flex-col items-end">
+                            <h2 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                                Vorlagen <br />
+                                <span className="text-zinc-600">nutzen und erstellen.</span>
+                            </h2>
+                            <p className="text-zinc-400 text-xl leading-relaxed max-w-md">
+                                Strukturieren Sie Ihre kreativen Prozesse mit Variablen und Presets. Wiederholbarkeit auf Knopfdruck, ohne Speed einzubüßen.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* USP 3: Visual Prompting (Fullscreen Center Focus) */}
+                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
+                    <div className="max-w-5xl mx-auto px-6 w-full text-center mb-16">
+                        <h2 className="text-6xl sm:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                            Visual <span className="text-orange-500">prompting.</span>
+                        </h2>
+                        <p className="text-zinc-400 text-xl leading-relaxed mx-auto max-w-2xl">
+                            Kommunizieren Sie direkt mit der KI durch visuelle Marker. Sie sagen nicht nur was, sondern WO etwas passieren soll.
+                        </p>
+                    </div>
+                    <div className="w-full max-w-4xl px-6">
+                        <div className="aspect-video rounded-3xl overflow-hidden shadow-[0_0_150px_rgba(255,255,255,0.05)] border border-zinc-800 bg-zinc-900 group">
+                            <img
+                                src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_2_1769643498884.png"
+                                alt="Visual Prompting"
+                                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
+                            />
                         </div>
                     </div>
                 </section>
