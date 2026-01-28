@@ -22,13 +22,11 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 
 // Code-split Admin Dashboard (only loads for admins)
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
+const DatenschutzPage = React.lazy(() => import('@/components/pages/DatenschutzPage').then(m => ({ default: m.DatenschutzPage })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
-
-// Import new pages
-import { AboutPage } from '@/components/pages/AboutPage';
-import { ContactPage } from '@/components/pages/ContactPage';
-import { ImpressumPage } from '@/components/pages/ImpressumPage';
-import { DatenschutzPage } from '@/components/pages/DatenschutzPage';
 
 
 const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -767,6 +765,26 @@ export function App() {
 
     return (
         <Routes>
+            <Route path="/about" element={
+                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                    <AboutPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                </Suspense>
+            } />
+            <Route path="/contact" element={
+                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                    <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                </Suspense>
+            } />
+            <Route path="/impressum" element={
+                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                    <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                </Suspense>
+            } />
+            <Route path="/datenschutz" element={
+                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                    <DatenschutzPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                </Suspense>
+            } />
             <Route path="/projects" element={boardsPage} />
             <Route path="/projects/:boardId" element={canvasView} />
             <Route path="/settings" element={
@@ -833,10 +851,6 @@ export function App() {
                     </Suspense>
                 </AdminRoute>
             } />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/impressum" element={<ImpressumPage />} />
-            <Route path="/datenschutz" element={<DatenschutzPage />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
             <Route path="/v2" element={<Navigate to="/projects" replace />} />
             <Route path="*" element={<Navigate to="/projects" replace />} />

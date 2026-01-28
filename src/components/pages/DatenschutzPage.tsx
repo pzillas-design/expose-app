@@ -1,78 +1,77 @@
 import React from 'react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import { AppNavbar } from '../layout/AppNavbar';
+import { GlobalFooter } from '../layout/GlobalFooter';
+import { TranslationFunction } from '@/types';
+import { Theme, Typo } from '@/components/ui/DesignSystem';
 
-export const DatenschutzPage: React.FC = () => {
+interface DatenschutzPageProps {
+    user: any;
+    userProfile: any;
+    credits: number;
+    onCreateBoard: () => void;
+    t: TranslationFunction;
+}
+
+export const DatenschutzPage: React.FC<DatenschutzPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-            <div className="max-w-4xl mx-auto px-6 py-24">
-                <h1 className={`${Typo.H1} text-4xl md:text-5xl font-bold mb-12 ${Theme.Colors.TextHighlight}`}>
-                    Datenschutzerklärung
-                </h1>
+        <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+            <AppNavbar
+                user={user}
+                userProfile={userProfile}
+                credits={credits}
+                onCreateBoard={onCreateBoard}
+                t={t}
+            />
 
-                <div className="prose prose-zinc dark:prose-invert max-w-none space-y-8">
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            1. Datenschutz auf einen Blick
-                        </h2>
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Allgemeine Hinweise
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.
-                        </p>
-                    </section>
+            <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-12 sm:py-24">
+                <article className="prose prose-zinc dark:prose-invert max-w-none">
+                    <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Datenschutzerklärung</h1>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            2. Datenerfassung auf unserer Website
-                        </h2>
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Wer ist verantwortlich für die Datenerfassung?
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400 mb-4`}>
-                            Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum dieser Website entnehmen.
-                        </p>
+                    <h3>1. Datenschutz auf einen Blick</h3>
+                    <h4>Allgemeine Hinweise</h4>
+                    <p>
+                        Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.
+                    </p>
 
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Wie erfassen wir Ihre Daten?
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch beim Besuch der Website durch unsere IT-Systeme erfasst.
-                        </p>
-                    </section>
+                    <h4>Datenerfassung auf dieser Website</h4>
+                    <p>
+                        <strong>Wer ist verantwortlich für die Datenerfassung auf dieser Website?</strong><br />
+                        Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Impressum dieser Website entnehmen.
+                    </p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            3. Hosting und Content Delivery Networks (CDN)
-                        </h2>
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Externes Hosting
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Diese Website wird bei einem externen Dienstleister gehostet (Hoster). Die personenbezogenen Daten, die auf dieser Website erfasst werden, werden auf den Servern des Hosters gespeichert.
-                        </p>
-                    </section>
+                    <h3>2. Hosting und Content Delivery Networks (CDN)</h3>
+                    <p>
+                        Wir hosten die Inhalte unserer Website bei folgenden Anbietern:
+                    </p>
+                    <h4>Vercel</h4>
+                    <p>
+                        Anbieter ist die Vercel Inc., 340 S Lemon Ave #4133 Walnut, CA 91789, USA. Wenn Sie unsere Website besuchen, erfasst Vercel verschiedene Logfiles inklusive Ihrer IP-Adressen.
+                    </p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            4. Ihre Rechte
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Sie haben jederzeit das Recht unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung, Sperrung oder Löschung dieser Daten zu verlangen.
-                        </p>
-                    </section>
+                    <h3>3. Allgemeine Hinweise und Pflichtinformationen</h3>
+                    <h4>Datenschutz</h4>
+                    <p>
+                        Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.
+                    </p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            5. Kontakt
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Bei Fragen zum Datenschutz können Sie sich jederzeit unter folgender E-Mail-Adresse an uns wenden:<br />
-                            <a href="mailto:hello@expose.ae" className="text-blue-600 dark:text-blue-400 hover:underline">hello@expose.ae</a>
-                        </p>
-                    </section>
-                </div>
-            </div>
+                    <h4>Hinweis zur verantwortlichen Stelle</h4>
+                    <p>
+                        Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:<br /><br />
+                        Expose GmbH<br />
+                        Musterstraße 123<br />
+                        10115 Berlin<br /><br />
+                        Telefon: +49 (0) 30 12345678<br />
+                        E-Mail: kontakt@expose.ae
+                    </p>
+
+                    {/* Placeholder for more content */}
+                    <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-lg text-sm text-zinc-500 border border-zinc-200 dark:border-zinc-800 my-8">
+                        Hier folgen weitere gesetzlich vorgeschriebene Abschnitte (Widerruf, Beschwerderecht, SSL-Verschlüsselung, etc.). Dieser Text ist ein Platzhalter.
+                    </div>
+                </article>
+            </main>
+
+            <GlobalFooter t={t} />
         </div>
     );
 };

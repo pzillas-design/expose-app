@@ -1,75 +1,74 @@
 import React from 'react';
-import { Typo, Theme } from '@/components/ui/DesignSystem';
+import { AppNavbar } from '../layout/AppNavbar';
+import { GlobalFooter } from '../layout/GlobalFooter';
+import { TranslationFunction } from '@/types';
+import { Theme, Typo } from '@/components/ui/DesignSystem';
 
-export const ImpressumPage: React.FC = () => {
+interface ImpressumPageProps {
+    user: any;
+    userProfile: any;
+    credits: number;
+    onCreateBoard: () => void;
+    t: TranslationFunction;
+}
+
+export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     return (
-        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-            <div className="max-w-4xl mx-auto px-6 py-24">
-                <h1 className={`${Typo.H1} text-4xl md:text-5xl font-bold mb-12 ${Theme.Colors.TextHighlight}`}>
-                    Impressum
-                </h1>
+        <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+            <AppNavbar
+                user={user}
+                userProfile={userProfile}
+                credits={credits}
+                onCreateBoard={onCreateBoard}
+                t={t}
+            />
 
-                <div className="prose prose-zinc dark:prose-invert max-w-none space-y-8">
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            Angaben gemäß § 5 TMG
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            [Firmenname]<br />
-                            [Straße und Hausnummer]<br />
-                            [PLZ und Ort]<br />
-                            [Land]
-                        </p>
-                    </section>
+            <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-12 sm:py-24">
+                <article className="prose prose-zinc dark:prose-invert max-w-none">
+                    <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Impressum</h1>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            Kontakt
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            E-Mail: <a href="mailto:hello@expose.ae" className="text-blue-600 dark:text-blue-400 hover:underline">hello@expose.ae</a>
-                        </p>
-                    </section>
+                    <h3>Angaben gemäß § 5 TMG</h3>
+                    <p>
+                        Expose GmbH<br />
+                        Musterstraße 123<br />
+                        10115 Berlin<br />
+                        Deutschland
+                    </p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            Vertreten durch
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            [Name des Geschäftsführers/Inhabers]
-                        </p>
-                    </section>
+                    <h3>Vertreten durch</h3>
+                    <p>Max Mustermann (Geschäftsführer)</p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            Umsatzsteuer-ID
-                        </h2>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Umsatzsteuer-Identifikationsnummer gemäß §27 a Umsatzsteuergesetz:<br />
-                            [USt-IdNr.]
-                        </p>
-                    </section>
+                    <h3>Kontakt</h3>
+                    <p>
+                        Telefon: +49 (0) 30 12345678<br />
+                        E-Mail: kontakt@expose.ae
+                    </p>
 
-                    <section>
-                        <h2 className={`${Typo.H2} text-2xl font-bold mb-4 ${Theme.Colors.TextHighlight}`}>
-                            Haftungsausschluss
-                        </h2>
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Haftung für Inhalte
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400 mb-4`}>
-                            Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.
-                        </p>
+                    <h3>Registereintrag</h3>
+                    <p>
+                        Eintragung im Handelsregister.<br />
+                        Registergericht: Amtsgericht Berlin-Charlottenburg<br />
+                        Registernummer: HRB 123456
+                    </p>
 
-                        <h3 className={`${Typo.H3} text-xl font-semibold mb-2 ${Theme.Colors.TextHighlight}`}>
-                            Haftung für Links
-                        </h3>
-                        <p className={`${Typo.Body} text-zinc-600 dark:text-zinc-400`}>
-                            Unser Angebot enthält Links zu externen Webseiten Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen.
-                        </p>
-                    </section>
-                </div>
-            </div>
+                    <h3>Umsatzsteuer-ID</h3>
+                    <p>
+                        Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz:<br />
+                        DE 123 456 789
+                    </p>
+
+                    <h3>Streitschlichtung</h3>
+                    <p>
+                        Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: https://ec.europa.eu/consumers/odr.<br />
+                        Unsere E-Mail-Adresse finden Sie oben im Impressum.
+                    </p>
+                    <p>
+                        Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+                    </p>
+                </article>
+            </main>
+
+            <GlobalFooter t={t} />
         </div>
     );
 };
