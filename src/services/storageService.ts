@@ -64,12 +64,12 @@ export const storageService = {
                 throw error;
             }
 
-            // 5. Generate and Upload Thumbnail (800px width for better quality)
+            // 5. Generate and Upload Thumbnail (600px width for optimal quality/size balance)
             let thumbPath: string | undefined;
             if (shouldGenerateThumb) {
                 try {
                     const { generateThumbnail } = await import('../utils/imageUtils');
-                    const thumbBlob = await generateThumbnail(imageSrc, 800);
+                    const thumbBlob = await generateThumbnail(imageSrc, 600);
                     const thumbFileName = `thumb_${fileName}`;
                     const thumbFilePath = `${folderPath}/${thumbFileName}`;
 
