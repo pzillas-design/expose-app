@@ -100,14 +100,40 @@ export function App() {
         if (params.get('payment') === 'success') {
             const amount = params.get('amount');
 
-            // Show success toast
-            if (amount) {
-                actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
-            }
+            // If this is a payment redirect (opened from checkout), notify the original tab and close
+            if (window.opener) {
+                // Notify the original tab via BroadcastChannel
+                const channel = new BroadcastChannel('stripe-payment');
+                channel.postMessage({ type: 'payment-success', amount });
+                channel.close();
 
-            // Clean URL
-            navigate(location.pathname, { replace: true });
+                // Close this tab after a short delay
+                setTimeout(() => {
+                    window.close();
+                }, 500);
+            } else {
+                // Fallback: show toast in this tab (if user manually navigated here)
+                if (amount) {
+                    actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                }
+                navigate(location.pathname, { replace: true });
+            }
         }
+
+        // Listen for payment success from other tabs
+        const channel = new BroadcastChannel('stripe-payment');
+        channel.onmessage = (event) => {
+            if (event.data.type === 'payment-success') {
+                const amount = event.data.amount;
+                if (amount) {
+                    actions.showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                }
+            }
+        };
+
+        return () => {
+            channel.close();
+        };
     }, [location.search, navigate, actions, t]);
 
     // Initial Scroll Centering to prevent bottom-right jumping on load
