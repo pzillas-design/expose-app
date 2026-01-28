@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
-import { Theme, Typo, SectionHeader } from '@/components/ui/DesignSystem';
-import { ChevronDown } from 'lucide-react';
+import { Theme, Typo } from '@/components/ui/DesignSystem';
+import { ChevronDown, Pen, Camera, X, ChevronRight } from 'lucide-react';
+import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 
 interface AboutPageProps {
     user: any;
@@ -12,6 +13,124 @@ interface AboutPageProps {
     onCreateBoard: () => void;
     t: TranslationFunction;
 }
+
+// --- Mockup Components ---
+
+const CanvasMockup = () => {
+    const rowConfigs = [3, 5, 2, 4, 3, 6, 4]; // 7 rows with varying counts
+
+    return (
+        <div className="w-full flex flex-col gap-4 p-8 bg-zinc-950 rounded-3xl border border-zinc-900 shadow-2xl overflow-hidden group">
+            {rowConfigs.map((count, i) => (
+                <div
+                    key={i}
+                    className="flex gap-4 animate-in fade-in slide-in-from-left duration-1000"
+                    style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}
+                >
+                    {Array.from({ length: count }).map((_, j) => (
+                        <div
+                            key={j}
+                            className={`
+                                h-16 sm:h-24 rounded-lg bg-zinc-900 border border-zinc-800/50 flex-none
+                                ${j === count - 1 ? 'w-48 sm:w-64 bg-zinc-800/20' : 'w-24 sm:w-32'}
+                                hover:border-orange-500/50 transition-all duration-300
+                                relative overflow-hidden
+                            `}
+                        >
+                            {/* Animated progress bar for "generating" state */}
+                            {(i + j) % 3 === 0 && (
+                                <div className="absolute bottom-0 left-0 h-1 bg-orange-500/30 w-full overflow-hidden">
+                                    <div className="h-full bg-orange-500 w-1/3 animate-[progress_2s_infinite_linear]" />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            ))}
+            <style>{`
+                @keyframes progress {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(300%); }
+                }
+            `}</style>
+        </div>
+    );
+};
+
+const SidepanelMockup = () => {
+    const [selectedSeason, setSelectedSeason] = useState('Sommer');
+    const [selectedTime, setSelectedTime] = useState('Nachmittag');
+
+    return (
+        <div className="w-full max-w-sm mx-auto bg-zinc-950 rounded-2xl border border-zinc-900 shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-700">
+            {/* Mock Header */}
+            <div className="px-6 py-4 border-b border-zinc-900 flex justify-between items-center bg-zinc-900/50">
+                <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500">Bearbeiten</span>
+                <X className="w-4 h-4 text-zinc-600" />
+            </div>
+
+            <div className="p-6 flex flex-col gap-4">
+                {/* Prompt Mock */}
+                <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-900">
+                    <p className="text-sm font-mono text-zinc-300 leading-relaxed">
+                        Inszeniere das Bild neu, indem du die Jahreszeit anpasst
+                        <span className="inline-block w-1.5 h-4 bg-orange-500 ml-1 animate-pulse" />
+                    </p>
+                </div>
+
+                {/* Variable Blocks Mock */}
+                <div className="p-4 rounded-xl border border-zinc-900 flex flex-col gap-3">
+                    <span className="text-[10px] uppercase tracking-widest text-zinc-500">Saison</span>
+                    <div className="flex flex-wrap gap-2">
+                        {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
+                            <button
+                                key={s}
+                                onClick={() => setSelectedSeason(s)}
+                                className={`px-3 py-1.5 rounded-md text-[11px] transition-all ${selectedSeason === s ? 'bg-white text-black font-bold' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}
+                            >
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-zinc-900 flex flex-col gap-3">
+                    <span className="text-[10px] uppercase tracking-widest text-zinc-500">Uhrzeit</span>
+                    <div className="flex flex-wrap gap-2">
+                        {['Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
+                            <button
+                                key={t}
+                                onClick={() => setSelectedTime(t)}
+                                className={`px-3 py-1.5 rounded-md text-[11px] transition-all ${selectedTime === t ? 'bg-white text-black font-bold' : 'bg-zinc-900 text-zinc-500 hover:text-zinc-300'}`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Tools Buttons */}
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                    <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px]">
+                        <Pen className="w-3 h-3 text-blue-500" /> Anmerkung
+                    </div>
+                    <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px]">
+                        <Camera className="w-3 h-3 text-orange-500" /> Referenzbild
+                    </div>
+                </div>
+
+                {/* Generate Button */}
+                <button className="w-full py-4 rounded-xl bg-white text-black font-bold text-sm tracking-tight mt-4 flex items-center justify-center gap-2 group overflow-hidden relative">
+                    <span className="relative z-10">GENERIEREN</span>
+                    <TwoDotsVertical className="w-4 h-4 ml-auto relative z-10" />
+                    <div className="absolute inset-0 bg-zinc-100 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// --- Page Component ---
 
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrolled, setScrolled] = useState(false);
@@ -37,7 +156,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <main className="flex-1 w-full">
                 {/* Full-Height Hero Section */}
                 <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
-                    {/* Background Detail/Gradient */}
                     <div className="absolute inset-0 z-0">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,rgba(63,63,70,0.15)_0%,transparent_70%)]" />
                         <div className="absolute inset-0 bg-zinc-950" />
@@ -45,102 +163,104 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                     <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
                         <span className="text-zinc-500 font-mono text-sm tracking-[0.3em] uppercase mb-8 block animate-in fade-in slide-in-from-bottom-4 duration-1000">Est. 2026</span>
-                        <h1 className="text-6xl sm:text-8xl md:text-9xl font-bold tracking-tighter text-white mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+                        <h1 className="text-7xl sm:text-8xl md:text-[10rem] font-bold tracking-tighter text-white mb-8 leading-[0.8] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                             Creation <br />
                             <span className="text-zinc-600">Reimagined.</span>
                         </h1>
                         <p className="max-w-xl mx-auto text-xl text-zinc-400 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-500">
-                            Wir bauen Werkzeuge für die Architekten des Unmöglichen. Schlichtheit trifft auf brute Kraft.
+                            Architektur für Pixel-Perfektionisten. <br />Schlichtheit trifft auf brute Kraft.
                         </p>
                     </div>
 
-                    {/* Scroll Indicator */}
                     <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 animate-bounce opacity-40">
                         <span className="text-[10px] font-mono tracking-widest uppercase">Scroll</span>
                         <ChevronDown className="w-5 h-5" />
                     </div>
                 </section>
 
-                {/* USP 1: Iterativ + Parallel */}
+                {/* USP 1: Iterativ + Parallel (FULLSCREEN CODE MOCKUP) */}
                 <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-                    <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        <div className="z-10 order-2 lg:order-1">
-                            <h2 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
-                                <span className="text-orange-500">Iterativ</span> + parallel <br />
-                                arbeiten.
+                    <div className="w-full h-full absolute inset-0 opacity-10 blur-3xl pointer-events-none">
+                        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-orange-600 rounded-full" />
+                    </div>
+
+                    <div className="max-w-[1700px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
+                        <div className="lg:col-span-4 order-2 lg:order-1">
+                            <h2 className="text-6xl sm:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                                <span className="text-orange-500">Iterativ</span> + parallel arbeiten.
                             </h2>
-                            <p className="text-zinc-400 text-xl leading-relaxed max-w-md">
-                                Unser einzigartiger Canvas erlaubt es Ihnen, ganze Variantenreihen gleichzeitig zu generieren und im direkten Vergleich zu verfeinern.
+                            <p className="text-zinc-500 text-xl leading-relaxed max-w-sm">
+                                Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
                             </p>
                         </div>
-                        <div className="relative order-1 lg:order-2">
-                            <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(249,115,22,0.1)] border border-zinc-800/50 bg-zinc-900 group">
-                                <img
-                                    src="/about/usp-canvas.png"
-                                    alt="Parallel Workflow"
-                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
-                                />
-                            </div>
+                        <div className="lg:col-span-8 order-1 lg:order-2">
+                            <CanvasMockup />
                         </div>
                     </div>
                 </section>
 
-                {/* USP 2: Vorlagen */}
-                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950/50 overflow-hidden">
-                    <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                        <div className="relative">
-                            <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.05)] border border-zinc-800/50 bg-zinc-900 group">
-                                <img
-                                    src="/about/usp-presets.png"
-                                    alt="Templates and Variables"
-                                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
-                                />
+                {/* USP 2: Sidepanel / Präzise Steuerung (FULLSCREEN CODE MOCKUP) */}
+                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-900/20 overflow-hidden border-y border-zinc-900/50">
+                    <div className="max-w-[1700px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                        <div className="lg:col-span-7 flex justify-center">
+                            <div className="relative group perspective-[2000px] w-full max-w-md">
+                                <div className="hidden lg:block absolute -inset-20 bg-orange-500/5 blur-[120px] rounded-full group-hover:bg-orange-500/10 transition-all duration-1000" />
+                                <div className="transition-transform duration-1000">
+                                    <SidepanelMockup />
+                                </div>
                             </div>
                         </div>
-                        <div className="z-10 text-right flex flex-col items-end">
-                            <h2 className="text-5xl sm:text-7xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
-                                Vorlagen <br />
-                                <span className="text-zinc-600">nutzen und erstellen.</span>
+                        <div className="lg:col-span-5 flex flex-col items-start lg:items-end text-left lg:text-right">
+                            <h2 className="text-6xl sm:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                                <span className="text-zinc-700">Präzise</span> Steuerung.
                             </h2>
-                            <p className="text-zinc-400 text-xl leading-relaxed max-w-md">
-                                Strukturieren Sie Ihre kreativen Prozesse mit Variablen und Presets. Wiederholbarkeit auf Knopfdruck, ohne Speed einzubüßen.
+                            <p className="text-zinc-500 text-xl leading-relaxed max-w-sm">
+                                Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.
                             </p>
                         </div>
                     </div>
                 </section>
 
-                {/* USP 3: Visual Prompting (Fullscreen Center Focus) */}
+                {/* USP 3: Visual Prompting */}
                 <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
                     <div className="max-w-5xl mx-auto px-6 w-full text-center mb-16">
-                        <h2 className="text-6xl sm:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                        <h2 className="text-7xl sm:text-9xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
                             Visual <span className="text-orange-500">prompting.</span>
                         </h2>
-                        <p className="text-zinc-400 text-xl leading-relaxed mx-auto max-w-2xl">
-                            Kommunizieren Sie direkt mit der KI durch visuelle Marker. Sie sagen nicht nur was, sondern WO etwas passieren soll.
+                        <p className="text-zinc-500 text-xl leading-relaxed mx-auto max-w-2xl">
+                            Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white">genau wo</span> etwas passieren soll.
                         </p>
                     </div>
-                    <div className="w-full max-w-4xl px-6">
-                        <div className="aspect-video rounded-3xl overflow-hidden shadow-[0_0_150px_rgba(255,255,255,0.05)] border border-zinc-800 bg-zinc-900 group">
-                            <img
-                                src="/about/usp-prompting.png"
-                                alt="Visual Prompting"
-                                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
-                            />
+                    <div className="w-full max-w-5xl px-6 relative group">
+                        <div className="absolute inset-0 bg-white/5 blur-[150px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                        <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl border border-zinc-900 bg-zinc-900/50 relative">
+                            {/* Abstract Visualization of Annotations */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="relative w-full h-full cursor-crosshair">
+                                    {/* Mock Annotation Markers */}
+                                    <div className="absolute top-[20%] left-[30%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded font-mono text-[11px] whitespace-nowrap text-white">"Sessel austauschen"</div>
+                                    </div>
+                                    <div className="absolute bottom-[25%] right-[20%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded font-mono text-[11px] whitespace-nowrap text-white">"Lichtquelle hinzufügen"</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
                 {/* Cinematic Quote Section */}
                 <section className="py-60 bg-zinc-950 relative overflow-hidden text-center">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-30 blur-[100px] pointer-events-none">
-                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full animate-pulse" />
-                        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full animate-pulse delay-1000" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full opacity-10 blur-[120px] pointer-events-none">
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-600 rounded-full animate-pulse" />
+                        <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-zinc-700 rounded-full animate-pulse delay-1000" />
                     </div>
                     <div className="max-w-4xl mx-auto px-6 relative z-10">
-                        <blockquote className="text-4xl sm:text-6xl font-medium tracking-tight text-white leading-[1.1] italic">
+                        <blockquote className="text-5xl sm:text-7xl font-medium tracking-tight text-white leading-[1] italic">
                             "Hinter jedem Bild steckt eine Geschichte, die darauf wartet, erzählt zu werden."
                         </blockquote>
-                        <footer className="mt-12 text-zinc-500 font-mono tracking-widest uppercase text-sm">
+                        <footer className="mt-12 text-zinc-600 font-mono tracking-widest uppercase text-sm">
                             — Michael Pzillas, Founder
                         </footer>
                     </div>
