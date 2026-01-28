@@ -76,7 +76,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <div className="relative order-1 lg:order-2">
                             <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(249,115,22,0.1)] border border-zinc-800/50 bg-zinc-900 group">
                                 <img
-                                    src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_0_1769643498884.png"
+                                    src="/about/usp-canvas.png"
                                     alt="Parallel Workflow"
                                     className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
                                 />
@@ -91,7 +91,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <div className="relative">
                             <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.05)] border border-zinc-800/50 bg-zinc-900 group">
                                 <img
-                                    src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_1_1769643498884.png"
+                                    src="/about/usp-presets.png"
                                     alt="Templates and Variables"
                                     className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
                                 />
@@ -122,7 +122,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     <div className="w-full max-w-4xl px-6">
                         <div className="aspect-video rounded-3xl overflow-hidden shadow-[0_0_150px_rgba(255,255,255,0.05)] border border-zinc-800 bg-zinc-900 group">
                             <img
-                                src="/Users/michaelpzillas/.gemini/antigravity/brain/0474a27b-3ed7-4a0a-9c6c-ad28a97a0666/uploaded_media_2_1769643498884.png"
+                                src="/about/usp-prompting.png"
                                 alt="Visual Prompting"
                                 className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000"
                             />
