@@ -86,21 +86,35 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     const [isHighRes, setIsHighRes] = useState(!!src && (!thumbSrc || !path));
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
+    const lastSrc = useRef(src);
     const hasNotifiedLoad = useRef(false);
 
     // Sync state if props change (e.g. after generation completes or when swapping images)
     useEffect(() => {
-        if (path !== lastPath.current || (src && src !== currentSrc)) {
-            setIsLoaded(false);
+        const pathChanged = path !== lastPath.current;
+        const srcChanged = src !== lastSrc.current;
+
+        if (pathChanged || srcChanged) {
+            // Only hide the image if the path actually changed (major swap)
+            // If just the src changed (e.g. upload skeleton -> real data), keep it visible
+            if (pathChanged) {
+                setIsLoaded(false);
+            }
 
             // If selected and no storage path yet (initial upload), prioritize high-res src
             const initialSrc = (!path && isSelected && src) ? src : (maskSrc || thumbSrc || src || null);
-            setCurrentSrc(initialSrc);
+
+            // Avoid setting state if nothing changed to prevent extra cycles
+            if (initialSrc !== currentSrc) {
+                setCurrentSrc(initialSrc);
+            }
+
             setIsHighRes(!!src && (!thumbSrc || !path || (isSelected && !path)));
             lastPath.current = path;
+            lastSrc.current = src;
             hasNotifiedLoad.current = false;
         }
-    }, [path, src, maskSrc, thumbSrc, currentSrc, isSelected]);
+    }, [path, src, maskSrc, thumbSrc, isSelected]);
 
     useEffect(() => {
         if (maskSrc) {
@@ -318,7 +332,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {image.isGenerating && (
+                {image.isGenerating && (image.generationStartTime || image.quality) && (
                     <ProcessingOverlay
                         startTime={image.generationStartTime}
                         duration={image.estimatedDuration || getDurationForQuality(image.quality)}
