@@ -126,8 +126,17 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 filter: `id=eq.${user.id}`
             }, (payload) => {
                 if (payload.new && typeof payload.new.credits === 'number') {
-                    setCredits(payload.new.credits);
+                    const oldCredits = credits;
+                    const newCredits = payload.new.credits;
+
+                    setCredits(newCredits);
                     setUserProfile(payload.new);
+
+                    // Show toast if credits increased (payment received)
+                    if (newCredits > oldCredits) {
+                        const amount = (newCredits - oldCredits).toFixed(2);
+                        showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                    }
                 }
             })
             .subscribe();
@@ -135,7 +144,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user, isAuthDisabled]);
+    }, [user, isAuthDisabled, credits, showToast, t]);
 
     // Payment Success Redirect
     useEffect(() => {
