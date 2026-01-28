@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 import { X, Wallet, Loader2, Check } from 'lucide-react';
+import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 
 interface CreditsModalProps {
     isOpen: boolean;
@@ -22,6 +23,9 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
     const [showMinError, setShowMinError] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Animate the balance counter
+    const animatedBalance = useAnimatedCounter(currentBalance ?? 0, 800);
 
     const handleAddFundsConfirm = async () => {
         const finalAmount = parseFloat(customAmount);
@@ -65,8 +69,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                 <div className="p-8 flex flex-col gap-8">
                     <div className="text-center space-y-2">
                         <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{t('current_balance') || 'Aktuelles Guthaben'}</span>
-                        <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
-                            {(currentBalance ?? 0).toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
+                        <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
+                            {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                         </div>
                     </div>
 
