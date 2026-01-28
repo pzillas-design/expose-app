@@ -92,12 +92,15 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     useEffect(() => {
         if (path !== lastPath.current || (src && src !== currentSrc)) {
             setIsLoaded(false);
-            setCurrentSrc(maskSrc || thumbSrc || src || null);
-            setIsHighRes(!!src && (!thumbSrc || !path));
+
+            // If selected and no storage path yet (initial upload), prioritize high-res src
+            const initialSrc = (!path && isSelected && src) ? src : (maskSrc || thumbSrc || src || null);
+            setCurrentSrc(initialSrc);
+            setIsHighRes(!!src && (!thumbSrc || !path || (isSelected && !path)));
             lastPath.current = path;
             hasNotifiedLoad.current = false;
         }
-    }, [path, src, maskSrc, thumbSrc, currentSrc]);
+    }, [path, src, maskSrc, thumbSrc, currentSrc, isSelected]);
 
     useEffect(() => {
         if (maskSrc) {
@@ -134,12 +137,16 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             }
         };
 
-        const shouldFetch = !currentSrc || (isSelected && !isHighRes) || (path !== lastPath.current);
+        const shouldFetch = !currentSrc || (isSelected && !isHighRes && !!path) || (path !== lastPath.current && !!path);
 
         if (shouldFetch) {
             const delay = (!currentSrc || path !== lastPath.current) ? 0 : 200;
             const timeout = setTimeout(fetchUrl, delay);
             return () => clearTimeout(timeout);
+        } else if (isSelected && !isHighRes && !path && src) {
+            // Handle initial upload high-res switch
+            setCurrentSrc(src);
+            setIsHighRes(true);
         }
     }, [path, src, maskSrc, isSelected, isHighRes, currentSrc]);
 
