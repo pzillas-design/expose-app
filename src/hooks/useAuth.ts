@@ -113,6 +113,43 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => subscription.unsubscribe();
     }, [isAuthDisabled, fetchProfile]);
 
+    // Refresh credits when tab becomes visible (e.g., returning from Stripe checkout)
+    useEffect(() => {
+        if (isAuthDisabled || !user) return;
+
+        const handleVisibilityChange = async () => {
+            if (!document.hidden) {
+                // Tab became visible - refresh profile to get latest credits
+                try {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile) {
+                        const oldCredits = credits;
+                        const newCredits = profile.credits ?? 0;
+
+                        setCredits(newCredits);
+                        setUserProfile(profile);
+
+                        // Show toast if credits increased
+                        if (newCredits > oldCredits) {
+                            const amount = (newCredits - oldCredits).toFixed(2);
+                            showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to refresh credits:', err);
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isAuthDisabled, user, credits, showToast, t]);
+
     // Real-time Credit Updates
     useEffect(() => {
         if (!user || isAuthDisabled) return;
