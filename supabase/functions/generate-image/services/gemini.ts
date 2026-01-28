@@ -110,10 +110,27 @@ export const generateImage = async (
         systemInstruction: systemInstruction
     });
 
-    const geminiResult = await model.generateContent({
-        contents: [{ parts: parts }],
-        generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
-    });
+    // Implement simple retry for transient 500/503 errors
+    let lastError: any;
+    for (let i = 0; i < 2; i++) {
+        try {
+            const geminiResult = await model.generateContent({
+                contents: [{ parts: parts }],
+                generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
+            });
 
-    return geminiResult.response;
+            return geminiResult.response;
+        } catch (err: any) {
+            lastError = err;
+            const status = err.status || (err.message?.match(/\[(\d+)\]/)?.[1]);
+            if (status === '500' || status === '503' || status === '429' || err.message?.includes('fetch failed')) {
+                console.warn(`Gemini API transient error (${status}), retrying ${i + 1}/2...`);
+                await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+                continue;
+            }
+            throw err;
+        }
+    }
+
+    throw lastError;
 };

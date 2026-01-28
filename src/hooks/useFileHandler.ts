@@ -33,6 +33,35 @@ export const useFileHandler = ({
         let processedCount = 0;
 
         files.forEach(file => {
+            const skeletonId = generateId();
+            const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
+
+            // 1. ADD SKELETON IMMEDIATELY
+            const skeleton: CanvasImage = {
+                id: skeletonId,
+                src: '', // Empty initially
+                storage_path: '',
+                width: 512, // Default square placeholder
+                height: 512,
+                title: baseName,
+                baseName: baseName,
+                version: 1,
+                isGenerating: true, // This triggers the skeleton/shimmer UI
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                boardId: currentBoardId || undefined
+            };
+
+            setRows(prev => [...prev, {
+                id: generateId(),
+                title: baseName,
+                items: [skeleton],
+                createdAt: Date.now()
+            }]);
+
+            newImageIds.push(skeletonId);
+
+            // 2. PROCESS FILE IN BACKGROUND
             const reader = new FileReader();
             reader.onload = (event) => {
                 if (typeof event.target?.result === 'string') {
@@ -42,46 +71,47 @@ export const useFileHandler = ({
                         const targetHeight = 512;
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
-                        const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
-                        const newId = generateId();
 
                         generateThumbnail(event.target!.result as string).then(async (thumbBlob) => {
-                            // Convert Blob to Blob URL for display
                             const thumbSrc = URL.createObjectURL(thumbBlob);
 
-                            const newImage: CanvasImage = {
-                                id: newId,
-                                src: event.target!.result as string,
-                                storage_path: '',
-                                thumbSrc: thumbSrc,
-                                width: w, height: h,
-                                realWidth: img.width, realHeight: img.height,
-                                title: baseName, baseName: baseName,
-                                version: 1, isGenerating: false, originalSrc: event.target!.result as string,
-                                userDraftPrompt: '',
-                                boardId: currentBoardId || undefined,
-                                createdAt: Date.now(),
-                                updatedAt: Date.now()
-                            };
+                            // 3. UPDATE SKELETON WITH REAL DATA
+                            setRows(prev => prev.map(row => ({
+                                ...row,
+                                items: row.items.map(item => item.id === skeletonId ? {
+                                    ...item,
+                                    src: event.target!.result as string,
+                                    thumbSrc: thumbSrc,
+                                    width: w,
+                                    height: h,
+                                    realWidth: img.width,
+                                    realHeight: img.height,
+                                    isGenerating: false, // Turn off shimmering
+                                    originalSrc: event.target!.result as string
+                                } : item)
+                            })));
 
-                            setRows(prev => [...prev, {
-                                id: generateId(),
-                                title: baseName,
-                                items: [newImage],
-                                createdAt: Date.now()
-                            }]);
-
-                            newImageIds.push(newId);
                             processedCount++;
 
                             if (processedCount === files.length) {
                                 selectMultiple(newImageIds);
-                                snapToItem(newId);
+                                snapToItem(skeletonId);
                             }
 
                             if (user && !isAuthDisabled) {
                                 try {
-                                    const result = await imageService.persistImage(newImage, user.id, user.email);
+                                    // Prepare the full object for persistence
+                                    const finalImage: CanvasImage = {
+                                        ...skeleton,
+                                        src: event.target!.result as string,
+                                        thumbSrc: thumbSrc,
+                                        width: w,
+                                        height: h,
+                                        realWidth: img.width,
+                                        realHeight: img.height,
+                                        isGenerating: false
+                                    };
+                                    const result = await imageService.persistImage(finalImage, user.id, user.email);
                                     if (!result.success) {
                                         const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
                                         showToast(`${t('save_failed')}: ${errorMsg}`, "error");
