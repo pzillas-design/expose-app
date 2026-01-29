@@ -228,6 +228,10 @@ export const useGeneration = ({
 
         // Create the composite Annotation Image (if markings exist)
         const annotations = sourceImage.annotations || [];
+        console.log('[DEBUG] performGeneration - sourceImage.id:', sourceImage.id);
+        console.log('[DEBUG] performGeneration - annotations count:', annotations.length);
+        console.log('[DEBUG] performGeneration - annotations:', JSON.stringify(annotations.map(a => ({ type: a.type, id: a.id }))));
+
         const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
         let annotationImageBase64: string | undefined;
 
@@ -238,6 +242,7 @@ export const useGeneration = ({
                     annotations,
                     { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 }
                 );
+                console.log('[DEBUG] performGeneration - annotationImage created:', !!annotationImageBase64);
             } catch (err) {
                 console.warn("Failed to generate annotation image:", err);
             }
@@ -245,6 +250,8 @@ export const useGeneration = ({
 
         // Prepare structured references
         const refs = annotations.filter(a => a.type === 'reference_image');
+        console.log('[DEBUG] performGeneration - reference images count:', refs.length);
+
         const structuredRefs: StructuredReference[] = refs.map(ann => ({
             src: ann.referenceImage!,
             instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
@@ -258,6 +265,12 @@ export const useGeneration = ({
             annotationImage: annotationImageBase64,
             references: structuredRefs
         };
+
+        console.log('[DEBUG] performGeneration - structuredRequest:', {
+            hasAnnotationImage: !!annotationImageBase64,
+            referencesCount: structuredRefs.length,
+            promptLength: prompt.length
+        });
 
         const row = rows[rowIndex];
         const siblings = row.items.filter(i => i && (i.baseName || i.title || '').startsWith(baseName));
@@ -297,7 +310,7 @@ export const useGeneration = ({
             maskSrc: undefined,
             thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
             src: sourceImage.src, // Explicitly preserve source for blurry preview
-            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references
+            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references for new image
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
             userDraftPrompt: '', // Clean prompt field

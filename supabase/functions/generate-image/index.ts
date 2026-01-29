@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
                 type: 'reference_image',
                 referenceImage: r.src,
                 text: r.instruction || ''
-            }))) : (sourceImage?.annotations ? JSON.stringify(sourceImage.annotations.filter((a: any) => a.type === 'reference_image')) : '[]'),
+            }))) : (sourceImage?.annotations ? JSON.stringify(sourceImage.annotations) : '[]'),
             generation_params: { quality: qualityMode }
         };
 
