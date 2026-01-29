@@ -37,12 +37,12 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Image grid configuration: Preserve original counts and add 45.jpg
+    // Image grid configuration: Removed 23.jpg and 43.jpg
     const imageRows = [
         ['11.jpg', '12.jpg', '13.jpg', '14.jpg'],
-        ['21.jpg', '22.jpg', '23.jpg', '24.jpg'],
+        ['21.jpg', '22.jpg', '24.jpg'],
         ['31.jpg', '32.jpg', '33.jpg'],
-        ['41.jpg', '42.jpg', '43.jpg', '44.jpg', '45.jpg']
+        ['41.jpg', '42.jpg', '44.jpg', '45.jpg']
     ];
 
     return (
@@ -57,7 +57,7 @@ const CanvasMockup = () => {
                             <div
                                 key={imageName}
                                 className={`
-                                    w-24 sm:w-48 lg:w-64 h-auto overflow-hidden
+                                    w-28 sm:w-56 lg:w-80 h-auto overflow-hidden
                                     transition-all duration-[1500ms]
                                 `}
                                 style={{
@@ -206,11 +206,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 {/* USP 1: Iterativ + Parallel (FULL-BLEED REFINED) */}
                 <section className="relative min-h-[120vh] py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-0 items-center relative z-10">
-                        <div className="lg:col-span-7 order-2 lg:order-1 -ml-6 lg:ml-0 lg:-translate-x-12 xl:-translate-x-24">
+                    <div className="w-full flex flex-col lg:flex-row items-center relative z-10">
+                        <div className="w-auto order-2 lg:order-1 flex-none">
                             <CanvasMockup />
                         </div>
-                        <div className="lg:col-span-5 order-1 lg:order-2 px-6 lg:px-20 xl:px-32 flex flex-col justify-center">
+                        <div className="flex-1 order-1 lg:order-2 px-6 lg:px-20 xl:px-40 flex flex-col justify-center">
                             <h2 className="text-6xl sm:text-7xl lg:text-9xl font-bold tracking-tighter text-white mb-8 leading-[0.8]">
                                 <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                             </h2>
