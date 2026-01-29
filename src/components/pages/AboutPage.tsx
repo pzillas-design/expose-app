@@ -50,8 +50,8 @@ const CanvasMockup = () => {
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
                     {row.map((imageName, imgIndex) => {
-                        // Calculate target opacity based on position in row (staggering from 20% up to 100%)
-                        const targetOpacity = Math.max(0.2, 1 - (row.length - 1 - imgIndex) * 0.2);
+                        // Calculate target opacity based on position in row (staggering from 10% up to 100%)
+                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.3);
 
                         return (
                             <div
@@ -65,8 +65,8 @@ const CanvasMockup = () => {
                                     transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
                                     opacity: isVisible ? targetOpacity : 0,
                                     transform: isVisible
-                                        ? 'translateY(0) scale(1)'
-                                        : 'translateY(40px) scale(0.98)'
+                                        ? 'scale(1)'
+                                        : 'scale(0.98)'
                                 }}
                             >
                                 <img
