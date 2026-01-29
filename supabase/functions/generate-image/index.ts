@@ -169,10 +169,6 @@ Deno.serve(async (req) => {
             topP: 0.95,
             topK: 40,
             maxOutputTokens: 8192,
-            // Enable deep thinking for Gemini 3 Pro models to better follow annotations
-            ...(finalModelName === 'gemini-3-pro-image-preview' ? {
-                thinkingLevel: 'HIGH'
-            } : {}),
             imageConfig: {
                 ...(isEditMode ? {} : { aspectRatio: bestRatio }),
                 ...(finalModelName === 'gemini-3-pro-image-preview' ? {
