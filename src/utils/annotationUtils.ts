@@ -30,11 +30,14 @@ export async function generateAnnotationImage(
 
     // 2. Draw Annotations at 100% opacity
     // Draw in order: shapes first, then paths, then stamps (so text is always on top)
+    // ALL annotations are rendered in HIGH-VISIBILITY RED for maximum AI attention
+
+    const ANNOTATION_COLOR = '#FF0000'; // Bright red for maximum visibility
 
     // First: Draw shapes
     for (const ann of annotations) {
         if (ann.type === 'shape' && ann.points && ann.points.length > 0) {
-            ctx.strokeStyle = ann.color || '#ffffff';
+            ctx.strokeStyle = ANNOTATION_COLOR;
             ctx.lineWidth = ann.strokeWidth || 4;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -74,7 +77,7 @@ export async function generateAnnotationImage(
     for (const ann of annotations) {
         if (ann.type === 'mask_path' && ann.points && ann.points.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = ann.color || '#ffffff';
+            ctx.strokeStyle = ANNOTATION_COLOR;
             ctx.lineWidth = ann.strokeWidth || 4;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -97,21 +100,31 @@ export async function generateAnnotationImage(
                 ctx.fillText(ann.emoji, ann.x, ann.y);
             }
 
-            // Draw text label with high contrast (white text with black outline)
+            // Draw text label with white text on red background
             if (ann.text) {
-                const fontSize = 24;
-                const textY = ann.y + (ann.emoji ? 30 : 0); // Position below emoji if present
+                const fontSize = 20;
+                const textY = ann.y + (ann.emoji ? 30 : 0);
 
                 ctx.font = `bold ${fontSize}px sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
 
-                // Black outline for contrast
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 4;
-                ctx.strokeText(ann.text, ann.x, textY);
+                // Measure text for background
+                const metrics = ctx.measureText(ann.text);
+                const padding = 8;
+                const bgWidth = metrics.width + padding * 2;
+                const bgHeight = fontSize + padding * 2;
 
-                // White fill
+                // Draw red background
+                ctx.fillStyle = ANNOTATION_COLOR;
+                ctx.fillRect(
+                    ann.x - bgWidth / 2,
+                    textY - bgHeight / 2,
+                    bgWidth,
+                    bgHeight
+                );
+
+                // Draw white text
                 ctx.fillStyle = '#ffffff';
                 ctx.fillText(ann.text, ann.x, textY);
             }
@@ -123,17 +136,27 @@ export async function generateAnnotationImage(
             const centerX = ann.points.reduce((sum, p) => sum + p.x, 0) / ann.points.length;
             const centerY = ann.points.reduce((sum, p) => sum + p.y, 0) / ann.points.length;
 
-            const fontSize = 24;
+            const fontSize = 20;
             ctx.font = `bold ${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
-            // Black outline for contrast
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 4;
-            ctx.strokeText(ann.text, centerX, centerY);
+            // Measure text for background
+            const metrics = ctx.measureText(ann.text);
+            const padding = 8;
+            const bgWidth = metrics.width + padding * 2;
+            const bgHeight = fontSize + padding * 2;
 
-            // White fill
+            // Draw red background
+            ctx.fillStyle = ANNOTATION_COLOR;
+            ctx.fillRect(
+                centerX - bgWidth / 2,
+                centerY - bgHeight / 2,
+                bgWidth,
+                bgHeight
+            );
+
+            // Draw white text
             ctx.fillStyle = '#ffffff';
             ctx.fillText(ann.text, centerX, centerY);
         }
