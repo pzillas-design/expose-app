@@ -27,7 +27,7 @@ const CanvasMockup = () => {
                     setIsVisible(true);
                 }
             },
-            { threshold: 0.2 }
+            { threshold: 0.1 }
         );
 
         if (containerRef.current) {
@@ -49,28 +49,33 @@ const CanvasMockup = () => {
         <div ref={containerRef} className="w-full flex flex-col gap-3 sm:gap-6">
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
-                    {row.map((imageName, imgIndex) => (
-                        <div
-                            key={imageName}
-                            className={`
-                                w-24 sm:w-48 lg:w-64 aspect-[4/5] overflow-hidden
-                                transition-all duration-[1200ms]
-                                ${isVisible
-                                    ? 'opacity-100 translate-y-0 scale-100 blur-0'
-                                    : 'opacity-0 translate-y-12 scale-95 blur-sm'}
-                            `}
-                            style={{
-                                transitionDelay: `${(rowIndex * 150) + (imgIndex * 100)}ms`,
-                                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
-                            }}
-                        >
-                            <img
-                                src={`/about/iterativ arbeiten img/${imageName}`}
-                                alt={`Canvas example ${imageName}`}
-                                className="w-full h-full object-cover block border-0 outline-none"
-                            />
-                        </div>
-                    ))}
+                    {row.map((imageName, imgIndex) => {
+                        const targetOpacity = 1 - (row.length - 1 - imgIndex) * 0.1;
+
+                        return (
+                            <div
+                                key={imageName}
+                                className={`
+                                    w-24 sm:w-48 lg:w-64 aspect-[4/5] overflow-hidden
+                                    transition-all duration-[1500ms]
+                                `}
+                                style={{
+                                    transitionDelay: `${(imgIndex * 180) + (rowIndex * 40)}ms`,
+                                    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                                    opacity: isVisible ? targetOpacity : 0,
+                                    transform: isVisible
+                                        ? 'translateY(0) scale(1)'
+                                        : 'translateY(40px) scale(0.98)'
+                                }}
+                            >
+                                <img
+                                    src={`/about/iterativ arbeiten img/${imageName}`}
+                                    alt={`Canvas example ${imageName}`}
+                                    className="w-full h-full object-cover block border-0 outline-none"
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
             ))}
         </div>
