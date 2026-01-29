@@ -46,7 +46,7 @@ const CanvasMockup = () => {
     ];
 
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-3 sm:gap-6">
+        <div ref={containerRef} className="w-full flex flex-col gap-6 sm:gap-12">
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
                     {row.map((imageName, imgIndex) => {
