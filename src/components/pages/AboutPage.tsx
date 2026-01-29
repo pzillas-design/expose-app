@@ -56,7 +56,7 @@ const CanvasMockup = () => {
                             <div
                                 key={imageName}
                                 className={`
-                                    w-24 sm:w-48 lg:w-64 aspect-[4/5] overflow-hidden
+                                    w-24 sm:w-48 lg:w-64 h-auto overflow-hidden
                                     transition-all duration-[1500ms]
                                 `}
                                 style={{
@@ -71,7 +71,7 @@ const CanvasMockup = () => {
                                 <img
                                     src={`/about/iterativ arbeiten img/${imageName}`}
                                     alt={`Canvas example ${imageName}`}
-                                    className="w-full h-full object-cover block border-0 outline-none"
+                                    className="w-full h-auto block border-0 outline-none"
                                 />
                             </div>
                         );
