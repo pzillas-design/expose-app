@@ -17,42 +17,59 @@ interface AboutPageProps {
 // --- Mockup Components ---
 
 const CanvasMockup = () => {
-    const rowConfigs = [3, 5, 2, 4, 3, 6, 4]; // 7 rows with varying counts
+    const [isVisible, setIsVisible] = useState(false);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                }
+            },
+            { threshold: 0.2 }
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    // Image grid configuration: [row1: 4 images, row2: 4 images, row3: 3 images, row4: 4 images]
+    const imageRows = [
+        ['11.jpg', '12.jpg', '13.jpg', '14.jpg'],
+        ['21.jpg', '22.jpg', '23.jpg', '24.jpg'],
+        ['31.jpg', '32.jpg', '33.jpg'],
+        ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
+    ];
 
     return (
-        <div className="w-full flex flex-col gap-4 p-8 bg-zinc-950 rounded-3xl border border-zinc-900 shadow-2xl overflow-hidden group">
-            {rowConfigs.map((count, i) => (
-                <div
-                    key={i}
-                    className="flex gap-4 animate-in fade-in slide-in-from-left duration-1000"
-                    style={{ animationDelay: `${i * 150}ms`, animationFillMode: 'both' }}
-                >
-                    {Array.from({ length: count }).map((_, j) => (
+        <div ref={containerRef} className="w-full flex flex-col gap-3">
+            {imageRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex gap-3">
+                    {row.map((imageName, imgIndex) => (
                         <div
-                            key={j}
+                            key={imageName}
                             className={`
-                                h-16 sm:h-24 rounded-lg bg-zinc-900 border border-zinc-800/50 flex-none
-                                ${j === count - 1 ? 'w-48 sm:w-64 bg-zinc-800/20' : 'w-24 sm:w-32'}
-                                hover:border-orange-500/50 transition-all duration-300
-                                relative overflow-hidden
+                                flex-1 aspect-square overflow-hidden
+                                transition-all duration-700 ease-out
+                                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
                             `}
+                            style={{
+                                transitionDelay: `${(rowIndex * row.length + imgIndex) * 80}ms`
+                            }}
                         >
-                            {/* Animated progress bar for "generating" state */}
-                            {(i + j) % 3 === 0 && (
-                                <div className="absolute bottom-0 left-0 h-1 bg-orange-500/30 w-full overflow-hidden">
-                                    <div className="h-full bg-orange-500 w-1/3 animate-[progress_2s_infinite_linear]" />
-                                </div>
-                            )}
+                            <img
+                                src={`/about/iterativ arbeiten img/${imageName}`}
+                                alt={`Canvas example ${imageName}`}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     ))}
                 </div>
             ))}
-            <style>{`
-                @keyframes progress {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(300%); }
-                }
-            `}</style>
         </div>
     );
 };
@@ -180,21 +197,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 {/* USP 1: Iterativ + Parallel (FULLSCREEN CODE MOCKUP) */}
                 <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-                    <div className="w-full h-full absolute inset-0 opacity-10 blur-3xl pointer-events-none">
-                        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-orange-600 rounded-full" />
-                    </div>
-
-                    <div className="max-w-[1700px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
-                        <div className="lg:col-span-4 order-2 lg:order-1">
-                            <h2 className="text-6xl sm:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.9]">
+                    <div className="max-w-[1800px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-20 items-center relative z-10">
+                        <div className="order-2 lg:order-1">
+                            <CanvasMockup />
+                        </div>
+                        <div className="order-1 lg:order-2 flex flex-col justify-center">
+                            <h2 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.85]">
                                 <span className="text-orange-500">Iterativ</span> + parallel arbeiten.
                             </h2>
-                            <p className="text-zinc-500 text-xl leading-relaxed max-w-sm">
+                            <p className="text-zinc-400 text-xl lg:text-2xl leading-relaxed max-w-lg">
                                 Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
                             </p>
-                        </div>
-                        <div className="lg:col-span-8 order-1 lg:order-2">
-                            <CanvasMockup />
                         </div>
                     </div>
                 </section>
