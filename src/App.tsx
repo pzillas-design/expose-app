@@ -27,6 +27,7 @@ const AboutPage0 = React.lazy(() => import('@/components/pages/AboutPage0').then
 const AboutPage1 = React.lazy(() => import('@/components/pages/AboutPage1').then(m => ({ default: m.AboutPage })));
 const AboutPage2 = React.lazy(() => import('@/components/pages/AboutPage2').then(m => ({ default: m.AboutPage })));
 const AboutPage3 = React.lazy(() => import('@/components/pages/AboutPage3').then(m => ({ default: m.AboutPage })));
+const AboutPage4 = React.lazy(() => import('@/components/pages/AboutPage4').then(m => ({ default: m.AboutPage })));
 const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
 const DatenschutzPage = React.lazy(() => import('@/components/pages/DatenschutzPage').then(m => ({ default: m.DatenschutzPage })));
@@ -792,6 +793,11 @@ export function App() {
             <Route path="/about-3" element={
                 <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
                     <AboutPage3 user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                </Suspense>
+            } />
+            <Route path="/about-4" element={
+                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                    <AboutPage4 user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
                 </Suspense>
             } />
             <Route path="/contact" element={
