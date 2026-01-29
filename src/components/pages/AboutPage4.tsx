@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { AboutVersionSwitcher } from './AboutVersionSwitcher';
-import { ArrowRight, Cpu, Layout, Maximize2 } from 'lucide-react';
+import { ArrowRight, Cpu, Zap, Maximize2, Crosshair, Sparkles } from 'lucide-react';
 
 interface AboutPageProps {
     user: any;
@@ -13,16 +13,57 @@ interface AboutPageProps {
     t: TranslationFunction;
 }
 
-const CinematicSection = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-    <section className={`relative h-screen w-full overflow-hidden flex items-center justify-center ${className}`}>
+// --- Interaction Components ---
+
+const FloatingElement = ({ children, depth, x, y, opacity, blur = 0 }: { children: React.ReactNode, depth: number, x: string, y: string, opacity: number, blur?: number }) => (
+    <div
+        className="absolute transition-all duration-1000 ease-out preserve-3d"
+        style={{
+            left: x,
+            top: y,
+            transform: `translateZ(${depth}px)`,
+            zIndex: Math.floor(depth) + 1000,
+            opacity: opacity,
+            filter: blur > 0 ? `blur(${blur}px)` : 'none'
+        }}
+    >
         {children}
-    </section>
+    </div>
 );
+
+const ParticleField = ({ count = 20 }: { count?: number }) => {
+    const particles = useMemo(() => {
+        return Array.from({ length: count }).map((_, i) => ({
+            id: i,
+            x: `${Math.random() * 100}%`,
+            y: `${Math.random() * 100}%`,
+            z: Math.random() * -1000,
+            size: Math.random() * 4 + 1
+        }));
+    }, [count]);
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden preserve-3d">
+            {particles.map(p => (
+                <div
+                    key={p.id}
+                    className="absolute bg-white rounded-full opacity-20"
+                    style={{
+                        left: p.x,
+                        top: p.y,
+                        width: p.size,
+                        height: p.size,
+                        transform: `translateZ(${p.z}px)`
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrollY, setScrollY] = useState(0);
     const [scrolled, setScrolled] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -38,197 +79,223 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
         return Math.min(Math.max(p, 0), 1);
     };
 
-    // --- Animation Progressions ---
-    const s1Progress = getProgress(0, 1000); // 0 to 100vh
-    const s2Progress = getProgress(1000, 2500); // 100 to 250vh
-    const s3Progress = getProgress(2500, 4500); // 250 to 450vh
-    const s4Progress = getProgress(4500, 6000); // 450 to 600vh
+    // --- Section 1: THE REFINED DIVE (0 - 2500) ---
+    const s1Alpha = 1 - getProgress(1800, 2300);
+    const diveDepth = scrollY * 1.4;
+
+    // --- Section 2: DUAL-TRACK HORIZON (2500 - 5500) ---
+    const s2Alpha = getProgress(2300, 2800) * (1 - getProgress(5000, 5500));
+    const track1X = (getProgress(2800, 5000) * -120); // Top row moves left
+    const track2X = (getProgress(2800, 5000) * 80) - 80; // Bottom row moves right
+
+    // --- Section 3: PRECISION MAGNIFIER (5500 - 8500) ---
+    const s3Alpha = getProgress(5300, 5800) * (1 - getProgress(8000, 8500));
+    const magnifierPos = getProgress(5800, 8000) * 100;
+
+    // --- Section 4: KINETIC STORY (8500 - 11000) ---
+    const s4Alpha = getProgress(8300, 8800);
+    const quoteProgress = getProgress(8800, 10500);
 
     return (
-        <div className="bg-black text-white min-h-[700vh] flex flex-col selection:bg-orange-500 selection:text-white font-sans">
-            <div className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-black/80 backdrop-blur-2xl border-b border-white/5' : 'bg-transparent'}`}>
+        <div className="bg-[#050505] text-white min-h-[11000vh] flex flex-col selection:bg-orange-500 selection:text-white font-sans overflow-x-hidden">
+            <div className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 ${scrolled ? 'bg-black/90 backdrop-blur-2xl border-b border-white/5' : 'bg-transparent'}`}>
                 <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
             </div>
 
             <AboutVersionSwitcher activeId="4" />
 
-            <main className="w-full">
+            <main className="fixed inset-0 overflow-hidden">
 
-                {/* SECTION 1: THE GLASS HERO (Creation Reimagined) */}
-                <CinematicSection className="sticky top-0 z-10">
-                    <div className="absolute inset-0 bg-black">
-                        <img
-                            src="/about/iterativ arbeiten img/41.jpg"
-                            className="w-full h-full object-cover transition-all duration-1000"
-                            style={{
-                                opacity: 0.4 + s1Progress * 0.4,
-                                filter: `blur(${(1 - s1Progress) * 40}px)`,
-                                transform: `scale(${1.2 - s1Progress * 0.1})`
-                            }}
-                            alt="Background"
-                        />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
+                {/* SECTION 1: THE REFINED DIVE */}
+                {s1Alpha > 0 && (
+                    <div
+                        className="absolute inset-0 flex items-center justify-center transition-opacity pointer-events-none preserve-3d"
+                        style={{
+                            opacity: s1Alpha,
+                            transform: `perspective(1000px) translate3d(0, 0, ${diveDepth}px)`
+                        }}
+                    >
+                        <ParticleField count={40} />
 
-                    <div className="relative z-10 text-center px-10 max-w-7xl mx-auto">
-                        <div
-                            className="transition-all duration-1000 ease-out"
-                            style={{
-                                transform: `translateY(${(1 - s1Progress) * 100}px)`,
-                                opacity: s1Progress * 1.5
-                            }}
-                        >
-                            <h1 className="text-7xl md:text-[14rem] font-black tracking-tighter leading-[0.7] mb-12 italic uppercase drop-shadow-2xl">
-                                Creation <br /> <span className="text-orange-500">Reimagined.</span>
+                        <div className="text-center z-10" style={{ transform: 'translateZ(300px)' }}>
+                            <h1 className="text-8xl md:text-[16rem] font-black tracking-tighter leading-[0.7] drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] italic uppercase">
+                                Dive<br /><span className="text-orange-500">Deeper.</span>
                             </h1>
-                            <p className="text-xl md:text-3xl font-medium tracking-tight text-white/50 max-w-3xl mx-auto leading-relaxed">
-                                Der Wendepunkt in deinem kreativen Prozess. Visionär, präzise und grenzenlos.
-                            </p>
+                            <p className="mt-8 text-xl md:text-2xl text-white/40 font-medium tracking-[0.2em] uppercase">Der Ursprung deiner Vision</p>
                         </div>
+
+                        {/* Extended Layers */}
+                        <FloatingElement x="15%" y="10%" depth={-200} opacity={1}>
+                            <img src="/about/iterativ arbeiten img/41.jpg" className="w-[300px] h-auto shadow-2xl border border-white/10" alt="Depth 1" />
+                        </FloatingElement>
+                        <FloatingElement x="75%" y="60%" depth={-500} opacity={0.8}>
+                            <img src="/about/iterativ arbeiten img/11.jpg" className="w-[450px] h-auto shadow-2xl border border-white/10" alt="Depth 2" />
+                        </FloatingElement>
+                        <FloatingElement x="5%" y="40%" depth={-900} opacity={0.6} blur={2}>
+                            <img src="/about/iterativ arbeiten img/21.jpg" className="w-[500px] h-auto shadow-2xl border border-white/10" alt="Depth 3" />
+                        </FloatingElement>
+                        <FloatingElement x="65%" y="15%" depth={-1400} opacity={0.4} blur={4}>
+                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-[400px] h-auto shadow-2xl border border-white/10" alt="Depth 4" />
+                        </FloatingElement>
                     </div>
+                )}
 
-                    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30 animate-bounce">
-                        <div className="text-[10px] font-mono tracking-[0.4em] uppercase">Eintauchen</div>
-                        <div className="w-px h-12 bg-white" />
-                    </div>
-                </CinematicSection>
+                {/* SECTION 2: DUAL-TRACK HORIZON */}
+                {s2Alpha > 0 && (
+                    <div
+                        className="absolute inset-0 flex flex-col justify-center gap-12 transition-opacity"
+                        style={{ opacity: s2Alpha }}
+                    >
+                        <div className="absolute top-20 left-20 z-30 transition-all duration-700" style={{ transform: `translateX(${(1 - s2Alpha) * -50}px)`, opacity: s2Alpha }}>
+                            <h2 className="text-6xl md:text-9xl font-black italic tracking-tighter leading-[0.8] uppercase">
+                                Iterativ <br /> <span className="text-orange-500">+ Parallel.</span>
+                            </h2>
+                        </div>
 
-                <div className="h-[100vh]" /> {/* Gap for Section 1 Scroll */}
-
-                {/* SECTION 2: THE EXPANDING CANVAS (Iterativ + parallel) */}
-                <CinematicSection className="sticky top-0 z-20 bg-zinc-950">
-                    <div className="absolute inset-0 flex items-center justify-center p-20 overflow-hidden">
-                        {/* Central Large Image */}
+                        {/* Track 1: Moving Left */}
                         <div
-                            className="relative w-full max-w-5xl aspect-video rounded-3xl overflow-hidden shadow-2xl transition-transform duration-1000"
-                            style={{
-                                transform: `scale(${0.8 + s2Progress * 0.4})`,
-                                opacity: getProgress(1000, 1300)
-                            }}
+                            className="flex gap-8 px-20 transition-transform duration-300 ease-out"
+                            style={{ transform: `translateX(${track1X}vw)` }}
                         >
-                            <img src="/about/iterativ arbeiten img/11.jpg" className="w-full h-full object-cover" alt="Focus" />
-                            <div className="absolute inset-0 bg-black/20" />
+                            {['41.jpg', '42.jpg', '44.jpg', '45.jpg', '11.jpg'].map((img, i) => (
+                                <div key={i} className="min-w-[450px] aspect-video bg-white/5 rounded-3xl overflow-hidden border border-white/10 shadow-2xl group flex-shrink-0">
+                                    <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Variant" />
+                                    <div className="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Floating Parallel Elements */}
-                        <div className="absolute inset-0 pointer-events-none">
-                            {[13, 14, 21, 24].map((id, i) => (
-                                <div
-                                    key={id}
-                                    className="absolute w-64 h-auto rounded-2xl shadow-2xl overflow-hidden transition-all duration-1000 border border-white/5"
-                                    style={{
-                                        left: `${15 + i * 20}%`,
-                                        top: `${20 + (i % 2) * 40}%`,
-                                        transform: `translateY(${(1 - s2Progress) * (100 + i * 50)}px) rotate(${(1 - s2Progress) * 10}deg)`,
-                                        opacity: s2Progress
-                                    }}
-                                >
-                                    <img src={`/about/iterativ arbeiten img/${id}.jpg`} className="w-full h-auto" alt="Parallel" />
+                        {/* Track 2: Moving Right */}
+                        <div
+                            className="flex gap-8 px-20 transition-transform duration-300 ease-out"
+                            style={{ transform: `translateX(${track2X}vw)` }}
+                        >
+                            {['13.jpg', '14.jpg', '21.jpg', '24.jpg', '31.jpg'].map((img, i) => (
+                                <div key={i} className="min-w-[450px] aspect-video bg-white/5 rounded-3xl overflow-hidden border border-white/10 shadow-2xl group flex-shrink-0">
+                                    <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Variant" />
+                                    <div className="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
                             ))}
                         </div>
                     </div>
+                )}
 
-                    <div className="absolute bottom-40 left-0 w-full px-20 flex justify-between items-end z-30">
-                        <div
-                            className="max-w-xl transition-all duration-700"
-                            style={{ transform: `translateY(${(1 - s2Progress) * 50}px)`, opacity: s2Progress }}
-                        >
-                            <h2 className="text-6xl md:text-9xl font-black tracking-tighter leading-none italic uppercase mb-8">
-                                <span className="text-orange-500">Parallel</span> <br />arbeiten.
-                            </h2>
-                            <p className="text-lg md:text-2xl text-zinc-400 font-medium">
-                                Varianten in Echtzeit vergleichen. Werde zum Regisseur deines eigenen digitalen Ateliers.
-                            </p>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="w-20 h-2 bg-orange-500 rounded-full" />
-                            <div className="w-32 h-2 bg-zinc-800 rounded-full" />
-                        </div>
-                    </div>
-                </CinematicSection>
+                {/* SECTION 3: PRECISION GLASS HUD */}
+                {s3Alpha > 0 && (
+                    <div
+                        className="absolute inset-0 flex items-center justify-center transition-opacity p-10"
+                        style={{ opacity: s3Alpha }}
+                    >
+                        <div className="relative w-full max-w-7xl h-[75vh] bg-zinc-900 rounded-[3rem] overflow-hidden shadow-[0_0_100px_rgba(249,115,22,0.1)] border border-white/5 flex">
 
-                <div className="h-[150vh]" /> {/* Gap for Section 2 Scroll */}
-
-                {/* SECTION 3: THE BLUEPRINT REVEAL (Präzise Steuerung) */}
-                <CinematicSection className="sticky top-0 z-30 bg-black">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="relative w-[90vw] h-[80vh] rounded-[4rem] overflow-hidden border border-white/10 group">
-                            {/* The Real Image */}
-                            <img src="/about/iterativ arbeiten img/41.jpg" className="w-full h-full object-cover" alt="Result" />
-
-                            {/* The Blueprint/Technical Reveal */}
-                            <div
-                                className="absolute inset-0 overflow-hidden"
-                                style={{
-                                    clipPath: `inset(0 0 ${(1 - s3Progress) * 100}% 0)`,
-                                    transition: 'clip-path 0.1s linear'
-                                }}
-                            >
-                                <div className="absolute inset-0 bg-[#0a0a0a] flex flex-col items-center justify-center p-20 border-t-2 border-orange-500">
-                                    <div className="absolute top-10 left-10 text-[10px] font-mono tracking-widest text-orange-500/50">SYSTEM_REVEAL // PRECISION_V5</div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-20 w-full max-w-6xl">
-                                        <div className="space-y-12">
-                                            <h2 className="text-6xl md:text-9xl font-black tracking-tighter leading-none italic uppercase">
-                                                Präzise <br /><span className="text-orange-500">Steuerung.</span>
-                                            </h2>
-                                            <p className="text-lg md:text-2xl text-zinc-500 leading-relaxed max-w-lg">
-                                                Variablen, Presets und logische Strukturen. Wir bringen Ordnung in das Chaos der Möglichkeiten.
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-col justify-center space-y-6">
-                                            {[1, 2, 3, 4].map(i => (
-                                                <div key={i} className="group p-8 rounded-3xl bg-white/5 border border-white/10 flex items-center gap-8 hover:bg-white/10 transition-all">
-                                                    <div className="w-16 h-16 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-500">
-                                                        <Cpu className="w-8 h-8" />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <div className="text-[10px] font-mono text-zinc-500 mb-1 tracking-widest">CONTROL_NODE_0{i}</div>
-                                                        <div className="text-xl font-bold">Variable Optimization</div>
-                                                    </div>
-                                                    <div className="text-orange-500 font-mono">100%</div>
-                                                </div>
-                                            ))}
-                                        </div>
+                            {/* Left Text Block */}
+                            <div className="flex-1 p-20 flex flex-col justify-center space-y-12 z-10">
+                                <div className="space-y-4">
+                                    <div className="text-[10px] font-mono tracking-widest text-orange-500 flex items-center gap-2">
+                                        <Crosshair className="w-3 h-3" /> PRECISION_SYSTEM_ANALYSIS
                                     </div>
-                                    <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f97316 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                                    <h2 className="text-6xl md:text-8xl font-black italic tracking-tighter leading-none uppercase">
+                                        Präzise <br /> <span className="text-orange-500">Steuerung.</span>
+                                    </h2>
+                                </div>
+                                <p className="text-xl text-zinc-500 max-w-md leading-relaxed">
+                                    Variablen und Presets geben Ihnen die Kontrolle zurück. Wir strukturieren den kreativen Workflow in messbare Qualität.
+                                </p>
+                                <div className="flex flex-wrap gap-4">
+                                    {['STIL', 'LICHT', 'FARBE', 'TEXTUREN'].map(tag => (
+                                        <div key={tag} className="px-5 py-2 rounded-full border border-white/10 bg-white/5 text-[10px] font-mono tracking-widest text-zinc-400">{tag}</div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right Image Block with Magnifier */}
+                            <div className="flex-1 relative overflow-hidden bg-black">
+                                <img src="/about/iterativ arbeiten img/41.jpg" className="w-full h-full object-cover opacity-60" alt="Base" />
+
+                                {/* Magnifier HUD */}
+                                <div
+                                    className="absolute inset-0 transition-all duration-200 pointer-events-none"
+                                    style={{
+                                        clipPath: `circle(150px at ${magnifierPos}% 50%)`,
+                                        opacity: s3Alpha > 0.5 ? 1 : 0
+                                    }}
+                                >
+                                    <div className="absolute inset-0 bg-black">
+                                        <img
+                                            src="/about/iterativ arbeiten img/41.jpg"
+                                            className="w-full h-full object-cover scale-[1.5]"
+                                            style={{ transform: `translate(${(50 - magnifierPos) * 0.5}%, 0) scale(1.5)` }}
+                                            alt="Zoomed"
+                                        />
+                                        <div className="absolute inset-0 bg-orange-500/10 backdrop-blur-sm mix-blend-overlay" />
+                                    </div>
+                                </div>
+
+                                {/* Magnifier Ring */}
+                                <div
+                                    className="absolute top-1/2 -translate-y-1/2 w-[300px] h-[300px] border-2 border-orange-500 rounded-full shadow-[0_0_50px_rgba(249,115,22,0.5)] z-20 pointer-events-none flex items-center justify-center"
+                                    style={{ left: `calc(${magnifierPos}% - 150px)` }}
+                                >
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 px-3 py-1.5 bg-orange-500 text-black text-[10px] font-mono font-bold tracking-widest clip-path-polygon">
+                                        LENS_ACTIVE
+                                        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-orange-500"></div>
+                                    </div>
+                                    <div className="w-full h-[1px] bg-orange-500/30" />
+                                    <div className="h-full w-[1px] bg-orange-500/30 absolute" />
+                                    <Sparkles className="w-6 h-6 text-orange-500 animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                                 </div>
                             </div>
                         </div>
                     </div>
-                </CinematicSection>
+                )}
 
-                <div className="h-[200vh]" /> {/* Gap for Section 3 Scroll */}
-
-                {/* SECTION 4: FINAL REVEAL (Narrative CTA) */}
-                <section className="relative h-screen bg-black flex flex-col items-center justify-center overflow-hidden z-40">
-                    <div className="absolute inset-0 bg-orange-500/5 blur-[150px] rounded-full" />
-
-                    <div className="relative z-10 text-center px-10">
-                        <blockquote className="text-4xl md:text-[6vw] font-black tracking-tighter leading-[0.85] mb-20 italic max-w-7xl mx-auto drop-shadow-2xl">
-                            "Hinter jedem Bild steckt eine Geschichte, die darauf wartet, erzählt zu werden."
-                        </blockquote>
-                        <div className="flex flex-col items-center gap-12">
-                            <button
-                                onClick={onCreateBoard}
-                                className="px-16 py-8 bg-white text-black font-black text-2xl italic rounded-full hover:scale-110 transition-all hover:bg-orange-500 hover:text-white shadow-[0_20px_100px_rgba(255,255,255,0.1)] flex items-center gap-4 group"
+                {/* SECTION 4: KINETIC STORY */}
+                {s4Alpha > 0 && (
+                    <div
+                        className="absolute inset-0 flex flex-col items-center justify-center p-20 transition-opacity bg-black"
+                        style={{ opacity: s4Alpha }}
+                    >
+                        <div className="max-w-7xl text-center space-y-12">
+                            <h2
+                                className="text-[6vw] md:text-[8vw] font-black italic tracking-tighter leading-none text-balance transition-all duration-700"
+                                style={{ transform: `scale(${0.9 + quoteProgress * 0.1})`, opacity: quoteProgress }}
                             >
-                                JETZT STARTEN <ArrowRight className="w-8 h-8 group-hover:translate-x-3 transition-transform" />
-                            </button>
-                            <p className="text-zinc-600 font-mono tracking-[0.6em] uppercase text-xs">— MICHAEL PZILLAS, FOUNDER</p>
+                                "Hinter jedem <span className="text-orange-500">Bild</span> steckt eine <span className="text-white/30 italic">Geschichte,</span> die erzählt werden will."
+                            </h2>
+
+                            <div
+                                className="flex flex-col items-center gap-12 transition-all duration-1000 delay-300"
+                                style={{ transform: `translateY(${(1 - quoteProgress) * 100}px)`, opacity: quoteProgress }}
+                            >
+                                <div className="w-1 h-32 bg-gradient-to-b from-orange-500 to-transparent" />
+                                <button
+                                    onClick={onCreateBoard}
+                                    className="group flex items-center gap-6 bg-white text-black px-12 py-6 rounded-full text-xl font-black italic hover:bg-orange-500 hover:text-white transition-all hover:scale-110 shadow-[0_30px_60px_rgba(255,255,255,0.05)]"
+                                >
+                                    CREATION REIMAGINED <ArrowRight className="w-8 h-8 group-hover:translate-x-3 transition-transform" />
+                                </button>
+                                <p className="text-zinc-600 font-mono tracking-[0.6em] uppercase text-xs">— MICHAEL PZILLAS, FOUNDER</p>
+                            </div>
                         </div>
                     </div>
-                </section>
+                )}
+
             </main>
+
+            {/* Navigation Progress Bar */}
+            <div className="fixed bottom-10 left-10 h-1 w-64 bg-white/10 rounded-full overflow-hidden z-[100]">
+                <div
+                    className="h-full bg-orange-500 transition-all duration-300"
+                    style={{ width: `${getProgress(0, 10000) * 100}%` }}
+                />
+                <div className="absolute top-[-20px] left-0 text-[8px] font-mono tracking-widest text-zinc-500">STORY_PROGRESS</div>
+            </div>
 
             <GlobalFooter t={t} />
 
             <style>{`
-                @font-face {
-                    font-family: 'Inter';
-                    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-                }
-                main { font-family: 'Inter', sans-serif; }
+                .preserve-3d { transform-style: preserve-3d; }
+                .clip-path-polygon { clip-path: inset(0 0 -10px 0); }
             `}</style>
         </div>
     );
