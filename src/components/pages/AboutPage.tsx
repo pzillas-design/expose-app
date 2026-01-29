@@ -46,14 +46,14 @@ const CanvasMockup = () => {
     ];
 
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-4">
+        <div ref={containerRef} className="w-full flex flex-col gap-3 sm:gap-6">
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-2 sm:gap-4 items-end">
+                <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
                     {row.map((imageName, imgIndex) => (
                         <div
                             key={imageName}
                             className={`
-                                flex-1 overflow-hidden
+                                w-24 sm:w-48 lg:w-64 aspect-[4/5] overflow-hidden
                                 transition-all duration-[1200ms]
                                 ${isVisible
                                     ? 'opacity-100 translate-y-0 scale-100 blur-0'
@@ -67,7 +67,7 @@ const CanvasMockup = () => {
                             <img
                                 src={`/about/iterativ arbeiten img/${imageName}`}
                                 alt={`Canvas example ${imageName}`}
-                                className="w-full h-auto block border-0 outline-none"
+                                className="w-full h-full object-cover block border-0 outline-none"
                             />
                         </div>
                     ))}
