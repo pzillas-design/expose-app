@@ -37,34 +37,37 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Image grid configuration: [row1: 4 images, row2: 4 images, row3: 3 images, row4: 4 images]
+    // Image grid configuration: Preserve original counts and add 45.jpg
     const imageRows = [
         ['11.jpg', '12.jpg', '13.jpg', '14.jpg'],
         ['21.jpg', '22.jpg', '23.jpg', '24.jpg'],
         ['31.jpg', '32.jpg', '33.jpg'],
-        ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
+        ['41.jpg', '42.jpg', '43.jpg', '44.jpg', '45.jpg']
     ];
 
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-3">
+        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-4">
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-3">
+                <div key={rowIndex} className="flex gap-2 sm:gap-4 items-end">
                     {row.map((imageName, imgIndex) => (
                         <div
                             key={imageName}
                             className={`
-                                flex-1 aspect-square overflow-hidden
-                                transition-all duration-700 ease-out
-                                ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+                                flex-1 overflow-hidden
+                                transition-all duration-[1200ms]
+                                ${isVisible
+                                    ? 'opacity-100 translate-y-0 scale-100 blur-0'
+                                    : 'opacity-0 translate-y-12 scale-95 blur-sm'}
                             `}
                             style={{
-                                transitionDelay: `${(rowIndex * row.length + imgIndex) * 80}ms`
+                                transitionDelay: `${(rowIndex * 150) + (imgIndex * 100)}ms`,
+                                transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)'
                             }}
                         >
                             <img
                                 src={`/about/iterativ arbeiten img/${imageName}`}
                                 alt={`Canvas example ${imageName}`}
-                                className="w-full h-full object-cover"
+                                className="w-full h-auto block border-0 outline-none"
                             />
                         </div>
                     ))}
@@ -195,17 +198,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     </div>
                 </section>
 
-                {/* USP 1: Iterativ + Parallel (FULLSCREEN CODE MOCKUP) */}
-                <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
-                    <div className="max-w-[1800px] mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-20 items-center relative z-10">
-                        <div className="order-2 lg:order-1">
+                {/* USP 1: Iterativ + Parallel (FULL-BLEED REFINED) */}
+                <section className="relative min-h-[120vh] py-32 flex flex-col items-center justify-center bg-zinc-950 overflow-hidden">
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-0 items-center relative z-10">
+                        <div className="lg:col-span-7 order-2 lg:order-1 -ml-6 lg:ml-0 lg:-translate-x-12 xl:-translate-x-24">
                             <CanvasMockup />
                         </div>
-                        <div className="order-1 lg:order-2 flex flex-col justify-center">
-                            <h2 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tighter text-white mb-8 leading-[0.85]">
-                                <span className="text-orange-500">Iterativ</span> + parallel arbeiten.
+                        <div className="lg:col-span-5 order-1 lg:order-2 px-6 lg:px-20 xl:px-32 flex flex-col justify-center">
+                            <h2 className="text-6xl sm:text-7xl lg:text-9xl font-bold tracking-tighter text-white mb-8 leading-[0.8]">
+                                <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                             </h2>
-                            <p className="text-zinc-400 text-xl lg:text-2xl leading-relaxed max-w-lg">
+                            <p className="text-zinc-500 text-xl lg:text-2xl leading-relaxed max-w-lg">
                                 Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
                             </p>
                         </div>
