@@ -22,7 +22,7 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 
 // Code-split Admin Dashboard (only loads for admins)
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
-const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m => ({ default: m.AboutPage })));
+const AboutPage0 = React.lazy(() => import('@/components/pages/AboutPage0').then(m => ({ default: m.AboutPage })));
 const AboutPage1 = React.lazy(() => import('@/components/pages/AboutPage1').then(m => ({ default: m.AboutPage })));
 const AboutPage2 = React.lazy(() => import('@/components/pages/AboutPage2').then(m => ({ default: m.AboutPage })));
 const AboutPage3 = React.lazy(() => import('@/components/pages/AboutPage3').then(m => ({ default: m.AboutPage })));
@@ -770,7 +770,7 @@ export function App() {
         <Routes>
             <Route path="/about" element={
                 <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                    <AboutPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
+                    <AboutPage0 user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
                 </Suspense>
             } />
             <Route path="/about-1" element={
