@@ -37,9 +37,9 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Image grid configuration: Removed 23.jpg and 43.jpg
+    // Image grid configuration: Removed 12.jpg, 23.jpg and 43.jpg
     const imageRows = [
-        ['11.jpg', '12.jpg', '13.jpg', '14.jpg'],
+        ['11.jpg', '13.jpg', '14.jpg'],
         ['21.jpg', '22.jpg', '24.jpg'],
         ['31.jpg', '32.jpg', '33.jpg'],
         ['41.jpg', '42.jpg', '44.jpg', '45.jpg']
