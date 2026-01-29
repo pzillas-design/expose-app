@@ -29,12 +29,53 @@ export async function generateAnnotationImage(
     }
 
     // 2. Draw Annotations at 100% opacity
-    // We group them to draw paths first, then stamps/shapes
+    // Draw in order: shapes first, then paths, then stamps (so text is always on top)
+
+    // First: Draw shapes
+    for (const ann of annotations) {
+        if (ann.type === 'shape' && ann.points && ann.points.length > 0) {
+            ctx.strokeStyle = ann.color || '#ffffff';
+            ctx.lineWidth = ann.strokeWidth || 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (ann.shapeType === 'rect' && ann.points.length >= 2) {
+                // Draw rectangle
+                const minX = Math.min(...ann.points.map(p => p.x));
+                const minY = Math.min(...ann.points.map(p => p.y));
+                const maxX = Math.max(...ann.points.map(p => p.x));
+                const maxY = Math.max(...ann.points.map(p => p.y));
+                ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+            } else if (ann.shapeType === 'circle' && ann.points.length >= 2) {
+                // Draw circle
+                const centerX = (ann.points[0].x + ann.points[1].x) / 2;
+                const centerY = (ann.points[0].y + ann.points[1].y) / 2;
+                const radius = Math.sqrt(
+                    Math.pow(ann.points[1].x - ann.points[0].x, 2) +
+                    Math.pow(ann.points[1].y - ann.points[0].y, 2)
+                ) / 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else {
+                // Draw polygon
+                ctx.beginPath();
+                ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                for (let i = 1; i < ann.points.length; i++) {
+                    ctx.lineTo(ann.points[i].x, ann.points[i].y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+        }
+    }
+
+    // Second: Draw paths (brush strokes)
     for (const ann of annotations) {
         if (ann.type === 'mask_path' && ann.points && ann.points.length > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = ann.color;
-            ctx.lineWidth = ann.strokeWidth;
+            ctx.strokeStyle = ann.color || '#ffffff';
+            ctx.lineWidth = ann.strokeWidth || 4;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.moveTo(ann.points[0].x, ann.points[0].y);
@@ -42,24 +83,59 @@ export async function generateAnnotationImage(
                 ctx.lineTo(ann.points[i].x, ann.points[i].y);
             }
             ctx.stroke();
-        } else if ((ann.type === 'stamp' || ann.type === 'shape') && ann.x !== undefined && ann.y !== undefined) {
-            // Draw Emoji or Shape
+        }
+    }
+
+    // Third: Draw stamps and their text labels (on top)
+    for (const ann of annotations) {
+        if (ann.type === 'stamp' && ann.x !== undefined && ann.y !== undefined) {
+            // Draw Emoji if exists
             if (ann.emoji) {
-                ctx.font = `${ann.width || 32}px serif`;
+                ctx.font = `${ann.width || 48}px serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(ann.emoji, ann.x, ann.y);
             }
 
-            // Draw text label if exists
+            // Draw text label with high contrast (white text with black outline)
             if (ann.text) {
-                ctx.font = 'bold 20px sans-serif';
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 3;
-                ctx.strokeText(ann.text, ann.x, ann.y + (ann.height || 0) / 2 + 20);
-                ctx.fillText(ann.text, ann.x, ann.y + (ann.height || 0) / 2 + 20);
+                const fontSize = 24;
+                const textY = ann.y + (ann.emoji ? 30 : 0); // Position below emoji if present
+
+                ctx.font = `bold ${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Black outline for contrast
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 4;
+                ctx.strokeText(ann.text, ann.x, textY);
+
+                // White fill
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(ann.text, ann.x, textY);
             }
+        }
+
+        // Also draw text labels for shapes
+        if (ann.type === 'shape' && ann.text && ann.points && ann.points.length > 0) {
+            // Calculate center of shape
+            const centerX = ann.points.reduce((sum, p) => sum + p.x, 0) / ann.points.length;
+            const centerY = ann.points.reduce((sum, p) => sum + p.y, 0) / ann.points.length;
+
+            const fontSize = 24;
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Black outline for contrast
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 4;
+            ctx.strokeText(ann.text, centerX, centerY);
+
+            // White fill
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(ann.text, centerX, centerY);
         }
     }
 
