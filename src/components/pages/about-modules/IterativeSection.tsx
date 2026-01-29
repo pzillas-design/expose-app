@@ -8,6 +8,64 @@ interface IterativeProps {
 
 const images = ['41.jpg', '42.jpg', '44.jpg', '45.jpg', '11.jpg', '13.jpg', '14.jpg', '21.jpg'];
 
+const CanvasMockup = ({ isVisible }: { isVisible: boolean }) => {
+    // Exact row configuration from commit 5383817
+    const imageRows = [
+        ['41.jpg', '42.jpg', '44.jpg', '45.jpg'],
+        ['11.jpg', '13.jpg', '14.jpg'],
+        ['21.jpg', '24.jpg'],
+        ['31.jpg', '32.jpg', '33.jpg']
+    ];
+
+    return (
+        <div className="w-full flex flex-col gap-6">
+            {imageRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex gap-6 items-end">
+                    {row.map((imageName, imgIndex) => {
+                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.15);
+                        return (
+                            <div
+                                key={imageName}
+                                className="w-28 sm:w-56 lg:w-80 h-auto overflow-hidden transition-all duration-[1500ms]"
+                                style={{
+                                    transitionDelay: `${(imgIndex * 180) + (rowIndex * 40)}ms`,
+                                    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                                    opacity: isVisible ? targetOpacity : 0,
+                                    transform: isVisible ? 'scale(1)' : 'scale(0.98)'
+                                }}
+                            >
+                                <img
+                                    src={`/about/iterativ arbeiten img/${imageName}`}
+                                    alt={`Iteration ${imageName}`}
+                                    className="w-full h-auto block border-0 rounded-none shadow-xl"
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export const IterativeOriginal = ({ progress }: IterativeProps) => (
+    <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden">
+        <div className="w-full flex flex-col lg:flex-row items-center relative z-10">
+            <div className="w-auto order-2 lg:order-1 flex-none translate-y-10" style={{ opacity: progress }}>
+                <CanvasMockup isVisible={progress > 0.1} />
+            </div>
+            <div className="flex-1 order-1 lg:order-2 px-6 lg:px-20 xl:px-40 flex flex-col justify-center transition-all duration-1000" style={{ opacity: progress, transform: `translateY(${(1 - progress) * 100}px)` }}>
+                <h2 className="text-6xl sm:text-7xl lg:text-9xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-8 leading-[0.8] italic_off">
+                    <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
+                </h2>
+                <p className="text-zinc-400 dark:text-zinc-500 text-xl lg:text-2xl leading-relaxed max-w-lg font-bold tracking-tight">
+                    Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
+                </p>
+            </div>
+        </div>
+    </section>
+);
+
 export const IterativeGrid = ({ progress }: IterativeProps) => (
     <div className="w-full bg-white dark:bg-zinc-950 py-32 px-6">
         <div className="max-w-7xl mx-auto">

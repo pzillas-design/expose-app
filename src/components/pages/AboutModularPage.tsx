@@ -62,7 +62,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
     // Module States
     // Module States (Hero is now locked to Dive)
-    const [iterativeVariant, setIterativeVariant] = useState('Grid');
+    const [iterativeVariant, setIterativeVariant] = useState('Original');
     const [precisionVariant, setPrecisionVariant] = useState('Sidepanel');
     const [finaleVariant, setFinaleVariant] = useState('Simple');
 
@@ -87,13 +87,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     <Hero.HeroDive scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />
                 </section>
 
-                {/* ITERATIVE SECTION */}
+                {/* ITERATIVE SECTION - Optimized for Original/Modern Flow */}
                 <SectionWrapper
                     id="iterative"
                     active={iterativeVariant}
-                    variants={['Modern', 'Cinematic', 'Minimalistic', 'Grid', 'Canvas', 'Horizon', 'Dual-Track']}
+                    variants={['Original', 'Modern', 'Cinematic', 'Minimalistic', 'Grid', 'Canvas', 'Horizon', 'Dual-Track']}
                     onSelect={setIterativeVariant}
                 >
+                    {iterativeVariant === 'Original' && <Iterative.IterativeOriginal scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Modern' && <Iterative.IterativeModern scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Cinematic' && <Iterative.IterativeCinematic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Minimalistic' && <Iterative.IterativeMinimalistic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface HeroProps {
     scrollY: number;
@@ -6,8 +6,53 @@ interface HeroProps {
     t: any;
 }
 
+const FloatingImage = ({ src, depth, x, y, size }: { src: string, depth: number, x: string, y: string, size: string, key?: any }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    return (
+        <div
+            className="absolute transition-all duration-700 ease-out"
+            style={{
+                left: x,
+                top: y,
+                width: size,
+                transform: `translateZ(${depth}px) ${isHovered ? 'scale(1.1)' : 'scale(1)'}`,
+                zIndex: Math.floor(depth)
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="relative group overflow-hidden">
+                <img
+                    src={src}
+                    className="w-full h-auto shadow-2xl transition-all duration-500 rounded-none border border-white/5"
+                    alt="Canvas Element"
+                />
+
+                {/* Subtle Hover Overlay */}
+                <div className={`absolute inset-0 bg-orange-500/10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+
+                {/* Tech Metadata (Visual only) */}
+                <div className={`absolute bottom-4 left-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-none border border-white/10 text-[8px] font-bold text-white/50 tracking-widest uppercase transition-all duration-500 ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                    VAR_0{Math.floor(Math.random() * 9)} // DEPTH: {depth}PX
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const HeroDive = ({ scrollY }: HeroProps) => {
-    const diveDepth = scrollY * 1.5; // Increased slightly for more impact
+    const scrollDepth = scrollY * 0.8; // Adjusted for better dive feel
+
+    const images = [
+        { src: '/about/iterativ arbeiten img/41.jpg', x: '10%', y: '10%', depth: 0, size: '400px' },
+        { src: '/about/iterativ arbeiten img/11.jpg', x: '55%', y: '20%', depth: -300, size: '500px' },
+        { src: '/about/iterativ arbeiten img/21.jpg', x: '25%', y: '45%', depth: -600, size: '350px' },
+        { src: '/about/iterativ arbeiten img/31.jpg', x: '60%', y: '60%', depth: -900, size: '450px' },
+        { src: '/about/iterativ arbeiten img/42.jpg', x: '15%', y: '110%', depth: -1200, size: '600px' },
+        { src: '/about/iterativ arbeiten img/13.jpg', x: '50%', y: '130%', depth: -1500, size: '400px' },
+        { src: '/about/iterativ arbeiten img/24.jpg', x: '20%', y: '160%', depth: -1800, size: '550px' },
+        { src: '/about/iterativ arbeiten img/32.jpg', x: '65%', y: '180%', depth: -2100, size: '300px' },
+    ];
 
     return (
         <div
@@ -16,44 +61,38 @@ export const HeroDive = ({ scrollY }: HeroProps) => {
         >
             <div
                 className="relative flex items-center justify-center preserve-3d w-full h-full transition-transform duration-100 ease-out"
-                style={{ transform: `translate3d(0, 0, ${diveDepth}px)` }}
+                style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
             >
-                {/* Hero Text - Restored Headline & Balanced Size */}
-                <div className="text-center z-10" style={{ transform: 'translateZ(300px)' }}>
-                    <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter uppercase leading-[0.8] drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                        Creation <br /><span className="text-orange-500">Reimagined.</span>
+                {/* Hero Text - Restored from Commit 2450848 */}
+                <div className="text-center z-10" style={{ transform: 'translateZ(200px)' }}>
+                    <h1 className="text-7xl md:text-[10rem] font-bold tracking-tighter uppercase leading-[0.8] mb-12 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        Creation <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
                     </h1>
-                    <p className="mt-6 text-lg md:text-xl text-white/40 font-bold tracking-[0.2em] uppercase">Der Wendepunkt in deinem kreativen Prozess.</p>
+                    <p className="max-w-md mx-auto text-lg md:text-xl text-zinc-500 font-bold tracking-tight uppercase px-6">
+                        Scroll down to dive into the architecture of your next big idea.
+                    </p>
                 </div>
 
-                {/* Floating Images (Exact Initial "Hammer" Layout) */}
+                {/* Floating Images (Full 8-image depth array) */}
                 <div className="absolute inset-0 pointer-events-none preserve-3d">
-                    {/* Layer 1 - Nearest */}
-                    <div className="absolute left-[75%] top-[15%] w-[350px] shadow-[0_30px_60px_rgba(0,0,0,0.8)]" style={{ transform: 'translateZ(-100px)' }}>
-                        <img src="/about/iterativ arbeiten img/41.jpg" className="w-full h-auto rounded-none border border-white/5" alt="Layer 1" />
-                    </div>
-
-                    {/* Layer 2 */}
-                    <div className="absolute left-[5%] top-[55%] w-[500px] shadow-[0_40px_80px_rgba(0,0,0,0.8)]" style={{ transform: 'translateZ(-600px)' }}>
-                        <img src="/about/iterativ arbeiten img/11.jpg" className="w-full h-auto rounded-none border border-white/5" alt="Layer 2" />
-                    </div>
-
-                    {/* Layer 3 */}
-                    <div className="absolute left-[65%] top-[65%] w-[450px] shadow-[0_50px_100px_rgba(0,0,0,0.8)]" style={{ transform: 'translateZ(-1200px)' }}>
-                        <img src="/about/iterativ arbeiten img/21.jpg" className="w-full h-auto rounded-none border border-white/5" alt="Layer 3" />
-                    </div>
-
-                    {/* Layer 4 - Deepest */}
-                    <div className="absolute left-[15%] top-[10%] w-[400px] shadow-[0_60px_120px_rgba(0,0,0,0.8)]" style={{ transform: 'translateZ(-1800px)' }}>
-                        <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-auto rounded-none border border-white/5" alt="Layer 4" />
-                    </div>
+                    {images.map((img, i) => (
+                        <FloatingImage
+                            key={i}
+                            src={img.src}
+                            x={img.x}
+                            y={img.y}
+                            depth={img.depth}
+                            size={img.size}
+                        />
+                    ))}
                 </div>
             </div>
 
-            {/* Scrolling Indicator */}
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/10">
-                <div className="w-[2px] h-20 bg-gradient-to-b from-orange-500 to-transparent mx-auto" />
-                <div className="mt-4 text-[10px] font-black tracking-[0.5em] uppercase text-orange-500/50">Scroll</div>
+            {/* Custom Scroll Indicator */}
+            <div className="fixed top-1/2 right-10 -translate-y-1/2 flex flex-col items-center gap-4 opacity-20 pointer-events-none">
+                <div className="w-px h-32 bg-gradient-to-b from-transparent via-white to-transparent" />
+                <span className="text-[10px] font-bold rotate-90 whitespace-nowrap tracking-[0.3em] uppercase">Scroll to Dive</span>
             </div>
         </div>
     );
