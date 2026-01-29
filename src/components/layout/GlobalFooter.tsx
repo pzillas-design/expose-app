@@ -25,24 +25,6 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                         {t('footer_about') || 'About'}
                     </a>
                     <a
-                        href="/about-1"
-                        className="text-[13px] font-medium text-blue-500 hover:text-blue-700 transition-all duration-300"
-                    >
-                        About 1
-                    </a>
-                    <a
-                        href="/about-2"
-                        className="text-[13px] font-medium text-orange-500 hover:text-orange-700 transition-all duration-300"
-                    >
-                        About 2
-                    </a>
-                    <a
-                        href="/about-3"
-                        className="text-[13px] font-medium text-purple-500 hover:text-purple-700 transition-all duration-300"
-                    >
-                        About 3
-                    </a>
-                    <a
                         href="/contact"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
