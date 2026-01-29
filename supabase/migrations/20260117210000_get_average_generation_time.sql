@@ -1,4 +1,4 @@
--- Simplified smart generation estimates - only quality_mode and concurrency
+-- Fixed smart generation estimates - resolved ambiguous column references
 CREATE OR REPLACE FUNCTION get_smart_generation_estimates()
 RETURNS TABLE(
     quality_mode TEXT,
@@ -10,32 +10,31 @@ SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
-  WITH recent_data AS (
-    -- Get completed jobs from last 30 days, weighted by recency
+  WITH recent_data AS (\n    -- Get completed jobs from last 30 days, weighted by recency
     SELECT 
-      quality_mode,
-      duration_ms,
-      concurrent_jobs,
+      gj.quality_mode,
+      gj.duration_ms,
+      gj.concurrent_jobs,
       CASE 
-        WHEN created_at > NOW() - INTERVAL '7 days' THEN 0.7
+        WHEN gj.created_at > NOW() - INTERVAL '7 days' THEN 0.7
         ELSE 0.3
       END as weight
-    FROM generation_jobs
-    WHERE status = 'completed'
-      AND duration_ms IS NOT NULL
-      AND duration_ms > 0
-      AND duration_ms < 300000  -- Exclude outliers > 5 minutes
-      AND created_at > NOW() - INTERVAL '30 days'
-      AND quality_mode IS NOT NULL
+    FROM generation_jobs gj
+    WHERE gj.status = 'completed'
+      AND gj.duration_ms IS NOT NULL
+      AND gj.duration_ms > 0
+      AND gj.duration_ms < 300000  -- Exclude outliers > 5 minutes
+      AND gj.created_at > NOW() - INTERVAL '30 days'
+      AND gj.quality_mode IS NOT NULL
   ),
   base_durations AS (
     -- Calculate weighted average base duration (solo jobs only)
     SELECT 
-      quality_mode,
-      SUM(duration_ms * weight) / SUM(weight) as weighted_avg
-    FROM recent_data
-    WHERE concurrent_jobs <= 1
-    GROUP BY quality_mode
+      rd.quality_mode,
+      SUM(rd.duration_ms * rd.weight) / SUM(rd.weight) as weighted_avg
+    FROM recent_data rd
+    WHERE rd.concurrent_jobs <= 1
+    GROUP BY rd.quality_mode
     HAVING COUNT(*) >= 1  -- Start with just 1 sample
   ),
   concurrency_impact AS (
