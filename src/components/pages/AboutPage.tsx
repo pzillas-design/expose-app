@@ -50,7 +50,8 @@ const CanvasMockup = () => {
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
                     {row.map((imageName, imgIndex) => {
-                        const targetOpacity = 1 - (row.length - 1 - imgIndex) * 0.1;
+                        // Calculate target opacity based on position in row (staggering from 20% up to 100%)
+                        const targetOpacity = Math.max(0.2, 1 - (row.length - 1 - imgIndex) * 0.2);
 
                         return (
                             <div
