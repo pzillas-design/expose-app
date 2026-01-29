@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    LogOut, Globe, Moon, Sun, Monitor, Loader2, Check, ChevronDown, Trash2, Mail, CreditCard
+    LogOut, Globe, Moon, Sun, Monitor, Loader2, Check, ChevronDown, Trash2, Mail, CreditCard, Bell
 } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';
 import { Button, Theme, Typo, SectionHeader } from '@/components/ui/DesignSystem';
@@ -9,6 +9,13 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { CreditsModal } from '../modals/CreditsModal';
+import {
+    isNotificationSupported,
+    getNotificationPermission,
+    requestNotificationPermission,
+    areNotificationsEnabled,
+    setNotificationsEnabled
+} from '@/utils/notifications';
 
 interface SettingsPageProps {
     qualityMode: GenerationQuality;
@@ -37,7 +44,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [isDeleteExpanded, setIsDeleteExpanded] = useState(false);
+    const [notificationsEnabled, setNotificationsEnabledState] = useState(areNotificationsEnabled());
+    const [notificationPermission, setNotificationPermission] = useState(getNotificationPermission());
     const { confirm } = useItemDialog();
+
+    const handleNotificationToggle = async (enabled: boolean) => {
+        if (enabled && notificationPermission !== 'granted') {
+            const permission = await requestNotificationPermission();
+            setNotificationPermission(permission);
+            if (permission !== 'granted') {
+                return; // Don't enable if permission denied
+            }
+        }
+        setNotificationsEnabled(enabled);
+        setNotificationsEnabledState(enabled);
+    };
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
         { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: t('price_free') },
@@ -261,6 +282,45 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Browser Notifications */}
+                        {isNotificationSupported() && (
+                            <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-white/5 rounded-2xl p-6 shadow-sm">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex items-start gap-4 flex-1">
+                                        <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                                            <Bell className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                                        </div>
+                                        <div className="flex flex-col gap-1 flex-1">
+                                            <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                                                Browser-Benachrichtigungen
+                                            </span>
+                                            <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                                                Erhalte eine Benachrichtigung, wenn deine Bildgenerierung abgeschlossen ist (nur wenn Tab inaktiv)
+                                            </span>
+                                            {notificationPermission === 'denied' && (
+                                                <span className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                                    ⚠️ Benachrichtigungen wurden blockiert. Bitte erlaube sie in deinen Browser-Einstellungen.
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleNotificationToggle(!notificationsEnabled)}
+                                        disabled={notificationPermission === 'denied'}
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 dark:focus:ring-offset-zinc-900 flex-shrink-0 ${notificationsEnabled
+                                                ? 'bg-zinc-900 dark:bg-white'
+                                                : 'bg-zinc-200 dark:bg-zinc-700'
+                                            } ${notificationPermission === 'denied' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* --- KONTO LÖSCHEN SECTION --- */}

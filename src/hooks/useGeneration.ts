@@ -5,6 +5,7 @@ import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
 import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
+import { sendGenerationCompleteNotification } from '@/utils/notifications';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -123,6 +124,12 @@ export const useGeneration = ({
                     ...row,
                     items: row.items.map(item => item.id === jobId ? refreshedImage : item)
                 })));
+
+                // Send browser notification if enabled and tab is inactive
+                sendGenerationCompleteNotification(
+                    refreshedImage.title || refreshedImage.baseName,
+                    refreshedImage.generationPrompt
+                );
 
                 // Persist job history for admin dashboard
                 attachedJobIds.current.delete(jobId);
