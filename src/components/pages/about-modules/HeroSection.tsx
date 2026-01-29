@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 interface HeroProps {
     scrollY: number;
     progress: number;
-    zoomProgress?: number; // New for zoom-through
     t: any;
 }
 

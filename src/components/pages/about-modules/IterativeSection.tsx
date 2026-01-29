@@ -8,7 +8,7 @@ interface IterativeProps {
 
 const images = ['41.jpg', '42.jpg', '44.jpg', '45.jpg', '11.jpg', '13.jpg', '14.jpg', '21.jpg'];
 
-const CanvasMockup = ({ isVisible }: { isVisible: boolean }) => {
+const CanvasMockup = ({ isVisible, progress }: { isVisible: boolean, progress: number }) => {
     // Exact row configuration from commit 5383817
     const imageRows = [
         ['41.jpg', '42.jpg', '44.jpg', '45.jpg'],
@@ -18,26 +18,28 @@ const CanvasMockup = ({ isVisible }: { isVisible: boolean }) => {
     ];
 
     return (
-        <div className="w-full flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-4 md:gap-8 transition-transform duration-[1200ms] cubic-bezier(0.16, 1, 0.3, 1)"
+            style={{ transform: `translateY(${(1 - progress) * 50}px)` }}>
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-6 items-end">
+                <div key={rowIndex} className="flex gap-4 md:gap-8 items-end justify-start">
                     {row.map((imageName, imgIndex) => {
-                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.15);
+                        const delay = (rowIndex * 0.1) + (imgIndex * 0.05);
+                        const targetOpacity = Math.max(0.1, (1 - (row.length - 1 - imgIndex) * 0.15) * (isVisible ? 1 : 0));
+
                         return (
                             <div
                                 key={imageName}
-                                className="w-28 sm:w-56 lg:w-80 h-auto overflow-hidden transition-all duration-[1500ms]"
+                                className="flex-1 min-w-0 max-w-[400px] transition-all duration-[1200ms] cubic-bezier(0.16, 1, 0.3, 1)"
                                 style={{
-                                    transitionDelay: `${(imgIndex * 180) + (rowIndex * 40)}ms`,
-                                    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                                    transitionDelay: `${delay}s`,
                                     opacity: isVisible ? targetOpacity : 0,
-                                    transform: isVisible ? 'scale(1)' : 'scale(0.98)'
+                                    transform: isVisible ? `scale(${0.98 + progress * 0.02})` : 'scale(0.95)'
                                 }}
                             >
                                 <img
                                     src={`/about/iterativ arbeiten img/${imageName}`}
                                     alt={`Iteration ${imageName}`}
-                                    className="w-full h-auto block border-0 rounded-none shadow-xl"
+                                    className="w-full h-auto block border-0 rounded-none shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
                                 />
                             </div>
                         );
@@ -49,18 +51,29 @@ const CanvasMockup = ({ isVisible }: { isVisible: boolean }) => {
 };
 
 export const IterativeOriginal = ({ progress }: IterativeProps) => (
-    <section className="relative min-h-screen py-32 flex flex-col items-center justify-center bg-white dark:bg-zinc-950 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row items-center relative z-10">
-            <div className="w-auto order-2 lg:order-1 flex-none translate-y-10" style={{ opacity: progress }}>
-                <CanvasMockup isVisible={progress > 0.1} />
+    <section className="relative min-h-screen py-24 md:py-32 flex flex-col items-center justify-center bg-white dark:bg-[#050505] overflow-hidden">
+        <div className="w-full max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center relative z-10 px-6 lg:px-12">
+            <div className="w-full lg:w-3/5 order-2 lg:order-1 flex-none" style={{ opacity: progress }}>
+                <CanvasMockup isVisible={progress > 0.05} progress={progress} />
             </div>
-            <div className="flex-1 order-1 lg:order-2 px-6 lg:px-20 xl:px-40 flex flex-col justify-center transition-all duration-1000" style={{ opacity: progress, transform: `translateY(${(1 - progress) * 100}px)` }}>
-                <h2 className="text-6xl sm:text-7xl lg:text-9xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-8 leading-[0.8] italic_off">
+            <div className="flex-1 order-1 lg:order-2 lg:pl-20 flex flex-col justify-center transition-all duration-1000"
+                style={{ opacity: progress, transform: `translateX(${(1 - progress) * 40}px)` }}>
+                <h2 className="text-6xl sm:text-7xl lg:text-9xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-8 leading-[0.8] italic_off uppercase">
                     <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                 </h2>
-                <p className="text-zinc-400 dark:text-zinc-500 text-xl lg:text-2xl leading-relaxed max-w-lg font-bold tracking-tight">
+                <p className="text-zinc-500 dark:text-zinc-400 text-xl lg:text-2xl leading-relaxed max-w-lg font-bold tracking-tight">
                     Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
                 </p>
+                <div className="mt-12 pt-8 border-t border-zinc-100 dark:border-white/10 flex gap-12">
+                    <div>
+                        <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Scale</div>
+                        <div className="text-2xl font-black">Unlimited</div>
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Speed</div>
+                        <div className="text-2xl font-black">Instant</div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
