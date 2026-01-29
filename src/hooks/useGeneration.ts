@@ -240,7 +240,8 @@ export const useGeneration = ({
                 annotationImageBase64 = await generateAnnotationImage(
                     sourceImage.src,
                     annotations,
-                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 }
+                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 },
+                    { width: sourceImage.width || 1024, height: sourceImage.height || 1024 } // Canvas dimensions
                 );
                 console.log('[DEBUG] performGeneration - annotationImage created:', !!annotationImageBase64);
             } catch (err) {
