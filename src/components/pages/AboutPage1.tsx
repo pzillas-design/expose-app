@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
+import { AboutVersionSwitcher } from './AboutVersionSwitcher';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { ChevronDown, Pen, Camera, X, Layout, Command, Layers, Maximize, MousePointer2 } from 'lucide-react';
 
@@ -81,6 +82,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     return (
         <div className="bg-[#fcfcfc] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-zinc-900 selection:text-white font-sans">
             <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
+
+            <AboutVersionSwitcher activeId="1" />
 
             <main className="flex-1 w-full">
                 {/* Section 1: Structural Hero */}

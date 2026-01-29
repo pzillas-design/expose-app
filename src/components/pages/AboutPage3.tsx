@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
+import { AboutVersionSwitcher } from './AboutVersionSwitcher';
 import { Search, Monitor, Cpu, ArrowRight } from 'lucide-react';
 
 interface AboutPageProps {
@@ -64,6 +65,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-[1000vh] flex flex-col selection:bg-orange-500 selection:text-white">
             <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
+
+            <AboutVersionSwitcher activeId="3" />
 
             <main className="fixed inset-0 overflow-hidden">
 
