@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
+import { MousePointer2, Info, Layers, Eye } from 'lucide-react';
 
 interface AboutPageProps {
     user: any;
@@ -11,115 +12,169 @@ interface AboutPageProps {
     t: TranslationFunction;
 }
 
-// --- Organic Components ---
+// --- Interaction Components ---
 
-const FluidBackground = () => (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-40 dark:opacity-20 translate-z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-orange-200/40 dark:bg-orange-900/40 blur-[120px] rounded-full animate-[morph_15s_ease-in-out_infinite_alternate]" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] bg-blue-100/30 dark:bg-blue-900/20 blur-[100px] rounded-full animate-[morph_20s_ease-in-out_infinite_alternate-reverse]" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-    </div>
-);
+interface FloatingImageProps {
+    src: string;
+    depth: number;
+    x: string;
+    y: string;
+    size: string;
+    mode: 'art' | 'tech';
+    key?: React.Key;
+}
 
-const FluidImageScroll = () => {
-    const images = ['11.jpg', '13.jpg', '14.jpg', '21.jpg', '24.jpg', '31.jpg', '32.jpg', '33.jpg'];
+const FloatingImage = ({ src, depth, x, y, size, mode }: FloatingImageProps) => {
+    const [isHovered, setIsHovered] = useState(false);
 
     return (
-        <div className="flex gap-12 animate-[scroll_60s_linear_infinite] hover:[animation-play-state:paused] py-20">
-            {[...images, ...images].map((img, i) => (
-                <div key={i} className="flex-none w-64 sm:w-80 group">
-                    <div className="relative aspect-[3/4] rounded-[3rem] overflow-hidden shadow-2xl transition-all duration-700 group-hover:rounded-2xl group-hover:scale-105">
-                        <img
-                            src={`/about/iterativ arbeiten img/${img}`}
-                            alt="Fluidity"
-                            className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div
+            className="absolute transition-all duration-700 ease-out"
+            style={{
+                left: x,
+                top: y,
+                width: size,
+                transform: `translateZ(${depth}px) ${isHovered ? 'scale(1.1)' : 'scale(1)'}`,
+                zIndex: Math.floor(depth)
+            }}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="relative group cursor-none">
+                <img
+                    src={src}
+                    className={`w-full h-auto shadow-2xl transition-all duration-500 ${mode === 'tech' ? 'grayscale opacity-50 contrast-125 brightness-75' : 'grayscale-0 opacity-100'}`}
+                    alt="Canvas Element"
+                />
+
+                {/* Tech Overlay (Mode Tech) */}
+                {mode === 'tech' && (
+                    <div className="absolute inset-0 border border-orange-500/30 pointer-events-none">
+                        <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-orange-500" />
+                        <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-orange-500" />
+                        <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-orange-500" />
+                        <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-orange-500" />
+                    </div>
+                )}
+
+                {/* Hover Metadata Explosion */}
+                <div className={`absolute -inset-10 flex items-center justify-center transition-all duration-500 pointer-events-none ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+                    <div className="p-4 bg-black/80 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-mono text-white/70 space-y-2 translate-y-20">
+                        <div className="flex justify-between gap-4"><span>SEED:</span> <span className="text-orange-400">83921002</span></div>
+                        <div className="flex justify-between gap-4"><span>MODEL:</span> <span className="text-blue-400">FLUX.1-PRO</span></div>
+                        <div className="flex justify-between gap-4"><span>LATENCY:</span> <span className="text-green-400">1.2s</span></div>
                     </div>
                 </div>
-            ))}
+            </div>
         </div>
     );
 };
 
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
-    return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 min-h-screen flex flex-col selection:bg-orange-100 selection:text-orange-900 font-serif">
-            <style>{`
-                @keyframes morph {
-                    0% { border-radius: 40% 60% 60% 40% / 40% 40% 60% 60%; transform: translate(0,0) scale(1); }
-                    100% { border-radius: 60% 40% 40% 60% / 60% 60% 40% 40%; transform: translate(5%,5%) scale(1.1); }
-                }
-                @keyframes scroll {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
-                }
-            `}</style>
+    const [scrollDepth, setScrollDepth] = useState(0);
+    const [viewMode, setViewMode] = useState<'art' | 'tech'>('art');
+    const containerRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrolled = window.scrollY;
+            setScrollDepth(scrolled * 0.5); // Adjust sensitivity
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const images = [
+        { src: '/about/iterativ arbeiten img/41.jpg', x: '10%', y: '10%', depth: 0, size: '400px' },
+        { src: '/about/iterativ arbeiten img/11.jpg', x: '55%', y: '20%', depth: -300, size: '500px' },
+        { src: '/about/iterativ arbeiten img/21.jpg', x: '25%', y: '45%', depth: -600, size: '350px' },
+        { src: '/about/iterativ arbeiten img/31.jpg', x: '60%', y: '60%', depth: -900, size: '450px' },
+        { src: '/about/iterativ arbeiten img/42.jpg', x: '15%', y: '110%', depth: -1200, size: '600px' },
+        { src: '/about/iterativ arbeiten img/13.jpg', x: '50%', y: '130%', depth: -1500, size: '400px' },
+        { src: '/about/iterativ arbeiten img/24.jpg', x: '20%', y: '160%', depth: -1800, size: '550px' },
+        { src: '/about/iterativ arbeiten img/32.jpg', x: '65%', y: '180%', depth: -2100, size: '300px' },
+    ];
+
+    return (
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-[400vh] flex flex-col selection:bg-orange-500 selection:text-white">
             <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
 
-            <main className="flex-1 w-full">
-                {/* Hero: The Flow */}
-                <section className="relative h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">
-                    <FluidBackground />
-                    <div className="relative z-10 space-y-8 max-w-4xl animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                        <h1 className="text-7xl sm:text-9xl font-light tracking-tight leading-[0.9]">
-                            Der Fluss <br />
-                            <span className="italic text-zinc-400 dark:text-zinc-600">der Intuition.</span>
+            {/* Global View Controls */}
+            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200]">
+                <div className="bg-black/90 backdrop-blur-xl border border-white/10 p-1.5 rounded-full flex gap-1 shadow-2xl">
+                    <button
+                        onClick={() => setViewMode('art')}
+                        className={`px-6 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'art' ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}
+                    >
+                        <Eye className="w-3.5 h-3.5" /> THE ART
+                    </button>
+                    <button
+                        onClick={() => setViewMode('tech')}
+                        className={`px-6 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${viewMode === 'tech' ? 'bg-orange-500 text-white' : 'text-white/50 hover:text-white'}`}
+                    >
+                        <Layers className="w-3.5 h-3.5" /> THE ENGINE
+                    </button>
+                </div>
+            </div>
+
+            <main className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div
+                    className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out pointer-events-auto"
+                    style={{ transform: `perspective(1000px) translate3d(0, 0, ${scrollDepth}px)` }}
+                >
+                    {/* Hero Text Layer */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(200px)' }}>
+                        <h1 className="text-7xl sm:text-[12rem] font-bold tracking-tighter leading-[0.8] mb-12">
+                            Creation <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
                         </h1>
-                        <p className="text-xl sm:text-2xl text-zinc-500 dark:text-zinc-400 font-light max-w-2xl mx-auto leading-relaxed">
-                            Kreativität braucht keinen Widerstand. Exposé fängt Ihre Gedanken ein und lässt sie zur Form verschmelzen – sanft, organisch und ohne Grenzen.
+                        <p className="max-w-md mx-auto text-xl text-zinc-500 font-medium">
+                            Scroll down to dive into the architecture of your next big idea.
                         </p>
                     </div>
-                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-20 transform scale-75">
-                        <div className="w-px h-20 bg-zinc-900 dark:bg-zinc-100" />
-                    </div>
-                </section>
 
-                {/* Section 2: Seamless Scroll */}
-                <section className="bg-zinc-50 dark:bg-zinc-900/10 py-40 overflow-hidden">
-                    <div className="px-6 max-w-4xl mx-auto mb-20 text-center">
-                        <h2 className="text-4xl sm:text-6xl font-light mb-8 italic">Unendliche Möglichkeiten.</h2>
-                        <p className="text-lg text-zinc-500 font-light">Wir haben das Raster aufgebrochen. In Exposé fließen Ideen ineinander, bis das perfekte Bild entsteht.</p>
-                    </div>
-                    <FluidImageScroll />
-                </section>
+                    {/* Floating Images across depths */}
+                    {images.map((img, i) => (
+                        <FloatingImage
+                            key={i}
+                            src={img.src}
+                            x={img.x}
+                            y={img.y}
+                            depth={img.depth}
+                            size={img.size}
+                            mode={viewMode}
+                        />
+                    ))}
 
-                {/* Section 3: The Soul of Design */}
-                <section className="py-60 px-6 relative">
-                    <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
-                        <div className="space-y-12">
-                            <h3 className="text-5xl sm:text-7xl font-light leading-tight">Wo die Seele <br />auf Pixel trifft.</h3>
-                            <p className="text-xl text-zinc-500 font-light leading-relaxed">
-                                Technik sollte sich nie wie Technik anfühlen. Wir haben jedes Detail so gestaltet, dass es sich natürlich anfühlt – als wäre es schon immer Teil Ihrer Vision gewesen.
-                            </p>
-                            <button className="px-10 py-5 rounded-full border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-900 dark:hover:bg-white hover:text-white dark:hover:text-black transition-all duration-500 text-lg">
-                                Unsere Philosophie erfahren
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <div className="aspect-square bg-gradient-to-br from-orange-50 to-blue-50 dark:from-zinc-900 dark:to-zinc-800 rounded-[4rem] flex items-center justify-center p-12">
-                                <div className="w-full h-full border border-zinc-200/50 dark:border-zinc-700/50 rounded-[3rem] animate-[morph_10s_ease-in-out_infinite_alternate]" />
-                                <div className="absolute inset-0 flex items-center justify-center text-8xl opacity-10 font-serif">æ</div>
-                            </div>
-                        </div>
+                    {/* Content Layers at different depths */}
+                    <div className="absolute top-[180%] left-1/2 -translate-x-1/2 w-full max-w-4xl p-6" style={{ transform: 'translateZ(-1000px)' }}>
+                        <h2 className="text-6xl font-bold mb-8 text-center">Iterativ + parallel arbeiten.</h2>
+                        <p className="text-2xl text-zinc-400 text-center leading-relaxed">Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.</p>
                     </div>
-                </section>
 
-                {/* Quote: Poetical Closing */}
-                <section className="py-40 bg-white dark:bg-zinc-950 text-center">
-                    <div className="max-w-3xl mx-auto px-6 italic">
-                        <p className="text-3xl sm:text-5xl font-light text-zinc-400 dark:text-zinc-600 leading-tight mb-12">
-                            "Das Bild ist nicht das Ziel. Der Moment der Entdeckung ist alles."
-                        </p>
-                        <div className="h-px w-20 bg-zinc-200 dark:bg-zinc-800 mx-auto mb-8" />
-                        <span className="font-sans text-[10px] tracking-[0.5em] uppercase text-zinc-400">M. Pzillas</span>
+                    <div className="absolute top-[280%] left-1/2 -translate-x-1/2 w-full max-w-4xl p-6" style={{ transform: 'translateZ(-2000px)' }}>
+                        <h2 className="text-6xl font-bold mb-8 text-center">Präzise Steuerung.</h2>
+                        <p className="text-2xl text-zinc-400 text-center leading-relaxed">Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.</p>
                     </div>
-                </section>
+
+                    <div className="absolute top-[380%] left-1/2 -translate-x-1/2 w-full max-w-4xl p-6" style={{ transform: 'translateZ(-3000px)' }}>
+                        <blockquote className="text-6xl font-medium italic mb-12 text-center">
+                            "Hinter jedem Bild steckt eine Geschichte, die darauf wartet, erzählt zu werden."
+                        </blockquote>
+                        <div className="text-sm font-mono tracking-widest uppercase text-zinc-500 text-center">— Michael Pzillas, Founder</div>
+                    </div>
+                </div>
             </main>
 
-            <GlobalFooter t={t} />
+            {/* Custom Cursor Hint */}
+            <div className="fixed top-1/2 right-10 -translate-y-1/2 flex flex-col items-center gap-4 opacity-30 group">
+                <div className="w-0.5 h-32 bg-gradient-to-b from-transparent via-zinc-500 to-transparent" />
+                <span className="text-[10px] font-mono rotate-90 whitespace-nowrap tracking-[0.3em]">SCROLL TO DIVE</span>
+            </div>
+
+            <style>{`
+                .preserve-3d { transform-style: preserve-3d; }
+            `}</style>
         </div>
     );
 };
-
