@@ -37,10 +37,10 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Image grid configuration: Removed 12.jpg, 23.jpg and 43.jpg
+    // Image grid configuration: Swapped rows 1 & 2, removed 12, 23, 43.jpg
     const imageRows = [
-        ['11.jpg', '13.jpg', '14.jpg'],
         ['21.jpg', '22.jpg', '24.jpg'],
+        ['11.jpg', '13.jpg', '14.jpg'],
         ['31.jpg', '32.jpg', '33.jpg'],
         ['41.jpg', '42.jpg', '44.jpg', '45.jpg']
     ];
@@ -50,8 +50,8 @@ const CanvasMockup = () => {
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
                     {row.map((imageName, imgIndex) => {
-                        // Calculate target opacity based on position in row (staggering from 10% up to 100%)
-                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.3);
+                        // Calculate target opacity based on position in row (staggering from right to left by 15%)
+                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.15);
 
                         return (
                             <div
