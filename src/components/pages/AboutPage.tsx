@@ -183,12 +183,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 {/* Full-Height Hero Section */}
                 <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 z-0">
+                        <img
+                            src="https://images.unsplash.com/photo-1717501218661-0322e4bc4c81?fm=jpg&q=60&w=3000&auto=format&fit=crop"
+                            alt="Atmospheric Background"
+                            className="absolute inset-0 w-full h-full object-cover opacity-20 dark:opacity-30 invert dark:invert-0 transition-opacity duration-1000"
+                        />
+                        <div className="absolute inset-0 bg-white/60 dark:bg-zinc-950/80" />
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[radial-gradient(circle_at_center,rgba(63,63,70,0.1)_0%,transparent_70%)] dark:bg-[radial-gradient(circle_at_center,rgba(63,63,70,0.15)_0%,transparent_70%)]" />
-                        <div className="absolute inset-0 bg-white dark:bg-zinc-950" />
                     </div>
 
                     <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-                        <span className="text-zinc-400 dark:text-zinc-500 font-mono text-sm tracking-[0.3em] uppercase mb-8 block animate-in fade-in slide-in-from-bottom-4 duration-1000">Est. 2026</span>
+                        <span className="text-zinc-400 dark:text-zinc-500 font-mono text-xs tracking-[0.4em] uppercase mb-10 block animate-in fade-in slide-in-from-bottom-4 duration-1000">Precision Crafted</span>
                         <h1 className="text-7xl sm:text-8xl md:text-[10rem] font-bold tracking-tighter text-zinc-900 dark:text-white mb-8 leading-[0.8] animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                             Creation <br />
                             <span className="text-zinc-300 dark:text-zinc-600">Reimagined.</span>
@@ -196,11 +201,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <p className="max-w-xl mx-auto text-xl text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-500">
                             Architektur für Pixel-Perfektionisten. <br />Schlichtheit trifft auf brute Kraft.
                         </p>
-                    </div>
-
-                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 animate-bounce opacity-40">
-                        <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-900 dark:text-white">Scroll</span>
-                        <ChevronDown className="w-5 h-5 text-zinc-900 dark:text-white" />
                     </div>
                 </section>
 
