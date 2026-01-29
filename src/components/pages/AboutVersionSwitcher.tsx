@@ -12,7 +12,7 @@ const versions: Version[] = [
     { id: '1', name: 'About 1 (Blueprint)', path: '/about-1' },
     { id: '2', name: 'About 2 (The Dive)', path: '/about-2' },
     { id: '3', name: 'About 3 (Experience)', path: '/about-3' },
-    { id: '4', name: 'About 4 (Kinetic)', path: '/about-4' },
+    { id: '4', name: 'About 4 (Cinematic)', path: '/about-4' },
 ];
 
 export const AboutVersionSwitcher: React.FC<{ activeId: string }> = ({ activeId }) => {
