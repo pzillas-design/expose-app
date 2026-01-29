@@ -159,20 +159,21 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     useEffect(() => {
         const handleScroll = () => {
             setScrollDepth(window.scrollY);
-            setScrolled(window.scrollY > window.innerHeight);
+            setScrolled(window.scrollY > window.innerHeight * 1.5);
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const heroImages = [
-        { src: "/about/iterativ arbeiten img/41.jpg", depth: 400, x: "10%", y: "15%", size: "300px" },
-        { src: "/about/iterativ arbeiten img/11.jpg", depth: 800, x: "65%", y: "10%", size: "400px" },
-        { src: "/about/iterativ arbeiten img/21.jpg", depth: 1200, x: "5%", y: "55%", size: "350px" },
-        { src: "/about/iterativ arbeiten img/31.jpg", depth: 1600, x: "70%", y: "60%", size: "450px" },
-        { src: "/about/iterativ arbeiten img/44.jpg", depth: 2000, x: "25%", y: "30%", size: "280px" },
-        { src: "/about/iterativ arbeiten img/13.jpg", depth: 2400, x: "55%", y: "45%", size: "320px" },
-        { src: "/about/iterativ arbeiten img/24.jpg", depth: 2800, x: "15%", y: "10%", size: "380px" },
+        { src: "/about/iterativ arbeiten img/41.jpg", depth: 200, x: "15%", y: "20%", size: "280px" },
+        { src: "/about/iterativ arbeiten img/11.jpg", depth: 500, x: "70%", y: "15%", size: "350px" },
+        { src: "/about/iterativ arbeiten img/21.jpg", depth: 800, x: "10%", y: "60%", size: "320px" },
+        { src: "/about/iterativ arbeiten img/31.jpg", depth: 1100, x: "75%", y: "65%", size: "400px" },
+        { src: "/about/iterativ arbeiten img/44.jpg", depth: 1400, x: "30%", y: "10%", size: "250px" },
+        { src: "/about/iterativ arbeiten img/13.jpg", depth: 1700, x: "60%", y: "50%", size: "300px" },
+        { src: "/about/iterativ arbeiten img/24.jpg", depth: 2000, x: "20%", y: "40%", size: "340px" },
+        { src: "/about/iterativ arbeiten img/32.jpg", depth: 2300, x: "80%", y: "30%", size: "280px" },
     ];
 
     return (
@@ -183,13 +184,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
             <main className="flex-1 w-full">
                 {/* 3D Depth Hero Section */}
-                <section className="relative h-[200vh] z-10">
-                    <div className="sticky top-0 h-screen w-full perspective-[1000px] overflow-hidden">
+                <section className="relative h-[250vh] z-10">
+                    <div className="sticky top-0 h-screen w-full perspective-[800px] overflow-hidden">
                         <div
-                            className="absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-300 ease-out"
+                            className="absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-100 ease-out"
                             style={{
                                 transformStyle: 'preserve-3d',
-                                transform: `translateZ(${scrollDepth * 2}px)` // Accelerate zoom
+                                transform: `translateZ(${scrollDepth * 1.5}px)`
                             }}
                         >
                             {/* Depth Layers */}
@@ -197,14 +198,15 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 <FloatingImage key={i} {...img} />
                             ))}
 
-                            {/* Center Text that we dive through */}
+                            {/* Center Text that we dive through last */}
                             <div
                                 className="absolute flex flex-col items-center justify-center text-center pointer-events-none"
-                                style={{ transform: 'translateZ(1500px)' }}
+                                style={{ transform: 'translateZ(2600px)' }}
                             >
-                                <span className="text-zinc-400 dark:text-zinc-500 font-mono text-xs tracking-[0.4em] uppercase mb-8">Creation Reimagined</span>
-                                <h1 className="text-[12rem] font-bold tracking-tighter leading-none">
-                                    EXPOSÉ
+                                <span className="text-zinc-400 dark:text-zinc-500 font-mono text-xs tracking-[0.4em] uppercase mb-12">Architecture of Pixel-Perfection</span>
+                                <h1 className="text-7xl sm:text-8xl md:text-[11rem] font-bold tracking-tighter leading-[0.85] whitespace-nowrap">
+                                    CREATION <br />
+                                    <span className="text-zinc-200 dark:text-zinc-800 italic">REIMAGINED.</span>
                                 </h1>
                             </div>
                         </div>
