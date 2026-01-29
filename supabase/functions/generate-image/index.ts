@@ -348,12 +348,14 @@ Deno.serve(async (req) => {
             version: currentVersion,
             prompt: prompt,
             parent_id: (requestType === 'edit' || payloadOriginalImage) ? (sourceImage?.id || null) : null,
+            // CRITICAL: Newly generated images should NOT inherit annotations from source
+            // Only 'create' requests with references should have annotations
             annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
                 id: crypto.randomUUID(),
                 type: 'reference_image',
                 referenceImage: r.src,
                 text: r.instruction || ''
-            }))) : (sourceImage?.annotations ? JSON.stringify(sourceImage.annotations) : '[]'),
+            }))) : '[]',
             generation_params: { quality: qualityMode }
         };
 
