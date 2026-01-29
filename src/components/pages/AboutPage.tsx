@@ -136,17 +136,17 @@ interface FloatingImageProps {
 const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
     return (
         <div
-            className="absolute transition-transform duration-700 ease-out"
+            className="absolute"
             style={{
                 left: x,
                 top: y,
                 width: size,
                 transform: `translateZ(${depth}px)`,
-                zIndex: Math.floor(depth) + 1000
+                zIndex: Math.floor(depth) + 10000
             }}
         >
-            <div className="relative group overflow-hidden rounded-sm shadow-2xl">
-                <img src={src} className="w-full h-auto transition-transform duration-1000 group-hover:scale-110" alt="Canvas Element" />
+            <div className="relative group overflow-hidden rounded-sm shadow-2xl scale-[1.5]">
+                <img src={src} className="w-full h-auto" alt="Canvas Element" />
             </div>
         </div>
     );
@@ -160,26 +160,24 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
         const handleScroll = () => {
             const y = window.scrollY;
             setScrollDepth(y);
-            // Show navbar bg/border once we've zoomed through the first section
-            setScrolled(y > window.innerHeight);
+            setScrolled(y > window.innerHeight * 0.8);
         };
-        window.addEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const heroImages = [
-        { src: "/about/iterativ arbeiten img/41.jpg", depth: -800, x: "15%", y: "20%", size: "400px" },
-        { src: "/about/iterativ arbeiten img/11.jpg", depth: -1400, x: "70%", y: "15%", size: "500px" },
-        { src: "/about/iterativ arbeiten img/21.jpg", depth: -2000, x: "10%", y: "60%", size: "450px" },
-        { src: "/about/iterativ arbeiten img/31.jpg", depth: -2600, x: "75%", y: "65%", size: "550px" },
-        { src: "/about/iterativ arbeiten img/44.jpg", depth: -3200, x: "30%", y: "10%", size: "400px" },
-        { src: "/about/iterativ arbeiten img/13.jpg", depth: -3800, x: "60%", y: "50%", size: "500px" },
-        { src: "/about/iterativ arbeiten img/24.jpg", depth: -4400, x: "20%", y: "40%", size: "550px" },
+        { src: "/about/iterativ arbeiten img/41.jpg", depth: -1000, x: "10%", y: "15%", size: "400px" },
+        { src: "/about/iterativ arbeiten img/11.jpg", depth: -2000, x: "70%", y: "10%", size: "500px" },
+        { src: "/about/iterativ arbeiten img/21.jpg", depth: -3000, x: "5%", y: "55%", size: "450px" },
+        { src: "/about/iterativ arbeiten img/31.jpg", depth: -4000, x: "75%", y: "60%", size: "550px" },
+        { src: "/about/iterativ arbeiten img/44.jpg", depth: -5000, x: "25%", y: "30%", size: "400px" },
+        { src: "/about/iterativ arbeiten img/13.jpg", depth: -6000, x: "60%", y: "50%", size: "500px" },
     ];
 
-    // Multiplier to pass through everything within exactly 100vh
-    // perspective(1200) + depth(5200) = 6400. 6400 / innerHeight
-    const multiplier = 5.2;
+    // Multiplier: (Perspective (1000) + Deepest Depth (7500)) / Scroll Range (InnerHeight)
+    // We want to be through the letters (at -7500) within 100vh
+    const multiplier = 8.5;
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white overflow-x-hidden">
@@ -190,9 +188,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <main className="flex-1 w-full">
                 {/* 3D Depth Hero Section */}
                 <section className="relative h-[200vh] z-10">
-                    <div className="sticky top-0 h-screen w-full perspective-[1200px] overflow-hidden bg-white dark:bg-zinc-950">
+                    <div className="sticky top-0 h-screen w-full perspective-[1000px] overflow-hidden bg-white dark:bg-zinc-950">
                         <div
-                            className="absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-100 ease-out"
+                            className="absolute inset-0 w-full h-full flex items-center justify-center will-change-transform"
                             style={{
                                 transformStyle: 'preserve-3d',
                                 transform: `translateZ(${scrollDepth * multiplier}px)`
@@ -205,12 +203,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                             {/* Center Text that we dive through last */}
                             <div
-                                className="absolute flex flex-col items-center justify-center text-center pointer-events-none"
-                                style={{ transform: 'translateZ(-5200px)', transformStyle: 'preserve-3d' }}
+                                className="absolute flex flex-col items-center justify-center text-center pointer-events-none will-change-transform"
+                                style={{ transform: 'translateZ(-7500px)', transformStyle: 'preserve-3d' }}
                             >
-                                <span className="text-zinc-400 dark:text-zinc-500 font-mono text-xs tracking-[0.4em] uppercase mb-12">Architecture of Pixel-Perfection</span>
-                                <h1 className="text-7xl sm:text-8xl md:text-[13rem] font-bold tracking-tighter leading-[0.75] whitespace-nowrap">
-                                    <span className="text-zinc-900 dark:text-white">CREATION</span> <br />
+                                <span className="text-zinc-400 dark:text-zinc-500 font-mono text-[10px] tracking-[0.5em] uppercase mb-12">Architecture of Pixel-Perfection</span>
+                                <h1 className="text-8xl sm:text-[14rem] font-black tracking-tighter leading-[0.7] text-zinc-900 dark:text-white uppercase transition-none">
+                                    CREATION <br />
                                     <span className="bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
                                         REIMAGINED.
                                     </span>
