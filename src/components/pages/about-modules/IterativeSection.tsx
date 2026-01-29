@@ -90,6 +90,73 @@ export const IterativeCanvas = ({ progress }: IterativeProps) => {
     );
 };
 
+// --- NEW FULLSCREEN VARIANTS ---
+
+export const IterativeModern = ({ progress }: IterativeProps) => (
+    <div className="relative h-screen w-full bg-zinc-950 overflow-hidden flex items-center justify-center p-20">
+        <div className="absolute top-10 left-20">
+            <h2 className="text-[10vw] font-black tracking-tighter uppercase leading-[0.7] opacity-10">Modern.</h2>
+        </div>
+        <div className="grid grid-cols-3 gap-8 w-full max-w-7xl transition-all duration-1000" style={{ transform: `scale(${0.9 + progress * 0.1}) rotateX(${10 - progress * 10}deg)`, opacity: progress }}>
+            {images.slice(0, 3).map((img, i) => (
+                <div key={i} className="relative group overflow-hidden bg-black border border-white/5 shadow-2xl transition-all hover:scale-[1.05]">
+                    <img src={`/about/iterativ arbeiten img/${img}`} className="w-full aspect-[4/5] object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Modern grid item" />
+                    <div className="absolute bottom-6 left-6 text-white z-10 transition-transform translate-y-10 group-hover:translate-y-0 duration-500">
+                        <div className="text-[10px] font-mono tracking-widest text-orange-500 mb-2">ITERATION_V.0{i + 1}</div>
+                        <div className="text-2xl font-black uppercase">Refined Result</div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black to-transparent opacity-60" />
+                </div>
+            ))}
+        </div>
+        <div className="absolute bottom-10 right-20 text-right">
+            <h3 className="text-4xl font-black uppercase tracking-tighter mb-4"><span className="text-orange-500">Iterativ</span> arbeiten.</h3>
+            <p className="text-zinc-500 max-w-sm font-medium tracking-tight">Smarte Workflows führen zu präzisen Ergebnissen unter maximaler Kontrolle.</p>
+        </div>
+    </div>
+);
+
+export const IterativeCinematic = ({ progress }: IterativeProps) => (
+    <div className="relative h-screen w-full bg-black overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0">
+            <img src="/about/iterativ arbeiten img/41.jpg" className="w-full h-full object-cover blur-[100px] opacity-30 scale-150 animate-pulse" alt="Ambient" />
+        </div>
+        <div className="relative z-10 w-full max-w-[90vw] transition-all duration-1000 flex items-center gap-20" style={{ opacity: progress, transform: `translateY(${(1 - progress) * 100}px)` }}>
+            <div className="flex-1 space-y-8">
+                <div className="text-orange-500 text-xs font-mono tracking-[0.5em] uppercase">Cinematic Sequence</div>
+                <h2 className="text-[8vw] font-black tracking-tighter uppercase leading-[0.8]">The <br />Foundry <br /><span className="text-orange-500 text-stroke-white opacity-40">Parallel.</span></h2>
+                <p className="text-xl text-white/50 max-w-md leading-relaxed">Wir denken nicht in Einzelbildern, sondern in gesamten Design-Universen, die gleichzeitig entstehen.</p>
+            </div>
+            <div className="flex-1 relative aspect-video bg-zinc-900 overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,1)] border border-white/5 group">
+                <img src="/about/iterativ arbeiten img/11.jpg" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[20s] linear" alt="Cinematic hero" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-orange-500 to-transparent animate-scan" style={{ top: `${progress * 100}%` }} />
+            </div>
+        </div>
+    </div>
+);
+
+export const IterativeMinimalistic = ({ progress }: IterativeProps) => (
+    <div className="relative h-screen w-full bg-white dark:bg-black overflow-hidden flex flex-col items-center justify-center p-20">
+        <div className="max-w-7xl w-full flex flex-col md:flex-row items-end justify-between transition-all duration-1000" style={{ opacity: progress, transform: `scale(${0.95 + progress * 0.05})` }}>
+            <div className="space-y-12">
+                <div className="w-24 h-1 bg-orange-500" />
+                <h2 className="text-8xl font-black tracking-tighter uppercase leading-none italic_off">Parallel <br /><span className="text-zinc-300 dark:text-zinc-800">Processing.</span></h2>
+            </div>
+            <p className="text-2xl text-zinc-500 dark:text-zinc-400 font-medium max-w-sm lowercase tracking-tighter text-right">
+                infinite variations, one vision. scaled for impact, delivered with precision.
+            </p>
+        </div>
+        <div className="grid grid-cols-4 gap-4 w-full max-w-7xl mt-20 h-1/3">
+            {images.slice(4, 8).map((img, i) => (
+                <div key={i} className="bg-zinc-100 dark:bg-zinc-900 h-full overflow-hidden transition-all duration-700" style={{ transform: `translateY(${(1 - progress) * (50 + i * 30)}px)`, opacity: progress }}>
+                    <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Minimal item" />
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 export const IterativeHorizon = ({ progress }: IterativeProps) => {
     const horizonX = progress * -150;
     return (
@@ -124,14 +191,14 @@ export const IterativeDualTrack = ({ progress }: IterativeProps) => {
             <div className="flex gap-8 px-20 transition-transform duration-500 ease-out" style={{ transform: `translateX(${track1X}vw)` }}>
                 {images.slice(0, 5).map((img, i) => (
                     <div key={i} className="min-w-[500px] aspect-video bg-zinc-900 rounded-none overflow-hidden border border-white/10 shadow-2xl flex-shrink-0">
-                        <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Track 1" />
+                        <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Track 1" />
                     </div>
                 ))}
             </div>
             <div className="flex gap-8 px-20 transition-transform duration-500 ease-out" style={{ transform: `translateX(${track2X}vw)` }}>
                 {images.slice(3, 8).map((img, i) => (
                     <div key={i} className="min-w-[500px] aspect-video bg-zinc-900 rounded-none overflow-hidden border border-white/10 shadow-2xl flex-shrink-0">
-                        <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt="Track 2" />
+                        <img src={`/about/iterativ arbeiten img/${img}`} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" alt="Track 2" />
                     </div>
                 ))}
             </div>

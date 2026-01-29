@@ -91,9 +91,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <SectionWrapper
                     id="iterative"
                     active={iterativeVariant}
-                    variants={['Grid', 'Canvas', 'Horizon', 'Dual-Track']}
+                    variants={['Modern', 'Cinematic', 'Minimalistic', 'Grid', 'Canvas', 'Horizon', 'Dual-Track']}
                     onSelect={setIterativeVariant}
                 >
+                    {iterativeVariant === 'Modern' && <Iterative.IterativeModern scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
+                    {iterativeVariant === 'Cinematic' && <Iterative.IterativeCinematic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
+                    {iterativeVariant === 'Minimalistic' && <Iterative.IterativeMinimalistic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Grid' && <Iterative.IterativeGrid scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Canvas' && <Iterative.IterativeCanvas scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
                     {iterativeVariant === 'Horizon' && <Iterative.IterativeHorizon scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}

@@ -18,12 +18,12 @@ export const HeroDive = ({ scrollY }: HeroProps) => {
                 className="relative flex items-center justify-center preserve-3d w-full h-full transition-transform duration-100 ease-out"
                 style={{ transform: `translate3d(0, 0, ${diveDepth}px)` }}
             >
-                {/* Hero Text - Centered and Bold */}
+                {/* Hero Text - Restored Headline & Balanced Size */}
                 <div className="text-center z-10" style={{ transform: 'translateZ(300px)' }}>
-                    <h1 className="text-8xl md:text-[16rem] font-black tracking-tighter uppercase leading-[0.7] drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                        Dive <br /><span className="text-orange-500">Deep.</span>
+                    <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter uppercase leading-[0.8] drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        Creation <br /><span className="text-orange-500">Reimagined.</span>
                     </h1>
-                    <p className="mt-8 text-xl md:text-2xl text-white/40 font-black tracking-[0.3em] uppercase">Entdecke die Tiefe deiner Kreativität.</p>
+                    <p className="mt-6 text-lg md:text-xl text-white/40 font-bold tracking-[0.2em] uppercase">Der Wendepunkt in deinem kreativen Prozess.</p>
                 </div>
 
                 {/* Floating Images (Exact Initial "Hammer" Layout) */}
