@@ -37,12 +37,12 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    // Image grid configuration: Swapped rows 1 & 2, removed 12, 23, 43.jpg
+    // Image grid configuration: Swapped rows, removed 12, 22, 23, 43.jpg
     const imageRows = [
-        ['21.jpg', '22.jpg', '24.jpg'],
+        ['41.jpg', '42.jpg', '44.jpg', '45.jpg'],
         ['11.jpg', '13.jpg', '14.jpg'],
-        ['31.jpg', '32.jpg', '33.jpg'],
-        ['41.jpg', '42.jpg', '44.jpg', '45.jpg']
+        ['21.jpg', '24.jpg'],
+        ['31.jpg', '32.jpg', '33.jpg']
     ];
 
     return (
