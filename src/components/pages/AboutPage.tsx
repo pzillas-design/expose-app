@@ -158,23 +158,28 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
     useEffect(() => {
         const handleScroll = () => {
-            setScrollDepth(window.scrollY);
-            setScrolled(window.scrollY > window.innerHeight * 1.5);
+            const y = window.scrollY;
+            setScrollDepth(y);
+            // Show navbar bg/border once we've zoomed through the first section
+            setScrolled(y > window.innerHeight);
         };
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const heroImages = [
-        { src: "/about/iterativ arbeiten img/41.jpg", depth: 200, x: "15%", y: "20%", size: "280px" },
-        { src: "/about/iterativ arbeiten img/11.jpg", depth: 500, x: "70%", y: "15%", size: "350px" },
-        { src: "/about/iterativ arbeiten img/21.jpg", depth: 800, x: "10%", y: "60%", size: "320px" },
-        { src: "/about/iterativ arbeiten img/31.jpg", depth: 1100, x: "75%", y: "65%", size: "400px" },
-        { src: "/about/iterativ arbeiten img/44.jpg", depth: 1400, x: "30%", y: "10%", size: "250px" },
-        { src: "/about/iterativ arbeiten img/13.jpg", depth: 1700, x: "60%", y: "50%", size: "300px" },
-        { src: "/about/iterativ arbeiten img/24.jpg", depth: 2000, x: "20%", y: "40%", size: "340px" },
-        { src: "/about/iterativ arbeiten img/32.jpg", depth: 2300, x: "80%", y: "30%", size: "280px" },
+        { src: "/about/iterativ arbeiten img/41.jpg", depth: -800, x: "15%", y: "20%", size: "400px" },
+        { src: "/about/iterativ arbeiten img/11.jpg", depth: -1400, x: "70%", y: "15%", size: "500px" },
+        { src: "/about/iterativ arbeiten img/21.jpg", depth: -2000, x: "10%", y: "60%", size: "450px" },
+        { src: "/about/iterativ arbeiten img/31.jpg", depth: -2600, x: "75%", y: "65%", size: "550px" },
+        { src: "/about/iterativ arbeiten img/44.jpg", depth: -3200, x: "30%", y: "10%", size: "400px" },
+        { src: "/about/iterativ arbeiten img/13.jpg", depth: -3800, x: "60%", y: "50%", size: "500px" },
+        { src: "/about/iterativ arbeiten img/24.jpg", depth: -4400, x: "20%", y: "40%", size: "550px" },
     ];
+
+    // Multiplier to pass through everything within exactly 100vh
+    // perspective(1200) + depth(5200) = 6400. 6400 / innerHeight
+    const multiplier = 5.2;
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white overflow-x-hidden">
@@ -184,13 +189,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
             <main className="flex-1 w-full">
                 {/* 3D Depth Hero Section */}
-                <section className="relative h-[250vh] z-10">
-                    <div className="sticky top-0 h-screen w-full perspective-[800px] overflow-hidden">
+                <section className="relative h-[200vh] z-10">
+                    <div className="sticky top-0 h-screen w-full perspective-[1200px] overflow-hidden bg-white dark:bg-zinc-950">
                         <div
                             className="absolute inset-0 w-full h-full flex items-center justify-center transition-transform duration-100 ease-out"
                             style={{
                                 transformStyle: 'preserve-3d',
-                                transform: `translateZ(${scrollDepth * 1.5}px)`
+                                transform: `translateZ(${scrollDepth * multiplier}px)`
                             }}
                         >
                             {/* Depth Layers */}
@@ -201,12 +206,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             {/* Center Text that we dive through last */}
                             <div
                                 className="absolute flex flex-col items-center justify-center text-center pointer-events-none"
-                                style={{ transform: 'translateZ(2600px)' }}
+                                style={{ transform: 'translateZ(-5200px)', transformStyle: 'preserve-3d' }}
                             >
                                 <span className="text-zinc-400 dark:text-zinc-500 font-mono text-xs tracking-[0.4em] uppercase mb-12">Architecture of Pixel-Perfection</span>
-                                <h1 className="text-7xl sm:text-8xl md:text-[11rem] font-bold tracking-tighter leading-[0.85] whitespace-nowrap">
-                                    CREATION <br />
-                                    <span className="text-zinc-200 dark:text-zinc-800 italic">REIMAGINED.</span>
+                                <h1 className="text-7xl sm:text-8xl md:text-[13rem] font-bold tracking-tighter leading-[0.75] whitespace-nowrap">
+                                    <span className="text-zinc-900 dark:text-white">CREATION</span> <br />
+                                    <span className="bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">
+                                        REIMAGINED.
+                                    </span>
                                 </h1>
                             </div>
                         </div>
