@@ -61,7 +61,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const [scrollY, setScrollY] = useState(0);
 
     // Module States
-    const [heroVariant, setHeroVariant] = useState('Classic');
+    // Module States (Hero is now locked to Dive)
     const [iterativeVariant, setIterativeVariant] = useState('Grid');
     const [precisionVariant, setPrecisionVariant] = useState('Sidepanel');
     const [finaleVariant, setFinaleVariant] = useState('Simple');
@@ -82,18 +82,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
 
             <main className="w-full">
-                {/* HERO SECTION */}
-                <SectionWrapper
-                    id="hero"
-                    active={heroVariant}
-                    variants={['Classic', 'Dive', 'Atmospheric', 'Cinematic']}
-                    onSelect={setHeroVariant}
-                >
-                    {heroVariant === 'Classic' && <Hero.HeroClassic scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />}
-                    {heroVariant === 'Dive' && <Hero.HeroDive scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />}
-                    {heroVariant === 'Atmospheric' && <Hero.HeroAtmospheric scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />}
-                    {heroVariant === 'Cinematic' && <Hero.HeroCinematic scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />}
-                </SectionWrapper>
+                {/* HERO SECTION - Locked to Dive Variant */}
+                <section id="hero" className="relative w-full overflow-hidden border-b border-white/5">
+                    <Hero.HeroDive scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />
+                </section>
 
                 {/* ITERATIVE SECTION */}
                 <SectionWrapper
