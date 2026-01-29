@@ -66,6 +66,81 @@ export const IterativeOriginal = ({ progress }: IterativeProps) => (
     </section>
 );
 
+export const IterativeRefined = ({ progress }: IterativeProps) => {
+    const imageRows = [
+        ['41.jpg', '42.jpg', '44.jpg', '45.jpg'],
+        ['11.jpg', '13.jpg', '14.jpg'],
+        ['21.jpg', '24.jpg'],
+        ['31.jpg', '32.jpg', '33.jpg']
+    ];
+
+    return (
+        <section className="relative min-h-screen py-24 flex flex-col items-center justify-center bg-white dark:bg-[#050505] overflow-hidden">
+            <div className="w-full max-w-[1800px] mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
+                {/* Responsive & Fluid Grid */}
+                <div className="w-full lg:w-3/5 order-2 lg:order-1">
+                    <div className="flex flex-col gap-4 md:gap-8 transition-transform duration-1000 ease-out"
+                        style={{ transform: `translateY(${(1 - progress) * 50}px)` }}>
+                        {imageRows.map((row, rowIndex) => (
+                            <div key={rowIndex} className="flex gap-4 md:gap-8 items-end justify-start">
+                                {row.map((imageName, imgIndex) => {
+                                    const delay = (rowIndex * 0.1) + (imgIndex * 0.05);
+                                    const staggerOpacity = Math.max(0.15, progress * 1.5 - delay);
+
+                                    return (
+                                        <div
+                                            key={imageName}
+                                            className="flex-1 min-w-0 transition-all duration-[1200ms] "
+                                            style={{
+                                                opacity: staggerOpacity,
+                                                transform: `translateY(${(1 - progress) * (20 + rowIndex * 10)}px) scale(${0.95 + progress * 0.05})`,
+                                                transitionDelay: `${delay}s`
+                                            }}
+                                        >
+                                            <div className="group relative overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                                                <img
+                                                    src={`/about/iterativ arbeiten img/${imageName}`}
+                                                    alt={`Refined Iteration ${imageName}`}
+                                                    className="w-full h-auto block grayscale hover:grayscale-0 transition-all duration-700"
+                                                />
+                                                <div className="absolute inset-0 border border-white/5 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Content Side */}
+                <div className="w-full lg:w-2/5 order-1 lg:order-2 space-y-8"
+                    style={{ opacity: progress, transform: `translateX(${(1 - progress) * 40}px)` }}>
+                    <div className="space-y-4">
+                        <div className="inline-block px-3 py-1 bg-orange-500 text-black text-[10px] font-black tracking-widest uppercase">Process_v5.0</div>
+                        <h2 className="text-6xl sm:text-7xl xl:text-8xl font-black tracking-tighter text-zinc-900 dark:text-white leading-[0.8] uppercase italic_off">
+                            Everything <br /><span className="text-orange-500">at once.</span>
+                        </h2>
+                    </div>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-xl xl:text-2xl leading-relaxed font-bold tracking-tight max-w-md">
+                        Parallel workflows allow you to see the big picture while refining every detail. No more sequential bottlenecks.
+                    </p>
+                    <div className="grid grid-cols-2 gap-8 pt-8 border-t border-zinc-200 dark:border-white/10">
+                        <div>
+                            <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-2">Simultaneity</div>
+                            <div className="text-2xl font-black">12+ Paths</div>
+                        </div>
+                        <div>
+                            <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-2">Efficiency</div>
+                            <div className="text-2xl font-black">300% Boost</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
 export const IterativeGrid = ({ progress }: IterativeProps) => (
     <div className="w-full bg-white dark:bg-zinc-950 py-32 px-6">
         <div className="max-w-7xl mx-auto">

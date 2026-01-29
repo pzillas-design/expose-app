@@ -62,7 +62,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
     // Module States
     // Module States (Hero is now locked to Dive)
-    const [iterativeVariant, setIterativeVariant] = useState('Original');
+    const [iterativeVariant, setIterativeVariant] = useState('Refined');
     const [precisionVariant, setPrecisionVariant] = useState('Sidepanel');
     const [finaleVariant, setFinaleVariant] = useState('Simple');
 
@@ -82,27 +82,32 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
 
             <main className="w-full">
-                {/* HERO SECTION - Locked to Dive Variant */}
-                <section id="hero" className="relative w-full overflow-hidden border-b border-white/5">
-                    <Hero.HeroDive scrollY={scrollY} progress={getProgress(0, 1000)} t={t} />
-                </section>
+                {/* HERO SECTION - Zoom-Through Transition */}
+                <div className="relative h-[180vh] w-full z-0">
+                    <section id="hero" className="sticky top-0 h-screen w-full overflow-hidden">
+                        <Hero.HeroDive scrollY={scrollY} progress={getProgress(0, 1200)} t={t} />
+                    </section>
+                </div>
 
-                {/* ITERATIVE SECTION - Optimized for Original/Modern Flow */}
-                <SectionWrapper
-                    id="iterative"
-                    active={iterativeVariant}
-                    variants={['Original', 'Modern', 'Cinematic', 'Minimalistic', 'Grid', 'Canvas', 'Horizon', 'Dual-Track']}
-                    onSelect={setIterativeVariant}
-                >
-                    {iterativeVariant === 'Original' && <Iterative.IterativeOriginal scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Modern' && <Iterative.IterativeModern scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Cinematic' && <Iterative.IterativeCinematic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Minimalistic' && <Iterative.IterativeMinimalistic scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Grid' && <Iterative.IterativeGrid scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Canvas' && <Iterative.IterativeCanvas scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Horizon' && <Iterative.IterativeHorizon scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                    {iterativeVariant === 'Dual-Track' && <Iterative.IterativeDualTrack scrollY={scrollY} progress={getProgress(1000, 2500)} t={t} />}
-                </SectionWrapper>
+                {/* ITERATIVE SECTION - Scrolling OVER the Hero */}
+                <div className="relative z-10 bg-white dark:bg-[#050505] shadow-[0_-50px_100px_rgba(0,0,0,0.5)]">
+                    <SectionWrapper
+                        id="iterative"
+                        active={iterativeVariant}
+                        variants={['Refined', 'Original', 'Modern', 'Cinematic', 'Minimalistic', 'Grid', 'Canvas', 'Horizon', 'Dual-Track']}
+                        onSelect={setIterativeVariant}
+                    >
+                        {iterativeVariant === 'Refined' && <Iterative.IterativeRefined scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Original' && <Iterative.IterativeOriginal scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Modern' && <Iterative.IterativeModern scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Cinematic' && <Iterative.IterativeCinematic scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Minimalistic' && <Iterative.IterativeMinimalistic scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Grid' && <Iterative.IterativeGrid scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Canvas' && <Iterative.IterativeCanvas scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Horizon' && <Iterative.IterativeHorizon scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                        {iterativeVariant === 'Dual-Track' && <Iterative.IterativeDualTrack scrollY={scrollY} progress={getProgress(1200, 2500)} t={t} />}
+                    </SectionWrapper>
+                </div>
 
                 {/* PRECISION SECTION */}
                 <SectionWrapper

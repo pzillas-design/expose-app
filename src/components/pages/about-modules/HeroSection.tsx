@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 interface HeroProps {
     scrollY: number;
     progress: number;
+    zoomProgress?: number; // New for zoom-through
     t: any;
 }
 
@@ -40,8 +41,12 @@ const FloatingImage = ({ src, depth, x, y, size }: { src: string, depth: number,
     );
 };
 
-export const HeroDive = ({ scrollY }: HeroProps) => {
-    const scrollDepth = scrollY * 0.8; // Adjusted for better dive feel
+export const HeroDive = ({ scrollY, progress }: HeroProps) => {
+    // Dynamic zoom values
+    const zoomScale = 1 + progress * 8;
+    const zoomOpacity = Math.max(0, 1 - progress * 1.5);
+    const imageOpacity = Math.max(0, 1 - progress * 2);
+    const scrollDepth = scrollY * 1.2;
 
     const images = [
         { src: '/about/iterativ arbeiten img/41.jpg', x: '10%', y: '10%', depth: 0, size: '400px' },
@@ -57,15 +62,21 @@ export const HeroDive = ({ scrollY }: HeroProps) => {
     return (
         <div
             className="relative h-screen flex items-center justify-center overflow-hidden bg-black text-white"
-            style={{ perspective: '1000px' }}
+            style={{ perspective: '1200px' }}
         >
             <div
                 className="relative flex items-center justify-center preserve-3d w-full h-full transition-transform duration-100 ease-out"
                 style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
             >
-                {/* Hero Text - Restored from Commit 2450848 */}
-                <div className="text-center z-10" style={{ transform: 'translateZ(200px)' }}>
-                    <h1 className="text-7xl md:text-[10rem] font-bold tracking-tighter uppercase leading-[0.8] mb-12 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                {/* Hero Text - Zoom-Through Logic */}
+                <div
+                    className="text-center z-10 transition-all duration-300"
+                    style={{
+                        transform: `translateZ(200px) scale(${zoomScale})`,
+                        opacity: zoomOpacity
+                    }}
+                >
+                    <h1 className="text-7xl md:text-[10rem] font-bold tracking-tighter uppercase leading-[0.8] mb-12 drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
                         Creation <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
                     </h1>
@@ -74,8 +85,8 @@ export const HeroDive = ({ scrollY }: HeroProps) => {
                     </p>
                 </div>
 
-                {/* Floating Images (Full 8-image depth array) */}
-                <div className="absolute inset-0 pointer-events-none preserve-3d">
+                {/* Floating Images */}
+                <div className="absolute inset-0 pointer-events-none preserve-3d" style={{ opacity: imageOpacity }}>
                     {images.map((img, i) => (
                         <FloatingImage
                             key={i}
