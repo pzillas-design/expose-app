@@ -14,7 +14,7 @@ interface AboutPageProps {
     t: TranslationFunction;
 }
 
-// --- Interaction Components from About 2 ---
+// --- Interaction Components ---
 
 interface FloatingImageProps {
     src: string;
@@ -53,7 +53,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
     );
 };
 
-// --- Mockup Components from About 0 ---
+// --- Mockup Components ---
 
 const CanvasMockup = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -109,7 +109,7 @@ const SidepanelMockup = () => {
     const [selectedTime, setSelectedTime] = useState('Nachmittag');
 
     return (
-        <div className="w-full max-w-sm mx-auto bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-900 shadow-2xl overflow-hidden flex flex-col scale-110 lg:scale-125">
+        <div className="w-full max-w-sm mx-auto bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-900 shadow-2xl overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-900 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
                 <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 dark:text-zinc-500">Bearbeiten</span>
                 <X className="w-4 h-4 text-zinc-400 dark:text-zinc-600" />
@@ -156,11 +156,17 @@ const SidepanelMockup = () => {
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrollDepth, setScrollDepth] = useState(0);
     const [scrolled, setScrolled] = useState(false);
+    const [introProgress, setIntroProgress] = useState(0); // 0 to 1
 
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            setScrollDepth(y * 0.6);
+            const introHeight = window.innerHeight * 2; // Duration of the 3D dive
+
+            // Calculate progress for the intro (0 to 1)
+            const progress = Math.min(Math.max(y / introHeight, 0), 1);
+            setIntroProgress(progress);
+            setScrollDepth(y * 0.8);
             setScrolled(y > 50);
         };
         window.addEventListener('scroll', handleScroll);
@@ -172,85 +178,99 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
         { src: '/about/iterativ arbeiten img/11.jpg', x: '55%', y: '25%', depth: -300, size: '500px' },
         { src: '/about/iterativ arbeiten img/21.jpg', x: '25%', y: '50%', depth: -600, size: '350px' },
         { src: '/about/iterativ arbeiten img/31.jpg', x: '60%', y: '65%', depth: -900, size: '450px' },
+        { src: '/about/iterativ arbeiten img/42.jpg', x: '15%', y: '85%', depth: -1200, size: '600px' },
     ];
 
     return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-[700vh] flex flex-col selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
             <div className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-900' : 'bg-transparent'}`}>
                 <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
             </div>
 
-            <main className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div
-                    className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out pointer-events-auto"
-                    style={{ transform: `perspective(1000px) translate3d(0, 0, ${scrollDepth}px)` }}
-                >
-                    {/* --- Hero Dive Section --- */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
-                        <h1 className="text-7xl sm:text-[12rem] font-bold tracking-tighter leading-[0.8] mb-12">
-                            Creation <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
-                        </h1>
-                        <p className="max-w-md mx-auto text-xl text-zinc-500 font-medium">
-                            Scroll down to dive into the architecture of your next big idea.
-                        </p>
-                    </div>
-
-                    {floatingImages.map((img, i) => (
-                        <FloatingImage key={i} {...img} />
-                    ))}
-
-                    {/* --- Iterativ + Parallel Section --- */}
+            {/* --- Sticky 3D Intro Section --- */}
+            <div className="relative h-[250vh] w-full">
+                <div className="sticky top-0 h-screen w-full overflow-hidden perspective-[1000px]">
                     <div
-                        className="absolute top-[200%] left-0 w-full px-6 flex flex-col lg:flex-row items-center gap-20"
-                        style={{ transform: 'translateZ(-1500px)' }}
+                        className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out"
+                        style={{
+                            transform: `translate3d(0, 0, ${scrollDepth}px)`,
+                            opacity: 1 - Math.pow(introProgress, 3) // Fade out as we finish the dive
+                        }}
                     >
+                        {/* Hero Text Layer */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
+                            <h1 className="text-7xl sm:text-[12rem] font-bold tracking-tighter leading-[0.8] mb-12">
+                                Creation <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
+                            </h1>
+                            <p className="max-w-md mx-auto text-xl text-zinc-500 font-medium">
+                                Scroll down to dive into the architecture of your next big idea.
+                            </p>
+                        </div>
+
+                        {floatingImages.map((img, i) => (
+                            <FloatingImage key={i} {...img} />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* --- Content Sections (Scrolling up from below) --- */}
+            <main className="relative z-20 bg-white dark:bg-zinc-950">
+
+                {/* Iterativ + Parallel */}
+                <section className="py-32 px-6 overflow-hidden">
+                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-20">
                         <div className="w-auto flex-none">
                             <CanvasMockup />
                         </div>
                         <div className="flex-1 max-w-2xl">
-                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
+                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.8] animate-in fade-in slide-in-from-bottom-12 duration-1000">
                                 <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                             </h2>
-                            <p className="text-2xl text-zinc-500 leading-relaxed">
+                            <p className="text-2xl text-zinc-500 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                                 Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
                             </p>
                         </div>
                     </div>
+                </section>
 
-                    {/* --- Präzise Steuerung Section --- */}
-                    <div
-                        className="absolute top-[380%] left-0 w-full px-6 grid grid-cols-1 lg:grid-cols-2 gap-32 items-center"
-                        style={{ transform: 'translateZ(-3500px)' }}
-                    >
+                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
+
+                {/* Präzise Steuerung */}
+                <section className="py-32 px-6 bg-zinc-50/50 dark:bg-zinc-900/10">
+                    <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
                         <div className="flex justify-center lg:justify-end order-2 lg:order-1">
-                            <SidepanelMockup />
+                            <div className="relative group p-4 bg-white dark:bg-zinc-950 rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-900">
+                                <SidepanelMockup />
+                            </div>
                         </div>
                         <div className="text-left order-1 lg:order-2 max-w-2xl">
-                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9]">
+                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-12 duration-1000">
                                 <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
                             </h2>
-                            <p className="text-2xl text-zinc-500 leading-relaxed">
+                            <p className="text-2xl text-zinc-500 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                                 Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.
                             </p>
                         </div>
                     </div>
+                </section>
 
-                    {/* --- Visual Prompting Section --- */}
-                    <div
-                        className="absolute top-[580%] left-0 w-full px-6 flex flex-col items-center text-center"
-                        style={{ transform: 'translateZ(-5500px)' }}
-                    >
+                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
+
+                {/* Visual Prompting */}
+                <section className="py-32 px-6">
+                    <div className="max-w-[1700px] mx-auto flex flex-col items-center text-center">
                         <div className="max-w-4xl mb-24">
-                            <h2 className="text-7xl lg:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9]">
+                            <h2 className="text-7xl lg:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-12 duration-1000">
                                 Visual <span className="text-orange-500">prompting.</span>
                             </h2>
-                            <p className="text-2xl text-zinc-500">
+                            <p className="text-2xl text-zinc-500 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
                                 Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
                             </p>
                         </div>
-                        <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900">
-                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125" alt="" />
+                        <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900 animate-in fade-in zoom-in-95 duration-1000 delay-300">
+                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
                             <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
                             </div>
@@ -259,27 +279,24 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             </div>
                         </div>
                     </div>
+                </section>
 
-                    {/* --- Quote Section --- */}
-                    <div
-                        className="absolute top-[780%] left-1/2 -translate-x-1/2 w-full max-w-5xl px-6 text-center"
-                        style={{ transform: 'translateZ(-7500px)' }}
-                    >
-                        <blockquote className="text-6xl lg:text-[7rem] font-medium tracking-tight italic mb-16 leading-[1.1]">
+                {/* Quote Section */}
+                <section className="py-60 px-6 text-center bg-zinc-50 dark:bg-zinc-900/20">
+                    <div className="max-w-5xl mx-auto">
+                        <blockquote className="text-6xl lg:text-[7rem] font-medium tracking-tight italic mb-16 leading-[1.1] text-zinc-900 dark:text-white">
                             "Hinter jedem Bild steckt eine Geschichte, die darauf wartet, erzählt zu werden."
                         </blockquote>
-                        <div className="text-sm font-mono tracking-[0.5em] uppercase text-zinc-500">— Michael Pzillas, Founder</div>
+                        <div className="text-sm font-mono tracking-[0.5em] uppercase text-zinc-400">— Michael Pzillas, Founder</div>
                     </div>
-                </div>
-            </main>
+                </section>
 
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 opacity-20 pointer-events-none animate-bounce">
-                <div className="w-0.5 h-12 bg-zinc-500" />
-            </div>
+                <GlobalFooter t={t} />
+            </main>
 
             <style>{`
                 .preserve-3d { transform-style: preserve-3d; }
-                .overflow-hidden { overflow: hidden; }
+                .perspective-1000 { perspective: 1000px; }
             `}</style>
         </div>
     );
