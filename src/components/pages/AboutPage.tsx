@@ -279,10 +279,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Präzise Steuerung */}
-                <section className="py-32 px-6 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-hidden">
-                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-20 lg:gap-32">
+                <section className="py-32 px-6 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-visible">
+                    <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 lg:gap-32 items-start">
                         <ScrollReveal delay={100}>
-                            <div className="flex-1 max-w-2xl order-2 lg:order-1">
+                            <div className="flex-1 max-w-2xl order-2 lg:order-1 min-h-[600px] flex flex-col justify-center">
                                 <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
                                     <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
                                 </h2>
@@ -291,16 +291,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 </p>
                             </div>
                         </ScrollReveal>
-                        <ScrollReveal delay={300}>
-                            <div className="w-full lg:w-auto flex-none order-1 lg:order-2 flex justify-center">
-                                <div className="relative group transform transition-all duration-700 hover:scale-105">
-                                    <div className="absolute -inset-8 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                    <div className="relative p-4 bg-white dark:bg-zinc-950 rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-900">
-                                        <SidepanelMockup />
+                        <div className="w-full order-1 lg:order-2 flex justify-center lg:justify-start">
+                            <div className="sticky top-32 lg:top-40">
+                                <ScrollReveal delay={300}>
+                                    <div className="relative group transform transition-all duration-700 hover:scale-105">
+                                        <div className="absolute -inset-8 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                        <div className="relative p-4 bg-white dark:bg-zinc-950 rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-900">
+                                            <SidepanelMockup />
+                                        </div>
                                     </div>
-                                </div>
+                                </ScrollReveal>
                             </div>
-                        </ScrollReveal>
+                        </div>
                     </div>
                 </section>
 
