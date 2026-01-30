@@ -56,61 +56,40 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 // --- Mockup Components ---
 
 const CanvasMockup = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) setIsVisible(true);
-            },
-            { threshold: 0.1 }
-        );
-        if (containerRef.current) observer.observe(containerRef.current);
-        return () => observer.disconnect();
-    }, []);
-
-    // Curated selection for clean, cinematic workflow
-    const images = [
-        { src: '41.jpg', delay: 0 },
-        { src: '42.jpg', delay: 150 },
-        { src: '44.jpg', delay: 300 },
-        { src: '11.jpg', delay: 450 },
-        { src: '13.jpg', delay: 600 },
-        { src: '21.jpg', delay: 750 },
+    // Irregular grid: 4-3-2-4 rows
+    const imageRows = [
+        ['41.jpg', '42.jpg', '43.jpg', '44.jpg'],
+        ['11.jpg', '12.jpg', '13.jpg'],
+        ['21.jpg', '22.jpg'],
+        ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
     return (
-        <div ref={containerRef} className="w-full grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-2xl">
-            {images.map((img, index) => (
-                <div
-                    key={img.src}
-                    className="relative group overflow-hidden rounded-lg"
-                    style={{
-                        opacity: isVisible ? 1 : 0,
-                        transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.95)',
-                        transition: 'all 1200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        transitionDelay: `${img.delay}ms`,
-                    }}
-                >
-                    {/* Floating shadow effect */}
-                    <div className="absolute -inset-2 bg-gradient-to-br from-orange-500/10 to-transparent rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
+        <div className="w-full flex flex-col gap-3 sm:gap-4 lg:gap-6 max-w-3xl">
+            {imageRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex gap-3 sm:gap-4 lg:gap-6 justify-center">
+                    {row.map((img, imgIndex) => (
+                        <div
+                            key={img}
+                            className="relative group overflow-hidden rounded-lg flex-1"
+                        >
+                            {/* Image container with aspect ratio */}
+                            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
+                                <img
+                                    src={`/about/2 iterativ+parallel/${img}`}
+                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
+                                    alt=""
+                                />
+                                {/* Subtle overlay for depth */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            </div>
 
-                    {/* Image container with aspect ratio */}
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900 shadow-lg group-hover:shadow-2xl transition-shadow duration-500">
-                        <img
-                            src={`/about/iterativ arbeiten img/${img.src}`}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
-                            alt=""
-                        />
-                        {/* Subtle overlay for depth */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    </div>
-
-                    {/* Workflow indicator - subtle number badge */}
-                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[10px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {index + 1}
-                    </div>
+                            {/* Workflow indicator - subtle number badge */}
+                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {rowIndex * 4 + imgIndex + 1}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ))}
         </div>
@@ -207,7 +186,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 2.5; // Duration of the 3D dive
+            const introHeight = window.innerHeight * 2.0; // Duration of the 3D dive
 
             // Calculate progress for the intro (0 to 1)
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
@@ -229,7 +208,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
-            <div className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-900' : 'bg-transparent'}`}>
+            <div className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${scrolled ? 'bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50' : 'bg-transparent'}`}>
                 <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
             </div>
 
@@ -265,7 +244,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             </div>
 
             {/* Spacer to allow scrolling through the intro */}
-            <div className="h-[250vh] w-full relative z-0" />
+            <div className="h-[200vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
