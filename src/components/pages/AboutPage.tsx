@@ -161,7 +161,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 2; // Duration of the 3D dive
+            const introHeight = window.innerHeight * 2.5; // Duration of the 3D dive
 
             // Calculate progress for the intro (0 to 1)
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
@@ -187,15 +187,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
             </div>
 
-            {/* --- Sticky 3D Intro Section --- */}
-            <div className="relative h-[250vh] w-full">
-                <div className="sticky top-0 h-screen w-full overflow-hidden perspective-[1000px]">
+            {/* --- Fixed 3D Intro Container --- */}
+            <div
+                className="fixed inset-0 z-10 overflow-hidden transition-opacity duration-1000"
+                style={{
+                    opacity: 1 - Math.pow(introProgress, 2),
+                    pointerEvents: introProgress > 0.95 ? 'none' : 'auto'
+                }}
+            >
+                <div className="w-full h-full" style={{ perspective: '1000px' }}>
                     <div
                         className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out"
-                        style={{
-                            transform: `translate3d(0, 0, ${scrollDepth}px)`,
-                            opacity: 1 - Math.pow(introProgress, 3) // Fade out as we finish the dive
-                        }}
+                        style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
                     >
                         {/* Hero Text Layer */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
@@ -214,6 +217,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     </div>
                 </div>
             </div>
+
+            {/* Spacer to allow scrolling through the intro */}
+            <div className="h-[250vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-20 bg-white dark:bg-zinc-950">
