@@ -70,48 +70,49 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Curated selection for clean, cinematic workflow
     const images = [
-        '41.jpg', '42.jpg', '44.jpg', '45.jpg',
-        '11.jpg', '13.jpg', '14.jpg',
-        '21.jpg', '24.jpg',
-        '31.jpg', '32.jpg', '33.jpg'
+        { src: '41.jpg', delay: 0 },
+        { src: '42.jpg', delay: 150 },
+        { src: '44.jpg', delay: 300 },
+        { src: '11.jpg', delay: 450 },
+        { src: '13.jpg', delay: 600 },
+        { src: '21.jpg', delay: 750 },
     ];
 
     return (
-        <div ref={containerRef} className="w-full grid grid-cols-3 gap-4 sm:gap-6">
-            {images.map((imageName, index) => {
-                const delay = index * 80;
-                const floatDelay = index * 0.3;
-                const floatDuration = 3 + (index % 3) * 0.5;
+        <div ref={containerRef} className="w-full grid grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-2xl">
+            {images.map((img, index) => (
+                <div
+                    key={img.src}
+                    className="relative group overflow-hidden rounded-lg"
+                    style={{
+                        opacity: isVisible ? 1 : 0,
+                        transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(30px) scale(0.95)',
+                        transition: 'all 1200ms cubic-bezier(0.16, 1, 0.3, 1)',
+                        transitionDelay: `${img.delay}ms`,
+                    }}
+                >
+                    {/* Floating shadow effect */}
+                    <div className="absolute -inset-2 bg-gradient-to-br from-orange-500/10 to-transparent rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 -z-10" />
 
-                return (
-                    <div
-                        key={imageName}
-                        className="aspect-square overflow-hidden rounded-lg shadow-lg transition-all duration-1000 hover:shadow-2xl hover:scale-105 group"
-                        style={{
-                            transitionDelay: `${delay}ms`,
-                            opacity: isVisible ? 1 : 0,
-                            transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
-                            animation: isVisible ? `float ${floatDuration}s ease-in-out ${floatDelay}s infinite` : 'none'
-                        }}
-                    >
+                    {/* Image container with aspect ratio */}
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900 shadow-lg group-hover:shadow-2xl transition-shadow duration-500">
                         <img
-                            src={`/about/iterativ arbeiten img/${imageName}`}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            src={`/about/iterativ arbeiten img/${img.src}`}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
                             alt=""
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        {/* Subtle overlay for depth */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
-                );
-            })}
-            <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    25% { transform: translateY(-8px) rotate(1deg); }
-                    50% { transform: translateY(-4px) rotate(-0.5deg); }
-                    75% { transform: translateY(-12px) rotate(0.5deg); }
-                }
-            `}</style>
+
+                    {/* Workflow indicator - subtle number badge */}
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[10px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {index + 1}
+                    </div>
+                </div>
+            ))}
         </div>
     );
 };
