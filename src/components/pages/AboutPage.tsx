@@ -151,6 +151,39 @@ const SidepanelMockup = () => {
     );
 };
 
+// --- Scroll Animation Wrapper ---
+
+const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({ children, delay = 0 }) => {
+    const [isVisible, setIsVisible] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => setIsVisible(true), delay);
+                }
+            },
+            { threshold: 0.1, rootMargin: '-50px' }
+        );
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, [delay]);
+
+    return (
+        <div
+            ref={ref}
+            className="transition-all duration-1000 ease-out"
+            style={{
+                opacity: isVisible ? 1 : 0,
+                transform: isVisible ? 'translateY(0)' : 'translateY(40px)'
+            }}
+        >
+            {children}
+        </div>
+    );
+};
+
 // --- Main Page Component ---
 
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
@@ -189,7 +222,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
             {/* --- Fixed 3D Intro Container --- */}
             <div
-                className="fixed inset-0 z-10 overflow-hidden transition-opacity duration-1000"
+                className="fixed inset-0 z-[5] overflow-hidden transition-opacity duration-1000"
                 style={{
                     opacity: 1 - Math.pow(introProgress, 2),
                     pointerEvents: introProgress > 0.95 ? 'none' : 'auto'
@@ -202,11 +235,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     >
                         {/* Hero Text Layer */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
-                            <h1 className="text-7xl sm:text-[12rem] font-bold tracking-tighter leading-[0.8] mb-12">
+                            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.8] mb-8">
                                 Creation <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
                             </h1>
-                            <p className="max-w-md mx-auto text-xl text-zinc-500 font-medium">
+                            <p className="max-w-md mx-auto text-base sm:text-lg text-zinc-500 font-medium">
                                 Scroll down to dive into the architecture of your next big idea.
                             </p>
                         </div>
@@ -230,35 +263,44 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <div className="w-auto flex-none">
                             <CanvasMockup />
                         </div>
-                        <div className="flex-1 max-w-2xl">
-                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.8] animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                                <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
-                            </h2>
-                            <p className="text-2xl text-zinc-500 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-                                Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
-                            </p>
-                        </div>
+                        <ScrollReveal delay={200}>
+                            <div className="flex-1 max-w-2xl">
+                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
+                                    <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
+                                </h2>
+                                <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                    Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
+                                </p>
+                            </div>
+                        </ScrollReveal>
                     </div>
                 </section>
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Präzise Steuerung */}
-                <section className="py-32 px-6 bg-zinc-50/50 dark:bg-zinc-900/10">
-                    <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
-                        <div className="flex justify-center lg:justify-end order-2 lg:order-1">
-                            <div className="relative group p-4 bg-white dark:bg-zinc-950 rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-900">
-                                <SidepanelMockup />
+                <section className="py-32 px-6 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-hidden">
+                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-20 lg:gap-32">
+                        <ScrollReveal delay={100}>
+                            <div className="flex-1 max-w-2xl order-2 lg:order-1">
+                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
+                                    <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
+                                </h2>
+                                <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                    Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.
+                                </p>
                             </div>
-                        </div>
-                        <div className="text-left order-1 lg:order-2 max-w-2xl">
-                            <h2 className="text-6xl lg:text-9xl font-bold tracking-tighter mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                                <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
-                            </h2>
-                            <p className="text-2xl text-zinc-500 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-                                Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.
-                            </p>
-                        </div>
+                        </ScrollReveal>
+                        <ScrollReveal delay={300}>
+                            <div className="w-full lg:w-auto flex-none order-1 lg:order-2 flex justify-center">
+                                <div className="relative group transform transition-all duration-700 hover:scale-105">
+                                    <div className="absolute -inset-8 bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    <div className="relative p-4 bg-white dark:bg-zinc-950 rounded-[2.5rem] shadow-2xl border border-zinc-100 dark:border-zinc-900">
+                                        <SidepanelMockup />
+                                    </div>
+                                </div>
+                            </div>
+                        </ScrollReveal>
                     </div>
                 </section>
 
@@ -267,23 +309,27 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 {/* Visual Prompting */}
                 <section className="py-32 px-6">
                     <div className="max-w-[1700px] mx-auto flex flex-col items-center text-center">
-                        <div className="max-w-4xl mb-24">
-                            <h2 className="text-7xl lg:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-12 duration-1000">
-                                Visual <span className="text-orange-500">prompting.</span>
-                            </h2>
-                            <p className="text-2xl text-zinc-500 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-                                Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
-                            </p>
-                        </div>
-                        <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
-                            <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
+                        <ScrollReveal>
+                            <div className="max-w-4xl mb-24">
+                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9]">
+                                    Visual <span className="text-orange-500">prompting.</span>
+                                </h2>
+                                <p className="text-xl sm:text-2xl text-zinc-500">
+                                    Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
+                                </p>
                             </div>
-                            <div className="absolute bottom-[30%] right-[25%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Lichtquelle hinzufügen"</div>
+                        </ScrollReveal>
+                        <ScrollReveal delay={200}>
+                            <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900">
+                                <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
+                                <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
+                                </div>
+                                <div className="absolute bottom-[30%] right-[25%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Lichtquelle hinzufügen"</div>
+                                </div>
                             </div>
-                        </div>
+                        </ScrollReveal>
                     </div>
                 </section>
 
