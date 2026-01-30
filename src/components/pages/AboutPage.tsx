@@ -222,7 +222,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
             {/* --- Fixed 3D Intro Container --- */}
             <div
-                className="fixed inset-0 z-[5] overflow-hidden transition-opacity duration-1000"
+                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000"
                 style={{
                     opacity: 1 - Math.pow(introProgress, 2),
                     pointerEvents: introProgress > 0.95 ? 'none' : 'auto'
@@ -255,12 +255,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <div className="h-[250vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
-            <main className="relative z-20 bg-white dark:bg-zinc-950">
+            <main className="relative z-10 bg-white dark:bg-zinc-950">
 
                 {/* Iterativ + Parallel */}
                 <section className="py-32 px-6 overflow-hidden">
-                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-20">
-                        <div className="w-auto flex-none">
+                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                        <div className="w-full lg:w-auto flex-none max-w-full lg:max-w-[55%]">
                             <CanvasMockup />
                         </div>
                         <ScrollReveal delay={200}>
