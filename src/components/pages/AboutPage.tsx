@@ -70,36 +70,48 @@ const CanvasMockup = () => {
         return () => observer.disconnect();
     }, []);
 
-    const imageRows = [
-        ['41.jpg', '42.jpg', '44.jpg', '45.jpg'],
-        ['11.jpg', '13.jpg', '14.jpg'],
-        ['21.jpg', '24.jpg'],
-        ['31.jpg', '32.jpg', '33.jpg']
+    const images = [
+        '41.jpg', '42.jpg', '44.jpg', '45.jpg',
+        '11.jpg', '13.jpg', '14.jpg',
+        '21.jpg', '24.jpg',
+        '31.jpg', '32.jpg', '33.jpg'
     ];
 
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-6 sm:gap-12">
-            {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-3 sm:gap-6 items-end">
-                    {row.map((imageName, imgIndex) => {
-                        const targetOpacity = Math.max(0.1, 1 - (row.length - 1 - imgIndex) * 0.15);
-                        return (
-                            <div
-                                key={imageName}
-                                className="w-28 sm:w-56 lg:w-80 h-auto overflow-hidden transition-all duration-[1500ms]"
-                                style={{
-                                    transitionDelay: `${(imgIndex * 180) + (rowIndex * 40)}ms`,
-                                    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                                    opacity: isVisible ? targetOpacity : 0,
-                                    transform: isVisible ? 'scale(1)' : 'scale(0.98)'
-                                }}
-                            >
-                                <img src={`/about/iterativ arbeiten img/${imageName}`} className="w-full h-auto block" alt="" />
-                            </div>
-                        );
-                    })}
-                </div>
-            ))}
+        <div ref={containerRef} className="w-full grid grid-cols-3 gap-4 sm:gap-6">
+            {images.map((imageName, index) => {
+                const delay = index * 80;
+                const floatDelay = index * 0.3;
+                const floatDuration = 3 + (index % 3) * 0.5;
+
+                return (
+                    <div
+                        key={imageName}
+                        className="aspect-square overflow-hidden rounded-lg shadow-lg transition-all duration-1000 hover:shadow-2xl hover:scale-105 group"
+                        style={{
+                            transitionDelay: `${delay}ms`,
+                            opacity: isVisible ? 1 : 0,
+                            transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+                            animation: isVisible ? `float ${floatDuration}s ease-in-out ${floatDelay}s infinite` : 'none'
+                        }}
+                    >
+                        <img
+                            src={`/about/iterativ arbeiten img/${imageName}`}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            alt=""
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </div>
+                );
+            })}
+            <style>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) rotate(0deg); }
+                    25% { transform: translateY(-8px) rotate(1deg); }
+                    50% { transform: translateY(-4px) rotate(-0.5deg); }
+                    75% { transform: translateY(-12px) rotate(0.5deg); }
+                }
+            `}</style>
         </div>
     );
 };
@@ -258,13 +270,15 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <main className="relative z-10 bg-white dark:bg-zinc-950">
 
                 {/* Iterativ + Parallel */}
-                <section className="py-32 px-6 overflow-hidden">
-                    <div className="max-w-[1700px] mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-                        <div className="w-full lg:w-auto flex-none max-w-full lg:max-w-[55%]">
-                            <CanvasMockup />
+                <section className="py-32 px-6 overflow-visible">
+                    <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+                        <div className="w-full order-2 lg:order-1">
+                            <div className="sticky top-32 lg:top-40">
+                                <CanvasMockup />
+                            </div>
                         </div>
                         <ScrollReveal delay={200}>
-                            <div className="flex-1 max-w-2xl">
+                            <div className="flex-1 max-w-2xl order-1 lg:order-2 min-h-[800px] flex flex-col justify-center">
                                 <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
                                     <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                                 </h2>
