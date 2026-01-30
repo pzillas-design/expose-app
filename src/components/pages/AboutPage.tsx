@@ -56,7 +56,23 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 // --- Mockup Components ---
 
 const CanvasMockup = () => {
-    // Irregular grid: 4-3-2-4 rows
+    const [isVisible, setIsVisible] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => setIsVisible(true), 100);
+                }
+            },
+            { threshold: 0.2 }
+        );
+        if (containerRef.current) observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    // Irregular grid: 4-3-2-4 rows (fransiges Design)
     const imageRows = [
         ['41.jpg', '42.jpg', '43.jpg', '44.jpg'],
         ['11.jpg', '12.jpg', '13.jpg'],
@@ -65,31 +81,42 @@ const CanvasMockup = () => {
     ];
 
     return (
-        <div className="w-full flex flex-col gap-3 sm:gap-4 lg:gap-6 max-w-3xl">
+        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4">
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-3 sm:gap-4 lg:gap-6 justify-center">
-                    {row.map((img, imgIndex) => (
-                        <div
-                            key={img}
-                            className="relative group overflow-hidden rounded-lg flex-1"
-                        >
-                            {/* Image container with aspect ratio */}
-                            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
-                                <img
-                                    src={`/about/2 iterativ+parallel/${img}`}
-                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
-                                    alt=""
-                                />
-                                {/* Subtle overlay for depth */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            </div>
+                <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4">
+                    {row.map((img, imgIndex) => {
+                        const delay = (rowIndex * 4 + imgIndex) * 80;
+                        return (
+                            <div
+                                key={img}
+                                className="relative group overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
+                                style={{
+                                    opacity: isVisible ? 1 : 0,
+                                    transform: isVisible
+                                        ? 'translateX(0) scale(1)'
+                                        : 'translateX(-20px) scale(1.05)',
+                                    transition: 'all 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
+                                    transitionDelay: `${delay}ms`,
+                                }}
+                            >
+                                {/* Image container - NO border radius */}
+                                <div className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                                    <img
+                                        src={`/about/2-iterativ-parallel/${img}`}
+                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
+                                        alt=""
+                                    />
+                                    {/* Subtle overlay for depth */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                </div>
 
-                            {/* Workflow indicator - subtle number badge */}
-                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                {rowIndex * 4 + imgIndex + 1}
+                                {/* Workflow indicator - subtle number badge */}
+                                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    {rowIndex * 4 + imgIndex + 1}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ))}
         </div>
@@ -250,15 +277,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <main className="relative z-10 bg-white dark:bg-zinc-950">
 
                 {/* Iterativ + Parallel */}
-                <section className="py-32 px-6 overflow-visible">
-                    <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-                        <div className="w-full order-2 lg:order-1">
+                <section className="py-32 overflow-visible">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+                        {/* Images on the left - edge to edge */}
+                        <div className="w-full order-1 lg:order-1 pl-0">
                             <div className="sticky top-32 lg:top-40">
                                 <CanvasMockup />
                             </div>
                         </div>
+                        {/* Text on the right */}
                         <ScrollReveal delay={200}>
-                            <div className="flex-1 max-w-2xl order-1 lg:order-2 min-h-[800px] flex flex-col justify-center">
+                            <div className="flex-1 max-w-2xl order-2 lg:order-2 min-h-[800px] flex flex-col justify-center px-6">
                                 <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
                                     <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
                                 </h2>
