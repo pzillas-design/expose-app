@@ -355,11 +355,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 WebkitFontSmoothing: 'antialiased'
                             }}
                         >
-                            <div className="w-[66%] lg:w-full mt-[-2vh]">
+                            <div className="w-[85%] lg:w-full mt-[-2vh]">
                                 <h1
                                     className="font-bold tracking-tighter leading-[0.85] antialiased"
                                     style={{
-                                        fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
+                                        fontSize: 'clamp(3.5rem, 12vw, 8.5rem)',
                                         WebkitBackfaceVisibility: 'hidden',
                                         transform: 'translate3d(0, 0, 0)'
                                     }}
