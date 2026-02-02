@@ -270,6 +270,8 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
 
 // --- Main Page Component ---
 
+// --- Main Page Component ---
+
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrolled, setScrolled] = useState(false);
     const section1Ref = useRef<HTMLElement>(null);
@@ -279,7 +281,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 1.5;
+            const introHeight = window.innerHeight * 2.0;
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
 
             // Apply scrolled state for navbar
@@ -294,6 +296,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             }
 
             if (heroContainerRef.current) {
+                // Sharp fade in last 10%
                 const opacity = progress > 0.9 ? (1 - progress) * 10 : 1;
                 heroContainerRef.current.style.opacity = opacity.toString();
                 heroContainerRef.current.style.pointerEvents = progress > 0.95 ? 'none' : 'auto';
@@ -306,13 +309,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     }, [scrolled]);
 
     const floatingImages = [
-        { src: '/about/2-iterativ-parallel/41.jpg', x: '10%', y: '5%', depth: -500, size: '25vw' },
-        { src: '/about/2-iterativ-parallel/11.jpg', x: '85%', y: '20%', depth: -850, size: '32vw' },
-        { src: '/about/2-iterativ-parallel/21.jpg', x: '90%', y: '80%', depth: -350, size: '10vw' },
-        { src: '/about/2-iterativ-parallel/31.jpg', x: '-25%', y: '85%', depth: -1100, size: '35vw' },
-        { src: '/about/2-iterativ-parallel/42.jpg', x: '35%', y: '10%', depth: -650, size: '24vw' },
-        { src: '/about/2-iterativ-parallel/12.jpg', x: '70%', y: '90%', depth: -1000, size: '20vw' },
-        { src: '/about/2-iterativ-parallel/22.jpg', x: '-45%', y: '30%', depth: -1100, size: '18vw' },
+        { src: '/about/2-iterativ-parallel/41.jpg', x: '10%', y: '5%', depth: -300, size: '25vw' },
+        { src: '/about/2-iterativ-parallel/11.jpg', x: '85%', y: '20%', depth: -650, size: '32vw' },
+        { src: '/about/2-iterativ-parallel/21.jpg', x: '90%', y: '80%', depth: -150, size: '10vw' },
+        { src: '/about/2-iterativ-parallel/31.jpg', x: '-25%', y: '85%', depth: -900, size: '35vw' },
+        { src: '/about/2-iterativ-parallel/42.jpg', x: '35%', y: '10%', depth: -450, size: '24vw' },
+        { src: '/about/2-iterativ-parallel/12.jpg', x: '70%', y: '90%', depth: -800, size: '20vw' },
+        { src: '/about/2-iterativ-parallel/22.jpg', x: '-45%', y: '30%', depth: -900, size: '18vw' },
     ];
 
     return (
@@ -324,21 +327,20 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
             <div
                 ref={heroContainerRef}
-                className="fixed inset-0 z-20 overflow-hidden will-change-opacity"
+                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
             >
-                <div className="w-full h-full" style={{ perspective: '1000px', WebkitPerspective: '1000px' }}>
+                <div className="w-full h-full" style={{ perspective: '1000px' }}>
                     <div
                         ref={heroLayerRef}
-                        className="relative w-full h-full preserve-3d will-change-transform"
+                        className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out will-change-transform"
                     >
                         {/* Hero Text Layer */}
                         <div
                             className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
                             style={{
-                                transform: 'translate3d(0, 0, 1px)', // Stay at 1:1 scale for maximum sharpness
+                                transform: 'translate3d(0, 0, 150px)',
                                 backfaceVisibility: 'hidden',
-                                WebkitBackfaceVisibility: 'hidden',
-                                WebkitFontSmoothing: 'subpixel-antialiased'
+                                WebkitFontSmoothing: 'antialiased'
                             }}
                         >
                             <div className="w-[66%]">
@@ -346,8 +348,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     className="font-bold tracking-tighter leading-[0.8] antialiased"
                                     style={{
                                         fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
-                                        transform: 'translate3d(0, 0, 0)',
-                                        textRendering: 'optimizeLegibility'
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        transform: 'translate3d(0, 0, 0)'
                                     }}
                                 >
                                     Creation <br />
@@ -364,7 +366,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             </div>
 
             {/* Spacer to allow scrolling through the intro */}
-            <div className="h-[150vh] w-full relative z-0" />
+            <div className="h-[200vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
