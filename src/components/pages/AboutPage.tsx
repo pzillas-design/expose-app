@@ -80,23 +80,35 @@ const CanvasMockup = () => {
         ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
+    // Random Z-offsets for chaos effect (different depth per image)
+    const zOffsets = [
+        -120, 80, -150, 100,  // Row 1
+        -90, 130, -110,        // Row 2
+        70, -140,              // Row 3
+        -100, 90, -130, 110    // Row 4
+    ];
+
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4">
+        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4">
+                <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
                         const delay = (rowIndex * 4 + imgIndex) * 80;
+                        const zIndex = rowIndex * 4 + imgIndex;
+                        const zOffset = zOffsets[zIndex] || 0;
+
                         return (
                             <div
                                 key={img}
                                 className="relative group overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
                                 style={{
-                                    opacity: isVisible ? 1 : 0,
+                                    opacity: 1, // Always visible
                                     transform: isVisible
-                                        ? 'translateX(0) scale(1)'
-                                        : 'translateX(-20px) scale(1.05)',
-                                    transition: 'all 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
+                                        ? 'translateZ(0) scale(1)' // End: normal size, no depth
+                                        : `translateZ(${zOffset}px) scale(1.15)`, // Start: varied depth, larger
+                                    transition: 'all 1200ms cubic-bezier(0.16, 1, 0.3, 1)',
                                     transitionDelay: `${delay}ms`,
+                                    transformStyle: 'preserve-3d',
                                 }}
                             >
                                 {/* Image container - NO border radius */}
@@ -112,7 +124,7 @@ const CanvasMockup = () => {
 
                                 {/* Workflow indicator - subtle number badge */}
                                 <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    {rowIndex * 4 + imgIndex + 1}
+                                    {zIndex + 1}
                                 </div>
                             </div>
                         );
@@ -281,7 +293,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
                         {/* Images on the left - edge to edge */}
                         <div className="w-full order-1 lg:order-1 pl-0">
-                            <div className="sticky top-32 lg:top-40">
+                            <div className="sticky top-32 lg:top-40" style={{ perspective: '1200px' }}>
                                 <CanvasMockup />
                             </div>
                         </div>
