@@ -284,7 +284,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 1.5;
+            const introHeight = window.innerHeight * 2.0;
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
 
             // Apply scrolled state for navbar
@@ -384,12 +384,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             </div>
 
             {/* Spacer to allow scrolling through the intro */}
-            <div className="h-[150vh] w-full relative z-0" />
+            <div className="h-[200vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
                 {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
-                <section ref={section1Ref} className="relative h-[250vh]">
+                <section ref={section1Ref} className="relative h-[300vh]">
                     <div className="sticky top-0 h-screen overflow-hidden">
                         <div className="w-full h-full flex flex-col lg:flex-row">
                             {/* Left: Image Cluster */}
