@@ -56,20 +56,31 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 // --- Mockup Components ---
 
 const CanvasMockup = () => {
-    const [isVisible, setIsVisible] = useState(false);
+    const [scrollProgress, setScrollProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setTimeout(() => setIsVisible(true), 100);
-                }
-            },
-            { threshold: 0.2 }
-        );
-        if (containerRef.current) observer.observe(containerRef.current);
-        return () => observer.disconnect();
+        const handleScroll = () => {
+            if (!containerRef.current) return;
+
+            const rect = containerRef.current.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            // Calculate progress based on element position
+            // Start animation when element enters viewport (bottom of screen)
+            // Complete when element is centered
+            const start = windowHeight;
+            const end = windowHeight / 2;
+            const current = rect.top;
+
+            // Progress from 0 (chaos) to 1 (order)
+            const progress = Math.min(Math.max((start - current) / (start - end), 0), 1);
+            setScrollProgress(progress);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll(); // Initial calculation
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     // Irregular grid: 4-3-2-4 rows (fransiges Design)
@@ -93,21 +104,26 @@ const CanvasMockup = () => {
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
-                        const delay = (rowIndex * 4 + imgIndex) * 80;
+                        const delay = (rowIndex * 4 + imgIndex) * 0.05; // Stagger effect
                         const zIndex = rowIndex * 4 + imgIndex;
                         const zOffset = zOffsets[zIndex] || 0;
+
+                        // Apply delay to progress for staggered effect
+                        const delayedProgress = Math.min(Math.max(scrollProgress - delay, 0), 1);
+
+                        // Interpolate between chaos and order
+                        const currentScale = 1.15 - (delayedProgress * 0.15); // 1.15 → 1.0
+                        const currentZ = zOffset * (1 - delayedProgress); // varied → 0
+                        const currentOpacity = 0.3 + (delayedProgress * 0.7); // 0.3 → 1.0
 
                         return (
                             <div
                                 key={img}
                                 className="relative group overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
                                 style={{
-                                    opacity: 1, // Always visible
-                                    transform: isVisible
-                                        ? 'translateZ(0) scale(1)' // End: normal size, no depth
-                                        : `translateZ(${zOffset}px) scale(1.15)`, // Start: varied depth, larger
-                                    transition: 'all 1200ms cubic-bezier(0.16, 1, 0.3, 1)',
-                                    transitionDelay: `${delay}ms`,
+                                    opacity: currentOpacity,
+                                    transform: `translateZ(${currentZ}px) scale(${currentScale})`,
+                                    transition: 'all 300ms ease-out',
                                     transformStyle: 'preserve-3d',
                                 }}
                             >
@@ -315,16 +331,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 {/* Präzise Steuerung */}
                 <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-visible">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-                        {/* Images on the left - edge to edge */}
-                        <div className="w-full order-1 lg:order-1 pl-0">
-                            <div className="sticky top-32 lg:top-40" style={{ perspective: '1200px' }}>
-                                <CanvasMockup />
-                            </div>
-                        </div>
-                        {/* Text on the right */}
+                    <div className="max-w-[1700px] mx-auto px-6">
+                        {/* Text only - placeholder for future visual */}
                         <ScrollReveal delay={100}>
-                            <div className="flex-1 max-w-2xl order-2 lg:order-2 min-h-[800px] flex flex-col justify-center px-6">
+                            <div className="flex-1 max-w-2xl min-h-[600px] flex flex-col justify-center">
                                 <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
                                     <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
                                 </h2>
