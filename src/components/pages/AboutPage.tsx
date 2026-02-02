@@ -67,14 +67,8 @@ const CanvasMockup = () => {
             const windowHeight = window.innerHeight;
 
             // Calculate progress based on element position
-            // Start animation when element enters viewport (bottom of screen)
-            // Complete when element reaches 75vh (earlier than before)
-            const start = windowHeight; // Bottom of screen
-            const end = windowHeight * 0.75; // 75vh - completes earlier
-            const current = rect.top;
-
-            // Progress from 0 (chaos) to 1 (order)
-            const progress = Math.min(Math.max((start - current) / (start - end), 0), 1);
+            // Animation completes when top of container reaches 60% of viewport
+            const progress = Math.min(Math.max(1 - (rect.top / (windowHeight * 0.6)), 0), 1);
             setScrollProgress(progress);
         };
 
@@ -130,20 +124,13 @@ const CanvasMockup = () => {
                                     transformStyle: 'preserve-3d',
                                 }}
                             >
-                                {/* Image container - NO border radius */}
+                                {/* Image container - NO border radius, NO hover effects */}
                                 <div className="relative aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                                     <img
                                         src={`/about/2-iterativ-parallel/${img}`}
-                                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
+                                        className="absolute inset-0 w-full h-full object-cover"
                                         alt=""
                                     />
-                                    {/* Subtle overlay for depth */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                </div>
-
-                                {/* Workflow indicator - subtle number badge */}
-                                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    {zIndex + 1}
                                 </div>
                             </div>
                         );
