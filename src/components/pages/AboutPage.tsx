@@ -292,11 +292,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     }, []);
 
     const floatingImages = [
-        { src: '/about/iterativ arbeiten img/41.jpg', x: '10%', y: '15%', depth: 0, size: '400px' },
-        { src: '/about/iterativ arbeiten img/11.jpg', x: '55%', y: '25%', depth: -300, size: '500px' },
-        { src: '/about/iterativ arbeiten img/21.jpg', x: '25%', y: '50%', depth: -600, size: '350px' },
-        { src: '/about/iterativ arbeiten img/31.jpg', x: '60%', y: '65%', depth: -900, size: '450px' },
-        { src: '/about/iterativ arbeiten img/42.jpg', x: '15%', y: '85%', depth: -1200, size: '600px' },
+        { src: '/about/2-iterativ-parallel/41.jpg', x: '10%', y: '5%', depth: -300, size: '25vw' },
+        { src: '/about/2-iterativ-parallel/11.jpg', x: '85%', y: '20%', depth: -650, size: '32vw' },
+        { src: '/about/2-iterativ-parallel/21.jpg', x: '90%', y: '80%', depth: -150, size: '10vw' },
+        { src: '/about/2-iterativ-parallel/31.jpg', x: '-25%', y: '85%', depth: -900, size: '35vw' },
+        { src: '/about/2-iterativ-parallel/42.jpg', x: '35%', y: '10%', depth: -450, size: '24vw' },
+        { src: '/about/2-iterativ-parallel/12.jpg', x: '70%', y: '90%', depth: -800, size: '20vw' },
+        { src: '/about/2-iterativ-parallel/22.jpg', x: '-45%', y: '30%', depth: -900, size: '18vw' },
     ];
 
     return (
@@ -320,11 +322,15 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     >
                         {/* Hero Text Layer */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
-                            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.8] mb-8">
-                                Creation <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
-                            </h1>
-
+                            <div className="w-[66%]">
+                                <h1
+                                    className="font-bold tracking-tighter leading-[0.8]"
+                                    style={{ fontSize: 'clamp(2.5rem, 8vw, 8.5rem)' }}
+                                >
+                                    Creation <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
+                                </h1>
+                            </div>
                         </div>
 
                         {floatingImages.map((img, i) => (
