@@ -44,7 +44,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
             <div className="relative group cursor-none">
                 <img
                     src={src}
-                    className="w-full h-auto shadow-2xl transition-all duration-500 rounded-sm"
+                    className="w-full h-full transition-all duration-500 rounded-sm"
                     alt="Canvas Element"
                 />
                 <div className={`absolute -inset-4 bg-orange-500/10 blur-xl rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
@@ -55,7 +55,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 
 // --- Mockup Components ---
 
-const CanvasMockup = () => {
+const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement> }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -63,23 +63,24 @@ const CanvasMockup = () => {
         let rafId: number;
 
         const handleScroll = () => {
-            if (!containerRef.current) return;
+            if (!containerRef.current || !triggerRef?.current) return;
 
-            // Use requestAnimationFrame for smooth updates without React re-renders
+            // Use requestAnimationFrame for smooth updates
             rafId = requestAnimationFrame(() => {
-                if (!containerRef.current) return;
+                if (!containerRef.current || !triggerRef.current) return;
 
-                const rect = containerRef.current.getBoundingClientRect();
+                const rect = triggerRef.current.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
 
-                // Improved progress calculation logic
-                // Start: when element top is at bottom of viewport (100vh)
-                // End: when element top is at 20% of viewport (20vh) - reaches order phase earlier
-                // This ensures full completion while the element is prominently visible
-                const startPoint = windowHeight;
-                const endPoint = windowHeight * 0.2;
+                // Scroll progress relative to the trigger section
+                // Start anim: when section top is at 0 (sticky start)
+                // End anim: when section top is at -windowHeight (scrolled 1 screen height)
+                // Animation Timing Tuning:
+                // Reduced buffer to 10% to minimize "Empty run" / Leerlauf.
+                const startPoint = -windowHeight * 0.1;
+                const endPoint = -windowHeight * 1.1;
 
-                // Calculate raw progress
+                // Calculate progress
                 const rawProgress = (startPoint - rect.top) / (startPoint - endPoint);
                 const progress = Math.min(Math.max(rawProgress, 0), 1);
 
@@ -88,47 +89,37 @@ const CanvasMockup = () => {
                     if (!imgRef) return;
 
                     // Simple index based logic
-                    // Grid has 13 images total in rows: 4, 3, 2, 4
-
-                    // Calculate individual delays based on index
-                    const delay = index * 0.03; // Slightly tighter stagger
+                    // Wave logic: center triggers first, ripples outward
+                    const delay = Math.abs(index - 6) * 0.05;
                     const zIndex = index;
-
-                    // Pre-defined Z-offsets (same as before)
                     const zOffsets = [
-                        150, 200, 125, 175,  // Row 1
-                        140, 190, 160,       // Row 2
-                        170, 130,            // Row 3
-                        145, 185, 155, 165   // Row 4
+                        150, 200, 125, 175, 140, 190, 160, 170, 130, 145, 185, 155, 165
                     ];
-
                     const zOffset = zOffsets[zIndex] || 0;
 
-                    // Staggered progress for this specific image
-                    // The delay shifts the effective start point for each image
+                    // Staggered progress
                     const delayedProgress = Math.min(Math.max(progress - delay, 0), 1);
 
-                    // Normalize delayed progress so it reaches 1.0 fully
-                    // effective animation range for an image is (progress: delay -> 1.0)
-                    // We map that 0 -> 1 for the transform interpolation
-                    // Using a smoother easing
+                    // Normalize
                     const normalizedProgress = progress > delay
                         ? Math.min((progress - delay) / (1 - delay - 0.1), 1)
                         : 0;
 
                     // Interpolate values
                     // Unified opacity tied to progress
-                    const opacity = Math.min(normalizedProgress * 1.5, 1); // Fade in faster
+                    const opacity = Math.min(normalizedProgress * 1.5, 1);
 
                     // Unified zoom from center (fly-through effect)
-                    // Start: large positive Z (closer/zoom out)
+                    // Start: large positive Z (closer/zoom out) -> "von vorne"
                     // End: 0 (flat on plane)
-                    const currentZ = zOffset * (1 - normalizedProgress);
+                    // 400px start gives a nice "fly in" feel
+                    const currentZ = 400 - (normalizedProgress * 400);
 
                     // Apply styles directly
+                    // Added transition to mimic the "Hero" smoothness (interpolation)
+                    imgRef.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s linear';
                     imgRef.style.opacity = opacity.toString();
                     imgRef.style.transform = `translateZ(${currentZ}px)`;
-                    // NO transition property here - ensures 1:1 scroll lock
                 });
             });
         };
@@ -140,13 +131,13 @@ const CanvasMockup = () => {
             window.removeEventListener('scroll', handleScroll);
             cancelAnimationFrame(rafId);
         };
-    }, []);
+    }, [triggerRef]);
 
-    // Irregular grid: 4-3-2-4 rows (fransiges Design)
+    // Irregular grid: 4-3-2-4 rows with dummy placeholders to make all rows equal (4 items)
     const imageRows = [
         ['41.jpg', '42.jpg', '43.jpg', '44.jpg'],
-        ['11.jpg', '12.jpg', '13.jpg'],
-        ['21.jpg', '22.jpg'],
+        ['11.jpg', '12.jpg', '13.jpg', null], // 1 dummy
+        ['21.jpg', '22.jpg', null, null],      // 2 dummies
         ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
@@ -155,19 +146,24 @@ const CanvasMockup = () => {
     return (
         <div
             ref={containerRef}
-            className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4"
+            className="w-full flex flex-col gap-4 sm:gap-6 lg:gap-8"
             style={{ transformStyle: 'preserve-3d' }}
         >
             {imageRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
+                <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4 justify-start" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
                         const currentIndex = flatIndex++;
+
+                        // Skip rendering for dummy placeholders (null)
+                        if (img === null) {
+                            return <div key={`dummy-${rowIndex}-${imgIndex}`} className="flex-1 basis-0 min-w-0" />;
+                        }
 
                         return (
                             <div
                                 key={img}
                                 ref={el => { imageRefs.current[currentIndex] = el; }}
-                                className="relative overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
+                                className="relative overflow-hidden flex-1 basis-0 min-w-0"
                                 style={{
                                     transformStyle: 'preserve-3d',
                                     willChange: 'transform, opacity', // Optimization hint
@@ -278,11 +274,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const [scrollDepth, setScrollDepth] = useState(0);
     const [scrolled, setScrolled] = useState(false);
     const [introProgress, setIntroProgress] = useState(0); // 0 to 1
+    const section1Ref = useRef<HTMLElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 2.0; // Duration of the 3D dive
+            const introHeight = window.innerHeight * 1.5; // Increased to 1.5 for slightly more spacing
 
             // Calculate progress for the intro (0 to 1)
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
@@ -308,11 +305,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
             </div>
 
-            {/* --- Fixed 3D Intro Container --- */}
+            {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
             <div
                 className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000"
                 style={{
-                    opacity: 1 - Math.pow(introProgress, 2),
+                    opacity: introProgress > 0.9 ? (1 - introProgress) * 10 : 1, // Sharp fade in last 10%
                     pointerEvents: introProgress > 0.95 ? 'none' : 'auto'
                 }}
             >
@@ -327,9 +324,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 Creation <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
                             </h1>
-                            <p className="max-w-md mx-auto text-base sm:text-lg text-zinc-500 font-medium">
-                                Scroll down to dive into the architecture of your next big idea.
-                            </p>
+
                         </div>
 
                         {floatingImages.map((img, i) => (
@@ -339,45 +334,65 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 </div>
             </div>
 
-            {/* Spacer to allow scrolling through the intro */}
-            <div className="h-[200vh] w-full relative z-0" />
+            {/* Spacer to allow scrolling through the intro - adjusted height */}
+            <div className="h-[150vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
 
-                {/* Iterativ + Parallel - Cinematic Scroll Sequence */}
-                <section className="relative">
-                    {/* Phase 1: Text scrolls in and stops at center (sticky) */}
-                    {/* Phase 2: Text stays fixed, images animate in */}
-                    {/* Phase 3: Both scroll together */}
+                {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
+                <section ref={section1Ref} className="relative h-[300vh]">
+                    {/* Sticky Viewport - Mobile: Vertical Stack, Desktop: 50/50 Split */}
+                    <div className="sticky top-0 h-screen overflow-hidden">
+                        <div className="w-full h-full flex flex-col lg:flex-row">
 
-                    {/* Spacer for Phase 1: Text scroll-in */}
-                    <div className="h-[50vh]" />
+                            {/* Left: Image Cluster - 60% on desktop */}
+                            <div className="w-full lg:w-3/5 h-1/2 lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible">
+                                <style>{`
+                                    #desktop-cluster-container { 
+                                        width: 100%; 
+                                        min-width: 100%;
+                                    }
+                                    @media (min-width: 1024px) {
+                                        #desktop-cluster-container { 
+                                            width: 125% !important; 
+                                            min-width: 125% !important; 
+                                        }
+                                    }
+                                `}</style>
+                                <div
+                                    id="desktop-cluster-container"
+                                    className=""
+                                    style={{
+                                        perspective: '1200px',
+                                        perspectiveOrigin: 'center center'
+                                    }}
+                                >
+                                    <CanvasMockup triggerRef={section1Ref} />
+                                </div>
+                            </div>
 
-                    {/* Sticky container for text */}
-                    <div className="sticky top-0 h-screen flex items-center justify-end px-6 pointer-events-none z-20">
-                        <div className="flex-1 max-w-2xl pointer-events-auto">
-                            <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
-                                <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
-                            </h2>
-                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
-                            </p>
+                            {/* Right: Text - 40% on desktop */}
+                            <div
+                                className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center lg:justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10"
+                            >
+                                <div className="flex flex-col justify-center max-w-2xl">
+                                    <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
+                                        <span className="text-orange-500">Iterativ</span> + parallel arbeiten.
+                                    </h2>
+                                    <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                        Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
+                                    </p>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-
-                    {/* Images container - animates during Phase 2, AFTER text */}
-                    <div className="absolute top-[100vh] left-0 w-full lg:w-1/2" style={{ perspective: '1200px', perspectiveOrigin: 'center center' }}>
-                        <CanvasMockup />
-                    </div>
-
-                    {/* Spacer for Phase 2: Image animation + Phase 3: Both scroll together */}
-                    <div className="h-[150vh]" />
                 </section>
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Präzise Steuerung */}
+                {/* Section 3: Präzise Steuerung */}
                 <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-visible">
                     <div className="max-w-[1700px] mx-auto px-6">
                         {/* Text only - placeholder for future visual */}
@@ -396,7 +411,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Visual Prompting */}
+                {/* Section 4: Visual Prompting */}
                 <section className="py-32 px-6">
                     <div className="max-w-[1700px] mx-auto flex flex-col items-center text-center">
                         <ScrollReveal>
@@ -423,7 +438,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     </div>
                 </section>
 
-                {/* Quote Section */}
+                {/* Section 5: Quote */}
                 <section className="py-60 px-6 text-center bg-zinc-50 dark:bg-zinc-900/20">
                     <div className="max-w-5xl mx-auto">
                         <blockquote className="text-6xl lg:text-[7rem] font-medium tracking-tight italic mb-16 leading-[1.1] text-zinc-900 dark:text-white">
