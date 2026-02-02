@@ -309,14 +309,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     }, [scrolled]);
 
     const floatingImages = [
-        { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '30vw' },
-        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '38vw' },
-        { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '15vw' },
-        { src: '/about/2-iterativ-parallel/31.jpg', x: '-20%', y: '0%', depth: -950, size: '42vw' },
-        { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '28vw' },
-        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '25vw' },
-        { src: '/about/2-iterativ-parallel/22.jpg', x: '30%', y: '-5%', depth: -600, size: '22vw' },
-        { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '20vw' },
+        { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '40vw' },
+        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '48vw' },
+        { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '22vw' },
+        { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '0%', depth: -950, size: '52vw' },
+        { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '36vw' },
+        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '32vw' },
+        { src: '/about/2-iterativ-parallel/22.jpg', x: '35%', y: '-5%', depth: -600, size: '30vw' },
+        { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '26vw' },
     ];
 
     return (
