@@ -339,6 +339,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             --mobile-scale: 2.6;
                             max-width: 95vw;
                         }
+                        .hero-headline-container {
+                            width: 85% !important;
+                        }
+                        .hero-headline {
+                            font-size: clamp(3.5rem, 12vw, 8.5rem) !important;
+                        }
                     }
                 `}</style>
                 <div className="w-full h-full" style={{ perspective: '1000px' }}>
@@ -355,11 +361,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 WebkitFontSmoothing: 'antialiased'
                             }}
                         >
-                            <div className="w-[85%] lg:w-full mt-[-2vh]">
+                            <div className="w-[66%] mt-[-2vh] hero-headline-container">
                                 <h1
-                                    className="font-bold tracking-tighter leading-[0.85] antialiased"
+                                    className="font-bold tracking-tighter leading-[0.85] antialiased hero-headline"
                                     style={{
-                                        fontSize: 'clamp(3.5rem, 12vw, 8.5rem)',
+                                        fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
                                         WebkitBackfaceVisibility: 'hidden',
                                         transform: 'translate3d(0, 0, 0)'
                                     }}
