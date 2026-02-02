@@ -113,18 +113,16 @@ const CanvasMockup = () => {
                         // Apply delay to progress for staggered effect
                         const delayedProgress = Math.min(Math.max(scrollProgress - delay, 0), 1);
 
-                        // Interpolate between chaos and order
-                        // Reduced scale range: 1.15-1.25 (half of previous 1.3-1.7)
-                        const startScale = 1.15 + (zOffset / 2000); // 1.15 to 1.25 based on Z
-                        const currentScale = startScale - (delayedProgress * (startScale - 1.0));
-                        const currentZ = zOffset * (1 - delayedProgress); // varied → 0
+                        // Unified zoom from center point (like hero fly-through)
+                        // All images zoom FROM a common vanishing point in the center
+                        const currentZ = zOffset * (1 - delayedProgress); // Start far, come to 0
 
                         return (
                             <div
                                 key={img}
                                 className="relative overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
                                 style={{
-                                    transform: `translateZ(${currentZ}px) scale(${currentScale})`,
+                                    transform: `translateZ(${currentZ}px)`,
                                     transition: 'all 300ms ease-out',
                                     transformStyle: 'preserve-3d',
                                 }}
@@ -320,8 +318,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
                     </div>
 
-                    {/* Images container - animates during Phase 2 */}
-                    <div className="absolute top-[50vh] left-0 w-full lg:w-1/2" style={{ perspective: '1200px' }}>
+                    {/* Images container - animates during Phase 2, AFTER text */}
+                    <div className="absolute top-[100vh] left-0 w-full lg:w-1/2" style={{ perspective: '1200px', perspectiveOrigin: 'center center' }}>
                         <CanvasMockup />
                     </div>
 
