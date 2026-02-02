@@ -309,13 +309,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     }, [scrolled]);
 
     const floatingImages = [
-        { src: '/about/2-iterativ-parallel/41.jpg', x: '5%', y: '8%', depth: -300, size: '30vw' },
-        { src: '/about/2-iterativ-parallel/11.jpg', x: '85%', y: '15%', depth: -650, size: '40vw' },
-        { src: '/about/2-iterativ-parallel/21.jpg', x: '80%', y: '92%', depth: -150, size: '22vw' },
-        { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '88%', depth: -900, size: '45vw' },
-        { src: '/about/2-iterativ-parallel/42.jpg', x: '40%', y: '2%', depth: -450, size: '28vw' },
-        { src: '/about/2-iterativ-parallel/12.jpg', x: '70%', y: '60%', depth: -800, size: '35vw' },
-        { src: '/about/2-iterativ-parallel/22.jpg', x: '-10%', y: '40%', depth: -900, size: '25vw' },
+        { src: '/about/2-iterativ-parallel/41.jpg', x: '5%', y: '8%', depth: -200, size: '30vw' },
+        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '15%', depth: -500, size: '38vw' },
+        { src: '/about/2-iterativ-parallel/21.jpg', x: '85%', y: '85%', depth: -100, size: '15vw' },
+        { src: '/about/2-iterativ-parallel/31.jpg', x: '-20%', y: '95%', depth: -900, size: '42vw' },
+        { src: '/about/2-iterativ-parallel/42.jpg', x: '35%', y: '10%', depth: -450, size: '28vw' },
+        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '92%', depth: -800, size: '25vw' },
+        { src: '/about/2-iterativ-parallel/22.jpg', x: '-40%', y: '35%', depth: -900, size: '22vw' },
+        { src: '/about/2-iterativ-parallel/32.jpg', x: '15%', y: '65%', depth: -600, size: '20vw' },
     ];
 
     return (
@@ -327,7 +328,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
             <div
                 ref={heroContainerRef}
-                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
+                className="fixed top-0 left-0 w-full h-[100dvh] z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
             >
                 <div className="w-full h-full" style={{ perspective: '1000px' }}>
                     <div
@@ -343,9 +344,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 WebkitFontSmoothing: 'antialiased'
                             }}
                         >
-                            <div className="w-[66%]">
+                            <div className="w-[66%] lg:w-full mt-[-2vh]">
                                 <h1
-                                    className="font-bold tracking-tighter leading-[0.8] antialiased"
+                                    className="font-bold tracking-tighter leading-[0.85] antialiased"
                                     style={{
                                         fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
                                         WebkitBackfaceVisibility: 'hidden',
