@@ -336,7 +336,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <style>{`
                     @media (max-width: 768px) {
                         .hero-floating-image {
-                            --mobile-scale: 2.6;
+                            --mobile-scale: 1.5;
                             max-width: 95vw;
                         }
                         .hero-headline-container {
