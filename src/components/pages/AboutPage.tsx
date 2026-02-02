@@ -68,9 +68,9 @@ const CanvasMockup = () => {
 
             // Calculate progress based on element position
             // Start animation when element enters viewport (bottom of screen)
-            // Complete when element reaches center (50vh)
+            // Complete when element reaches 75vh (earlier than before)
             const start = windowHeight; // Bottom of screen
-            const end = windowHeight * 0.5; // Center of screen
+            const end = windowHeight * 0.75; // 75vh - completes earlier
             const current = rect.top;
 
             // Progress from 0 (chaos) to 1 (order)
@@ -91,13 +91,13 @@ const CanvasMockup = () => {
         ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
-    // Larger Z-offsets for chaos effect (prevent overlap)
+    // Reduced Z-offsets (half of previous values)
     // All positive values so images only scale DOWN, never up
     const zOffsets = [
-        300, 400, 250, 350,  // Row 1 - all positive (further away)
-        280, 380, 320,       // Row 2
-        340, 260,            // Row 3
-        290, 370, 310, 330   // Row 4
+        150, 200, 125, 175,  // Row 1 - reduced from 300-400
+        140, 190, 160,       // Row 2 - reduced from 280-380
+        170, 130,            // Row 3 - reduced from 340-260
+        145, 185, 155, 165   // Row 4 - reduced from 290-370
     ];
 
     return (
@@ -113,8 +113,8 @@ const CanvasMockup = () => {
                         const delayedProgress = Math.min(Math.max(scrollProgress - delay, 0), 1);
 
                         // Interpolate between chaos and order
-                        // Scale: larger values (1.3-1.5) → 1.0 (only scale DOWN)
-                        const startScale = 1.3 + (zOffset / 1000); // 1.3 to 1.7 based on Z
+                        // Reduced scale range: 1.15-1.25 (half of previous 1.3-1.7)
+                        const startScale = 1.15 + (zOffset / 2000); // 1.15 to 1.25 based on Z
                         const currentScale = startScale - (delayedProgress * (startScale - 1.0));
                         const currentZ = zOffset * (1 - delayedProgress); // varied → 0
                         const currentOpacity = 0.3 + (delayedProgress * 0.7); // 0.3 → 1.0
