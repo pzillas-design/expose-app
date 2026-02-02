@@ -68,9 +68,9 @@ const CanvasMockup = () => {
 
             // Calculate progress based on element position
             // Start animation when element enters viewport (bottom of screen)
-            // Complete when element is centered
-            const start = windowHeight;
-            const end = windowHeight / 2;
+            // Complete when element reaches center (50vh)
+            const start = windowHeight; // Bottom of screen
+            const end = windowHeight * 0.5; // Center of screen
             const current = rect.top;
 
             // Progress from 0 (chaos) to 1 (order)
@@ -91,12 +91,13 @@ const CanvasMockup = () => {
         ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
-    // Random Z-offsets for chaos effect (different depth per image)
+    // Larger Z-offsets for chaos effect (prevent overlap)
+    // All positive values so images only scale DOWN, never up
     const zOffsets = [
-        -120, 80, -150, 100,  // Row 1
-        -90, 130, -110,        // Row 2
-        70, -140,              // Row 3
-        -100, 90, -130, 110    // Row 4
+        300, 400, 250, 350,  // Row 1 - all positive (further away)
+        280, 380, 320,       // Row 2
+        340, 260,            // Row 3
+        290, 370, 310, 330   // Row 4
     ];
 
     return (
@@ -104,7 +105,7 @@ const CanvasMockup = () => {
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
-                        const delay = (rowIndex * 4 + imgIndex) * 0.05; // Stagger effect
+                        const delay = (rowIndex * 4 + imgIndex) * 0.04; // Stagger effect
                         const zIndex = rowIndex * 4 + imgIndex;
                         const zOffset = zOffsets[zIndex] || 0;
 
@@ -112,7 +113,9 @@ const CanvasMockup = () => {
                         const delayedProgress = Math.min(Math.max(scrollProgress - delay, 0), 1);
 
                         // Interpolate between chaos and order
-                        const currentScale = 1.15 - (delayedProgress * 0.15); // 1.15 → 1.0
+                        // Scale: larger values (1.3-1.5) → 1.0 (only scale DOWN)
+                        const startScale = 1.3 + (zOffset / 1000); // 1.3 to 1.7 based on Z
+                        const currentScale = startScale - (delayedProgress * (startScale - 1.0));
                         const currentZ = zOffset * (1 - delayedProgress); // varied → 0
                         const currentOpacity = 0.3 + (delayedProgress * 0.7); // 0.3 → 1.0
 
