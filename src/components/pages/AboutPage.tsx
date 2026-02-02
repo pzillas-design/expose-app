@@ -424,7 +424,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Parallel & iterativ</span> arbeiten.
                                     </h2>
                                     <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                        Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
+                                        Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
                                     </p>
                                 </div>
                             </div>
