@@ -95,7 +95,14 @@ const CanvasMockup = () => {
     ];
 
     return (
-        <div ref={containerRef} className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
+        <div
+            ref={containerRef}
+            className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4"
+            style={{
+                transformStyle: 'preserve-3d',
+                opacity: scrollProgress // Unified opacity for all images
+            }}
+        >
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
@@ -111,14 +118,12 @@ const CanvasMockup = () => {
                         const startScale = 1.15 + (zOffset / 2000); // 1.15 to 1.25 based on Z
                         const currentScale = startScale - (delayedProgress * (startScale - 1.0));
                         const currentZ = zOffset * (1 - delayedProgress); // varied → 0
-                        const currentOpacity = 0.3 + (delayedProgress * 0.7); // 0.3 → 1.0
 
                         return (
                             <div
                                 key={img}
-                                className="relative group overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
+                                className="relative overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
                                 style={{
-                                    opacity: currentOpacity,
                                     transform: `translateZ(${currentZ}px) scale(${currentScale})`,
                                     transition: 'all 300ms ease-out',
                                     transformStyle: 'preserve-3d',
@@ -294,27 +299,34 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
 
-                {/* Iterativ + Parallel */}
-                <section className="py-32 overflow-visible">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-                        {/* Images on the left - edge to edge */}
-                        <div className="w-full order-1 lg:order-1 pl-0">
-                            <div className="sticky top-32 lg:top-40" style={{ perspective: '1200px' }}>
-                                <CanvasMockup />
-                            </div>
+                {/* Iterativ + Parallel - Cinematic Scroll Sequence */}
+                <section className="relative">
+                    {/* Phase 1: Text scrolls in and stops at center (sticky) */}
+                    {/* Phase 2: Text stays fixed, images animate in */}
+                    {/* Phase 3: Both scroll together */}
+
+                    {/* Spacer for Phase 1: Text scroll-in */}
+                    <div className="h-[50vh]" />
+
+                    {/* Sticky container for text */}
+                    <div className="sticky top-0 h-screen flex items-center justify-end px-6 pointer-events-none z-20">
+                        <div className="flex-1 max-w-2xl pointer-events-auto">
+                            <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
+                                <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
+                            </h2>
+                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
+                            </p>
                         </div>
-                        {/* Text on the right */}
-                        <ScrollReveal delay={200}>
-                            <div className="flex-1 max-w-2xl order-2 lg:order-2 min-h-[800px] flex flex-col justify-center px-6">
-                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.8]">
-                                    <span className="text-orange-500">Iterativ</span> <br />+ parallel arbeiten.
-                                </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                    Ganze Variantenreihen gleichzeitig generieren. Vergleichen, verwerfen, veredeln – in Echtzeit.
-                                </p>
-                            </div>
-                        </ScrollReveal>
                     </div>
+
+                    {/* Images container - animates during Phase 2 */}
+                    <div className="absolute top-[50vh] left-0 w-full lg:w-1/2" style={{ perspective: '1200px' }}>
+                        <CanvasMockup />
+                    </div>
+
+                    {/* Spacer for Phase 2: Image animation + Phase 3: Both scroll together */}
+                    <div className="h-[150vh]" />
                 </section>
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
