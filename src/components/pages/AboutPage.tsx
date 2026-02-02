@@ -56,25 +56,90 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 // --- Mockup Components ---
 
 const CanvasMockup = () => {
-    const [scrollProgress, setScrollProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     useEffect(() => {
+        let rafId: number;
+
         const handleScroll = () => {
             if (!containerRef.current) return;
 
-            const rect = containerRef.current.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
+            // Use requestAnimationFrame for smooth updates without React re-renders
+            rafId = requestAnimationFrame(() => {
+                if (!containerRef.current) return;
 
-            // Calculate progress based on element position
-            // Animation completes when top of container reaches 60% of viewport
-            const progress = Math.min(Math.max(1 - (rect.top / (windowHeight * 0.6)), 0), 1);
-            setScrollProgress(progress);
+                const rect = containerRef.current.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+
+                // Improved progress calculation logic
+                // Start: when element top is at bottom of viewport (100vh)
+                // End: when element top is at 20% of viewport (20vh) - reaches order phase earlier
+                // This ensures full completion while the element is prominently visible
+                const startPoint = windowHeight;
+                const endPoint = windowHeight * 0.2;
+
+                // Calculate raw progress
+                const rawProgress = (startPoint - rect.top) / (startPoint - endPoint);
+                const progress = Math.min(Math.max(rawProgress, 0), 1);
+
+                // Apply transforms directly to DOM nodes
+                imageRefs.current.forEach((imgRef, index) => {
+                    if (!imgRef) return;
+
+                    // Simple index based logic
+                    // Grid has 13 images total in rows: 4, 3, 2, 4
+
+                    // Calculate individual delays based on index
+                    const delay = index * 0.03; // Slightly tighter stagger
+                    const zIndex = index;
+
+                    // Pre-defined Z-offsets (same as before)
+                    const zOffsets = [
+                        150, 200, 125, 175,  // Row 1
+                        140, 190, 160,       // Row 2
+                        170, 130,            // Row 3
+                        145, 185, 155, 165   // Row 4
+                    ];
+
+                    const zOffset = zOffsets[zIndex] || 0;
+
+                    // Staggered progress for this specific image
+                    // The delay shifts the effective start point for each image
+                    const delayedProgress = Math.min(Math.max(progress - delay, 0), 1);
+
+                    // Normalize delayed progress so it reaches 1.0 fully
+                    // effective animation range for an image is (progress: delay -> 1.0)
+                    // We map that 0 -> 1 for the transform interpolation
+                    // Using a smoother easing
+                    const normalizedProgress = progress > delay
+                        ? Math.min((progress - delay) / (1 - delay - 0.1), 1)
+                        : 0;
+
+                    // Interpolate values
+                    // Unified opacity tied to progress
+                    const opacity = Math.min(normalizedProgress * 1.5, 1); // Fade in faster
+
+                    // Unified zoom from center (fly-through effect)
+                    // Start: large positive Z (closer/zoom out)
+                    // End: 0 (flat on plane)
+                    const currentZ = zOffset * (1 - normalizedProgress);
+
+                    // Apply styles directly
+                    imgRef.style.opacity = opacity.toString();
+                    imgRef.style.transform = `translateZ(${currentZ}px)`;
+                    // NO transition property here - ensures 1:1 scroll lock
+                });
+            });
         };
 
         window.addEventListener('scroll', handleScroll);
         handleScroll(); // Initial calculation
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            cancelAnimationFrame(rafId);
+        };
     }, []);
 
     // Irregular grid: 4-3-2-4 rows (fransiges Design)
@@ -85,46 +150,29 @@ const CanvasMockup = () => {
         ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
     ];
 
-    // Reduced Z-offsets (half of previous values)
-    // All positive values so images only scale DOWN, never up
-    const zOffsets = [
-        150, 200, 125, 175,  // Row 1 - reduced from 300-400
-        140, 190, 160,       // Row 2 - reduced from 280-380
-        170, 130,            // Row 3 - reduced from 340-260
-        145, 185, 155, 165   // Row 4 - reduced from 290-370
-    ];
+    let flatIndex = 0;
 
     return (
         <div
             ref={containerRef}
             className="w-full flex flex-col gap-2 sm:gap-3 lg:gap-4"
-            style={{
-                transformStyle: 'preserve-3d',
-                opacity: scrollProgress // Unified opacity for all images
-            }}
+            style={{ transformStyle: 'preserve-3d' }}
         >
             {imageRows.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
-                        const delay = (rowIndex * 4 + imgIndex) * 0.04; // Stagger effect
-                        const zIndex = rowIndex * 4 + imgIndex;
-                        const zOffset = zOffsets[zIndex] || 0;
-
-                        // Apply delay to progress for staggered effect
-                        const delayedProgress = Math.min(Math.max(scrollProgress - delay, 0), 1);
-
-                        // Unified zoom from center point (like hero fly-through)
-                        // All images zoom FROM a common vanishing point in the center
-                        const currentZ = zOffset * (1 - delayedProgress); // Start far, come to 0
+                        const currentIndex = flatIndex++;
 
                         return (
                             <div
                                 key={img}
+                                ref={el => { imageRefs.current[currentIndex] = el; }}
                                 className="relative overflow-hidden w-32 sm:w-40 md:w-48 lg:w-56 flex-shrink-0"
                                 style={{
-                                    transform: `translateZ(${currentZ}px)`,
-                                    transition: 'all 300ms ease-out',
                                     transformStyle: 'preserve-3d',
+                                    willChange: 'transform, opacity', // Optimization hint
+                                    opacity: 0, // Start invisible
+                                    transform: 'translateZ(200px)' // Start state
                                 }}
                             >
                                 {/* Image container - NO border radius, NO hover effects */}
