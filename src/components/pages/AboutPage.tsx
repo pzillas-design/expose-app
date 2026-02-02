@@ -270,26 +270,43 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
 
 // --- Main Page Component ---
 
+// --- Main Page Component ---
+
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
-    const [scrollDepth, setScrollDepth] = useState(0);
     const [scrolled, setScrolled] = useState(false);
-    const [introProgress, setIntroProgress] = useState(0); // 0 to 1
     const section1Ref = useRef<HTMLElement>(null);
+    const heroLayerRef = useRef<HTMLDivElement>(null);
+    const heroContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
             const y = window.scrollY;
-            const introHeight = window.innerHeight * 1.5; // Increased to 1.5 for slightly more spacing
-
-            // Calculate progress for the intro (0 to 1)
+            const introHeight = window.innerHeight * 1.5;
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
-            setIntroProgress(progress);
-            setScrollDepth(y * 0.8);
-            setScrolled(y > 50);
+
+            // Apply scrolled state for navbar
+            if (y > 50 !== scrolled) {
+                setScrolled(y > 50);
+            }
+
+            // Direct DOM manipulation for performance
+            if (heroLayerRef.current) {
+                const scrollDepth = y * 0.8;
+                heroLayerRef.current.style.transform = `translate3d(0, 0, ${scrollDepth}px)`;
+            }
+
+            if (heroContainerRef.current) {
+                // Sharp fade in last 10%
+                const opacity = progress > 0.9 ? (1 - progress) * 10 : 1;
+                heroContainerRef.current.style.opacity = opacity.toString();
+                heroContainerRef.current.style.pointerEvents = progress > 0.95 ? 'none' : 'auto';
+            }
         };
-        window.addEventListener('scroll', handleScroll);
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [scrolled]);
 
     const floatingImages = [
         { src: '/about/2-iterativ-parallel/41.jpg', x: '10%', y: '5%', depth: -300, size: '25vw' },
@@ -309,23 +326,31 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
             {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
             <div
-                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000"
-                style={{
-                    opacity: introProgress > 0.9 ? (1 - introProgress) * 10 : 1, // Sharp fade in last 10%
-                    pointerEvents: introProgress > 0.95 ? 'none' : 'auto'
-                }}
+                ref={heroContainerRef}
+                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
             >
                 <div className="w-full h-full" style={{ perspective: '1000px' }}>
                     <div
-                        className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out"
-                        style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
+                        ref={heroLayerRef}
+                        className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out will-change-transform"
                     >
                         {/* Hero Text Layer */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6" style={{ transform: 'translateZ(350px)' }}>
+                        <div
+                            className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
+                            style={{
+                                transform: 'translate3d(0, 0, 150px)',
+                                backfaceVisibility: 'hidden',
+                                WebkitFontSmoothing: 'antialiased'
+                            }}
+                        >
                             <div className="w-[66%]">
                                 <h1
-                                    className="font-bold tracking-tighter leading-[0.8]"
-                                    style={{ fontSize: 'clamp(2.5rem, 8vw, 8.5rem)' }}
+                                    className="font-bold tracking-tighter leading-[0.8] antialiased"
+                                    style={{
+                                        fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        transform: 'translate3d(0, 0, 0)'
+                                    }}
                                 >
                                     Creation <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
@@ -340,19 +365,16 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 </div>
             </div>
 
-            {/* Spacer to allow scrolling through the intro - adjusted height */}
+            {/* Spacer to allow scrolling through the intro */}
             <div className="h-[150vh] w-full relative z-0" />
 
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
-
                 {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
                 <section ref={section1Ref} className="relative h-[300vh]">
-                    {/* Sticky Viewport - Mobile: Vertical Stack, Desktop: 50/50 Split */}
                     <div className="sticky top-0 h-screen overflow-hidden">
                         <div className="w-full h-full flex flex-col lg:flex-row">
-
-                            {/* Left: Image Cluster - 60% on desktop */}
+                            {/* Left: Image Cluster */}
                             <div className="w-full lg:w-3/5 h-1/2 lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible">
                                 <style>{`
                                     #desktop-cluster-container { 
@@ -368,7 +390,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 `}</style>
                                 <div
                                     id="desktop-cluster-container"
-                                    className=""
                                     style={{
                                         perspective: '1200px',
                                         perspectiveOrigin: 'center center'
@@ -378,10 +399,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 </div>
                             </div>
 
-                            {/* Right: Text - 40% on desktop */}
-                            <div
-                                className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center lg:justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10"
-                            >
+                            {/* Right: Text */}
+                            <div className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10">
                                 <div className="flex flex-col justify-center max-w-2xl">
                                     <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
                                         <span className="text-orange-500">Iterativ</span> + parallel arbeiten.
@@ -391,7 +410,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     </p>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </section>
@@ -401,7 +419,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 {/* Section 3: Präzise Steuerung */}
                 <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-visible">
                     <div className="max-w-[1700px] mx-auto px-6">
-                        {/* Text only - placeholder for future visual */}
                         <ScrollReveal delay={100}>
                             <div className="flex-1 max-w-2xl min-h-[600px] flex flex-col justify-center">
                                 <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
