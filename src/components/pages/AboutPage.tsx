@@ -27,17 +27,20 @@ interface FloatingImageProps {
 
 const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
     const [isHovered, setIsHovered] = useState(false);
+    const sizeVal = parseInt(size);
 
     return (
         <div
-            className="absolute transition-all duration-700 ease-out"
+            className="absolute transition-all duration-700 ease-out hero-floating-image"
             style={{
                 left: x,
                 top: y,
-                width: size,
+                width: `calc(var(--base-vw, ${sizeVal}) * var(--mobile-scale, 1) * 1vw)`,
                 transform: `translateZ(${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
-                zIndex: Math.floor(depth) + 1000
-            }}
+                zIndex: Math.floor(depth) + 1000,
+                // Cast to any to allow CSS variables in inline style object
+                '--base-vw': sizeVal
+            } as any}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -309,14 +312,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     }, [scrolled]);
 
     const floatingImages = [
-        { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '40vw' },
-        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '48vw' },
-        { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '22vw' },
-        { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '0%', depth: -950, size: '52vw' },
-        { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '36vw' },
-        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '32vw' },
-        { src: '/about/2-iterativ-parallel/22.jpg', x: '35%', y: '-5%', depth: -600, size: '30vw' },
-        { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '26vw' },
+        { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '35vw' },
+        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '44vw' },
+        { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '17vw' },
+        { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '0%', depth: -950, size: '48vw' },
+        { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '32vw' },
+        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '29vw' },
+        { src: '/about/2-iterativ-parallel/22.jpg', x: '35%', y: '-5%', depth: -600, size: '25vw' },
+        { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '23vw' },
     ];
 
     return (
@@ -330,6 +333,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 ref={heroContainerRef}
                 className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
             >
+                <style>{`
+                    @media (max-width: 768px) {
+                        .hero-floating-image {
+                            --mobile-scale: 1.5;
+                        }
+                    }
+                `}</style>
                 <div className="w-full h-full" style={{ perspective: '1000px' }}>
                     <div
                         ref={heroLayerRef}
