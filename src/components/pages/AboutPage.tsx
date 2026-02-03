@@ -193,64 +193,66 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 
 const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
     return (
-        <div className="w-full max-w-[340px] bg-[#121212] rounded-r-none lg:rounded-r-3xl border border-zinc-800 flex flex-col p-8 gap-6 h-screen">
-            {/* Bearbeiten Header */}
+        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-l border-zinc-200 dark:border-zinc-800 flex flex-col p-8 gap-7 h-screen">
+            {/* Header: Simple & Clean */}
             <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Bearbeiten</span>
-                <div className="flex gap-3">
-                    <div className="w-4 h-4 rounded-md border border-zinc-800 flex items-center justify-center text-[10px] text-zinc-600">↓</div>
-                    <X className="w-4 h-4 text-zinc-600" />
+                <div className="flex gap-4">
+                    <div className="flex flex-col gap-0.5 opacity-40">
+                        <div className="w-1 h-1 bg-zinc-400 rounded-full" />
+                        <div className="w-1 h-1 bg-zinc-400 rounded-full" />
+                    </div>
                 </div>
             </div>
 
-            {/* Prompt Box */}
-            <div className="p-4 rounded-2xl bg-[#1c1c1f] border border-zinc-800/50">
-                <p className="text-[13px] font-medium text-zinc-400 leading-relaxed">
+            {/* Prompt Box: Mirroring the Bordered Card Style */}
+            <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed">
                     Inszeniere das Bild neu indem du die Jahreszeit anpasst.
+                    <span className="inline-block w-1 h-3.5 bg-orange-500 ml-1 animate-pulse" />
                 </p>
             </div>
 
-            {/* Jahreszeit Section */}
-            <div className="flex flex-col gap-3">
-                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-1">Jahreszeit</span>
-                <div className="flex flex-wrap gap-2">
+            {/* Jahreszeit Section: Chips */}
+            <div className="flex flex-col gap-4">
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Jahreszeit</span>
+                <div className="flex flex-wrap gap-1.5">
                     {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                        <div key={s} className={`px-4 py-2.5 text-[11px] rounded-xl transition-all duration-300 ${activeSeason === s ? 'bg-white text-black font-bold' : 'bg-[#1c1c1f] text-zinc-500 border border-zinc-800/50'}`}>
+                        <div key={s} className={`px-3 py-1.5 text-[12px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
                             {s}
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Uhrzeit Section */}
-            <div className="flex flex-col gap-3">
-                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-1">Uhrzeit</span>
-                <div className="flex flex-wrap gap-2">
+            {/* Uhrzeit Section: Chips */}
+            <div className="flex flex-col gap-4">
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Uhrzeit</span>
+                <div className="flex flex-wrap gap-1.5">
                     {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                        <div key={t} className={`px-4 py-2.5 text-[11px] rounded-xl transition-all duration-300 ${t === 'Nachmittag' ? 'bg-white text-black font-bold' : 'bg-[#1c1c1f] text-zinc-500 border border-zinc-800/50'}`}>
+                        <div key={t} className={`px-3 py-1.5 text-[12px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
                             {t}
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="mt-auto flex flex-col gap-3">
-                {/* Sub-Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#1c1c1f] border border-zinc-800/50 text-zinc-400 text-[11px] font-medium">
+            <div className="mt-auto flex flex-col gap-4">
+                {/* Tools Buttons: Clean Secondary Style */}
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-normal border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
                         <Pen className="w-3.5 h-3.5 text-blue-500/80" /> Anmerkung
                     </div>
-                    <div className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#1c1c1f] border border-zinc-800/50 text-zinc-400 text-[11px] font-medium">
+                    <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-normal border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
                         <Camera className="w-3.5 h-3.5 text-orange-500/80" /> Referenzbild
                     </div>
                 </div>
 
-                {/* Generate Button */}
-                <div className="w-full py-4.5 rounded-2xl bg-white text-black font-bold text-[14px] flex items-center justify-center relative h-16">
-                    <span className="uppercase tracking-widest">Generieren</span>
-                    <div className="absolute right-6 flex flex-col gap-1 opacity-60">
-                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
-                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
+                {/* Generate Button: Strict Accent Style */}
+                <div className="w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest">
+                    <span>Generieren</span>
+                    <div className="absolute right-3">
+                        <TwoDotsVertical className="w-4 h-4 opacity-50" />
                     </div>
                 </div>
             </div>
@@ -282,7 +284,7 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
         <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col lg:flex-row items-center w-full gap-0 overflow-visible">
                 {/* 1. Visual: Image on the Left, docked */}
-                <div className="relative flex-1 h-[50vh] lg:h-screen bg-zinc-900 lg:rounded-l-3xl overflow-hidden border-y lg:border-l border-zinc-800">
+                <div className="relative flex-1 h-[50vh] lg:h-screen bg-zinc-100 dark:bg-zinc-950 lg:rounded-l-3xl overflow-hidden border-y lg:border-l border-zinc-200 dark:border-zinc-800">
                     <img
                         src="/about/3-vorlagen/small/edit_sommer.jpg"
                         className="absolute inset-0 w-full h-full object-cover"
