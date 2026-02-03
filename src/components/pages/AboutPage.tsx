@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
-import { Pen, Camera, X } from 'lucide-react';
+import { Pen, Camera, X, Plus } from 'lucide-react';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { Theme } from '@/components/ui/DesignSystem';
 
@@ -193,67 +193,97 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 
 const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
     return (
-        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-l border-zinc-200 dark:border-zinc-800 flex flex-col p-8 gap-7 h-screen">
-            {/* Header: Simple & Clean */}
-            <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Bearbeiten</span>
-                <div className="flex gap-4">
-                    <div className="flex flex-col gap-0.5 opacity-40">
-                        <div className="w-1 h-1 bg-zinc-400 rounded-full" />
-                        <div className="w-1 h-1 bg-zinc-400 rounded-full" />
+        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-l border-zinc-200 dark:border-zinc-800 flex flex-col pt-24 pb-8 h-screen overflow-hidden">
+            {/* 0. Top Header / Tabs */}
+            <div className="px-6 pb-6">
+                <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
+                    <div className="flex-1 py-1.5 text-center bg-white dark:bg-zinc-800 rounded-lg shadow-sm">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-100">Prompt</span>
+                    </div>
+                    <div className="flex-1 py-1.5 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Pinsel</span>
+                    </div>
+                    <div className="flex-1 py-1.5 text-center">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Objekte</span>
                     </div>
                 </div>
             </div>
 
-            {/* Prompt Box: Mirroring the Bordered Card Style */}
-            <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-                <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Inszeniere das Bild neu indem du die Jahreszeit anpasst.
-                    <span className="inline-block w-1 h-3.5 bg-orange-500 ml-1 animate-pulse" />
-                </p>
-            </div>
+            <div className="flex-1 flex flex-col px-6 gap-5 overflow-y-auto no-scrollbar">
+                {/* 1. Prompt Box */}
+                <div className="flex flex-col gap-3">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Beschreibung</span>
+                    <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                        <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                            Inszeniere das Bild neu indem du die Jahreszeit anpasst.
+                            <span className="inline-block w-1.5 h-3.5 bg-orange-500 ml-1 animate-pulse align-middle" />
+                        </p>
+                    </div>
+                </div>
 
-            {/* Jahreszeit Section: Chips */}
-            <div className="flex flex-col gap-4">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Jahreszeit</span>
-                <div className="flex flex-wrap gap-1.5">
-                    {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                        <div key={s} className={`px-3 py-1.5 text-[12px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
-                            {s}
+                {/* 2. Jahreszeit Section: Boxed Variables */}
+                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/30 dark:bg-zinc-800/10">
+                    <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-white/5">
+                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Jahreszeit</span>
+                    </div>
+                    <div className="p-4 flex flex-wrap gap-1.5">
+                        {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
+                            <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}>
+                                {s}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 3. Uhrzeit Section: Boxed Variables */}
+                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/30 dark:bg-zinc-800/10">
+                    <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-white/5">
+                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Uhrzeit</span>
+                    </div>
+                    <div className="p-4 flex flex-wrap gap-1.5">
+                        {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
+                            <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}>
+                                {t}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-4">
+                    {/* Tools Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Pen className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" /> Anmerkung
+                        </div>
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Camera className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
+                        </div>
+                    </div>
+
+                    {/* Generate Button */}
+                    <div className="w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest cursor-pointer hover:opacity-90 transition-opacity active:scale-[0.98]">
+                        <span>Generieren</span>
+                        <div className="absolute right-3 p-1 rounded hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
+                            <TwoDotsVertical className="w-4 h-4 opacity-70" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Vorlagen Section (Accordion Style Header) */}
+                <div className="flex flex-col gap-1 border-t border-zinc-100 dark:border-zinc-800 pt-6">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
+                        <Plus className="w-3.5 h-3.5 text-zinc-400" />
+                    </div>
+                    {['Staging', 'Cleanup', 'Modern Home', 'Saison & Uhrzeit'].map((lib, i) => (
+                        <div key={lib} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 group transition-colors cursor-pointer">
+                            <span className="text-xs text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-40 transition-opacity">
+                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                            </div>
                         </div>
                     ))}
-                </div>
-            </div>
-
-            {/* Uhrzeit Section: Chips */}
-            <div className="flex flex-col gap-4">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">Uhrzeit</span>
-                <div className="flex flex-wrap gap-1.5">
-                    {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                        <div key={t} className={`px-3 py-1.5 text-[12px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
-                            {t}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="mt-auto flex flex-col gap-4">
-                {/* Tools Buttons: Clean Secondary Style */}
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-normal border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                        <Pen className="w-3.5 h-3.5 text-blue-500/80" /> Anmerkung
-                    </div>
-                    <div className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-xs font-normal border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                        <Camera className="w-3.5 h-3.5 text-orange-500/80" /> Referenzbild
-                    </div>
-                </div>
-
-                {/* Generate Button: Strict Accent Style */}
-                <div className="w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest">
-                    <span>Generieren</span>
-                    <div className="absolute right-3">
-                        <TwoDotsVertical className="w-4 h-4 opacity-50" />
-                    </div>
                 </div>
             </div>
         </div>
@@ -530,7 +560,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 {/* Section 3: Vorlagen nutzen und anlegen */}
                 <section ref={section3Ref} className="relative h-[300vh] bg-zinc-50/30 dark:bg-zinc-900/10">
                     <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center">
-                        <div className="max-w-[1800px] w-full mx-auto px-6 overflow-visible">
+                        <div className="w-full mx-auto overflow-visible">
                             <InteractiveSeasonPanel triggerRef={section3Ref} />
                         </div>
                     </div>
