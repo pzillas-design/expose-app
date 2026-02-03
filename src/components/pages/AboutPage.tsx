@@ -191,48 +191,160 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
     );
 };
 
-const SidepanelMockup = () => {
-    const [selectedSeason, setSelectedSeason] = useState('Sommer');
-    const [selectedTime, setSelectedTime] = useState('Nachmittag');
-
+const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
     return (
-        <div className="w-full max-w-sm mx-auto bg-white dark:bg-zinc-950 rounded-2xl border border-zinc-200 dark:border-zinc-900 shadow-2xl overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-900 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900/50">
-                <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-400 dark:text-zinc-500">Bearbeiten</span>
-                <X className="w-4 h-4 text-zinc-400 dark:text-zinc-600" />
+        <div className="w-full max-w-[340px] bg-[#18181b] rounded-3xl border border-zinc-800 shadow-2xl overflow-hidden flex flex-col p-4 gap-3">
+            {/* Prompt Box */}
+            <div className="p-4 rounded-[1.25rem] bg-[#1c1c1f] border border-zinc-800/50">
+                <p className="text-[12px] font-medium text-zinc-400 leading-relaxed">
+                    Inszeniere das Bild neu indem du die Jahreszeit anpasst.
+                </p>
             </div>
 
-            <div className="p-6 flex flex-col gap-4">
-                <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-900">
-                    <p className="text-sm font-mono text-zinc-600 dark:text-zinc-300">
-                        Inszeniere das Bild neu, indem du die Jahreszeit anpasst
-                        <span className="inline-block w-1.5 h-4 bg-orange-500 ml-1 animate-pulse" />
-                    </p>
+            {/* Jahreszeit Section */}
+            <div className="p-4 rounded-[1.25rem] bg-[#1c1c1f] border border-zinc-800/50 flex flex-col gap-3">
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-1">Jahreszeit</span>
+                <div className="flex flex-wrap gap-2">
+                    {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
+                        <div key={s} className={`px-3.5 py-2 text-[11px] rounded-lg transition-all duration-300 ${activeSeason === s ? 'bg-white text-black font-bold' : 'bg-[#27272a] text-zinc-500'}`}>
+                            {s}
+                        </div>
+                    ))}
                 </div>
-                <div className="flex flex-col gap-3">
-                    <span className="text-[10px] uppercase tracking-widest text-zinc-400">Saison</span>
-                    <div className="flex flex-wrap gap-2">
-                        {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                            <button key={s} onClick={() => setSelectedSeason(s)} className={`px-3 py-1 text-[11px] rounded-md transition-all ${selectedSeason === s ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-bold' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500'}`}>{s}</button>
-                        ))}
+            </div>
+
+            {/* Uhrzeit Section */}
+            <div className="p-4 rounded-[1.25rem] bg-[#1c1c1f] border border-zinc-800/50 flex flex-col gap-3">
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-1">Uhrzeit</span>
+                <div className="flex flex-wrap gap-2">
+                    {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
+                        <div key={t} className={`px-3.5 py-2 text-[11px] rounded-lg transition-all duration-300 ${t === 'Nachmittag' ? 'bg-white text-black font-bold' : 'bg-[#27272a] text-zinc-500'}`}>
+                            {t}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Look Section */}
+            <div className="p-4 rounded-[1.25rem] bg-[#1c1c1f] border border-zinc-800/50 flex flex-col gap-3">
+                <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest px-1">Look</span>
+                <div className="flex flex-wrap gap-2">
+                    {['realistisch', 'atmosphärisch', 'cinematisch', 'High fidelity rendering'].map(l => (
+                        <div key={l} className={`px-3.5 py-2 text-[11px] rounded-lg transition-all duration-300 ${l === 'realistisch' ? 'bg-white text-black font-bold' : 'bg-[#27272a] text-zinc-500'}`}>
+                            {l}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Sub-Buttons */}
+            <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1c1c1f] border border-zinc-800/50 text-zinc-400 text-[11px]">
+                    <Pen className="w-3.5 h-3.5 text-blue-500/80" /> Anmerkung
+                </div>
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1c1c1f] border border-zinc-800/50 text-zinc-400 text-[11px]">
+                    <Camera className="w-3.5 h-3.5 text-orange-500/80" /> Referenzbild
+                </div>
+            </div>
+
+            {/* Generate Button */}
+            <div className="w-full py-4.5 rounded-2xl bg-white text-black font-bold text-[13px] flex items-center justify-center relative mt-1 h-14">
+                <span className="uppercase tracking-wide">Generieren</span>
+                <div className="absolute right-6 flex flex-col gap-0.5 opacity-40">
+                    <div className="w-1 h-1 bg-black rounded-full" />
+                    <div className="w-1 h-1 bg-black rounded-full" />
+                </div>
+            </div>
+
+            {/* Vorlagen Section (Screenshot Style) */}
+            <div className="mt-2 pt-4 border-t border-zinc-800/50 flex flex-col gap-4">
+                <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em]">
+                        <span className="rotate-90 text-[8px]">›</span> VORLAGEN
+                    </div>
+                    <div className="flex gap-4 items-center">
+                        <span className="text-zinc-600 text-[12px] cursor-none">🔍</span>
+                        <span className="text-zinc-600 text-[14px] cursor-none">+</span>
                     </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                    <span className="text-[10px] uppercase tracking-widest text-zinc-400">Uhrzeit</span>
-                    <div className="flex flex-wrap gap-2">
-                        {['Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                            <button key={t} onClick={() => setSelectedTime(t)} className={`px-3 py-1 text-[11px] rounded-md transition-all ${selectedTime === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-black font-bold' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500'}`}>{t}</button>
-                        ))}
+                <div className="flex flex-col gap-4 text-[13px] text-zinc-400 px-1 ml-4 font-medium">
+                    {['Staging', 'Himmel', 'Aufräumen', 'Privatsphäre', 'Jahreszeiten'].map(v => (
+                        <div key={v} className="hover:text-white transition-colors cursor-none">{v}</div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement> }) => {
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!triggerRef.current) return;
+            const rect = triggerRef.current.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            // Calculate progress through Section 3 (300vh)
+            // Start: when section top is at 0 (sticky start)
+            // End: when section top is at -2*windowHeight (scrolled 2 screens)
+            const startPoint = 0;
+            const endPoint = -windowHeight * 1.5;
+            const rawProgress = (startPoint - rect.top) / (startPoint - endPoint);
+            setProgress(Math.min(Math.max(rawProgress, 0), 1));
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [triggerRef]);
+
+    return (
+        <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-32">
+            {/* Visual: Image on the Left */}
+            <div className="relative w-full lg:w-[48%] aspect-[4/3] rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/5">
+                <img
+                    src="/about/3-vorlagen/small/edit_sommer.jpg"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    alt="Sommer"
+                />
+                <img
+                    src="/about/3-vorlagen/small/edit_winter.jpg"
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                    style={{ opacity: progress }}
+                    alt="Winter"
+                />
+
+                {/* Visual state indicator */}
+                <div className="absolute top-8 left-8 flex flex-col gap-2">
+                    <div className="px-4 py-2 bg-black/40 backdrop-blur-xl rounded-full text-white/90 text-[10px] font-mono tracking-widest uppercase border border-white/10">
+                        {progress < 0.2 ? 'Original' : progress > 0.8 ? 'Generiert' : 'Bearbeitung...'}
+                    </div>
+                    <div className="px-4 py-2 bg-black/40 backdrop-blur-xl rounded-full text-white/90 text-[10px] font-mono tracking-widest uppercase border border-white/10 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        Preset: Jahreszeit
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-400 text-[11px]"><Pen className="w-3 h-3 text-blue-500" /> Anmerkung</div>
-                    <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-400 text-[11px]"><Camera className="w-3 h-3 text-orange-500" /> Referenzbild</div>
+
+                {/* Progress bar overlay */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+                    <div
+                        className="h-full bg-orange-500 transition-all duration-300 ease-out"
+                        style={{ width: `${progress * 100}%` }}
+                    />
                 </div>
-                <button className="w-full py-4 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black font-bold text-sm tracking-tight mt-4 flex items-center justify-center gap-2">
-                    <span>GENERIEREN</span>
-                    <TwoDotsVertical className="w-4 h-4 ml-auto" />
-                </button>
+            </div>
+
+            {/* Control: Panel on the Right */}
+            <div
+                className="w-full lg:w-auto transform transition-all duration-500"
+                style={{
+                    transform: `translateY(${(1 - progress) * 20}px)`,
+                    opacity: 0.5 + (Math.sin(progress * Math.PI) * 0.5) + (progress > 0.5 ? 0.5 : 0) // Fade in subtle
+                }}
+            >
+                <SidepanelMockup activeSeason={progress > 0.6 ? 'Winter' : 'Sommer'} />
             </div>
         </div>
     );
@@ -278,6 +390,7 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrolled, setScrolled] = useState(false);
     const section1Ref = useRef<HTMLElement>(null);
+    const section3Ref = useRef<HTMLElement>(null);
     const heroLayerRef = useRef<HTMLDivElement>(null);
     const heroContainerRef = useRef<HTMLDivElement>(null);
 
@@ -435,35 +548,22 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 3: Vorlagen nutzen und erstellen */}
-                <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-hidden">
-                    <div className="max-w-[1700px] mx-auto px-6">
-                        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
-                            {/* Left: Image */}
-                            <div className="w-full lg:w-1/2">
+                <section ref={section3Ref} className="relative h-[300vh] bg-zinc-50/30 dark:bg-zinc-900/10">
+                    <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center">
+                        <div className="max-w-[1700px] w-full mx-auto px-6 flex flex-col items-center">
+                            <div className="w-full mb-12 text-center">
                                 <ScrollReveal delay={100}>
-                                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800">
-                                        <img
-                                            src="/about/section3-presets.jpg"
-                                            alt="Vorlagen nutzen und erstellen"
-                                            className="w-full h-auto object-cover"
-                                        />
-                                    </div>
+                                    <h2 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 leading-none">
+                                        Vorlagen <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & erstellen.</span>
+                                    </h2>
+                                    <p className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto">
+                                        Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
+                                    </p>
                                 </ScrollReveal>
                             </div>
 
-                            {/* Right: Text */}
-                            <div className="w-full lg:w-1/2">
-                                <ScrollReveal delay={200}>
-                                    <div className="flex flex-col justify-center">
-                                        <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
-                                            Vorlagen <br />
-                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & erstellen.</span>
-                                        </h2>
-                                        <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                            Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
-                                        </p>
-                                    </div>
-                                </ScrollReveal>
+                            <div className="w-full">
+                                <InteractiveSeasonPanel triggerRef={section3Ref} />
                             </div>
                         </div>
                     </div>
