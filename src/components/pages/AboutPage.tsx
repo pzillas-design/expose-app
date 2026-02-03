@@ -191,7 +191,15 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
     );
 };
 
-const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
+const SidepanelMockup = ({
+    activeSeason = 'Sommer',
+    activeTime = 'Nachmittag',
+    isPressed = false
+}: {
+    activeSeason?: string;
+    activeTime?: string;
+    isPressed?: boolean;
+}) => {
     return (
         <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-x border-zinc-200 dark:border-zinc-800 flex flex-col pt-24 pb-8 h-screen overflow-hidden">
             {/* 0. Top Header / Tabs */}
@@ -227,7 +235,7 @@ const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string })
                         <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                                <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                                <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-500 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-md scale-[1.02]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
                                     {s}
                                 </div>
                             ))}
@@ -241,7 +249,7 @@ const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string })
                         <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                                <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                                <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-500 ${activeTime === t ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-md scale-[1.02]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
                                     {t}
                                 </div>
                             ))}
@@ -261,7 +269,7 @@ const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string })
                     </div>
 
                     {/* Generate Button */}
-                    <div className="w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest cursor-pointer hover:opacity-90 transition-opacity active:scale-[0.98]">
+                    <div className={`w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest transition-all duration-200 ${isPressed ? 'scale-95 opacity-80 bg-zinc-800 dark:bg-zinc-200' : 'scale-100'}`}>
                         <span>Generieren</span>
                         <div className="absolute right-3 p-1 rounded hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
                             <TwoDotsVertical className="w-4 h-4 opacity-70" />
@@ -315,6 +323,13 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
         return () => window.removeEventListener('scroll', handleScroll);
     }, [triggerRef]);
 
+    // Derived Animation States based on scroll progress
+    const season = progress < 0.2 ? 'Sommer' : 'Winter';
+    const time = progress < 0.4 ? 'Mittag' : 'Nachmittag';
+    const isButtonPressed = progress >= 0.6 && progress < 0.7;
+    // Image transition starts after the button "click"
+    const imageOpacity = progress < 0.75 ? 0 : (progress - 0.75) / 0.25;
+
     return (
         <div className="w-full h-full flex items-center justify-center">
             <div className="flex flex-col lg:flex-row items-center w-full gap-0 overflow-visible">
@@ -328,7 +343,7 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
                     <img
                         src="/about/3-vorlagen/small/edit_winter.jpg"
                         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-                        style={{ opacity: progress }}
+                        style={{ opacity: imageOpacity }}
                         alt="Winter"
                     />
 
@@ -343,7 +358,11 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
 
                 {/* 2. Control: Sidepanel in the MIDDLE */}
                 <div className="shrink-0 flex-col hidden lg:flex z-10">
-                    <SidepanelMockup activeSeason={progress > 0.6 ? 'Winter' : 'Sommer'} />
+                    <SidepanelMockup
+                        activeSeason={season}
+                        activeTime={time}
+                        isPressed={isButtonPressed}
+                    />
                 </div>
 
                 {/* 3. Text: Headline and Subline on the RIGHT */}
