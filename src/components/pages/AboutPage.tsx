@@ -317,7 +317,7 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
                         <div className="flex flex-col text-left max-w-xl">
                             <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
                                 Vorlagen <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & erstellen.</span>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & anlegen.</span>
                             </h2>
                             <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
                                 Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
@@ -527,7 +527,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Section 3: Vorlagen nutzen und erstellen */}
+                {/* Section 3: Vorlagen nutzen und anlegen */}
                 <section ref={section3Ref} className="relative h-[300vh] bg-zinc-50/30 dark:bg-zinc-900/10">
                     <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center">
                         <div className="max-w-[1800px] w-full mx-auto px-6 overflow-visible">
