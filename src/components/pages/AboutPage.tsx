@@ -193,7 +193,7 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 
 const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
     return (
-        <div className="w-full max-w-[340px] bg-[#121212] rounded-r-3xl border border-zinc-800 flex flex-col p-5 gap-5 h-[620px]">
+        <div className="w-full max-w-[340px] bg-[#121212] rounded-r-none lg:rounded-r-3xl border border-zinc-800 flex flex-col p-8 gap-6 h-screen">
             {/* Bearbeiten Header */}
             <div className="flex justify-between items-center mb-1">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Bearbeiten</span>
@@ -279,10 +279,10 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
     }, [triggerRef]);
 
     return (
-        <div className="w-full h-full flex items-center justify-center px-6">
-            <div className="flex flex-col lg:flex-row items-center w-full max-w-[1700px] gap-12 lg:gap-0">
+        <div className="w-full h-full flex items-center justify-center">
+            <div className="flex flex-col lg:flex-row items-center w-full gap-0 overflow-visible">
                 {/* 1. Visual: Image on the Left, docked */}
-                <div className="relative flex-1 lg:h-[620px] bg-zinc-900 rounded-l-3xl overflow-hidden border-y border-l border-zinc-800 min-h-[400px]">
+                <div className="relative flex-1 h-[50vh] lg:h-screen bg-zinc-900 lg:rounded-l-3xl overflow-hidden border-y lg:border-l border-zinc-800">
                     <img
                         src="/about/3-vorlagen/small/edit_sommer.jpg"
                         className="absolute inset-0 w-full h-full object-cover"
