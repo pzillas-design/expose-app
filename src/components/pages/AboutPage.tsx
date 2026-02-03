@@ -138,10 +138,10 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 
     // Irregular grid: 4-3-2-4 rows with dummy placeholders to make all rows equal (4 items)
     const imageRows = [
-        ['41.jpg', '42.jpg', '43.jpg', '44.jpg'],
-        ['11.jpg', '12.jpg', '13.jpg', null], // 1 dummy
-        ['21.jpg', '22.jpg', null, null],      // 2 dummies
-        ['31.jpg', '32.jpg', '14.jpg', '23.jpg']
+        ['11.jpg', '12.jpg', '13.jpg', '14.jpg'],
+        ['21.jpg', '22.jpg', '23.jpg', null],
+        ['31.jpg', '32.jpg', null, null],
+        ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
     ];
 
     let flatIndex = 0;
