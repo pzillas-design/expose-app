@@ -421,7 +421,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <div className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10">
                                 <div className="flex flex-col justify-center max-w-2xl">
                                     <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Parallel & iterativ</span> arbeiten.
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Parallel + iterativ</span> arbeiten.
                                     </h2>
                                     <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
                                         Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
