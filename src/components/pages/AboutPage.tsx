@@ -280,9 +280,9 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
 
     return (
         <div className="w-full h-full flex items-center justify-center px-6">
-            <div className="flex flex-col lg:flex-row items-stretch w-full max-w-[1100px] bg-transparent overflow-hidden">
-                {/* Visual: Image on the Left, docked to Sidepanel */}
-                <div className="relative flex-1 min-h-[400px] lg:h-[620px] bg-zinc-900 rounded-l-3xl overflow-hidden border-y border-l border-zinc-800">
+            <div className="flex flex-col lg:flex-row items-center w-full max-w-[1700px] gap-12 lg:gap-0">
+                {/* 1. Visual: Image on the Left, docked */}
+                <div className="relative flex-1 lg:h-[620px] bg-zinc-900 rounded-l-3xl overflow-hidden border-y border-l border-zinc-800 min-h-[400px]">
                     <img
                         src="/about/3-vorlagen/small/edit_sommer.jpg"
                         className="absolute inset-0 w-full h-full object-cover"
@@ -304,9 +304,24 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
                     </div>
                 </div>
 
-                {/* Sidepanel on the Right, docked */}
-                <div className="shrink-0 flex-col hidden lg:flex">
+                {/* 2. Control: Sidepanel in the MIDDLE */}
+                <div className="shrink-0 flex-col hidden lg:flex z-10">
                     <SidepanelMockup activeSeason={progress > 0.6 ? 'Winter' : 'Sommer'} />
+                </div>
+
+                {/* 3. Text: Headline and Subline on the RIGHT */}
+                <div className="flex-1 lg:pl-16 xl:pl-24">
+                    <ScrollReveal delay={100}>
+                        <div className="flex flex-col text-left max-w-xl">
+                            <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
+                                Vorlagen <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & erstellen.</span>
+                            </h2>
+                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
+                            </p>
+                        </div>
+                    </ScrollReveal>
                 </div>
             </div>
         </div>
@@ -513,21 +528,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 {/* Section 3: Vorlagen nutzen und erstellen */}
                 <section ref={section3Ref} className="relative h-[300vh] bg-zinc-50/30 dark:bg-zinc-900/10">
                     <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center">
-                        <div className="max-w-[1700px] w-full mx-auto px-6 flex flex-col items-center">
-                            <div className="w-full mb-12 text-center">
-                                <ScrollReveal delay={100}>
-                                    <h2 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 leading-none">
-                                        Vorlagen <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & erstellen.</span>
-                                    </h2>
-                                    <p className="text-lg sm:text-xl text-zinc-500 max-w-2xl mx-auto">
-                                        Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
-                                    </p>
-                                </ScrollReveal>
-                            </div>
-
-                            <div className="w-full">
-                                <InteractiveSeasonPanel triggerRef={section3Ref} />
-                            </div>
+                        <div className="max-w-[1800px] w-full mx-auto px-6 overflow-visible">
+                            <InteractiveSeasonPanel triggerRef={section3Ref} />
                         </div>
                     </div>
                 </section>
