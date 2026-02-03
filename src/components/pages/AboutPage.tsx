@@ -434,19 +434,38 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Section 3: Präzise Steuerung */}
-                <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-visible">
+                {/* Section 3: Vorlagen nutzen und erstellen */}
+                <section className="py-32 bg-zinc-50/50 dark:bg-zinc-900/10 overflow-hidden">
                     <div className="max-w-[1700px] mx-auto px-6">
-                        <ScrollReveal delay={100}>
-                            <div className="flex-1 max-w-2xl min-h-[600px] flex flex-col justify-center">
-                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
-                                    <span className="text-zinc-300 dark:text-zinc-700">Präzise</span> Steuerung.
-                                </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                    Variablen und Presets geben Ihnen die Kontrolle zurück. Strukturieren Sie Chaos in messbare Qualität.
-                                </p>
+                        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
+                            {/* Left: Image */}
+                            <div className="w-full lg:w-1/2">
+                                <ScrollReveal delay={100}>
+                                    <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800">
+                                        <img
+                                            src="/about/section3-presets.jpg"
+                                            alt="Vorlagen nutzen und erstellen"
+                                            className="w-full h-auto object-cover"
+                                        />
+                                    </div>
+                                </ScrollReveal>
                             </div>
-                        </ScrollReveal>
+
+                            {/* Right: Text */}
+                            <div className="w-full lg:w-1/2">
+                                <ScrollReveal delay={200}>
+                                    <div className="flex flex-col justify-center">
+                                        <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
+                                            Vorlagen <br />
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen und erstellen</span>.
+                                        </h2>
+                                        <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                            Presets sind Ihr kreatives Gedächtnis. Speichern Sie Exzellenz und rufen Sie sie jederzeit wieder ab.
+                                        </p>
+                                    </div>
+                                </ScrollReveal>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -496,6 +515,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 .preserve-3d { transform-style: preserve-3d; }
                 .perspective-1000 { perspective: 1000px; }
             `}</style>
-        </div>
+        </div >
     );
 };
