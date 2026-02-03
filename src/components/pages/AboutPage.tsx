@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
-import { Pen, Camera, X, Plus } from 'lucide-react';
+import { Pen, Camera, X, Plus, ChevronDown } from 'lucide-react';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { Theme } from '@/components/ui/DesignSystem';
 
@@ -193,7 +193,7 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 
 const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string }) => {
     return (
-        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-l border-zinc-200 dark:border-zinc-800 flex flex-col pt-24 pb-8 h-screen overflow-hidden">
+        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-x border-zinc-200 dark:border-zinc-800 flex flex-col pt-24 pb-8 h-screen overflow-hidden">
             {/* 0. Top Header / Tabs */}
             <div className="px-6 pb-6">
                 <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
@@ -221,31 +221,31 @@ const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string })
                     </div>
                 </div>
 
-                {/* 2. Jahreszeit Section: Boxed Variables */}
-                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/30 dark:bg-zinc-800/10">
-                    <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-white/5">
-                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Jahreszeit</span>
-                    </div>
-                    <div className="p-4 flex flex-wrap gap-1.5">
-                        {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                            <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}>
-                                {s}
-                            </div>
-                        ))}
+                {/* 2. Jahreszeit Section: App-style Card */}
+                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 shadow-sm p-5 gap-4 relative group">
+                    <div className="flex flex-col gap-2.5">
+                        <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
+                                <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                                    {s}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* 3. Uhrzeit Section: Boxed Variables */}
-                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/30 dark:bg-zinc-800/10">
-                    <div className="px-4 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-white/5">
-                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Uhrzeit</span>
-                    </div>
-                    <div className="p-4 flex flex-wrap gap-1.5">
-                        {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                            <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}>
-                                {t}
-                            </div>
-                        ))}
+                {/* 3. Uhrzeit Section: App-style Card */}
+                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 shadow-sm p-5 gap-4 relative group">
+                    <div className="flex flex-col gap-2.5">
+                        <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
+                                <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-300 ${t === 'Nachmittag' ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                                    {t}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -269,21 +269,26 @@ const SidepanelMockup = ({ activeSeason = 'Sommer' }: { activeSeason?: string })
                     </div>
                 </div>
 
-                {/* 4. Vorlagen Section (Accordion Style Header) */}
-                <div className="flex flex-col gap-1 border-t border-zinc-100 dark:border-zinc-800 pt-6">
-                    <div className="flex items-center justify-between px-1">
-                        <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
+                {/* 4. Vorlagen Section: Replicating SidebarAccordion */}
+                <div className="flex flex-col border-t border-zinc-200 dark:border-zinc-800 mt-6 -mx-6">
+                    <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
+                        <div className="flex items-center gap-2">
+                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
+                        </div>
                         <Plus className="w-3.5 h-3.5 text-zinc-400" />
                     </div>
-                    {['Staging', 'Cleanup', 'Modern Home', 'Saison & Uhrzeit'].map((lib, i) => (
-                        <div key={lib} className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800/50 group transition-colors cursor-pointer">
-                            <span className="text-xs text-zinc-600 dark:text-zinc-300 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-40 transition-opacity">
-                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
-                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                    <div className="pb-4 space-y-0.5">
+                        {['Staging', 'Cleanup', 'Modern Home', 'Saison & Uhrzeit'].map((lib, i) => (
+                            <div key={lib} className="flex items-center justify-between py-2 px-6 pl-12 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 group transition-colors cursor-pointer">
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
+                                <div className="flex gap-1.5 opacity-0 group-hover:opacity-30 transition-opacity pr-2">
+                                    <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                                    <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,7 +347,7 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
                 </div>
 
                 {/* 3. Text: Headline and Subline on the RIGHT */}
-                <div className="flex-1 lg:pl-16 xl:pl-24">
+                <div className="flex-1 lg:pl-32 xl:pl-48">
                     <ScrollReveal delay={100}>
                         <div className="flex flex-col text-left max-w-xl">
                             <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
