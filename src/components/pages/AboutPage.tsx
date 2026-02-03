@@ -460,7 +460,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen und erstellen</span>.
                                         </h2>
                                         <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                            Presets sind Ihr kreatives Gedächtnis. Speichern Sie Exzellenz und rufen Sie sie jederzeit wieder ab.
+                                            Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
                                         </p>
                                     </div>
                                 </ScrollReveal>
