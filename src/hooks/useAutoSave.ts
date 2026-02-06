@@ -17,9 +17,39 @@ export const useAutoSave = (
     const isSavingRef = useRef(false);
 
     useEffect(() => {
-        // Skip if not logged in
-        if (!user || isAuthDisabled) {
-            console.log('[AutoSave] Skipped - no user or auth disabled');
+        // For Beta (auth disabled): Use localStorage
+        if (isAuthDisabled) {
+            const currentState = JSON.stringify(rows);
+            if (currentState === lastSavedRef.current) {
+                return;
+            }
+
+            // Debounce: Save every 5s to localStorage
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+
+            saveTimeoutRef.current = setTimeout(() => {
+                try {
+                    console.log('[AutoSave] Saving to localStorage (Beta mode)...');
+                    localStorage.setItem('beta_canvas_state', currentState);
+                    lastSavedRef.current = currentState;
+                    console.log('[AutoSave] Saved to localStorage successfully');
+                } catch (err) {
+                    console.error('[AutoSave] localStorage save failed:', err);
+                }
+            }, 5000); // 5 seconds for Beta
+
+            return () => {
+                if (saveTimeoutRef.current) {
+                    clearTimeout(saveTimeoutRef.current);
+                }
+            };
+        }
+
+        // For Production (with auth): Use Supabase
+        if (!user) {
+            console.log('[AutoSave] Skipped - no user');
             return;
         }
 
