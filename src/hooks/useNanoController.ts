@@ -17,6 +17,7 @@ import { useGeneration } from './useGeneration';
 import { usePersistence } from './usePersistence';
 import { useBoards } from './useBoards';
 import { usePresets } from './usePresets';
+import { useAutoSave } from './useAutoSave';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -205,7 +206,11 @@ export const useNanoController = () => {
         user, isAuthDisabled, setRows
     });
 
+    // Auto-Save: Background persistence every 30s
+    useAutoSave(rows, user, isAuthDisabled);
+
     // --- Actions --- (Integrated via Hooks above)
+
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
