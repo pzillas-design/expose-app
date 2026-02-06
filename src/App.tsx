@@ -10,6 +10,7 @@ import { CreditsModal } from '@/components/modals/CreditsModal';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
+import { ImageInfoModal } from '@/components/canvas/ImageInfoModal';
 import { useNanoController } from '@/hooks/useNanoController';
 import { Plus, Layout, Home, Upload, Loader2 } from 'lucide-react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
@@ -73,6 +74,7 @@ export function App() {
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+    const [infoModalImageId, setInfoModalImageId] = useState<string | null>(null);
     const sideSheetHandlersRef = useRef<{ onStart: () => void, onEnd: () => void } | null>(null);
 
     // Active Annotation State
@@ -608,6 +610,8 @@ export function App() {
                                                 onDelete={requestDelete}
                                                 onDownload={handleDownload}
                                                 onContextMenu={handleImageContextMenu}
+                                                onNavigateParent={handleNavigateParent}
+                                                onShowInfo={(id) => setInfoModalImageId(id)}
                                                 t={t}
                                             />
                                         ))}
@@ -749,6 +753,7 @@ export function App() {
                     onDownloadSelected={handleDownloadSelected}
                     onDeleteSelected={() => requestDelete(selectedIds)}
                     onGenerateVariations={handleGenerateVariations}
+                    onShowInfo={(id) => setInfoModalImageId(id)}
                     t={t}
                 />
             )}
@@ -760,6 +765,17 @@ export function App() {
                 t={t}
                 lang={lang}
             />
+
+            {infoModalImageId && (() => {
+                const image = allImages.find(img => img.id === infoModalImageId);
+                return image ? (
+                    <ImageInfoModal
+                        image={image}
+                        onClose={() => setInfoModalImageId(null)}
+                        t={t}
+                    />
+                ) : null;
+            })()}
 
             <CreditsModal
                 isOpen={isCreditsModalOpen}
