@@ -350,20 +350,20 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Bottom Action Buttons */}
             {zoom > 0.4 && !image.isGenerating && (
                 <div className="flex items-center justify-center gap-2 mt-3 animate-in fade-in duration-300">
-                    {/* Navigate Parent (Zurück) */}
-                    {image.parentId && onNavigateParent && (
-                        <Tooltip text={t('tt_navigate_parent') || 'Navigate to parent image'}>
+                    {/* Previous Image */}
+                    {hasLeft && (
+                        <Tooltip text={t('previous') || 'Previous'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onNavigateParent(image.id);
+                                    onNavigate?.(-1, image.id);
                                 }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                                     ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
                                     flex items-center gap-1.5`}
                             >
                                 <ChevronLeft className="w-3.5 h-3.5" />
-                                {t('back') || 'Zurück'}
+                                {t('previous') || 'Zurück'}
                             </button>
                         </Tooltip>
                     )}
@@ -382,22 +382,23 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         </button>
                     </Tooltip>
 
-                    {/* Save (Speichern) */}
-                    <Tooltip text={t('tt_save') || 'Download image'}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onDownload) onDownload(image.id);
-                                else downloadImage(image.src, image.title || 'image');
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                                ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
-                                flex items-center gap-1.5`}
-                        >
-                            <Save className="w-3.5 h-3.5" />
-                            {t('save') || 'Speichern'}
-                        </button>
-                    </Tooltip>
+                    {/* Next Image */}
+                    {hasRight && (
+                        <Tooltip text={t('next') || 'Next'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigate?.(1, image.id);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                    ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
+                                    flex items-center gap-1.5`}
+                            >
+                                {t('next') || 'Weiter'}
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </Tooltip>
+                    )}
                 </div>
             )}
         </div>
