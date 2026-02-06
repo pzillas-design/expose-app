@@ -357,6 +357,9 @@ export function App() {
     }, [selectedIds, selectAndSnap]);
 
     const handleDownload = async (id: string) => {
+        const isValid = await actions.ensureValidSession();
+        if (!isValid) return;
+
         const img = allImages.find(i => i.id === id);
         if (img) {
             await downloadImage(img.src, img.title);
@@ -387,6 +390,9 @@ export function App() {
     }, [currentLang, t, confirm, handleDeleteImage, selectedIds]);
 
     const handleDownloadSelected = useCallback(async () => {
+        const isValid = await actions.ensureValidSession();
+        if (!isValid) return;
+
         for (const id of selectedIds) {
             const img = allImages.find(i => i.id === id);
             if (img && img.src) {
@@ -600,6 +606,7 @@ export function App() {
                                                 hasLeft={imgIndex > 0}
                                                 hasRight={imgIndex < row.items.length - 1}
                                                 onDelete={requestDelete}
+                                                onDownload={handleDownload}
                                                 onContextMenu={handleImageContextMenu}
                                                 t={t}
                                             />
@@ -682,6 +689,7 @@ export function App() {
                     onUpdateVariables={handleUpdateVariables}
                     onUpdateImageTitle={handleUpdateImageTitle}
                     onDeleteImage={handleDeleteImage}
+                    onDownload={handleDownload}
                     onGenerateMore={handleGenerateMore}
                     onNavigateParent={handleNavigateParent}
                     isGlobalDragOver={isDragOver}

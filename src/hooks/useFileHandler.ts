@@ -95,7 +95,7 @@ export const useFileHandler = ({
 
                             if (processedCount === files.length) {
                                 selectMultiple(newImageIds);
-                                snapToItem(skeletonId);
+                                // Don't auto-scroll on upload completion - only on new skeleton creation
                             }
 
                             if (user && !isAuthDisabled) {

@@ -115,20 +115,34 @@ export const useGeneration = ({
             if (imgData) {
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
-                const refreshedImage = {
-                    ...finalImage,
-                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
-                };
 
                 setRows(prev => prev.map(row => ({
                     ...row,
-                    items: row.items.map(item => item.id === jobId ? refreshedImage : item)
+                    items: row.items.map(item => {
+                        if (item.id === jobId) {
+                            // MERGE: Preserve local state that might have been changed while polling
+                            return {
+                                ...finalImage,
+                                src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`,
+                                // Preserve local edits (even empty strings)
+                                userDraftPrompt: item.userDraftPrompt !== undefined ? item.userDraftPrompt : finalImage.userDraftPrompt,
+                                activeTemplateId: item.activeTemplateId !== undefined ? item.activeTemplateId : finalImage.activeTemplateId,
+                                variableValues: item.variableValues !== undefined ? item.variableValues : finalImage.variableValues,
+                                // If the local item has annotations (e.g. user started brushing), prefer those
+                                // UNLESS the final image has new annotations from the server (e.g. generation result)
+                                annotations: (item.annotations && item.annotations.length > 0 && (!finalImage.annotations || finalImage.annotations.length === 0))
+                                    ? item.annotations
+                                    : (finalImage.annotations || [])
+                            };
+                        }
+                        return item;
+                    })
                 })));
 
                 // Send browser notification if enabled and tab is inactive
                 sendGenerationCompleteNotification(
-                    refreshedImage.title || refreshedImage.baseName,
-                    refreshedImage.generationPrompt
+                    finalImage.title || finalImage.baseName,
+                    finalImage.generationPrompt
                 );
 
                 // Persist job history for admin dashboard

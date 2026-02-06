@@ -37,6 +37,7 @@ interface SideSheetProps {
     onDeselectAll?: () => void;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
+    onDownload?: (id: string | string[]) => void;
     // Drag & Drop props
     isGlobalDragOver: boolean;
     onGlobalDragLeave: () => void;
@@ -116,6 +117,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onDeleteTemplate,
         onSaveRecentPrompt,
         onUpdateImageTitle,
+        onDownload,
         onAddReference: onAddReferenceExternal, // Rename to avoid conflict
         userProfile
     } = props;
@@ -285,31 +287,53 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     const lastIsMultiRef = useRef(isMulti);
 
+    const lastSelectedIdRef = useRef<string | null>(null);
+    const lastIsGeneratingRef = useRef(false);
+
     useEffect(() => {
         if (selectedImage && !isMulti) {
-            setPrompt(selectedImage.userDraftPrompt || '');
+            const isNewSelection = selectedImage.id !== lastSelectedIdRef.current;
+            const isGenerating = selectedImage.isGenerating;
+            const wasGenerating = lastIsGeneratingRef.current;
 
-            // When a new image is selected, default to prompt (edit) mode
-            // EXCEPT if it's currently generating (we stay in whatever mode we were in)
-            if (sideSheetMode !== 'prompt' && !selectedImage.isGenerating) {
-                onModeChange('prompt');
+            // 1. Handle New Selection
+            if (isNewSelection) {
+                setPrompt(selectedImage.userDraftPrompt || '');
+                // Default to prompt mode on NEW selection, unless it's generating
+                if (sideSheetMode !== 'prompt' && !isGenerating) {
+                    onModeChange('prompt');
+                }
+                lastSelectedIdRef.current = selectedImage.id;
+            } else {
+                // 2. Handle Identity Update (same ID)
+                // Just sync the prompt if it's not being edited? 
+                // Actually, if we're merging correctly in the controller, it should be fine.
+                // But let's at least ensure we don't overwrite if user is typing.
+                // For now, identity updates (like sync) should NOT trigger mode changes.
             }
+
+            // 3. Handle Generation Status Transition (within same ID or across selection)
+            if (wasGenerating && !isGenerating) {
+                // Generation FINISHED: Only auto-switch to prompt mode if NOT currently in an active editing mode
+                // This prevents kicking the user out of Brush/Objects mode during sync.
+                if (sideSheetMode === 'prompt') {
+                    setShowInfo(true);
+                }
+                lastAutoOpenedId.current = selectedImage.id;
+            }
+
+            // Update ref for next run
+            lastIsGeneratingRef.current = isGenerating;
         } else if (isMulti && !lastIsMultiRef.current) {
             // Reset prompt when entering multi-select mode
             setPrompt('');
             if (sideSheetMode !== 'prompt') onModeChange('prompt');
+            lastSelectedIdRef.current = null;
+            lastIsGeneratingRef.current = false;
         }
-        lastIsMultiRef.current = isMulti;
-    }, [selectedImage?.id, selectedImage?.userDraftPrompt, isMulti]);
 
-    // Auto-open Info Modal on new generation
-    // Verify auto-open logic
-    useEffect(() => {
-        if (selectedImage && selectedImage.isGenerating && selectedImage.id !== lastAutoOpenedId.current && !isMulti) {
-            setShowInfo(true);
-            lastAutoOpenedId.current = selectedImage.id;
-        }
-    }, [selectedImage?.isGenerating, selectedImage?.id, isMulti]);
+        lastIsMultiRef.current = isMulti;
+    }, [selectedImage?.id, selectedImage?.isGenerating, isMulti, sideSheetMode, onModeChange]);
 
     // Auto-close Info Modal when navigating to a different image
     useEffect(() => {
@@ -348,6 +372,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleDownload = async () => {
+        if (onDownload) {
+            if (isMulti && selectedImages) {
+                onDownload(selectedImages.map(img => img.id));
+            } else if (selectedImage) {
+                onDownload(selectedImage.id);
+            }
+            return;
+        }
+
         if (isMulti && selectedImages) {
             for (const img of selectedImages) {
                 if (img.src) {
@@ -746,6 +779,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     onGenerateMore={onGenerateMore}
                                     onUpdateImageTitle={onUpdateImageTitle}
                                     onNavigateParent={onNavigateParent}
+                                    onDownload={onDownload}
                                     currentLang={lang}
                                 />
                             </div>

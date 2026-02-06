@@ -132,21 +132,41 @@ export async function downloadImage(src: string, filename: string): Promise<void
         finalFilename = `${finalFilename}.${urlExt || 'jpg'}`;
     }
 
-    // For Supabase signed URLs, add download parameter to force download
+    // For Supabase signed URLs, fetch as blob first to avoid Chrome's slow validation
     const isSupabaseUrl = src.includes('supabase.co/storage');
 
     if (isSupabaseUrl) {
-        // Add download parameter to Supabase URL to force download instead of display
-        const url = new URL(src);
-        url.searchParams.set('download', finalFilename);
+        try {
+            // Fetch the image as blob first - this is much faster than letting Chrome validate the signed URL
+            const response = await fetch(src, { cache: 'force-cache' });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        const link = document.body.appendChild(document.createElement('a'));
-        link.style.display = 'none';
-        link.href = url.toString();
-        link.click();
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
 
-        setTimeout(() => link.remove(), 200);
-        return;
+            const link = document.body.appendChild(document.createElement('a'));
+            link.style.display = 'none';
+            link.href = url;
+            link.download = finalFilename;
+            link.click();
+
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                link.remove();
+            }, 200);
+            return;
+        } catch (err) {
+            console.error('Supabase blob download failed, falling back to direct URL:', err);
+            // Fallback to direct URL method
+            const url = new URL(src);
+            url.searchParams.set('download', finalFilename);
+            const link = document.body.appendChild(document.createElement('a'));
+            link.style.display = 'none';
+            link.href = url.toString();
+            link.click();
+            setTimeout(() => link.remove(), 200);
+            return;
+        }
     }
 
     // For data URLs, convert to blob for proper download
@@ -195,8 +215,14 @@ export async function downloadImage(src: string, filename: string): Promise<void
             link.remove();
         }, 200);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Download failed:', error);
+
+        // Check for common error messages
+        const errorText = error?.message || '';
+        if (errorText.includes('JWT') || errorText.includes('exp') || errorText.includes('claim')) {
+            console.error('Possible authentication failure during download');
+        }
 
         // Final fallback
         const link = document.body.appendChild(document.createElement('a'));

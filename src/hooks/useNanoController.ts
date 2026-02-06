@@ -66,7 +66,8 @@ export const useNanoController = () => {
         isAuthModalOpen, setIsAuthModalOpen,
         authEmail, setAuthEmail,
         authError, setAuthError,
-        handleAddFunds, handleSignOut, updateProfile, deleteAccount
+        handleAddFunds, handleSignOut, updateProfile, deleteAccount,
+        ensureValidSession
     } = useAuth({
         isAuthDisabled,
         getResolvedLang,
@@ -298,7 +299,7 @@ export const useNanoController = () => {
             if (finalPrompt && activeTemplateId === undefined) {
                 saveRecentPrompt(finalPrompt);
             }
-            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
+            performGeneration(selectedImage, finalPrompt, 1, false, draftPrompt, activeTemplateId, variableValues);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, saveRecentPrompt]);
 
@@ -315,12 +316,12 @@ export const useNanoController = () => {
             if (img.parentId) {
                 const parent = allImages.find(p => p.id === img!.parentId);
                 if (parent) {
-                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '');
+                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, false);
                     return;
                 }
             }
             // Fallback: regenerate from current
-            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '');
+            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '', 1, false);
         }
     }, [allImages, performGeneration]);
 
@@ -445,7 +446,8 @@ export const useNanoController = () => {
         savePreset: saveTemplate,
         setIsCanvasLoading,
         deletePreset: deleteTemplate,
-        saveRecentPrompt
+        saveRecentPrompt,
+        ensureValidSession
     }), [
         setRows, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll, getMostVisibleItem, setQualityMode,
         setThemeMode, setLang, handleModeChange, setSideSheetMode, setBrushSize, setMaskTool, setActiveShape,
@@ -456,7 +458,8 @@ export const useNanoController = () => {
         handleUpdateVariables, performGeneration, handleGenerate, handleGenerateMore,
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
-        refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt
+        refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt,
+        ensureValidSession
     ]);
 
     return React.useMemo(() => ({

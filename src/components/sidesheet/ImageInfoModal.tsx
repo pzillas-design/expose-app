@@ -12,6 +12,7 @@ interface ImageInfoModalProps {
     onGenerateMore: (id: string) => void;
     onUpdateImageTitle?: (id: string, title: string) => void;
     onNavigateParent?: (id: string) => void;
+    onDownload?: (id: string) => void;
     currentLang: 'de' | 'en';
 }
 
@@ -22,6 +23,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     onGenerateMore,
     onUpdateImageTitle,
     onNavigateParent,
+    onDownload,
     currentLang
 }) => {
     const { showToast } = useToast();
@@ -197,7 +199,10 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
                     <Button
                         variant="secondary"
-                        onClick={() => image.src && downloadImage(image.src, image.title || image.id)}
+                        onClick={() => {
+                            if (onDownload) onDownload(image.id);
+                            else if (image.src) downloadImage(image.src, image.title || image.id);
+                        }}
                         disabled={image.isGenerating}
                         className="justify-start px-4 gap-3"
                     >

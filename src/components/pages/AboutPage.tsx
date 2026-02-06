@@ -79,9 +79,11 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
                 // Start anim: when section top is at 0 (sticky start)
                 // End anim: when section top is at -windowHeight (scrolled 1 screen height)
                 // Animation Timing Tuning:
-                // Reduced buffer to 10% to minimize "Empty run" / Leerlauf.
-                const startPoint = -windowHeight * 0.1;
-                const endPoint = -windowHeight * 1.1;
+                // Start exactly when the section hits the top (sticky start)
+                // End when section travel ends (rect.height - windowHeight)
+                const startPoint = 0;
+                // For a 250vh section, total travel is 150vh
+                const endPoint = -windowHeight * 1.5;
 
                 // Calculate progress
                 const rawProgress = (startPoint - rect.top) / (startPoint - endPoint);
@@ -192,50 +194,54 @@ const CanvasMockup = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement>
 };
 
 const SidepanelMockup = ({
-    activeSeason = 'Sommer',
-    activeTime = 'Nachmittag',
-    isPressed = false
+    activeSeason,
+    activeTime,
+    buttonScale = 1,
+    seasonScale = 1,
+    timeScale = 1,
+    activeSection,
+    isSeasonPressed,
+    isTimePressed,
+    generationProgress = 0,
+    isGenerating = false,
 }: {
     activeSeason?: string;
     activeTime?: string;
-    isPressed?: boolean;
+    buttonScale?: number;
+    seasonScale?: number;
+    timeScale?: number;
+    activeSection?: 'prompt' | 'season' | 'time' | 'generate';
+    isSeasonPressed?: boolean;
+    isTimePressed?: boolean;
+    generationProgress?: number;
+    isGenerating?: boolean;
 }) => {
-    return (
-        <div className="w-full max-w-[340px] bg-white dark:bg-zinc-900 border-y lg:border-x border-zinc-200 dark:border-zinc-800 flex flex-col pt-24 pb-8 h-screen overflow-hidden">
-            {/* 0. Top Header / Tabs */}
-            <div className="px-6 pb-6">
-                <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/50 rounded-xl">
-                    <div className="flex-1 py-1.5 text-center bg-white dark:bg-zinc-800 rounded-lg shadow-sm">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-100">Prompt</span>
-                    </div>
-                    <div className="flex-1 py-1.5 text-center">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Pinsel</span>
-                    </div>
-                    <div className="flex-1 py-1.5 text-center">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Objekte</span>
-                    </div>
-                </div>
-            </div>
+    const highlightClass = "border-zinc-400 dark:border-zinc-600";
 
-            <div className="flex-1 flex flex-col px-6 gap-5 overflow-y-auto no-scrollbar">
+    return (
+        <div className="flex flex-col h-full overflow-hidden px-6 pt-6 pb-4">
+            <div className="flex-none flex flex-col gap-5">
                 {/* 1. Prompt Box */}
                 <div className="flex flex-col gap-3">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Beschreibung</span>
-                    <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                    <div className={`p-4 rounded-lg bg-transparent border transition-all duration-300 ${activeSection === 'prompt' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                         <p className="text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                            Inszeniere das Bild neu indem du die Jahreszeit anpasst.
-                            <span className="inline-block w-1.5 h-3.5 bg-orange-500 ml-1 animate-pulse align-middle" />
+                            Inszeniere das Bild neu indem du die Jahreszeit anpasst
+                            <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
                         </p>
                     </div>
                 </div>
 
-                {/* 2. Jahreszeit Section: App-style Card */}
-                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 shadow-sm p-5 gap-4 relative group">
+                {/* 2. Jahreszeit Section */}
+                <div className={`flex flex-col border rounded-lg bg-transparent p-5 gap-4 group transition-all duration-300 ${activeSection === 'season' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2.5">
-                        <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
+                        <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {['Sommer', 'Herbst', 'Winter', 'Frühling'].map(s => (
-                                <div key={s} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-500 ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-md scale-[1.02]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                            {['Frühling', 'Sommer', 'Winter'].map(s => (
+                                <div
+                                    key={s}
+                                    className={`px-4 py-2.5 text-xs rounded-md transition-all duration-150 flex items-center justify-center leading-none font-medium ${activeSeason === s ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md' : isSeasonPressed && s === 'Winter' ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                                    style={{ transform: (s === 'Winter' || activeSeason === s) ? `scale(${seasonScale})` : 'scale(1)' }}
+                                >
                                     {s}
                                 </div>
                             ))}
@@ -243,13 +249,17 @@ const SidepanelMockup = ({
                     </div>
                 </div>
 
-                {/* 3. Uhrzeit Section: App-style Card */}
-                <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900/50 shadow-sm p-5 gap-4 relative group">
+                {/* 3. Uhrzeit Section */}
+                <div className={`flex flex-col border rounded-lg bg-transparent p-5 gap-4 group transition-all duration-300 ${activeSection === 'time' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2.5">
-                        <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
+                        <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
-                            {['Mittag', 'Nachmittag', 'Morgen', 'Golden Hour', 'Blue Hour', 'Nacht'].map(t => (
-                                <div key={t} className={`px-3 py-1.5 text-[11px] rounded-md transition-all duration-500 ${activeTime === t ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shadow-md scale-[1.02]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
+                            {['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour'].map(t => (
+                                <div
+                                    key={t}
+                                    className={`px-4 py-2.5 text-xs rounded-md transition-all duration-150 flex items-center justify-center leading-none font-medium ${activeTime === t ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md' : isTimePressed && t === 'Golden Hour' ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                                    style={{ transform: (t === 'Golden Hour' || activeTime === t) ? `scale(${timeScale})` : 'scale(1)' }}
+                                >
                                     {t}
                                 </div>
                             ))}
@@ -257,45 +267,179 @@ const SidepanelMockup = ({
                     </div>
                 </div>
 
-                <div className="mt-4 flex flex-col gap-4">
-                    {/* Tools Buttons */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Pen className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" /> Anmerkung
+                {/* Generate Button Block (Now fixed in position relative to top) */}
+                <div className="flex flex-col gap-4">
+                    <div className="hidden lg:grid grid-cols-2 gap-2">
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Pen className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" /> Anmerkung
                         </div>
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Camera className="w-3.5 h-3.5 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Camera className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
                         </div>
                     </div>
 
-                    {/* Generate Button */}
-                    <div className={`w-full h-12 rounded-lg bg-black dark:bg-white text-white dark:text-black font-bold text-[10px] flex items-center justify-center relative shadow-sm uppercase tracking-widest transition-all duration-200 ${isPressed ? 'scale-95 opacity-80 bg-zinc-800 dark:bg-zinc-200' : 'scale-100'}`}>
+                    <div
+                        className={`w-full h-12 rounded-lg font-bold text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-black dark:bg-white text-white dark:text-black overflow-hidden`}
+                        style={{ transform: `scale(${buttonScale})` }}
+                    >
                         <span>Generieren</span>
                         <div className="absolute right-3 p-1 rounded hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
-                            <TwoDotsVertical className="w-4 h-4 opacity-70" />
+                            <TwoDotsVertical className="w-4 h-4" />
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* 4. Vorlagen Section: Replicating SidebarAccordion */}
-                <div className="flex flex-col border-t border-zinc-200 dark:border-zinc-800 mt-6 -mx-6">
-                    <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
-                        <div className="flex items-center gap-2">
-                            <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
-                        </div>
-                        <Plus className="w-3.5 h-3.5 text-zinc-400" />
+            {/* DYNAMIC SPACE: Grows as viewport height increases */}
+            <div className="flex-1 min-h-[20px]" />
+
+            {/* 4. Vorlagen Section (Docks to bottom or gets cut off) */}
+            <div className="hidden lg:flex flex-none flex-col border-t border-zinc-200 dark:border-zinc-800 -mx-6">
+                <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-2">
+                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
                     </div>
-                    <div className="pb-4 space-y-0.5">
-                        {['Staging', 'Cleanup', 'Modern Home', 'Saison & Uhrzeit'].map((lib, i) => (
-                            <div key={lib} className="flex items-center justify-between py-2 px-6 pl-12 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 group transition-colors cursor-pointer">
-                                <span className="text-xs text-zinc-500 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
-                                <div className="flex gap-1.5 opacity-0 group-hover:opacity-30 transition-opacity pr-2">
-                                    <div className="w-1 h-1 bg-zinc-500 rounded-full" />
-                                    <div className="w-1 h-1 bg-zinc-500 rounded-full" />
-                                </div>
+                    <Plus className="w-3.5 h-3.5 text-zinc-400" />
+                </div>
+                <div className="pt-0.5 pb-0 space-y-1.5">
+                    {['Home Staging', 'Cleanup', 'Jahreszeit'].map((lib, i) => (
+                        <div key={lib} className="flex items-center justify-between py-2 px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 group transition-colors cursor-pointer">
+                            <span className="text-[13px] text-zinc-500 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
+                            <div className="flex gap-1.5 opacity-0 group-hover:opacity-30 transition-opacity pr-2">
+                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
+                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
                             </div>
-                        ))}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface Section3MockupUIProps {
+    season?: string;
+    time?: string;
+    buttonScale: number;
+    seasonScale: number;
+    timeScale: number;
+    generationProgress: number;
+    isGenerating: boolean;
+    isFinished: boolean;
+    progress: number;
+    activeSection?: 'prompt' | 'season' | 'time' | 'generate';
+    isSeasonPressed: boolean;
+    isTimePressed: boolean;
+    isButtonPressed: boolean;
+    mockupRef?: React.RefObject<HTMLDivElement>;
+    textRef?: React.RefObject<HTMLDivElement>;
+}
+
+const Section3MockupUI = ({
+    season,
+    time,
+    buttonScale,
+    seasonScale,
+    timeScale,
+    generationProgress,
+    isGenerating,
+    isFinished,
+    progress,
+    activeSection,
+    isSeasonPressed,
+    isTimePressed,
+    isButtonPressed,
+    mockupRef,
+    textRef
+}: Section3MockupUIProps) => {
+    // Determine Cursor Position based on progress stages
+    const getCursorPos = () => {
+        if (progress < 0.06) return { top: '100px', left: '100px' }; // Prompt
+        if (progress < 0.14) return { top: '300px', left: '200px' }; // Season (Winter)
+        if (progress < 0.22) return { top: '480px', left: '280px' }; // Time (Golden Hour)
+        return { top: '650px', left: '175px' }; // Generate
+    };
+
+    const cursorPos = getCursorPos();
+    return (
+        <div className="w-full flex items-center justify-center" style={{ height: '80vh', minHeight: '80vh' }}>
+            <div className="max-w-[1700px] mx-auto w-full h-full flex items-stretch px-8 lg:px-12 2xl:px-16 relative">
+                {/* 1. Left Column: Text (Ends at screen center) */}
+                <div className="flex-1 flex items-center lg:pr-[175px] z-20">
+                    <ScrollReveal delay={100}>
+                        <div ref={textRef} className="flex flex-col text-left max-w-xl will-change-transform">
+                            <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br />
+                                nutzen & anlegen.
+                            </h2>
+                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed font-light">
+                                Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.
+                            </p>
+                        </div>
+                    </ScrollReveal>
+                </div>
+
+                {/* 2. Right Column Area: Contains the absolute 'breaking' Mockup Unit */}
+                <div className="flex-1 relative">
+                    <div
+                        ref={mockupRef}
+                        className="absolute top-0 bottom-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity"
+                        style={{
+                            left: '-175px',
+                            right: '-100vw'
+                        }}
+                    >
+                        {/* 0. Top Progress Bar (Global for whole box, constrained to viewport) */}
+                        <div
+                            className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`}
+                            style={{ width: 'calc(50vw + 175px)' }}
+                        >
+                            <div
+                                className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                                style={{ width: `${generationProgress * 100}%` }}
+                            />
+                        </div>
+                        {/* A. Middle: Sidepanel (Fixed width) */}
+                        <div
+                            className="hidden lg:flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50"
+                            style={{ width: '350px' }}
+                        >
+                            <SidepanelMockup
+                                activeSeason={season}
+                                activeTime={time}
+                                buttonScale={buttonScale}
+                                seasonScale={seasonScale}
+                                timeScale={timeScale}
+                                activeSection={activeSection}
+                                isSeasonPressed={isSeasonPressed}
+                                isTimePressed={isTimePressed}
+                                generationProgress={generationProgress}
+                                isGenerating={isGenerating}
+                            />
+                        </div>
+
+                        {/* B. Right: Visual Animation Area (Fills remaining space) */}
+                        <div className="relative flex-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden" style={{ width: 'calc(100vw / 2 - 175px)' }}>
+                            {/* Sommer Image (Original) */}
+                            <img
+                                src="/about/3-vorlagen/small/edit_sommer.jpg"
+                                className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`}
+                                alt="Sommer Scene"
+                            />
+
+                            {/* Winter Image (Result) */}
+                            <img
+                                src="/about/3-vorlagen/small/edit_winter.jpg"
+                                className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-100' : 'opacity-0'}`}
+                                alt="Winter Scene Result"
+                            />
+
+                            {/* Removed old generation overlay */}
+
+                            {/* Edge Shadow */}
+                            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/5 to-transparent pointer-events-none" />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -303,8 +447,21 @@ const SidepanelMockup = ({
     );
 };
 
-const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HTMLElement> }) => {
+const InteractiveSeasonPanel = ({ triggerRef, mockupRef, textRef }: { triggerRef: React.RefObject<HTMLElement>, mockupRef: React.RefObject<HTMLDivElement>, textRef: React.RefObject<HTMLDivElement> }) => {
     const [progress, setProgress] = useState(0);
+    const [autoProgress, setAutoProgress] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const [isSeasonStepPressed, setIsSeasonStepPressed] = useState(false);
+    const [isTimeStepPressed, setIsTimeStepPressed] = useState(false);
+    const [isButtonStepPressed, setIsButtonStepPressed] = useState(false);
+
+    const [seasonState, setSeasonState] = useState<string | undefined>(undefined);
+    const [timeState, setTimeState] = useState<string | undefined>(undefined);
+
+    const hasTriggeredSeason = useRef(false);
+    const hasTriggeredTime = useRef(false);
+    const hasTriggeredGenerate = useRef(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -312,9 +469,10 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
             const rect = triggerRef.current.getBoundingClientRect();
             const windowHeight = window.innerHeight;
 
-            const startPoint = 0;
-            const endPoint = -windowHeight * 1.5;
-            const rawProgress = (startPoint - rect.top) / (startPoint - endPoint);
+            // Travel distance is total section height minus what's visible (100vh sticky)
+            const travelDistance = rect.height - windowHeight;
+            const rawProgress = -rect.top / travelDistance;
+
             setProgress(Math.min(Math.max(rawProgress, 0), 1));
         };
 
@@ -323,64 +481,128 @@ const InteractiveSeasonPanel = ({ triggerRef }: { triggerRef: React.RefObject<HT
         return () => window.removeEventListener('scroll', handleScroll);
     }, [triggerRef]);
 
-    // Derived Animation States based on scroll progress
-    const season = progress < 0.2 ? 'Sommer' : 'Winter';
-    const time = progress < 0.4 ? 'Mittag' : 'Nachmittag';
-    const isButtonPressed = progress >= 0.6 && progress < 0.7;
-    // Image transition starts after the button "click"
-    const imageOpacity = progress < 0.75 ? 0 : (progress - 0.75) / 0.25;
+    // Unified Interaction Logic (Single Event Triggers)
+    useEffect(() => {
+        // 1. Reset Logic
+        if (progress < 0.05) {
+            hasTriggeredSeason.current = false;
+            hasTriggeredTime.current = false;
+            hasTriggeredGenerate.current = false;
+            setSeasonState(undefined);
+            setTimeState(undefined);
+            setAutoProgress(0);
+            setIsFinished(false);
+            setIsSeasonStepPressed(false);
+            setIsTimeStepPressed(false);
+            setIsButtonStepPressed(false);
+            return;
+        }
+
+        // Individual Step Resets (for scrolling back)
+        if (progress < 0.14 && hasTriggeredTime.current) {
+            hasTriggeredTime.current = false;
+            setTimeState(undefined);
+            setIsTimeStepPressed(false);
+        }
+        if (progress < 0.22 && hasTriggeredGenerate.current) {
+            hasTriggeredGenerate.current = false;
+            setAutoProgress(0);
+            setIsFinished(false);
+            setIsButtonStepPressed(false);
+        }
+
+        // 2. Winter Click (Threshold: 0.08)
+        if (progress >= 0.08 && !hasTriggeredSeason.current) {
+            hasTriggeredSeason.current = true;
+            setIsSeasonStepPressed(true);
+            setTimeout(() => {
+                setIsSeasonStepPressed(false);
+                setSeasonState('Winter');
+            }, 150);
+        }
+
+        // 3. Golden Hour Click (Threshold: 0.16)
+        if (progress >= 0.16 && !hasTriggeredTime.current) {
+            hasTriggeredTime.current = true;
+            setIsTimeStepPressed(true);
+            setTimeout(() => {
+                setIsTimeStepPressed(false);
+                setTimeState('Golden Hour');
+            }, 150);
+        }
+
+        // 4. Generate & Progress Click (Threshold: 0.24)
+        if (progress >= 0.24 && !hasTriggeredGenerate.current) {
+            hasTriggeredGenerate.current = true;
+            setIsButtonStepPressed(true);
+
+            setTimeout(() => {
+                setIsButtonStepPressed(false);
+
+                // Start the automatic progress animation immediately after snap-out
+                let startTime: number | null = null;
+                const duration = 1250;
+
+                const animate = (timestamp: number) => {
+                    if (!startTime) startTime = timestamp;
+                    const elapsed = timestamp - startTime;
+                    const linearProgress = Math.min(elapsed / duration, 1);
+                    const easedProgress = Math.pow(linearProgress, 2.0);
+
+                    setAutoProgress(easedProgress);
+
+                    if (linearProgress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        setIsFinished(true);
+                    }
+                };
+                requestAnimationFrame(animate);
+            }, 150);
+        }
+    }, [progress]);
+
+    // DERIVED ANIMATION STATES (Consolidated)
+    const isSeasonPressed = isSeasonStepPressed;
+    const season = seasonState;
+    const seasonScale = isSeasonPressed ? 0.90 : 1;
+
+    const isTimePressed = isTimeStepPressed;
+    const time = timeState;
+    const timeScale = isTimePressed ? 0.90 : 1;
+
+    const isButtonPressed = isButtonStepPressed;
+    const buttonScale = isButtonPressed ? 0.95 : 1;
+
+    const isFinishedCalculated = isFinished && progress >= 0.24;
+    const isGenerating = autoProgress > 0 && !isFinishedCalculated && progress >= 0.24;
+
+    const generationProgress = autoProgress;
+
+    // Derived Highlight States (Simplified)
+    const activeSection = progress < 0.05 ? 'prompt' :
+        progress < 0.13 ? 'season' :
+            progress < 0.21 ? 'time' :
+                'generate';
 
     return (
-        <div className="w-full h-full flex items-center justify-center">
-            <div className="flex flex-col lg:flex-row items-center w-full gap-0 overflow-visible">
-                {/* 1. Visual: Image on the Left, docked */}
-                <div className="relative flex-1 h-[50vh] lg:h-screen bg-zinc-100 dark:bg-zinc-950 lg:rounded-l-3xl overflow-hidden border-y lg:border-l border-zinc-200 dark:border-zinc-800">
-                    <img
-                        src="/about/3-vorlagen/small/edit_sommer.jpg"
-                        className="absolute inset-0 w-full h-full object-cover"
-                        alt="Sommer"
-                    />
-                    <img
-                        src="/about/3-vorlagen/small/edit_winter.jpg"
-                        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-                        style={{ opacity: imageOpacity }}
-                        alt="Winter"
-                    />
-
-                    {/* Progress Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20 z-20">
-                        <div
-                            className="h-full bg-orange-500 transition-all duration-300 ease-out"
-                            style={{ width: `${progress * 100}%` }}
-                        />
-                    </div>
-                </div>
-
-                {/* 2. Control: Sidepanel in the MIDDLE */}
-                <div className="shrink-0 flex-col hidden lg:flex z-10">
-                    <SidepanelMockup
-                        activeSeason={season}
-                        activeTime={time}
-                        isPressed={isButtonPressed}
-                    />
-                </div>
-
-                {/* 3. Text: Headline and Subline on the RIGHT */}
-                <div className="flex-1 lg:pl-32 xl:pl-48">
-                    <ScrollReveal delay={100}>
-                        <div className="flex flex-col text-left max-w-xl">
-                            <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
-                                Vorlagen <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">nutzen & anlegen.</span>
-                            </h2>
-                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                Definieren Sie Ihren Stil einmal und nutzen Sie ihn immer wieder.
-                            </p>
-                        </div>
-                    </ScrollReveal>
-                </div>
-            </div>
-        </div>
+        <Section3MockupUI
+            season={season}
+            time={time}
+            buttonScale={buttonScale}
+            seasonScale={seasonScale}
+            timeScale={timeScale}
+            generationProgress={generationProgress}
+            isGenerating={isGenerating}
+            isFinished={isFinishedCalculated}
+            progress={progress}
+            activeSection={activeSection}
+            isSeasonPressed={isSeasonPressed}
+            isTimePressed={isTimePressed}
+            isButtonPressed={isButtonPressed}
+            mockupRef={mockupRef}
+            textRef={textRef}
+        />
     );
 };
 
@@ -419,14 +641,16 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
 
 // --- Main Page Component ---
 
-// --- Main Page Component ---
-
 export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
     const [scrolled, setScrolled] = useState(false);
     const section1Ref = useRef<HTMLElement>(null);
     const section3Ref = useRef<HTMLElement>(null);
     const heroLayerRef = useRef<HTMLDivElement>(null);
     const heroContainerRef = useRef<HTMLDivElement>(null);
+    const section2StickyRef = useRef<HTMLDivElement>(null);
+    const section3MockupRef = useRef<HTMLDivElement>(null);
+    const section2TextRef = useRef<HTMLDivElement>(null);
+    const section3TextRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -450,6 +674,59 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 const opacity = progress > 0.9 ? (1 - progress) * 10 : 1;
                 heroContainerRef.current.style.opacity = opacity.toString();
                 heroContainerRef.current.style.pointerEvents = progress > 0.95 ? 'none' : 'auto';
+            }
+
+            // Section 2 Fade Out (Locked in place - fades while still sticky)
+            if (section1Ref.current && section2StickyRef.current) {
+                const rect = section1Ref.current.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                const travelDistance = rect.height - windowHeight;
+                const progressS2 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+
+                // Fade out elegantly over the last phase of sticky duration (0.60 -> 0.90)
+                // Giving it more time as requested
+                if (progressS2 > 0.60) {
+                    const fadeOpacity = Math.max(0, 1 - (progressS2 - 0.60) * (1 / 0.30));
+                    section2StickyRef.current.style.opacity = fadeOpacity.toString();
+                } else {
+                    section2StickyRef.current.style.opacity = '1';
+                }
+
+                // Parallax Text Movement (Only for Section 2)
+                if (section2TextRef.current) {
+                    // Move text vertically between 300px and -300px for a stronger effect
+                    const translateY = (0.5 - progressS2) * 600;
+                    section2TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
+                }
+            }
+
+            // Section 3 Fade In & Parallax (Coupled with physical entry)
+            if (section3Ref.current && section3MockupRef.current) {
+                const rect = section3Ref.current.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                const travelDistance = rect.height - windowHeight;
+                const progressS3 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+
+                // 1. Mockup Fade in (Elegant sequence - triggers AFTER stickiness)
+                // Start mockup fade once typography is already in view
+                const mockupFadeStart = 0.02; // Start shortly after stickiness
+                const mockupFadeEnd = 0.10;   // Fully visible after 10% scroll
+
+                if (progressS3 >= mockupFadeStart) {
+                    const fadeOpacity = Math.min(1, (progressS3 - mockupFadeStart) / (mockupFadeEnd - mockupFadeStart));
+                    section3MockupRef.current.style.opacity = fadeOpacity.toString();
+                } else {
+                    section3MockupRef.current.style.opacity = '0';
+                }
+                section3MockupRef.current.style.transform = 'translate3d(0, 0, 0)';
+
+                // 2. Parallax Text Movement (Synchronized with visuals)
+                if (section3TextRef.current) {
+                    // Text comes in from below (400px) and scrolls way up (-800px)
+                    // (0.2 - progressS3) * 2000 means it hits 0 at 20% scroll
+                    const translateY = (0.15 - progressS3) * 1500;
+                    section3TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
+                }
             }
         };
 
@@ -536,8 +813,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
                 {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
-                <section ref={section1Ref} className="relative h-[300vh]">
-                    <div className="sticky top-0 h-screen overflow-hidden">
+                <section ref={section1Ref} className="relative h-[250vh]">
+                    <div ref={section2StickyRef} className="sticky top-0 h-screen overflow-hidden will-change-opacity">
                         <div className="w-full h-full flex flex-col lg:flex-row">
                             {/* Left: Image Cluster */}
                             <div className="w-full lg:w-3/5 h-1/2 lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible">
@@ -566,9 +843,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                             {/* Right: Text */}
                             <div className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10">
-                                <div className="flex flex-col justify-center max-w-2xl">
+                                <div ref={section2TextRef} className="flex flex-col justify-center max-w-2xl will-change-transform">
                                     <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Parallel & iterativ</span> arbeiten.
+                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> & parallel arbeiten.
                                     </h2>
                                     <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
                                         Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
@@ -579,13 +856,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     </div>
                 </section>
 
-                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 3: Vorlagen nutzen und anlegen */}
-                <section ref={section3Ref} className="relative h-[300vh] bg-zinc-50/30 dark:bg-zinc-900/10">
-                    <div className="sticky top-0 h-screen overflow-hidden flex flex-col items-center justify-center">
-                        <div className="w-full mx-auto overflow-visible">
-                            <InteractiveSeasonPanel triggerRef={section3Ref} />
+                {/* Structural Overlay: Negative margin and higher z-index for seamless "handover" */}
+                <section
+                    ref={section3Ref}
+                    className="relative z-20 bg-white dark:bg-zinc-950"
+                    style={{ height: '800vh' }}
+                >
+                    <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-x-hidden">
+                        <div className="w-full flex items-center justify-center">
+                            <InteractiveSeasonPanel triggerRef={section3Ref} mockupRef={section3MockupRef} textRef={section3TextRef} />
                         </div>
                     </div>
                 </section>
@@ -635,6 +916,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             <style>{`
                 .preserve-3d { transform-style: preserve-3d; }
                 .perspective-1000 { perspective: 1000px; }
+                .mockup-cursor {
+                    animation: cursor-blink 1s steps(1, start) infinite;
+                }
+                @keyframes cursor-blink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0; }
+                }
             `}</style>
         </div >
     );

@@ -172,6 +172,9 @@ export const storageService = {
         }
 
         try {
+            // Ensure session is fresh before batch signing
+            await supabase.auth.getSession();
+
             // 2. Fetch missing in one call
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
             const { data, error } = await supabase.storage
@@ -229,6 +232,9 @@ export const storageService = {
         }
 
         try {
+            // Ensure session is fresh before signing
+            await supabase.auth.getSession();
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .createSignedUrl(path, 60 * 60 * 24 * 7, {

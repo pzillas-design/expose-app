@@ -29,6 +29,7 @@ interface ImageItemProps {
     hasLeft?: boolean,
     hasRight?: boolean,
     onDelete?: (id: string) => void;
+    onDownload?: (id: string) => void;
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
@@ -205,6 +206,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasLeft,
     hasRight,
     onDelete,
+    onDownload,
     onInteractionStart,
     onInteractionEnd,
     onContextMenu,
@@ -247,7 +249,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <Tooltip text={t('tt_download')}>
                             <button
-                                onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title || 'image'); }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDownload) onDownload(image.id);
+                                    else downloadImage(image.src, image.title || 'image');
+                                }}
                                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
                                 <Download className="w-3.5 h-3.5" />
