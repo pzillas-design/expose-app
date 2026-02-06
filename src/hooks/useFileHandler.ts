@@ -98,35 +98,7 @@ export const useFileHandler = ({
                                 // Don't auto-scroll on upload completion - only on new skeleton creation
                             }
 
-                            // Immediate DB save for uploads (so they persist on reload)
-                            if (user && !isAuthDisabled) {
-                                const finalImage: CanvasImage = {
-                                    id: skeletonId,
-                                    src: event.target!.result as string,
-                                    thumbSrc: thumbSrc,
-                                    width: w,
-                                    height: h,
-                                    realWidth: img.width,
-                                    realHeight: img.height,
-                                    title: file.name.replace(/\.[^/.]+$/, ''),
-                                    baseName: file.name.replace(/\.[^/.]+$/, ''),
-                                    version: 1,
-                                    annotations: [],
-                                    generationPrompt: '',
-                                    userDraftPrompt: '',
-                                    quality: 'pro-1k',
-                                    parentId: null,
-                                    boardId: currentBoardId,
-                                    createdAt: Date.now(),
-                                    updatedAt: Date.now(),
-                                    isGenerating: false,
-                                    originalSrc: event.target!.result as string,
-                                    storage_path: ''
-                                };
-
-                                imageService.persistImage(finalImage, user.id)
-                                    .catch(err => console.error('[Upload] Failed to persist image:', err));
-                            }
+                            // Note: Auto-save will handle DB persistence (every 30s)
                         }).catch((err) => {
                             console.error('[Upload] Thumbnail generation failed:', err);
                             showToast(t('upload_failed'), "error");
