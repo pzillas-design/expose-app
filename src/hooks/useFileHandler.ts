@@ -98,37 +98,32 @@ export const useFileHandler = ({
                                 // Don't auto-scroll on upload completion - only on new skeleton creation
                             }
 
-                            if (user && !isAuthDisabled) {
-                                try {
-                                    // Prepare the full object for persistence
-                                    const finalImage: CanvasImage = {
-                                        ...skeleton,
-                                        src: event.target!.result as string,
-                                        thumbSrc: thumbSrc,
-                                        width: w,
-                                        height: h,
-                                        realWidth: img.width,
-                                        realHeight: img.height,
-                                        isGenerating: false
-                                    };
-                                    const result = await imageService.persistImage(finalImage, user.id, user.email);
-                                    if (!result.success) {
-                                        const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
-                                        showToast(`${t('save_failed')}: ${errorMsg}`, "error");
-                                    }
-                                } catch (err: any) {
-                                    showToast(`${t('save_failed')}: ${err.message}`, "error");
-                                }
-                            }
+                            // Note: No immediate DB sync - Auto-save will handle persistence in background
+                        }).catch((err) => {
+                            console.error('[Upload] Thumbnail generation failed:', err);
+                            showToast(t('upload_failed'), "error");
                         });
                     };
                 }
             };
             reader.readAsDataURL(file);
         });
-    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, t]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
 
-    const processFile = useCallback((file: File) => processFiles([file]), [processFiles]);
+    const processFile = useCallback((file: File) => {
+        processFiles([file]);
+    }, [processFiles]);
 
-    return { processFiles, processFile };
+    const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+        processFiles(files);
+    }, [processFiles]);
+
+    return {
+        processFiles,
+        processFile,
+        handleFileDrop
+    };
 };
