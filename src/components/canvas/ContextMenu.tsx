@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Download, Trash, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload } from 'lucide-react';
+import { Download, Trash, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload, Info } from 'lucide-react';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
 import { TranslationFunction, CanvasImage } from '@/types';
 
@@ -25,6 +25,7 @@ interface ContextMenuProps {
     onResetView: () => void;
     onUpload: () => void;
     onCreateNew: () => void;
+    onShowInfo?: (id: string) => void;
 
     // Multi Actions
     selectedIds: string[];
@@ -37,7 +38,7 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
     menu, images, onClose, onDownload, onDelete, onSelect, onAddToSelection, onRemoveFromSelection, onSelectAll, onDeselectAll, onResetView,
-    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, onCreateNew, t
+    selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, onCreateNew, onShowInfo, t
 }) => {
     if (!menu) return null;
 
@@ -174,6 +175,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Copy className={iconClass} />
                                             <span className={textClass}>{t('copy_image')}</span>
                                         </button>
+
+                                        <Separator />
+
+                                        {onShowInfo && (
+                                            <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
+                                                <Info className={iconClass} />
+                                                <span className={textClass}>{t('info') || 'Info'}</span>
+                                            </button>
+                                        )}
 
                                         <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
                                             <Trash className={dangerIconClass} />

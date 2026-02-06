@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -33,6 +33,8 @@ interface ImageItemProps {
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    onNavigateParent?: (id: string) => void;
+    onShowInfo?: (id: string) => void;
     t: TranslationFunction;
 }
 
@@ -210,6 +212,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onInteractionStart,
     onInteractionEnd,
     onContextMenu,
+    onNavigateParent,
+    onShowInfo,
     t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
@@ -243,40 +247,21 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Toolbar */}
             {zoom > 0.4 && (
                 <div className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate uppercase text-[10px] tracking-wider`}>
-                        {image.title || 'Untitled'}
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider`}>
+                        {image.title || 'Untitled'}.jpg
                     </span>
-                    <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        <Tooltip text={t('tt_download')}>
+                    <div className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        <Tooltip text={t('tt_more') || 'More options'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (onDownload) onDownload(image.id);
-                                    else downloadImage(image.src, image.title || 'image');
+                                    onContextMenu?.(e, image.id);
                                 }}
                                 className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
-                                <Download className="w-3.5 h-3.5" />
+                                <MoreVertical className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
-                        <Tooltip text={t('tt_delete')}>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
-                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                            >
-                                <Trash className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
-                        {image.parentId && (
-                            <Tooltip text={t('ctx_create_variations')}>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-                            </Tooltip>
-                        )}
                     </div>
                 </div>
             )}
@@ -359,6 +344,60 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             <ChevronRight className="w-6 h-6" />
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Bottom Action Buttons */}
+            {zoom > 0.4 && !image.isGenerating && (
+                <div className="flex items-center justify-center gap-2 mt-3 animate-in fade-in duration-300">
+                    {/* Navigate Parent (Zurück) */}
+                    {image.parentId && onNavigateParent && (
+                        <Tooltip text={t('tt_navigate_parent') || 'Navigate to parent image'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigateParent(image.id);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                    ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
+                                    flex items-center gap-1.5`}
+                            >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                                {t('back') || 'Zurück'}
+                            </button>
+                        </Tooltip>
+                    )}
+
+                    {/* Generate More (Mehr) */}
+                    <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRetry?.(image.id);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                        >
+                            {t('more') || 'Mehr'}
+                        </button>
+                    </Tooltip>
+
+                    {/* Save (Speichern) */}
+                    <Tooltip text={t('tt_save') || 'Download image'}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onDownload) onDownload(image.id);
+                                else downloadImage(image.src, image.title || 'image');
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                                ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
+                                flex items-center gap-1.5`}
+                        >
+                            <Save className="w-3.5 h-3.5" />
+                            {t('save') || 'Speichern'}
+                        </button>
+                    </Tooltip>
                 </div>
             )}
         </div>
