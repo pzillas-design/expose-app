@@ -281,7 +281,6 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                         >
                             <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
                         </button>
-                        <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
                         <button
                             onClick={async (e) => {
                                 e.stopPropagation();
