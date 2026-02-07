@@ -69,7 +69,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 {/* 1. Prompt Section - First */}
                 {image.generationPrompt && (
                     <div className="flex flex-col gap-2 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs uppercase tracking-wider`}>
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
                             {t('prompt') || 'Prompt'}
                         </span>
                         <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
