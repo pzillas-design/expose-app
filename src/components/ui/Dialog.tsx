@@ -137,9 +137,9 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             {/* Buttons - Stacked Vertically */}
                             <div className="flex flex-col gap-3 mt-2">
                                 <Button
-                                    variant={options.variant === 'danger' ? 'secondary' : 'primary'}
+                                    variant="primary"
                                     onClick={() => handleClose(true)}
-                                    className={`w-full h-11 ${options.variant === 'danger' ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
+                                    className={`w-full h-11 ${options.variant === 'danger' ? '!bg-red-500 hover:!bg-red-600 !text-white !border-red-500' : ''}`}
                                 >
                                     {options.confirmLabel || 'Bestätigen'}
                                 </Button>
