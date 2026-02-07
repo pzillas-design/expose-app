@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Copy, Check as CheckIcon, X } from 'lucide-react';
+import { Copy, Check as CheckIcon, X, Edit2 } from 'lucide-react';
 import { Typo, Theme, Tooltip, IconButton } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 
 interface ImageInfoModalProps {
     image: CanvasImage;
     onClose: () => void;
+    onUpdateImageTitle?: (id: string, title: string) => void;
     t: TranslationFunction;
     currentLang?: 'de' | 'en';
 }
@@ -14,11 +15,14 @@ interface ImageInfoModalProps {
 export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     image,
     onClose,
+    onUpdateImageTitle,
     t,
     currentLang = 'de'
 }) => {
     const { showToast } = useToast();
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState(image.title || '');
 
     // Read actual image dimensions from the loaded image
     useEffect(() => {
@@ -94,11 +98,56 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
                 {/* 2. Metadata Grid */}
                 <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-8 gap-y-4">
-                    {/* Filename */}
+                    {/* Filename with Rename Support */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename') || 'Dateiname'}</span>
-                    <span className={`${Typo.Mono} text-black dark:text-white text-xs truncate select-all`}>
-                        {image.title || 'Untitled'}_v{image.version || 1}
-                    </span>
+                    <div className="group/title min-w-0 w-full">
+                        {!isEditingTitle ? (
+                            <div className="flex items-center gap-2 cursor-pointer group/text" onClick={() => {
+                                setEditTitleValue(image.title || '');
+                                setIsEditingTitle(true);
+                            }}>
+                                <span className={`${Typo.Mono} text-black dark:text-white text-xs truncate select-all`}>
+                                    {image.title || 'Untitled'}_v{image.version || 1}
+                                </span>
+                                <Edit2 className="w-3 h-3 text-zinc-400 opacity-0 group-hover/text:opacity-100 transition-opacity" />
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 w-full">
+                                <input
+                                    autoFocus
+                                    className={`
+                                        flex-1 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 
+                                        rounded px-2 py-1 outline-none ${Typo.Mono} text-xs text-black dark:text-white 
+                                        focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors w-full
+                                    `}
+                                    value={editTitleValue}
+                                    onChange={(e) => setEditTitleValue(e.target.value)}
+                                    // Stop propagation to prevent modal closing or other interactions
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                        e.stopPropagation();
+                                        if (e.key === 'Enter') {
+                                            onUpdateImageTitle?.(image.id, editTitleValue);
+                                            setIsEditingTitle(false);
+                                        }
+                                        if (e.key === 'Escape') {
+                                            setEditTitleValue(image.title || '');
+                                            setIsEditingTitle(false);
+                                        }
+                                    }}
+                                />
+                                <IconButton
+                                    icon={<CheckIcon className="w-3 h-3" />}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onUpdateImageTitle?.(image.id, editTitleValue);
+                                        setIsEditingTitle(false);
+                                    }}
+                                    className="bg-zinc-100 dark:bg-zinc-800 h-6 w-6 shrink-0"
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     {/* Created At */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created') || 'Erstellt'}</span>
