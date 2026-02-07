@@ -35,7 +35,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     return (
         <header className="sticky top-0 z-50 w-full">
-            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-24 flex items-center justify-between">
+            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-28 pt-4 flex items-center justify-between">
                 {/* Brand */}
                 <NavLink to="/" className="flex items-center gap-4 group transition-all duration-300">
                     <Logo className="w-11 h-11 group-hover:scale-110 transition-transform duration-500" />
