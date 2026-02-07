@@ -145,9 +145,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Download className={iconClass} />
                                         </button>
 
-                                        <button onClick={() => { onDeleteSelected(); onClose(); }} className={dangerClass}>
-                                            <span className={dangerTextClass}>{t('ctx_delete_multi').replace('{{n}}', selectedIds.length.toString())}</span>
-                                            <Trash className={dangerIconClass} />
+                                        <button onClick={() => { onDeleteSelected(); onClose(); }} className={itemClass}>
+                                            <span className={textClass}>{t('ctx_delete_multi').replace('{{n}}', selectedIds.length.toString())}</span>
+                                            <Trash className={iconClass} />
                                         </button>
                                     </>
                                 ) : (
@@ -163,16 +163,16 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Download className={iconClass} />
                                         </button>
 
+                                        <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
+                                            <span className={textClass}>{t('ctx_delete_image')}</span>
+                                            <Trash className={iconClass} />
+                                        </button>
+
                                         {onShowInfo && (
                                             <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
                                                 <span className={textClass}>{t('info') || 'Info'}</span>
                                             </button>
                                         )}
-
-                                        <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
-                                            <span className={dangerTextClass}>{t('ctx_delete_image')}</span>
-                                            <Trash className={dangerIconClass} />
-                                        </button>
                                     </>
                                 )}
                             </>
@@ -195,9 +195,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     <Download className={iconClass} />
                                 </button>
 
-                                <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>
-                                    <span className={dangerTextClass}>{t('ctx_delete_image')}</span>
-                                    <Trash className={dangerIconClass} />
+                                <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
+                                    <span className={textClass}>{t('ctx_delete_image')}</span>
+                                    <Trash className={iconClass} />
                                 </button>
                             </>
                         )}
