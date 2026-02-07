@@ -86,7 +86,8 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isHighRes, setIsHighRes] = useState(!!src && (!thumbSrc || !path));
+    const isBlob = src?.startsWith('blob:');
+    const [isHighRes, setIsHighRes] = useState(isBlob || (!!src && (!thumbSrc || !path)));
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
     const lastSrc = useRef(src);
@@ -105,14 +106,25 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             }
 
             // If selected and no storage path yet (initial upload), prioritize high-res src
-            const initialSrc = (!path && isSelected && src) ? src : (maskSrc || thumbSrc || src || null);
+            const isBlob = src?.startsWith('blob:');
+            const initialSrc = (isBlob || (!path && isSelected && src)) ? src : (maskSrc || thumbSrc || src || null);
 
             // Avoid setting state if nothing changed to prevent extra cycles
             if (initialSrc !== currentSrc) {
                 setCurrentSrc(initialSrc);
             }
 
-            setIsHighRes(!!src && (!thumbSrc || !path || (isSelected && !path)));
+            // Reuse isBlob from previous declaration or check again if needed (but it's same scope)
+            // Actually, we can just use the check inline or reuse the variable if it was declared in the same block.
+            // Since I declared it twice in the SAME useEffect block, I should just use the first one.
+            // Wait, I declared it in lines 107 and 115. Let's merge.
+
+            // Re-reading logic:
+            // Line 107: const isBlob = src?.startsWith('blob:');
+            // Line 115: const isBlob = src?.startsWith('blob:');
+
+            // I will remove the second one.
+            setIsHighRes(isBlob || (!!src && (!thumbSrc || !path || (isSelected && !path))));
             lastPath.current = path;
             lastSrc.current = src;
             hasNotifiedLoad.current = false;
