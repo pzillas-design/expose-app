@@ -246,10 +246,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Toolbar */}
             {zoom > 0.4 && (
-                <div className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider`}>
-                        {image.title || 'Untitled'}.jpg
-                    </span>
+                <div className="flex items-center gap-2 w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
+                    {/* Context Menu Button - Left aligned */}
                     <div className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <Tooltip text={t('tt_more') || 'More options'}>
                             <button
@@ -257,12 +255,16 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     e.stopPropagation();
                                     onContextMenu?.(e, image.id);
                                 }}
-                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                             >
                                 <MoreVertical className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
                     </div>
+                    {/* Filename */}
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider`}>
+                        {image.title || 'Untitled'}.jpg
+                    </span>
                 </div>
             )}
 
@@ -347,58 +349,53 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 </div>
             )}
 
-            {/* Bottom Action Buttons */}
+            {/* Bottom Navigation Buttons */}
             {zoom > 0.4 && !image.isGenerating && (
-                <div className="flex items-center justify-center gap-2 mt-3 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between w-full h-8 mt-3 px-0.5 animate-in fade-in duration-300">
                     {/* Previous Image */}
-                    {hasLeft && (
+                    {hasLeft ? (
                         <Tooltip text={t('previous') || 'Previous'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(-1, image.id);
                                 }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                                    ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
-                                    flex items-center gap-1.5`}
+                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1"
                             >
                                 <ChevronLeft className="w-3.5 h-3.5" />
-                                {t('previous') || 'Zurück'}
+                                <span className="text-[10px] tracking-wider">{t('previous') || 'Zurück'}</span>
                             </button>
                         </Tooltip>
-                    )}
+                    ) : <div />}
 
-                    {/* Generate More (Mehr) */}
+                    {/* Generate More (Mehr) - Center */}
                     <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onRetry?.(image.id);
                             }}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                                ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                         >
-                            {t('more') || 'Mehr'}
+                            <span className="text-[10px] tracking-wider">{t('more') || 'Mehr'}</span>
                         </button>
                     </Tooltip>
 
                     {/* Next Image */}
-                    {hasRight && (
+                    {hasRight ? (
                         <Tooltip text={t('next') || 'Next'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(1, image.id);
                                 }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                                    ${Theme.Colors.TextSecondary} hover:bg-zinc-100 dark:hover:bg-zinc-800
-                                    flex items-center gap-1.5`}
+                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1"
                             >
-                                {t('next') || 'Weiter'}
+                                <span className="text-[10px] tracking-wider">{t('next') || 'Weiter'}</span>
                                 <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                         </Tooltip>
-                    )}
+                    ) : <div />}
                 </div>
             )}
         </div>
