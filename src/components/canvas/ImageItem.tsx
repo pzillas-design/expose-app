@@ -405,26 +405,24 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             </button>
                         </Tooltip>
                     </div>
-                </div>
 
                     {/* Next Image - Square Button */}
-            {hasRight && (
-                <Tooltip text={t('next') || 'Next'}>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onNavigate?.(1, image.id);
-                        }}
-                        className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </Tooltip>
+                    {hasRight && (
+                        <Tooltip text={t('next') || 'Next'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigate?.(1, image.id);
+                                }}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
+                    )}
+                </div>
             )}
         </div>
-    )
-}
-        </div >
     );
 });
 
