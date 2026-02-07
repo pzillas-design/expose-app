@@ -310,11 +310,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                             <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
                         </button>
                     </div>
-                </div >
                 </>,
-        document.body
-    )
-}
+                document.body
+            )}
         </>
     );
 }
+
