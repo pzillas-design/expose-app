@@ -43,13 +43,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </NavLink>
 
                 {/* Navigation Links */}
-                <nav className="hidden md:flex items-center gap-2">
+                <nav className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl backdrop-blur-xl bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/30 dark:border-white/10">
                     <NavLink
                         to="/projects"
                         className={({ isActive }) => `
-                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 backdrop-blur-xl
+                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
                             ${isActive
-                                ? 'bg-white/80 dark:bg-zinc-800/80 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                 : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
                         `}
                     >
@@ -60,9 +60,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <NavLink
                         to="/settings"
                         className={({ isActive }) => `
-                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 backdrop-blur-xl
+                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
                             ${isActive
-                                ? 'bg-white/80 dark:bg-zinc-800/80 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                 : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
                         `}
                     >
