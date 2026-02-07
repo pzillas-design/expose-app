@@ -107,8 +107,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                             <span className={textClass}>{t('generate_new')}</span>
                         </button>
 
-                        <Separator />
-
                         <button onClick={() => { onSelectAll(); onClose(); }} className={itemClass}>
                             <span className={textClass}>{t('ctx_select_all')}</span>
                         </button>
@@ -134,14 +132,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                         {selectedIds.every(isGenerated) && (
                                             <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
                                                 <span className={textClass}>{t('ctx_create_variations')}</span>
+                                                <Plus className={iconClass} />
                                             </button>
                                         )}
 
                                         <button onClick={() => { onRemoveFromSelection(menu.targetId!); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_remove_from_selection')}</span>
                                         </button>
-
-                                        <Separator />
 
                                         <button onClick={() => { onDownloadSelected(); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_download_multi').replace('{{n}}', selectedIds.length.toString())}</span>
@@ -158,18 +155,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     <>
                                         <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_create_variations')}</span>
+                                            <Plus className={iconClass} />
                                         </button>
-                                        <Separator />
 
                                         <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_download_image')}</span>
                                             <Download className={iconClass} />
                                         </button>
-                                        <button onClick={() => handleCopy(menu.targetId!)} className={itemClass}>
-                                            <span className={textClass}>{t('copy_image')}</span>
-                                        </button>
-
-                                        <Separator />
 
                                         {onShowInfo && (
                                             <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
@@ -195,16 +187,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
                                 <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_create_variations')}</span>
+                                    <Plus className={iconClass} />
                                 </button>
-
-                                <Separator />
 
                                 <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_download_image')}</span>
                                     <Download className={iconClass} />
-                                </button>
-                                <button onClick={() => handleCopy(menu.targetId!)} className={itemClass}>
-                                    <span className={textClass}>{t('copy_image')}</span>
                                 </button>
 
                                 <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={dangerClass}>

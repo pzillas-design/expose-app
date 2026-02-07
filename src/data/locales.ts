@@ -154,7 +154,7 @@ export const translations = {
     ctx_copy_prompt: "Copy Prompt",
     copy_image: "Copy",
     ctx_download: "Download",
-    ctx_delete_image: "Delete image",
+    ctx_delete_image: "Delete",
     ctx_delete: "Delete",
     ctx_set_reference: "Set as Reference",
 
@@ -170,9 +170,9 @@ export const translations = {
     ctx_deselect: "Deselect",
     ctx_delete_selection: "Delete Selection",
     ctx_download_selection: "Download Selection",
-    ctx_download_multi: "Download {{n}} images",
+    ctx_download_multi: "Save {{n}} images",
     ctx_delete_multi: "Delete {{n}} images",
-    ctx_download_image: "Download image",
+    ctx_download_image: "Save",
 
     // Generation Modal
     gen_modal_title: "Generate Image",
@@ -206,7 +206,7 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
-    ctx_create_variations: "Retry",
+    ctx_create_variations: "Generate More",
     filename: "Filename",
     reference_images: "Reference Images",
     info: "Info",
@@ -517,7 +517,7 @@ export const translations = {
     ctx_copy_prompt: "Prompt kopieren",
     copy_image: "Kopieren",
     ctx_download: "Herunterladen",
-    ctx_delete_image: "Bild löschen",
+    ctx_delete_image: "Löschen",
     ctx_delete: "Löschen",
     ctx_set_reference: "Als Referenz setzen",
 
@@ -533,9 +533,9 @@ export const translations = {
     ctx_deselect: "Auswahl aufheben",
     ctx_delete_selection: "Auswahl löschen",
     ctx_download_selection: "Auswahl herunterladen",
-    ctx_download_multi: "{{n}} Bilder herunterladen",
+    ctx_download_multi: "{{n}} Bilder speichern",
     ctx_delete_multi: "{{n}} Bilder löschen",
-    ctx_download_image: "Bild herunterladen",
+    ctx_download_image: "Speichern",
 
     // Generation Modal
     gen_modal_title: "Bild generieren",
@@ -569,7 +569,7 @@ export const translations = {
     role_admin: "Admin",
     id_label: "ID",
     tab_info: "Info",
-    ctx_create_variations: "Erneut generieren",
+    ctx_create_variations: "Mehr generieren",
     filename: "Dateiname",
     reference_images: "Referenzbilder",
     info: "Info",
