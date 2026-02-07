@@ -111,44 +111,46 @@ export const useAutoSave = (
                         board_id: img.boardId || null,
                         created_at: new Date(img.createdAt).toISOString(),
                         updated_at: new Date().toISOString()
-                        if(isBlob && !img.storage_path) {
+                    };
+
+                    if (isBlob && !img.storage_path) {
                         return null; // Skip blob images that haven't been peristed yet
-            }
+                    }
 
-                        return dbRecord;
-        }).filter(Boolean); // Remove nulls
+                    return dbRecord;
+                }).filter(Boolean); // Remove nulls
 
-        if (payload.length > 0) {
-            const { error } = await supabase
-                .from('canvas_images')
-                .upsert(payload, { onConflict: 'id' });
+                if (payload.length > 0) {
+                    const { error } = await supabase
+                        .from('canvas_images')
+                        .upsert(payload, { onConflict: 'id' });
 
-            if (error) {
+                    if (error) {
+                        console.error('[AutoSave] Error:', error);
+                    } else {
+                        console.log('[AutoSave] Saved', payload.length, 'images successfully');
+                        lastSavedRef.current = currentState;
+                    }
+                }
+            } catch (err) {
                 console.error('[AutoSave] Error:', error);
             } else {
-                console.log('[AutoSave] Saved', payload.length, 'images successfully');
+                console.log('[AutoSave] Saved', imagesToSave.length, 'images successfully');
                 lastSavedRef.current = currentState;
             }
+        } catch (err) {
+            console.error('[AutoSave] Exception:', err);
+        } finally {
+            isSavingRef.current = false;
         }
-    } catch (err) {
-        console.error('[AutoSave] Error:', error);
-    } else {
-        console.log('[AutoSave] Saved', imagesToSave.length, 'images successfully');
-        lastSavedRef.current = currentState;
-    }
-} catch (err) {
-    console.error('[AutoSave] Exception:', err);
-} finally {
-    isSavingRef.current = false;
-}
-        }, 30000); // 30 seconds
+    }, 30000); // 30 seconds
 
-return () => {
-    if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-    }
-};
-    }, [rows, user, isAuthDisabled]);
+    return () => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+    };
+}, [rows, user, isAuthDisabled]);
 };
 
 return () => {
