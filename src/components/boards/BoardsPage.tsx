@@ -12,7 +12,7 @@ import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
-import { BetaNotice } from '../ui/BetaNotice';
+import { BetaBanner } from '../ui/BetaBanner';
 import { formatRelativeTime, shouldShowDeletionCountdown, daysUntilBoardDeletion } from '@/utils/timeUtils';
 
 const getInitials = (name?: string, email?: string) => {
@@ -120,6 +120,8 @@ export function BoardsPage({
     return (
         <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
 
+            <BetaBanner t={t} />
+
             <AppNavbar
                 user={user}
                 userProfile={userProfile}
@@ -132,12 +134,8 @@ export function BoardsPage({
 
                 <main className="pb-32 flex-1 flex flex-col">
 
-                    <div className="mb-12 flex items-center justify-between gap-8">
-                        <div>
-                            <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
-                            <p className="text-sm text-zinc-500 mt-1">{t('overview_desc')}</p>
-                        </div>
-                        <BetaNotice t={t} />
+                    <div className="mb-12">
+                        <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
