@@ -654,6 +654,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section3TextRef = useRef<HTMLDivElement>(null);
     const section4Ref = useRef<HTMLElement>(null);
     const section4ContentRef = useRef<HTMLDivElement>(null);
+    const section4BackgroundRef = useRef<HTMLDivElement>(null);
+    const section4LabelsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -737,28 +739,37 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 }
             }
 
-            // Section 4 Special Fade & Early Exit
-            if (section4Ref.current && section4ContentRef.current) {
+            // Section 4 Full-Page Sticky Animation
+            if (section4Ref.current && section4BackgroundRef.current && section4ContentRef.current) {
                 const rect = section4Ref.current.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
+                const travelDistance = rect.height - windowHeight;
+                const progressS4 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // 1. Unified Fade-in (Starts when top of section is 20% from bottom)
-                const startPoint = windowHeight * 1.2;
-                const endPoint = windowHeight * 0.4;
-                const progressS4 = Math.min(Math.max((startPoint - rect.top) / (startPoint - endPoint), 0), 1);
+                // 1. Background Image Zoom/Parallax
+                const bgScale = 1.1 - (progressS4 * 0.1);
+                section4BackgroundRef.current.style.transform = `scale(${bgScale}) translate3d(0, 0, 0)`;
 
-                section4ContentRef.current.style.opacity = progressS4.toString();
+                // 2. Content (Typo) Fade and Movement
+                // Fade in early, stay, then fade out at the end
+                const typoOpacity = progressS4 < 0.1 ? progressS4 * 10
+                    : progressS4 > 0.8 ? (1 - progressS4) * 5
+                        : 1;
+                section4ContentRef.current.style.opacity = typoOpacity.toString();
 
-                // 2. Early Unified Scroll-out
-                // When typography (at top) would hit top of mockup (negative rect.top)
-                // If progress is high and typography is near mockup center
-                const scrollOutThreshold = 0.85;
-                if (progressS4 > scrollOutThreshold) {
-                    const exitProgress = (progressS4 - scrollOutThreshold) / (1 - scrollOutThreshold);
-                    const exitY = exitProgress * -windowHeight * 0.8;
-                    section4ContentRef.current.style.transform = `translate3d(0, ${exitY}px, 0)`;
-                } else {
-                    section4ContentRef.current.style.transform = 'translate3d(0, 0, 0)';
+                // 3. Labels ("Zipfel") staggered reveal
+                if (section4LabelsRef.current) {
+                    const children = section4LabelsRef.current.children;
+                    for (let i = 0; i < children.length; i++) {
+                        const child = children[i] as HTMLElement;
+                        const startTrigger = 0.15 + (i * 0.1);
+                        const endTrigger = startTrigger + 0.1;
+                        const labelProgress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
+
+                        // Scale and opacity for label reveal
+                        child.style.opacity = labelProgress.toString();
+                        child.style.transform = `scale(${0.8 + labelProgress * 0.2}) translate3d(0, ${(1 - labelProgress) * 20}px, 0)`;
+                    }
                 }
             }
         };
@@ -905,37 +916,97 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Section 4: Visual Prompting */}
-                <section ref={section4Ref} className="py-32 px-6">
-                    <div ref={section4ContentRef} className="max-w-[1700px] mx-auto flex flex-col items-center text-center will-change-transform will-change-opacity transition-transform duration-100 ease-out opacity-0">
-                        <div className="max-w-4xl mb-24">
-                            <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9]">
-                                Visual <span className="text-orange-500">prompting.</span>
-                            </h2>
-                            <p className="text-xl sm:text-2xl text-zinc-500">
-                                Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
-                            </p>
+                {/* Section 4: Visual Prompting (Full-Page Sticky) */}
+                <section ref={section4Ref} className="relative h-[250vh] bg-black">
+                    <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
+                        {/* Background Layer */}
+                        <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
+                            <img
+                                src="/about/iterativ arbeiten img/31.jpg"
+                                className="w-full h-full object-cover opacity-60 grayscale-[20%] contrast-125"
+                                alt=""
+                            />
+                            {/* Dark Gradient Overlays */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+                            <div className="absolute inset-0 bg-black/20" />
                         </div>
-                        <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900">
-                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
-                            <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
+
+                        {/* Content Layer (Typo) */}
+                        <div className="relative z-20 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity">
+                                <h2 className="text-6xl sm:text-7xl lg:text-9xl xl:text-[12rem] font-bold tracking-tighter leading-[0.85] text-white">
+                                    Visual <br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
+                                </h2>
                             </div>
-                            <div className="absolute bottom-[30%] right-[25%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Lichtquelle hinzufügen"</div>
+
+                            {/* Annotation Labels ("Zipfel" style) */}
+                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none">
+                                {/* Label 1: Sessel */}
+                                <div className="absolute top-[35%] left-[30%] opacity-0 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        {/* Chip (Internal annotation style) */}
+                                        <div className="px-5 py-3 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-2xl flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-orange-500" />
+                                            <span className="text-lg font-medium text-zinc-900 dark:text-white">"Sessel austauschen"</span>
+                                        </div>
+                                        {/* Connector "Zipfel" */}
+                                        <div className="w-0.5 h-16 bg-gradient-to-b from-white/40 to-transparent mt-[-1px]" />
+                                    </div>
+                                </div>
+
+                                {/* Label 2: Lichtquelle */}
+                                <div className="absolute bottom-[35%] right-[25%] opacity-0 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-5 py-3 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-2xl flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                            <span className="text-lg font-medium text-zinc-900 dark:text-white">"Lichtquelle hinzufügen"</span>
+                                        </div>
+                                        <div className="w-0.5 h-16 bg-gradient-to-b from-white/40 to-transparent mt-[-1px]" />
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Subline overlay (locked to bottom center) */}
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center w-full px-6 z-30">
+                            <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-light">
+                                Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white font-medium">genau wo</span> etwas passieren soll.
+                            </p>
                         </div>
                     </div>
                 </section>
 
-                {/* Section 5: Quote */}
-                <section className="py-60 px-6 text-center bg-zinc-50 dark:bg-zinc-900/20">
-                    <div className="max-w-5xl mx-auto">
-                        <blockquote className="text-6xl lg:text-[7rem] font-medium tracking-tight italic mb-16 leading-[1.1] text-zinc-900 dark:text-white">
-                            "Hinter jedem Bild steckt eine Geschichte, die darauf wartet, erzählt zu werden."
-                        </blockquote>
-                        <div className="text-sm font-mono tracking-[0.5em] uppercase text-zinc-400">— Michael Pzillas, Founder</div>
+                {/* Section 5: Clean CTA */}
+                <section className="relative py-60 px-6 overflow-hidden bg-white dark:bg-zinc-950">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/10 to-transparent" />
+
+                    <div className="relative z-10 max-w-5xl mx-auto text-center">
+                        <h2 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter mb-12 leading-[0.9]">
+                            Bereit für <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
+                        </h2>
+
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-16">
+                            <button
+                                onClick={onCreateBoard}
+                                className="group relative px-10 py-5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-lg rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <span className="relative z-10">Projekt starten</span>
+                            </button>
+
+                            <a
+                                href="/projects"
+                                className="px-10 py-5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white font-medium text-lg transition-colors"
+                            >
+                                Jetzt anmelden &rarr;
+                            </a>
+                        </div>
                     </div>
+
+                    {/* Subtle Background Elements */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-500/5 blur-[120px] rounded-full pointer-events-none" />
                 </section>
 
                 <GlobalFooter t={t} />
