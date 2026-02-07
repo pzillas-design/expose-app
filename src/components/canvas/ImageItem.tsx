@@ -1,7 +1,7 @@
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -351,22 +351,21 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
             {/* Bottom Navigation Buttons */}
             {zoom > 0.4 && !image.isGenerating && (
-                <div className="flex items-center justify-between w-full h-8 mt-3 px-0.5 animate-in fade-in duration-300">
+                <div className="flex items-center justify-center gap-2 mt-3 px-0.5 animate-in fade-in duration-300">
                     {/* Previous Image */}
-                    {hasLeft ? (
+                    {hasLeft && (
                         <Tooltip text={t('previous') || 'Previous'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(-1, image.id);
                                 }}
-                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1"
+                                className="px-4 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2"
                             >
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                                <span className="text-[10px] tracking-wider">{t('previous') || 'Zurück'}</span>
+                                <ChevronLeft className="w-4 h-4" />
                             </button>
                         </Tooltip>
-                    ) : <div />}
+                    )}
 
                     {/* Generate More (Mehr) - Center */}
                     <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
@@ -375,27 +374,41 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 e.stopPropagation();
                                 onRetry?.(image.id);
                             }}
-                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                            className="px-6 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2 text-xs font-medium tracking-wider uppercase"
                         >
-                            <span className="text-[10px] tracking-wider">{t('more') || 'Mehr'}</span>
+                            <Plus className="w-4 h-4" />
+                            {t('more') || 'MEHR'}
+                        </button>
+                    </Tooltip>
+
+                    {/* Save/Download */}
+                    <Tooltip text={t('tt_save') || 'Download image'}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onDownload) onDownload(image.id);
+                            }}
+                            className="px-6 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2 text-xs font-medium tracking-wider uppercase"
+                        >
+                            <Download className="w-4 h-4" />
+                            {t('save') || 'SPEICHERN'}
                         </button>
                     </Tooltip>
 
                     {/* Next Image */}
-                    {hasRight ? (
+                    {hasRight && (
                         <Tooltip text={t('next') || 'Next'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(1, image.id);
                                 }}
-                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white flex items-center gap-1"
+                                className="px-4 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2"
                             >
-                                <span className="text-[10px] tracking-wider">{t('next') || 'Weiter'}</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
+                                <ChevronRight className="w-4 h-4" />
                             </button>
                         </Tooltip>
-                    ) : <div />}
+                    )}
                 </div>
             )}
         </div>
