@@ -43,11 +43,6 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                         {t('footer_privacy') || 'Datenschutz'}
                     </a>
                 </nav>
-
-                {/* Copyright - Subtle normal case */}
-                <p className="text-[11px] font-medium text-zinc-300 dark:text-zinc-800 tracking-wide">
-                    &copy; 2026 Exposé
-                </p>
             </div>
         </footer>
     );
