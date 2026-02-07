@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Copy, Check as CheckIcon } from 'lucide-react';
-import { Typo, Theme, Tooltip, Button } from '@/components/ui/DesignSystem'; // Added Button import
+import { Copy, Check as CheckIcon, X } from 'lucide-react';
+import { Typo, Theme, Tooltip, IconButton } from '@/components/ui/DesignSystem';
 import { useToast } from '@/components/ui/Toast';
 
 interface ImageInfoModalProps {
@@ -55,9 +55,16 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 flex flex-col gap-8 animate-in zoom-in-95 duration-200
             `}>
                 {/* 0. Section Title: Info */}
-                <h2 className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
-                    Info
-                </h2>
+                <div className="flex items-center justify-between">
+                    <h2 className={`${Typo.H2} text-zinc-900 dark:text-zinc-100`}>
+                        Info
+                    </h2>
+                    <IconButton
+                        icon={<X className="w-5 h-5" />}
+                        onClick={onClose}
+                        className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    />
+                </div>
 
                 {/* 1. Prompt Section - First */}
                 {image.generationPrompt && (
@@ -125,17 +132,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
                 </div>
 
-                {/* 3. Close Button */}
-                <div className="pt-2">
-                    <Button
-                        disabled={false}
-                        variant="primary"
-                        onClick={onClose}
-                        className="w-full justify-center py-3 text-sm"
-                    >
-                        {t('done') || 'Fertig'}
-                    </Button>
-                </div>
             </div>
         </div>
     );
