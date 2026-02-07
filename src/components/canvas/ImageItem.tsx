@@ -250,7 +250,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Toolbar */}
             {zoom > 0.4 && (
                 <div
-                    className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title"
+                    className="flex items-center justify-start gap-2 w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title"
                     onClick={(e) => {
                         e.stopPropagation();
                         onContextMenu?.(e, image.id);
