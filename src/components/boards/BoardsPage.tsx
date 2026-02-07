@@ -277,7 +277,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                                     onRename(newName);
                                 }
                             }}
-                            className="flex items-center justify-between w-full px-3 py-2 mx-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
                             <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
                         </button>
@@ -296,7 +296,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                                     onDelete();
                                 }
                             }}
-                            className="flex items-center justify-between w-full px-3 py-2 mx-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
                             <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
                             <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
