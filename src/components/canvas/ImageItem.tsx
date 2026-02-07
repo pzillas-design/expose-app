@@ -1,4 +1,3 @@
-
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
 import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus } from 'lucide-react';
@@ -11,6 +10,7 @@ import { storageService } from '@/services/storageService';
 interface ImageItemProps {
     image: CanvasImage;
     isSelected: boolean;
+    isPrimary?: boolean;
     zoom: number;
     hasAnySelection?: boolean;
     onRetry?: (id: string) => void;
@@ -25,9 +25,9 @@ interface ImageItemProps {
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
-    onNavigate?: (direction: -1 | 1, fromId?: string) => void,
-    hasLeft?: boolean,
-    hasRight?: boolean,
+    onNavigate?: (direction: -1 | 1, fromId?: string) => void;
+    hasLeft?: boolean;
+    hasRight?: boolean;
     onDelete?: (id: string) => void;
     onDownload?: (id: string) => void;
     onInteractionStart?: () => void;
@@ -72,7 +72,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
             </div>
         </div>
     );
-}
+};
 
 const getDurationForQuality = (quality?: GenerationQuality): number => {
     switch (quality) {
@@ -114,22 +114,12 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
                 setCurrentSrc(initialSrc);
             }
 
-            // Reuse isBlob from previous declaration or check again if needed (but it's same scope)
-            // Actually, we can just use the check inline or reuse the variable if it was declared in the same block.
-            // Since I declared it twice in the SAME useEffect block, I should just use the first one.
-            // Wait, I declared it in lines 107 and 115. Let's merge.
-
-            // Re-reading logic:
-            // Line 107: const isBlob = src?.startsWith('blob:');
-            // Line 115: const isBlob = src?.startsWith('blob:');
-
-            // I will remove the second one.
             setIsHighRes(isBlob || (!!src && (!thumbSrc || !path || (isSelected && !path))));
             lastPath.current = path;
             lastSrc.current = src;
             hasNotifiedLoad.current = false;
         }
-    }, [path, src, maskSrc, thumbSrc, isSelected]);
+    }, [path, src, maskSrc, thumbSrc, isSelected, currentSrc]);
 
     useEffect(() => {
         if (maskSrc) {
@@ -210,6 +200,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
     isSelected,
+    isPrimary,
     hasAnySelection,
     zoom,
     onRetry,
@@ -372,7 +363,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             {/* Bottom Navigation Buttons - Beta Style */}
-            {zoom > 0.4 && isSelected && !image.isGenerating && (
+            {zoom > 0.4 && isSelected && isPrimary && !image.isGenerating && (
                 <div className="flex items-center justify-center gap-2 mt-3 px-0.5 animate-in fade-in duration-300">
                     {/* Previous Image - Square Button */}
                     {hasLeft && (

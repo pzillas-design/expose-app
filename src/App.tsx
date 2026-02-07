@@ -585,36 +585,40 @@ export function App() {
                             rows.map((row) => (
                                 <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                     <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
-                                        {row.items.map((img, imgIndex) => (
-                                            <ImageItem
-                                                key={img.id}
-                                                image={img}
-                                                zoom={zoom}
-                                                isSelected={selectedIds.includes(img.id)}
-                                                hasAnySelection={selectedIds.length > 0}
-                                                onRetry={handleGenerateMore}
-                                                onChangePrompt={handleNavigateParent}
-                                                editorState={editorState}
-                                                onUpdateAnnotations={handleUpdateAnnotations}
-                                                onEditStart={handleAnnotationEditStart}
-                                                editorActions={{
-                                                    setMaskTool: actions.setMaskTool,
-                                                    setBrushSize: actions.setBrushSize,
-                                                    setActiveShape: actions.setActiveShape
-                                                }}
-                                                onInteractionStart={() => sideSheetHandlersRef.current?.onStart()}
-                                                onInteractionEnd={() => sideSheetHandlersRef.current?.onEnd()}
-                                                onNavigate={moveSelection}
-                                                hasLeft={imgIndex > 0}
-                                                hasRight={imgIndex < row.items.length - 1}
-                                                onDelete={requestDelete}
-                                                onDownload={handleDownload}
-                                                onContextMenu={handleImageContextMenu}
-                                                onNavigateParent={handleNavigateParent}
-                                                onShowInfo={(id) => setInfoModalImageId(id)}
-                                                t={t}
-                                            />
-                                        ))}
+                                        {row.items.map((img, imgIndex) => {
+                                            const isPrimary = selectedIds.length > 0 && selectedIds[selectedIds.length - 1] === img.id;
+                                            return (
+                                                <ImageItem
+                                                    key={img.id}
+                                                    image={img}
+                                                    zoom={zoom}
+                                                    isSelected={selectedIds.includes(img.id)}
+                                                    isPrimary={isPrimary}
+                                                    hasAnySelection={selectedIds.length > 0}
+                                                    onRetry={handleGenerateMore}
+                                                    onChangePrompt={handleNavigateParent}
+                                                    editorState={editorState}
+                                                    onUpdateAnnotations={handleUpdateAnnotations}
+                                                    onEditStart={handleAnnotationEditStart}
+                                                    editorActions={{
+                                                        setMaskTool: actions.setMaskTool,
+                                                        setBrushSize: actions.setBrushSize,
+                                                        setActiveShape: actions.setActiveShape
+                                                    }}
+                                                    onInteractionStart={() => sideSheetHandlersRef.current?.onStart()}
+                                                    onInteractionEnd={() => sideSheetHandlersRef.current?.onEnd()}
+                                                    onNavigate={moveSelection}
+                                                    hasLeft={imgIndex > 0}
+                                                    hasRight={imgIndex < row.items.length - 1}
+                                                    onDelete={requestDelete}
+                                                    onDownload={handleDownload}
+                                                    onContextMenu={handleImageContextMenu}
+                                                    onNavigateParent={handleNavigateParent}
+                                                    onShowInfo={(id) => setInfoModalImageId(id)}
+                                                    t={t}
+                                                />
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))
@@ -676,87 +680,91 @@ export function App() {
                 </div>
             </div>
 
-            {selectedIds.length > 0 && selectedImage && (
-                <SideSheet
-                    selectedImage={selectedImage}
-                    selectedImages={selectedImages}
-                    sideSheetMode={sideSheetMode}
-                    onModeChange={handleModeChange}
-                    onDeselectAll={() => selectMultiple([])}
-                    brushSize={brushSize}
-                    onBrushSizeChange={setBrushSize}
-                    onBrushResizeStart={() => setIsBrushResizing(true)}
-                    onBrushResizeEnd={() => setIsBrushResizing(false)}
-                    onGenerate={handleGenerate}
-                    onUpdateAnnotations={handleUpdateAnnotations}
-                    onUpdatePrompt={handleUpdatePrompt}
-                    onUpdateVariables={handleUpdateVariables}
-                    onUpdateImageTitle={handleUpdateImageTitle}
-                    onDeleteImage={handleDeleteImage}
-                    onDownload={handleDownload}
-                    onGenerateMore={handleGenerateMore}
-                    onNavigateParent={handleNavigateParent}
-                    isGlobalDragOver={isDragOver}
-                    onGlobalDragLeave={() => setIsDragOver(false)}
-                    t={t}
-                    lang={currentLang}
-                    fullLibrary={fullLibrary}
-                    onAddUserCategory={addUserCategory}
-                    onDeleteUserCategory={deleteUserCategory}
-                    onDeleteUserItem={deleteUserItem}
-                    maskTool={maskTool}
-                    onMaskToolChange={setMaskTool}
-                    activeShape={activeShape}
-                    onActiveShapeChange={setActiveShape}
-                    onActiveAnnotationChange={setActiveAnnotationId}
-                    onInteractionStart={() => { /* Handled via ref below */ }}
-                    onInteractionEnd={() => { /* Handled via ref below */ }}
-                    onUpload={() => processFile()}
-                    onCreateNew={() => setIsCreationModalOpen(true)}
-                    isBoardEmpty={rows.length === 0}
-                    qualityMode={qualityMode}
-                    onQualityModeChange={setQualityMode}
-                    templates={templates}
-                    onRefreshTemplates={refreshTemplates}
-                    onSaveTemplate={savePreset}
-                    onDeleteTemplate={deletePreset}
-                    onSaveRecentPrompt={actions.saveRecentPrompt}
-                    userProfile={userProfile}
-                    // Hack to bridge handlers without exposing them as public state
-                    ref={(el: any) => {
-                        if (el) {
-                            sideSheetHandlersRef.current = {
-                                onStart: el.handleInteractionStart,
-                                onEnd: el.handleInteractionEnd
-                            };
-                        }
-                    }}
-                />
-            )}
+            {
+                selectedIds.length > 0 && selectedImage && (
+                    <SideSheet
+                        selectedImage={selectedImage}
+                        selectedImages={selectedImages}
+                        sideSheetMode={sideSheetMode}
+                        onModeChange={handleModeChange}
+                        onDeselectAll={() => selectMultiple([])}
+                        brushSize={brushSize}
+                        onBrushSizeChange={setBrushSize}
+                        onBrushResizeStart={() => setIsBrushResizing(true)}
+                        onBrushResizeEnd={() => setIsBrushResizing(false)}
+                        onGenerate={handleGenerate}
+                        onUpdateAnnotations={handleUpdateAnnotations}
+                        onUpdatePrompt={handleUpdatePrompt}
+                        onUpdateVariables={handleUpdateVariables}
+                        onUpdateImageTitle={handleUpdateImageTitle}
+                        onDeleteImage={handleDeleteImage}
+                        onDownload={handleDownload}
+                        onGenerateMore={handleGenerateMore}
+                        onNavigateParent={handleNavigateParent}
+                        isGlobalDragOver={isDragOver}
+                        onGlobalDragLeave={() => setIsDragOver(false)}
+                        t={t}
+                        lang={currentLang}
+                        fullLibrary={fullLibrary}
+                        onAddUserCategory={addUserCategory}
+                        onDeleteUserCategory={deleteUserCategory}
+                        onDeleteUserItem={deleteUserItem}
+                        maskTool={maskTool}
+                        onMaskToolChange={setMaskTool}
+                        activeShape={activeShape}
+                        onActiveShapeChange={setActiveShape}
+                        onActiveAnnotationChange={setActiveAnnotationId}
+                        onInteractionStart={() => { /* Handled via ref below */ }}
+                        onInteractionEnd={() => { /* Handled via ref below */ }}
+                        onUpload={() => processFile()}
+                        onCreateNew={() => setIsCreationModalOpen(true)}
+                        isBoardEmpty={rows.length === 0}
+                        qualityMode={qualityMode}
+                        onQualityModeChange={setQualityMode}
+                        templates={templates}
+                        onRefreshTemplates={refreshTemplates}
+                        onSaveTemplate={savePreset}
+                        onDeleteTemplate={deletePreset}
+                        onSaveRecentPrompt={actions.saveRecentPrompt}
+                        userProfile={userProfile}
+                        // Hack to bridge handlers without exposing them as public state
+                        ref={(el: any) => {
+                            if (el) {
+                                sideSheetHandlersRef.current = {
+                                    onStart: el.handleInteractionStart,
+                                    onEnd: el.handleInteractionEnd
+                                };
+                            }
+                        }}
+                    />
+                )
+            }
 
-            {contextMenu && (
-                <ContextMenu
-                    menu={contextMenu}
-                    images={allImages}
-                    onClose={() => setContextMenu(null)}
-                    onDownload={handleDownload}
-                    onDelete={requestDelete}
-                    onSelect={(id) => selectAndSnap(id)}
-                    onAddToSelection={handleAddToSelection}
-                    onRemoveFromSelection={handleRemoveFromSelection}
-                    onSelectAll={() => selectMultiple(allImages.map(img => img.id))}
-                    onDeselectAll={() => selectMultiple([])}
-                    onResetView={() => smoothZoomTo(1, 0, 0)}
-                    onUpload={() => processFile()}
-                    onCreateNew={() => setIsCreationModalOpen(true)}
-                    selectedIds={selectedIds}
-                    onDownloadSelected={handleDownloadSelected}
-                    onDeleteSelected={() => requestDelete(selectedIds)}
-                    onGenerateVariations={handleGenerateVariations}
-                    onShowInfo={(id) => setInfoModalImageId(id)}
-                    t={t}
-                />
-            )}
+            {
+                contextMenu && (
+                    <ContextMenu
+                        menu={contextMenu}
+                        images={allImages}
+                        onClose={() => setContextMenu(null)}
+                        onDownload={handleDownload}
+                        onDelete={requestDelete}
+                        onSelect={(id) => selectAndSnap(id)}
+                        onAddToSelection={handleAddToSelection}
+                        onRemoveFromSelection={handleRemoveFromSelection}
+                        onSelectAll={() => selectMultiple(allImages.map(img => img.id))}
+                        onDeselectAll={() => selectMultiple([])}
+                        onResetView={() => smoothZoomTo(1, 0, 0)}
+                        onUpload={() => processFile()}
+                        onCreateNew={() => setIsCreationModalOpen(true)}
+                        selectedIds={selectedIds}
+                        onDownloadSelected={handleDownloadSelected}
+                        onDeleteSelected={() => requestDelete(selectedIds)}
+                        onGenerateVariations={handleGenerateVariations}
+                        onShowInfo={(id) => setInfoModalImageId(id)}
+                        t={t}
+                    />
+                )
+            }
 
             <CreationModal
                 isOpen={isCreationModalOpen}
@@ -766,16 +774,18 @@ export function App() {
                 lang={lang}
             />
 
-            {infoModalImageId && (() => {
-                const image = allImages.find(img => img.id === infoModalImageId);
-                return image ? (
-                    <ImageInfoModal
-                        image={image}
-                        onClose={() => setInfoModalImageId(null)}
-                        t={t}
-                    />
-                ) : null;
-            })()}
+            {
+                infoModalImageId && (() => {
+                    const image = allImages.find(img => img.id === infoModalImageId);
+                    return image ? (
+                        <ImageInfoModal
+                            image={image}
+                            onClose={() => setInfoModalImageId(null)}
+                            t={t}
+                        />
+                    ) : null;
+                })()
+            }
 
             <CreditsModal
                 isOpen={isCreditsModalOpen}
@@ -784,7 +794,7 @@ export function App() {
                 onAddFunds={handleAddFunds}
                 t={t}
             />
-        </div>
+        </div >
     );
 
     return (
