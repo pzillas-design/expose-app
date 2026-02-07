@@ -43,7 +43,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </NavLink>
 
                 {/* Navigation Links */}
-                <nav className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl backdrop-blur-xl bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/30 dark:border-white/10">
+                <nav className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl backdrop-blur-xl bg-white/85 dark:bg-zinc-900/85 border border-zinc-200/30 dark:border-white/10">
                     <NavLink
                         to="/projects"
                         className={({ isActive }) => `

@@ -648,6 +648,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const heroLayerRef = useRef<HTMLDivElement>(null);
     const heroContainerRef = useRef<HTMLDivElement>(null);
     const section2StickyRef = useRef<HTMLDivElement>(null);
+    const section2ClusterRef = useRef<HTMLDivElement>(null);
     const section3MockupRef = useRef<HTMLDivElement>(null);
     const section2TextRef = useRef<HTMLDivElement>(null);
     const section3TextRef = useRef<HTMLDivElement>(null);
@@ -676,25 +677,27 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 heroContainerRef.current.style.pointerEvents = progress > 0.95 ? 'none' : 'auto';
             }
 
-            // Section 2 Fade Out (Locked in place - fades while still sticky)
-            if (section1Ref.current && section2StickyRef.current) {
+            // Section 2 Fade Out (Cluster only - text stays)
+            if (section1Ref.current && section2ClusterRef.current) {
                 const rect = section1Ref.current.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
                 const travelDistance = rect.height - windowHeight;
                 const progressS2 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // Fade out elegantly over the last phase of sticky duration (0.60 -> 0.90)
-                // Giving it more time as requested
-                if (progressS2 > 0.60) {
-                    const fadeOpacity = Math.max(0, 1 - (progressS2 - 0.60) * (1 / 0.30));
-                    section2StickyRef.current.style.opacity = fadeOpacity.toString();
+                // Fade out cluster vertically and opacity at the very end
+                if (progressS2 > 0.85) {
+                    const fadeProgress = (progressS2 - 0.85) / 0.15;
+                    const fadeOpacity = Math.max(0, 1 - fadeProgress);
+                    section2ClusterRef.current.style.opacity = fadeOpacity.toString();
+                    // Additional slight upward movement for the cluster while fading
+                    section2ClusterRef.current.style.transform = `translate3d(0, -${fadeProgress * 100}px, 0)`;
                 } else {
-                    section2StickyRef.current.style.opacity = '1';
+                    section2ClusterRef.current.style.opacity = '1';
+                    section2ClusterRef.current.style.transform = 'translate3d(0, 0, 0)';
                 }
 
                 // Parallax Text Movement (Only for Section 2)
                 if (section2TextRef.current) {
-                    // Move text vertically between 300px and -300px for a stronger effect
                     const translateY = (0.5 - progressS2) * 600;
                     section2TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
                 }
@@ -707,25 +710,28 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 const travelDistance = rect.height - windowHeight;
                 const progressS3 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // 1. Mockup Fade in (Elegant sequence - triggers AFTER stickiness)
-                // Start mockup fade once typography is already in view
-                const mockupFadeStart = 0.02; // Start shortly after stickiness
-                const mockupFadeEnd = 0.10;   // Fully visible after 10% scroll
+                // 1. Mockup Fade in (Triggered immediately as it enters)
+                const mockupFadeEnd = 0.08;   // Fully visible after 8% scroll
 
-                if (progressS3 >= mockupFadeStart) {
-                    const fadeOpacity = Math.min(1, (progressS3 - mockupFadeStart) / (mockupFadeEnd - mockupFadeStart));
-                    section3MockupRef.current.style.opacity = fadeOpacity.toString();
-                } else {
-                    section3MockupRef.current.style.opacity = '0';
-                }
-                section3MockupRef.current.style.transform = 'translate3d(0, 0, 0)';
+                const fadeOpacity = progressS3 < mockupFadeEnd
+                    ? Math.min(1, progressS3 / mockupFadeEnd)
+                    : 1;
 
-                // 2. Parallax Text Movement (Synchronized with visuals)
+                section3MockupRef.current.style.opacity = fadeOpacity.toString();
+
+                // 2. Unified Scroll-out (Once text reaches top of mockup)
+                // Interaction phase ends around 0.40 progress
+                const scrollOutStart = 0.45;
+                const scrollY = progressS3 > scrollOutStart
+                    ? (progressS3 - scrollOutStart) * -windowHeight * 1.5
+                    : 0;
+
+                section3MockupRef.current.style.transform = `translate3d(0, ${scrollY}px, 0)`;
+
                 if (section3TextRef.current) {
-                    // Text comes in from below (400px) and scrolls way up (-800px)
-                    // (0.2 - progressS3) * 2000 means it hits 0 at 20% scroll
-                    const translateY = (0.15 - progressS3) * 1500;
-                    section3TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
+                    // Parallax text entrance + Unified scroll-out
+                    const parallaxY = (0.15 - progressS3) * 1500;
+                    section3TextRef.current.style.transform = `translate3d(0, ${parallaxY + scrollY}px, 0)`;
                 }
             }
         };
@@ -829,6 +835,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     }
                                 `}</style>
                                 <div
+                                    ref={section2ClusterRef}
                                     id="desktop-cluster-container"
                                     style={{
                                         perspective: '1200px',
