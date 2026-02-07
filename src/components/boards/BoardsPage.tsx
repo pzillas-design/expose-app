@@ -134,11 +134,7 @@ export function BoardsPage({
 
                 <main className="pb-32 flex-1 flex flex-col">
 
-                    <div className="mb-12">
-                        <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10 mb-12">
 
                         <button
                             onClick={onCreateBoard}
