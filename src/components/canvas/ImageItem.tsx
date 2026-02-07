@@ -258,25 +258,26 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Toolbar */}
             {zoom > 0.4 && (
-                <div className="flex items-center gap-2 w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
-                    {/* Context Menu Button - Left aligned */}
-                    <div className={`transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        <Tooltip text={t('tt_more') || 'More options'}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onContextMenu?.(e, image.id);
-                                }}
-                                className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                            >
-                                <MoreVertical className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
-                    </div>
-                    {/* Filename */}
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider`}>
+                <div
+                    className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onContextMenu?.(e, image.id);
+                    }}
+                >
+                    {/* Filename - Left aligned */}
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider transition-colors group-hover/title:text-black dark:group-hover/title:text-white`}>
                         {image.title || 'Untitled'}.jpg
                     </span>
+
+                    {/* Context Menu Button - Right aligned, visible on hover */}
+                    <div className={`transition-opacity ${'opacity-0 group-hover/title:opacity-100'}`}>
+                        <button
+                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                        >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             )}
 
