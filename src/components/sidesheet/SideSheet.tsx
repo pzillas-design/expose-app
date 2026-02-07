@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, LibraryCategory, LibraryItem, GenerationQuality } from '@/types';
-import { Trash, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package } from 'lucide-react';
+import { Trash, Download, ArrowLeft, Check, Layers, ChevronLeft, Upload, Plus, Info, Undo2, Redo2, MousePointer2, Pen, Shapes, Type, Package, X } from 'lucide-react';
 import { DEFAULT_TEMPLATES } from '@/data/promptTemplates';
 import { IconButton, Button, Typo, Theme } from '@/components/ui/DesignSystem';
 import { InfoFilled } from '@/components/ui/CustomIcons';
@@ -17,7 +17,6 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { PromptTab } from './PromptTab';
 import { BrushTab } from './BrushTab';
 import { ObjectsTab } from './ObjectsTab';
-import { ImageInfoModal } from './ImageInfoModal';
 
 interface SideSheetProps {
     selectedImage: CanvasImage | null;
@@ -68,6 +67,7 @@ interface SideSheetProps {
     onDeleteTemplate?: (id: string) => Promise<void>;
     onSaveRecentPrompt?: (prompt: string) => Promise<void>;
     onUpdateImageTitle?: (id: string, title: string) => void;
+    onShowInfo?: (id: string) => void;
     userProfile: any;
 }
 
@@ -117,6 +117,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onDeleteTemplate,
         onSaveRecentPrompt,
         onUpdateImageTitle,
+        onShowInfo,
         onDownload,
         onAddReference: onAddReferenceExternal, // Rename to avoid conflict
         userProfile
@@ -131,7 +132,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [pendingFileName, setPendingFileName] = useState<string>('');
     const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
-    const [showInfo, setShowInfo] = useState(false);
+
     const [historyMap, setHistoryMap] = useState<Map<string, AnnotationObject[][]>>(new Map());
     const [historyIndexMap, setHistoryIndexMap] = useState<Map<string, number>>(new Map());
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
@@ -317,7 +318,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 // Generation FINISHED: Only auto-switch to prompt mode if NOT currently in an active editing mode
                 // This prevents kicking the user out of Brush/Objects mode during sync.
                 if (sideSheetMode === 'prompt') {
-                    setShowInfo(true);
+                    onShowInfo?.(selectedImage.id);
                 }
                 lastAutoOpenedId.current = selectedImage.id;
             }
@@ -335,34 +336,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         lastIsMultiRef.current = isMulti;
     }, [selectedImage?.id, selectedImage?.isGenerating, isMulti, sideSheetMode, onModeChange]);
 
-    // Auto-close Info Modal when navigating to a different image
-    useEffect(() => {
-        if (showInfo && selectedImage && selectedImage.id !== lastAutoOpenedId.current) {
-            setShowInfo(false);
-        }
-    }, [selectedImage?.id]);
 
-    // NEW: Global click listener to close Info Modal on outside interaction
-    useEffect(() => {
-        if (!showInfo) return;
-
-        const handleClickOutside = (event: MouseEvent) => {
-            const modal = document.getElementById('info-modal-container');
-            const headerInfoButton = document.getElementById('header-info-button');
-
-            // Allow clicks inside the modal OR on the toggle button itself
-            if (modal && !modal.contains(event.target as Node) &&
-                headerInfoButton && !headerInfoButton.contains(event.target as Node)) {
-                setShowInfo(false);
-            }
-        };
-
-        // Use mousedown to catch clicks before other handlers might stop propagation
-        window.addEventListener('mousedown', handleClickOutside, true);
-        return () => {
-            window.removeEventListener('mousedown', handleClickOutside, true);
-        };
-    }, [showInfo]);
 
     const handlePromptChange = (val: string) => {
         setPrompt(val);
@@ -729,16 +703,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             case 'prompt':
                 return (
                     <>
-                        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border} relative z-40`}>
+                        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} relative z-40`}>
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
-                                <IconButton
-                                    icon={<ChevronLeft className="w-4 h-4" />}
-                                    onClick={() => {
-                                        if (showInfo) setShowInfo(false);
-                                        else onDeselectAll?.();
-                                    }}
-                                    tooltip={showInfo ? t('back') : t('tt_deselect')}
-                                />
                                 {isMulti && selectedImages ? (
                                     <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
                                         {selectedImages.length} {t('images_selected')}
@@ -750,40 +716,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 )}
                             </div>
 
-                            {!isMulti && (
+                            <div className="flex items-center gap-1">
                                 <IconButton
                                     id="header-info-button"
                                     icon={<Info className="w-[18px] h-[18px]" />}
-                                    active={showInfo}
-                                    onClick={() => setShowInfo(!showInfo)}
-                                    className={`transition-colors z-50 ${showInfo ? 'text-black dark:text-white' : 'text-zinc-400'}`}
+                                    onClick={() => selectedImage && onShowInfo?.(selectedImage.id)}
+                                    className="transition-colors z-50 text-zinc-400"
                                     tooltip="Info"
                                 />
-                            )}
-                        </div>
-
-                        {/* BACKDROP for Info Modal - Covers the whole SideSheet area including header */}
-                        {showInfo && !isMulti && (
-                            <div
-                                className="absolute inset-0 bg-white/60 dark:bg-black/60 z-30 animate-in fade-in duration-200"
-                                onClick={() => setShowInfo(false)}
-                            />
-                        )}
-
-                        {showInfo && !isMulti && selectedImage && (
-                            <div id="info-modal-container" className="contents">
-                                <ImageInfoModal
-                                    image={selectedImage}
-                                    t={t}
-                                    onClose={() => setShowInfo(false)}
-                                    onGenerateMore={onGenerateMore}
-                                    onUpdateImageTitle={onUpdateImageTitle}
-                                    onNavigateParent={onNavigateParent}
-                                    onDownload={onDownload}
-                                    currentLang={lang}
+                                <IconButton
+                                    icon={<X className="w-[18px] h-[18px]" />}
+                                    onClick={() => onDeselectAll?.()}
+                                    className="transition-colors z-50 text-zinc-400"
+                                    tooltip={t('tt_deselect') || 'Auswahl aufheben'}
                                 />
                             </div>
-                        )}
+                        </div>
 
                         <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
 
