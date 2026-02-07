@@ -69,7 +69,7 @@ export const storageService = {
             if (shouldGenerateThumb) {
                 try {
                     const { generateThumbnail } = await import('../utils/imageUtils');
-                    const thumbBlob = await generateThumbnail(imageSrc, 600);
+                    const thumbBlob = await generateThumbnail(imageSrc, 400);
                     const thumbFileName = `thumb_${fileName}`;
                     const thumbFilePath = `${folderPath}/${thumbFileName}`;
 
