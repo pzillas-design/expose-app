@@ -284,10 +284,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex flex-col gap-1 flex-1">
                                         <span className="text-sm font-bold text-zinc-900 dark:text-white">
-                                            Browser-Benachrichtigungen
+                                            Benachrichtigungen
                                         </span>
                                         <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                                            Erhalte eine Benachrichtigung, wenn deine Bildgenerierung abgeschlossen ist (nur wenn Tab inaktiv)
+                                            Benachrichtigung nach abgeschlossener Bildgenerierung
                                         </span>
                                         {notificationPermission === 'denied' && (
                                             <span className="text-xs text-red-600 dark:text-red-400 mt-1">
