@@ -259,13 +259,14 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                     <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} onContextMenu={(e) => { e.preventDefault(); setMenuOpen(false); }} />
                     <div
                         className={`
-                            fixed z-[101] min-w-[170px]
+                            fixed z-[101] min-w-[200px]
                             bg-white dark:bg-zinc-950
                             border border-zinc-200 dark:border-zinc-800
-                            rounded-xl shadow-md ring-1 ring-black/5
-                            overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
+                            rounded-xl shadow-lg ring-1 ring-black/5
+                            overflow-hidden animate-in fade-in zoom-in-95 duration-100
+                            py-1.5
                         `}
-                        style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
+                        style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 210) }}
                     >
                         <button
                             onClick={async (e) => {
@@ -282,12 +283,12 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                                     onRename(newName);
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 mx-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
-                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
+                            <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
+                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
                         </button>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
+                        <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
                         <button
                             onClick={async (e) => {
                                 e.stopPropagation();
@@ -303,15 +304,17 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                                     onDelete();
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 mx-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
-                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
+                            <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
+                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
                         </button>
                     </div>
+                </div >
                 </>,
-                document.body
-            )}
+        document.body
+    )
+}
         </>
     );
 }
