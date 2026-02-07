@@ -173,7 +173,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         <img
             src={currentSrc || ''}
             alt={title}
-            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-500 ${!isHighRes ? 'blur-sm scale-110' : 'blur-0 scale-100'}`}
+            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-500 ${!isHighRes ? 'blur-sm' : 'blur-0'}`}
             loading="lazy"
             onLoad={(e) => {
                 const img = e.currentTarget;
@@ -366,8 +366,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {zoom > 0.4 && (
                 <div
                     className={`flex items-center justify-center gap-2 mt-3 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
-                            ? 'opacity-100 translate-y-0'
-                            : 'opacity-0 translate-y-2 pointer-events-none'
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}
                 >
                     {/* Previous Image - Square Button */}
