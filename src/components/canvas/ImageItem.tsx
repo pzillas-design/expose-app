@@ -362,9 +362,14 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 </div>
             )}
 
-            {/* Bottom Navigation Buttons - Beta Style */}
-            {zoom > 0.4 && isSelected && isPrimary && !image.isGenerating && (
-                <div className="flex items-center justify-center gap-2 mt-3 px-0.5 animate-in fade-in duration-300">
+            {/* Bottom Navigation Buttons - Space Reserved to prevent Layout Shift */}
+            {zoom > 0.4 && (
+                <div
+                    className={`flex items-center justify-center gap-2 mt-3 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
+                            ? 'opacity-100 translate-y-0'
+                            : 'opacity-0 translate-y-2 pointer-events-none'
+                        }`}
+                >
                     {/* Previous Image - Square Button */}
                     {hasLeft && (
                         <Tooltip text={t('previous') || 'Previous'}>
