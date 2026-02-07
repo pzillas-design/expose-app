@@ -19,7 +19,8 @@ export const storageService = {
                 blob = await response.blob();
             } else {
                 const { compressImage } = await import('../utils/imageUtils');
-                blob = await compressImage(imageSrc);
+                // Optmize: Max 4K (4096px) and 80% Quality (0.8)
+                blob = await compressImage(imageSrc, 4096, 0.8);
                 shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 

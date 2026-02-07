@@ -87,97 +87,120 @@ export const useAutoSave = (
                 }
 
                 // Batch Upsert (faster than individual inserts)
-                const { error } = await supabase
-                    .from('canvas_images')
-                    .upsert(
-                        imagesToSave.map(img => ({
-                            id: img.id,
-                            user_id: user.id,
-                            src: img.src,  // Base64 directly in DB
-                            thumb_src: img.thumbSrc || img.src,
-                            storage_path: img.storage_path || '',
-                            width: img.width,
-                            height: img.height,
-                            real_width: img.realWidth || img.width,
-                            real_height: img.realHeight || img.height,
-                            title: img.title,
-                            base_name: img.baseName || img.title,
-                            version: img.version || 1,
-                            annotations: img.annotations || [],
-                            generation_prompt: img.generationPrompt || '',
-                            user_draft_prompt: img.userDraftPrompt || '',
-                            quality: img.quality || 'pro-1k',
-                            parent_id: img.parentId || null,
-                            board_id: img.boardId || null,
-                            created_at: new Date(img.createdAt).toISOString(),
-                            updated_at: new Date().toISOString()
-                        })),
-                        { onConflict: 'id' }
-                    );
+                const payload = imagesToSave.map(img => {
+                    const isBlob = img.src.startsWith('blob:');
 
-                if (error) {
-                    console.error('[AutoSave] Error:', error);
-                } else {
-                    console.log('[AutoSave] Saved', imagesToSave.length, 'images successfully');
-                    lastSavedRef.current = currentState;
-                }
-            } catch (err) {
-                console.error('[AutoSave] Exception:', err);
-            } finally {
-                isSavingRef.current = false;
+                    // Create base object
+                    const dbRecord: any = {
+                        id: img.id,
+                        user_id: user.id,
+                        thumb_src: (img.thumbSrc && !img.thumbSrc.startsWith('blob:')) ? img.thumbSrc : (isBlob ? null : img.src),
+                        storage_path: img.storage_path || '',
+                        width: img.width,
+                        height: img.height,
+                        real_width: img.realWidth || img.width,
+                        real_height: img.realHeight || img.height,
+                        title: img.title,
+                        base_name: img.baseName || img.title,
+                        version: img.version || 1,
+                        annotations: img.annotations || [],
+                        generation_prompt: img.generationPrompt || '',
+                        user_draft_prompt: img.userDraftPrompt || '',
+                        quality: img.quality || 'pro-1k',
+                        parent_id: img.parentId || null,
+                        board_id: img.boardId || null,
+                        created_at: new Date(img.createdAt).toISOString(),
+                        updated_at: new Date().toISOString()
+                        if(isBlob && !img.storage_path) {
+                        return null; // Skip blob images that haven't been peristed yet
             }
+
+                        return dbRecord;
+        }).filter(Boolean); // Remove nulls
+
+        if (payload.length > 0) {
+            const { error } = await supabase
+                .from('canvas_images')
+                .upsert(payload, { onConflict: 'id' });
+
+            if (error) {
+                console.error('[AutoSave] Error:', error);
+            } else {
+                console.log('[AutoSave] Saved', payload.length, 'images successfully');
+                lastSavedRef.current = currentState;
+            }
+        }
+    } catch (err) {
+        console.error('[AutoSave] Error:', error);
+    } else {
+        console.log('[AutoSave] Saved', imagesToSave.length, 'images successfully');
+        lastSavedRef.current = currentState;
+    }
+} catch (err) {
+    console.error('[AutoSave] Exception:', err);
+} finally {
+    isSavingRef.current = false;
+}
         }, 30000); // 30 seconds
 
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
+return () => {
+    if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+    }
+};
+    }, [rows, user, isAuthDisabled]);
+};
+
+return () => {
+    if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+    }
+};
     }, [rows, user, isAuthDisabled]);
 
-    // Force save on unmount (when user closes tab)
-    useEffect(() => {
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
+// Force save on unmount (when user closes tab)
+useEffect(() => {
+    return () => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
 
-            // Trigger immediate save on unmount
-            if (user && !isAuthDisabled && !isSavingRef.current) {
-                const allImages = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
-                if (allImages.length > 0) {
-                    console.log('[AutoSave] Force save on unmount');
-                    supabase.from('canvas_images').upsert(
-                        allImages.map(img => ({
-                            id: img.id,
-                            user_id: user.id,
-                            src: img.src,
-                            thumb_src: img.thumbSrc || img.src,
-                            storage_path: img.storage_path || '',
-                            width: img.width,
-                            height: img.height,
-                            real_width: img.realWidth || img.width,
-                            real_height: img.realHeight || img.height,
-                            title: img.title,
-                            base_name: img.baseName || img.title,
-                            version: img.version || 1,
-                            annotations: img.annotations || [],
-                            generation_prompt: img.generationPrompt || '',
-                            user_draft_prompt: img.userDraftPrompt || '',
-                            quality: img.quality || 'pro-1k',
-                            parent_id: img.parentId || null,
-                            board_id: img.boardId || null,
-                            created_at: new Date(img.createdAt).toISOString(),
-                            updated_at: new Date().toISOString()
-                        })),
-                        { onConflict: 'id' }
-                    ).then(() => {
-                        console.log('[AutoSave] Unmount save complete');
-                    }).catch(err => {
-                        console.error('[AutoSave] Unmount save failed:', err);
-                    });
-                }
+        // Trigger immediate save on unmount
+        if (user && !isAuthDisabled && !isSavingRef.current) {
+            const allImages = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+            if (allImages.length > 0) {
+                console.log('[AutoSave] Force save on unmount');
+                supabase.from('canvas_images').upsert(
+                    allImages.map(img => ({
+                        id: img.id,
+                        user_id: user.id,
+                        src: img.src,
+                        thumb_src: img.thumbSrc || img.src,
+                        storage_path: img.storage_path || '',
+                        width: img.width,
+                        height: img.height,
+                        real_width: img.realWidth || img.width,
+                        real_height: img.realHeight || img.height,
+                        title: img.title,
+                        base_name: img.baseName || img.title,
+                        version: img.version || 1,
+                        annotations: img.annotations || [],
+                        generation_prompt: img.generationPrompt || '',
+                        user_draft_prompt: img.userDraftPrompt || '',
+                        quality: img.quality || 'pro-1k',
+                        parent_id: img.parentId || null,
+                        board_id: img.boardId || null,
+                        created_at: new Date(img.createdAt).toISOString(),
+                        updated_at: new Date().toISOString()
+                    })),
+                    { onConflict: 'id' }
+                ).then(() => {
+                    console.log('[AutoSave] Unmount save complete');
+                }).catch(err => {
+                    console.error('[AutoSave] Unmount save failed:', err);
+                });
             }
-        };
-    }, []); // Empty deps - only run on unmount
+        }
+    };
+}, []); // Empty deps - only run on unmount
 };
