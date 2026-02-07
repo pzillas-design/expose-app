@@ -347,29 +347,31 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
             </div>
 
-            {isSelected && zoom > 1.2 && (
-                <div className="absolute inset-0 pointer-events-none">
-                    {hasLeft && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-16 top-1/2 -translate-y-1/2`}>
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                    )}
-                    {hasRight && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-16 top-1/2 -translate-y-1/2`}>
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    )}
-                </div>
-            )}
+
 
             {/* Bottom Navigation Buttons - Space Reserved to prevent Layout Shift */}
             {zoom > 0.4 && (
                 <div
                     className={`flex items-center justify-center gap-2 mt-6 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
-                            ? 'opacity-100 translate-y-0'
-                            : 'opacity-0 translate-y-2 pointer-events-none'
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}
                 >
+                    {/* Previous Image - Square Button */}
+                    {hasLeft && (
+                        <Tooltip text={t('previous') || 'Previous'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigate?.(-1, image.id);
+                                }}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
+                    )}
+
                     {/* Center Action Group - Joined Pill */}
                     <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
                         {/* Generate More */}
@@ -404,8 +406,25 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         </Tooltip>
                     </div>
                 </div>
+
+                    {/* Next Image - Square Button */}
+            {hasRight && (
+                <Tooltip text={t('next') || 'Next'}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate?.(1, image.id);
+                        }}
+                        className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </Tooltip>
             )}
         </div>
+    )
+}
+        </div >
     );
 });
 
