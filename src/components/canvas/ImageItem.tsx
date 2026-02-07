@@ -349,10 +349,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 </div>
             )}
 
-            {/* Bottom Navigation Buttons */}
+            {/* Bottom Navigation Buttons - Beta Style */}
             {zoom > 0.4 && !image.isGenerating && (
                 <div className="flex items-center justify-center gap-2 mt-3 px-0.5 animate-in fade-in duration-300">
-                    {/* Previous Image */}
+                    {/* Previous Image - Square Button */}
                     {hasLeft && (
                         <Tooltip text={t('previous') || 'Previous'}>
                             <button
@@ -360,42 +360,48 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     e.stopPropagation();
                                     onNavigate?.(-1, image.id);
                                 }}
-                                className="px-4 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2"
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
                         </Tooltip>
                     )}
 
-                    {/* Generate More (Mehr) - Center */}
-                    <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRetry?.(image.id);
-                            }}
-                            className="px-6 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2 text-xs font-medium tracking-wider uppercase"
-                        >
-                            <Plus className="w-4 h-4" />
-                            {t('more') || 'MEHR'}
-                        </button>
-                    </Tooltip>
+                    {/* Center Action Group - Joined Pill */}
+                    <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
+                        {/* Generate More */}
+                        <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRetry?.(image.id);
+                                }}
+                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span className={Typo.Label}>{t('more') || 'MEHR'}</span>
+                            </button>
+                        </Tooltip>
 
-                    {/* Save/Download */}
-                    <Tooltip text={t('tt_save') || 'Download image'}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onDownload) onDownload(image.id);
-                            }}
-                            className="px-6 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2 text-xs font-medium tracking-wider uppercase"
-                        >
-                            <Download className="w-4 h-4" />
-                            {t('save') || 'SPEICHERN'}
-                        </button>
-                    </Tooltip>
+                        {/* Separator */}
+                        <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
 
-                    {/* Next Image */}
+                        {/* Save/Download */}
+                        <Tooltip text={t('tt_save') || 'Download image'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDownload) onDownload(image.id);
+                                }}
+                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
+                            </button>
+                        </Tooltip>
+                    </div>
+
+                    {/* Next Image - Square Button */}
                     {hasRight && (
                         <Tooltip text={t('next') || 'Next'}>
                             <button
@@ -403,7 +409,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     e.stopPropagation();
                                     onNavigate?.(1, image.id);
                                 }}
-                                className="px-4 py-2 bg-zinc-900/80 dark:bg-zinc-800/80 border border-zinc-700/50 dark:border-zinc-600/50 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-700 transition-all text-white flex items-center gap-2"
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>
