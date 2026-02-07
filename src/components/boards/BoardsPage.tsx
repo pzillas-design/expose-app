@@ -258,7 +258,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                             border border-zinc-200 dark:border-zinc-800
                             rounded-xl shadow-lg ring-1 ring-black/5
                             overflow-hidden animate-in fade-in zoom-in-95 duration-100
-                            py-1.5
+                            p-1.5
                         `}
                         style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 210) }}
                     >
