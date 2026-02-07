@@ -53,11 +53,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     };
 
     // Styles - New cleaner design
-    const itemClass = `flex items-center justify-between w-full pl-3 pr-2.5 py-2 mx-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group cursor-pointer`;
+    const itemClass = `flex items-center justify-between w-full pl-3 pr-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group cursor-pointer`;
     const iconClass = `w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors shrink-0 ml-3`;
     const textClass = `${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`;
 
-    const dangerClass = `flex items-center justify-between w-full pl-3 pr-2.5 py-2 mx-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer`;
+    const dangerClass = `flex items-center justify-between w-full pl-3 pr-3 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-left transition-colors group cursor-pointer`;
     const dangerIconClass = `w-4 h-4 text-red-400 group-hover:text-red-600 transition-colors shrink-0 ml-3`;
     const dangerTextClass = `${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`;
 
