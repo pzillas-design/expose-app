@@ -116,7 +116,7 @@ export const useFileHandler = ({
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
-        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        const files = Array.from(e.dataTransfer.files).filter((f): f is File => f.type.startsWith('image/'));
         if (files.length === 0) return;
         processFiles(files);
     }, [processFiles]);
