@@ -80,6 +80,7 @@ export interface Board {
   itemCount?: number;
   createdAt: number;
   updatedAt: number;
+  lastActivityAt?: number; // Timestamp of last image generation/upload (for auto-deletion)
 }
 
 export interface PresetOption {

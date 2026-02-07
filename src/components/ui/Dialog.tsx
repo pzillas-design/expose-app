@@ -134,7 +134,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 </div>
                             )}
 
-                            {/* Buttons - Stacked Vertically */}
+                            {/* Buttons - Only Primary Action */}
                             <div className="flex flex-col gap-3 mt-2">
                                 <Button
                                     variant="primary"
@@ -142,13 +142,6 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                     className={`w-full h-11 ${options.variant === 'danger' ? '!bg-red-500 hover:!bg-red-600 !text-white !border-red-500' : ''}`}
                                 >
                                     {options.confirmLabel || 'Bestätigen'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleClose(false)}
-                                    className="w-full h-11"
-                                >
-                                    {options.cancelLabel || 'Abbrechen'}
                                 </Button>
                             </div>
                         </div>

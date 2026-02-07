@@ -13,6 +13,7 @@ import { Wordmark } from '../ui/Wordmark';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { BetaNotice } from '../ui/BetaNotice';
+import { formatRelativeTime, shouldShowDeletionCountdown, daysUntilBoardDeletion } from '@/utils/timeUtils';
 
 const getInitials = (name?: string, email?: string) => {
     if (name && name.trim()) {
@@ -165,7 +166,7 @@ export function BoardsPage({
                                         onSelect={() => onSelectBoard(board.id)}
                                         onDelete={() => onDeleteBoard(board.id)}
                                         onRename={(name) => onRenameBoard(board.id, name)}
-                                        locale={locale}
+                                        lang={lang}
                                         t={t}
                                     />
                                 ))
@@ -184,11 +185,11 @@ interface BoardCardProps {
     onSelect: () => void;
     onDelete: () => void;
     onRename: (name: string) => void;
-    locale: any;
+    lang: 'de' | 'en';
     t: (key: any) => string;
 }
 
-function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCardProps) {
+function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
     const [isLoaded, setIsLoaded] = useState(false);
@@ -223,6 +224,13 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             onLoaded={() => setIsLoaded(true)}
                         />
                     </div>
+
+                    {/* Deletion Countdown Badge */}
+                    {board.lastActivityAt && shouldShowDeletionCountdown(board.lastActivityAt) && (
+                        <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-medium px-2.5 py-1 rounded-md shadow-sm z-20">
+                            Noch {daysUntilBoardDeletion(board.lastActivityAt)} {daysUntilBoardDeletion(board.lastActivityAt) === 1 ? 'Tag' : 'Tage'}
+                        </div>
+                    )}
                 </div>
 
                 {/* Info Section */}
@@ -240,7 +248,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                     </div>
                     <div className="text-zinc-400 dark:text-zinc-600 -mt-[1px]">
                         <span className={`${Typo.Body} opacity-70`}>
-                            {formatDistanceToNow(board.updatedAt, { locale, addSuffix: true })}
+                            {formatRelativeTime(new Date(board.updatedAt), lang)}
                         </span>
                     </div>
                 </div>
