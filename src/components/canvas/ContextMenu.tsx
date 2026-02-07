@@ -128,6 +128,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 {isMultiSelectionActive ? (
                                     // Part of a Multi-Selection
                                     <>
+                                        <button onClick={() => { onDownloadSelected(); onClose(); }} className={itemClass}>
+                                            <span className={textClass}>{t('ctx_download_multi').replace('{{n}}', selectedIds.length.toString())}</span>
+                                            <Download className={iconClass} />
+                                        </button>
+
                                         {/* Show variations only if ALL selected items are generated images */}
                                         {selectedIds.every(isGenerated) && (
                                             <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
@@ -140,32 +145,25 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <span className={textClass}>{t('ctx_remove_from_selection')}</span>
                                         </button>
 
-                                        <button onClick={() => { onDownloadSelected(); onClose(); }} className={itemClass}>
-                                            <span className={textClass}>{t('ctx_download_multi').replace('{{n}}', selectedIds.length.toString())}</span>
-                                            <Download className={iconClass} />
-                                        </button>
-
                                         <button onClick={() => { onDeleteSelected(); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_delete_multi').replace('{{n}}', selectedIds.length.toString())}</span>
-                                            <Trash className={iconClass} />
                                         </button>
                                     </>
                                 ) : (
                                     // Single Selected Image
                                     <>
-                                        <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
-                                            <span className={textClass}>{t('ctx_create_variations')}</span>
-                                            <Plus className={iconClass} />
-                                        </button>
-
                                         <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_download_image')}</span>
                                             <Download className={iconClass} />
                                         </button>
 
+                                        <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
+                                            <span className={textClass}>{t('ctx_create_variations')}</span>
+                                            <Plus className={iconClass} />
+                                        </button>
+
                                         <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_delete_image')}</span>
-                                            <Trash className={iconClass} />
                                         </button>
 
                                         {onShowInfo && (
@@ -185,19 +183,18 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     <span className={textClass}>{t('ctx_add_to_selection')}</span>
                                 </button>
 
-                                <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
-                                    <span className={textClass}>{t('ctx_create_variations')}</span>
-                                    <Plus className={iconClass} />
-                                </button>
-
                                 <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_download_image')}</span>
                                     <Download className={iconClass} />
                                 </button>
 
+                                <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
+                                    <span className={textClass}>{t('ctx_create_variations')}</span>
+                                    <Plus className={iconClass} />
+                                </button>
+
                                 <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_delete_image')}</span>
-                                    <Trash className={iconClass} />
                                 </button>
                             </>
                         )}
