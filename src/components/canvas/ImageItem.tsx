@@ -275,7 +275,16 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <button
                             className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                         >
-                            <MoreVertical className="w-3.5 h-3.5" />
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-3.5 h-3.5"
+                            >
+                                <circle cx="12" cy="7" r="2.5" />
+                                <circle cx="12" cy="17" r="2.5" />
+                            </svg>
                         </button>
                     </div>
                 </div>
