@@ -92,11 +92,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             />
 
             <main className="max-w-xl mx-auto w-full px-4 sm:px-6 flex-1 py-12 sm:py-24">
-                <div className="mb-12">
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                        {t('tab_settings')}
-                    </h1>
-                </div>
 
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 

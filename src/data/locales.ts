@@ -361,7 +361,7 @@ export const translations = {
     admin_user_default: 'User',
     admin_user_email_missing: 'No Email',
     delete_account_section: 'More',
-    delete_account_permanently: 'Delete Account Permanently',
+    delete_account_permanently: 'Delete Account',
   },
   de: {
     // General
@@ -724,6 +724,6 @@ export const translations = {
     admin_user_default: 'Benutzer',
     admin_user_email_missing: 'Keine E-Mail',
     delete_account_section: 'Sonstiges',
-    delete_account_permanently: 'Konto dauerhaft löschen',
+    delete_account_permanently: 'Konto löschen',
   }
 };
