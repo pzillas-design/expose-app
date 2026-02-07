@@ -655,6 +655,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section4Ref = useRef<HTMLElement>(null);
     const section4ContentRef = useRef<HTMLDivElement>(null);
     const section4BackgroundRef = useRef<HTMLDivElement>(null);
+    const section4Image1Ref = useRef<HTMLImageElement>(null);
+    const section4Image2Ref = useRef<HTMLImageElement>(null);
+    const section4ProgressRef = useRef<HTMLDivElement>(null);
     const section4LabelsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -739,25 +742,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 }
             }
 
-            // Section 4 Full-Page Sticky Animation
+            // Section 4 Full-Page Sticky Animation (Multi-Phase)
             if (section4Ref.current && section4BackgroundRef.current && section4ContentRef.current) {
                 const rect = section4Ref.current.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
                 const travelDistance = rect.height - windowHeight;
                 const progressS4 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // 1. Background Image Zoom/Parallax
-                const bgScale = 1.1 - (progressS4 * 0.1);
-                section4BackgroundRef.current.style.transform = `scale(${bgScale}) translate3d(0, 0, 0)`;
-
-                // 2. Content (Typo) Fade and Movement
-                // Fade in early, stay, then fade out at the end
-                const typoOpacity = progressS4 < 0.1 ? progressS4 * 10
-                    : progressS4 > 0.8 ? (1 - progressS4) * 5
-                        : 1;
+                // 1. Text Reveal (0.0 - 0.15)
+                const typoOpacity = progressS4 < 0.15 ? progressS4 / 0.15 : 1;
                 section4ContentRef.current.style.opacity = typoOpacity.toString();
 
-                // 3. Labels ("Zipfel") staggered reveal
+                // 2. Progressive Label Appearance (0.15 - 0.50)
                 if (section4LabelsRef.current) {
                     const children = section4LabelsRef.current.children;
                     for (let i = 0; i < children.length; i++) {
@@ -766,11 +762,32 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         const endTrigger = startTrigger + 0.1;
                         const labelProgress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
 
-                        // Scale and opacity for label reveal
                         child.style.opacity = labelProgress.toString();
-                        child.style.transform = `scale(${0.8 + labelProgress * 0.2}) translate3d(0, ${(1 - labelProgress) * 20}px, 0)`;
+                        child.style.transform = `scale(${0.9 + labelProgress * 0.1}) translate3d(0, ${(1 - labelProgress) * 10}px, 0)`;
                     }
                 }
+
+                // 3. Orange Progress Bar (0.50 - 0.70)
+                if (section4ProgressRef.current) {
+                    const barProgress = Math.min(Math.max((progressS4 - 0.5) / 0.2, 0), 1);
+                    section4ProgressRef.current.style.width = `${barProgress * 100}%`;
+                    section4ProgressRef.current.style.opacity = (barProgress > 0 && progressS4 < 0.8) ? '1' : '0';
+                }
+
+                // 4. Image Transition (0.75 - 0.95)
+                if (section4Image2Ref.current) {
+                    const transformProgress = Math.min(Math.max((progressS4 - 0.75) / 0.2, 0), 1);
+                    section4Image2Ref.current.style.opacity = transformProgress.toString();
+
+                    // Fade out labels slightly during transformation
+                    if (section4LabelsRef.current) {
+                        section4LabelsRef.current.style.opacity = (1 - transformProgress).toString();
+                    }
+                }
+
+                // Parallax Zoom
+                const bgScale = 1.05 - (progressS4 * 0.05);
+                section4BackgroundRef.current.style.transform = `scale(${bgScale}) translate3d(0, 0, 0)`;
             }
         };
 
@@ -916,60 +933,88 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
-                {/* Section 4: Visual Prompting (Full-Page Sticky) */}
-                <section ref={section4Ref} className="relative h-[250vh] bg-black">
+                {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
+                <section ref={section4Ref} className="relative h-[350vh] bg-black">
                     <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
                         {/* Background Layer */}
                         <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
+                            {/* Image 1: Before */}
                             <img
-                                src="/about/iterativ arbeiten img/31.jpg"
-                                className="w-full h-full object-cover opacity-60 grayscale-[20%] contrast-125"
+                                ref={section4Image1Ref}
+                                src="/about/3 visual promting/1.jpg"
+                                className="absolute inset-0 w-full h-full object-cover opacity-60 grayscale-[10%] contrast-[1.1]"
                                 alt=""
                             />
+                            {/* Image 2: After (Revealed later) */}
+                            <img
+                                ref={section4Image2Ref}
+                                src="/about/3 visual promting/2.jpg"
+                                className="absolute inset-0 w-full h-full object-cover opacity-0 grayscale-[10%] contrast-[1.1] z-10"
+                                alt=""
+                            />
+
                             {/* Dark Gradient Overlays */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
-                            <div className="absolute inset-0 bg-black/20" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 z-20" />
+                            <div className="absolute inset-0 bg-black/20 z-20" />
                         </div>
 
+                        {/* Generation Progress Bar */}
+                        <div
+                            ref={section4ProgressRef}
+                            className="absolute top-0 left-0 h-1 bg-orange-500 z-50 transition-all duration-300 ease-out opacity-0 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
+                            style={{ width: '0%' }}
+                        />
+
                         {/* Content Layer (Typo) */}
-                        <div className="relative z-20 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity">
+                        <div className="relative z-30 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0">
                                 <h2 className="text-6xl sm:text-7xl lg:text-9xl xl:text-[12rem] font-bold tracking-tighter leading-[0.85] text-white">
                                     Visual <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
                             </div>
 
-                            {/* Annotation Labels ("Zipfel" style) */}
-                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none">
-                                {/* Label 1: Sessel */}
-                                <div className="absolute top-[35%] left-[30%] opacity-0 will-change-transform">
+                            {/* Annotation Labels (Exact User Design) */}
+                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500">
+                                {/* Label 1: Küche */}
+                                <div className="absolute top-[45%] left-[34%] opacity-0 will-change-transform">
                                     <div className="relative flex flex-col items-center">
-                                        {/* Chip (Internal annotation style) */}
-                                        <div className="px-5 py-3 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-2xl flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-orange-500" />
-                                            <span className="text-lg font-medium text-zinc-900 dark:text-white">"Sessel austauschen"</span>
+                                        {/* Dark Chip */}
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Küche</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
                                         </div>
-                                        {/* Connector "Zipfel" */}
-                                        <div className="w-0.5 h-16 bg-gradient-to-b from-white/40 to-transparent mt-[-1px]" />
+                                        {/* Connector Zipfel */}
+                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
 
-                                {/* Label 2: Lichtquelle */}
-                                <div className="absolute bottom-[35%] right-[25%] opacity-0 will-change-transform">
+                                {/* Label 2: Esstisch */}
+                                <div className="absolute bottom-[25%] left-[20%] opacity-0 will-change-transform">
                                     <div className="relative flex flex-col items-center">
-                                        <div className="px-5 py-3 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-white/20 shadow-2xl flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                                            <span className="text-lg font-medium text-zinc-900 dark:text-white">"Lichtquelle hinzufügen"</span>
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Esstisch</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
                                         </div>
-                                        <div className="w-0.5 h-16 bg-gradient-to-b from-white/40 to-transparent mt-[-1px]" />
+                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Label 3: Sofa */}
+                                <div className="absolute bottom-[12%] right-[35%] opacity-0 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Sofa</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Subline overlay (locked to bottom center) */}
-                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center w-full px-6 z-30">
+                        {/* Subline overlay */}
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center w-full px-6 z-40">
                             <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-light">
                                 Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white font-medium">genau wo</span> etwas passieren soll.
                             </p>
