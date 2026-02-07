@@ -726,6 +726,7 @@ export function App() {
                         onSaveTemplate={savePreset}
                         onDeleteTemplate={deletePreset}
                         onSaveRecentPrompt={actions.saveRecentPrompt}
+                        onShowInfo={(id) => setInfoModalImageId(id)}
                         userProfile={userProfile}
                         // Hack to bridge handlers without exposing them as public state
                         ref={(el: any) => {
