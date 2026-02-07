@@ -800,14 +800,15 @@ export function App() {
 
     return (
         <Routes>
-            <Route path="/about" element={
+            <Route path="/" element={
                 <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
                     <AboutPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
                 </Suspense>
             } />
-            <Route path="/about-1" element={<Navigate to="/about" replace />} />
-            <Route path="/about-2" element={<Navigate to="/about" replace />} />
-            <Route path="/about-3" element={<Navigate to="/about" replace />} />
+            <Route path="/about" element={<Navigate to="/" replace />} />
+            <Route path="/about-1" element={<Navigate to="/" replace />} />
+            <Route path="/about-2" element={<Navigate to="/" replace />} />
+            <Route path="/about-3" element={<Navigate to="/" replace />} />
             <Route path="/contact" element={
                 <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
                     <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />

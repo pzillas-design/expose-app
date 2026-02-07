@@ -19,7 +19,7 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                 {/* Navigation - Single line, minimal text, normal case */}
                 <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
                     <a
-                        href="/about"
+                        href="/"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_about') || 'About'}
