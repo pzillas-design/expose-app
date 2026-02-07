@@ -81,7 +81,7 @@ export const Typo = {
     H3: `text-sm font-medium ${Theme.Colors.TextPrimary}`,
 
     // Section Labels (The "Eyebrow" style)
-    Label: `text-[10px] font-bold uppercase tracking-widest ${Theme.Colors.TextSecondary}`,
+    Label: `text-[10px] font-bold tracking-wide ${Theme.Colors.TextSecondary}`,
 
     // Button Labels (Standardized for all buttons)
     ButtonLabel: `text-[10px] font-bold uppercase tracking-widest`,

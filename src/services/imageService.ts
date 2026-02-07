@@ -322,9 +322,9 @@ export const imageService = {
             activeTemplateId: undefined, // No preset carried over
             variableValues: undefined, // No variables carried over,
             version: result.version || targetVersion || (sourceImage.version || 1) + 1,
-            title: result.title || targetTitle || (sourceImage.title?.includes('_v')
-                ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
-                : `${sourceImage.title || 'Image'}_v2`),
+            title: result.title || targetTitle || (sourceImage.title?.includes(' v')
+                ? sourceImage.title.split(' v')[0] + ` v${(sourceImage.version || 1) + 1}`
+                : `${sourceImage.title || 'Image'} v2`),
             baseName: result.base_name || sourceImage.baseName || sourceImage.title,
             createdAt: Date.now(),
             updatedAt: Date.now(),
