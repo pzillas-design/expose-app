@@ -666,7 +666,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
 
     const SubHeader = ({ title, onBack }: { title: string, onBack?: () => void }) => (
-        <div className={`h-14 flex items-center gap-1 px-4 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
+        <div className={`h-14 flex items-center gap-1 px-6 shrink-0 ${Theme.Colors.PanelBg} border-b ${Theme.Colors.Border}`}>
             <IconButton icon={<ChevronLeft className="w-4 h-4" />} onClick={onBack || (() => onModeChange('prompt'))} tooltip={t('back')} />
             <span className={`${Typo.Label} ${Theme.Colors.TextPrimary} font-bold`}>{title}</span>
             <div className="flex-1" />
@@ -703,7 +703,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             case 'prompt':
                 return (
                     <>
-                        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${Theme.Colors.PanelBg} relative z-40`}>
+                        <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} relative z-40`}>
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 {isMulti && selectedImages ? (
                                     <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
