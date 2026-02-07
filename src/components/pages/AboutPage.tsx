@@ -652,6 +652,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section3MockupRef = useRef<HTMLDivElement>(null);
     const section2TextRef = useRef<HTMLDivElement>(null);
     const section3TextRef = useRef<HTMLDivElement>(null);
+    const section4Ref = useRef<HTMLElement>(null);
+    const section4ContentRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -732,6 +734,31 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     // Parallax text entrance + Unified scroll-out
                     const parallaxY = (0.15 - progressS3) * 1500;
                     section3TextRef.current.style.transform = `translate3d(0, ${parallaxY + scrollY}px, 0)`;
+                }
+            }
+
+            // Section 4 Special Fade & Early Exit
+            if (section4Ref.current && section4ContentRef.current) {
+                const rect = section4Ref.current.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+
+                // 1. Unified Fade-in (Starts when top of section is 20% from bottom)
+                const startPoint = windowHeight * 1.2;
+                const endPoint = windowHeight * 0.4;
+                const progressS4 = Math.min(Math.max((startPoint - rect.top) / (startPoint - endPoint), 0), 1);
+
+                section4ContentRef.current.style.opacity = progressS4.toString();
+
+                // 2. Early Unified Scroll-out
+                // When typography (at top) would hit top of mockup (negative rect.top)
+                // If progress is high and typography is near mockup center
+                const scrollOutThreshold = 0.85;
+                if (progressS4 > scrollOutThreshold) {
+                    const exitProgress = (progressS4 - scrollOutThreshold) / (1 - scrollOutThreshold);
+                    const exitY = exitProgress * -windowHeight * 0.8;
+                    section4ContentRef.current.style.transform = `translate3d(0, ${exitY}px, 0)`;
+                } else {
+                    section4ContentRef.current.style.transform = 'translate3d(0, 0, 0)';
                 }
             }
         };
@@ -879,29 +906,25 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 4: Visual Prompting */}
-                <section className="py-32 px-6">
-                    <div className="max-w-[1700px] mx-auto flex flex-col items-center text-center">
-                        <ScrollReveal>
-                            <div className="max-w-4xl mb-24">
-                                <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9]">
-                                    Visual <span className="text-orange-500">prompting.</span>
-                                </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-500">
-                                    Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
-                                </p>
+                <section ref={section4Ref} className="py-32 px-6">
+                    <div ref={section4ContentRef} className="max-w-[1700px] mx-auto flex flex-col items-center text-center will-change-transform will-change-opacity transition-transform duration-100 ease-out opacity-0">
+                        <div className="max-w-4xl mb-24">
+                            <h2 className="text-5xl sm:text-6xl lg:text-8xl xl:text-[10rem] font-bold tracking-tighter mb-8 leading-[0.9]">
+                                Visual <span className="text-orange-500">prompting.</span>
+                            </h2>
+                            <p className="text-xl sm:text-2xl text-zinc-500">
+                                Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-zinc-900 dark:text-white">genau wo</span> etwas passieren soll.
+                            </p>
+                        </div>
+                        <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900">
+                            <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
+                            <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
                             </div>
-                        </ScrollReveal>
-                        <ScrollReveal delay={200}>
-                            <div className="w-full max-w-6xl aspect-video rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 relative group bg-zinc-900">
-                                <img src="/about/iterativ arbeiten img/31.jpg" className="w-full h-full object-cover opacity-60 contrast-125 transition-transform duration-[3000ms] group-hover:scale-105" alt="" />
-                                <div className="absolute top-[25%] left-[35%] p-4 rounded-full border-2 border-orange-500 bg-orange-500/20 backdrop-blur-md animate-pulse">
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Sessel austauschen"</div>
-                                </div>
-                                <div className="absolute bottom-[30%] right-[25%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Lichtquelle hinzufügen"</div>
-                                </div>
+                            <div className="absolute bottom-[30%] right-[25%] p-4 rounded-full border-2 border-blue-500 bg-blue-500/20 backdrop-blur-md animate-pulse delay-700">
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white text-xs font-mono rounded whitespace-nowrap shadow-2xl">"Lichtquelle hinzufügen"</div>
                             </div>
-                        </ScrollReveal>
+                        </div>
                     </div>
                 </section>
 
