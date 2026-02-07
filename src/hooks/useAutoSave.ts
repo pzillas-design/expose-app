@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { ImageRow } from '@/types';
+import { ImageRow, CanvasImage } from '@/types';
 
 /**
  * Auto-Save Hook
@@ -16,18 +16,19 @@ export const useAutoSave = (
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isSavingRef = useRef(false);
 
+    // Helper to extract saveable images
+    const getImagesToSave = (currentRows: ImageRow[]): CanvasImage[] => {
+        return currentRows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+    };
+
+    // Main Auto-Save Logic
     useEffect(() => {
         // For Beta (auth disabled): Use localStorage
         if (isAuthDisabled) {
             const currentState = JSON.stringify(rows);
-            if (currentState === lastSavedRef.current) {
-                return;
-            }
+            if (currentState === lastSavedRef.current) return;
 
-            // Debounce: Save every 5s to localStorage
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
             saveTimeoutRef.current = setTimeout(() => {
                 try {
@@ -38,60 +39,49 @@ export const useAutoSave = (
                 } catch (err) {
                     console.error('[AutoSave] localStorage save failed:', err);
                 }
-            }, 5000); // 5 seconds for Beta
+            }, 5000);
 
             return () => {
-                if (saveTimeoutRef.current) {
-                    clearTimeout(saveTimeoutRef.current);
-                }
+                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
             };
         }
 
         // For Production (with auth): Use Supabase
-        if (!user) {
-            console.log('[AutoSave] Skipped - no user');
-            return;
-        }
+        if (!user) return;
 
         // Skip if no changes
         const currentState = JSON.stringify(rows);
-        if (currentState === lastSavedRef.current) {
-            return;
-        }
+        if (currentState === lastSavedRef.current) return;
 
         // Skip if already saving
-        if (isSavingRef.current) {
-            return;
-        }
+        if (isSavingRef.current) return;
 
         // Debounce: Only save every 30s
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
         saveTimeoutRef.current = setTimeout(async () => {
             try {
                 isSavingRef.current = true;
-                console.log('[AutoSave] Starting save...');
-
-                // Extract all images
-                const allImages = rows.flatMap(r => r.items);
-
-                // Filter out images that are still generating
-                const imagesToSave = allImages.filter(img => !img.isGenerating && img.src);
+                const imagesToSave = getImagesToSave(rows);
 
                 if (imagesToSave.length === 0) {
-                    console.log('[AutoSave] No images to save');
+                    lastSavedRef.current = currentState; // Update ref even if empty to avoid loop
                     isSavingRef.current = false;
                     return;
                 }
 
-                // Batch Upsert (faster than individual inserts)
+                console.log('[AutoSave] Starting save...');
+
+                // Batch Upsert
                 const payload = imagesToSave.map(img => {
                     const isBlob = img.src.startsWith('blob:');
 
-                    // Create base object
-                    const dbRecord: any = {
+                    // Skip blob images that haven't been persisted yet (no storage_path)
+                    if (isBlob && !img.storage_path) {
+                        return null;
+                    }
+
+                    return {
                         id: img.id,
                         user_id: user.id,
                         thumb_src: (img.thumbSrc && !img.thumbSrc.startsWith('blob:')) ? img.thumbSrc : (isBlob ? null : img.src),
@@ -112,13 +102,7 @@ export const useAutoSave = (
                         created_at: new Date(img.createdAt).toISOString(),
                         updated_at: new Date().toISOString()
                     };
-
-                    if (isBlob && !img.storage_path) {
-                        return null; // Skip blob images that haven't been peristed yet
-                    }
-
-                    return dbRecord;
-                }).filter(Boolean); // Remove nulls
+                }).filter((item): item is NonNullable<typeof item> => item !== null);
 
                 if (payload.length > 0) {
                     const { error } = await supabase
@@ -131,78 +115,71 @@ export const useAutoSave = (
                         console.log('[AutoSave] Saved', payload.length, 'images successfully');
                         lastSavedRef.current = currentState;
                     }
+                } else {
+                    // No valid payload (all blobs not yet persisted)
+                    lastSavedRef.current = currentState;
                 }
             } catch (err) {
-                console.error('[AutoSave] Error:', error);
-            } else {
-                console.log('[AutoSave] Saved', imagesToSave.length, 'images successfully');
-                lastSavedRef.current = currentState;
+                console.error('[AutoSave] Exception:', err);
+            } finally {
+                isSavingRef.current = false;
             }
-        } catch (err) {
-            console.error('[AutoSave] Exception:', err);
-        } finally {
-            isSavingRef.current = false;
-        }
-    }, 30000); // 30 seconds
+        }, 30000); // 30 seconds
 
-    return () => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-    };
-}, [rows, user, isAuthDisabled]);
-};
-
-return () => {
-    if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-    }
-};
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        };
     }, [rows, user, isAuthDisabled]);
 
-// Force save on unmount (when user closes tab)
-useEffect(() => {
-    return () => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
+    // Force save on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-        // Trigger immediate save on unmount
-        if (user && !isAuthDisabled && !isSavingRef.current) {
-            const allImages = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
-            if (allImages.length > 0) {
-                console.log('[AutoSave] Force save on unmount');
-                supabase.from('canvas_images').upsert(
-                    allImages.map(img => ({
-                        id: img.id,
-                        user_id: user.id,
-                        src: img.src,
-                        thumb_src: img.thumbSrc || img.src,
-                        storage_path: img.storage_path || '',
-                        width: img.width,
-                        height: img.height,
-                        real_width: img.realWidth || img.width,
-                        real_height: img.realHeight || img.height,
-                        title: img.title,
-                        base_name: img.baseName || img.title,
-                        version: img.version || 1,
-                        annotations: img.annotations || [],
-                        generation_prompt: img.generationPrompt || '',
-                        user_draft_prompt: img.userDraftPrompt || '',
-                        quality: img.quality || 'pro-1k',
-                        parent_id: img.parentId || null,
-                        board_id: img.boardId || null,
-                        created_at: new Date(img.createdAt).toISOString(),
-                        updated_at: new Date().toISOString()
-                    })),
-                    { onConflict: 'id' }
-                ).then(() => {
-                    console.log('[AutoSave] Unmount save complete');
-                }).catch(err => {
-                    console.error('[AutoSave] Unmount save failed:', err);
-                });
+            // Trigger immediate save on unmount if we have unsaved work
+            // Note: We can't easily check 'currentState vs lastSaved' here because of closure staleness,
+            // but we can check if we have valuable data.
+            // Ideally we blindly save on unmount to be safe.
+            if (user && !isAuthDisabled && !isSavingRef.current) {
+                const imagesToSave = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+
+                if (imagesToSave.length > 0) {
+                    const payload = imagesToSave.map(img => {
+                        const isBlob = img.src.startsWith('blob:');
+                        if (isBlob && !img.storage_path) return null;
+
+                        return {
+                            id: img.id,
+                            user_id: user.id,
+                            src: img.src,
+                            thumb_src: img.thumbSrc || img.src,
+                            storage_path: img.storage_path || '',
+                            width: img.width,
+                            height: img.height,
+                            real_width: img.realWidth || img.width,
+                            real_height: img.realHeight || img.height,
+                            title: img.title,
+                            base_name: img.baseName || img.title,
+                            version: img.version || 1,
+                            annotations: img.annotations || [],
+                            generation_prompt: img.generationPrompt || '',
+                            user_draft_prompt: img.userDraftPrompt || '',
+                            quality: img.quality || 'pro-1k',
+                            parent_id: img.parentId || null,
+                            board_id: img.boardId || null,
+                            created_at: new Date(img.createdAt).toISOString(),
+                            updated_at: new Date().toISOString()
+                        };
+                    }).filter(Boolean);
+
+                    if (payload.length > 0) {
+                        console.log('[AutoSave] Force save on unmount');
+                        supabase.from('canvas_images').upsert(payload, { onConflict: 'id' })
+                            .then(() => console.log('[AutoSave] Unmount save complete'))
+                            .catch(err => console.error('[AutoSave] Unmount save failed:', err));
+                    }
+                }
             }
-        }
-    };
-}, []); // Empty deps - only run on unmount
+        };
+    }, []); // Empty deps - only run on unmount
 };
