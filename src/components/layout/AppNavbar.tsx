@@ -43,13 +43,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </NavLink>
 
                 {/* Navigation Links */}
-                <nav className="hidden md:flex items-center gap-2 bg-zinc-100/50 dark:bg-zinc-900/50 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5">
+                <nav className="hidden md:flex items-center gap-2">
                     <NavLink
                         to="/projects"
                         className={({ isActive }) => `
-                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
+                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 backdrop-blur-xl
                             ${isActive
-                                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                ? 'bg-white/80 dark:bg-zinc-800/80 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                 : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
                         `}
                     >
@@ -60,9 +60,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <NavLink
                         to="/settings"
                         className={({ isActive }) => `
-                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
+                            flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300 backdrop-blur-xl
                             ${isActive
-                                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                ? 'bg-white/80 dark:bg-zinc-800/80 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                 : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
                         `}
                     >
