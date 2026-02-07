@@ -72,7 +72,7 @@ export const useFileHandler = ({
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
 
-                        generateThumbnail(event.target!.result as string, 400).then(async (thumbBlob) => {
+                        generateThumbnail(event.target!.result as string, 200).then(async (thumbBlob) => {
                             const thumbSrc = URL.createObjectURL(thumbBlob);
 
                             // 3. UPDATE SKELETON WITH REAL DATA
