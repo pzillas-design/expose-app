@@ -248,7 +248,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                     </div>
                     <div className="text-zinc-400 dark:text-zinc-600 -mt-[1px]">
                         <span className={`${Typo.Body} opacity-70`}>
-                            {formatRelativeTime(new Date(board.updatedAt), lang)}
+                            {formatRelativeTime(board.updatedAt, lang)}
                         </span>
                     </div>
                 </div>
