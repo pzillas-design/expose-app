@@ -98,7 +98,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-start justify-between px-6 pt-6 pb-2">
+                        <div className="flex items-center justify-between px-6 pt-6 pb-2">
                             <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
                                 {options.title || 'Bist du sicher?'}
                             </h2>
@@ -134,21 +134,21 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                 </div>
                             )}
 
-                            {/* Buttons */}
-                            <div className="flex gap-3 mt-2">
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => handleClose(false)}
-                                    className="flex-1 h-11"
-                                >
-                                    {options.cancelLabel || 'Abbrechen'}
-                                </Button>
+                            {/* Buttons - Stacked Vertically */}
+                            <div className="flex flex-col gap-3 mt-2">
                                 <Button
                                     variant={options.variant === 'danger' ? 'secondary' : 'primary'}
                                     onClick={() => handleClose(true)}
-                                    className={`flex-1 h-11 ${options.variant === 'danger' ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
+                                    className={`w-full h-11 ${options.variant === 'danger' ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
                                 >
                                     {options.confirmLabel || 'Bestätigen'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleClose(false)}
+                                    className="w-full h-11"
+                                >
+                                    {options.cancelLabel || 'Abbrechen'}
                                 </Button>
                             </div>
                         </div>
