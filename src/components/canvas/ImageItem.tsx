@@ -350,7 +350,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             {/* Bottom Navigation Buttons - Beta Style */}
-            {zoom > 0.4 && !image.isGenerating && (
+            {zoom > 0.4 && isSelected && !image.isGenerating && (
                 <div className="flex items-center justify-center gap-2 mt-3 px-0.5 animate-in fade-in duration-300">
                     {/* Previous Image - Square Button */}
                     {hasLeft && (
