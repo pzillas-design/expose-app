@@ -1100,8 +1100,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
                         <style>{`
                             .dark #section4-shadow-bed {
-                                background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 70%) !important;
-                                filter: blur(100px) !important;
+                                background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 80%) !important;
+                                filter: blur(120px) !important;
                             }
                         `}</style>
                     </div>
