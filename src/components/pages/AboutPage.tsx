@@ -1096,7 +1096,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <Button
                                 onClick={onCreateBoard}
                                 variant="primary"
-                                className="h-16 px-12 text-sm shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                className="px-12 text-sm shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                                 Projekt starten
                             </Button>
