@@ -1003,7 +1003,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
 
                         {/* Annotation Labels (Exact User Design) */}
-                        <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                        <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-[110] transition-opacity duration-500 flex items-center justify-center overflow-hidden">
                             {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
                             <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
                                 {/* Label 1: Küche */}
