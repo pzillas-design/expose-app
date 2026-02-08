@@ -243,7 +243,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Visual Part: Right on Desktop */}
                 <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[65vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
                     <div
-                        className="absolute bottom-0 left-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] shadow-xl lg:shadow-none border-t border-l border-b lg:border-t lg:border-l lg:border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
+                        className="absolute bottom-0 left-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
                     >
                         {/* Progress Bar */}
                         <div className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`} style={{ width: '100%' }}>

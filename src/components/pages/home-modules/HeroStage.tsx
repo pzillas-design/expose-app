@@ -33,7 +33,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
                     className="w-full h-full transition-all duration-500 rounded-sm"
                     alt="Canvas Element"
                 />
-                <div className={`absolute -inset-4 bg-orange-500/10 blur-xl rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
+                <div className={`absolute -inset-4 bg-orange-500/10 rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </div>
         </div>
     );
