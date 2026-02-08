@@ -992,87 +992,90 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             style={{ width: '0%' }}
                         />
 
-                        <div className="relative z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center">
+                        {/* Typography Container moved to the end of the sticky wrapper to ensure top-layer stacking */}
+
+
+                        {/* Annotation Labels (Exact User Design) */}
+                        <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                            {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
+                            <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
+                                {/* Label 1: Küche */}
+                                <div className="absolute top-[45%] left-[25%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        {/* Dark Chip */}
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Küche</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        {/* Connector Zipfel - ENLARGED */}
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Label 2: Esstisch */}
+                                <div className="absolute bottom-[25%] left-[10%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Esstisch</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Label 3: Sofa */}
+                                <div className="absolute bottom-[20%] right-[10%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Sofa</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER SOFA */}
+                                <svg
+                                    ref={section4LampRef}
+                                    width="320"
+                                    height="360"
+                                    viewBox="0 0 246 272"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="absolute top-[8%] left-[13%] opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
+                                >
+                                    <defs>
+                                        <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#fb923c" />
+                                            <stop offset="100%" stopColor="#ef4444" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path
+                                        ref={section4LampPath1Ref}
+                                        d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
+                                        stroke="url(#lampGradient)"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                    />
+                                    <path
+                                        ref={section4LampPath2Ref}
+                                        d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
+                                        stroke="url(#lampGradient)"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
                                 <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6 uppercase">
-                                    Visual <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
+                                    Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
                                 <p className="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed font-light">
-                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr <span className="text-white font-medium">exakt wo.</span>
+                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr <span className="text-white">exakt wo.</span>
                                 </p>
-                            </div>
-
-                            {/* Annotation Labels (Exact User Design) */}
-                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
-                                {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
-                                <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
-                                    {/* Label 1: Küche */}
-                                    <div className="absolute top-[45%] left-[25%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            {/* Dark Chip */}
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Küche</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            {/* Connector Zipfel - ENLARGED */}
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Label 2: Esstisch */}
-                                    <div className="absolute bottom-[25%] left-[10%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Esstisch</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Label 3: Sofa */}
-                                    <div className="absolute bottom-[20%] right-[10%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Sofa</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER SOFA */}
-                                    <svg
-                                        ref={section4LampRef}
-                                        width="320"
-                                        height="360"
-                                        viewBox="0 0 246 272"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="absolute top-[8%] left-[13%] opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-                                    >
-                                        <defs>
-                                            <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#fb923c" />
-                                                <stop offset="100%" stopColor="#ef4444" />
-                                            </linearGradient>
-                                        </defs>
-                                        <path
-                                            ref={section4LampPath1Ref}
-                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
-                                            stroke="url(#lampGradient)"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            ref={section4LampPath2Ref}
-                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
-                                            stroke="url(#lampGradient)"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                    </svg>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1126,6 +1129,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     50% { opacity: 0; }
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
