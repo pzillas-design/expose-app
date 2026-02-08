@@ -999,7 +999,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
                             <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
                                 {/* Label 1: Küche */}
-                                <div className="absolute top-[45%] left-[32%] opacity-0 z-20 will-change-transform">
+                                <div className="absolute top-[45%] left-[27%] opacity-0 z-20 will-change-transform">
                                     <div className="relative flex flex-col items-center">
                                         {/* Dark Chip */}
                                         <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
@@ -1042,7 +1042,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-                                    style={{ top: '12%', left: '20%' }}
+                                    style={{ top: '12%', left: '15%' }}
                                 >
                                     <defs>
                                         <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1105,6 +1105,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <Button
                                 onClick={onCreateBoard}
                                 variant="primary"
+                                className="scale-150"
                             >
                                 Projekt starten
                             </Button>
