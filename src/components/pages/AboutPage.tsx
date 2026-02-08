@@ -366,7 +366,7 @@ const Section3MockupUI = ({
     return (
         <div className="w-full h-screen lg:h-[80vh] flex flex-col lg:flex-row items-center justify-center relative bg-white dark:bg-zinc-950 lg:bg-transparent transition-colors duration-500">
             {/* Header/Mockup Part (Top on Mobile) */}
-            <div className="w-full h-[50vh] lg:h-full lg:flex-1 relative order-1 lg:order-2 overflow-hidden lg:overflow-visible">
+            <div className="w-full h-[55vh] lg:h-full lg:flex-1 relative order-1 lg:order-2 overflow-hidden lg:overflow-visible">
                 <div
                     ref={mockupRef}
                     className="absolute inset-0 lg:left-[-175px] lg:right-[-100vw] lg:top-0 lg:bottom-0 flex items-stretch bg-white dark:bg-zinc-900 lg:rounded-tl-[12px] lg:rounded-bl-[12px] border-b lg:border-l lg:border-t lg:border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-left"
@@ -382,9 +382,9 @@ const Section3MockupUI = ({
                         />
                     </div>
 
-                    {/* A. Middle: Sidepanel - Stays hidden on mobile for better focus */}
+                    {/* A. Middle: Sidepanel - Visible and refined for mobile */}
                     <div
-                        className="hidden lg:flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50"
+                        className="flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50 scale-[0.85] lg:scale-100 origin-left ml-4 lg:ml-0"
                         style={{ width: '350px' }}
                     >
                         <SidepanelMockup
@@ -401,8 +401,8 @@ const Section3MockupUI = ({
                         />
                     </div>
 
-                    {/* B. Right/Main Animation Area */}
-                    <div className="relative flex-1 bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+                    {/* B. Right/Main Animation Area - Shifted for focus */}
+                    <div className="relative flex-1 bg-zinc-50 dark:bg-zinc-950 overflow-hidden lg:ml-0 -mr-20 lg:mr-0">
                         <img
                             src="/about/3-vorlagen/small/edit_sommer.jpg"
                             className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`}
@@ -652,11 +652,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section4LampPath2Ref = useRef<SVGPathElement>(null);
     const section4ShadowRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const handleScroll = () => {
+    let rafId: number;
+
+    const handleScroll = () => {
+        rafId = requestAnimationFrame(() => {
             const y = window.scrollY;
             const introHeight = window.innerHeight * 2.0;
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
+            const isMobile = window.innerWidth < 1024;
 
             // Direct DOM manipulation for performance
             if (heroLayerRef.current) {
@@ -671,176 +674,192 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 heroContainerRef.current.style.pointerEvents = progress > 0.95 ? 'none' : 'auto';
             }
 
-            // Section 2 Fade Out (Cluster only - text stays)
+            // Section 2 Scroll Sequence
             if (section1Ref.current && section2ClusterRef.current) {
                 const rect = section1Ref.current.getBoundingClientRect();
                 const windowHeight = window.innerHeight;
                 const travelDistance = rect.height - windowHeight;
                 const progressS2 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // Fade out cluster vertically and opacity at the very end
-                if (progressS2 > 0.85) {
-                    const fadeProgress = (progressS2 - 0.85) / 0.15;
+                // Unified Scroll-out logic (Final phase)
+                const scrollOutStart = 0.85;
+                const scrollOutY = progressS2 > scrollOutStart
+                    ? (progressS2 - scrollOutStart) * -windowHeight * 1.5
+                    : 0;
+
+                // Cluster Animation
+                if (progressS2 > scrollOutStart) {
+                    const fadeProgress = (progressS2 - scrollOutStart) / 0.15;
                     const fadeOpacity = Math.max(0, 1 - fadeProgress);
                     section2ClusterRef.current.style.opacity = fadeOpacity.toString();
-                    // Additional slight upward movement for the cluster while fading
-                    section2ClusterRef.current.style.transform = `translate3d(0, -${fadeProgress * 100}px, 0)`;
+                    section2ClusterRef.current.style.transform = `translate3d(0, ${scrollOutY}px, 0)`;
                 } else {
                     section2ClusterRef.current.style.opacity = '1';
                     section2ClusterRef.current.style.transform = 'translate3d(0, 0, 0)';
                 }
 
-                // Parallax Text Movement (Only for Section 2)
+                // Mobile Snap Logic for Text
                 if (section2TextRef.current) {
-                    const translateY = (0.5 - progressS2) * 900;
-                    section2TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
+                    if (isMobile) {
+                        // Snap to center of bottom half
+                        const snapProgress = Math.min(progressS2 / 0.15, 1);
+                        const snapY = (1 - snapProgress) * 50; // Subtle entrance
+                        section2TextRef.current.style.transform = `translate3d(0, ${snapY + scrollOutY}px, 0)`;
+                        section2TextRef.current.style.opacity = Math.min(progressS2 / 0.05, 1).toString();
+                    } else {
+                        // Desktop Parallax
+                        const translateY = (0.5 - progressS2) * 900;
+                        section2TextRef.current.style.transform = `translate3d(0, ${translateY + scrollOutY}px, 0)`;
+                    }
                 }
             }
+        });
+    };
 
-            // Section 3 Fade In & Parallax (Coupled with physical entry)
-            if (section3Ref.current && section3MockupRef.current) {
-                const rect = section3Ref.current.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                const travelDistance = rect.height - windowHeight;
-                const progressS3 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+    // Section 3 Fade In & Parallax (Coupled with physical entry)
+    if (section3Ref.current && section3MockupRef.current) {
+        const rect = section3Ref.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const travelDistance = rect.height - windowHeight;
+        const progressS3 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // 1. Mockup Fade in (Triggered immediately as it enters)
-                const mockupFadeEnd = 0.08;   // Fully visible after 8% scroll
+        // 1. Mockup Fade in (Triggered immediately as it enters)
+        const mockupFadeEnd = 0.08;   // Fully visible after 8% scroll
 
-                const fadeOpacity = progressS3 < mockupFadeEnd
-                    ? Math.min(1, progressS3 / mockupFadeEnd)
-                    : 1;
+        const fadeOpacity = progressS3 < mockupFadeEnd
+            ? Math.min(1, progressS3 / mockupFadeEnd)
+            : 1;
 
-                section3MockupRef.current.style.opacity = fadeOpacity.toString();
+        section3MockupRef.current.style.opacity = fadeOpacity.toString();
 
-                // 2. Unified Scroll-out (Once text reaches top of mockup)
-                // Interaction phase ends around 0.50 progress for a 500vh section
-                const scrollOutStart = 0.5;
-                const scrollY = progressS3 > scrollOutStart
-                    ? (progressS3 - scrollOutStart) * -windowHeight * 2.1
-                    : 0;
+        // 2. Unified Scroll-out (Once text reaches top of mockup)
+        // Interaction phase ends around 0.50 progress for a 500vh section
+        const scrollOutStart = 0.5;
+        const scrollY = progressS3 > scrollOutStart
+            ? (progressS3 - scrollOutStart) * -windowHeight * 2.1
+            : 0;
 
-                section3MockupRef.current.style.transform = `translate3d(0, ${scrollY}px, 0)`;
+        section3MockupRef.current.style.transform = `translate3d(0, ${scrollY}px, 0)`;
 
-                if (section3TextRef.current) {
-                    // Parallax text entrance + Unified scroll-out
-                    const parallaxY = (0.15 - progressS3) * 1500;
-                    section3TextRef.current.style.transform = `translate3d(0, ${parallaxY + scrollY}px, 0)`;
+        if (section3TextRef.current) {
+            // Parallax text entrance + Unified scroll-out
+            const parallaxY = (0.15 - progressS3) * 1500;
+            section3TextRef.current.style.transform = `translate3d(0, ${parallaxY + scrollY}px, 0)`;
+        }
+    }
+
+    // Section 4 Full-Page Sticky Animation (Multi-Phase)
+    if (section4Ref.current && section4BackgroundRef.current && section4ContentRef.current) {
+        const rect = section4Ref.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const travelDistance = rect.height - windowHeight;
+        const progressS4 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+
+        // 1. Text Immediate Visibility (was fade-in)
+        const typoOpacity = 1;
+        section4ContentRef.current.style.opacity = typoOpacity.toString();
+        if (section4ShadowRef.current) {
+            section4ShadowRef.current.style.opacity = typoOpacity.toString();
+        }
+
+        // 2. Progressive Content Appearance (0.15 - 0.75)
+        if (section4LabelsRef.current) {
+            const container = section4LabelsRef.current.children[0] as HTMLElement;
+            if (container) {
+                const children = container.children;
+                // Sequence: Küche (0), Esstisch (1), Sofa (2), Lamp (3)
+
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i] as HTMLElement;
+                    const startTrigger = 0.15 + (i * 0.12);
+                    const endTrigger = startTrigger + 0.1;
+                    const progress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
+
+                    if (child === section4LampRef.current) {
+                        // Special handling for Lamp SVG drawing (Last in sequence)
+                        child.style.opacity = progress.toString();
+                        if (section4LampPath1Ref.current && section4LampPath2Ref.current) {
+                            const length1 = 220;
+                            const length2 = 800;
+
+                            // Sequential Drawing: Path 1 (Stick) then Path 2 (Body)
+                            // Split progress: 0.0 - 0.3 for Path 1, 0.3 - 1.0 for Path 2
+                            const progressPath1 = Math.min(Math.max(progress / 0.3, 0), 1);
+                            const progressPath2 = Math.min(Math.max((progress - 0.3) / 0.7, 0), 1);
+
+                            section4LampPath1Ref.current.style.strokeDasharray = `${length1}`;
+                            section4LampPath1Ref.current.style.strokeDashoffset = `${length1 * (1 - progressPath1)}`;
+
+                            section4LampPath2Ref.current.style.strokeDasharray = `${length2}`;
+                            section4LampPath2Ref.current.style.strokeDashoffset = `${length2 * (1 - progressPath2)}`;
+                        }
+                    } else {
+                        // Standard label reveal
+                        child.style.opacity = progress.toString();
+                        child.style.transform = `scale(${0.9 + progress * 0.1}) translate3d(0, ${(1 - progress) * 10}px, 0)`;
+                    }
                 }
             }
+        }
 
-            // Section 4 Full-Page Sticky Animation (Multi-Phase)
-            if (section4Ref.current && section4BackgroundRef.current && section4ContentRef.current) {
-                const rect = section4Ref.current.getBoundingClientRect();
-                const windowHeight = window.innerHeight;
-                const travelDistance = rect.height - windowHeight;
-                const progressS4 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+        // 3. Orange Progress Bar (Starts AFTER Lamp Drawing is complete at ~0.61)
+        if (section4ProgressRef.current) {
+            const barProgress = Math.min(Math.max((progressS4 - 0.65) / 0.15, 0), 1);
+            section4ProgressRef.current.style.width = `${barProgress * 100}%`;
+            section4ProgressRef.current.style.opacity = (barProgress > 0 && progressS4 < 0.8) ? '1' : '0';
+        }
 
-                // 1. Text Immediate Visibility (was fade-in)
-                const typoOpacity = 1;
-                section4ContentRef.current.style.opacity = typoOpacity.toString();
+        // 4. Image Transition (0.75 - 0.95)
+        if (section4Image2Ref.current) {
+            const transformProgress = Math.min(Math.max((progressS4 - 0.75) / 0.2, 0), 1);
+            section4Image2Ref.current.style.opacity = transformProgress.toString();
+
+            // SINK FADEOUT: Typography and labels fade out together
+            const fadeOutOpacity = (1 - transformProgress).toString();
+            if (section4LabelsRef.current) {
+                section4LabelsRef.current.style.opacity = fadeOutOpacity;
+            }
+            if (section4ContentRef.current) {
+                const finalContentOpacity = (parseFloat(typoOpacity.toString()) * (1 - transformProgress)).toString();
+                section4ContentRef.current.style.opacity = finalContentOpacity;
                 if (section4ShadowRef.current) {
-                    section4ShadowRef.current.style.opacity = typoOpacity.toString();
+                    section4ShadowRef.current.style.opacity = finalContentOpacity;
                 }
-
-                // 2. Progressive Content Appearance (0.15 - 0.75)
-                if (section4LabelsRef.current) {
-                    const container = section4LabelsRef.current.children[0] as HTMLElement;
-                    if (container) {
-                        const children = container.children;
-                        // Sequence: Küche (0), Esstisch (1), Sofa (2), Lamp (3)
-
-                        for (let i = 0; i < children.length; i++) {
-                            const child = children[i] as HTMLElement;
-                            const startTrigger = 0.15 + (i * 0.12);
-                            const endTrigger = startTrigger + 0.1;
-                            const progress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
-
-                            if (child === section4LampRef.current) {
-                                // Special handling for Lamp SVG drawing (Last in sequence)
-                                child.style.opacity = progress.toString();
-                                if (section4LampPath1Ref.current && section4LampPath2Ref.current) {
-                                    const length1 = 220;
-                                    const length2 = 800;
-
-                                    // Sequential Drawing: Path 1 (Stick) then Path 2 (Body)
-                                    // Split progress: 0.0 - 0.3 for Path 1, 0.3 - 1.0 for Path 2
-                                    const progressPath1 = Math.min(Math.max(progress / 0.3, 0), 1);
-                                    const progressPath2 = Math.min(Math.max((progress - 0.3) / 0.7, 0), 1);
-
-                                    section4LampPath1Ref.current.style.strokeDasharray = `${length1}`;
-                                    section4LampPath1Ref.current.style.strokeDashoffset = `${length1 * (1 - progressPath1)}`;
-
-                                    section4LampPath2Ref.current.style.strokeDasharray = `${length2}`;
-                                    section4LampPath2Ref.current.style.strokeDashoffset = `${length2 * (1 - progressPath2)}`;
-                                }
-                            } else {
-                                // Standard label reveal
-                                child.style.opacity = progress.toString();
-                                child.style.transform = `scale(${0.9 + progress * 0.1}) translate3d(0, ${(1 - progress) * 10}px, 0)`;
-                            }
-                        }
-                    }
-                }
-
-                // 3. Orange Progress Bar (Starts AFTER Lamp Drawing is complete at ~0.61)
-                if (section4ProgressRef.current) {
-                    const barProgress = Math.min(Math.max((progressS4 - 0.65) / 0.15, 0), 1);
-                    section4ProgressRef.current.style.width = `${barProgress * 100}%`;
-                    section4ProgressRef.current.style.opacity = (barProgress > 0 && progressS4 < 0.8) ? '1' : '0';
-                }
-
-                // 4. Image Transition (0.75 - 0.95)
-                if (section4Image2Ref.current) {
-                    const transformProgress = Math.min(Math.max((progressS4 - 0.75) / 0.2, 0), 1);
-                    section4Image2Ref.current.style.opacity = transformProgress.toString();
-
-                    // SINK FADEOUT: Typography and labels fade out together
-                    const fadeOutOpacity = (1 - transformProgress).toString();
-                    if (section4LabelsRef.current) {
-                        section4LabelsRef.current.style.opacity = fadeOutOpacity;
-                    }
-                    if (section4ContentRef.current) {
-                        const finalContentOpacity = (parseFloat(typoOpacity.toString()) * (1 - transformProgress)).toString();
-                        section4ContentRef.current.style.opacity = finalContentOpacity;
-                        if (section4ShadowRef.current) {
-                            section4ShadowRef.current.style.opacity = finalContentOpacity;
-                        }
-                    }
-                }
-
-                // Parallax Zoom
-                const bgScale = 1.05 - (progressS4 * 0.05);
-                section4BackgroundRef.current.style.transform = `scale(${bgScale}) translate3d(0, 0, 0)`;
             }
-        };
+        }
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
+        // Parallax Zoom
+        const bgScale = 1.05 - (progressS4 * 0.05);
+        section4BackgroundRef.current.style.transform = `scale(${bgScale}) translate3d(0, 0, 0)`;
+    }
+};
+
+window.addEventListener('scroll', handleScroll, { passive: true });
+handleScroll();
+return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const floatingImages = [
-        { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '35vw' },
-        { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '44vw' },
-        { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '17vw' },
-        { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '0%', depth: -950, size: '48vw' },
-        { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '32vw' },
-        { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '29vw' },
-        { src: '/about/2-iterativ-parallel/22.jpg', x: '35%', y: '-5%', depth: -600, size: '25vw' },
-        { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '23vw' },
-    ];
+const floatingImages = [
+    { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '35vw' },
+    { src: '/about/2-iterativ-parallel/11.jpg', x: '80%', y: '5%', depth: -500, size: '44vw' },
+    { src: '/about/2-iterativ-parallel/21.jpg', x: '45%', y: '95%', depth: -150, size: '17vw' },
+    { src: '/about/2-iterativ-parallel/31.jpg', x: '-15%', y: '0%', depth: -950, size: '48vw' },
+    { src: '/about/2-iterativ-parallel/42.jpg', x: '90%', y: '85%', depth: -400, size: '32vw' },
+    { src: '/about/2-iterativ-parallel/12.jpg', x: '75%', y: '50%', depth: -800, size: '29vw' },
+    { src: '/about/2-iterativ-parallel/22.jpg', x: '35%', y: '-5%', depth: -600, size: '25vw' },
+    { src: '/about/2-iterativ-parallel/32.jpg', x: '10%', y: '80%', depth: -1200, size: '23vw' },
+];
 
-    return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
-            <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} onSignIn={onSignIn} t={t} />
+return (
+    <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+        <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} onSignIn={onSignIn} t={t} />
 
-            {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
-            <div
-                ref={heroContainerRef}
-                className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
-            >
-                <style>{`
+        {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
+        <div
+            ref={heroContainerRef}
+            className="fixed inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
+        >
+            <style>{`
                     @media (max-width: 768px) {
                         .hero-floating-image {
                             --mobile-scale: 1.5;
@@ -854,54 +873,54 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         }
                     }
                 `}</style>
-                <div className="w-full h-full" style={{ perspective: '1000px' }}>
+            <div className="w-full h-full" style={{ perspective: '1000px' }}>
+                <div
+                    ref={heroLayerRef}
+                    className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out will-change-transform"
+                >
+                    {/* Hero Text Layer */}
                     <div
-                        ref={heroLayerRef}
-                        className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out will-change-transform"
+                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
+                        style={{
+                            transform: 'translate3d(0, 0, 150px)',
+                            backfaceVisibility: 'hidden',
+                            WebkitFontSmoothing: 'antialiased'
+                        }}
                     >
-                        {/* Hero Text Layer */}
-                        <div
-                            className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
-                            style={{
-                                transform: 'translate3d(0, 0, 150px)',
-                                backfaceVisibility: 'hidden',
-                                WebkitFontSmoothing: 'antialiased'
-                            }}
-                        >
-                            <div className="w-[66%] mt-[-2vh] hero-headline-container">
-                                <h1
-                                    className="font-bold tracking-tighter leading-[0.85] antialiased hero-headline"
-                                    style={{
-                                        fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
-                                        WebkitBackfaceVisibility: 'hidden',
-                                        transform: 'translate3d(0, 0, 0)'
-                                    }}
-                                >
-                                    Creation <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
-                                </h1>
-                            </div>
+                        <div className="w-[66%] mt-[-2vh] hero-headline-container">
+                            <h1
+                                className="font-bold tracking-tighter leading-[0.85] antialiased hero-headline"
+                                style={{
+                                    fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
+                                    WebkitBackfaceVisibility: 'hidden',
+                                    transform: 'translate3d(0, 0, 0)'
+                                }}
+                            >
+                                Creation <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
+                            </h1>
                         </div>
-
-                        {floatingImages.map((img, i) => (
-                            <FloatingImage key={i} {...img} />
-                        ))}
                     </div>
+
+                    {floatingImages.map((img, i) => (
+                        <FloatingImage key={i} {...img} />
+                    ))}
                 </div>
             </div>
+        </div>
 
-            {/* Spacer to allow scrolling through the intro */}
-            <div className="h-[200vh] w-full relative z-0" />
+        {/* Spacer to allow scrolling through the intro */}
+        <div className="h-[200vh] w-full relative z-0" />
 
-            {/* --- Content Sections (Scrolling up from below) --- */}
-            <main className="relative z-10 bg-white dark:bg-zinc-950">
-                {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
-                <section ref={section1Ref} className="relative h-[350vh]">
-                    <div ref={section2StickyRef} className="sticky top-0 h-screen overflow-hidden will-change-opacity">
-                        <div className="w-full h-full flex flex-col lg:flex-row">
-                            {/* Left: Image Cluster */}
-                            <div className="w-full lg:w-3/5 h-1/2 lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible">
-                                <style>{`
+        {/* --- Content Sections (Scrolling up from below) --- */}
+        <main className="relative z-10 bg-white dark:bg-zinc-950">
+            {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
+            <section ref={section1Ref} className="relative h-[350vh]">
+                <div ref={section2StickyRef} className="sticky top-0 h-screen overflow-hidden will-change-opacity">
+                    <div className="w-full h-full flex flex-col lg:flex-row">
+                        {/* Left: Image Cluster */}
+                        <div className="w-full lg:w-3/5 h-1/2 lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible">
+                            <style>{`
                                     #desktop-cluster-container { 
                                         width: 100%; 
                                         min-width: 100%;
@@ -913,213 +932,213 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                         }
                                     }
                                 `}</style>
-                                <div
-                                    ref={section2ClusterRef}
-                                    id="desktop-cluster-container"
-                                    style={{
-                                        perspective: '1200px',
-                                        perspectiveOrigin: 'center center'
-                                    }}
-                                >
-                                    <CanvasMockup triggerRef={section1Ref} />
-                                </div>
-                            </div>
-
-                            {/* Right: Text */}
-                            <div className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10">
-                                <div ref={section2TextRef} className="flex flex-col justify-center max-w-2xl will-change-transform">
-                                    <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> & parallel arbeiten.
-                                    </h2>
-                                    <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
-                                        Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-
-                {/* Section 3: Vorlagen nutzen und anlegen */}
-                {/* Structural Overlay: Negative margin and higher z-index for seamless "handover" */}
-                <section
-                    ref={section3Ref}
-                    className="relative z-20 bg-white dark:bg-zinc-950"
-                    style={{ height: '500vh' }}
-                >
-                    <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-x-hidden">
-                        <div className="w-full flex items-center justify-center">
-                            <InteractiveSeasonPanel triggerRef={section3Ref} mockupRef={section3MockupRef} textRef={section3TextRef} />
-                        </div>
-                    </div>
-                </section>
-
-                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
-
-                {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
-                <section ref={section4Ref} className="relative h-[450vh] bg-white dark:bg-zinc-950">
-                    <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col lg:items-center lg:justify-center">
-                        {/* 1. Background Layer (Top Part on Mobile) */}
-                        <div ref={section4BackgroundRef} className="relative h-[55vh] lg:h-full w-full lg:absolute lg:inset-0 z-0">
-                            {/* Image 1: Initial State */}
-                            <img
-                                ref={section4Image1Ref}
-                                src="/about/3 visual promting/2.jpg"
-                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
-                                alt=""
-                            />
-                            {/* Image 2: Result */}
-                            <img
-                                ref={section4Image2Ref}
-                                src="/about/3 visual promting/1.jpg"
-                                className="absolute inset-0 w-full h-full object-cover opacity-0 grayscale-[10%] contrast-[1.1] z-10"
-                                alt=""
-                            />
-
-                            {/* Annotation Labels (Exact User Design) */}
-                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-[110] transition-opacity duration-500 flex items-center justify-center overflow-hidden">
-                                {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
-                                <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
-                                    {/* Label 1: Küche */}
-                                    <div className="absolute top-[45%] left-[27%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Küche</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Label 2: Esstisch */}
-                                    <div className="absolute bottom-[25%] left-[20%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Esstisch</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Label 3: Sofa */}
-                                    <div className="absolute bottom-[20%] right-[20%] opacity-0 z-20 will-change-transform">
-                                        <div className="relative flex flex-col items-center">
-                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                                <span className="text-lg font-medium text-white">Sofa</span>
-                                                <X className="w-4 h-4 text-zinc-500" />
-                                            </div>
-                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
-                                        </div>
-                                    </div>
-
-                                    {/* Lamp Drawing */}
-                                    <svg
-                                        ref={section4LampRef}
-                                        width="320"
-                                        height="360"
-                                        viewBox="0 0 246 272"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)] scale-[0.8] lg:scale-100"
-                                        style={{ top: '12%', left: '21%' }}
-                                    >
-                                        <defs>
-                                            <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#fb923c" />
-                                                <stop offset="100%" stopColor="#ef4444" />
-                                            </linearGradient>
-                                        </defs>
-                                        <path
-                                            ref={section4LampPath1Ref}
-                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
-                                            stroke="url(#lampGradient)"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            ref={section4LampPath2Ref}
-                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
-                                            stroke="url(#lampGradient)"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            {/* Generation Progress Bar */}
                             <div
-                                ref={section4ProgressRef}
-                                className="absolute top-0 left-0 h-1 bg-orange-500 z-50 transition-all duration-300 ease-out opacity-0 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
-                                style={{ width: '0%' }}
-                            />
-                        </div>
-
-                        {/* 2. Typography Layer (Bottom Part on Mobile) */}
-                        <div className="relative flex-1 lg:absolute lg:inset-0 z-[100] container mx-auto px-6 flex flex-col justify-center items-center text-center pointer-events-none bg-white dark:bg-zinc-950 lg:bg-transparent">
-                            {/* Diffuse Shadow Bed (Vignette) - HIDDEN ON MOBILE */}
-                            <div
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-100 pointer-events-none will-change-opacity hidden lg:block"
+                                ref={section2ClusterRef}
+                                id="desktop-cluster-container"
                                 style={{
-                                    background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) 20%, rgba(255,255,255,0) 80%)',
-                                    filter: 'blur(100px)',
-                                    zIndex: -1
+                                    perspective: '1200px',
+                                    perspectiveOrigin: 'center center'
                                 }}
-                                ref={section4ShadowRef}
-                                id="section4-shadow-bed"
-                            />
+                            >
+                                <CanvasMockup triggerRef={section1Ref} />
+                            </div>
+                        </div>
 
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-100 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 leading-[0.9] lg:leading-tight">
-                                    Visual <br className="hidden lg:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
+                        {/* Right: Text */}
+                        <div className="w-full lg:w-2/5 h-1/2 lg:h-full flex items-center justify-center px-6 lg:px-12 xl:px-24 pt-12 lg:pt-0 relative z-10">
+                            <div ref={section2TextRef} className="flex flex-col justify-center max-w-2xl will-change-transform">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.8]">
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> & parallel arbeiten.
                                 </h2>
-                                <p className="text-lg sm:text-xl lg:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed font-medium">
-                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
+                                <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed">
+                                    Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
                                 </p>
                             </div>
                         </div>
-                        <style>{`
+                    </div>
+                </div>
+            </section>
+
+
+            {/* Section 3: Vorlagen nutzen und anlegen */}
+            {/* Structural Overlay: Negative margin and higher z-index for seamless "handover" */}
+            <section
+                ref={section3Ref}
+                className="relative z-20 bg-white dark:bg-zinc-950"
+                style={{ height: '500vh' }}
+            >
+                <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-x-hidden">
+                    <div className="w-full flex items-center justify-center">
+                        <InteractiveSeasonPanel triggerRef={section3Ref} mockupRef={section3MockupRef} textRef={section3TextRef} />
+                    </div>
+                </div>
+            </section>
+
+            <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
+
+            {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
+            <section ref={section4Ref} className="relative h-[450vh] bg-white dark:bg-zinc-950">
+                <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col lg:items-center lg:justify-center">
+                    {/* 1. Background Layer (Top Part on Mobile) */}
+                    <div ref={section4BackgroundRef} className="relative h-[55vh] lg:h-full w-full lg:absolute lg:inset-0 z-0">
+                        {/* Image 1: Initial State */}
+                        <img
+                            ref={section4Image1Ref}
+                            src="/about/3 visual promting/2.jpg"
+                            className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
+                            alt=""
+                        />
+                        {/* Image 2: Result */}
+                        <img
+                            ref={section4Image2Ref}
+                            src="/about/3 visual promting/1.jpg"
+                            className="absolute inset-0 w-full h-full object-cover opacity-0 grayscale-[10%] contrast-[1.1] z-10"
+                            alt=""
+                        />
+
+                        {/* Annotation Labels (Exact User Design) */}
+                        <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-[110] transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                            {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
+                            <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
+                                {/* Label 1: Küche */}
+                                <div className="absolute top-[45%] left-[27%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Küche</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Label 2: Esstisch */}
+                                <div className="absolute bottom-[25%] left-[20%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Esstisch</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Label 3: Sofa */}
+                                <div className="absolute bottom-[20%] right-[20%] opacity-0 z-20 will-change-transform">
+                                    <div className="relative flex flex-col items-center">
+                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                            <span className="text-lg font-medium text-white">Sofa</span>
+                                            <X className="w-4 h-4 text-zinc-500" />
+                                        </div>
+                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
+                                    </div>
+                                </div>
+
+                                {/* Lamp Drawing */}
+                                <svg
+                                    ref={section4LampRef}
+                                    width="320"
+                                    height="360"
+                                    viewBox="0 0 246 272"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)] scale-[0.8] lg:scale-100"
+                                    style={{ top: '12%', left: '21%' }}
+                                >
+                                    <defs>
+                                        <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#fb923c" />
+                                            <stop offset="100%" stopColor="#ef4444" />
+                                        </linearGradient>
+                                    </defs>
+                                    <path
+                                        ref={section4LampPath1Ref}
+                                        d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
+                                        stroke="url(#lampGradient)"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                    />
+                                    <path
+                                        ref={section4LampPath2Ref}
+                                        d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
+                                        stroke="url(#lampGradient)"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Generation Progress Bar */}
+                        <div
+                            ref={section4ProgressRef}
+                            className="absolute top-0 left-0 h-1 bg-orange-500 z-50 transition-all duration-300 ease-out opacity-0 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
+                            style={{ width: '0%' }}
+                        />
+                    </div>
+
+                    {/* 2. Typography Layer (Bottom Part on Mobile) */}
+                    <div className="relative flex-1 lg:absolute lg:inset-0 z-[100] container mx-auto px-6 flex flex-col justify-center items-center text-center pointer-events-none bg-white dark:bg-zinc-950 lg:bg-transparent">
+                        {/* Diffuse Shadow Bed (Vignette) - HIDDEN ON MOBILE */}
+                        <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-100 pointer-events-none will-change-opacity hidden lg:block"
+                            style={{
+                                background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) 20%, rgba(255,255,255,0) 80%)',
+                                filter: 'blur(100px)',
+                                zIndex: -1
+                            }}
+                            ref={section4ShadowRef}
+                            id="section4-shadow-bed"
+                        />
+
+                        <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-100 flex flex-col items-center pointer-events-auto">
+                            <h2 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 leading-[0.9] lg:leading-tight">
+                                Visual <br className="hidden lg:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
+                            </h2>
+                            <p className="text-lg sm:text-xl lg:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed font-medium">
+                                Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
+                            </p>
+                        </div>
+                    </div>
+                    <style>{`
                             .dark #section4-shadow-bed {
                                 background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0) 80%) !important;
                                 filter: blur(120px) !important;
                             }
                         `}</style>
+                </div>
+            </section>
+
+            <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
+
+            {/* Section 5: Clean CTA */}
+            <section className="relative py-60 px-6 overflow-hidden bg-white dark:bg-zinc-950">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/10 to-transparent" />
+
+                <div className="relative z-10 max-w-5xl mx-auto text-center">
+                    <h2 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter mb-12 leading-[0.9]">
+                        Bereit für <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
+                    </h2>
+
+                    <div className="flex flex-col items-center justify-center gap-6 mt-16">
+                        <Button
+                            onClick={onCreateBoard}
+                            variant="primary"
+                            className="scale-125"
+                        >
+                            Projekt starten
+                        </Button>
                     </div>
-                </section>
+                </div>
 
-                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
+                {/* Subtle Background Elements */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-500/5 blur-[120px] rounded-full pointer-events-none" />
+            </section>
 
-                {/* Section 5: Clean CTA */}
-                <section className="relative py-60 px-6 overflow-hidden bg-white dark:bg-zinc-950">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/10 to-transparent" />
+            <GlobalFooter t={t} />
+        </main>
 
-                    <div className="relative z-10 max-w-5xl mx-auto text-center">
-                        <h2 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter mb-12 leading-[0.9]">
-                            Bereit für <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
-                        </h2>
-
-                        <div className="flex flex-col items-center justify-center gap-6 mt-16">
-                            <Button
-                                onClick={onCreateBoard}
-                                variant="primary"
-                                className="scale-125"
-                            >
-                                Projekt starten
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Subtle Background Elements */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-orange-500/5 blur-[120px] rounded-full pointer-events-none" />
-                </section>
-
-                <GlobalFooter t={t} />
-            </main>
-
-            <style>{`
+        <style>{`
                 .preserve-3d { transform-style: preserve-3d; }
                 .perspective-1000 { perspective: 1000px; }
                 .mockup-cursor {
@@ -1130,6 +1149,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     50% { opacity: 0; }
                 }
             `}</style>
-        </div >
-    );
+    </div >
+);
 };
