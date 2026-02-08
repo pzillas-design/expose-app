@@ -756,12 +756,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 const typoOpacity = progressS4 < 0.15 ? progressS4 / 0.15 : 1;
                 section4ContentRef.current.style.opacity = typoOpacity.toString();
 
-                // 2. Progressive Content Appearance (0.15 - 0.65)
+                // 2. Progressive Content Appearance (0.15 - 0.75)
                 if (section4LabelsRef.current) {
                     const container = section4LabelsRef.current.children[0] as HTMLElement;
                     if (container) {
                         const children = container.children;
-                        // Sequence: Küche (0), Lamp (1), Esstisch (2), Sofa (3)
+                        // Sequence: Küche (0), Esstisch (1), Sofa (2), Lamp (3)
 
                         for (let i = 0; i < children.length; i++) {
                             const child = children[i] as HTMLElement;
@@ -770,7 +770,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             const progress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
 
                             if (child === section4LampRef.current) {
-                                // Special handling for Lamp SVG drawing
+                                // Special handling for Lamp SVG drawing (Last in sequence)
                                 child.style.opacity = progress.toString();
                                 if (section4LampPath1Ref.current && section4LampPath2Ref.current) {
                                     const length1 = 220;
@@ -989,9 +989,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                         <div className="relative z-30 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-[0.85] text-white mb-6">
-                                    Visual <br />
-                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6 uppercase">
+                                    Visual <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
                                 <p className="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed font-light">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr <span className="text-white font-medium">exakt wo.</span>
@@ -1011,35 +1010,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                                 <X className="w-4 h-4 text-zinc-500" />
                                             </div>
                                             {/* Connector Zipfel - ENLARGED */}
-                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
                                     </div>
-
-                                    {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER KÜCHE */}
-                                    <svg
-                                        ref={section4LampRef}
-                                        width="160"
-                                        height="180"
-                                        viewBox="0 0 246 272"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="absolute top-[12%] left-[10%] opacity-0 stroke-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
-                                    >
-                                        <path
-                                            ref={section4LampPath1Ref}
-                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
-                                            stroke="white"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                        <path
-                                            ref={section4LampPath2Ref}
-                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
-                                            stroke="white"
-                                            strokeWidth="6"
-                                            strokeLinecap="round"
-                                        />
-                                    </svg>
 
                                     {/* Label 2: Esstisch */}
                                     <div className="absolute bottom-[25%] left-[10%] opacity-0 will-change-transform">
@@ -1048,7 +1021,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                                 <span className="text-lg font-medium text-white">Esstisch</span>
                                                 <X className="w-4 h-4 text-zinc-500" />
                                             </div>
-                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
                                     </div>
 
@@ -1059,16 +1032,48 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                                 <span className="text-lg font-medium text-white">Sofa</span>
                                                 <X className="w-4 h-4 text-zinc-500" />
                                             </div>
-                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
                                     </div>
+
+                                    {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER SOFA */}
+                                    <svg
+                                        ref={section4LampRef}
+                                        width="320"
+                                        height="360"
+                                        viewBox="0 0 246 272"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="absolute top-[15%] left-[13%] opacity-0 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
+                                    >
+                                        <defs>
+                                            <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#fb923c" />
+                                                <stop offset="100%" stopColor="#ef4444" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path
+                                            ref={section4LampPath1Ref}
+                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
+                                            stroke="url(#lampGradient)"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            ref={section4LampPath2Ref}
+                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
+                                            stroke="url(#lampGradient)"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
                 </section>
+
+                <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 5: Clean CTA */}
                 <section className="relative py-60 px-6 overflow-hidden bg-white dark:bg-zinc-950">
@@ -1116,6 +1121,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     50% { opacity: 0; }
                 }
             `}</style>
-        </div >
+        </div>
     );
 };
