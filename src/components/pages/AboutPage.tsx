@@ -755,15 +755,18 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 // 2. Progressive Label Appearance (0.15 - 0.50)
                 if (section4LabelsRef.current) {
-                    const children = section4LabelsRef.current.children;
-                    for (let i = 0; i < children.length; i++) {
-                        const child = children[i] as HTMLElement;
-                        const startTrigger = 0.15 + (i * 0.1);
-                        const endTrigger = startTrigger + 0.1;
-                        const labelProgress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
+                    const container = section4LabelsRef.current.children[0] as HTMLElement;
+                    if (container) {
+                        const children = container.children;
+                        for (let i = 0; i < children.length; i++) {
+                            const child = children[i] as HTMLElement;
+                            const startTrigger = 0.15 + (i * 0.1);
+                            const endTrigger = startTrigger + 0.1;
+                            const labelProgress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
 
-                        child.style.opacity = labelProgress.toString();
-                        child.style.transform = `scale(${0.9 + labelProgress * 0.1}) translate3d(0, ${(1 - labelProgress) * 10}px, 0)`;
+                            child.style.opacity = labelProgress.toString();
+                            child.style.transform = `scale(${0.9 + labelProgress * 0.1}) translate3d(0, ${(1 - labelProgress) * 10}px, 0)`;
+                        }
                     }
                 }
 
@@ -977,39 +980,42 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             </div>
 
                             {/* Annotation Labels (Exact User Design) */}
-                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500">
-                                {/* Label 1: Küche */}
-                                <div className="absolute top-[45%] left-[15%] opacity-0 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        {/* Dark Chip */}
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Küche</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                                {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
+                                <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
+                                    {/* Label 1: Küche */}
+                                    <div className="absolute top-[45%] left-[25%] opacity-0 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            {/* Dark Chip */}
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Küche</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            {/* Connector Zipfel - ENLARGED */}
+                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                         </div>
-                                        {/* Connector Zipfel - ENLARGED */}
-                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
-                                </div>
 
-                                {/* Label 2: Esstisch */}
-                                <div className="absolute bottom-[25%] left-[10%] opacity-0 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Esstisch</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                                    {/* Label 2: Esstisch */}
+                                    <div className="absolute bottom-[25%] left-[10%] opacity-0 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Esstisch</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                         </div>
-                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
-                                </div>
 
-                                {/* Label 3: Sofa */}
-                                <div className="absolute bottom-[20%] right-[10%] opacity-0 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Sofa</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                                    {/* Label 3: Sofa */}
+                                    <div className="absolute bottom-[20%] right-[10%] opacity-0 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Sofa</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                         </div>
-                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
                             </div>
