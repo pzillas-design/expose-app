@@ -13,15 +13,15 @@ body {
 }
 
 :root {
-  --grid-dot: #52525b;
+  --grid-dot: transparent;
 }
 
 .dark {
-  --grid-dot: #71717a;
+  --grid-dot: transparent;
 }
 
 html:not(.dark) {
-  --grid-dot: #52525b;
+  --grid-dot: transparent;
 }
 
 .no-scrollbar::-webkit-scrollbar {

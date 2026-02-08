@@ -131,7 +131,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
     return (
         <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
-            <CanvasGrid zoom={1} />
+
 
             {/* Beta Version Notice - Top of Screen */}
             <div className="absolute top-0 left-0 right-0 z-20">
@@ -147,6 +147,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             >
                 {/* Header */}
                 <div className="p-8 pt-[72px] pb-2 flex flex-col items-center text-center relative z-10">
+                    <IconButton
+                        icon={<X className="w-5 h-5" />}
+                        onClick={onClose}
+                        className="absolute top-4 right-4"
+                        tooltip="Close"
+                    />
                     <div className="flex flex-col items-center justify-center mb-[22px]">
                         <BrandLogo className="w-36 h-36" />
                     </div>

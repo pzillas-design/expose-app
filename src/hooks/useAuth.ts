@@ -23,7 +23,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     }, [user]);
 
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(!isAuthDisabled);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
 
