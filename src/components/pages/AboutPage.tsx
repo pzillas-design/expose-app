@@ -1068,25 +1068,19 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
 
                         <style>{`
-                            .section4-text-shadow-light {
-                                text-shadow: 0 8px 32px rgba(255, 255, 255, 0.5);
+                            .section4-drop-shadow-light {
+                                filter: drop-shadow(0 8px 32px rgba(255, 255, 255, 0.6));
                             }
-                            .dark .section4-text-shadow-dark {
-                                text-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
-                            }
-                            .section4-subtext-shadow-light {
-                                text-shadow: 0 4px 16px rgba(255, 255, 255, 0.4);
-                            }
-                            .dark .section4-subtext-shadow-dark {
-                                text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+                            .dark .section4-drop-shadow-dark {
+                                filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.8));
                             }
                         `}</style>
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 section4-text-shadow-light section4-text-shadow-dark">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto section4-drop-shadow-light section4-drop-shadow-dark">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed section4-subtext-shadow-light section4-subtext-shadow-dark">
+                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
