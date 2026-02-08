@@ -19,13 +19,22 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
     const mainTrackRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
+        let ticking = false;
+
         const handleScroll = () => {
-            if (!mainTrackRef.current) return;
-            const rect = mainTrackRef.current.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            const travelDistance = rect.height - windowHeight;
-            const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
-            setProgress(p);
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    if (mainTrackRef.current) {
+                        const rect = mainTrackRef.current.getBoundingClientRect();
+                        const windowHeight = window.innerHeight;
+                        const travelDistance = rect.height - windowHeight;
+                        const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+                        setProgress(p);
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });

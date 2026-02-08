@@ -33,30 +33,39 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ progress }) => {
 
     return (
         <div className="sticky top-0 h-screen w-full overflow-hidden bg-white dark:bg-zinc-950">
-            {/* Render all stages but control visibility via opacity/mount state within modules */}
-            <HeroStage
-                progress={progress}
-                scrollActive={progress <= 0.25}
-            />
+            {/* Render stages conditionally to reduce DOM size and improve mobile performance */}
 
-            <IterativeParallelStage
-                progress={ipProgress}
-                scrollActive={progress > 0.15 && progress <= 0.5}
-                exitProgress={transition23}
-            />
+            {progress <= 0.3 && (
+                <HeroStage
+                    progress={progress}
+                    scrollActive={progress <= 0.25}
+                />
+            )}
 
-            <TemplatesStage
-                progress={templateProgress}
-                scrollActive={progress > 0.4 && progress <= 0.8}
-                enterProgress={transition23}
-                exitProgress={transition34}
-            />
+            {progress > 0.1 && progress <= 0.55 && (
+                <IterativeParallelStage
+                    progress={ipProgress}
+                    scrollActive={progress > 0.15 && progress <= 0.5}
+                    exitProgress={transition23}
+                />
+            )}
 
-            <VisualPromptingStage
-                progress={vpProgress}
-                scrollActive={progress > 0.7}
-                enterProgress={transition34}
-            />
+            {progress > 0.35 && progress <= 0.85 && (
+                <TemplatesStage
+                    progress={templateProgress}
+                    scrollActive={progress > 0.4 && progress <= 0.8}
+                    enterProgress={transition23}
+                    exitProgress={transition34}
+                />
+            )}
+
+            {progress > 0.65 && (
+                <VisualPromptingStage
+                    progress={vpProgress}
+                    scrollActive={progress > 0.7}
+                    enterProgress={transition34}
+                />
+            )}
         </div>
     );
 };

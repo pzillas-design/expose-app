@@ -15,7 +15,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
 
     return (
         <div
-            className="absolute transition-all duration-700 ease-out hero-floating-image"
+            className="absolute lg:transition-all lg:duration-700 lg:ease-out hero-floating-image"
             style={{
                 left: x,
                 top: y,
@@ -91,7 +91,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
             `}</style>
             <div className="w-full h-full" style={{ perspective: '1000px' }}>
                 <div
-                    className="relative w-full h-full preserve-3d transition-transform duration-500 ease-out will-change-transform"
+                    className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out will-change-transform"
                     style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
                 >
                     {/* Hero Text Layer */}

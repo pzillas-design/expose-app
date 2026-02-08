@@ -50,11 +50,11 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         return (
                             <div
                                 key={index}
-                                className="flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800 shadow-xl will-change-transform"
+                                className="flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800 shadow-md lg:shadow-xl will-change-transform"
                                 style={{
                                     opacity: opacity,
                                     transform: `translateZ(${currentZ}px)`,
-                                    transition: 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s linear'
+                                    transition: (typeof window !== 'undefined' && window.innerWidth < 1024) ? 'none' : 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s linear'
                                 }}
                             >
                                 <img

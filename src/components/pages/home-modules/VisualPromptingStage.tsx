@@ -216,8 +216,8 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
                 style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center center', transition: 'transform 0.1s linear' }}
             >
                 <div className="absolute inset-0">
-                    <img src="/home/4 visual promting/1.jpg" className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1] opacity-50" alt="" />
-                    <img ref={image2Ref} src="/home/4 visual promting/2.jpg" className="absolute inset-0 w-full h-full object-cover opacity-0 grayscale-[10%] contrast-[1.1] z-10" alt="" />
+                    <img src="/home/4 visual promting/1.jpg" className="absolute inset-0 w-full h-full object-cover lg:grayscale-[10%] lg:contrast-[1.1] opacity-50" alt="" />
+                    <img ref={image2Ref} src="/home/4 visual promting/2.jpg" className="absolute inset-0 w-full h-full object-cover opacity-0 lg:grayscale-[10%] lg:contrast-[1.1] z-10" alt="" />
                 </div>
 
                 {/* Annotations */}
@@ -228,7 +228,7 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
                         <AnnotationChip label="Sofa" position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.26, 0.8)} />
 
                         {/* SVG Lamp */}
-                        <svg ref={lampRef} viewBox="0 0 1700 1141" fill="none" className="absolute inset-0 w-full h-full opacity-0 z-10 transition-all duration-500">
+                        <svg ref={lampRef} viewBox="0 0 1700 1141" fill="none" className="absolute inset-0 w-full h-full opacity-0 z-10 lg:transition-all lg:duration-500">
                             <path ref={lampPath1Ref} d="M449.761 177.57C445.213 305 444.653 357.523 449.761 393.07" stroke="#ED693D" strokeWidth="8" strokeLinecap="round" />
                             <path ref={lampPath2Ref} d="M536.84 384.305C529.849 377.695 497.722 364.971 425.139 366.954C334.411 369.433 232.284 421.484 390.489 437.347C548.694 453.211 674.528 379.843 476.202 353.57" stroke="#ED693D" strokeWidth="8" strokeLinecap="round" />
                         </svg>
