@@ -970,7 +970,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <img
                                 ref={section4Image1Ref}
                                 src="/about/3 visual promting/2.jpg"
-                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1] opacity-60"
+                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
                                 alt=""
                             />
                             {/* Image 2: Result (now 1.jpg) */}
@@ -1069,10 +1069,22 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
+                                <h2
+                                    className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6"
+                                    style={{ textShadow: '0 8px 32px rgba(255, 255, 255, 0.4)' }}
+                                >
+                                    <style>{`
+                                        .dark h2 { text-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important; }
+                                    `}</style>
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed">
+                                <p
+                                    className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed"
+                                    style={{ textShadow: '0 4px 16px rgba(255, 255, 255, 0.3)' }}
+                                >
+                                    <style>{`
+                                        .dark p { text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important; }
+                                    `}</style>
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
