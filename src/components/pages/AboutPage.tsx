@@ -748,8 +748,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 const travelDistance = rect.height - windowHeight;
                 const progressS4 = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
 
-                // 1. Text Reveal (0.0 - 0.15)
-                const typoOpacity = progressS4 < 0.15 ? progressS4 / 0.15 : 1;
+                // 1. Text Immediate Visibility (was fade-in)
+                const typoOpacity = 1;
                 section4ContentRef.current.style.opacity = typoOpacity.toString();
                 if (section4ShadowRef.current) {
                     section4ShadowRef.current.style.opacity = typoOpacity.toString();
@@ -1079,7 +1079,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
                             {/* Diffuse Shadow Bed (Vignette) */}
                             <div
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-0 pointer-events-none will-change-opacity"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-100 pointer-events-none will-change-opacity"
                                 style={{
                                     background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) 20%, rgba(255,255,255,0) 80%)',
                                     filter: 'blur(100px)',
@@ -1089,7 +1089,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 id="section4-shadow-bed"
                             />
 
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-100 flex flex-col items-center pointer-events-auto">
                                 <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
                                 </h2>
