@@ -662,6 +662,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section4LampRef = useRef<SVGSVGElement>(null);
     const section4LampPath1Ref = useRef<SVGPathElement>(null);
     const section4LampPath2Ref = useRef<SVGPathElement>(null);
+    const section4ShadowRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -750,6 +751,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 // 1. Text Reveal (0.0 - 0.15)
                 const typoOpacity = progressS4 < 0.15 ? progressS4 / 0.15 : 1;
                 section4ContentRef.current.style.opacity = typoOpacity.toString();
+                if (section4ShadowRef.current) {
+                    section4ShadowRef.current.style.opacity = typoOpacity.toString();
+                }
 
                 // 2. Progressive Content Appearance (0.15 - 0.75)
                 if (section4LabelsRef.current) {
@@ -809,7 +813,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         section4LabelsRef.current.style.opacity = fadeOutOpacity;
                     }
                     if (section4ContentRef.current) {
-                        section4ContentRef.current.style.opacity = (parseFloat(typoOpacity.toString()) * (1 - transformProgress)).toString();
+                        const finalContentOpacity = (parseFloat(typoOpacity.toString()) * (1 - transformProgress)).toString();
+                        section4ContentRef.current.style.opacity = finalContentOpacity;
+                        if (section4ShadowRef.current) {
+                            section4ShadowRef.current.style.opacity = finalContentOpacity;
+                        }
                     }
                 }
 
@@ -1068,41 +1076,34 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             </div>
                         </div>
 
-                        <style>{`
-                            /* Multi-layered shadows for maximum visibility and 'projected' feel */
-                            .section4-title-shadow {
-                                text-shadow: 
-                                    0 2px 4px rgba(0,0,0,0.05),
-                                    0 10px 40px rgba(255, 255, 255, 1),
-                                    0 0 120px rgba(255, 255, 255, 0.6);
-                            }
-                            .dark .section4-title-shadow {
-                                text-shadow: 
-                                    0 10px 40px rgba(0, 0, 0, 1),
-                                    0 0 120px rgba(0, 0, 0, 0.6);
-                            }
-                            .section4-para-shadow {
-                                text-shadow: 
-                                    0 1px 2px rgba(0,0,0,0.05),
-                                    0 5px 20px rgba(255, 255, 255, 1),
-                                    0 0 80px rgba(255, 255, 255, 0.5);
-                            }
-                            .dark .section4-para-shadow {
-                                text-shadow: 
-                                    0 5px 20px rgba(0, 0, 0, 1),
-                                    0 0 80px rgba(0, 0, 0, 0.5);
-                            }
-                        `}</style>
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
+                            {/* Diffuse Shadow Bed (Vignette) */}
+                            <div
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[60%] opacity-0 pointer-events-none will-change-opacity"
+                                style={{
+                                    background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)',
+                                    filter: 'blur(80px)',
+                                    zIndex: -1
+                                }}
+                                ref={section4ShadowRef}
+                                id="section4-shadow-bed"
+                            />
+
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 section4-title-shadow">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed section4-para-shadow font-medium">
+                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed font-medium">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
                         </div>
+                        <style>{`
+                            .dark #section4-shadow-bed {
+                                background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 70%) !important;
+                                filter: blur(100px) !important;
+                            }
+                        `}</style>
                     </div>
                 </section>
 
