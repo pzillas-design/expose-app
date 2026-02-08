@@ -1079,9 +1079,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
                             {/* Diffuse Shadow Bed (Vignette) */}
                             <div
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[150%] h-[80%] opacity-0 pointer-events-none will-change-opacity"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-0 pointer-events-none will-change-opacity"
                                 style={{
-                                    background: 'radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 30%, rgba(255,255,255,0) 80%)',
+                                    background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) 20%, rgba(255,255,255,0) 80%)',
                                     filter: 'blur(100px)',
                                     zIndex: -1
                                 }}
@@ -1100,7 +1100,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
                         <style>{`
                             .dark #section4-shadow-bed {
-                                background: radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0) 80%) !important;
+                                background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0) 80%) !important;
                                 filter: blur(120px) !important;
                             }
                         `}</style>
