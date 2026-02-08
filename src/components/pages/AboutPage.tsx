@@ -1042,7 +1042,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-                                    style={{ top: '12%', left: '15%' }}
+                                    style={{ top: '12%', left: '18%' }}
                                 >
                                     <defs>
                                         <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1070,10 +1070,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                         <style>{`
                             .section4-drop-shadow-light {
-                                filter: drop-shadow(0 8px 32px rgba(255, 255, 255, 0.6));
+                                filter: drop-shadow(0 12px 48px rgba(255, 255, 255, 0.9));
                             }
                             .dark .section4-drop-shadow-dark {
-                                filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.8));
+                                filter: drop-shadow(0 12px 48px rgba(0, 0, 0, 0.9));
                             }
                         `}</style>
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
