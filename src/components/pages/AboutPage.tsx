@@ -369,12 +369,7 @@ const Section3MockupUI = ({
             <div className="w-full h-[50vh] lg:h-full lg:flex-1 relative order-1 lg:order-2 overflow-hidden lg:overflow-visible">
                 <div
                     ref={mockupRef}
-                    className="absolute inset-0 lg:top-0 lg:bottom-0 flex items-stretch bg-white dark:bg-zinc-900 lg:rounded-tl-[12px] lg:rounded-bl-[12px] border-b lg:border-l lg:border-t lg:border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-left"
-                    style={{
-                        // On desktop we keep the breaking left margin, on mobile we fill the width
-                        left: window.innerWidth < 1024 ? '0' : '-175px',
-                        right: window.innerWidth < 1024 ? '0' : '-100vw',
-                    }}
+                    className="absolute inset-0 lg:left-[-175px] lg:right-[-100vw] lg:top-0 lg:bottom-0 flex items-stretch bg-white dark:bg-zinc-900 lg:rounded-tl-[12px] lg:rounded-bl-[12px] border-b lg:border-l lg:border-t lg:border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-left"
                 >
                     {/* 0. Top Progress Bar */}
                     <div
