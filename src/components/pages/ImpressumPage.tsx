@@ -9,10 +9,11 @@ interface ImpressumPageProps {
     userProfile: any;
     credits: number;
     onCreateBoard: () => void;
+    onSignIn?: () => void;
     t: TranslationFunction;
 }
 
-export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
+export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
     return (
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
             <AppNavbar
@@ -20,6 +21,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
                 userProfile={userProfile}
                 credits={credits}
                 onCreateBoard={onCreateBoard}
+                onSignIn={onSignIn}
                 t={t}
             />
 

@@ -37,6 +37,20 @@ const BoardRedirect = () => {
     return <Navigate to={`/projects/${boardId}`} replace />;
 };
 
+const ProtectedRoute = ({ user, children, onAuthRequired }: { user: any, children: React.ReactNode, onAuthRequired: () => void }) => {
+    const location = useLocation();
+    useEffect(() => {
+        if (!user) {
+            onAuthRequired();
+        }
+    }, [user, onAuthRequired]);
+
+    if (!user) {
+        return <Navigate to="/" state={{ from: location }} replace />;
+    }
+    return <>{children}</>;
+};
+
 export function App() {
     const { state, actions, refs, t } = useNanoController();
     const navigate = useNavigate();
@@ -444,6 +458,11 @@ export function App() {
     }, [selectedIds, moveSelection, moveRowSelection, requestDelete]);
 
     const handleCreateBoardAndNavigate = async () => {
+        if (!user) {
+            setIsAuthModalOpen(true);
+            setAuthModalMode('signin');
+            return;
+        }
         const newBoard = await createBoard();
         if (newBoard) {
             navigate(`/projects/${newBoard.id}`);
@@ -473,23 +492,19 @@ export function App() {
         }
     };
 
-    if (!user) {
-        return (
-            <div className={`flex h-screen w-screen ${Theme.Colors.CanvasBg} overflow-hidden`}>
-                <AuthModal
-                    isOpen={isAuthModalOpen}
-                    onClose={() => setIsAuthModalOpen(false)}
-                    error={authError}
-                    onClearError={() => setAuthError(null)}
-                    email={authEmail}
-                    onEmailChange={setAuthEmail}
-                    mode={authModalMode}
-                    onModeChange={setAuthModalMode}
-                    t={t}
-                />
-            </div>
-        );
-    }
+    const authModal = (
+        <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            error={authError}
+            onClearError={() => setAuthError(null)}
+            email={authEmail}
+            onEmailChange={setAuthEmail}
+            mode={authModalMode}
+            onModeChange={setAuthModalMode}
+            t={t}
+        />
+    );
 
     const boardsPage = (
         <BoardsPage
@@ -799,100 +814,118 @@ export function App() {
     );
 
     return (
-        <Routes>
-            <Route path="/" element={
-                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                    <AboutPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
-                </Suspense>
-            } />
-            <Route path="/about" element={<Navigate to="/" replace />} />
-            <Route path="/about-1" element={<Navigate to="/" replace />} />
-            <Route path="/about-2" element={<Navigate to="/" replace />} />
-            <Route path="/about-3" element={<Navigate to="/" replace />} />
-            <Route path="/contact" element={
-                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                    <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
-                </Suspense>
-            } />
-            <Route path="/impressum" element={
-                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                    <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
-                </Suspense>
-            } />
-            <Route path="/datenschutz" element={
-                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                    <DatenschutzPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} t={t} />
-                </Suspense>
-            } />
-            <Route path="/projects" element={boardsPage} />
-            <Route path="/projects/:boardId" element={canvasView} />
-            <Route path="/settings" element={
-                <SettingsPage
-                    user={user}
-                    userProfile={userProfile}
-                    updateProfile={updateProfile}
-                    t={t}
-                    currentBalance={credits}
-                    onAddFunds={handleAddFunds}
-                    qualityMode={qualityMode}
-                    onQualityModeChange={setQualityMode}
-                    themeMode={themeMode}
-                    onThemeChange={setThemeMode}
-                    lang={lang}
-                    onLangChange={setLang}
-                    onSignOut={handleSignOut}
-                    onDeleteAccount={handleDeleteAccount}
-                    onCreateBoard={handleCreateBoardAndNavigate}
-                />
-            } />
-            <Route path="/settings/:tab" element={
-                <SettingsPage
-                    user={user}
-                    userProfile={userProfile}
-                    updateProfile={updateProfile}
-                    t={t}
-                    currentBalance={credits}
-                    onAddFunds={handleAddFunds}
-                    qualityMode={qualityMode}
-                    onQualityModeChange={setQualityMode}
-                    themeMode={themeMode}
-                    onThemeChange={setThemeMode}
-                    lang={lang}
-                    onLangChange={setLang}
-                    onSignOut={handleSignOut}
-                    onDeleteAccount={handleDeleteAccount}
-                    onCreateBoard={handleCreateBoardAndNavigate}
-                />
-            } />
-            <Route path="/admin" element={
-                <AdminRoute user={user} userProfile={userProfile}>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
-                        <AdminDashboard
+        <>
+            <Routes>
+                <Route path="/" element={
+                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                        <AboutPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                    </Suspense>
+                } />
+                <Route path="/about" element={<Navigate to="/" replace />} />
+                <Route path="/about-1" element={<Navigate to="/" replace />} />
+                <Route path="/about-2" element={<Navigate to="/" replace />} />
+                <Route path="/about-3" element={<Navigate to="/" replace />} />
+                <Route path="/contact" element={
+                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                        <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                    </Suspense>
+                } />
+                <Route path="/impressum" element={
+                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                        <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                    </Suspense>
+                } />
+                <Route path="/datenschutz" element={
+                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                        <DatenschutzPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                    </Suspense>
+                } />
+                <Route path="/projects" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        {boardsPage}
+                    </ProtectedRoute>
+                } />
+                <Route path="/projects/:boardId" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        {canvasView}
+                    </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        <SettingsPage
                             user={user}
                             userProfile={userProfile}
-                            credits={credits}
-                            onCreateBoard={handleCreateBoardAndNavigate}
+                            updateProfile={updateProfile}
                             t={t}
+                            currentBalance={credits}
+                            onAddFunds={handleAddFunds}
+                            qualityMode={qualityMode}
+                            onQualityModeChange={setQualityMode}
+                            themeMode={themeMode}
+                            onThemeChange={setThemeMode}
+                            lang={lang}
+                            onLangChange={setLang}
+                            onSignOut={handleSignOut}
+                            onDeleteAccount={handleDeleteAccount}
+                            onCreateBoard={handleCreateBoardAndNavigate}
                         />
-                    </Suspense>
-                </AdminRoute>
-            } />
-            <Route path="/admin/:tab" element={
-                <AdminRoute user={user} userProfile={userProfile}>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
-                        <AdminDashboard
+                    </ProtectedRoute>
+                } />
+                <Route path="/settings/:tab" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        <SettingsPage
                             user={user}
                             userProfile={userProfile}
-                            credits={credits}
-                            onCreateBoard={handleCreateBoardAndNavigate}
+                            updateProfile={updateProfile}
                             t={t}
+                            currentBalance={credits}
+                            onAddFunds={handleAddFunds}
+                            qualityMode={qualityMode}
+                            onQualityModeChange={setQualityMode}
+                            themeMode={themeMode}
+                            onThemeChange={setThemeMode}
+                            lang={lang}
+                            onLangChange={setLang}
+                            onSignOut={handleSignOut}
+                            onDeleteAccount={handleDeleteAccount}
+                            onCreateBoard={handleCreateBoardAndNavigate}
                         />
-                    </Suspense>
-                </AdminRoute>
-            } />
-            <Route path="/" element={<Navigate to="/projects" replace />} />
-            <Route path="/v2" element={<Navigate to="/projects" replace />} />
-            <Route path="*" element={<Navigate to="/projects" replace />} />
-        </Routes>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        <AdminRoute user={user} userProfile={userProfile}>
+                            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
+                                <AdminDashboard
+                                    user={user}
+                                    userProfile={userProfile}
+                                    credits={credits}
+                                    onCreateBoard={handleCreateBoardAndNavigate}
+                                    t={t}
+                                />
+                            </Suspense>
+                        </AdminRoute>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/:tab" element={
+                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                        <AdminRoute user={user} userProfile={userProfile}>
+                            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
+                                <AdminDashboard
+                                    user={user}
+                                    userProfile={userProfile}
+                                    credits={credits}
+                                    onCreateBoard={handleCreateBoardAndNavigate}
+                                    t={t}
+                                />
+                            </Suspense>
+                        </AdminRoute>
+                    </ProtectedRoute>
+                } />
+                <Route path="/v2" element={<Navigate to="/projects" replace />} />
+                <Route path="*" element={<Navigate to="/projects" replace />} />
+            </Routes>
+            {authModal}
+        </>
     );
 }

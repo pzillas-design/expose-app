@@ -11,6 +11,7 @@ interface AppNavbarProps {
     userProfile: any;
     credits: number;
     onCreateBoard: () => void;
+    onSignIn?: () => void;
     t: (key: any) => string;
 }
 
@@ -19,6 +20,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     userProfile,
     credits,
     onCreateBoard,
+    onSignIn,
     t
 }) => {
     const getInitials = (name?: string, email?: string) => {
@@ -73,24 +75,35 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-6">
-                    {/* New Board Button */}
-                    <Button
-                        onClick={onCreateBoard}
-                        variant="primary"
-                        icon={<Plus className="w-4 h-4" />}
-                        className="px-6 h-11 hidden lg:flex"
-                    >
-                        {t('default_project_name')}
-                    </Button>
+                    {user ? (
+                        <>
+                            {/* New Board Button */}
+                            <Button
+                                onClick={onCreateBoard}
+                                variant="primary"
+                                icon={<Plus className="w-4 h-4" />}
+                                className="px-6 h-11 hidden lg:flex"
+                            >
+                                {t('default_project_name')}
+                            </Button>
 
-                    {/* Compact New Board for small screens */}
-                    <button
-                        onClick={onCreateBoard}
-                        className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all"
-                    >
-                        <Plus className="w-5 h-5" />
-                    </button>
-
+                            {/* Compact New Board for small screens */}
+                            <button
+                                onClick={onCreateBoard}
+                                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all"
+                            >
+                                <Plus className="w-5 h-5" />
+                            </button>
+                        </>
+                    ) : (
+                        <Button
+                            onClick={onSignIn}
+                            variant="primary"
+                            className="px-8 h-11"
+                        >
+                            {t('login_btn') || 'Login'}
+                        </Button>
+                    )}
                 </div>
             </div>
         </header>

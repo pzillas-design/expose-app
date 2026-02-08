@@ -10,10 +10,11 @@ interface ContactPageProps {
     userProfile: any;
     credits: number;
     onCreateBoard: () => void;
+    onSignIn?: () => void;
     t: TranslationFunction;
 }
 
-export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
+export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSent, setIsSent] = useState(false);
 
@@ -33,6 +34,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
                 userProfile={userProfile}
                 credits={credits}
                 onCreateBoard={onCreateBoard}
+                onSignIn={onSignIn}
                 t={t}
             />
 

@@ -11,6 +11,7 @@ interface AboutPageProps {
     userProfile: any;
     credits: number;
     onCreateBoard: () => void;
+    onSignIn?: () => void;
     t: TranslationFunction;
 }
 
@@ -641,8 +642,7 @@ const ScrollReveal: React.FC<{ children: React.ReactNode; delay?: number }> = ({
 
 // --- Main Page Component ---
 
-export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
-    const [scrolled, setScrolled] = useState(false);
+export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
     const section1Ref = useRef<HTMLElement>(null);
     const section3Ref = useRef<HTMLElement>(null);
     const heroLayerRef = useRef<HTMLDivElement>(null);
@@ -668,11 +668,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             const y = window.scrollY;
             const introHeight = window.innerHeight * 2.0;
             const progress = Math.min(Math.max(y / introHeight, 0), 1);
-
-            // Apply scrolled state for navbar
-            if (y > 50 !== scrolled) {
-                setScrolled(y > 50);
-            }
 
             // Direct DOM manipulation for performance
             if (heroLayerRef.current) {
@@ -708,7 +703,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 // Parallax Text Movement (Only for Section 2)
                 if (section2TextRef.current) {
-                    const translateY = (0.5 - progressS2) * 600;
+                    const translateY = (0.5 - progressS2) * 900;
                     section2TextRef.current.style.transform = `translate3d(0, ${translateY}px, 0)`;
                 }
             }
@@ -730,10 +725,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 section3MockupRef.current.style.opacity = fadeOpacity.toString();
 
                 // 2. Unified Scroll-out (Once text reaches top of mockup)
-                // Interaction phase ends around 0.40 progress
-                const scrollOutStart = 0.45;
+                // Interaction phase ends around 0.50 progress for a 500vh section
+                const scrollOutStart = 0.5;
                 const scrollY = progressS3 > scrollOutStart
-                    ? (progressS3 - scrollOutStart) * -windowHeight * 1.5
+                    ? (progressS3 - scrollOutStart) * -windowHeight * 2.1
                     : 0;
 
                 section3MockupRef.current.style.transform = `translate3d(0, ${scrollY}px, 0)`;
@@ -823,7 +818,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
         window.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll();
         return () => window.removeEventListener('scroll', handleScroll);
-    }, [scrolled]);
+    }, []);
 
     const floatingImages = [
         { src: '/about/2-iterativ-parallel/41.jpg', x: '-15%', y: '85%', depth: -300, size: '35vw' },
@@ -838,7 +833,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
-            <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} t={t} />
+            <AppNavbar user={user} userProfile={userProfile} credits={credits} onCreateBoard={onCreateBoard} onSignIn={onSignIn} t={t} />
 
             {/* --- Section 1: Hero (Fixed 3D Intro) --- */}
             <div
@@ -901,7 +896,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
             {/* --- Content Sections (Scrolling up from below) --- */}
             <main className="relative z-10 bg-white dark:bg-zinc-950">
                 {/* Section 2: Iterativ + Parallel - Cinematic Scroll Sequence */}
-                <section ref={section1Ref} className="relative h-[250vh]">
+                <section ref={section1Ref} className="relative h-[350vh]">
                     <div ref={section2StickyRef} className="sticky top-0 h-screen overflow-hidden will-change-opacity">
                         <div className="w-full h-full flex flex-col lg:flex-row">
                             {/* Left: Image Cluster */}
@@ -951,7 +946,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <section
                     ref={section3Ref}
                     className="relative z-20 bg-white dark:bg-zinc-950"
-                    style={{ height: '800vh' }}
+                    style={{ height: '500vh' }}
                 >
                     <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-x-hidden">
                         <div className="w-full flex items-center justify-center">
@@ -963,7 +958,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
-                <section ref={section4Ref} className="relative h-[350vh] bg-black">
+                <section ref={section4Ref} className="relative h-[450vh] bg-black">
                     <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
                         {/* Background Layer */}
                         <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
@@ -971,7 +966,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <img
                                 ref={section4Image1Ref}
                                 src="/about/3 visual promting/2.jpg"
-                                className="absolute inset-0 w-full h-full object-cover opacity-60 grayscale-[10%] contrast-[1.1]"
+                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
                                 alt=""
                             />
                             {/* Image 2: Result (now 1.jpg) */}
@@ -1070,11 +1065,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6 uppercase">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed font-light">
-                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr <span className="text-white">exakt wo.</span>
+                                <p className="text-xl sm:text-2xl text-zinc-500 max-w-2xl leading-relaxed">
+                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
                         </div>

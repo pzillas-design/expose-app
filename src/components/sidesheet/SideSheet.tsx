@@ -315,11 +315,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
             // 3. Handle Generation Status Transition (within same ID or across selection)
             if (wasGenerating && !isGenerating) {
-                // Generation FINISHED: Only auto-switch to prompt mode if NOT currently in an active editing mode
-                // This prevents kicking the user out of Brush/Objects mode during sync.
-                if (sideSheetMode === 'prompt') {
-                    onShowInfo?.(selectedImage.id);
-                }
+                // Generation FINISHED: Auto-linking or mode switching can happen here,
+                // but we disabled the automatic onShowInfo modal popup.
                 lastAutoOpenedId.current = selectedImage.id;
             }
 
