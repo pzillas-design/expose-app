@@ -364,85 +364,78 @@ const Section3MockupUI = ({
 
     const cursorPos = getCursorPos();
     return (
-        <div className="w-full flex items-center justify-center" style={{ height: '80vh', minHeight: '80vh' }}>
-            <div className="max-w-[1700px] mx-auto w-full h-full flex items-stretch px-8 lg:px-12 2xl:px-16 relative">
-                {/* 1. Left Column: Text (Ends at screen center) */}
-                <div className="flex-1 flex items-center lg:pr-[175px] z-20">
-                    <ScrollReveal delay={100}>
-                        <div ref={textRef} className="flex flex-col text-left max-w-xl will-change-transform">
-                            <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-8 leading-[0.85]">
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br />
-                                nutzen & anlegen.
-                            </h2>
-                            <p className="text-xl sm:text-2xl text-zinc-500 leading-relaxed font-light">
-                                Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.
-                            </p>
-                        </div>
-                    </ScrollReveal>
-                </div>
-
-                {/* 2. Right Column Area: Contains the absolute 'breaking' Mockup Unit */}
-                <div className="flex-1 relative">
+        <div className="w-full h-screen lg:h-[80vh] flex flex-col lg:flex-row items-center justify-center relative bg-white dark:bg-zinc-950 lg:bg-transparent transition-colors duration-500">
+            {/* Header/Mockup Part (Top on Mobile) */}
+            <div className="w-full h-[50vh] lg:h-full lg:flex-1 relative order-1 lg:order-2 overflow-hidden lg:overflow-visible">
+                <div
+                    ref={mockupRef}
+                    className="absolute inset-0 lg:top-0 lg:bottom-0 flex items-stretch bg-white dark:bg-zinc-900 lg:rounded-tl-[12px] lg:rounded-bl-[12px] border-b lg:border-l lg:border-t lg:border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-left"
+                    style={{
+                        // On desktop we keep the breaking left margin, on mobile we fill the width
+                        left: window.innerWidth < 1024 ? '0' : '-175px',
+                        right: window.innerWidth < 1024 ? '0' : '-100vw',
+                    }}
+                >
+                    {/* 0. Top Progress Bar */}
                     <div
-                        ref={mockupRef}
-                        className="absolute top-0 bottom-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity"
-                        style={{
-                            left: '-175px',
-                            right: '-100vw'
-                        }}
+                        className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`}
+                        style={{ width: '100vw' }}
                     >
-                        {/* 0. Top Progress Bar (Global for whole box, constrained to viewport) */}
                         <div
-                            className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`}
-                            style={{ width: 'calc(50vw + 175px)' }}
-                        >
-                            <div
-                                className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
-                                style={{ width: `${generationProgress * 100}%` }}
-                            />
-                        </div>
-                        {/* A. Middle: Sidepanel (Fixed width) */}
-                        <div
-                            className="hidden lg:flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50"
-                            style={{ width: '350px' }}
-                        >
-                            <SidepanelMockup
-                                activeSeason={season}
-                                activeTime={time}
-                                buttonScale={buttonScale}
-                                seasonScale={seasonScale}
-                                timeScale={timeScale}
-                                activeSection={activeSection}
-                                isSeasonPressed={isSeasonPressed}
-                                isTimePressed={isTimePressed}
-                                generationProgress={generationProgress}
-                                isGenerating={isGenerating}
-                            />
-                        </div>
+                            className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out"
+                            style={{ width: `${generationProgress * 100}%` }}
+                        />
+                    </div>
 
-                        {/* B. Right: Visual Animation Area (Fills remaining space) */}
-                        <div className="relative flex-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden" style={{ width: 'calc(100vw / 2 - 175px)' }}>
-                            {/* Sommer Image (Original) */}
-                            <img
-                                src="/about/3-vorlagen/small/edit_sommer.jpg"
-                                className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`}
-                                alt="Sommer Scene"
-                            />
+                    {/* A. Middle: Sidepanel - Stays hidden on mobile for better focus */}
+                    <div
+                        className="hidden lg:flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50"
+                        style={{ width: '350px' }}
+                    >
+                        <SidepanelMockup
+                            activeSeason={season}
+                            activeTime={time}
+                            buttonScale={buttonScale}
+                            seasonScale={seasonScale}
+                            timeScale={timeScale}
+                            activeSection={activeSection}
+                            isSeasonPressed={isSeasonPressed}
+                            isTimePressed={isTimePressed}
+                            generationProgress={generationProgress}
+                            isGenerating={isGenerating}
+                        />
+                    </div>
 
-                            {/* Winter Image (Result) */}
-                            <img
-                                src="/about/3-vorlagen/small/edit_winter.jpg"
-                                className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-100' : 'opacity-0'}`}
-                                alt="Winter Scene Result"
-                            />
-
-                            {/* Removed old generation overlay */}
-
-                            {/* Edge Shadow */}
-                            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/5 to-transparent pointer-events-none" />
-                        </div>
+                    {/* B. Right/Main Animation Area */}
+                    <div className="relative flex-1 bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+                        <img
+                            src="/about/3-vorlagen/small/edit_sommer.jpg"
+                            className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`}
+                            alt="Sommer Scene"
+                        />
+                        <img
+                            src="/about/3-vorlagen/small/edit_winter.jpg"
+                            className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-100' : 'opacity-0'}`}
+                            alt="Winter Scene Result"
+                        />
+                        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-black/5 to-transparent pointer-events-none" />
                     </div>
                 </div>
+            </div>
+
+            {/* Typography Part (Bottom on Mobile) */}
+            <div className="w-full h-[50vh] lg:h-full lg:flex-1 flex items-center justify-center lg:justify-start lg:pr-[175px] z-20 order-2 lg:order-1 px-8">
+                <ScrollReveal delay={100}>
+                    <div ref={textRef} className="flex flex-col text-center lg:text-left max-w-xl will-change-transform">
+                        <h2 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-6 lg:mb-8 leading-[0.9] lg:leading-[0.85]">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br className="hidden lg:block" />
+                            nutzen & anlegen.
+                        </h2>
+                        <p className="text-lg sm:text-xl lg:text-2xl text-zinc-500 leading-relaxed font-light">
+                            Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.
+                        </p>
+                    </div>
+                </ScrollReveal>
             </div>
         </div>
     );
@@ -971,17 +964,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                 {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
                 <section ref={section4Ref} className="relative h-[450vh] bg-white dark:bg-zinc-950">
-                    <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
-                        {/* Background Layer */}
-                        <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
-                            {/* Image 1: Initial State (now 2.jpg) */}
+                    <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col lg:items-center lg:justify-center">
+                        {/* 1. Background Layer (Top Part on Mobile) */}
+                        <div ref={section4BackgroundRef} className="relative h-[55vh] lg:h-full w-full lg:absolute lg:inset-0 z-0">
+                            {/* Image 1: Initial State */}
                             <img
                                 ref={section4Image1Ref}
                                 src="/about/3 visual promting/2.jpg"
                                 className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
                                 alt=""
                             />
-                            {/* Image 2: Result (now 1.jpg) */}
+                            {/* Image 2: Result */}
                             <img
                                 ref={section4Image2Ref}
                                 src="/about/3 visual promting/1.jpg"
@@ -989,97 +982,91 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 alt=""
                             />
 
-                            {/* Background Overlays Removed per user request */}
-                        </div>
-
-                        {/* Generation Progress Bar */}
-                        <div
-                            ref={section4ProgressRef}
-                            className="absolute top-0 left-0 h-1 bg-orange-500 z-50 transition-all duration-300 ease-out opacity-0 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
-                            style={{ width: '0%' }}
-                        />
-
-                        {/* Typography Container moved to the end of the sticky wrapper to ensure top-layer stacking */}
-
-
-                        {/* Annotation Labels (Exact User Design) */}
-                        <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-[110] transition-opacity duration-500 flex items-center justify-center overflow-hidden">
-                            {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
-                            <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
-                                {/* Label 1: Küche */}
-                                <div className="absolute top-[45%] left-[27%] opacity-0 z-20 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        {/* Dark Chip */}
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Küche</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                            {/* Annotation Labels (Exact User Design) */}
+                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-[110] transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                                {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
+                                <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
+                                    {/* Label 1: Küche */}
+                                    <div className="absolute top-[45%] left-[27%] opacity-0 z-20 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Küche</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
-                                        {/* Connector Zipfel - ENLARGED */}
-                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                     </div>
-                                </div>
 
-                                {/* Label 2: Esstisch */}
-                                <div className="absolute bottom-[25%] left-[20%] opacity-0 z-20 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Esstisch</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                                    {/* Label 2: Esstisch */}
+                                    <div className="absolute bottom-[25%] left-[20%] opacity-0 z-20 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Esstisch</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
-                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                     </div>
-                                </div>
 
-                                {/* Label 3: Sofa */}
-                                <div className="absolute bottom-[20%] right-[20%] opacity-0 z-20 will-change-transform">
-                                    <div className="relative flex flex-col items-center">
-                                        <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
-                                            <span className="text-lg font-medium text-white">Sofa</span>
-                                            <X className="w-4 h-4 text-zinc-500" />
+                                    {/* Label 3: Sofa */}
+                                    <div className="absolute bottom-[20%] right-[20%] opacity-0 z-20 will-change-transform">
+                                        <div className="relative flex flex-col items-center">
+                                            <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
+                                                <span className="text-lg font-medium text-white">Sofa</span>
+                                                <X className="w-4 h-4 text-zinc-500" />
+                                            </div>
+                                            <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                         </div>
-                                        <div className="w-4 h-4 bg-zinc-900 rotate-45 -mt-[8px] border-r border-b border-white/10" />
                                     </div>
-                                </div>
 
-                                {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER SOFA */}
-                                <svg
-                                    ref={section4LampRef}
-                                    width="320"
-                                    height="360"
-                                    viewBox="0 0 246 272"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-                                    style={{ top: '12%', left: '21%' }}
-                                >
-                                    <defs>
-                                        <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#fb923c" />
-                                            <stop offset="100%" stopColor="#ef4444" />
-                                        </linearGradient>
-                                    </defs>
-                                    <path
-                                        ref={section4LampPath1Ref}
-                                        d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
-                                        stroke="url(#lampGradient)"
-                                        strokeWidth="6"
-                                        strokeLinecap="round"
-                                    />
-                                    <path
-                                        ref={section4LampPath2Ref}
-                                        d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
-                                        stroke="url(#lampGradient)"
-                                        strokeWidth="6"
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
+                                    {/* Lamp Drawing */}
+                                    <svg
+                                        ref={section4LampRef}
+                                        width="320"
+                                        height="360"
+                                        viewBox="0 0 246 272"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)] scale-[0.8] lg:scale-100"
+                                        style={{ top: '12%', left: '21%' }}
+                                    >
+                                        <defs>
+                                            <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                <stop offset="0%" stopColor="#fb923c" />
+                                                <stop offset="100%" stopColor="#ef4444" />
+                                            </linearGradient>
+                                        </defs>
+                                        <path
+                                            ref={section4LampPath1Ref}
+                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
+                                            stroke="url(#lampGradient)"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            ref={section4LampPath2Ref}
+                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
+                                            stroke="url(#lampGradient)"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                </div>
                             </div>
+
+                            {/* Generation Progress Bar */}
+                            <div
+                                ref={section4ProgressRef}
+                                className="absolute top-0 left-0 h-1 bg-orange-500 z-50 transition-all duration-300 ease-out opacity-0 shadow-[0_0_20px_rgba(249,115,22,0.5)]"
+                                style={{ width: '0%' }}
+                            />
                         </div>
 
-                        <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
-                            {/* Diffuse Shadow Bed (Vignette) */}
+                        {/* 2. Typography Layer (Bottom Part on Mobile) */}
+                        <div className="relative flex-1 lg:absolute lg:inset-0 z-[100] container mx-auto px-6 flex flex-col justify-center items-center text-center pointer-events-none bg-white dark:bg-zinc-950 lg:bg-transparent">
+                            {/* Diffuse Shadow Bed (Vignette) - HIDDEN ON MOBILE */}
                             <div
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-100 pointer-events-none will-change-opacity"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120%] h-[50%] opacity-100 pointer-events-none will-change-opacity hidden lg:block"
                                 style={{
                                     background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.8) 20%, rgba(255,255,255,0) 80%)',
                                     filter: 'blur(100px)',
@@ -1090,10 +1077,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             />
 
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-100 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
-                                    Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
+                                <h2 className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 leading-[0.9] lg:leading-tight">
+                                    Visual <br className="hidden lg:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed font-medium">
+                                <p className="text-lg sm:text-xl lg:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed font-medium">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
