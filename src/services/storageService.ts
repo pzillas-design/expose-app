@@ -19,7 +19,8 @@ export const storageService = {
                 blob = await response.blob();
             } else {
                 const { compressImage } = await import('../utils/imageUtils');
-                blob = await compressImage(imageSrc);
+                // Optmize: Max 4K (4096px) and 80% Quality (0.8)
+                blob = await compressImage(imageSrc, 4096, 0.8);
                 shouldGenerateThumb = true; // Generate thumbnail for full-size images
             }
 
@@ -69,7 +70,7 @@ export const storageService = {
             if (shouldGenerateThumb) {
                 try {
                     const { generateThumbnail } = await import('../utils/imageUtils');
-                    const thumbBlob = await generateThumbnail(imageSrc, 600);
+                    const thumbBlob = await generateThumbnail(imageSrc, 200);
                     const thumbFileName = `thumb_${fileName}`;
                     const thumbFilePath = `${folderPath}/${thumbFileName}`;
 
@@ -172,6 +173,9 @@ export const storageService = {
         }
 
         try {
+            // Ensure session is fresh before batch signing
+            await supabase.auth.getSession();
+
             // 2. Fetch missing in one call
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
             const { data, error } = await supabase.storage
@@ -229,6 +233,9 @@ export const storageService = {
         }
 
         try {
+            // Ensure session is fresh before signing
+            await supabase.auth.getSession();
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .createSignedUrl(path, 60 * 60 * 24 * 7, {

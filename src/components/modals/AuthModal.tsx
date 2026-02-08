@@ -6,7 +6,7 @@ import { Logo } from '@/components/ui/Logo';
 import { BrandLogo } from '@/components/ui/BrandLogo';
 import { TranslationFunction } from '@/types';
 import { CanvasGrid } from '@/components/canvas/CanvasGrid';
-import { BetaNotice } from '@/components/ui/BetaNotice';
+import { BetaBanner } from '@/components/ui/BetaBanner';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -134,8 +134,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             <CanvasGrid zoom={1} />
 
             {/* Beta Version Notice - Top of Screen */}
-            <div className="absolute top-4 left-0 right-0 z-20 flex justify-center px-4">
-                <BetaNotice t={t} />
+            <div className="absolute top-0 left-0 right-0 z-20">
+                <BetaBanner t={t} />
             </div>
 
             <div

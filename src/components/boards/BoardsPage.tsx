@@ -12,7 +12,8 @@ import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
-import { BetaNotice } from '../ui/BetaNotice';
+import { BetaBanner } from '../ui/BetaBanner';
+import { formatRelativeTime, shouldShowDeletionCountdown, daysUntilBoardDeletion } from '@/utils/timeUtils';
 
 const getInitials = (name?: string, email?: string) => {
     if (name && name.trim()) {
@@ -119,6 +120,8 @@ export function BoardsPage({
     return (
         <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
 
+            <BetaBanner t={t} />
+
             <AppNavbar
                 user={user}
                 userProfile={userProfile}
@@ -131,15 +134,7 @@ export function BoardsPage({
 
                 <main className="pb-32 flex-1 flex flex-col">
 
-                    <div className="mb-12 flex items-center justify-between gap-8">
-                        <div>
-                            <h1 className="text-xl font-medium tracking-tight">{t('tab_projects')}</h1>
-                            <p className="text-sm text-zinc-500 mt-1">{t('overview_desc')}</p>
-                        </div>
-                        <BetaNotice t={t} />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-8 2xl:gap-10 mb-12">
 
                         <button
                             onClick={onCreateBoard}
@@ -165,7 +160,7 @@ export function BoardsPage({
                                         onSelect={() => onSelectBoard(board.id)}
                                         onDelete={() => onDeleteBoard(board.id)}
                                         onRename={(name) => onRenameBoard(board.id, name)}
-                                        locale={locale}
+                                        lang={lang}
                                         t={t}
                                     />
                                 ))
@@ -184,11 +179,11 @@ interface BoardCardProps {
     onSelect: () => void;
     onDelete: () => void;
     onRename: (name: string) => void;
-    locale: any;
+    lang: 'de' | 'en';
     t: (key: any) => string;
 }
 
-function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCardProps) {
+function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardProps) {
     const [menuOpen, setMenuOpen] = useState(false);
     const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
     const [isLoaded, setIsLoaded] = useState(false);
@@ -223,6 +218,13 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                             onLoaded={() => setIsLoaded(true)}
                         />
                     </div>
+
+                    {/* Deletion Countdown Badge */}
+                    {board.lastActivityAt && shouldShowDeletionCountdown(board.lastActivityAt) && (
+                        <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-medium px-2.5 py-1 rounded-md shadow-sm z-20">
+                            Noch {daysUntilBoardDeletion(board.lastActivityAt)} {daysUntilBoardDeletion(board.lastActivityAt) === 1 ? 'Tag' : 'Tage'}
+                        </div>
+                    )}
                 </div>
 
                 {/* Info Section */}
@@ -240,7 +242,7 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                     </div>
                     <div className="text-zinc-400 dark:text-zinc-600 -mt-[1px]">
                         <span className={`${Typo.Body} opacity-70`}>
-                            {formatDistanceToNow(board.updatedAt, { locale, addSuffix: true })}
+                            {formatRelativeTime(board.updatedAt, lang)}
                         </span>
                     </div>
                 </div>
@@ -251,13 +253,14 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                     <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} onContextMenu={(e) => { e.preventDefault(); setMenuOpen(false); }} />
                     <div
                         className={`
-                            fixed z-[101] min-w-[170px]
+                            fixed z-[101] min-w-[200px]
                             bg-white dark:bg-zinc-950
                             border border-zinc-200 dark:border-zinc-800
-                            rounded-xl shadow-md ring-1 ring-black/5
-                            overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col
+                            rounded-xl shadow-lg ring-1 ring-black/5
+                            overflow-hidden animate-in fade-in zoom-in-95 duration-100
+                            p-1.5
                         `}
-                        style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 180) }}
+                        style={{ top: menuPos.y, left: Math.min(menuPos.x, window.innerWidth - 210) }}
                     >
                         <button
                             onClick={async (e) => {
@@ -274,12 +277,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                     onRename(newName);
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
-                            <Pen className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
+                            <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('rename_board')}</span>
                         </button>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />
                         <button
                             onClick={async (e) => {
                                 e.stopPropagation();
@@ -295,10 +296,10 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
                                     onDelete();
                                 }
                             }}
-                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-left transition-colors group"
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-left transition-colors group"
                         >
-                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
-                            <span className={`${Typo.Body} text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
+                            <span className={`${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`}>{t('delete')}</span>
+                            <Trash className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" />
                         </button>
                     </div>
                 </>,
@@ -307,3 +308,4 @@ function BoardCard({ board, onSelect, onDelete, onRename, locale, t }: BoardCard
         </>
     );
 }
+

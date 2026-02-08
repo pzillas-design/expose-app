@@ -12,6 +12,10 @@ export const prepareParts = async (
     const parts: any[] = [];
     const { prompt, variables, annotationImage, references } = payload;
 
+    console.log('[DEBUG] prepareParts - payload keys:', Object.keys(payload));
+    console.log('[DEBUG] prepareParts - has annotationImage:', !!annotationImage);
+    console.log('[DEBUG] prepareParts - has references:', !!references, 'count:', references?.length || 0);
+
     // 1. User Prompt
     if (prompt) {
         parts.push({ text: `User Prompt: ${prompt}` });
@@ -41,6 +45,7 @@ export const prepareParts = async (
     if (annotationImage) {
         hasMask = true;
         const maskBase64 = extractBase64FromDataUrl(annotationImage);
+        console.log('[DEBUG] prepareParts - annotationImage base64 length:', maskBase64?.length || 0);
         parts.push({
             inlineData: {
                 mimeType: 'image/png',
@@ -82,6 +87,7 @@ export const prepareParts = async (
         }
     }
 
+    console.log('[DEBUG] prepareParts - final parts count:', parts.length, 'hasMask:', hasMask, 'hasRefs:', hasRefs);
     return { parts, hasMask, hasRefs, allRefs };
 };
 
@@ -100,7 +106,7 @@ export const generateImage = async (
     let systemInstruction = "You are an expert AI designer. You interpret prompts and visual context to generate high-quality, photorealistic images.";
 
     if (requestType === 'edit') {
-        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification using high-contrast overlays or labels. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise. IMPORTANT: The annotations in Image 2 are only logical guides and instructions; do not include or render any of the annotation markings (like brush strokes, chips, or labels) in the final generated image.";
+        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification. CRITICAL: All annotations in Image 2 are rendered in BRIGHT RED color for maximum visibility. Each red annotation (shape, line, or text label on red background) indicates a specific object or modification that MUST be implemented in the exact location shown. You MUST strictly follow ALL red annotations shown in Image 2. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified by the RED annotations in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise. IMPORTANT: The red annotations in Image 2 are only logical guides and instructions; do not include or render any of the red annotation markings themselves in the final generated image - only implement what they indicate.";
     } else {
         systemInstruction += " Create a brand new image from scratch based on the User Prompt and Design Parameters provided.";
     }

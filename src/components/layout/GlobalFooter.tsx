@@ -19,43 +19,30 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                 {/* Navigation - Single line, minimal text, normal case */}
                 <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
                     <a
-                        href="/about"
+                        href="/"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        {t('footer_about')}
+                        {t('footer_about') || 'About'}
                     </a>
                     <a
-                        href="https://pzillas.com"
-                        target="_blank"
-                        rel="noreferrer"
+                        href="/contact"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        {t('footer_website')}
+                        {t('footer_contact') || 'Contact'}
                     </a>
                     <a
-                        href="mailto:hello@expose.ae"
+                        href="/impressum"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        {t('footer_contact')}
+                        {t('footer_legal') || 'Impressum'}
                     </a>
                     <a
-                        href="/legal"
+                        href="/datenschutz"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        {t('footer_legal')}
-                    </a>
-                    <a
-                        href="/privacy"
-                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-                    >
-                        {t('footer_privacy')}
+                        {t('footer_privacy') || 'Datenschutz'}
                     </a>
                 </nav>
-
-                {/* Copyright - Subtle normal case */}
-                <p className="text-[11px] font-medium text-zinc-300 dark:text-zinc-800 tracking-wide">
-                    &copy; 2026 Exposé
-                </p>
             </div>
         </footer>
     );

@@ -72,7 +72,7 @@ export const useFileHandler = ({
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
 
-                        generateThumbnail(event.target!.result as string).then(async (thumbBlob) => {
+                        generateThumbnail(event.target!.result as string, 200).then(async (thumbBlob) => {
                             const thumbSrc = URL.createObjectURL(thumbBlob);
 
                             // 3. UPDATE SKELETON WITH REAL DATA
@@ -95,40 +95,77 @@ export const useFileHandler = ({
 
                             if (processedCount === files.length) {
                                 selectMultiple(newImageIds);
-                                snapToItem(skeletonId);
+                                // Don't auto-scroll on upload completion - only on new skeleton creation
                             }
 
+                            // IMMEDIATE PERSISTENCE (Background)
                             if (user && !isAuthDisabled) {
-                                try {
-                                    // Prepare the full object for persistence
-                                    const finalImage: CanvasImage = {
-                                        ...skeleton,
-                                        src: event.target!.result as string,
-                                        thumbSrc: thumbSrc,
-                                        width: w,
-                                        height: h,
-                                        realWidth: img.width,
-                                        realHeight: img.height,
-                                        isGenerating: false
-                                    };
-                                    const result = await imageService.persistImage(finalImage, user.id, user.email);
-                                    if (!result.success) {
-                                        const errorMsg = result.error === 'Upload Failed' ? t('upload_failed') : (result.error || t('save_failed'));
-                                        showToast(`${t('save_failed')}: ${errorMsg}`, "error");
+                                // Create temp image object for persistence
+                                const finalImage: CanvasImage = {
+                                    id: skeletonId,
+                                    src: event.target!.result as string, // We need to pass the DataURL/Blob for upload
+                                    thumbSrc: thumbSrc,
+                                    width: w,
+                                    height: h,
+                                    realWidth: img.width,
+                                    realHeight: img.height,
+                                    title: baseName,
+                                    baseName: baseName,
+                                    version: 1,
+                                    isGenerating: false,
+                                    createdAt: Date.now(),
+                                    updatedAt: Date.now(),
+                                    boardId: currentBoardId || undefined,
+                                    storage_path: '', // Will be filled by persistence
+                                };
+
+                                imageService.persistImage(finalImage, user.id, user.email).then(result => {
+                                    if (result.success && result.storage_path) {
+                                        // Update state with storage paths
+                                        setRows(prev => prev.map(row => ({
+                                            ...row,
+                                            items: row.items.map(item => item.id === skeletonId ? {
+                                                ...item,
+                                                storage_path: result.storage_path,
+                                                thumb_storage_path: result.thumb_storage_path
+                                            } : item)
+                                        })));
+                                    } else {
+                                        console.error('Persistence failed:', result.error);
+                                        showToast(t('save_failed') || 'Could not save image to cloud', "error");
                                     }
-                                } catch (err: any) {
-                                    showToast(`${t('save_failed')}: ${err.message}`, "error");
-                                }
+                                }).catch(err => {
+                                    console.error('Persistence error:', err);
+                                    showToast(t('save_failed') || 'Could not save image to cloud', "error");
+                                });
                             }
+
+                            // Note: Auto-save will handle DB persistence (every 30s)
+                        }).catch((err) => {
+                            console.error('[Upload] Thumbnail generation failed:', err);
+                            showToast(t('upload_failed'), "error");
                         });
                     };
                 }
             };
             reader.readAsDataURL(file);
         });
-    }, [user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, t]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
 
-    const processFile = useCallback((file: File) => processFiles([file]), [processFiles]);
+    const processFile = useCallback((file: File) => {
+        processFiles([file]);
+    }, [processFiles]);
 
-    return { processFiles, processFile };
+    const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        const files = Array.from(e.dataTransfer.files).filter((f): f is File => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+        processFiles(files);
+    }, [processFiles]);
+
+    return {
+        processFiles,
+        processFile,
+        handleFileDrop
+    };
 };

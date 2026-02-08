@@ -1,4 +1,5 @@
--- Simplified smart generation estimates - only quality_mode and concurrency
+-- Simple generation time estimates using last actual generation time
+-- Returns the duration from the most recent completed job for each quality mode
 CREATE OR REPLACE FUNCTION get_smart_generation_estimates()
 RETURNS TABLE(
     quality_mode TEXT,
@@ -10,55 +11,37 @@ SECURITY DEFINER
 AS $$
 BEGIN
   RETURN QUERY
-  WITH recent_data AS (
-    -- Get completed jobs from last 30 days, weighted by recency
-    SELECT 
-      quality_mode,
-      duration_ms,
-      concurrent_jobs,
-      CASE 
-        WHEN created_at > NOW() - INTERVAL '7 days' THEN 0.7
-        ELSE 0.3
-      END as weight
-    FROM generation_jobs
-    WHERE status = 'completed'
-      AND duration_ms IS NOT NULL
-      AND duration_ms > 0
-      AND duration_ms < 300000  -- Exclude outliers > 5 minutes
-      AND created_at > NOW() - INTERVAL '30 days'
-      AND quality_mode IS NOT NULL
+  WITH last_jobs AS (
+    SELECT DISTINCT ON (gj.quality_mode)
+      gj.quality_mode,
+      gj.duration_ms
+    FROM generation_jobs gj
+    WHERE gj.status = 'completed'
+      AND gj.duration_ms IS NOT NULL
+      AND gj.duration_ms > 0
+      AND gj.duration_ms < 300000
+      AND gj.created_at > NOW() - INTERVAL '7 days'
+    ORDER BY gj.quality_mode, gj.created_at DESC
   ),
-  base_durations AS (
-    -- Calculate weighted average base duration (solo jobs only)
+  defaults AS (
     SELECT 
-      quality_mode,
-      SUM(duration_ms * weight) / SUM(weight) as weighted_avg
-    FROM recent_data
-    WHERE concurrent_jobs <= 1
-    GROUP BY quality_mode
-    HAVING COUNT(*) >= 1  -- Start with just 1 sample
-  ),
-  concurrency_impact AS (
-    -- Calculate concurrency factor from parallel jobs
-    SELECT 
-      rd.quality_mode,
-      CASE 
-        WHEN bd.weighted_avg > 0 AND COUNT(*) >= 2 THEN  -- Just 2 parallel samples
-          GREATEST(0, (AVG(rd.duration_ms) - bd.weighted_avg) / NULLIF(AVG(rd.concurrent_jobs) * bd.weighted_avg, 0))
-        ELSE 0.3  -- Default fallback
-      END as factor
-    FROM recent_data rd
-    JOIN base_durations bd ON rd.quality_mode = bd.quality_mode
-    WHERE rd.concurrent_jobs > 1
-    GROUP BY rd.quality_mode, bd.weighted_avg
+      qm.mode::TEXT as quality_mode,
+      qm.duration::NUMERIC as duration_ms
+    FROM (
+      VALUES 
+        ('fast', 8000),
+        ('pro-1k', 25000),
+        ('pro-2k', 35000),
+        ('pro-4k', 50000)
+    ) AS qm(mode, duration)
   )
   SELECT 
-    bd.quality_mode,
-    ROUND(bd.weighted_avg)::NUMERIC as base_duration_ms,
-    COALESCE(ROUND(ci.factor::NUMERIC, 3), 0.3) as concurrency_factor,
-    (SELECT COUNT(*)::BIGINT FROM recent_data rd2 WHERE rd2.quality_mode = bd.quality_mode) as sample_count
-  FROM base_durations bd
-  LEFT JOIN concurrency_impact ci ON bd.quality_mode = ci.quality_mode;
+    COALESCE(lj.quality_mode, d.quality_mode)::TEXT,
+    COALESCE(lj.duration_ms, d.duration_ms)::NUMERIC as base_duration_ms,
+    0.3::NUMERIC as concurrency_factor,
+    CASE WHEN lj.quality_mode IS NOT NULL THEN 1::BIGINT ELSE 0::BIGINT END as sample_count
+  FROM defaults d
+  LEFT JOIN last_jobs lj ON d.quality_mode = lj.quality_mode;
 END;
 $$ LANGUAGE plpgsql;
 

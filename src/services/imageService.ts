@@ -10,7 +10,7 @@ export const imageService = {
      * Saves a newly generated image to Storage and DB.
      * This is intended to be called in the background (fire and forget from UI perspective).
      */
-    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string }> {
+    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string; storage_path?: string; thumb_storage_path?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
         // 1. Determine Path & Filename
@@ -68,7 +68,11 @@ export const imageService = {
             return { success: false, error: `DB: ${error.message}` };
         } else {
             console.log(`Deep Sync: Success! Image ${image.id} is safe.`);
-            return { success: true };
+            return {
+                success: true,
+                storage_path: uploadResult.path,
+                thumb_storage_path: uploadResult.thumbPath || undefined
+            };
         }
     },
 
@@ -318,9 +322,9 @@ export const imageService = {
             activeTemplateId: undefined, // No preset carried over
             variableValues: undefined, // No variables carried over,
             version: result.version || targetVersion || (sourceImage.version || 1) + 1,
-            title: result.title || targetTitle || (sourceImage.title?.includes('_v')
-                ? sourceImage.title.split('_v')[0] + `_v${(sourceImage.version || 1) + 1}`
-                : `${sourceImage.title || 'Image'}_v2`),
+            title: result.title || targetTitle || (sourceImage.title?.includes(' v')
+                ? sourceImage.title.split(' v')[0] + ` v${(sourceImage.version || 1) + 1}`
+                : `${sourceImage.title || 'Image'} v2`),
             baseName: result.base_name || sourceImage.baseName || sourceImage.title,
             createdAt: Date.now(),
             updatedAt: Date.now(),

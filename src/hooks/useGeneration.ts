@@ -5,6 +5,7 @@ import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
 import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
+import { sendGenerationCompleteNotification } from '@/utils/notifications';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -114,15 +115,35 @@ export const useGeneration = ({
             if (imgData) {
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
-                const refreshedImage = {
-                    ...finalImage,
-                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
-                };
 
                 setRows(prev => prev.map(row => ({
                     ...row,
-                    items: row.items.map(item => item.id === jobId ? refreshedImage : item)
+                    items: row.items.map(item => {
+                        if (item.id === jobId) {
+                            // MERGE: Preserve local state that might have been changed while polling
+                            return {
+                                ...finalImage,
+                                src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`,
+                                // Preserve local edits (even empty strings)
+                                userDraftPrompt: item.userDraftPrompt !== undefined ? item.userDraftPrompt : finalImage.userDraftPrompt,
+                                activeTemplateId: item.activeTemplateId !== undefined ? item.activeTemplateId : finalImage.activeTemplateId,
+                                variableValues: item.variableValues !== undefined ? item.variableValues : finalImage.variableValues,
+                                // If the local item has annotations (e.g. user started brushing), prefer those
+                                // UNLESS the final image has new annotations from the server (e.g. generation result)
+                                annotations: (item.annotations && item.annotations.length > 0 && (!finalImage.annotations || finalImage.annotations.length === 0))
+                                    ? item.annotations
+                                    : (finalImage.annotations || [])
+                            };
+                        }
+                        return item;
+                    })
                 })));
+
+                // Send browser notification if enabled and tab is inactive
+                sendGenerationCompleteNotification(
+                    finalImage.title || finalImage.baseName,
+                    finalImage.generationPrompt
+                );
 
                 // Persist job history for admin dashboard
                 attachedJobIds.current.delete(jobId);
@@ -228,6 +249,10 @@ export const useGeneration = ({
 
         // Create the composite Annotation Image (if markings exist)
         const annotations = sourceImage.annotations || [];
+        console.log('[DEBUG] performGeneration - sourceImage.id:', sourceImage.id);
+        console.log('[DEBUG] performGeneration - annotations count:', annotations.length);
+        console.log('[DEBUG] performGeneration - annotations:', JSON.stringify(annotations.map(a => ({ type: a.type, id: a.id }))));
+
         const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
         let annotationImageBase64: string | undefined;
 
@@ -236,8 +261,10 @@ export const useGeneration = ({
                 annotationImageBase64 = await generateAnnotationImage(
                     sourceImage.src,
                     annotations,
-                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 }
+                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 },
+                    { width: sourceImage.width || 1024, height: sourceImage.height || 1024 } // Canvas dimensions
                 );
+                console.log('[DEBUG] performGeneration - annotationImage created:', !!annotationImageBase64);
             } catch (err) {
                 console.warn("Failed to generate annotation image:", err);
             }
@@ -245,6 +272,8 @@ export const useGeneration = ({
 
         // Prepare structured references
         const refs = annotations.filter(a => a.type === 'reference_image');
+        console.log('[DEBUG] performGeneration - reference images count:', refs.length);
+
         const structuredRefs: StructuredReference[] = refs.map(ann => ({
             src: ann.referenceImage!,
             instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
@@ -258,6 +287,12 @@ export const useGeneration = ({
             annotationImage: annotationImageBase64,
             references: structuredRefs
         };
+
+        console.log('[DEBUG] performGeneration - structuredRequest:', {
+            hasAnnotationImage: !!annotationImageBase64,
+            referencesCount: structuredRefs.length,
+            promptLength: prompt.length
+        });
 
         const row = rows[rowIndex];
         const siblings = row.items.filter(i => i && (i.baseName || i.title || '').startsWith(baseName));
@@ -297,7 +332,7 @@ export const useGeneration = ({
             maskSrc: undefined,
             thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
             src: sourceImage.src, // Explicitly preserve source for blurry preview
-            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references
+            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references for new image
             parentId: sourceImage.id,
             generationPrompt: prompt, // Snapshot for Info tab
             userDraftPrompt: '', // Clean prompt field

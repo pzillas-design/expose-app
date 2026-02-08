@@ -1,3 +1,5 @@
+import { encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
+
 /**
  * Image processing utilities for base64 conversion
  */
@@ -7,13 +9,8 @@
  */
 export const urlToBase64 = async (url: string): Promise<string> => {
     const response = await fetch(url);
-    const blob = await response.arrayBuffer();
-    const uint8 = new Uint8Array(blob);
-    let binary = '';
-    for (let i = 0; i < uint8.length; i += 32768) {
-        binary += String.fromCharCode.apply(null, uint8.subarray(i, i + 32768) as any);
-    }
-    return btoa(binary);
+    const arrayBuffer = await response.arrayBuffer();
+    return encodeBase64(new Uint8Array(arrayBuffer));
 };
 
 /**

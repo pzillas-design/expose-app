@@ -279,6 +279,21 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     }, [user, isAuthDisabled, t, showToast]);
 
 
+    const ensureValidSession = useCallback(async () => {
+        if (isAuthDisabled) return true;
+
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+            console.warn("Auth: Session invalid or expired", error);
+            setUser(null);
+            setUserProfile(null);
+            setIsAuthModalOpen(true);
+            return false;
+        }
+        return true;
+    }, [isAuthDisabled]);
+
+
     return {
         user,
         userProfile,
@@ -295,6 +310,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         handleAddFunds,
         handleSignOut,
         updateProfile,
-        deleteAccount
+        deleteAccount,
+        ensureValidSession
     };
 };

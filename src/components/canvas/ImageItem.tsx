@@ -1,7 +1,6 @@
-
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -11,6 +10,7 @@ import { storageService } from '@/services/storageService';
 interface ImageItemProps {
     image: CanvasImage;
     isSelected: boolean;
+    isPrimary?: boolean;
     zoom: number;
     hasAnySelection?: boolean;
     onRetry?: (id: string) => void;
@@ -25,13 +25,16 @@ interface ImageItemProps {
     };
     onUpdateAnnotations?: (id: string, anns: AnnotationObject[]) => void;
     onEditStart?: (mode: 'brush' | 'objects') => void;
-    onNavigate?: (direction: -1 | 1, fromId?: string) => void,
-    hasLeft?: boolean,
-    hasRight?: boolean,
+    onNavigate?: (direction: -1 | 1, fromId?: string) => void;
+    hasLeft?: boolean;
+    hasRight?: boolean;
     onDelete?: (id: string) => void;
+    onDownload?: (id: string) => void;
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    onNavigateParent?: (id: string) => void;
+    onShowInfo?: (id: string) => void;
     t: TranslationFunction;
 }
 
@@ -69,7 +72,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
             </div>
         </div>
     );
-}
+};
 
 const getDurationForQuality = (quality?: GenerationQuality): number => {
     switch (quality) {
@@ -83,7 +86,8 @@ const getDurationForQuality = (quality?: GenerationQuality): number => {
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [isHighRes, setIsHighRes] = useState(!!src && (!thumbSrc || !path));
+    const isBlob = src?.startsWith('blob:');
+    const [isHighRes, setIsHighRes] = useState(isBlob || (!!src && (!thumbSrc || !path)));
     const fetchLock = useRef(false);
     const lastPath = useRef(path);
     const lastSrc = useRef(src);
@@ -102,19 +106,20 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             }
 
             // If selected and no storage path yet (initial upload), prioritize high-res src
-            const initialSrc = (!path && isSelected && src) ? src : (maskSrc || thumbSrc || src || null);
+            const isBlob = src?.startsWith('blob:');
+            const initialSrc = (isBlob || (!path && isSelected && src)) ? src : (maskSrc || thumbSrc || src || null);
 
             // Avoid setting state if nothing changed to prevent extra cycles
             if (initialSrc !== currentSrc) {
                 setCurrentSrc(initialSrc);
             }
 
-            setIsHighRes(!!src && (!thumbSrc || !path || (isSelected && !path)));
+            setIsHighRes(isBlob || (!!src && (!thumbSrc || !path || (isSelected && !path))));
             lastPath.current = path;
             lastSrc.current = src;
             hasNotifiedLoad.current = false;
         }
-    }, [path, src, maskSrc, thumbSrc, isSelected]);
+    }, [path, src, maskSrc, thumbSrc, isSelected, currentSrc]);
 
     useEffect(() => {
         if (maskSrc) {
@@ -168,7 +173,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         <img
             src={currentSrc || ''}
             alt={title}
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
+            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-500 ${!isHighRes ? 'blur-sm' : 'blur-0'}`}
             loading="lazy"
             onLoad={(e) => {
                 const img = e.currentTarget;
@@ -195,6 +200,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
     isSelected,
+    isPrimary,
     hasAnySelection,
     zoom,
     onRetry,
@@ -205,9 +211,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     hasLeft,
     hasRight,
     onDelete,
+    onDownload,
     onInteractionStart,
     onInteractionEnd,
     onContextMenu,
+    onNavigateParent,
+    onShowInfo,
     t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
@@ -240,37 +249,34 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {/* Toolbar */}
             {zoom > 0.4 && (
-                <div className="flex items-center justify-between w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300">
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate uppercase text-[10px] tracking-wider`}>
-                        {image.title || 'Untitled'}
+                <div
+                    className="flex items-center justify-start gap-2 w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onContextMenu?.(e, image.id);
+                    }}
+                >
+                    {/* Filename - Left aligned */}
+                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider transition-colors group-hover/title:text-black dark:group-hover/title:text-white`}>
+                        {image.title || 'Untitled'}.jpg
                     </span>
-                    <div className={`flex items-center gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        <Tooltip text={t('tt_download')}>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); downloadImage(image.src, image.title || 'image'); }}
-                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+
+                    {/* Context Menu Button - Right aligned, visible on hover */}
+                    <div className={`transition-opacity ${'opacity-0 group-hover/title:opacity-100'}`}>
+                        <button
+                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                        >
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                className="w-3.5 h-3.5"
                             >
-                                <Download className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
-                        <Tooltip text={t('tt_delete')}>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onDelete?.(image.id); }}
-                                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                            >
-                                <Trash className="w-3.5 h-3.5" />
-                            </button>
-                        </Tooltip>
-                        {image.parentId && (
-                            <Tooltip text={t('ctx_create_variations')}>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); onRetry?.(image.id); }}
-                                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                                >
-                                    <RotateCcw className="w-3.5 h-3.5" />
-                                </button>
-                            </Tooltip>
-                        )}
+                                <circle cx="12" cy="7" r="2.5" />
+                                <circle cx="12" cy="17" r="2.5" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             )}
@@ -341,17 +347,78 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 )}
             </div>
 
-            {isSelected && zoom > 1.2 && (
-                <div className="absolute inset-0 pointer-events-none">
+
+
+            {/* Bottom Navigation Buttons - Space Reserved to prevent Layout Shift */}
+            {zoom > 0.4 && (
+                <div
+                    className={`flex items-center justify-center gap-2 mt-6 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-2 pointer-events-none'
+                        }`}
+                >
+                    {/* Previous Image - Square Button */}
                     {hasLeft && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(-1, image.id); }} className={`${navIconBtnClass} -left-16 top-1/2 -translate-y-1/2`}>
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
+                        <Tooltip text={t('previous') || 'Previous'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigate?.(-1, image.id);
+                                }}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
                     )}
+
+                    {/* Center Action Group - Joined Pill */}
+                    <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
+                        {/* Generate More */}
+                        <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRetry?.(image.id);
+                                }}
+                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span className={Typo.Label}>{t('more') || 'MEHR'}</span>
+                            </button>
+                        </Tooltip>
+
+                        {/* Separator */}
+                        <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+
+                        {/* Save/Download */}
+                        <Tooltip text={t('tt_save') || 'Download image'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDownload) onDownload(image.id);
+                                }}
+                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
+                            </button>
+                        </Tooltip>
+                    </div>
+
+                    {/* Next Image - Square Button */}
                     {hasRight && (
-                        <button onClick={(e) => { e.stopPropagation(); onNavigate?.(1, image.id); }} className={`${navIconBtnClass} -right-16 top-1/2 -translate-y-1/2`}>
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
+                        <Tooltip text={t('next') || 'Next'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onNavigate?.(1, image.id);
+                                }}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </Tooltip>
                     )}
                 </div>
             )}
