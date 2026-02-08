@@ -659,6 +659,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
     const section4Image2Ref = useRef<HTMLImageElement>(null);
     const section4ProgressRef = useRef<HTMLDivElement>(null);
     const section4LabelsRef = useRef<HTMLDivElement>(null);
+    const section4LampRef = useRef<SVGSVGElement>(null);
+    const section4LampPath1Ref = useRef<SVGPathElement>(null);
+    const section4LampPath2Ref = useRef<SVGPathElement>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -753,19 +756,35 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 const typoOpacity = progressS4 < 0.15 ? progressS4 / 0.15 : 1;
                 section4ContentRef.current.style.opacity = typoOpacity.toString();
 
-                // 2. Progressive Label Appearance (0.15 - 0.50)
+                // 2. Progressive Content Appearance (0.15 - 0.65)
                 if (section4LabelsRef.current) {
                     const container = section4LabelsRef.current.children[0] as HTMLElement;
                     if (container) {
                         const children = container.children;
+                        // Sequence: Küche (0), Lamp (1), Esstisch (2), Sofa (3)
+
                         for (let i = 0; i < children.length; i++) {
                             const child = children[i] as HTMLElement;
-                            const startTrigger = 0.15 + (i * 0.1);
+                            const startTrigger = 0.15 + (i * 0.12);
                             const endTrigger = startTrigger + 0.1;
-                            const labelProgress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
+                            const progress = Math.min(Math.max((progressS4 - startTrigger) / (endTrigger - startTrigger), 0), 1);
 
-                            child.style.opacity = labelProgress.toString();
-                            child.style.transform = `scale(${0.9 + labelProgress * 0.1}) translate3d(0, ${(1 - labelProgress) * 10}px, 0)`;
+                            if (child === section4LampRef.current) {
+                                // Special handling for Lamp SVG drawing
+                                child.style.opacity = progress.toString();
+                                if (section4LampPath1Ref.current && section4LampPath2Ref.current) {
+                                    const length1 = 220;
+                                    const length2 = 800;
+                                    section4LampPath1Ref.current.style.strokeDasharray = `${length1}`;
+                                    section4LampPath1Ref.current.style.strokeDashoffset = `${length1 * (1 - progress)}`;
+                                    section4LampPath2Ref.current.style.strokeDasharray = `${length2}`;
+                                    section4LampPath2Ref.current.style.strokeDashoffset = `${length2 * (1 - progress)}`;
+                                }
+                            } else {
+                                // Standard label reveal
+                                child.style.opacity = progress.toString();
+                                child.style.transform = `scale(${0.9 + progress * 0.1}) translate3d(0, ${(1 - progress) * 10}px, 0)`;
+                            }
                         }
                     }
                 }
@@ -995,6 +1014,32 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                             <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                         </div>
                                     </div>
+
+                                    {/* Lamp Drawing (Top Left above Küche) - APPEARS AFTER KÜCHE */}
+                                    <svg
+                                        ref={section4LampRef}
+                                        width="160"
+                                        height="180"
+                                        viewBox="0 0 246 272"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="absolute top-[12%] left-[10%] opacity-0 stroke-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]"
+                                    >
+                                        <path
+                                            ref={section4LampPath1Ref}
+                                            d="M129.009 0.0950928C124.967 127.525 124.469 180.048 129.009 215.595"
+                                            stroke="white"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                        <path
+                                            ref={section4LampPath2Ref}
+                                            d="M206.413 212.83C200.199 206.22 171.641 193.497 107.124 195.48C26.4762 197.958 -64.3028 250.01 76.3236 265.873C216.95 281.736 328.802 208.369 152.513 182.095"
+                                            stroke="white"
+                                            strokeWidth="6"
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
 
                                     {/* Label 2: Esstisch */}
                                     <div className="absolute bottom-[25%] left-[10%] opacity-0 will-change-transform">
