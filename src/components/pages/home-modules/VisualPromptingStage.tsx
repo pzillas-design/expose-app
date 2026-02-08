@@ -15,8 +15,6 @@ const AnnotationChip = ({ label, position, opacity }: {
         }}
     >
         <div className="relative flex flex-col items-center">
-            {/* Simple colored circle instead of blur/shadow */}
-            <div className={`absolute -inset-4 bg-orange-500/10 rounded-full transition-opacity duration-500 pointer-events-none ${opacity > 0 ? 'opacity-100' : 'opacity-0'}`} />
 
             <div className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 flex items-center gap-3">
                 <span className="text-base font-medium text-white">{label}</span>
