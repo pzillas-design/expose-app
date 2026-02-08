@@ -982,9 +982,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 alt=""
                             />
 
-                            {/* Dark Gradient Overlays */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80 z-20" />
-                            <div className="absolute inset-0 bg-black/20 z-20" />
+                            {/* Background Overlays Removed per user request */}
                         </div>
 
                         {/* Generation Progress Bar */}
@@ -994,7 +992,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             style={{ width: '0%' }}
                         />
 
-                        <div className="relative z-60 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
+                        <div className="relative z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center">
                                 <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6 uppercase">
                                     Visual <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
