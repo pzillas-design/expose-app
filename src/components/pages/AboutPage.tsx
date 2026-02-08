@@ -1123,7 +1123,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <Button
                                 onClick={onCreateBoard}
                                 variant="primary"
-                                className="scale-150"
+                                className="scale-125"
                             >
                                 Projekt starten
                             </Button>
