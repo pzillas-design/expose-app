@@ -803,9 +803,13 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     const transformProgress = Math.min(Math.max((progressS4 - 0.75) / 0.2, 0), 1);
                     section4Image2Ref.current.style.opacity = transformProgress.toString();
 
-                    // Fade out labels slightly during transformation
+                    // SINK FADEOUT: Typography and labels fade out together
+                    const fadeOutOpacity = (1 - transformProgress).toString();
                     if (section4LabelsRef.current) {
-                        section4LabelsRef.current.style.opacity = (1 - transformProgress).toString();
+                        section4LabelsRef.current.style.opacity = fadeOutOpacity;
+                    }
+                    if (section4ContentRef.current) {
+                        section4ContentRef.current.style.opacity = (parseFloat(typoOpacity.toString()) * (1 - transformProgress)).toString();
                     }
                 }
 
@@ -958,7 +962,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                 <div className="w-full h-px bg-zinc-100 dark:bg-zinc-900 mx-auto max-w-[1700px]" />
 
                 {/* Section 4: Visual Prompting (Full-Page Sticky with Transformation) */}
-                <section ref={section4Ref} className="relative h-[450vh] bg-black">
+                <section ref={section4Ref} className="relative h-[450vh] bg-white dark:bg-zinc-950">
                     <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
                         {/* Background Layer */}
                         <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
@@ -966,7 +970,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <img
                                 ref={section4Image1Ref}
                                 src="/about/3 visual promting/2.jpg"
-                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1]"
+                                className="absolute inset-0 w-full h-full object-cover grayscale-[10%] contrast-[1.1] opacity-60"
                                 alt=""
                             />
                             {/* Image 2: Result (now 1.jpg) */}
@@ -1065,10 +1069,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
 
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
                             <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-white mb-6">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-500 max-w-2xl leading-relaxed">
+                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
