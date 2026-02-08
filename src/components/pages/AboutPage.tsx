@@ -1069,19 +1069,33 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
 
                         <style>{`
-                            .section4-drop-shadow-light {
-                                filter: drop-shadow(0 12px 48px rgba(255, 255, 255, 0.9));
+                            .section4-title-shadow {
+                                text-shadow: 
+                                    0 10px 40px rgba(255, 255, 255, 0.9),
+                                    0 0 100px rgba(255, 255, 255, 0.4);
                             }
-                            .dark .section4-drop-shadow-dark {
-                                filter: drop-shadow(0 12px 48px rgba(0, 0, 0, 0.9));
+                            .dark .section4-title-shadow {
+                                text-shadow: 
+                                    0 10px 40px rgba(0, 0, 0, 0.9),
+                                    0 0 100px rgba(0, 0, 0, 0.5);
+                            }
+                            .section4-para-shadow {
+                                text-shadow: 
+                                    0 5px 20px rgba(255, 255, 255, 0.8),
+                                    0 0 60px rgba(255, 255, 255, 0.3);
+                            }
+                            .dark .section4-para-shadow {
+                                text-shadow: 
+                                    0 5px 20px rgba(0, 0, 0, 0.8),
+                                    0 0 60px rgba(0, 0, 0, 0.4);
                             }
                         `}</style>
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto section4-drop-shadow-light section4-drop-shadow-dark">
-                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center pointer-events-auto">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter text-zinc-900 dark:text-white mb-6 section4-title-shadow">
                                     Visual <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting.</span>
                                 </h2>
-                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed">
+                                <p className="text-xl sm:text-2xl text-zinc-600 dark:text-zinc-500 max-w-2xl leading-relaxed section4-para-shadow font-medium">
                                     Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
                                 </p>
                             </div>
