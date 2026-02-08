@@ -4,7 +4,7 @@ import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Pen, Camera, X, Plus, ChevronDown } from 'lucide-react';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
-import { Theme } from '@/components/ui/DesignSystem';
+import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
 
 interface AboutPageProps {
     user: any;
@@ -1092,21 +1092,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
                         </h2>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-16">
-                            <button
+                        <div className="flex flex-col items-center justify-center gap-6 mt-16">
+                            <Button
                                 onClick={onCreateBoard}
-                                className="group relative px-10 py-5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-lg rounded-2xl overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl"
+                                variant="primary"
+                                className="h-16 px-12 text-sm shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                <span className="relative z-10">Projekt starten</span>
-                            </button>
-
-                            <a
-                                href="/projects"
-                                className="px-10 py-5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white font-medium text-lg transition-colors"
-                            >
-                                Jetzt anmelden &rarr;
-                            </a>
+                                Projekt starten
+                            </Button>
                         </div>
                     </div>
 
