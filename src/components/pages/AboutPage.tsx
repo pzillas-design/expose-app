@@ -775,10 +775,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                 if (section4LampPath1Ref.current && section4LampPath2Ref.current) {
                                     const length1 = 220;
                                     const length2 = 800;
+
+                                    // Sequential Drawing: Path 1 (Stick) then Path 2 (Body)
+                                    // Split progress: 0.0 - 0.3 for Path 1, 0.3 - 1.0 for Path 2
+                                    const progressPath1 = Math.min(Math.max(progress / 0.3, 0), 1);
+                                    const progressPath2 = Math.min(Math.max((progress - 0.3) / 0.7, 0), 1);
+
                                     section4LampPath1Ref.current.style.strokeDasharray = `${length1}`;
-                                    section4LampPath1Ref.current.style.strokeDashoffset = `${length1 * (1 - progress)}`;
+                                    section4LampPath1Ref.current.style.strokeDashoffset = `${length1 * (1 - progressPath1)}`;
+
                                     section4LampPath2Ref.current.style.strokeDasharray = `${length2}`;
-                                    section4LampPath2Ref.current.style.strokeDashoffset = `${length2 * (1 - progress)}`;
+                                    section4LampPath2Ref.current.style.strokeDashoffset = `${length2 * (1 - progressPath2)}`;
                                 }
                             } else {
                                 // Standard label reveal
@@ -998,7 +1005,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             </div>
 
                             {/* Annotation Labels (Exact User Design) */}
-                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
+                            <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-25 transition-opacity duration-500 flex items-center justify-center overflow-hidden">
                                 {/* Pinned Container (3:2 Aspect Ratio matching the image) */}
                                 <div className="relative aspect-[3/2] min-w-full min-h-full flex-none">
                                     {/* Label 1: Küche */}
