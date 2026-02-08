@@ -938,17 +938,17 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                     <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
                         {/* Background Layer */}
                         <div ref={section4BackgroundRef} className="absolute inset-0 z-0">
-                            {/* Image 1: Before */}
+                            {/* Image 1: Initial State (now 2.jpg) */}
                             <img
                                 ref={section4Image1Ref}
-                                src="/about/3 visual promting/1.jpg"
+                                src="/about/3 visual promting/2.jpg"
                                 className="absolute inset-0 w-full h-full object-cover opacity-60 grayscale-[10%] contrast-[1.1]"
                                 alt=""
                             />
-                            {/* Image 2: After (Revealed later) */}
+                            {/* Image 2: Result (now 1.jpg) */}
                             <img
                                 ref={section4Image2Ref}
-                                src="/about/3 visual promting/2.jpg"
+                                src="/about/3 visual promting/1.jpg"
                                 className="absolute inset-0 w-full h-full object-cover opacity-0 grayscale-[10%] contrast-[1.1] z-10"
                                 alt=""
                             />
@@ -965,60 +965,57 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                             style={{ width: '0%' }}
                         />
 
-                        {/* Content Layer (Typo) */}
                         <div className="relative z-30 container mx-auto px-6 h-full flex flex-col justify-center items-center text-center">
-                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0">
-                                <h2 className="text-6xl sm:text-7xl lg:text-9xl xl:text-[12rem] font-bold tracking-tighter leading-[0.85] text-white">
+                            <div ref={section4ContentRef} className="max-w-6xl mb-12 will-change-transform will-change-opacity opacity-0 flex flex-col items-center">
+                                <h2 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tighter leading-[0.85] text-white mb-6">
                                     Visual <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
+                                <p className="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed font-light">
+                                    Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white font-medium">genau wo</span> etwas passieren soll.
+                                </p>
                             </div>
 
                             {/* Annotation Labels (Exact User Design) */}
                             <div ref={section4LabelsRef} className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-500">
                                 {/* Label 1: Küche */}
-                                <div className="absolute top-[45%] left-[34%] opacity-0 will-change-transform">
+                                <div className="absolute top-[45%] left-[15%] opacity-0 will-change-transform">
                                     <div className="relative flex flex-col items-center">
                                         {/* Dark Chip */}
                                         <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
                                             <span className="text-lg font-medium text-white">Küche</span>
                                             <X className="w-4 h-4 text-zinc-500" />
                                         </div>
-                                        {/* Connector Zipfel */}
-                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
+                                        {/* Connector Zipfel - ENLARGED */}
+                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
 
                                 {/* Label 2: Esstisch */}
-                                <div className="absolute bottom-[25%] left-[20%] opacity-0 will-change-transform">
+                                <div className="absolute bottom-[25%] left-[10%] opacity-0 will-change-transform">
                                     <div className="relative flex flex-col items-center">
                                         <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
                                             <span className="text-lg font-medium text-white">Esstisch</span>
                                             <X className="w-4 h-4 text-zinc-500" />
                                         </div>
-                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
+                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
 
                                 {/* Label 3: Sofa */}
-                                <div className="absolute bottom-[12%] right-[35%] opacity-0 will-change-transform">
+                                <div className="absolute bottom-[20%] right-[10%] opacity-0 will-change-transform">
                                     <div className="relative flex flex-col items-center">
                                         <div className="px-4 py-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-4">
                                             <span className="text-lg font-medium text-white">Sofa</span>
                                             <X className="w-4 h-4 text-zinc-500" />
                                         </div>
-                                        <div className="w-1.5 h-1.5 bg-zinc-900 rotate-45 -mt-[4px] border-r border-b border-white/10" />
+                                        <div className="w-3 h-3 bg-zinc-900 rotate-45 -mt-[6px] border-r border-b border-white/10" />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Subline overlay */}
-                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 text-center w-full px-6 z-40">
-                            <p className="text-xl sm:text-2xl text-zinc-300 max-w-3xl mx-auto leading-relaxed font-light">
-                                Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white font-medium">genau wo</span> etwas passieren soll.
-                            </p>
-                        </div>
+
                     </div>
                 </section>
 
