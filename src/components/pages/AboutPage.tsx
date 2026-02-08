@@ -972,7 +972,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Prompting.</span>
                                 </h2>
                                 <p className="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed font-light">
-                                    Marker setzen statt Sätze hämmern. Sagen Sie der KI nicht nur was, sondern <span className="text-white font-medium">genau wo</span> etwas passieren soll.
+                                    Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr <span className="text-white font-medium">exakt wo.</span>
                                 </p>
                             </div>
 
