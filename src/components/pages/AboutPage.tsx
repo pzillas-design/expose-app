@@ -1042,7 +1042,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                                     fill="none"
                                     xmlns="http://www.w3.org/2000/svg"
                                     className="absolute opacity-0 z-10 drop-shadow-[0_0_20px_rgba(251,146,60,0.3)]"
-                                    style={{ top: '12%', left: '18%' }}
+                                    style={{ top: '12%', left: '21%' }}
                                 >
                                     <defs>
                                         <linearGradient id="lampGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1069,25 +1069,28 @@ export const AboutPage: React.FC<AboutPageProps> = ({ user, userProfile, credits
                         </div>
 
                         <style>{`
+                            /* Multi-layered shadows for maximum visibility and 'projected' feel */
                             .section4-title-shadow {
                                 text-shadow: 
-                                    0 10px 40px rgba(255, 255, 255, 0.9),
-                                    0 0 100px rgba(255, 255, 255, 0.4);
+                                    0 2px 4px rgba(0,0,0,0.05),
+                                    0 10px 40px rgba(255, 255, 255, 1),
+                                    0 0 120px rgba(255, 255, 255, 0.6);
                             }
                             .dark .section4-title-shadow {
                                 text-shadow: 
-                                    0 10px 40px rgba(0, 0, 0, 0.9),
-                                    0 0 100px rgba(0, 0, 0, 0.5);
+                                    0 10px 40px rgba(0, 0, 0, 1),
+                                    0 0 120px rgba(0, 0, 0, 0.6);
                             }
                             .section4-para-shadow {
                                 text-shadow: 
-                                    0 5px 20px rgba(255, 255, 255, 0.8),
-                                    0 0 60px rgba(255, 255, 255, 0.3);
+                                    0 1px 2px rgba(0,0,0,0.05),
+                                    0 5px 20px rgba(255, 255, 255, 1),
+                                    0 0 80px rgba(255, 255, 255, 0.5);
                             }
                             .dark .section4-para-shadow {
                                 text-shadow: 
-                                    0 5px 20px rgba(0, 0, 0, 0.8),
-                                    0 0 60px rgba(0, 0, 0, 0.4);
+                                    0 5px 20px rgba(0, 0, 0, 1),
+                                    0 0 80px rgba(0, 0, 0, 0.5);
                             }
                         `}</style>
                         <div className="absolute inset-0 z-[100] container mx-auto px-6 h-full flex flex-col justify-center items-center text-center pointer-events-none">
