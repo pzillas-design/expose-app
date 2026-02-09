@@ -230,9 +230,9 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Typography Part: Left on Desktop */}
                 <div className="w-full h-[35vh] lg:h-full lg:flex-1 flex items-start lg:items-center justify-start lg:pr-40 z-20 order-2 lg:order-1 text-left pointer-events-auto py-8 lg:py-0">
                     <div className="flex flex-col max-w-xl">
-                        <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-bold tracking-tighter mb-4 lg:mb-8 leading-[1.1] lg:leading-[1.1]">
+                        <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.1] lg:leading-[1.1]">
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br className="hidden lg:block" />
-                            nutzen & anlegen.
+                            nutzen & anlegen
                         </h2>
                         <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 leading-relaxed font-light">
                             Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.

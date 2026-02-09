@@ -118,7 +118,7 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
                 <div className="flex flex-col max-w-2xl will-change-transform">
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.1] lg:leading-[1.1]">
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> <br className="hidden lg:block" />
-                        & parallel arbeiten.
+                        & parallel arbeiten
                     </h2>
                     <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 leading-relaxed font-light">
                         Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.
