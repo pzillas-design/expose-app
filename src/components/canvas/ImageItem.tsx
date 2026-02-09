@@ -267,8 +267,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
-                        {/* Selection Checkbox */}
-                        <Tooltip content={isSelected ? (t('deselect') || 'Deselect') : (t('select') || 'Select')}>
+                        {/* Unified Selection Button */}
+                        <Tooltip content={isSelected ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -277,25 +277,23 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onMouseUp={(e) => e.stopPropagation()}
-                                className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
-                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1)) ? 'opacity-100' : 'opacity-100'}`}
+                                className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
+                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                        ? 'text-black dark:text-white opacity-100'
+                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
                                 {(isSelected && selectedCount > 1) ? (
-                                    <SquareCheck className="w-4 h-4 text-black dark:text-white" />
+                                    <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
                                 ) : (
-                                    <Square className="w-4 h-4" />
+                                    <Square className="w-4 h-4 shrink-0" />
                                 )}
+
+                                <span className="truncate text-[10px] tracking-wider transition-colors">
+                                    {image.title || 'Untitled'}.jpg
+                                </span>
                             </button>
                         </Tooltip>
-
-                        {/* Filename */}
-                        <span className={`truncate text-[10px] tracking-wider transition-colors 
-                            ${(isContextMenuOpen || (isSelected && selectedCount > 1))
-                                ? 'text-black dark:text-white'
-                                : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                        >
-                            {image.title || 'Untitled'}.jpg
-                        </span>
                     </div>
 
                     {/* Right Group: Meatballs */}
