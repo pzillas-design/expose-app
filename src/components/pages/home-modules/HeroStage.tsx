@@ -103,14 +103,11 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                             WebkitBackfaceVisibility: 'hidden',
                         }}
                     >
-                        <div className="w-[85%] lg:w-[60%] mt-[-2vh]">
+                        <div className="w-[70%] lg:w-[48%] mt-[-2vh]">
                             <img
                                 src="/home/1 creation reimagined/section 1 typo.svg"
                                 alt="Creation Reimagined"
                                 className="w-full h-auto antialiased"
-                                style={{
-                                    filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.1))' // Subtle hint for Safari to keep it crisp
-                                }}
                             />
                         </div>
                     </div>
