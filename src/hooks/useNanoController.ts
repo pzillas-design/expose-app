@@ -26,6 +26,7 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [markedIds, setMarkedIds] = useState<string[]>([]);
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
     const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(() => {
         const path = window.location.pathname;
@@ -194,6 +195,17 @@ export const useNanoController = () => {
             }
         }
     }, [user, currentBoardId, resolvingBoardId, selectAndSnap]);
+
+    // --- Marking Logic ---
+    // Persistent marking separate from selection/focus
+    const toggleMark = useCallback((id: string) => {
+        setMarkedIds(prev => {
+            if (prev.includes(id)) return prev.filter(i => i !== id);
+            return [...prev, id];
+        });
+    }, []);
+
+    const clearMarks = useCallback(() => setMarkedIds([]), []);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
@@ -385,13 +397,13 @@ export const useNanoController = () => {
         isBoardsLoading,
         isBrushResizing,
         templates,
-        isMarkingMode
+        markedIds
     }), [
         rows, selectedIds, primarySelectedId, selectedImage, selectedImages, allImages, zoom, isZooming, isAutoScrolling,
         qualityMode, themeMode, lang, currentLang, sideSheetMode, isCanvasLoading, resolvingBoardId, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen, currentBoardId,
-        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates, isMarkingMode
+        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates, markedIds
     ]);
 
     const actions = React.useMemo(() => ({
@@ -469,7 +481,8 @@ export const useNanoController = () => {
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt,
-        ensureValidSession
+        ensureValidSession,
+        toggleMark, clearMarks
     ]);
 
     return React.useMemo(() => ({

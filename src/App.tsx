@@ -66,7 +66,7 @@ export function App() {
         currentLang, allImages, fullLibrary, user, userProfile, isAuthLoading,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
-        resolvingBoardId, loadingProgress, isBrushResizing, isMarkingMode
+        resolvingBoardId, loadingProgress, isBrushResizing, markedIds
     } = state;
 
     const {
@@ -79,7 +79,8 @@ export function App() {
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
-        savePreset, deletePreset, setIsCanvasLoading, resolveBoardIdentifier
+        savePreset, deletePreset, setIsCanvasLoading, resolveBoardIdentifier,
+        toggleMark
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -643,7 +644,8 @@ export function App() {
                                                     selectedCount={selectedIds.length}
                                                     isContextMenuOpen={contextMenu?.targetId === img.id}
                                                     t={t}
-                                                    isMarkingMode={isMarkingMode}
+                                                    isMarked={markedIds.includes(img.id)}
+                                                    onToggleMark={toggleMark}
                                                 />
                                             );
                                         })}
