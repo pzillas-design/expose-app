@@ -353,10 +353,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
                         onLoaded={() => setIsImageReady(true)}
                     />
 
-                    {/* Click to load hint - subtle and muted */}
+                    {/* Click to load hint - minimal */}
                     {!isSelected && !image.isGenerating && isImageReady && zoom > 0.3 && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in fade-in duration-700">
-                            <span className={`${Typo.Micro} text-white/80 drop-shadow-md tracking-wider uppercase font-medium bg-black/20 backdrop-blur-[1px] px-3 py-1 rounded-full`}>
+                            <span className={`${Typo.Micro} text-black/30 dark:text-white/30 tracking-wider uppercase font-medium`}>
                                 {t('click_to_load')}
                             </span>
                         </div>
