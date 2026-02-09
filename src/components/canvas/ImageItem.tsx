@@ -264,45 +264,49 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {/* Left Group: Meatballs | Checkbox | Filename */}
                     <div className="flex items-center gap-1 min-w-0">
                         {/* Meatballs - Always visible (muted/active) */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onMouseUp={(e) => e.stopPropagation()}
-                            className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all 
-                                ${isContextMenuOpen
-                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                                    : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                <circle cx="12" cy="7" r="2.5" />
-                                <circle cx="12" cy="17" r="2.5" />
-                            </svg>
-                        </button>
+                        <Tooltip content={t('options') || 'Options'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onMouseUp={(e) => e.stopPropagation()}
+                                className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all 
+                                    ${isContextMenuOpen
+                                        ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                    <circle cx="12" cy="7" r="2.5" />
+                                    <circle cx="12" cy="17" r="2.5" />
+                                </svg>
+                            </button>
+                        </Tooltip>
 
                         {/* Selection Checkbox - Visible on Hover/Active */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onSelect) onSelect(image.id, true, false);
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onMouseUp={(e) => e.stopPropagation()}
-                            className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
-                                ${(isContextMenuOpen || (isSelected && selectedCount > 1))
-                                    ? 'opacity-100'
-                                    : 'opacity-0 group-hover/title:opacity-100'}`}
-                        >
-                            {(isSelected && selectedCount > 1) ? (
-                                <SquareCheck className="w-4 h-4 text-black dark:text-white" />
-                            ) : (
-                                <Square className="w-4 h-4" />
-                            )}
-                        </button>
+                        <Tooltip content={isSelected ? (t('deselect') || 'Deselect') : (t('select') || 'Select')}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onSelect) onSelect(image.id, true, false);
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onMouseUp={(e) => e.stopPropagation()}
+                                className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
+                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                        ? 'opacity-100'
+                                        : 'opacity-0 group-hover/title:opacity-100'}`}
+                            >
+                                {(isSelected && selectedCount > 1) ? (
+                                    <SquareCheck className="w-4 h-4 text-black dark:text-white" />
+                                ) : (
+                                    <Square className="w-4 h-4" />
+                                )}
+                            </button>
+                        </Tooltip>
 
                         {/* Filename - Visible on Hover/Active */}
                         <span className={`${Typo.Label} truncate text-[10px] tracking-wider transition-all 
