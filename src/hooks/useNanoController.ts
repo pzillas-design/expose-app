@@ -120,7 +120,8 @@ export const useNanoController = () => {
         moveSelection,
         moveRowSelection,
         handleScroll,
-        setSnapEnabled
+        setSnapEnabled,
+        isMarkingMode
     } = useSelection({
         rows,
         snapToItem,
@@ -383,13 +384,14 @@ export const useNanoController = () => {
         boards,
         isBoardsLoading,
         isBrushResizing,
-        templates
+        templates,
+        isMarkingMode
     }), [
         rows, selectedIds, primarySelectedId, selectedImage, selectedImages, allImages, zoom, isZooming, isAutoScrolling,
         qualityMode, themeMode, lang, currentLang, sideSheetMode, isCanvasLoading, resolvingBoardId, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen, currentBoardId,
-        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates
+        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates, isMarkingMode
     ]);
 
     const actions = React.useMemo(() => ({

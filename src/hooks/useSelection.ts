@@ -34,6 +34,9 @@ export const useSelection = ({
     const lastSelectedIdRef = useRef<string | null>(null);
     const focusCheckRafRef = useRef<number | null>(null);
 
+    // State
+    const [isMarkingMode, setIsMarkingMode] = React.useState(false);
+
     // Derived
     const allImages = rows.flatMap(r => r.items);
     const primarySelectedId = selectedIds[selectedIds.length - 1] || null;
@@ -60,6 +63,7 @@ export const useSelection = ({
     const handleSelection = useCallback((id: string, multi: boolean, range: boolean) => {
         if (range && lastSelectedIdRef.current) {
             // Shift Click
+            setIsMarkingMode(true);
             const lastIdx = allImages.findIndex(i => i.id === lastSelectedIdRef.current);
             const currIdx = allImages.findIndex(i => i.id === id);
             if (lastIdx !== -1 && currIdx !== -1) {
@@ -70,6 +74,7 @@ export const useSelection = ({
             }
         } else if (multi) {
             // Cmd/Ctrl Click
+            setIsMarkingMode(true);
             setSelectedIds(prev => {
                 const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
                 if (next.length > 1) {
@@ -80,6 +85,7 @@ export const useSelection = ({
             lastSelectedIdRef.current = id;
         } else {
             // Single Click
+            setIsMarkingMode(false);
             isSnapEnabledRef.current = true;
             selectAndSnap(id);
         }
@@ -198,6 +204,7 @@ export const useSelection = ({
         selectMultiple,
         handleSelection,
         moveSelection,
+        isMarkingMode,
         moveRowSelection,
         handleScroll,
         setSnapEnabled,

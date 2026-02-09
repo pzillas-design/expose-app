@@ -200,31 +200,35 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     );
 });
 
-export const ImageItem: React.FC<ImageItemProps> = memo(({
-    image,
-    isSelected,
-    isPrimary,
-    hasAnySelection,
-    zoom,
-    onRetry,
-    editorState,
-    onUpdateAnnotations,
-    onEditStart,
-    onNavigate,
-    hasLeft,
-    hasRight,
-    onDelete,
-    onDownload,
-    onInteractionStart,
-    onInteractionEnd,
-    onContextMenu,
-    onNavigateParent,
-    onShowInfo,
-    onSelect,
-    selectedCount = 0,
-    isContextMenuOpen,
-    t
-}) => {
+export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
+    const {
+        image,
+        isSelected,
+        isPrimary,
+        hasAnySelection,
+        zoom,
+        onRetry,
+        onChangePrompt,
+        editorState,
+        onUpdateAnnotations,
+        onEditStart,
+        editorActions,
+        onNavigate,
+        hasLeft,
+        hasRight,
+        onDelete,
+        onDownload,
+        onInteractionStart,
+        onInteractionEnd,
+        onContextMenu,
+        onNavigateParent,
+        onShowInfo,
+        onSelect,
+        selectedCount = 0,
+        isContextMenuOpen = false,
+        isMarkingMode = false,
+        t
+    } = props;
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
 
@@ -268,7 +272,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
                         {/* Unified Selection Button */}
-                        <Tooltip content={isSelected ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
+                        <Tooltip content={(isSelected && isMarkingMode) ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -283,7 +287,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                         ? 'text-black dark:text-white opacity-100'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
-                                {isSelected ? (
+                                {(isSelected && isMarkingMode) ? (
                                     <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
                                 ) : (
                                     <Square className="w-4 h-4 shrink-0" />

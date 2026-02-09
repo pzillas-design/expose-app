@@ -66,7 +66,7 @@ export function App() {
         currentLang, allImages, fullLibrary, user, userProfile, isAuthLoading,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
-        resolvingBoardId, loadingProgress, isBrushResizing
+        resolvingBoardId, loadingProgress, isBrushResizing, isMarkingMode
     } = state;
 
     const {
@@ -643,6 +643,7 @@ export function App() {
                                                     selectedCount={selectedIds.length}
                                                     isContextMenuOpen={contextMenu?.targetId === img.id}
                                                     t={t}
+                                                    isMarkingMode={isMarkingMode}
                                                 />
                                             );
                                         })}
