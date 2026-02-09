@@ -259,10 +259,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
         >
             {zoom > 0.4 && (
                 <div
-                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-40"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                    }}
+                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-50"
+                // Removed onClick stopPropagation to allow button clicks to register properly
+                // The buttons themselves already have stopPropagation
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
