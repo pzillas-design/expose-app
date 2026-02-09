@@ -127,7 +127,7 @@ export function BoardsPage({
                 t={t}
             />
 
-            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 flex-1 flex flex-col pt-12">
+            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 flex-1 flex flex-col pt-44">
 
                 <main className="pb-32 flex-1 flex flex-col">
 

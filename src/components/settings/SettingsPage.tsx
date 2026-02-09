@@ -91,7 +91,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 t={t}
             />
 
-            <main className="max-w-xl mx-auto w-full px-4 sm:px-6 flex-1 py-12 sm:py-24">
+            <main className="max-w-xl mx-auto w-full px-4 sm:px-6 flex-1 pt-12 sm:pt-44 pb-12 sm:pb-24">
 
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 

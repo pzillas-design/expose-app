@@ -25,7 +25,7 @@ export const DatenschutzPage: React.FC<DatenschutzPageProps> = ({ user, userProf
                 t={t}
             />
 
-            <main className="flex-1 w-full max-w-3xl mx-auto px-6 py-12 sm:py-24">
+            <main className="flex-1 w-full max-w-3xl mx-auto px-6 pt-12 sm:pt-44 pb-12 sm:pb-24">
                 <article className="prose prose-zinc dark:prose-invert max-w-none">
                     <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Datenschutzerklärung</h1>
 
