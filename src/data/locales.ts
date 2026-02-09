@@ -141,7 +141,6 @@ export const translations = {
     empty_board_desc: "Upload images or use the generator to get started.",
     upload_image_edit: "Upload Image & Edit",
     generate_new: "Generate New",
-    click_to_load: "Click to load",
 
     // Settings / User
     login_btn: "Login",
@@ -505,7 +504,6 @@ export const translations = {
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
     upload_image_edit: "Hochladen",
     generate_new: "Bild generieren",
-    click_to_load: "Klicken zum Laden",
 
     // Settings / User
     login_btn: "Anmelden",

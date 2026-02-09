@@ -273,7 +273,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
                         <Tooltip content={isMarked ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
                             <div
                                 onClick={(e) => {
-                                    console.log('[ImageItem] Wrapper Click', image.id);
                                     e.stopPropagation();
                                     e.preventDefault();
                                     if (onToggleMark) onToggleMark(image.id);
@@ -358,14 +357,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
                         onLoaded={() => setIsImageReady(true)}
                     />
 
-                    {/* Click to load hint - minimal */}
-                    {!isSelected && !image.isGenerating && isImageReady && zoom > 0.3 && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-in fade-in duration-700">
-                            <span className={`${Typo.Micro} text-black/30 dark:text-white/30 tracking-wider uppercase font-medium`}>
-                                {t('click_to_load')}
-                            </span>
-                        </div>
-                    )}
+                    {/* (Click to load hint removed) */}
                 </div>
 
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
