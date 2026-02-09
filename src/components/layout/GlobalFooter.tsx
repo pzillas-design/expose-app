@@ -1,6 +1,7 @@
 import React from 'react';
 import { TranslationFunction } from '@/types';
 import { Logo } from '@/components/ui/Logo';
+import { Link } from 'react-router-dom';
 
 interface GlobalFooterProps {
     t: TranslationFunction;
@@ -18,12 +19,19 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
 
                 {/* Navigation - Single line, minimal text, normal case */}
                 <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-                    <a
-                        href="/"
+                    <Link
+                        to="/"
+                        state={{ skipRedirect: true }}
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
-                        {t('footer_about') || 'About'}
-                    </a>
+                        {t('footer_about') || 'Home'}
+                    </Link>
+                    <Link
+                        to="/projects"
+                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
+                    >
+                        {t('tab_projects') || 'Projekte'}
+                    </Link>
                     <a
                         href="/contact"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"

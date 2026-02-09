@@ -822,7 +822,7 @@ export function App() {
         <>
             <Routes>
                 <Route path="/" element={
-                    !isAuthLoading && user ? (
+                    !isAuthLoading && user && !location.state?.skipRedirect ? (
                         <Navigate to="/projects" replace />
                     ) : (
                         <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
