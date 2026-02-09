@@ -254,61 +254,58 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 transition: 'opacity 0.2s ease-out'
             }}
         >
-            {/* Toolbar - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className={`absolute -top-[44px] left-0 flex items-center justify-between gap-2 w-full h-10 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40 
-                        ${(isContextMenuOpen || (isSelected && selectedCount > 1)) ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
+                    className="absolute -top-[44px] left-0 flex items-center justify-between gap-2 w-full h-10 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Primary click on header (not buttons) could do something or just stop prop
                     }}
                 >
-                    {/* Left: Filename & Checkbox */}
+                    {/* Left: Context Menu & Filename */}
                     <div className="flex items-center gap-2 min-w-0">
-                        <span className={`${Typo.Label} truncate text-[10px] tracking-wider transition-colors 
-                            ${(isSelected && selectedCount > 1)
-                                ? 'text-black dark:text-white'
-                                : 'text-zinc-400 dark:text-zinc-500 group-hover/title:text-black dark:group-hover/title:text-white'}`}
-                        >
-                            {image.title || 'Untitled'}.jpg
-                        </span>
-
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (onSelect) onSelect(image.id, true, false);
+                                if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
                             }}
                             onPointerDown={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                             onMouseUp={(e) => e.stopPropagation()}
                             className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
-                                ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
+                                ${isContextMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
                         >
-                            {(isSelected && selectedCount > 1) ? (
-                                <SquareCheck className="w-4 h-4 text-black dark:text-white" />
-                            ) : (
-                                <Square className="w-4 h-4" />
-                            )}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <circle cx="12" cy="7" r="2.5" />
+                                <circle cx="12" cy="17" r="2.5" />
+                            </svg>
                         </button>
+
+                        <span className={`${Typo.Label} truncate text-[10px] tracking-wider transition-colors 
+                            ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                ? 'text-black dark:text-white'
+                                : 'text-zinc-400 dark:text-zinc-500 group-hover/title:text-black dark:group-hover/title:text-white'}`}
+                        >
+                            {image.title || 'Untitled'}.jpg
+                        </span>
                     </div>
 
-                    {/* Right: Context Menu */}
+                    {/* Right: Selection Checkbox */}
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
+                            if (onSelect) onSelect(image.id, true, false);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onMouseUp={(e) => e.stopPropagation()}
                         className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
-                            ${isContextMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
+                            ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                            <circle cx="12" cy="7" r="2.5" />
-                            <circle cx="12" cy="17" r="2.5" />
-                        </svg>
+                        {(isSelected && selectedCount > 1) ? (
+                            <SquareCheck className="w-4 h-4 text-black dark:text-white" />
+                        ) : (
+                            <Square className="w-4 h-4" />
+                        )}
                     </button>
                 </div>
             )}
