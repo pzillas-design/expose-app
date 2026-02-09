@@ -634,6 +634,8 @@ export function App() {
                                                     onContextMenu={handleImageContextMenu}
                                                     onNavigateParent={handleNavigateParent}
                                                     onShowInfo={(id) => setInfoModalImageId(id)}
+                                                    onSelect={handleSelection}
+                                                    selectedCount={selectedIds.length}
                                                     t={t}
                                                 />
                                             );

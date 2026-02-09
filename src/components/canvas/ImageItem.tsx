@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, CheckSquare } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -35,6 +35,8 @@ interface ImageItemProps {
     onContextMenu?: (e: React.MouseEvent, id: string) => void;
     onNavigateParent?: (id: string) => void;
     onShowInfo?: (id: string) => void;
+    onSelect?: (id: string, multi: boolean, range: boolean) => void;
+    selectedCount?: number;
     t: TranslationFunction;
 }
 
@@ -217,6 +219,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onContextMenu,
     onNavigateParent,
     onShowInfo,
+    onSelect,
+    selectedCount = 0,
     t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
@@ -262,8 +266,23 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         {image.title || 'Untitled'}.jpg
                     </span>
 
-                    {/* Context Menu Button - Right aligned, visible on hover */}
-                    <div className={`transition-opacity ${'opacity-0 group-hover/title:opacity-100'}`}>
+                    {/* Selection Checkbox & Context Menu */}
+                    <div className={`flex items-center gap-1 transition-opacity ${'opacity-0 group-hover/title:opacity-100'}`}>
+                        {/* Multi-Selection Checkbox */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSelect) onSelect(image.id, true, false);
+                            }}
+                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                        >
+                            {(isSelected && selectedCount > 1) ? (
+                                <CheckSquare className="w-3.5 h-3.5 text-black dark:text-white" />
+                            ) : (
+                                <Square className="w-3.5 h-3.5" />
+                            )}
+                        </button>
+
                         <button
                             className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                         >
