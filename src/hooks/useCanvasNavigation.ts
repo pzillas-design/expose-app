@@ -10,13 +10,15 @@ interface UseCanvasNavigationProps {
     selectedIds: string[];
     allImages: CanvasImage[];
     primarySelectedId: string | null;
+    currentBoardId: string | null;
 }
 
 export const useCanvasNavigation = ({
     scrollContainerRef,
     selectedIds,
     allImages,
-    primarySelectedId
+    primarySelectedId,
+    currentBoardId
 }: UseCanvasNavigationProps) => {
 
     const [zoom, setZoom] = useState(1.25);
@@ -275,7 +277,7 @@ export const useCanvasNavigation = ({
 
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [zoom, scrollContainerRef]);
+    }, [zoom, scrollContainerRef, currentBoardId]);
 
     return {
         zoom,

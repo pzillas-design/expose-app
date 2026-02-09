@@ -99,7 +99,8 @@ export const useNanoController = () => {
         scrollContainerRef,
         selectedIds,
         allImages,
-        primarySelectedId: selectedIds[selectedIds.length - 1] || null
+        primarySelectedId: selectedIds[selectedIds.length - 1] || null,
+        currentBoardId
     });
 
     const {
