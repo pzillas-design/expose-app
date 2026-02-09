@@ -86,8 +86,8 @@ export const useCanvasNavigation = ({
             const containerRect = container.getBoundingClientRect();
             const screenX = containerRect.width / 2;
             const screenY = containerRect.height / 2;
-            const padX = window.innerWidth * 0.5;
-            const padY = window.innerHeight * 0.5;
+            const padX = window.innerWidth * 2.0;
+            const padY = window.innerHeight * 2.0;
 
             focalPointRef.current = {
                 contentX: (container.scrollLeft + screenX - padX) / startZoom,
