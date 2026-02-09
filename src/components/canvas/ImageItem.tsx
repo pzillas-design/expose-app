@@ -256,7 +256,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         >
             {zoom > 0.4 && (
                 <div
-                    className="absolute -top-[44px] left-0 flex items-center justify-between gap-1 w-full h-10 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
+                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-40"
                     onClick={(e) => {
                         e.stopPropagation();
                     }}
