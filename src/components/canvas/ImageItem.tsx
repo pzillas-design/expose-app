@@ -305,6 +305,15 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
                         onLoaded={() => setIsImageReady(true)}
                     />
+
+                    {/* Click to load hint - subtle and muted */}
+                    {!isSelected && !image.isGenerating && isImageReady && zoom > 0.3 && (
+                        <div className="absolute inset-0 flex items-end justify-center pb-6 pointer-events-none animate-in fade-in duration-700">
+                            <span className={`${Typo.Micro} text-zinc-400/60 dark:text-zinc-500/60 tracking-wider uppercase font-medium`}>
+                                {t('click_to_load') || 'zum Laden klicken'}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
