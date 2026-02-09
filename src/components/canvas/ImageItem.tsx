@@ -255,26 +255,29 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Toolbar - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className="absolute -top-11 left-0 flex items-center justify-start gap-2 w-full h-8 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
+                    className="absolute -top-11 left-0 flex items-center justify-between gap-2 w-full h-8 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
                     onClick={(e) => {
                         e.stopPropagation();
                         onContextMenu?.(e, image.id);
                     }}
                 >
-                    {/* Filename - Left aligned */}
-                    <span className={`${Typo.Label} ${Theme.Colors.TextSecondary} truncate text-[10px] tracking-wider transition-colors group-hover/title:text-black dark:group-hover/title:text-white`}>
-                        {image.title || 'Untitled'}.jpg
-                    </span>
+                    {/* Left: Filename & Checkbox */}
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className={`${Typo.Label} truncate text-[10px] tracking-wider transition-colors 
+                            ${(isSelected && selectedCount > 1)
+                                ? 'text-black dark:text-white'
+                                : 'text-zinc-400 dark:text-zinc-500 group-hover/title:text-black dark:group-hover/title:text-white'}`}
+                        >
+                            {image.title || 'Untitled'}.jpg
+                        </span>
 
-                    {/* Selection Checkbox & Context Menu */}
-                    <div className={`flex items-center gap-1 transition-opacity ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}>
-                        {/* Multi-Selection Checkbox */}
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onSelect) onSelect(image.id, true, false);
                             }}
-                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
+                            className={`p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
+                                ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
                         >
                             {(isSelected && selectedCount > 1) ? (
                                 <SquareCheck className="w-3.5 h-3.5 text-black dark:text-white" />
@@ -282,16 +285,17 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 <Square className="w-3.5 h-3.5" />
                             )}
                         </button>
-
-                        <button
-                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
-                        >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
-                                <circle cx="12" cy="7" r="2.5" />
-                                <circle cx="12" cy="17" r="2.5" />
-                            </svg>
-                        </button>
                     </div>
+
+                    {/* Right: Context Menu */}
+                    <button
+                        className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white opacity-0 group-hover/title:opacity-100"
+                    >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                            <circle cx="12" cy="7" r="2.5" />
+                            <circle cx="12" cy="17" r="2.5" />
+                        </svg>
+                    </button>
                 </div>
             )}
 
