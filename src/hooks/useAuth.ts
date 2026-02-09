@@ -26,11 +26,13 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(!isAuthDisabled);
 
     const fetchProfile = useCallback(async (sessionUser: any) => {
         // Prevent redundant loads if the user is already the same
         if (sessionUser?.id === userRef.current?.id && userProfile) {
             console.log("Auth: Session validated, skipping redundant profile/image reload.");
+            setIsAuthLoading(false);
             return;
         }
 
@@ -55,10 +57,13 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 }
             } catch (err) {
                 console.error("Auth: Profile fetch failed:", err);
+            } finally {
+                setIsAuthLoading(false);
             }
         } else {
             setUser(null);
             setUserProfile(null);
+            setIsAuthLoading(false);
         }
     }, [userProfile]);
 
@@ -66,6 +71,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     useEffect(() => {
         if (isAuthDisabled) {
             setCredits(999.00);
+            setIsAuthLoading(false);
             return;
         }
 
@@ -83,6 +89,8 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 fetchProfile(session.user);
+            } else {
+                setIsAuthLoading(false);
             }
         });
 
@@ -93,11 +101,15 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 if (newUserId !== currentUserId) {
                     fetchProfile(session?.user ?? null);
+                } else {
+                    setIsAuthLoading(false);
                 }
             } else if (event === 'TOKEN_REFRESHED') {
                 // Only re-fetch if the user actually changed 
                 if (newUserId && newUserId !== currentUserId) {
                     fetchProfile(session?.user);
+                } else {
+                    setIsAuthLoading(false);
                 }
             } else if (event === 'SIGNED_OUT') {
                 fetchProfile(null);
@@ -107,6 +119,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 }
                 setAuthModalMode('update-password');
                 setIsAuthModalOpen(true);
+                setIsAuthLoading(false);
             }
         });
 
@@ -311,6 +324,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         handleSignOut,
         updateProfile,
         deleteAccount,
-        ensureValidSession
+        ensureValidSession,
+        isAuthLoading
     };
 };

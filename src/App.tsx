@@ -37,13 +37,17 @@ const BoardRedirect = () => {
     return <Navigate to={`/projects/${boardId}`} replace />;
 };
 
-const ProtectedRoute = ({ user, children, onAuthRequired }: { user: any, children: React.ReactNode, onAuthRequired: () => void }) => {
+const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { user: any, isAuthLoading: boolean, children: React.ReactNode, onAuthRequired: () => void }) => {
     const location = useLocation();
     useEffect(() => {
-        if (!user) {
+        if (!isAuthLoading && !user) {
             onAuthRequired();
         }
-    }, [user, onAuthRequired]);
+    }, [user, isAuthLoading, onAuthRequired]);
+
+    if (isAuthLoading) {
+        return <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>;
+    }
 
     if (!user) {
         return <Navigate to="/" state={{ from: location }} replace />;
@@ -59,7 +63,7 @@ export function App() {
     const {
         rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, activeShape, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
-        currentLang, allImages, fullLibrary, user, userProfile,
+        currentLang, allImages, fullLibrary, user, userProfile, isAuthLoading,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
         resolvingBoardId, loadingProgress, isBrushResizing
@@ -814,12 +818,17 @@ export function App() {
     );
 
     return (
+
         <>
             <Routes>
                 <Route path="/" element={
-                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                        <HomePage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
-                    </Suspense>
+                    !isAuthLoading && user ? (
+                        <Navigate to="/projects" replace />
+                    ) : (
+                        <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                            <HomePage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                        </Suspense>
+                    )
                 } />
                 <Route path="/about" element={<Navigate to="/" replace />} />
                 <Route path="/about-1" element={<Navigate to="/" replace />} />
@@ -841,17 +850,17 @@ export function App() {
                     </Suspense>
                 } />
                 <Route path="/projects" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         {boardsPage}
                     </ProtectedRoute>
                 } />
                 <Route path="/projects/:boardId" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         {canvasView}
                     </ProtectedRoute>
                 } />
                 <Route path="/settings" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         <SettingsPage
                             user={user}
                             userProfile={userProfile}
@@ -872,7 +881,7 @@ export function App() {
                     </ProtectedRoute>
                 } />
                 <Route path="/settings/:tab" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         <SettingsPage
                             user={user}
                             userProfile={userProfile}
@@ -893,7 +902,7 @@ export function App() {
                     </ProtectedRoute>
                 } />
                 <Route path="/admin" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         <AdminRoute user={user} userProfile={userProfile}>
                             <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
                                 <AdminDashboard
@@ -908,7 +917,7 @@ export function App() {
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/:tab" element={
-                    <ProtectedRoute user={user} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         <AdminRoute user={user} userProfile={userProfile}>
                             <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
                                 <AdminDashboard

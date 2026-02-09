@@ -67,6 +67,7 @@ export const useNanoController = () => {
         isAuthModalOpen, setIsAuthModalOpen,
         authEmail, setAuthEmail,
         authError, setAuthError,
+        isAuthLoading,
         handleAddFunds, handleSignOut, updateProfile, deleteAccount,
         ensureValidSession
     } = useAuth({
