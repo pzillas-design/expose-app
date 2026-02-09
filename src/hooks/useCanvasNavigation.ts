@@ -245,37 +245,17 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                isZoomingRef.current = true;
-                setIsZoomingState(true);
-
-                if (zoomTimeoutRef.current) clearTimeout(zoomTimeoutRef.current);
-                zoomTimeoutRef.current = window.setTimeout(() => {
-                    isZoomingRef.current = false;
-                    setIsZoomingState(false);
-                    focalPointRef.current = null;
-                }, 400);
-
-                if (zoomAnimFrameRef.current) {
-                    cancelAnimationFrame(zoomAnimFrameRef.current);
-                    zoomAnimFrameRef.current = null;
-                }
-
-                // Calculate Focal Point (Pin the current selection or the viewport center)
+                const currentZoom = zoom;
                 const containerRect = container.getBoundingClientRect();
-                const currentZoom = zoomRef.current;
-
-                // Default focal point is viewport center
-                let focalX = containerRect.width / 2;
-                let focalY = containerRect.height / 2;
 
                 // Always use viewport (container) center
-                focalX = container.clientWidth / 2;
-                focalY = container.clientHeight / 2;
+                const focalX = container.clientWidth / 2;
+                const focalY = container.clientHeight / 2;
 
                 const padX = window.innerWidth * 2.0;
                 const padY = window.innerHeight * 2.0;
 
-                // Map screen coordinates to content coordinates based on current zoom
+                // Sync focal point state
                 focalPointRef.current = {
                     contentX: (container.scrollLeft + focalX - padX) / currentZoom,
                     contentY: (container.scrollTop + focalY - padY) / currentZoom,
@@ -284,12 +264,18 @@ export const useCanvasNavigation = ({
                 };
 
                 const delta = -e.deltaY;
-                setZoom(z => Math.min(Math.max(z * Math.exp(delta * 0.008), MIN_ZOOM), MAX_ZOOM));
+                const zoomFactor = Math.exp(delta * 0.008);
+                const nextZoom = Math.min(Math.max(zoom * zoomFactor, MIN_ZOOM), MAX_ZOOM);
+
+                // Use the state update for wheel zoom to keep it extremely responsive 
+                // but we could also pipe it through smoothZoomTo if we want it "buttery"
+                setZoom(nextZoom);
             }
         };
+
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, primarySelectedId]);
+    }, [zoom, scrollContainerRef]);
 
     return {
         zoom,
