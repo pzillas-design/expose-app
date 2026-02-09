@@ -32,11 +32,12 @@ interface ImageItemProps {
     onDownload?: (id: string) => void;
     onInteractionStart?: () => void;
     onInteractionEnd?: () => void;
-    onContextMenu?: (e: React.MouseEvent, id: string) => void;
+    onContextMenu?: (e: React.MouseEvent, id: string, rect?: DOMRect) => void;
     onNavigateParent?: (id: string) => void;
     onShowInfo?: (id: string) => void;
     onSelect?: (id: string, multi: boolean, range: boolean) => void;
     selectedCount?: number;
+    isContextMenuOpen?: boolean;
     t: TranslationFunction;
 }
 
@@ -221,6 +222,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     onShowInfo,
     onSelect,
     selectedCount = 0,
+    isContextMenuOpen,
     t
 }) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
@@ -255,10 +257,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Toolbar - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className="absolute -top-11 left-0 flex items-center justify-between gap-2 w-full h-8 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
+                    className={`absolute -top-[44px] left-0 flex items-center justify-between gap-2 w-full h-10 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40 
+                        ${(isContextMenuOpen || (isSelected && selectedCount > 1)) ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
                     onClick={(e) => {
                         e.stopPropagation();
-                        onContextMenu?.(e, image.id);
+                        // Primary click on header (not buttons) could do something or just stop prop
                     }}
                 >
                     {/* Left: Filename & Checkbox */}
@@ -276,22 +279,33 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 e.stopPropagation();
                                 if (onSelect) onSelect(image.id, true, false);
                             }}
-                            className={`p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onMouseUp={(e) => e.stopPropagation()}
+                            className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
                                 ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
                         >
                             {(isSelected && selectedCount > 1) ? (
-                                <SquareCheck className="w-3.5 h-3.5 text-black dark:text-white" />
+                                <SquareCheck className="w-4 h-4 text-black dark:text-white" />
                             ) : (
-                                <Square className="w-3.5 h-3.5" />
+                                <Square className="w-4 h-4" />
                             )}
                         </button>
                     </div>
 
                     {/* Right: Context Menu */}
                     <button
-                        className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white opacity-0 group-hover/title:opacity-100"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                        className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white 
+                            ${isContextMenuOpen ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                             <circle cx="12" cy="7" r="2.5" />
                             <circle cx="12" cy="17" r="2.5" />
                         </svg>

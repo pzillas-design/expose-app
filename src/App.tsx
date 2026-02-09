@@ -369,11 +369,16 @@ export function App() {
         setContextMenu({ x: e.clientX, y: e.clientY, type: 'background' });
     };
 
-    const handleImageContextMenu = useCallback((e: React.MouseEvent, id: string) => {
+    const handleImageContextMenu = useCallback((e: React.MouseEvent, id: string, rect?: DOMRect) => {
         e.preventDefault();
         e.stopPropagation();
         if (!selectedIds.includes(id)) selectAndSnap(id);
-        setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
+
+        if (rect) {
+            setContextMenu({ x: rect.left, y: rect.bottom + 4, type: 'image', targetId: id });
+        } else {
+            setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
+        }
     }, [selectedIds, selectAndSnap]);
 
     const handleDownload = async (id: string) => {
@@ -636,6 +641,7 @@ export function App() {
                                                     onShowInfo={(id) => setInfoModalImageId(id)}
                                                     onSelect={handleSelection}
                                                     selectedCount={selectedIds.length}
+                                                    isContextMenuOpen={contextMenu?.targetId === img.id}
                                                     t={t}
                                                 />
                                             );
