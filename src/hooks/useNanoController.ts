@@ -378,6 +378,7 @@ export const useNanoController = () => {
         isSettingsOpen,
         isAdminOpen,
         currentBoardId,
+        isAuthLoading,
         boards,
         isBoardsLoading,
         isBrushResizing,
@@ -387,7 +388,7 @@ export const useNanoController = () => {
         qualityMode, themeMode, lang, currentLang, sideSheetMode, isCanvasLoading, resolvingBoardId, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen, currentBoardId,
-        boards, isBoardsLoading, isBrushResizing, templates
+        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates
     ]);
 
     const actions = React.useMemo(() => ({
