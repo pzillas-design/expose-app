@@ -271,31 +271,36 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
                     >
                         {/* Unified Selection Button */}
                         <Tooltip content={isMarked ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
-                            <button
+                            <div
                                 onClick={(e) => {
+                                    console.log('[ImageItem] Wrapper Click', image.id);
                                     e.stopPropagation();
-                                    // Toggle mark ONLY, do not select
+                                    e.preventDefault();
                                     if (onToggleMark) onToggleMark(image.id);
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onMouseUp={(e) => e.stopPropagation()}
-                                className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
-                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 
-                                    ${(isContextMenuOpen || isMarked)
-                                        ? 'text-black dark:text-white opacity-100'
-                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                                className="inline-block"
                             >
-                                {isMarked ? (
-                                    <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
-                                ) : (
-                                    <Square className="w-4 h-4 shrink-0" />
-                                )}
+                                <button
+                                    className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
+                                        hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                                        ${(isContextMenuOpen || isMarked)
+                                            ? 'text-black dark:text-white opacity-100'
+                                            : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                                >
+                                    {isMarked ? (
+                                        <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
+                                    ) : (
+                                        <Square className="w-4 h-4 shrink-0" />
+                                    )}
 
-                                <span className="truncate text-[10px] tracking-wider transition-colors">
-                                    {image.title || 'Untitled'}.jpg
-                                </span>
-                            </button>
+                                    <span className="truncate text-[10px] tracking-wider transition-colors pointer-events-none">
+                                        {image.title || 'Untitled'}.jpg
+                                    </span>
+                                </button>
+                            </div>
                         </Tooltip>
                     </div>
 
