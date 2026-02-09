@@ -65,6 +65,7 @@ function GridThumbnail({ images, thumbnail, itemCount, onLoaded }: { images?: st
                         onLoad={handleLoad}
                         onError={handleLoad}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                     />
                 </div>
             ))}

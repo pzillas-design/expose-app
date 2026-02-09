@@ -18,28 +18,42 @@ export const boardService = {
             return [];
         }
 
-        // Get signed URLs for thumbnails (efficiently if possible, but 4 per board is manageable)
-        const boardsWithImages = await Promise.all(data.map(async (b) => {
+        // 1. Collect all paths that need signing across ALL boards
+        const allPathsToSign = new Set<string>();
+        data.forEach(board => {
+            (board.canvas_images || [])
+                .filter((img: any) => img.thumb_storage_path || img.storage_path)
+                .slice(0, 4)
+                .forEach((img: any) => {
+                    allPathsToSign.add(img.thumb_storage_path || img.storage_path);
+                });
+        });
+
+        // 2. Batch sign all paths in one network request
+        const signedUrlMap = await storageService.getSignedUrls(Array.from(allPathsToSign));
+
+        // 3. Map boards with their signed preview images
+        const boardsWithImages = data.map((b) => {
             const imagePaths = (b.canvas_images || [])
                 .filter((img: any) => img.thumb_storage_path || img.storage_path)
                 .slice(0, 4)
                 .map((img: any) => img.thumb_storage_path || img.storage_path);
 
-            const previewImages = await Promise.all(
-                imagePaths.map(path => storageService.getSignedUrl(path))
-            );
+            const previewImages = imagePaths
+                .map(path => signedUrlMap[path])
+                .filter(Boolean) as string[];
 
             return {
                 id: b.id,
                 userId: b.user_id,
                 name: b.name,
                 thumbnail: b.thumbnail,
-                previewImages: previewImages.filter(Boolean) as string[],
+                previewImages: previewImages,
                 itemCount: b.canvas_images?.length || 0,
                 createdAt: b.created_at ? new Date(b.created_at).getTime() : Date.now(),
                 updatedAt: b.updated_at ? new Date(b.updated_at).getTime() : (b.created_at ? new Date(b.created_at).getTime() : Date.now())
             };
-        }));
+        });
 
         return boardsWithImages;
     },
