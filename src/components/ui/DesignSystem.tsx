@@ -152,7 +152,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {isVisible && createPortal(
                 <div
                     className={`
-                        fixed z-[100] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
+                        fixed z-[1000] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
                         bg-white dark:bg-zinc-950
                         text-zinc-900 dark:text-zinc-100
                         border border-zinc-200 dark:border-zinc-800 shadow-md

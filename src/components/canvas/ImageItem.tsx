@@ -263,12 +263,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
-                        ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                        ${(isContextMenuOpen || isSelected)
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
                         {/* Unified Selection Button */}
-                        <Tooltip content={isSelected ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                        <Tooltip content={isSelected ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -279,11 +279,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onMouseUp={(e) => e.stopPropagation()}
                                 className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
                                     hover:bg-zinc-100 dark:hover:bg-zinc-800 
-                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                    ${(isContextMenuOpen || isSelected)
                                         ? 'text-black dark:text-white opacity-100'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
-                                {(isSelected && selectedCount > 1) ? (
+                                {isSelected ? (
                                     <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
                                 ) : (
                                     <Square className="w-4 h-4 shrink-0" />
