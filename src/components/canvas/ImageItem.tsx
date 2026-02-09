@@ -200,34 +200,31 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     );
 });
 
-export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
-    const {
-        image,
-        isSelected,
-        isPrimary,
-        hasAnySelection,
-        zoom,
-        onRetry,
-        editorState,
-        onUpdateAnnotations,
-        onEditStart,
-        onNavigate,
-        hasLeft,
-        hasRight,
-        onDelete,
-        onDownload,
-        onInteractionStart,
-        onInteractionEnd,
-        onContextMenu,
-        onNavigateParent,
-        onShowInfo,
-        onSelect,
-        selectedCount = 0,
-        isContextMenuOpen = false,
-        isMarked = false,
-        onToggleMark,
-        t
-    } = props;
+export const ImageItem: React.FC<ImageItemProps> = memo(({
+    image,
+    isSelected,
+    isPrimary,
+    hasAnySelection,
+    zoom,
+    onRetry,
+    editorState,
+    onUpdateAnnotations,
+    onEditStart,
+    onNavigate,
+    hasLeft,
+    hasRight,
+    onDelete,
+    onDownload,
+    onInteractionStart,
+    onInteractionEnd,
+    onContextMenu,
+    onNavigateParent,
+    onShowInfo,
+    onSelect,
+    selectedCount = 0,
+    isContextMenuOpen,
+    t
+}) => {
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
 
@@ -259,47 +256,43 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
         >
             {zoom > 0.4 && (
                 <div
-                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-50"
-                // Removed onClick stopPropagation to allow button clicks to register properly
-                // The buttons themselves already have stopPropagation
+                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-40"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
-                        ${(isContextMenuOpen || isMarked)
+                        ${(isContextMenuOpen || (isSelected && selectedCount > 1))
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
                         {/* Unified Selection Button */}
-                        <Tooltip content={isMarked ? (t('unmark') || 'Markierung aufheben') : (t('mark') || 'Markieren')}>
-                            <div
+                        <Tooltip content={isSelected ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    e.preventDefault();
-                                    if (onToggleMark) onToggleMark(image.id);
+                                    if (onSelect) onSelect(image.id, true, false);
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onMouseUp={(e) => e.stopPropagation()}
-                                className="inline-block"
+                                className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
+                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                        ? 'text-black dark:text-white opacity-100'
+                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
-                                <button
-                                    className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
-                                        hover:bg-zinc-100 dark:hover:bg-zinc-800 
-                                        ${(isContextMenuOpen || isMarked)
-                                            ? 'text-black dark:text-white opacity-100'
-                                            : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                                >
-                                    {isMarked ? (
-                                        <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
-                                    ) : (
-                                        <Square className="w-4 h-4 shrink-0" />
-                                    )}
+                                {(isSelected && selectedCount > 1) ? (
+                                    <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
+                                ) : (
+                                    <Square className="w-4 h-4 shrink-0" />
+                                )}
 
-                                    <span className="truncate text-[10px] tracking-wider transition-colors pointer-events-none">
-                                        {image.title || 'Untitled'}.jpg
-                                    </span>
-                                </button>
-                            </div>
+                                <span className="truncate text-[10px] tracking-wider transition-colors">
+                                    {image.title || 'Untitled'}.jpg
+                                </span>
+                            </button>
                         </Tooltip>
                     </div>
 
@@ -357,7 +350,6 @@ export const ImageItem: React.FC<ImageItemProps> = memo((props) => {
                         onLoaded={() => setIsImageReady(true)}
                     />
 
-                    {/* (Click to load hint removed) */}
                 </div>
 
                 {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
