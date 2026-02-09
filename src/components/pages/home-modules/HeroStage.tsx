@@ -94,29 +94,24 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                     className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out will-change-transform"
                     style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
                 >
-                    {/* Hero Text Layer */}
+                    {/* Hero SVG Headline Layer */}
                     <div
-                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none"
+                        className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none"
                         style={{
                             transform: 'translate3d(0, 0, 150px)',
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
-                            WebkitFontSmoothing: 'antialiased',
                         }}
                     >
-                        <div className="w-[66%] mt-[-2vh] hero-headline-container pointer-events-auto">
-                            <h1
-                                className="font-bold tracking-tighter leading-[1.0] hero-headline antialiased"
+                        <div className="w-[85%] lg:w-[60%] mt-[-2vh]">
+                            <img
+                                src="/home/1 creation reimagined/section 1 typo.svg"
+                                alt="Creation Reimagined"
+                                className="w-full h-auto antialiased"
                                 style={{
-                                    fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
-                                    transform: 'translateZ(0)',
-                                    WebkitFontSmoothing: 'antialiased',
-                                    WebkitTextStroke: '0.1px transparent', // Hack to force sharper text in Safari 3D
+                                    filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.1))' // Subtle hint for Safari to keep it crisp
                                 }}
-                            >
-                                Creation <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 block">Reimagined.</span>
-                            </h1>
+                            />
                         </div>
                     </div>
 
