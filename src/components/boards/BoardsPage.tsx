@@ -12,7 +12,6 @@ import { Logo } from '../ui/Logo';
 import { Wordmark } from '../ui/Wordmark';
 import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
-import { BetaBanner } from '../ui/BetaBanner';
 import { formatRelativeTime, shouldShowDeletionCountdown, daysUntilBoardDeletion } from '@/utils/timeUtils';
 
 const getInitials = (name?: string, email?: string) => {
@@ -119,8 +118,6 @@ export function BoardsPage({
 
     return (
         <div className={`min-h-screen w-full flex flex-col transition-all duration-700 ${getPageStyles()}`}>
-
-            <BetaBanner t={t} />
 
             <AppNavbar
                 user={user}
