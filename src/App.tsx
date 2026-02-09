@@ -162,8 +162,8 @@ export function App() {
             const container = refs.scrollContainerRef.current;
             // Only set if at 0,0 to avoid fighting with user scroll
             if (container.scrollLeft === 0 && container.scrollTop === 0) {
-                container.scrollLeft = window.innerWidth * 0.5;
-                container.scrollTop = window.innerHeight * 0.5;
+                container.scrollLeft = window.innerWidth * 2.0;
+                container.scrollTop = window.innerHeight * 2.0;
             }
         }
     }, [currentBoardId, refs.scrollContainerRef]);
@@ -589,8 +589,8 @@ export function App() {
                     <div
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                         style={{
-                            padding: '50vh 50vw',
-                            gap: `${6 * zoom}rem`,
+                            padding: '200vh 200vw',
+                            gap: `${140 * zoom}px`, // Increased gap to prevent overlay collision
                         }}
                     >
                         {/* Show skeletons while loading if we know images exist */}
@@ -599,7 +599,7 @@ export function App() {
                         ) : (
                             rows.map((row) => (
                                 <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
-                                    <div className="flex items-center" style={{ gap: `${3 * zoom}rem` }}>
+                                    <div className="flex items-center" style={{ gap: `${80 * zoom}px` }}>
                                         {row.items.map((img, imgIndex) => {
                                             const isPrimary = selectedIds.length > 0 && selectedIds[selectedIds.length - 1] === img.id;
                                             return (

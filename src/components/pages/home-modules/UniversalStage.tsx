@@ -32,7 +32,7 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ progress }) => {
     const transition34 = getLocalProgress([0.7, 0.8]);
 
     return (
-        <div className="sticky top-0 h-screen w-full overflow-hidden bg-white dark:bg-zinc-950">
+        <div className="sticky top-0 h-screen w-full overflow-hidden bg-white dark:bg-black">
             {/* Render stages conditionally to reduce DOM size and improve mobile performance */}
 
             {progress <= 0.3 && (

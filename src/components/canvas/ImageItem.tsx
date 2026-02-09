@@ -243,14 +243,15 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             className={`relative shrink-0 select-none group snap-center ${isSelected ? 'z-30' : 'z-20'}`}
             style={{
                 width: finalWidth,
+                height: finalHeight, // Stable height!
                 opacity: (hasAnySelection && !isSelected) ? 0.6 : 1,
                 transition: 'opacity 0.2s ease-out'
             }}
         >
-            {/* Toolbar */}
+            {/* Toolbar - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className="flex items-center justify-start gap-2 w-full h-8 mb-3 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title"
+                    className="absolute -top-11 left-0 flex items-center justify-start gap-2 w-full h-8 px-0.5 animate-in fade-in duration-300 cursor-pointer group/title z-40"
                     onClick={(e) => {
                         e.stopPropagation();
                         onContextMenu?.(e, image.id);
@@ -266,13 +267,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <button
                             className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                         >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-3.5 h-3.5"
-                            >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
                                 <circle cx="12" cy="7" r="2.5" />
                                 <circle cx="12" cy="17" r="2.5" />
                             </svg>
@@ -282,8 +277,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             <div
-                className={`relative overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
-                style={{ height: finalHeight, width: finalWidth }}
+                className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
             >
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
@@ -349,10 +343,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
 
 
-            {/* Bottom Navigation Buttons - Space Reserved to prevent Layout Shift */}
+            {/* Bottom Navigation Buttons - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className={`flex items-center justify-center gap-2 mt-6 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
+                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
                         ? 'opacity-100 translate-y-0'
                         : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}

@@ -43,7 +43,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
     }, []);
 
     return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
             <AppNavbar
                 user={user}
                 userProfile={userProfile}
@@ -63,7 +63,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 <section className="relative py-32 lg:py-60 px-6 overflow-hidden">
 
                     <div className="relative z-10 max-w-5xl mx-auto text-center">
-                        <h2 className="text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tighter mb-12 leading-[0.9]">
+                        <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1]">
                             Bereit für <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
                         </h2>

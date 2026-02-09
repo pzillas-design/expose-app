@@ -116,7 +116,7 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
             {/* Right: Text */}
             <div className="w-full lg:w-2/5 h-[35vh] lg:h-full flex items-start lg:items-center justify-start px-6 lg:px-12 xl:px-24 py-8 lg:py-0 text-left relative z-10">
                 <div className="flex flex-col max-w-2xl will-change-transform">
-                    <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.1] lg:leading-[1.1]">
+                    <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> <br className="hidden lg:block" />
                         & parallel arbeiten
                     </h2>

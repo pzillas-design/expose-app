@@ -32,8 +32,8 @@ export const useCanvasNavigation = ({
 
     // Zoom focal point tracking
     const focalPointRef = useRef<{
-        worldX: number,
-        worldY: number,
+        contentX: number,
+        contentY: number,
         screenX: number,
         screenY: number
     } | null>(null);
@@ -54,13 +54,13 @@ export const useCanvasNavigation = ({
         const container = scrollContainerRef.current;
         if (!container || !focalPointRef.current) return;
 
-        const { worldX, worldY, screenX, screenY } = focalPointRef.current;
-        const focalX = worldX * zoom;
-        const focalY = worldY * zoom;
+        const { contentX, contentY, screenX, screenY } = focalPointRef.current;
+        const padX = window.innerWidth * 2.0;
+        const padY = window.innerHeight * 2.0;
 
-        // Position on screen where the focal point was
-        container.scrollLeft = focalX - screenX;
-        container.scrollTop = focalY - screenY;
+        // Position on screen where the focal point was, adjusting for non-scaling padding
+        container.scrollLeft = (contentX * zoom) + padX - screenX;
+        container.scrollTop = (contentY * zoom) + padY - screenY;
     }, [zoom, scrollContainerRef]);
 
     // --- Zoom Logic (Synchronized) ---
@@ -84,9 +84,12 @@ export const useCanvasNavigation = ({
             const containerRect = container.getBoundingClientRect();
             const screenX = containerRect.width / 2;
             const screenY = containerRect.height / 2;
+            const padX = window.innerWidth * 0.5;
+            const padY = window.innerHeight * 0.5;
+
             focalPointRef.current = {
-                worldX: (startScrollX + screenX) / startZoom,
-                worldY: (startScrollY + screenY) / startZoom,
+                contentX: (container.scrollLeft + screenX - padX) / startZoom,
+                contentY: (container.scrollTop + screenY - padY) / startZoom,
                 screenX,
                 screenY
             };
@@ -265,27 +268,17 @@ export const useCanvasNavigation = ({
                 let focalX = containerRect.width / 2;
                 let focalY = containerRect.height / 2;
 
-                // Priority 1: Center of Selected Item
-                if (primarySelectedId) {
-                    const el = container.querySelector(`[data-image-id="${primarySelectedId}"]`);
-                    if (el) {
-                        const rect = el.getBoundingClientRect();
-                        focalX = rect.left + rect.width / 2 - containerRect.left;
-                        focalY = rect.top + rect.height / 2 - containerRect.top;
-                    }
-                } else {
-                    // Fallback: Mouse position if over container
-                    if (e.clientX >= containerRect.left && e.clientX <= containerRect.right &&
-                        e.clientY >= containerRect.top && e.clientY <= containerRect.bottom) {
-                        focalX = e.clientX - containerRect.left;
-                        focalY = e.clientY - containerRect.top;
-                    }
-                }
+                // Always use viewport (container) center
+                focalX = container.clientWidth / 2;
+                focalY = container.clientHeight / 2;
+
+                const padX = window.innerWidth * 2.0;
+                const padY = window.innerHeight * 2.0;
 
                 // Map screen coordinates to content coordinates based on current zoom
                 focalPointRef.current = {
-                    worldX: (container.scrollLeft + focalX) / currentZoom,
-                    worldY: (container.scrollTop + focalY) / currentZoom,
+                    contentX: (container.scrollLeft + focalX - padX) / currentZoom,
+                    contentY: (container.scrollTop + focalY - padY) / currentZoom,
                     screenX: focalX,
                     screenY: focalY
                 };
