@@ -96,24 +96,26 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                 >
                     {/* Hero Text Layer */}
                     <div
-                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
+                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none"
                         style={{
                             transform: 'translate3d(0, 0, 150px)',
                             backfaceVisibility: 'hidden',
-                            WebkitFontSmoothing: 'antialiased'
+                            WebkitBackfaceVisibility: 'hidden',
+                            WebkitFontSmoothing: 'antialiased',
                         }}
                     >
-                        <div className="w-[66%] mt-[-2vh] hero-headline-container">
+                        <div className="w-[66%] mt-[-2vh] hero-headline-container pointer-events-auto">
                             <h1
-                                className="font-bold tracking-tighter leading-[1.0] antialiased hero-headline"
+                                className="font-bold tracking-tighter leading-[1.0] hero-headline antialiased"
                                 style={{
                                     fontSize: 'clamp(2.5rem, 8vw, 8.5rem)',
-                                    WebkitBackfaceVisibility: 'hidden',
-                                    transform: 'translate3d(0, 0, 0)'
+                                    transform: 'translateZ(0)',
+                                    WebkitFontSmoothing: 'antialiased',
+                                    WebkitTextStroke: '0.1px transparent', // Hack to force sharper text in Safari 3D
                                 }}
                             >
                                 Creation <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Reimagined.</span>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 block">Reimagined.</span>
                             </h1>
                         </div>
                     </div>
