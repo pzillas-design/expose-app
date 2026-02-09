@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, CheckSquare } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -267,7 +267,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </span>
 
                     {/* Selection Checkbox & Context Menu */}
-                    <div className={`flex items-center gap-1 transition-opacity ${'opacity-0 group-hover/title:opacity-100'}`}>
+                    <div className={`flex items-center gap-1 transition-opacity ${(isSelected && selectedCount > 1) ? 'opacity-100' : 'opacity-0 group-hover/title:opacity-100'}`}>
                         {/* Multi-Selection Checkbox */}
                         <button
                             onClick={(e) => {
@@ -277,7 +277,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white"
                         >
                             {(isSelected && selectedCount > 1) ? (
-                                <CheckSquare className="w-3.5 h-3.5 text-black dark:text-white" />
+                                <SquareCheck className="w-3.5 h-3.5 text-black dark:text-white" />
                             ) : (
                                 <Square className="w-3.5 h-3.5" />
                             )}
