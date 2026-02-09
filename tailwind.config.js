@@ -6,7 +6,11 @@ export default {
     ],
     darkMode: 'class',
     theme: {
-        extend: {},
+        extend: {
+            fontFamily: {
+                kumbh: ['"Kumbh Sans"', 'sans-serif'],
+            },
+        },
     },
     plugins: [],
 }
