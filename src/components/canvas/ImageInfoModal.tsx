@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Copy, Edit2, Check as CheckIcon, Trash, Download } from 'lucide-react';
+import { Copy, Edit2, RotateCcw, Check as CheckIcon } from 'lucide-react';
 import { Typo, Theme, Tooltip, IconButton, Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
@@ -9,20 +9,18 @@ interface ImageInfoModalProps {
     image: CanvasImage;
     onClose: () => void;
     onUpdateImageTitle?: (id: string, title: string) => void;
+    onGenerateMore?: (id: string) => void;
     t: TranslationFunction;
     currentLang?: 'de' | 'en';
-    onDelete?: () => void;
-    onDownload?: () => void;
 }
 
 export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     image,
     onClose,
     onUpdateImageTitle,
+    onGenerateMore,
     t,
-    currentLang = 'de',
-    onDelete,
-    onDownload
+    currentLang = 'de'
 }) => {
     const { showToast } = useToast();
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -50,11 +48,11 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     return (
         <Modal isOpen={true} onClose={onClose} title="Info">
-            <div className="p-8 flex flex-col gap-8">
+            <div className="p-8 flex flex-col gap-10">
                 {/* 1. Prompt Section - First */}
                 {image.generationPrompt && (
                     <div className="flex flex-col gap-2 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                        <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
                             {t('prompt') || 'Prompt'}
                         </span>
                         <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
@@ -78,7 +76,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 )}
 
                 {/* 2. Metadata Grid */}
-                <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-8 gap-y-4">
+                <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-12 gap-y-4">
                     {/* Filename with Rename Support */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename') || 'Dateiname'}</span>
                     <div className="group/title min-w-0 w-full">
@@ -107,7 +105,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     onKeyDown={(e) => {
                                         e.stopPropagation();
                                         if (e.key === 'Enter') {
-                                            onUpdateImageTitle?.(image.id, editTitleValue);
+                                            if (onUpdateImageTitle) onUpdateImageTitle(image.id, editTitleValue);
                                             setIsEditingTitle(false);
                                         }
                                         if (e.key === 'Escape') {
@@ -120,7 +118,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     icon={<CheckIcon className="w-3 h-3" />}
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onUpdateImageTitle?.(image.id, editTitleValue);
+                                        if (onUpdateImageTitle) onUpdateImageTitle(image.id, editTitleValue);
                                         setIsEditingTitle(false);
                                     }}
                                     className="bg-zinc-100 dark:bg-zinc-800 h-6 w-6 shrink-0"
@@ -161,28 +159,24 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
                 </div>
 
-                {/* 3. Actions Footer */}
-                <div className="flex items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                    <Button
-                        variant="secondary"
-                        onClick={onDownload}
-                        icon={<Download className="w-4 h-4" />}
-                        className="flex-1"
-                    >
-                        {t('download') || 'Download'}
-                    </Button>
-                    <Button
-                        variant="danger"
-                        onClick={() => {
-                            onDelete?.();
-                            onClose();
-                        }}
-                        icon={<Trash className="w-4 h-4" />}
-                        className="flex-1"
-                    >
-                        {t('delete') || 'Delete'}
-                    </Button>
-                </div>
+                {/* 3. Actions */}
+                {onGenerateMore && (
+                    <div className="flex flex-col pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                onGenerateMore(image.id);
+                                onClose();
+                            }}
+                            className="justify-start px-4 gap-3"
+                        >
+                            <RotateCcw className="w-4 h-4 text-zinc-400" />
+                            <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                                {t('ctx_create_variations') || 'Mehr generieren'}
+                            </span>
+                        </Button>
+                    </div>
+                )}
             </div>
         </Modal>
     );

@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck, Info } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -307,11 +307,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'}`}
                     >
-                        <Tooltip content={t('info') || 'Info'}>
+                        <Tooltip content={t('options') || 'Options'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onShowInfo?.(image.id);
+                                    if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -321,7 +321,10 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                         ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
-                                <Info className="w-4 h-4" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                    <circle cx="12" cy="7" r="2.5" />
+                                    <circle cx="12" cy="17" r="2.5" />
+                                </svg>
                             </button>
                         </Tooltip>
                     </div>

@@ -543,7 +543,8 @@ export function App() {
                     zoom={zoom}
                     credits={credits}
                     onZoomChange={(z) => smoothZoomTo(z)}
-                    onOpenSettings={() => navigate('/settings')}
+                    onResetView={() => smoothZoomTo(1.25, { x: 0, y: 0 })}
+                    onOpenSettings={() => setIsSettingsOpen(true)}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
                     onAnnotate={() => {
@@ -554,7 +555,7 @@ export function App() {
                         }
                     }}
                     isAnnotationMode={sideSheetMode === 'brush'}
-                    onUpload={handleDockUpload}
+                    onUpload={(files) => processFile(files[0])}
                     onCreateNew={() => setIsCreationModalOpen(true)}
                     t={t}
                 />
@@ -595,7 +596,7 @@ export function App() {
                     <div
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                         style={{
-                            padding: '200vh 200vw',
+                            padding: '100vh 100vw',
                             gap: `${140 * zoom}px`, // Increased gap to prevent overlay collision
                         }}
                     >
@@ -808,8 +809,8 @@ export function App() {
                         <ImageInfoModal
                             image={image}
                             onClose={() => setInfoModalImageId(null)}
-                            onDelete={() => requestDelete([image.id])}
-                            onDownload={() => handleDownload(image.id)}
+                            onGenerateMore={handleGenerateMore}
+                            onUpdateImageTitle={handleUpdateImageTitle}
                             t={t}
                         />
                     ) : null;

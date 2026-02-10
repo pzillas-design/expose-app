@@ -57,8 +57,8 @@ export const useCanvasNavigation = ({
         if (!container || !focalPointRef.current) return;
 
         const { contentX, contentY, screenX, screenY } = focalPointRef.current;
-        const padX = window.innerWidth * 2.0;
-        const padY = window.innerHeight * 2.0;
+        const padX = window.innerWidth * 1.0;
+        const padY = window.innerHeight * 1.0;
 
         // Position on screen where the focal point was, adjusting for non-scaling padding
         container.scrollLeft = (contentX * zoom) + padX - screenX;
@@ -86,8 +86,8 @@ export const useCanvasNavigation = ({
             const containerRect = container.getBoundingClientRect();
             const screenX = containerRect.width / 2;
             const screenY = containerRect.height / 2;
-            const padX = window.innerWidth * 2.0;
-            const padY = window.innerHeight * 2.0;
+            const padX = window.innerWidth * 1.0;
+            const padY = window.innerHeight * 1.0;
 
             focalPointRef.current = {
                 contentX: (container.scrollLeft + screenX - padX) / startZoom,
@@ -254,8 +254,8 @@ export const useCanvasNavigation = ({
                 const focalX = container.clientWidth / 2;
                 const focalY = container.clientHeight / 2;
 
-                const padX = window.innerWidth * 2.0;
-                const padY = window.innerHeight * 2.0;
+                const padX = window.innerWidth * 1.0;
+                const padY = window.innerHeight * 1.0;
 
                 // Sync focal point state
                 focalPointRef.current = {
