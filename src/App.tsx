@@ -543,7 +543,6 @@ export function App() {
                     zoom={zoom}
                     credits={credits}
                     onZoomChange={(z) => smoothZoomTo(z)}
-                    onResetView={() => smoothZoomTo(1.25, { x: 0, y: 0 })}
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onHome={() => handleSelectBoard(null)}
@@ -596,7 +595,7 @@ export function App() {
                     <div
                         className="min-w-full min-h-full w-max h-max flex flex-col items-start z-10 relative will-change-transform"
                         style={{
-                            padding: '100vh 100vw',
+                            padding: '20vh 30vw',
                             gap: `${140 * zoom}px`, // Increased gap to prevent overlay collision
                         }}
                     >

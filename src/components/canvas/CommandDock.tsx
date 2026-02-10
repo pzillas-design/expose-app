@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, Pencil, Maximize } from 'lucide-react';
+import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, Pencil } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 
@@ -9,7 +9,6 @@ interface CommandDockProps {
   zoom: number;
   credits: number;
   onZoomChange: (targetZoom: number) => void;
-  onResetView: () => void;
   onNavigate?: (direction: -1 | 1) => void;
   onOpenSettings: () => void;
   onOpenCredits: () => void;
@@ -25,7 +24,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
   zoom,
   credits,
   onZoomChange,
-  onResetView,
   onOpenSettings,
   onOpenCredits,
   onHome,
@@ -121,12 +119,6 @@ export const CommandDock: React.FC<CommandDockProps> = ({
           onClick={() => onZoomChange(zoom * 1.2)}
           className="w-8 h-8 flex items-center justify-center p-0"
           tooltip={t('zoom_in')}
-        />
-        <IconButton
-          icon={<Maximize className="w-3.5 h-3.5" />}
-          onClick={onResetView}
-          className="w-8 h-8 flex items-center justify-center p-0"
-          tooltip={t('reset_view')}
         />
       </div>
 
