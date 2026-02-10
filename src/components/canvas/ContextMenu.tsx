@@ -143,10 +143,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
 
                                         <button onClick={() => { onRemoveFromSelection(menu.targetId!); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_remove_from_selection')}</span>
+                                            <XSquare className={iconClass} />
                                         </button>
 
                                         <button onClick={() => { onDeleteSelected(); onClose(); }} className={itemClass}>
                                             <span className={textClass}>{t('ctx_delete_multi').replace('{{n}}', selectedIds.length.toString())}</span>
+                                            <Trash className={iconClass} />
                                         </button>
                                     </>
                                 ) : (
@@ -162,15 +164,17 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Plus className={iconClass} />
                                         </button>
 
-                                        <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
-                                            <span className={textClass}>{t('ctx_delete_image')}</span>
-                                        </button>
-
                                         {onShowInfo && (
                                             <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
                                                 <span className={textClass}>{t('info') || 'Info'}</span>
+                                                <Info className={iconClass} />
                                             </button>
                                         )}
+
+                                        <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
+                                            <span className={textClass}>{t('ctx_delete_image')}</span>
+                                            <Trash className={iconClass} />
+                                        </button>
                                     </>
                                 )}
                             </>
@@ -179,10 +183,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                         {/* CASE B: Image IS NOT Selected */}
                         {!isTargetSelected && (
                             <>
-                                <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
-                                    <span className={textClass}>{t('ctx_add_to_selection')}</span>
-                                </button>
-
                                 <button onClick={() => { onDownload(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_download_image')}</span>
                                     <Download className={iconClass} />
@@ -193,8 +193,21 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     <Plus className={iconClass} />
                                 </button>
 
+                                <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
+                                    <span className={textClass}>{t('ctx_add_to_selection')}</span>
+                                    <CheckSquare className={iconClass} />
+                                </button>
+
+                                {onShowInfo && (
+                                    <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
+                                        <span className={textClass}>{t('info') || 'Info'}</span>
+                                        <Info className={iconClass} />
+                                    </button>
+                                )}
+
                                 <button onClick={() => { onDelete(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_delete_image')}</span>
+                                    <Trash className={iconClass} />
                                 </button>
                             </>
                         )}
