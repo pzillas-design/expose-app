@@ -281,8 +281,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onMouseUp={(e) => e.stopPropagation()}
-                                className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
-                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 
+                                className={`flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
                                     ${(isContextMenuOpen || isMarked)
                                         ? 'text-black dark:text-white opacity-100'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
