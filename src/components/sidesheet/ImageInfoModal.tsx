@@ -182,8 +182,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col gap-2 pt-4">
-                    {image.parentId && (
+                {image.parentId && (
+                    <div className="flex flex-col gap-2 pt-4">
                         <Button
                             variant="secondary"
                             onClick={() => onGenerateMore(image.id)}
@@ -195,24 +195,9 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                 {t('ctx_create_variations')}
                             </span>
                         </Button>
-                    )}
-
-                    <Button
-                        variant="secondary"
-                        onClick={() => {
-                            if (onDownload) onDownload(image.id);
-                            else if (image.src) downloadImage(image.src, image.title || image.id);
-                        }}
-                        disabled={image.isGenerating}
-                        className="justify-start px-4 gap-3"
-                    >
-                        <Download className="w-4 h-4 text-zinc-400" />
-                        <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                            {t('tt_download')}
-                        </span>
-                    </Button>
-                </div>
+                    </div>
+                )}
             </div>
-        </div >
+        </div>
     );
 };
