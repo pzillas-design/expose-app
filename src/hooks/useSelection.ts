@@ -13,6 +13,8 @@ interface UseSelectionProps {
     // External State
     selectedIds: string[];
     setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
+    activeId: string | null;
+    setActiveId: React.Dispatch<React.SetStateAction<string | null>>;
     getMostVisibleItem: () => string | null;
 }
 
@@ -26,6 +28,8 @@ export const useSelection = ({
     isZoomingRef,
     selectedIds,
     setSelectedIds,
+    activeId,
+    setActiveId,
     getMostVisibleItem
 }: UseSelectionProps) => {
 
@@ -34,12 +38,9 @@ export const useSelection = ({
     const lastSelectedIdRef = useRef<string | null>(null);
     const focusCheckRafRef = useRef<number | null>(null);
 
-    // State
-    const [isMarkingMode, setIsMarkingMode] = React.useState(false);
-
     // Derived
     const allImages = rows.flatMap(r => r.items);
-    const primarySelectedId = selectedIds[selectedIds.length - 1] || null;
+    const primarySelectedId = activeId;
     const selectedImage = allImages.find(img => img.id === primarySelectedId) || null;
     const selectedImages = allImages.filter(img => selectedIds.includes(img.id));
 
@@ -49,9 +50,9 @@ export const useSelection = ({
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
         isSnapEnabledRef.current = true;
         lastSelectedIdRef.current = id;
-        setSelectedIds([id]);
+        setActiveId(id);
         snapToItem(id, instant);
-    }, [snapToItem, setSelectedIds]);
+    }, [snapToItem, setActiveId]);
 
     const selectMultiple = useCallback((ids: string[]) => {
         setSelectedIds(ids);
@@ -63,7 +64,6 @@ export const useSelection = ({
     const handleSelection = useCallback((id: string, multi: boolean, range: boolean) => {
         if (range && lastSelectedIdRef.current) {
             // Shift Click
-            setIsMarkingMode(true);
             const lastIdx = allImages.findIndex(i => i.id === lastSelectedIdRef.current);
             const currIdx = allImages.findIndex(i => i.id === id);
             if (lastIdx !== -1 && currIdx !== -1) {
@@ -74,7 +74,6 @@ export const useSelection = ({
             }
         } else if (multi) {
             // Cmd/Ctrl Click
-            setIsMarkingMode(true);
             setSelectedIds(prev => {
                 const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
                 if (next.length > 1) {
@@ -85,7 +84,6 @@ export const useSelection = ({
             lastSelectedIdRef.current = id;
         } else {
             // Single Click
-            setIsMarkingMode(false);
             isSnapEnabledRef.current = true;
             selectAndSnap(id);
         }
@@ -143,10 +141,10 @@ export const useSelection = ({
             }
 
             if (closestImageId && primarySelectedId !== closestImageId) {
-                setSelectedIds([closestImageId]);
+                setActiveId(closestImageId);
             }
         });
-    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setSelectedIds, zoom]);
+    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setActiveId, zoom]);
 
     useEffect(() => {
         if (isZoomingRef.current) {
@@ -204,7 +202,6 @@ export const useSelection = ({
         selectMultiple,
         handleSelection,
         moveSelection,
-        isMarkingMode,
         moveRowSelection,
         handleScroll,
         setSnapEnabled,

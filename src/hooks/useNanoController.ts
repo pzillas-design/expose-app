@@ -26,7 +26,7 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [markedIds, setMarkedIds] = useState<string[]>([]);
+    const [activeId, setActiveId] = useState<string | null>(null); // viewed/focused image
     const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
     const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(() => {
         const path = window.location.pathname;
@@ -96,11 +96,12 @@ export const useNanoController = () => {
     } = useUIState();
 
     // --- Navigation ---
+    // --- Navigation ---
     const canvasNav = useCanvasNavigation({
         scrollContainerRef,
         selectedIds,
         allImages,
-        primarySelectedId: selectedIds[selectedIds.length - 1] || null,
+        primarySelectedId: activeId, // Navigate based on active image
         currentBoardId
     });
 
@@ -108,7 +109,7 @@ export const useNanoController = () => {
         zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
         isZooming, isAutoScrolling,
         isZoomingRef, isAutoScrollingRef, getMostVisibleItem, zoomToItem
-    } = canvasNav as any; // Cast as ANY temporarily to bypass incorrect inference while structural changes are finishing
+    } = canvasNav as any;
 
     // --- Selection ---
     const {
@@ -121,8 +122,7 @@ export const useNanoController = () => {
         moveSelection,
         moveRowSelection,
         handleScroll,
-        setSnapEnabled,
-        isMarkingMode
+        setSnapEnabled
     } = useSelection({
         rows,
         snapToItem,
@@ -133,6 +133,8 @@ export const useNanoController = () => {
         isZoomingRef,
         selectedIds,
         setSelectedIds,
+        activeId,
+        setActiveId,
         getMostVisibleItem
     });
 
@@ -195,17 +197,6 @@ export const useNanoController = () => {
             }
         }
     }, [user, currentBoardId, resolvingBoardId, selectAndSnap]);
-
-    // --- Marking Logic ---
-    // Persistent marking separate from selection/focus
-    const toggleMark = useCallback((id: string) => {
-        setMarkedIds(prev => {
-            if (prev.includes(id)) return prev.filter(i => i !== id);
-            return [...prev, id];
-        });
-    }, []);
-
-    const clearMarks = useCallback(() => setMarkedIds([]), []);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
@@ -360,6 +351,7 @@ export const useNanoController = () => {
     const state = React.useMemo(() => ({
         rows,
         selectedIds,
+        activeId,
         primarySelectedId,
         selectedImage,
         selectedImages,
@@ -396,14 +388,13 @@ export const useNanoController = () => {
         boards,
         isBoardsLoading,
         isBrushResizing,
-        templates,
-        markedIds
+        templates
     }), [
-        rows, selectedIds, primarySelectedId, selectedImage, selectedImages, allImages, zoom, isZooming, isAutoScrolling,
+        rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages, zoom, isZooming, isAutoScrolling,
         qualityMode, themeMode, lang, currentLang, sideSheetMode, isCanvasLoading, resolvingBoardId, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen, currentBoardId,
-        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates, markedIds
+        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates
     ]);
 
     const actions = React.useMemo(() => ({
@@ -481,8 +472,7 @@ export const useNanoController = () => {
         handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
         updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading, saveRecentPrompt,
-        ensureValidSession,
-        toggleMark, clearMarks
+        ensureValidSession
     ]);
 
     return React.useMemo(() => ({

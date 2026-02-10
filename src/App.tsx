@@ -61,12 +61,12 @@ export function App() {
     const location = useLocation();
 
     const {
-        rows, selectedIds, zoom, credits, sideSheetMode, brushSize, maskTool, activeShape, isDragOver,
+        rows, selectedIds, activeId, zoom, credits, sideSheetMode, brushSize, maskTool, activeShape, isDragOver,
         isSettingsOpen, selectedImage, selectedImages, qualityMode, themeMode, lang,
         currentLang, allImages, fullLibrary, user, userProfile, isAuthLoading,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
-        resolvingBoardId, loadingProgress, isBrushResizing, markedIds
+        resolvingBoardId, loadingProgress, isBrushResizing
     } = state;
 
     const {
@@ -79,8 +79,7 @@ export function App() {
         setAuthModalMode, setIsAuthModalOpen, setAuthError, setAuthEmail, moveRowSelection,
         setMaskTool, setActiveShape, setCurrentBoardId, setResolvingBoardId, setRows, createBoard, initializeNewBoard, deleteBoard, updateBoard, handleCreateNew,
         handleModeChange, handleUpdateVariables, handleUpdateImageTitle, refreshTemplates, setIsBrushResizing,
-        savePreset, deletePreset, setIsCanvasLoading, resolveBoardIdentifier,
-        toggleMark
+        savePreset, deletePreset, setIsCanvasLoading, resolveBoardIdentifier
     } = actions;
 
     const [settingsTab, setSettingsTab] = useState<'general' | 'account' | 'about'>('account');
@@ -332,9 +331,6 @@ export function App() {
 
         if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
             if (!panState.current.hasMoved) {
-                if (selectedIds.length > 0) {
-                    selectMultiple([]);
-                }
                 setEnableSnap(false);
                 actions.setSnapEnabled(false);
                 panState.current.hasMoved = true;
@@ -611,13 +607,15 @@ export function App() {
                                 <div key={row.id} data-row-id={row.id} className="flex flex-col shrink-0">
                                     <div className="flex items-center" style={{ gap: `${80 * zoom}px` }}>
                                         {row.items.map((img, imgIndex) => {
-                                            const isPrimary = selectedIds.length > 0 && selectedIds[selectedIds.length - 1] === img.id;
+                                            // isPrimary is now just for navigation checks or if we still use it for something else
+                                            const isPrimary = activeId === img.id;
                                             return (
                                                 <ImageItem
                                                     key={img.id}
                                                     image={img}
                                                     zoom={zoom}
-                                                    isSelected={selectedIds.includes(img.id)}
+                                                    isMarked={selectedIds.includes(img.id)}
+                                                    isActive={img.id === activeId}
                                                     isPrimary={isPrimary}
                                                     hasAnySelection={selectedIds.length > 0}
                                                     onRetry={handleGenerateMore}
@@ -644,8 +642,6 @@ export function App() {
                                                     selectedCount={selectedIds.length}
                                                     isContextMenuOpen={contextMenu?.targetId === img.id}
                                                     t={t}
-                                                    isMarked={markedIds.includes(img.id)}
-                                                    onToggleMark={toggleMark}
                                                 />
                                             );
                                         })}

@@ -9,7 +9,9 @@ import { storageService } from '@/services/storageService';
 
 interface ImageItemProps {
     image: CanvasImage;
-    isSelected: boolean;
+    isSelected?: boolean; // @deprecated use isMarked
+    isMarked?: boolean;
+    isActive?: boolean;
     isPrimary?: boolean;
     zoom: number;
     hasAnySelection?: boolean;
@@ -203,6 +205,8 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
     isSelected,
+    isMarked,
+    isActive,
     isPrimary,
     hasAnySelection,
     zoom,
@@ -246,11 +250,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         <div
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
-            className={`relative shrink-0 select-none group snap-center ${isSelected ? 'z-30' : 'z-20'}`}
+            className={`relative shrink-0 select-none group snap-center ${isActive ? 'z-30' : 'z-20'}`}
             style={{
                 width: finalWidth,
                 height: finalHeight, // Stable height!
-                opacity: (hasAnySelection && !isSelected) ? 0.6 : 1,
+                opacity: isActive ? 1 : 0.6,
                 transition: 'opacity 0.2s ease-out'
             }}
         >
@@ -263,12 +267,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
-                        ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                        ${(isContextMenuOpen || isMarked)
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
                         {/* Unified Selection Button */}
-                        <Tooltip content={isSelected ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                        <Tooltip content={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -279,11 +283,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onMouseUp={(e) => e.stopPropagation()}
                                 className={`flex items-center gap-2 p-2 rounded-md transition-all max-w-full
                                     hover:bg-zinc-100 dark:hover:bg-zinc-800 
-                                    ${(isContextMenuOpen || (isSelected && selectedCount > 1))
+                                    ${(isContextMenuOpen || isMarked)
                                         ? 'text-black dark:text-white opacity-100'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
-                                {(isSelected && selectedCount > 1) ? (
+                                {isMarked ? (
                                     <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
                                 ) : (
                                     <Square className="w-4 h-4 shrink-0" />
@@ -321,7 +325,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             <div
-                className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${isSelected ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
+                className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${isActive ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
             >
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
@@ -344,7 +348,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         thumbSrc={image.thumbSrc}
                         maskSrc={image.maskSrc}
                         zoom={zoom}
-                        isSelected={isSelected}
+                        isSelected={(isMarked || isActive) ?? false}
                         title={image.title || 'Image'}
                         onDimensionsDetected={(w, h) => setNaturalAspectRatio(w / h)}
                         onLoaded={() => setIsImageReady(true)}
@@ -352,7 +356,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
 
                 </div>
 
-                {!image.isGenerating && onUpdateAnnotations && editorState && (isSelected || (image.annotations && image.annotations.length > 0)) && (
+                {!image.isGenerating && onUpdateAnnotations && editorState && (isActive || (image.annotations && image.annotations.length > 0)) && (
                     <div className="absolute inset-0 z-20">
                         <EditorCanvas
                             width={finalWidth / zoom}
@@ -365,7 +369,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             maskTool={editorState.maskTool}
                             activeShape={editorState.activeShape}
                             isBrushResizing={editorState.isBrushResizing}
-                            isActive={isSelected}
+                            isActive={isActive}
                             activeAnnotationId={editorState.activeAnnotationId}
                             onActiveAnnotationChange={editorState.onActiveAnnotationChange}
                             onInteractionStart={onInteractionStart}
@@ -391,7 +395,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Bottom Navigation Buttons - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${(isSelected && isPrimary && !image.isGenerating)
+                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${(isActive && !image.isGenerating)
                         ? 'opacity-100 translate-y-0'
                         : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}
