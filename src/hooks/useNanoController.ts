@@ -307,7 +307,7 @@ export const useNanoController = () => {
             });
         } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
-            performGeneration(selectedImage, finalPrompt, 1, false, draftPrompt, activeTemplateId, variableValues);
+            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage]);
 
@@ -324,12 +324,12 @@ export const useNanoController = () => {
             if (img.parentId) {
                 const parent = allImages.find(p => p.id === img!.parentId);
                 if (parent) {
-                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, false);
+                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, true);
                     return;
                 }
             }
             // Fallback: regenerate from current
-            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '', 1, false);
+            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '', 1, true);
         }
     }, [allImages, performGeneration]);
 
