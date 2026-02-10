@@ -51,8 +51,9 @@ export const useSelection = ({
         isSnapEnabledRef.current = true;
         lastSelectedIdRef.current = id;
         setActiveId(id);
+        setSelectedIds([id]);
         snapToItem(id, instant);
-    }, [snapToItem, setActiveId]);
+    }, [snapToItem, setActiveId, setSelectedIds]);
 
     const selectMultiple = useCallback((ids: string[]) => {
         setSelectedIds(ids);

@@ -380,7 +380,7 @@ export const useGeneration = ({
         if (shouldSnap) {
             setTimeout(() => {
                 selectAndSnap(newId);
-            }, 150);
+            }, 250);
         }
 
         // Wrap generation in a timeout to prevent hanging skeletons
@@ -556,7 +556,7 @@ export const useGeneration = ({
 
         setTimeout(() => {
             selectAndSnap(newId);
-        }, 150);
+        }, 250);
 
         try {
             if (user && !isAuthDisabled) {
