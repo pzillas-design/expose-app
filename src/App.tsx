@@ -808,6 +808,8 @@ export function App() {
                         <ImageInfoModal
                             image={image}
                             onClose={() => setInfoModalImageId(null)}
+                            onDelete={() => requestDelete([image.id])}
+                            onDownload={() => handleDownload(image.id)}
                             t={t}
                         />
                     ) : null;

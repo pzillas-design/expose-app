@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Copy, Edit2, Check as CheckIcon } from 'lucide-react';
-import { Typo, Theme, Tooltip, IconButton } from '@/components/ui/DesignSystem';
+import { Copy, Edit2, Check as CheckIcon, Trash, Download } from 'lucide-react';
+import { Typo, Theme, Tooltip, IconButton, Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -11,6 +11,8 @@ interface ImageInfoModalProps {
     onUpdateImageTitle?: (id: string, title: string) => void;
     t: TranslationFunction;
     currentLang?: 'de' | 'en';
+    onDelete?: () => void;
+    onDownload?: () => void;
 }
 
 export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
@@ -18,7 +20,9 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     onClose,
     onUpdateImageTitle,
     t,
-    currentLang = 'de'
+    currentLang = 'de',
+    onDelete,
+    onDownload
 }) => {
     const { showToast } = useToast();
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -155,6 +159,29 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     : image.quality === 'pro-2k' ? '2048 × 2048px'
                                         : '1024 × 1024px'}
                     </span>
+                </div>
+
+                {/* 3. Actions Footer */}
+                <div className="flex items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                    <Button
+                        variant="secondary"
+                        onClick={onDownload}
+                        icon={<Download className="w-4 h-4" />}
+                        className="flex-1"
+                    >
+                        {t('download') || 'Download'}
+                    </Button>
+                    <Button
+                        variant="danger"
+                        onClick={() => {
+                            onDelete?.();
+                            onClose();
+                        }}
+                        icon={<Trash className="w-4 h-4" />}
+                        className="flex-1"
+                    >
+                        {t('delete') || 'Delete'}
+                    </Button>
                 </div>
             </div>
         </Modal>
