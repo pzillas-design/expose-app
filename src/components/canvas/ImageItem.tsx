@@ -250,7 +250,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         <div
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
-            className={`relative shrink-0 select-none group snap-center transition-opacity duration-200 ease-out
+            className={`relative shrink-0 select-none group snap-center transition-opacity duration-200 ease-out cursor-pointer
                 ${isActive ? 'z-30 opacity-100' : 'z-20'}
                 ${!isActive && isMarked ? 'opacity-100' : ''}
                 ${!isActive && !isMarked ? 'opacity-60 hover:opacity-100' : ''}
