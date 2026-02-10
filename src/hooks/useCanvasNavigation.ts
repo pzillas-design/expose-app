@@ -247,7 +247,7 @@ export const useCanvasNavigation = ({
                 e.preventDefault();
                 e.stopPropagation();
 
-                const currentZoom = zoom;
+                const currentZoom = zoomRef.current;
                 const containerRect = container.getBoundingClientRect();
 
                 // Always use viewport (container) center
@@ -267,17 +267,15 @@ export const useCanvasNavigation = ({
 
                 const delta = -e.deltaY;
                 const zoomFactor = Math.exp(delta * 0.008);
-                const nextZoom = Math.min(Math.max(zoom * zoomFactor, MIN_ZOOM), MAX_ZOOM);
+                const nextZoom = Math.min(Math.max(currentZoom * zoomFactor, MIN_ZOOM), MAX_ZOOM);
 
-                // Use the state update for wheel zoom to keep it extremely responsive 
-                // but we could also pipe it through smoothZoomTo if we want it "buttery"
                 setZoom(nextZoom);
             }
         };
 
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [zoom, scrollContainerRef, currentBoardId]);
+    }, [scrollContainerRef, currentBoardId, allImages]); // Remove zoom, add allImages to ensure attachment after mount/load
 
     return {
         zoom,
