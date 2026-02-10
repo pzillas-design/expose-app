@@ -302,26 +302,32 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
 
                     {/* Right Group: Meatballs */}
-                    <Tooltip content={t('options') || 'Options'}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onMouseUp={(e) => e.stopPropagation()}
-                            className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all 
-                                ${isContextMenuOpen
-                                    ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                                    : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                                <circle cx="12" cy="7" r="2.5" />
-                                <circle cx="12" cy="17" r="2.5" />
-                            </svg>
-                        </button>
-                    </Tooltip>
+                    <div className={`transition-opacity duration-200 
+                        ${(isContextMenuOpen || isMarked || isActive)
+                            ? 'opacity-100'
+                            : 'opacity-0 group-hover:opacity-100'}`}
+                    >
+                        <Tooltip content={t('options') || 'Options'}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onContextMenu) onContextMenu(e, image.id, e.currentTarget.getBoundingClientRect());
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onMouseUp={(e) => e.stopPropagation()}
+                                className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all 
+                                    ${isContextMenuOpen
+                                        ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                    <circle cx="12" cy="7" r="2.5" />
+                                    <circle cx="12" cy="17" r="2.5" />
+                                </svg>
+                            </button>
+                        </Tooltip>
+                    </div>
                 </div>
             )}
 
