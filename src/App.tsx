@@ -707,7 +707,7 @@ export function App() {
             </div>
 
             {
-                selectedIds.length > 0 && selectedImage && (
+                (activeId || selectedIds.length > 0) && selectedImage && (
                     <SideSheet
                         selectedImage={selectedImage}
                         selectedImages={selectedImages}
