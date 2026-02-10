@@ -5,7 +5,7 @@ import { translations, LocaleKey } from '../data/locales';
 export const useConfig = () => {
     // Quality Settings
     const [qualityMode, setQualityMode] = useState<GenerationQuality>(() => {
-        return (localStorage.getItem('nano_quality') as GenerationQuality) || 'pro-2k';
+        return (localStorage.getItem('nano_quality') as GenerationQuality) || 'pro-1k';
     });
 
     // Theme Logic
