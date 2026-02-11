@@ -50,8 +50,8 @@ export const useSelection = ({
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
         isSnapEnabledRef.current = true;
         lastSelectedIdRef.current = id;
-        setActiveId(id);
         setSelectedIds([id]);
+        setActiveId(id);
         snapToItem(id, instant);
     }, [snapToItem, setActiveId, setSelectedIds]);
 
