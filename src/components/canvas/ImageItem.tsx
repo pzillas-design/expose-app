@@ -269,12 +269,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
-                        ${(isContextMenuOpen || isMarked)
+                        ${(isContextMenuOpen || selectedCount >= 1 || isMarked)
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
                         {/* Unified Selection Button */}
-                        <Tooltip content={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                        <Tooltip text={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -307,7 +307,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'}`}
                     >
-                        <Tooltip content={t('options') || 'Options'}>
+                        <Tooltip text={t('options') || 'Options'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -332,7 +332,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             )}
 
             <div
-                className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${isActive ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
+                className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${(isActive || isMarked) ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
             >
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
@@ -425,21 +425,25 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     {/* Center Action Group - Joined Pill */}
                     <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
                         {/* Generate More */}
-                        <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRetry?.(image.id);
-                                }}
-                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                <span className={Typo.Label}>{t('more') || 'MEHR'}</span>
-                            </button>
-                        </Tooltip>
+                        {image.parentId && (
+                            <>
+                                <Tooltip text={t('tt_generate_more') || 'Generate more variations'}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRetry?.(image.id);
+                                        }}
+                                        className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span className={Typo.Label}>{t('more') || 'MEHR'}</span>
+                                    </button>
+                                </Tooltip>
 
-                        {/* Separator */}
-                        <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+                                {/* Separator */}
+                                <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+                            </>
+                        )}
 
                         {/* Save/Download */}
                         <Tooltip text={t('tt_save') || 'Download image'}>

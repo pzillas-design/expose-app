@@ -228,19 +228,13 @@ export const useCanvasNavigation = ({
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
         autoScrollTimeoutRef.current = window.setTimeout(() => { isAutoScrollingRef.current = false; }, 800);
 
-        // Retry mechanism to ensure element is in DOM (especially for new skeletons)
-        let attempts = 0;
-        const findAndScroll = () => {
+        // Simple scroll into view
+        setTimeout(() => {
             const el = document.querySelector(`[data-image-id="${id}"]`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-            } else if (attempts < 5) {
-                attempts++;
-                setTimeout(findAndScroll, 100);
             }
-        };
-
-        setTimeout(findAndScroll, 50);
+        }, 50);
     }, []);
 
     // Wheel Zoom Listener

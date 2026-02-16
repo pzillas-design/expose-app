@@ -205,7 +205,7 @@ export const useNanoController = () => {
 
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
@@ -289,7 +289,7 @@ export const useNanoController = () => {
         }
     }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav, getMostVisibleItem, selectAndSnap, allImages, syncGlobalItems]);
 
-    const handleGenerate = useCallback((
+    const handleGenerate = useCallback(async (
         prompt?: string,
         draftPrompt?: string,
         activeTemplateId?: string,
@@ -300,6 +300,14 @@ export const useNanoController = () => {
         }
 
         if (selectedImages.length > 1) {
+            const result = await confirm({
+                title: t('generate_multiple_title').replace('{{count}}', selectedImages.length.toString()),
+                confirmLabel: t('generate'),
+                variant: 'primary'
+            });
+
+            if (!result) return;
+
             selectedImages.forEach((img, index) => {
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
                 // Snap only to the first generated image in the batch
@@ -309,7 +317,7 @@ export const useNanoController = () => {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
-    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -326,12 +334,23 @@ export const useNanoController = () => {
                 if (parent) {
                     performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, true);
                     return;
+                } else {
+                    // Parent not found - show error instead of falling back
+                    const errorMsg = currentLang === 'de'
+                        ? 'Das Originalbild wurde nicht gefunden. "Mehr generieren" ist nur für Bilder mit verfügbarem Original möglich.'
+                        : 'Original image not found. "Generate more" is only available for images with an accessible original.';
+                    showToast(errorMsg, 'error', 5000);
+                    return;
                 }
+            } else {
+                // Image has no parentId - strictly "More" is not allowed for originals
+                const errorMsg = currentLang === 'de'
+                    ? '"Mehr generieren" ist nur für Versionen verfügbar, um den ursprünglichen Prompt zu wiederholen.'
+                    : '"Generate more" is only available for versions to repeat the original prompt.';
+                showToast(errorMsg, 'error', 5000);
             }
-            // Fallback: regenerate from current
-            performGeneration(img, img.generationPrompt || img.userDraftPrompt || '', 1, true);
         }
-    }, [allImages, performGeneration]);
+    }, [allImages, performGeneration, currentLang, showToast]);
 
     const handleCreateNew = useCallback((prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         performNewGeneration(prompt, model, ratio, attachments);

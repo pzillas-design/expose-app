@@ -160,7 +160,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 </div>
 
                 {/* 3. Actions */}
-                {onGenerateMore && (
+                {onGenerateMore && image.parentId && (
                     <div className="flex flex-col pt-4 border-t border-zinc-100 dark:border-zinc-800">
                         <Button
                             variant="secondary"

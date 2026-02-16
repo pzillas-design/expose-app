@@ -307,9 +307,38 @@ Deno.serve(async (req) => {
                 dbTitle = dbBaseName;
                 currentVersion = 1;
             } else {
-                // EDIT/VERSION: Inherit from source
-                dbBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
-                currentVersion = (sourceImage?.version || 0) + 1;
+                // EDIT/VERSION: Inherit baseName from source, but calculate version globally
+                const rawBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
+                dbBaseName = rawBaseName.replace(/_v\d+$/, ''); // Clean any existing version suffix
+
+                // Query database for all images with this baseName to find max version
+                try {
+                    const { data: siblings, error: siblingsError } = await supabaseAdmin
+                        .from('canvas_images')
+                        .select('version, base_name, title')
+                        .eq('user_id', user.id)
+                        .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
+
+                    if (siblingsError) {
+                        logError('Siblings Query', siblingsError);
+                        currentVersion = (sourceImage?.version || 0) + 1;
+                    } else if (siblings && siblings.length > 0) {
+                        const maxVersion = siblings.reduce((max, img) => {
+                            const imgBaseName = (img.base_name || img.title || '').replace(/_v\d+$/, '');
+                            if (imgBaseName === dbBaseName) {
+                                return Math.max(max, img.version || 1);
+                            }
+                            return max;
+                        }, 0);
+                        currentVersion = maxVersion + 1;
+                    } else {
+                        currentVersion = (sourceImage?.version || 0) + 1;
+                    }
+                } catch (err) {
+                    logError('Version Calculation', err);
+                    currentVersion = (sourceImage?.version || 0) + 1;
+                }
+
                 dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
             }
 

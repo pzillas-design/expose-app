@@ -597,16 +597,17 @@ export const imageService = {
                 current = imageMap.get(current.parentId)!;
                 depth++;
             }
-            return current.id;
+            // If the oldest visible one has a parentId, that missing parent is our "virtual" root.
+            // This ensures all siblings of the same missing parent stay in the same row.
+            return current.parentId || current.id;
         };
 
         loadedImages.forEach(img => {
             let groupId = getRootId(img);
 
-            // RESILIENCE FALLBACK: If the root is NOT in our local set (e.g. parent is on another board or deleted),
-            // group by baseName to keep versions of the same image together regardless of lineage chain breaks.
-            const root = imageMap.get(groupId);
-            if (!root && img.baseName) {
+            // FALLBACK: If the root is missing and not tracked by a missing parent ID,
+            // use baseName to keep related images together.
+            if (!imageMap.has(groupId) && img.baseName) {
                 groupId = `baseName_${img.baseName}`;
             }
 

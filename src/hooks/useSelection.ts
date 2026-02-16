@@ -83,12 +83,17 @@ export const useSelection = ({
                 return next;
             });
             lastSelectedIdRef.current = id;
+            // Also set as active when marking via checkbox
+            setActiveId(id);
         } else {
-            // Single Click
+            // Single Click on Image - Only change active selection (temporary focus)
+            // Do NOT clear marked images (selectedIds)
             isSnapEnabledRef.current = true;
-            selectAndSnap(id);
+            lastSelectedIdRef.current = id;
+            setActiveId(id);
+            snapToItem(id);
         }
-    }, [allImages, selectAndSnap, setSelectedIds]);
+    }, [allImages, setSelectedIds, setActiveId, snapToItem]);
 
     // fitSelectionToView removed to allow free movement during multi-select as requested
 
@@ -169,8 +174,11 @@ export const useSelection = ({
         if (nextIndex < 0) nextIndex = 0;
         if (nextIndex >= allImages.length) nextIndex = allImages.length - 1;
 
-        selectAndSnap(allImages[nextIndex].id);
-    }, [allImages, selectAndSnap, primarySelectedId]);
+        const nextId = allImages[nextIndex].id;
+        lastSelectedIdRef.current = nextId;
+        setActiveId(nextId);
+        snapToItem(nextId);
+    }, [allImages, setActiveId, snapToItem, primarySelectedId]);
 
     const moveRowSelection = useCallback((direction: -1 | 1) => {
         const currentId = lastSelectedIdRef.current || primarySelectedId;
@@ -186,9 +194,12 @@ export const useSelection = ({
             const targetRow = rows[targetRowIndex];
             if (targetRow.items.length === 0) return;
             const targetColIndex = Math.min(colIndex, targetRow.items.length - 1);
-            selectAndSnap(targetRow.items[targetColIndex].id);
+            const nextId = targetRow.items[targetColIndex].id;
+            lastSelectedIdRef.current = nextId;
+            setActiveId(nextId);
+            snapToItem(nextId);
         }
-    }, [rows, primarySelectedId, selectAndSnap]);
+    }, [rows, primarySelectedId, setActiveId, snapToItem]);
 
     const setSnapEnabled = useCallback((enabled: boolean) => {
         isSnapEnabledRef.current = enabled;

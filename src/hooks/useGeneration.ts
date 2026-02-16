@@ -21,6 +21,7 @@ interface UseGenerationProps {
     showToast: (msg: string, type: "success" | "error", duration?: number) => void;
     currentBoardId: string | null;
     t: (key: any) => string;
+    confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
 }
 
 const COSTS: Record<string, number> = {
@@ -87,7 +88,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
 
@@ -294,8 +295,13 @@ export const useGeneration = ({
             promptLength: prompt.length
         });
 
-        const row = rows[rowIndex];
-        const siblings = row.items.filter(i => i && (i.baseName || i.title || '').startsWith(baseName));
+        // Search globally across ALL rows for the highest version of this baseName
+        const allImages = rows.flatMap(r => r.items);
+        const siblings = allImages.filter(i => {
+            if (!i) return false;
+            const itemBaseName = (i.baseName || i.title || '').replace(/_v\d+$/, '');
+            return itemBaseName === baseName;
+        });
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
 
@@ -380,7 +386,7 @@ export const useGeneration = ({
         if (shouldSnap) {
             setTimeout(() => {
                 selectAndSnap(newId);
-            }, 250);
+            }, 150);
         }
 
         // Wrap generation in a timeout to prevent hanging skeletons
@@ -462,9 +468,25 @@ export const useGeneration = ({
                         });
                     return newCredits;
                 });
+
+                // Show retry dialog with refund notification
+                const formattedAmount = `${cost.toFixed(2)} €`;
+                confirm({
+                    title: t('generation_failed_title'),
+                    description: `${translated}\n\n${t('generation_failed_desc').replace('{{amount}}', formattedAmount)}`,
+                    confirmLabel: t('retry'),
+                    variant: 'primary'
+                }).then(shouldRetry => {
+                    if (shouldRetry) {
+                        // Retry the generation with the same parameters
+                        performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
+                    }
+                });
+            } else {
+                // No refund, just show error toast (already shown above)
             }
         }
-    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t]);
+    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm]);
 
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
@@ -556,7 +578,7 @@ export const useGeneration = ({
 
         setTimeout(() => {
             selectAndSnap(newId);
-        }, 250);
+        }, 150);
 
         try {
             if (user && !isAuthDisabled) {
@@ -624,9 +646,23 @@ export const useGeneration = ({
 
             if (!isPro) {
                 setCredits(prev => prev + cost);
+
+                // Show retry dialog with refund notification
+                const formattedAmount = `${cost.toFixed(2)} €`;
+                confirm({
+                    title: t('generation_failed_title'),
+                    description: `${translated}\n\n${t('generation_failed_desc').replace('{{amount}}', formattedAmount)}`,
+                    confirmLabel: t('retry'),
+                    variant: 'primary'
+                }).then(shouldRetry => {
+                    if (shouldRetry) {
+                        // Retry the generation with the same parameters
+                        performNewGeneration(prompt, modelId, ratio, attachments);
+                    }
+                });
             }
         }
-    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t]);
+    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t, confirm]);
 
 
     return { performGeneration, performNewGeneration };

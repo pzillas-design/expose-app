@@ -158,10 +158,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                             <Download className={iconClass} />
                                         </button>
 
-                                        <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
-                                            <span className={textClass}>{t('ctx_create_variations')}</span>
-                                            <Plus className={iconClass} />
-                                        </button>
+                                        {isGenerated(menu.targetId!) && (
+                                            <button onClick={() => { onGenerateVariations(); onClose(); }} className={itemClass}>
+                                                <span className={textClass}>{t('ctx_create_variations')}</span>
+                                                <Plus className={iconClass} />
+                                            </button>
+                                        )}
 
                                         {onShowInfo && (
                                             <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>
@@ -185,10 +187,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     <Download className={iconClass} />
                                 </button>
 
-                                <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
-                                    <span className={textClass}>{t('ctx_create_variations')}</span>
-                                    <Plus className={iconClass} />
-                                </button>
+                                {isGenerated(menu.targetId) && (
+                                    <button onClick={() => { onGenerateVariations(menu.targetId); onClose(); }} className={itemClass}>
+                                        <span className={textClass}>{t('ctx_create_variations')}</span>
+                                        <Plus className={iconClass} />
+                                    </button>
+                                )}
 
                                 <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
                                     <span className={textClass}>{t('ctx_add_to_selection')}</span>

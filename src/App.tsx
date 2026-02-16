@@ -369,14 +369,17 @@ export function App() {
     const handleImageContextMenu = useCallback((e: React.MouseEvent, id: string, rect?: DOMRect) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedIds.includes(id)) selectAndSnap(id);
+        // Set as active without snapping/recentering
+        if (activeId !== id) {
+            actions.setActiveId(id);
+        }
 
         if (rect) {
             setContextMenu({ x: rect.left, y: rect.bottom + 4, type: 'image', targetId: id });
         } else {
             setContextMenu({ x: e.clientX, y: e.clientY, type: 'image', targetId: id });
         }
-    }, [selectedIds, selectAndSnap]);
+    }, [activeId, actions]);
 
     const handleDownload = async (id: string) => {
         const isValid = await actions.ensureValidSession();

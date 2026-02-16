@@ -45,6 +45,12 @@ export const translations = {
     error_network_error: "Network error - please try again",
     error_server_error: "Server error - please try again later",
     error_unknown: "An unknown error occurred",
+    generation_failed_title: "Generation failed",
+    generation_failed_desc: "{{amount}} has been refunded to your account.",
+    retry: "Try again",
+    select_image: "Mark image",
+    deselect_image: "Unmark image",
+    options: "Options",
 
 
     // SideSheet Header
@@ -166,6 +172,7 @@ export const translations = {
     download_all: "Download All",
     delete_all: "Delete All",
     generate_multi: "Generate",
+    generate_multiple_title: "Do you want to generate {{count}} images?",
     mixed_prompts: "Mixed Prompts",
     ctx_select_all: "Select All",
     ctx_deselect: "Deselect",
@@ -420,6 +427,12 @@ export const translations = {
     error_network_error: "Netzwerkfehler - bitte erneut versuchen",
     error_server_error: "Serverfehler - bitte später erneut versuchen",
     error_unknown: "Ein unbekannter Fehler ist aufgetreten",
+    generation_failed_title: "Generierung fehlgeschlagen",
+    generation_failed_desc: "{{amount}} wurde Ihrem Konto gutgeschrieben.",
+    retry: "Nochmal versuchen",
+    select_image: "Bild markieren",
+    deselect_image: "Markierung aufheben",
+    options: "Optionen",
     annotations_summary: "{{count}} Anmerkungen",
 
     // Stickers (früher Stempel)
@@ -530,6 +543,7 @@ export const translations = {
     download_all: "Alle herunterladen",
     delete_all: "Alle löschen",
     generate_multi: "Generieren",
+    generate_multiple_title: "Möchten Sie {{count}} Bilder generieren?",
     mixed_prompts: "Gemischte Prompts",
     ctx_select_all: "Alles auswählen",
     ctx_deselect: "Auswahl aufheben",
