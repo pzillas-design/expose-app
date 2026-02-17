@@ -11,7 +11,10 @@ import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { ImageInfoModal } from '@/components/canvas/ImageInfoModal';
+import { PresetImportModal } from '@/components/modals/PresetImportModal';
 import { useNanoController } from '@/hooks/useNanoController';
+import { decodeTemplateFromSharing } from '@/utils/shareUtils';
+import { PromptTemplate } from '@/types';
 import { Plus, Layout, Home, Upload, Loader2 } from 'lucide-react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
@@ -27,6 +30,7 @@ const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m =
 const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
+import { SharedTemplateLanding } from '@/components/pages/SharedTemplateLanding';
 
 
 const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -88,6 +92,10 @@ export function App() {
 
     // Snap State
     const [enableSnap, setEnableSnap] = useState(true);
+
+    // Shared Template State
+    const [sharedTemplateData, setSharedTemplateData] = useState<Partial<PromptTemplate> | null>(null);
+    const [activeSharedSlug, setActiveSharedSlug] = useState<string | null>(null);
 
     // Context Menu State
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -158,6 +166,52 @@ export function App() {
             channel.close();
         };
     }, [location.search, navigate, actions, t]);
+
+    // Handle Shared Templates (Params & Hashes)
+    useEffect(() => {
+        // 1. Check for URL Params (Base64)
+        const params = new URLSearchParams(location.search);
+        const encoded = params.get('t');
+        if (encoded) {
+            const decoded = decodeTemplateFromSharing(encoded);
+            if (decoded) {
+                setSharedTemplateData(decoded);
+                const newParams = new URLSearchParams(location.search);
+                newParams.delete('t');
+                const newSearch = newParams.toString();
+                const newUrl = location.pathname + (newSearch ? `?${newSearch}` : '');
+                navigate(newUrl, { replace: true });
+                return;
+            }
+        }
+
+        // 2. Check for Hash Slugs (#chinesenewyear)
+        const hash = location.hash;
+        if (hash) {
+            const slugCandidate = hash.substring(1); // Remove the '#'
+            // Ignore common internal hashes if any
+            if (slugCandidate && slugCandidate.length > 2) {
+                setActiveSharedSlug(slugCandidate);
+            }
+        }
+    }, [location.search, location.hash, navigate]);
+
+    const handleImportShared = async (customTemplate?: PromptTemplate) => {
+        const target = customTemplate || sharedTemplateData;
+        if (!user) {
+            setIsAuthModalOpen(true);
+            setAuthModalMode('signin');
+            return;
+        }
+        if (target) {
+            // @ts-ignore
+            await actions.savePreset(target);
+            actions.showToast(t('save_success'), 'success');
+            setSharedTemplateData(null);
+            setActiveSharedSlug(null);
+            navigate('/', { replace: true });
+        }
+    };
 
     // Initial Scroll Centering to prevent bottom-right jumping on load
     React.useLayoutEffect(() => {
@@ -803,6 +857,17 @@ export function App() {
                 lang={lang}
             />
 
+            {sharedTemplateData && (
+                <PresetImportModal
+                    isOpen={!!sharedTemplateData}
+                    onClose={() => setSharedTemplateData(null)}
+                    template={sharedTemplateData}
+                    onImport={handleImportShared}
+                    t={t}
+                    currentLang={currentLang as 'de' | 'en'}
+                />
+            )}
+
             {
                 infoModalImageId && (() => {
                     const image = allImages.find(img => img.id === infoModalImageId);
@@ -831,6 +896,20 @@ export function App() {
     return (
 
         <>
+            {activeSharedSlug && (
+                <SharedTemplateLanding
+                    user={user}
+                    slugProp={activeSharedSlug}
+                    onImport={handleImportShared}
+                    onAuthRequired={(mode) => {
+                        setAuthModalMode(mode === 'signup' ? 'signup' : 'signin');
+                        setIsAuthModalOpen(true);
+                    }}
+                    t={t}
+                    currentLang={currentLang as 'de' | 'en'}
+                />
+            )}
+
             <Routes>
                 <Route path="/" element={
                     !isAuthLoading && user && !location.state?.skipRedirect ? (
@@ -939,7 +1018,19 @@ export function App() {
                     </ProtectedRoute>
                 } />
                 <Route path="/v2" element={<Navigate to="/projects" replace />} />
-                <Route path="*" element={<Navigate to="/projects" replace />} />
+                <Route path="/s/:slug" element={
+                    <SharedTemplateLanding
+                        user={user}
+                        onImport={handleImportShared}
+                        onAuthRequired={(mode) => {
+                            setAuthModalMode(mode === 'signup' ? 'signup' : 'signin');
+                            setIsAuthModalOpen(true);
+                        }}
+                        t={t}
+                        currentLang={currentLang as 'de' | 'en'}
+                    />
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             {authModal}
         </>

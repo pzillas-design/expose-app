@@ -198,6 +198,7 @@ export const adminService = {
             isPinned: p.is_pinned,
             isCustom: p.is_custom,
             isDefault: p.is_default || false,
+            slug: p.slug, // New: slug mapping
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
             lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
@@ -237,7 +238,8 @@ export const adminService = {
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls || [],
             user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
-            category: category
+            category: category,
+            slug: preset.slug || null // New: persist slug
         };
 
         const { error } = await supabase.from('global_presets').upsert(dbPreset);
@@ -266,6 +268,24 @@ export const adminService = {
     async deleteGlobalPreset(id: string): Promise<void> {
         const { error } = await supabase.from('global_presets').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    /**
+     * Fetch a single preset by its slug
+     */
+    async getPresetBySlug(slug: string): Promise<any | null> {
+        const { data, error } = await supabase
+            .from('global_presets')
+            .select('*')
+            .eq('slug', slug)
+            .single();
+
+        if (error) {
+            console.error('AdminService: getPresetBySlug failed!', error);
+            return null;
+        }
+
+        return this._mapDbPreset(data);
     },
 
     /**

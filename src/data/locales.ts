@@ -370,6 +370,9 @@ export const translations = {
     admin_user_email_missing: 'No Email',
     delete_account_section: 'More',
     delete_account_permanently: 'Delete Account',
+    slug_label: "Sharing URL slug",
+    regenerate: "Regenerate",
+    share: "Share"
   },
   de: {
     // General
@@ -468,6 +471,9 @@ export const translations = {
     no_presets: "Keine Presets gefunden",
     presets_header: "Vorlagen",
     search_presets: "Presets suchen...",
+    slug_label: "Sharing URL-Kürzel",
+    regenerate: "Neu generieren",
+    share: "Teilen",
     create_preset: "Preset erstellen",
     update_preset: "Preset aktualisieren",
     delete_preset: "Löschen",
