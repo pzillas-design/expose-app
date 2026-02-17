@@ -898,7 +898,6 @@ export function App() {
     );
 
     return (
-
         <>
             {activeSharedSlug && (
                 <SharedTemplateLanding
@@ -915,128 +914,138 @@ export function App() {
                 />
             )}
 
-            <Routes>
-                <Route path="/" element={
-                    !isAuthLoading && user && !location.state?.skipRedirect ? (
-                        <Navigate to="/projects" replace />
-                    ) : (
-                        <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                            <HomePage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
-                        </Suspense>
-                    )
-                } />
-                <Route path="/about" element={<Navigate to="/" replace />} />
-                <Route path="/about-1" element={<Navigate to="/" replace />} />
-                <Route path="/about-2" element={<Navigate to="/" replace />} />
-                <Route path="/about-3" element={<Navigate to="/" replace />} />
-                <Route path="/contact" element={
-                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                        <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
-                    </Suspense>
-                } />
-                <Route path="/impressum" element={
-                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                        <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
-                    </Suspense>
-                } />
-                <Route path="/datenschutz" element={<Navigate to="/impressum" replace />} />
-                <Route path="/projects" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        {boardsPage}
-                    </ProtectedRoute>
-                } />
-                <Route path="/projects/:boardId" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        {canvasView}
-                    </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <SettingsPage
-                            user={user}
-                            userProfile={userProfile}
-                            updateProfile={updateProfile}
-                            t={t}
-                            currentBalance={credits}
-                            onAddFunds={handleAddFunds}
-                            qualityMode={qualityMode}
-                            onQualityModeChange={setQualityMode}
-                            themeMode={themeMode}
-                            onThemeChange={setThemeMode}
-                            lang={lang}
-                            onLangChange={setLang}
-                            onSignOut={handleSignOut}
-                            onDeleteAccount={handleDeleteAccount}
-                            onCreateBoard={handleCreateBoardAndNavigate}
-                        />
-                    </ProtectedRoute>
-                } />
-                <Route path="/settings/:tab" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <SettingsPage
-                            user={user}
-                            userProfile={userProfile}
-                            updateProfile={updateProfile}
-                            t={t}
-                            currentBalance={credits}
-                            onAddFunds={handleAddFunds}
-                            qualityMode={qualityMode}
-                            onQualityModeChange={setQualityMode}
-                            themeMode={themeMode}
-                            onThemeChange={setThemeMode}
-                            lang={lang}
-                            onLangChange={setLang}
-                            onSignOut={handleSignOut}
-                            onDeleteAccount={handleDeleteAccount}
-                            onCreateBoard={handleCreateBoardAndNavigate}
-                        />
-                    </ProtectedRoute>
-                } />
-                <Route path="/admin" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <AdminRoute user={user} userProfile={userProfile}>
-                            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
-                                <AdminDashboard
+            {isAuthLoading ? (
+                <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+                </div>
+            ) : (
+                <>
+                    <Routes>
+                        <Route path="/" element={
+                            user && !location.state?.skipRedirect ? (
+                                <Navigate to="/projects" replace />
+                            ) : (
+                                <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                                    <HomePage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                                </Suspense>
+                            )
+                        } />
+                        <Route path="/about" element={<Navigate to="/" replace />} />
+                        <Route path="/about-1" element={<Navigate to="/" replace />} />
+                        <Route path="/about-2" element={<Navigate to="/" replace />} />
+                        <Route path="/about-3" element={<Navigate to="/" replace />} />
+                        <Route path="/contact" element={
+                            <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                                <ContactPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                            </Suspense>
+                        } />
+                        <Route path="/impressum" element={
+                            <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                                <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
+                            </Suspense>
+                        } />
+                        <Route path="/datenschutz" element={<Navigate to="/impressum" replace />} />
+                        <Route path="/projects" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                {boardsPage}
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/projects/:boardId" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                {canvasView}
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/settings" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                <SettingsPage
                                     user={user}
                                     userProfile={userProfile}
-                                    credits={credits}
-                                    onCreateBoard={handleCreateBoardAndNavigate}
+                                    updateProfile={updateProfile}
                                     t={t}
+                                    currentBalance={credits}
+                                    onAddFunds={handleAddFunds}
+                                    qualityMode={qualityMode}
+                                    onQualityModeChange={setQualityMode}
+                                    themeMode={themeMode}
+                                    onThemeChange={setThemeMode}
+                                    lang={lang}
+                                    onLangChange={setLang}
+                                    onSignOut={handleSignOut}
+                                    onDeleteAccount={handleDeleteAccount}
+                                    onCreateBoard={handleCreateBoardAndNavigate}
                                 />
-                            </Suspense>
-                        </AdminRoute>
-                    </ProtectedRoute>
-                } />
-                <Route path="/admin/:tab" element={
-                    <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <AdminRoute user={user} userProfile={userProfile}>
-                            <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
-                                <AdminDashboard
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/settings/:tab" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                <SettingsPage
                                     user={user}
                                     userProfile={userProfile}
-                                    credits={credits}
-                                    onCreateBoard={handleCreateBoardAndNavigate}
+                                    updateProfile={updateProfile}
                                     t={t}
+                                    currentBalance={credits}
+                                    onAddFunds={handleAddFunds}
+                                    qualityMode={qualityMode}
+                                    onQualityModeChange={setQualityMode}
+                                    themeMode={themeMode}
+                                    onThemeChange={setThemeMode}
+                                    lang={lang}
+                                    onLangChange={setLang}
+                                    onSignOut={handleSignOut}
+                                    onDeleteAccount={handleDeleteAccount}
+                                    onCreateBoard={handleCreateBoardAndNavigate}
                                 />
-                            </Suspense>
-                        </AdminRoute>
-                    </ProtectedRoute>
-                } />
-                <Route path="/v2" element={<Navigate to="/projects" replace />} />
-                <Route path="/s/:slug" element={
-                    <SharedTemplateLanding
-                        user={user}
-                        onImport={handleImportShared}
-                        onAuthRequired={(mode) => {
-                            setAuthModalMode(mode === 'signup' ? 'signup' : 'signin');
-                            setIsAuthModalOpen(true);
-                        }}
-                        t={t}
-                        currentLang={currentLang as 'de' | 'en'}
-                    />
-                } />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                <AdminRoute user={user} userProfile={userProfile}>
+                                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
+                                        <AdminDashboard
+                                            user={user}
+                                            userProfile={userProfile}
+                                            credits={credits}
+                                            onCreateBoard={handleCreateBoardAndNavigate}
+                                            t={t}
+                                        />
+                                    </Suspense>
+                                </AdminRoute>
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/admin/:tab" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
+                                <AdminRoute user={user} userProfile={userProfile}>
+                                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 text-zinc-400"><div className="flex flex-col items-center gap-4"><Loader2 className="w-8 h-8 animate-spin" /><span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Admin Panel wird geladen</span></div></div>}>
+                                        <AdminDashboard
+                                            user={user}
+                                            userProfile={userProfile}
+                                            credits={credits}
+                                            onCreateBoard={handleCreateBoardAndNavigate}
+                                            t={t}
+                                        />
+                                    </Suspense>
+                                </AdminRoute>
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/v2" element={<Navigate to="/projects" replace />} />
+                        <Route path="/s/:slug" element={
+                            <SharedTemplateLanding
+                                user={user}
+                                onImport={handleImportShared}
+                                onAuthRequired={(mode) => {
+                                    setAuthModalMode(mode === 'signup' ? 'signup' : 'signin');
+                                    setIsAuthModalOpen(true);
+                                }}
+                                onDismiss={() => setActiveSharedSlug(null)}
+                                t={t}
+                                currentLang={currentLang as 'de' | 'en'}
+                            />
+                        } />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </>
+            )}
+
             {authModal}
         </>
     );
