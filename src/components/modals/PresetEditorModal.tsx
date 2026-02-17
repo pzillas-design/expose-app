@@ -95,6 +95,9 @@ const LanguageForm = ({
             <div className={`px-6 pb-6 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-2">
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                        {t('title_label')}
+                    </label>
                     <div className="relative flex items-center">
                         <Input
                             value={title}
@@ -104,27 +107,33 @@ const LanguageForm = ({
                                 setSlug(generateSlug(newTitle));
                             }}
                             placeholder={t('title_placeholder')}
-                            className="pr-24"
+                            className="pr-36"
                         />
                         <div className="absolute right-1 flex items-center gap-1">
                             <button
                                 onClick={async () => {
                                     if (!title.trim()) return;
-                                    const currentSlug = generateSlug(title);
+                                    let currentSlug = generateSlug(title);
 
-                                    // Check for uniqueness (excluding current template if editing)
-                                    const isDuplicate = existingTemplates?.some(t =>
-                                        generateSlug(t.title) === currentSlug && t.id !== currentId
-                                    );
-
-                                    if (isDuplicate) {
-                                        showToast(t('name_already_exists') || 'Name existiert bereits!', 'error');
-                                        return;
+                                    // Auto-suffix logic if name exists
+                                    let suffix = 0;
+                                    let isDuplicate = true;
+                                    while (isDuplicate) {
+                                        const testSlug = suffix === 0 ? currentSlug : `${currentSlug}-${suffix}`;
+                                        const found = existingTemplates?.find(t =>
+                                            generateSlug(t.title) === testSlug && t.id !== currentId
+                                        );
+                                        if (!found) {
+                                            if (suffix > 0) currentSlug = testSlug;
+                                            isDuplicate = false;
+                                        } else {
+                                            suffix++;
+                                        }
                                     }
 
                                     const url = `${window.location.origin}/#${currentSlug}`;
                                     await navigator.clipboard.writeText(url);
-                                    showToast(t('copied_to_clipboard') || 'Link kopiert!', 'success');
+                                    showToast(t('template_copied') || 'Vorlage kopiert!', 'success');
                                 }}
                                 disabled={!title.trim()}
                                 className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5

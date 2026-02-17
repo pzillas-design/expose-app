@@ -68,7 +68,7 @@ export const SharedTemplateLanding: React.FC<SharedTemplateLandingProps> = ({
     }
 
     return (
-        <div className="min-h-screen bg-[#FDFDFD] dark:bg-[#050505] flex flex-col items-center overflow-x-hidden">
+        <div className="fixed inset-0 z-[1000] bg-[#FDFDFD] dark:bg-[#050505] flex flex-col items-center overflow-y-auto overflow-x-hidden">
             {/* Minimal Header */}
             <header className="w-full max-w-7xl px-6 py-8 flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-700">
                 <Logo size="md" />
