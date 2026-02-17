@@ -26,7 +26,6 @@ const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboar
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
-const DatenschutzPage = React.lazy(() => import('@/components/pages/DatenschutzPage').then(m => ({ default: m.DatenschutzPage })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 
 
@@ -856,11 +855,7 @@ export function App() {
                         <ImpressumPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
                     </Suspense>
                 } />
-                <Route path="/datenschutz" element={
-                    <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
-                        <DatenschutzPage user={user} userProfile={userProfile} credits={credits || 0} onCreateBoard={handleCreateBoardAndNavigate} onSignIn={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }} t={t} />
-                    </Suspense>
-                } />
+                <Route path="/datenschutz" element={<Navigate to="/impressum" replace />} />
                 <Route path="/projects" element={
                     <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
                         {boardsPage}

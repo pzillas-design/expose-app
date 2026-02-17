@@ -45,7 +45,7 @@ export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
                         {t('footer_legal') || 'Impressum'}
                     </a>
                     <a
-                        href="/datenschutz"
+                        href="/impressum"
                         className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
                     >
                         {t('footer_privacy') || 'Datenschutz'}
