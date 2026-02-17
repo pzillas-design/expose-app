@@ -278,7 +278,7 @@ export const adminService = {
             .from('global_presets')
             .select('*')
             .eq('slug', slug)
-            .single();
+            .maybeSingle();
 
         if (error) {
             console.error('AdminService: getPresetBySlug failed!', error);

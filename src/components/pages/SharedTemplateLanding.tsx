@@ -11,6 +11,7 @@ interface SharedTemplateLandingProps {
     slugProp?: string; // New: allow passing slug via props
     onImport: (template: PromptTemplate) => void;
     onAuthRequired: (mode: 'signin' | 'signup') => void;
+    onDismiss: () => void;
     t: TranslationFunction;
     currentLang: 'de' | 'en';
 }
@@ -20,6 +21,7 @@ export const SharedTemplateLanding: React.FC<SharedTemplateLandingProps> = ({
     slugProp,
     onImport,
     onAuthRequired,
+    onDismiss,
     t,
     currentLang
 }) => {
@@ -41,7 +43,7 @@ export const SharedTemplateLanding: React.FC<SharedTemplateLandingProps> = ({
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6">
+            <div className="fixed inset-0 z-[1000] bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400 mb-4" />
                 <Typo.Body className="text-zinc-500">{currentLang === 'de' ? 'Vorlage wird geladen...' : 'Loading template...'}</Typo.Body>
             </div>
@@ -50,17 +52,17 @@ export const SharedTemplateLanding: React.FC<SharedTemplateLandingProps> = ({
 
     if (!template) {
         return (
-            <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
+            <div className="fixed inset-0 z-[1000] bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center mb-6">
                     <Wand2 className="w-8 h-8 text-zinc-300" />
                 </div>
                 <h1 className={`${Typo.H1} text-2xl mb-2`}>{currentLang === 'de' ? 'Vorlage nicht gefunden' : 'Template not found'}</h1>
-                <p className={`${Typo.Body} text-zinc-500 mb-8`}>
+                <p className={`${Typo.Body} text-zinc-500 mb-8 whitespace-pre-line`}>
                     {currentLang === 'de'
-                        ? 'Dieser Link ist ungültig oder die Vorlage wurde entfernt.'
-                        : 'This link is invalid or the template has been removed.'}
+                        ? 'Dieser Link ist ungültig oder die Vorlage wurde entfernt.\nPrüfen Sie den Link oder erstellen Sie eine neue Vorlage.'
+                        : 'This link is invalid or the template has been removed.\nCheck the link or create a new template.'}
                 </p>
-                <Button variant="secondary" onClick={() => navigate('/')}>
+                <Button variant="secondary" onClick={() => { onDismiss(); navigate('/'); }}>
                     {t('back_to_app')}
                 </Button>
             </div>

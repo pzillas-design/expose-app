@@ -192,7 +192,11 @@ export function App() {
             // Ignore common internal hashes if any
             if (slugCandidate && slugCandidate.length > 2) {
                 setActiveSharedSlug(slugCandidate);
+            } else {
+                setActiveSharedSlug(null);
             }
+        } else {
+            setActiveSharedSlug(null);
         }
     }, [location.search, location.hash, navigate]);
 
@@ -905,6 +909,7 @@ export function App() {
                         setAuthModalMode(mode === 'signup' ? 'signup' : 'signin');
                         setIsAuthModalOpen(true);
                     }}
+                    onDismiss={() => setActiveSharedSlug(null)}
                     t={t}
                     currentLang={currentLang as 'de' | 'en'}
                 />
