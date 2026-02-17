@@ -28,12 +28,14 @@ export const useFileHandler = ({
     t
 }: UseFileHandlerProps) => {
 
-    const processFiles = useCallback((files: File[]) => {
+    const processFiles = useCallback(async (files: File[]) => {
         const newImageIds: string[] = [];
         let processedCount = 0;
 
-        files.forEach(file => {
+        for (const file of files) {
             const skeletonId = generateId();
+            const extension = file.name.split('.').pop()?.toLowerCase();
+            const isHeic = ['heic', 'heif'].includes(extension || '');
             const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
 
             // 1. ADD SKELETON IMMEDIATELY
@@ -61,18 +63,45 @@ export const useFileHandler = ({
 
             newImageIds.push(skeletonId);
 
-            // 2. PROCESS FILE IN BACKGROUND
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                if (typeof event.target?.result === 'string') {
+            // 2. PROCESS FILE (WITH HEIC CONVERSION IF NEEDED)
+            const getFileData = async (): Promise<{ result: string, file: File | Blob }> => {
+                if (isHeic) {
+                    try {
+                        const heic2any = (await import('heic2any')).default;
+                        const convertedBlob = await heic2any({
+                            blob: file,
+                            toType: "image/jpeg",
+                            quality: 0.85
+                        });
+                        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve({ result: e.target?.result as string, file: blob });
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (err) {
+                        console.error("HEIC conversion failed:", err);
+                        // Fallback to original file if conversion fails
+                    }
+                }
+
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve({ result: e.target?.result as string, file });
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            getFileData().then(({ result, file: processedFile }) => {
+                if (result) {
                     const img = new Image();
-                    img.src = event.target.result;
+                    img.src = result;
                     img.onload = async () => {
                         const targetHeight = 512;
                         const w = (img.width / img.height) * targetHeight;
                         const h = targetHeight;
 
-                        generateThumbnail(event.target!.result as string, 200).then(async (thumbBlob) => {
+                        generateThumbnail(result, 200).then(async (thumbBlob) => {
                             const thumbSrc = URL.createObjectURL(thumbBlob);
 
                             // 3. UPDATE SKELETON WITH REAL DATA
@@ -80,14 +109,14 @@ export const useFileHandler = ({
                                 ...row,
                                 items: row.items.map(item => item.id === skeletonId ? {
                                     ...item,
-                                    src: event.target!.result as string,
+                                    src: result,
                                     thumbSrc: thumbSrc,
                                     width: w,
                                     height: h,
                                     realWidth: img.width,
                                     realHeight: img.height,
                                     isGenerating: false, // Turn off shimmering
-                                    originalSrc: event.target!.result as string
+                                    originalSrc: result
                                 } : item)
                             })));
 
@@ -95,15 +124,13 @@ export const useFileHandler = ({
 
                             if (processedCount === files.length) {
                                 selectMultiple(newImageIds);
-                                // Don't auto-scroll on upload completion - only on new skeleton creation
                             }
 
                             // IMMEDIATE PERSISTENCE (Background)
                             if (user && !isAuthDisabled) {
-                                // Create temp image object for persistence
                                 const finalImage: CanvasImage = {
                                     id: skeletonId,
-                                    src: event.target!.result as string, // We need to pass the DataURL/Blob for upload
+                                    src: result,
                                     thumbSrc: thumbSrc,
                                     width: w,
                                     height: h,
@@ -116,40 +143,27 @@ export const useFileHandler = ({
                                     createdAt: Date.now(),
                                     updatedAt: Date.now(),
                                     boardId: currentBoardId || undefined,
-                                    storage_path: '', // Will be filled by persistence
+                                    storage_path: '',
                                 };
 
-                                imageService.persistImage(finalImage, user.id, user.email).then(result => {
-                                    if (result.success && result.storage_path) {
-                                        // Update state with storage paths
+                                imageService.persistImage(finalImage, user.id, user.email).then(res => {
+                                    if (res.success && res.storage_path) {
                                         setRows(prev => prev.map(row => ({
                                             ...row,
                                             items: row.items.map(item => item.id === skeletonId ? {
                                                 ...item,
-                                                storage_path: result.storage_path,
-                                                thumb_storage_path: result.thumb_storage_path
+                                                storage_path: res.storage_path,
+                                                thumb_storage_path: res.thumb_storage_path
                                             } : item)
                                         })));
-                                    } else {
-                                        console.error('Persistence failed:', result.error);
-                                        showToast(t('save_failed') || 'Could not save image to cloud', "error");
                                     }
-                                }).catch(err => {
-                                    console.error('Persistence error:', err);
-                                    showToast(t('save_failed') || 'Could not save image to cloud', "error");
                                 });
                             }
-
-                            // Note: Auto-save will handle DB persistence (every 30s)
-                        }).catch((err) => {
-                            console.error('[Upload] Thumbnail generation failed:', err);
-                            showToast(t('upload_failed'), "error");
                         });
                     };
                 }
-            };
-            reader.readAsDataURL(file);
-        });
+            });
+        }
     }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
 
     const processFile = useCallback((file: File) => {
@@ -158,7 +172,11 @@ export const useFileHandler = ({
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
-        const files = Array.from(e.dataTransfer.files).filter((f): f is File => f.type.startsWith('image/'));
+        const files = Array.from(e.dataTransfer.files).filter((f: File) => {
+            const isImage = f.type.startsWith('image/');
+            const isHeic = /\.(heic|heif)$/i.test(f.name);
+            return isImage || isHeic;
+        });
         if (files.length === 0) return;
         processFiles(files);
     }, [processFiles]);

@@ -52,28 +52,23 @@ const resolveTargetModel = (quality: string): string | undefined => {
 
 // HELPER: Map technical errors to user-friendly German
 const translateError = (errorMsg: string): string => {
-    if (!errorMsg) return "Ein unbekannter Fehler ist aufgetreten.";
+    if (!errorMsg) return "Unbekannter Fehler.";
 
-    // Lowercase for easier matching
     const msg = errorMsg.toLowerCase();
-    let header = "";
 
     if (msg.includes("cold start") || msg.includes("timeout")) {
-        header = "Die Generierung hat zu lange gedauert (Modell-Kaltstart). Bitte versuch es gleich noch einmal.";
+        return "Timeout. Bitte erneut versuchen.";
     } else if (msg.includes("nsfw") || msg.includes("safety")) {
-        header = "Der Inhalt wurde von den Sicherheitsfiltern abgelehnt. Bitte passe deinen Prompt an.";
+        return "Inhalt abgelehnt (Sicherheitsfilter).";
     } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        header = "Nicht genügend Guthaben vorhanden.";
+        return "Guthaben nicht ausreichend.";
     } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        header = "Verbindung zum Server fehlgeschlagen. Bitte prüfe dein Internet.";
+        return "Netzwerkfehler.";
     } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
-        header = "Fehler in der Anfrage.";
-    } else {
-        return `Fehler: ${errorMsg}`;
+        return "Fehler in der Anfrage.";
     }
 
-    const cleanOriginal = errorMsg.length > 150 ? errorMsg.substring(0, 150) + "..." : errorMsg;
-    return `${header} (Original: ${cleanOriginal})`;
+    return errorMsg.length > 60 ? errorMsg.substring(0, 60) + "..." : errorMsg;
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -235,67 +230,11 @@ export const useGeneration = ({
         const rowIndex = rows.findIndex(row => row.items.some(item => item.id === sourceImage.id));
         if (rowIndex === -1) return;
 
-        // Debit Credits Locally (for immediate UX)
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
-
-        const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
-
-        // CLEAN baseName: Remove any existing version suffix to group siblings correctly
+        const newId = generateId();
         const rawBaseName = sourceImage?.baseName || sourceImage?.title || 'Image';
         const baseName = rawBaseName.replace(/_v\d+$/, '');
-        const newId = generateId();
 
-        // Create the composite Annotation Image (if markings exist)
-        const annotations = sourceImage.annotations || [];
-        console.log('[DEBUG] performGeneration - sourceImage.id:', sourceImage.id);
-        console.log('[DEBUG] performGeneration - annotations count:', annotations.length);
-        console.log('[DEBUG] performGeneration - annotations:', JSON.stringify(annotations.map(a => ({ type: a.type, id: a.id }))));
-
-        const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
-        let annotationImageBase64: string | undefined;
-
-        if (hasMarkings) {
-            try {
-                annotationImageBase64 = await generateAnnotationImage(
-                    sourceImage.src,
-                    annotations,
-                    { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 },
-                    { width: sourceImage.width || 1024, height: sourceImage.height || 1024 } // Canvas dimensions
-                );
-                console.log('[DEBUG] performGeneration - annotationImage created:', !!annotationImageBase64);
-            } catch (err) {
-                console.warn("Failed to generate annotation image:", err);
-            }
-        }
-
-        // Prepare structured references
-        const refs = annotations.filter(a => a.type === 'reference_image');
-        console.log('[DEBUG] performGeneration - reference images count:', refs.length);
-
-        const structuredRefs: StructuredReference[] = refs.map(ann => ({
-            src: ann.referenceImage!,
-            instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
-        }));
-
-        const structuredRequest: StructuredGenerationRequest = {
-            type: 'edit',
-            prompt: prompt,
-            variables: variableValues || {},
-            originalImage: sourceImage.src,
-            annotationImage: annotationImageBase64,
-            references: structuredRefs
-        };
-
-        console.log('[DEBUG] performGeneration - structuredRequest:', {
-            hasAnnotationImage: !!annotationImageBase64,
-            referencesCount: structuredRefs.length,
-            promptLength: prompt.length
-        });
-
-        // Search globally across ALL rows for the highest version of this baseName
+        // 1. VERSION CALCULATION (Sync)
         const allImages = rows.flatMap(r => r.items);
         const siblings = allImages.filter(i => {
             if (!i) return false;
@@ -305,29 +244,21 @@ export const useGeneration = ({
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
 
-        const activeCount = rows.flatMap(r => r.items).filter(i => i.isGenerating).length;
+        // 2. CONCURRENCY & DURATION (Sync)
+        const activeCount = allImages.filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
-
-        // Calculate smart duration estimate using cached data
         let estimatedDuration: number;
-
-        // Check if we have smart estimates for this quality mode
-        const now = Date.now();
-        if (smartEstimatesCache && (now - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
+        const nowMs = Date.now();
+        if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
             const estimate = smartEstimatesCache[qualityMode];
             let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
-
-            // Apply concurrency factor (measured from real data)
-            const concurrencyFactor = estimate.concurrencyFactor || 0.3;
-            duration *= (1 + concurrencyFactor * currentConcurrency);
-
+            duration *= (1 + (estimate.concurrencyFactor || 0.3) * currentConcurrency);
             estimatedDuration = Math.round(duration);
         } else {
-            // Fallback to hardcoded estimate with simple linear concurrency
-            const baseDuration = ESTIMATED_DURATIONS[qualityMode] || 23000;
-            estimatedDuration = Math.round(baseDuration * (1 + 0.3 * currentConcurrency));
+            estimatedDuration = Math.round((ESTIMATED_DURATIONS[qualityMode] || 23000) * (1 + 0.3 * currentConcurrency));
         }
 
+        // 3. SHOW PLACEHOLDER IMMEDIATELY
         const placeholder: CanvasImage = {
             ...sourceImage,
             id: newId,
@@ -336,156 +267,159 @@ export const useGeneration = ({
             isGenerating: true,
             generationStartTime: Date.now(),
             maskSrc: undefined,
-            thumbSrc: sourceImage.thumbSrc, // Explicitly preserve thumbnail for blurry preview
-            src: sourceImage.src, // Explicitly preserve source for blurry preview
-            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'), // ONLY keep references for new image
+            thumbSrc: sourceImage.thumbSrc,
+            src: sourceImage.src,
+            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
             parentId: sourceImage.id,
-            generationPrompt: prompt, // Snapshot for Info tab
-            userDraftPrompt: '', // Clean prompt field
-            activeTemplateId: undefined, // No preset carried over
-            variableValues: undefined, // No variables carried over
+            generationPrompt: prompt,
+            userDraftPrompt: '',
+            activeTemplateId: undefined,
+            variableValues: undefined,
             quality: qualityMode,
             estimatedDuration,
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
 
-        if (currentUser && !isAuthDisabled) {
-            try {
-                // Log the job as 'processing' - The Edge function will update this to 'completed'
-                await supabase.from('generation_jobs').insert({
-                    id: newId,
-                    user_id: currentUser.id,
-                    user_name: currentUser.email,
-                    type: maskDataUrl ? 'Edit' : 'Create',
-                    model: qualityMode,
-                    status: 'processing',
-                    cost: cost,
-                    prompt: prompt,
-                    concurrent_jobs: currentConcurrency,
-                    board_id: currentBoardId || null,
-                    parent_id: sourceImage.id // Map lineage
-                });
-                attachedJobIds.current.add(newId);
-            } catch (dbErr) {
-                console.warn("Failed to log generation job:", dbErr);
-            }
-        }
-
         setRows(prev => {
             const newRows = [...prev];
-            const correctRowIndex = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
-            if (correctRowIndex === -1) return prev;
-            const currentRow = newRows[correctRowIndex];
-            const newItems = [...currentRow.items, placeholder];
-            newRows[correctRowIndex] = { ...currentRow, items: newItems };
+            const idx = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
+            if (idx === -1) return prev;
+            newRows[idx] = { ...newRows[idx], items: [...newRows[idx].items, placeholder] };
             return newRows;
         });
 
-        // Use a slightly longer timeout to ensure React has finished rendering the new image element
         if (shouldSnap) {
-            setTimeout(() => {
-                selectAndSnap(newId);
-            }, 150);
+            setTimeout(() => selectAndSnap(newId), 50);
         }
 
-        // Wrap generation in a timeout to prevent hanging skeletons
-        // Use 3min for single, 10min for batch generations
-        const timeoutMs = batchSize > 1 ? 600000 : 180000;
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
-        });
+        // --- ASYNC PROCESSING STARTS HERE ---
 
-        try {
-            const finalImage = await Promise.race([
-                imageService.processGeneration({
-                    payload: structuredRequest,
-                    sourceImage,
-                    qualityMode,
-                    // Inject model override for staging
-                    modelName: resolveTargetModel(qualityMode),
-                    newId,
-                    boardId: currentBoardId || undefined,
-                    targetVersion: newVersion,
-                    targetTitle: placeholder.title
-                }),
-                timeoutPromise
-            ]) as CanvasImage;
+        // Debit Credits Locally (for immediate UX)
+        if (!isPro) {
+            setCredits(prev => prev - cost);
+        }
 
-            if (finalImage) {
-                // Add cache busting to ensure the new image loads immediately
-                const cacheBuster = `?t=${Date.now()}`;
-                const refreshedImage = {
-                    ...finalImage,
-                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
+        // Heavy Canvas/DB operations in the background
+        const processGenerationAsync = async () => {
+            let currentUser: any; // Declare currentUser here to be accessible in catch block
+            try {
+                const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+                currentUser = fetchedUser; // Assign fetched user to currentUser
+                const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
+                const annotations = sourceImage.annotations || [];
+                const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
+                let annotationImageBase64: string | undefined;
+
+                if (hasMarkings) {
+                    try {
+                        annotationImageBase64 = await generateAnnotationImage(
+                            sourceImage.src,
+                            annotations,
+                            { width: sourceImage.realWidth || 1024, height: sourceImage.realHeight || 1024 },
+                            { width: sourceImage.width || 1024, height: sourceImage.height || 1024 }
+                        );
+                    } catch (err) { console.warn("Failed to generate annotation image:", err); }
+                }
+
+                const refs = annotations.filter(a => a.type === 'reference_image');
+                const structuredRefs: StructuredReference[] = refs.map(ann => ({
+                    src: ann.referenceImage!,
+                    instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
+                }));
+
+                const structuredRequest: StructuredGenerationRequest = {
+                    type: 'edit',
+                    prompt: prompt,
+                    variables: variableValues || {},
+                    originalImage: sourceImage.src,
+                    annotationImage: annotationImageBase64,
+                    references: structuredRefs
                 };
 
-                setRows(prev => {
-                    return prev.map(row => ({
+                if (currentUser && !isAuthDisabled) {
+                    supabase.from('generation_jobs').insert({
+                        id: newId,
+                        user_id: currentUser.id,
+                        user_name: currentUser.email,
+                        type: maskDataUrl ? 'Edit' : 'Create',
+                        model: qualityMode,
+                        status: 'processing',
+                        cost: cost,
+                        prompt: prompt,
+                        concurrent_jobs: currentConcurrency,
+                        board_id: currentBoardId || null,
+                        parent_id: sourceImage.id
+                    }).then(() => attachedJobIds.current.add(newId));
+                }
+
+                const timeoutMs = batchSize > 1 ? 600000 : 180000;
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(`Timeout (${timeoutMs / 60000}m)`)), timeoutMs);
+                });
+
+                const finalImage = await Promise.race([
+                    imageService.processGeneration({
+                        payload: structuredRequest,
+                        sourceImage,
+                        qualityMode,
+                        modelName: resolveTargetModel(qualityMode),
+                        newId,
+                        boardId: currentBoardId || undefined,
+                        targetVersion: newVersion,
+                        targetTitle: placeholder.title
+                    }),
+                    timeoutPromise
+                ]) as CanvasImage;
+
+                if (finalImage) {
+                    const cacheBuster = `?t=${Date.now()}`;
+                    const refreshedImage = {
+                        ...finalImage,
+                        src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
+                    };
+
+                    setRows(prev => prev.map(row => ({
                         ...row,
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
-                    }));
-                });
+                    })));
+                }
+            } catch (error: any) {
+                console.error("Generation failed:", error);
+                const translated = translateError(error.message || error);
+                showToast(translated, "error");
 
-                // Success: record preserved
-            } else {
-                throw new Error("Generation returned no image");
-            }
-        } catch (error: any) {
-            console.error("Generation failed:", error);
-            const translated = translateError(error.message || error);
-            showToast(translated, "error");
-
-            // Cleanup: remove the failed placeholder from rows
-            setRows(prev => {
-                const newRows = prev.map(row => ({
+                setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== newId)
-                })).filter(row => row.items.length > 0);
-                return newRows;
-            });
+                })).filter(row => row.items.length > 0));
 
-            // Deep Cleanup: Delete from DB if auth is enabled
-            if (user && !isAuthDisabled) {
-                supabase.from('generation_jobs')
-                    .delete()
-                    .eq('id', newId)
-                    .eq('user_id', user.id)
-                    .then(({ error }) => {
-                        if (error) console.warn("Failed to clean up failed job row from DB:", error);
+                if (currentUser && !isAuthDisabled) {
+                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
+                }
+
+                if (!isPro && cost > 0) {
+                    setCredits(prev => {
+                        const newCredits = prev + cost;
+                        if (currentUser) { // Only try to update if currentUser is defined
+                            supabase.from('profiles').update({ credits: newCredits }).eq('id', currentUser.id);
+                        }
+                        return newCredits;
                     });
-            }
 
-            if (!isPro && cost > 0) {
-                setCredits(prev => {
-                    const newCredits = prev + cost;
-                    // Try to sync with DB, but don't block if it fails (the 500 you saw)
-                    supabase.from('profiles')
-                        .update({ credits: newCredits })
-                        .eq('id', user.id)
-                        .then(({ error }) => {
-                            if (error) console.warn("Refund DB update failed (likely RLS):", error);
-                        });
-                    return newCredits;
-                });
-
-                // Show retry dialog with refund notification
-                const formattedAmount = `${cost.toFixed(2)} €`;
-                confirm({
-                    title: t('generation_failed_title'),
-                    description: `${translated}\n\n${t('generation_failed_desc').replace('{{amount}}', formattedAmount)}`,
-                    confirmLabel: t('retry'),
-                    variant: 'primary'
-                }).then(shouldRetry => {
-                    if (shouldRetry) {
-                        // Retry the generation with the same parameters
-                        performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
-                    }
-                });
-            } else {
-                // No refund, just show error toast (already shown above)
+                    confirm({
+                        title: t('generation_failed_title'),
+                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
+                        confirmLabel: t('retry'),
+                        variant: 'primary'
+                    }).then(shouldRetry => {
+                        if (shouldRetry) performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
+                    });
+                }
             }
-        }
+        };
+
+        processGenerationAsync();
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm]);
 
 
@@ -502,166 +436,71 @@ export const useGeneration = ({
         const newId = generateId();
         const baseName = t('new_generation') || 'Generation';
 
-        // Correctly calculate resolution based on Model & Ratio
+        // Ratio calc (Sync)
         let baseSize = 1024;
         if (modelId === 'pro-2k') baseSize = 2048;
         if (modelId === 'pro-4k') baseSize = 4096;
-
         let wRatio = 1, hRatio = 1;
         const parts = ratio.split(':').map(Number);
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-            wRatio = parts[0];
-            hRatio = parts[1];
-        }
+        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { wRatio = parts[0]; hRatio = parts[1]; }
+        let realWidth = baseSize, realHeight = baseSize;
+        if (wRatio >= hRatio) { realWidth = baseSize; realHeight = Math.round(baseSize * (hRatio / wRatio)); }
+        else { realHeight = baseSize; realWidth = Math.round(baseSize * (wRatio / hRatio)); }
+        const displayHeight = 512, displayWidth = (realWidth / realHeight) * displayHeight;
 
-        let realWidth = baseSize;
-        let realHeight = baseSize;
-
-        // Scale fitting the base size to the longest edge
-        if (wRatio >= hRatio) {
-            // Landscape or Square
-            realWidth = baseSize;
-            realHeight = Math.round(baseSize * (hRatio / wRatio));
-        } else {
-            // Portrait
-            realHeight = baseSize;
-            realWidth = Math.round(baseSize * (wRatio / hRatio));
-        }
-
-        // Display dimensions (normalized to 512px height for UI consistency)
-        const displayHeight = 512;
-        const displayWidth = (realWidth / realHeight) * displayHeight;
-
-        // Map attachments to annotations format for the Edge function
         const creationAnns: any[] = attachments.map(src => ({
-            id: generateId(),
-            type: 'reference_image',
-            referenceImage: src,
-            points: [],
-            strokeWidth: 0,
-            color: '#000000',
-            x: 0, y: 0, width: 0, height: 0 // Not used for global refs
+            id: generateId(), type: 'reference_image', referenceImage: src, points: [], strokeWidth: 0, color: '#000000', x: 0, y: 0, width: 0, height: 0
         }));
 
         const placeholder: CanvasImage = {
-            id: newId,
-            src: '',
-            storage_path: '',
-            width: displayWidth,
-            height: displayHeight,
-            realWidth,
-            realHeight,
-            title: baseName,
-            baseName: baseName,
-            version: 1,
-            isGenerating: true,
-            generationStartTime: Date.now(),
-            quality: modelId as any,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-            generationPrompt: prompt,
-            userDraftPrompt: '',
-            annotations: creationAnns,
-            boardId: currentBoardId || undefined,
-            userId: user?.id
+            id: newId, src: '', storage_path: '', width: displayWidth, height: displayHeight, realWidth, realHeight,
+            title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
+            quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
+            annotations: creationAnns, boardId: currentBoardId || undefined, userId: user?.id
         };
 
-        const newRow: ImageRow = {
-            id: generateId(),
-            title: baseName,
-            items: [placeholder],
-            createdAt: Date.now()
+        setRows(prev => [...prev, { id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }]);
+        setTimeout(() => selectAndSnap(newId), 50);
+
+        const processNewSync = async () => {
+            try {
+                if (user && !isAuthDisabled) {
+                    supabase.from('generation_jobs').insert({
+                        id: newId, user_id: user.id, user_name: user.email, type: 'Text2Img', model: modelId,
+                        status: 'processing', cost, prompt, board_id: currentBoardId || null
+                    });
+                }
+
+                const structuredRequest: StructuredGenerationRequest = {
+                    type: 'create', prompt, variables: {},
+                    references: creationAnns.map(ann => ({ src: ann.referenceImage!, instruction: ann.text || '' }))
+                };
+
+                const finalImage = await imageService.processGeneration({
+                    payload: structuredRequest, sourceImage: placeholder, qualityMode: modelId,
+                    modelName: resolveTargetModel(modelId), newId, boardId: currentBoardId || undefined, attachments, aspectRatio: ratio
+                });
+
+                if (finalImage) {
+                    setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
+                }
+            } catch (error: any) {
+                const translated = translateError(error.message || "");
+                showToast(translated, "error");
+                setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
+                if (!isPro) {
+                    setCredits(prev => prev + cost);
+                    confirm({
+                        title: t('generation_failed_title'),
+                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
+                        confirmLabel: t('retry'),
+                        variant: 'primary'
+                    }).then(shouldRetry => { if (shouldRetry) performNewGeneration(prompt, modelId, ratio, attachments); });
+                }
+            }
         };
 
-        // Appending to end implies newest
-        setRows(prev => [...prev, newRow]);
-
-        setTimeout(() => {
-            selectAndSnap(newId);
-        }, 150);
-
-        try {
-            if (user && !isAuthDisabled) {
-                await supabase.from('generation_jobs').insert({
-                    id: newId,
-                    user_id: user.id,
-                    user_name: user.email,
-                    type: 'Text2Img',
-                    model: modelId,
-                    status: 'processing',
-                    cost: cost,
-                    prompt: prompt,
-                    board_id: currentBoardId || null
-                });
-            }
-
-            // Wrap generation in a timeout to prevent hanging skeletons
-            // Use 3min for single generation
-            const timeoutMs = 180000;
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error(`Generation timeout (${timeoutMs / 60000} minutes)`)), timeoutMs);
-            });
-
-            const structuredRequest: StructuredGenerationRequest = {
-                type: 'create',
-                prompt,
-                variables: {}, // No variables in new generation for now
-                references: creationAnns.map(ann => ({
-                    src: ann.referenceImage!,
-                    instruction: ann.text || ''
-                }))
-            };
-
-            const finalImage = await Promise.race([
-                imageService.processGeneration({
-                    payload: structuredRequest,
-                    sourceImage: placeholder,
-                    qualityMode: modelId,
-                    // Inject model override for staging
-                    modelName: resolveTargetModel(modelId),
-                    newId,
-                    boardId: currentBoardId || undefined,
-                    attachments,
-                    aspectRatio: ratio // Explicitly pass the user-selected ratio string
-                }),
-                timeoutPromise
-            ]) as CanvasImage;
-
-            if (finalImage) {
-                setRows(prev => {
-                    return prev.map(row => ({
-                        ...row,
-                        items: row.items.map(i => i.id === newId ? finalImage : i)
-                    }));
-                });
-
-                // Success: record preserved
-            }
-        } catch (error: any) {
-            console.error("New Generation failed:", error);
-            const translated = translateError(error.message || "");
-            showToast(translated, "error", 6000);
-
-            setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
-
-            if (!isPro) {
-                setCredits(prev => prev + cost);
-
-                // Show retry dialog with refund notification
-                const formattedAmount = `${cost.toFixed(2)} €`;
-                confirm({
-                    title: t('generation_failed_title'),
-                    description: `${translated}\n\n${t('generation_failed_desc').replace('{{amount}}', formattedAmount)}`,
-                    confirmLabel: t('retry'),
-                    variant: 'primary'
-                }).then(shouldRetry => {
-                    if (shouldRetry) {
-                        // Retry the generation with the same parameters
-                        performNewGeneration(prompt, modelId, ratio, attachments);
-                    }
-                });
-            }
-        }
+        processNewSync();
     }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t, confirm]);
 
 
