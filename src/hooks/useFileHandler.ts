@@ -64,104 +64,114 @@ export const useFileHandler = ({
             newImageIds.push(skeletonId);
 
             // 2. PROCESS FILE (WITH HEIC CONVERSION IF NEEDED)
-            const getFileData = async (): Promise<{ result: string, file: File | Blob }> => {
+            const getFileData = async (): Promise<{ src: string, file: File | Blob }> => {
                 if (isHeic) {
                     try {
                         const heic2any = (await import('heic2any')).default;
                         const convertedBlob = await heic2any({
                             blob: file,
                             toType: "image/jpeg",
-                            quality: 0.85
+                            quality: 0.8
                         });
                         const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve({ result: e.target?.result as string, file: blob });
-                            reader.readAsDataURL(blob);
-                        });
+                        return { src: URL.createObjectURL(blob), file: blob };
                     } catch (err) {
                         console.error("HEIC conversion failed:", err);
-                        // Fallback to original file if conversion fails
+                        // Fallback to original file
                     }
                 }
-
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => resolve({ result: e.target?.result as string, file });
-                    reader.readAsDataURL(file);
-                });
+                return { src: URL.createObjectURL(file), file };
             };
 
-            getFileData().then(({ result, file: processedFile }) => {
-                if (result) {
-                    const img = new Image();
-                    img.src = result;
-                    img.onload = async () => {
-                        const targetHeight = 512;
-                        const w = (img.width / img.height) * targetHeight;
-                        const h = targetHeight;
+            getFileData().then(({ src, file: processedFile }) => {
+                const img = new Image();
+                img.onload = async () => {
+                    const targetHeight = 512;
+                    const w = (img.width / img.height) * targetHeight;
+                    const h = targetHeight;
 
-                        generateThumbnail(result, 200).then(async (thumbBlob) => {
-                            const thumbSrc = URL.createObjectURL(thumbBlob);
+                    try {
+                        const thumbBlob = await generateThumbnail(src, 200);
+                        const thumbSrc = URL.createObjectURL(thumbBlob);
 
-                            // 3. UPDATE SKELETON WITH REAL DATA
-                            setRows(prev => prev.map(row => ({
-                                ...row,
-                                items: row.items.map(item => item.id === skeletonId ? {
-                                    ...item,
-                                    src: result,
-                                    thumbSrc: thumbSrc,
-                                    width: w,
-                                    height: h,
-                                    realWidth: img.width,
-                                    realHeight: img.height,
-                                    isGenerating: false, // Turn off shimmering
-                                    originalSrc: result
-                                } : item)
-                            })));
+                        // 3. UPDATE SKELETON WITH REAL DATA
+                        setRows(prev => prev.map(row => ({
+                            ...row,
+                            items: row.items.map(item => item.id === skeletonId ? {
+                                ...item,
+                                src: src,
+                                thumbSrc: thumbSrc,
+                                width: w,
+                                height: h,
+                                realWidth: img.width,
+                                realHeight: img.height,
+                                isGenerating: false,
+                                originalSrc: src
+                            } : item)
+                        })));
 
-                            processedCount++;
+                        processedCount++;
+                        if (processedCount === files.length) {
+                            selectMultiple(newImageIds);
+                        }
 
-                            if (processedCount === files.length) {
-                                selectMultiple(newImageIds);
-                            }
+                        // IMMEDIATE PERSISTENCE (Background)
+                        if (user && !isAuthDisabled) {
+                            const finalImage: CanvasImage = {
+                                id: skeletonId,
+                                src: src,
+                                thumbSrc: thumbSrc,
+                                width: w,
+                                height: h,
+                                realWidth: img.width,
+                                realHeight: img.height,
+                                title: baseName,
+                                baseName: baseName,
+                                version: 1,
+                                isGenerating: false,
+                                createdAt: Date.now(),
+                                updatedAt: Date.now(),
+                                boardId: currentBoardId || undefined,
+                                storage_path: '',
+                            };
 
-                            // IMMEDIATE PERSISTENCE (Background)
-                            if (user && !isAuthDisabled) {
-                                const finalImage: CanvasImage = {
-                                    id: skeletonId,
-                                    src: result,
-                                    thumbSrc: thumbSrc,
-                                    width: w,
-                                    height: h,
-                                    realWidth: img.width,
-                                    realHeight: img.height,
-                                    title: baseName,
-                                    baseName: baseName,
-                                    version: 1,
-                                    isGenerating: false,
-                                    createdAt: Date.now(),
-                                    updatedAt: Date.now(),
-                                    boardId: currentBoardId || undefined,
-                                    storage_path: '',
-                                };
-
-                                imageService.persistImage(finalImage, user.id, user.email).then(res => {
-                                    if (res.success && res.storage_path) {
-                                        setRows(prev => prev.map(row => ({
-                                            ...row,
-                                            items: row.items.map(item => item.id === skeletonId ? {
-                                                ...item,
-                                                storage_path: res.storage_path,
-                                                thumb_storage_path: res.thumb_storage_path
-                                            } : item)
-                                        })));
-                                    }
-                                });
-                            }
-                        });
-                    };
-                }
+                            imageService.persistImage(finalImage, user.id, user.email).then(res => {
+                                if (res.success && res.storage_path) {
+                                    setRows(prev => prev.map(row => ({
+                                        ...row,
+                                        items: row.items.map(item => item.id === skeletonId ? {
+                                            ...item,
+                                            storage_path: res.storage_path,
+                                            thumb_storage_path: res.thumb_storage_path
+                                        } : item)
+                                    })));
+                                }
+                            });
+                        }
+                    } catch (thumbErr) {
+                        console.error("Thumbnail/Persistence failed:", thumbErr);
+                        // Still turn off generating if possible
+                        setRows(prev => prev.map(row => ({
+                            ...row,
+                            items: row.items.map(item => item.id === skeletonId ? { ...item, isGenerating: false } : item)
+                        })));
+                    }
+                };
+                img.onerror = () => {
+                    console.error("Image load failed");
+                    setRows(prev => prev.map(row => ({
+                        ...row,
+                        items: row.items.filter(item => item.id !== skeletonId)
+                    })).filter(r => r.items.length > 0));
+                };
+                img.src = src;
+            }).catch(err => {
+                console.error("File processing failed:", err);
+                // Cleanup skeleton on extreme failure
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(item => item.id !== skeletonId)
+                })).filter(r => r.items.length > 0));
             });
         }
     }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
