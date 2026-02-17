@@ -38,7 +38,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
                     <h3>Kontakt</h3>
                     <p>
-                        E-Mail: pzillas2@gmail.com
+                        E-Mail: hello@expose.ae
                     </p>
 
                     <h3>Umsatzsteuer-ID</h3>
@@ -90,14 +90,65 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
                         Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.
                     </p>
 
-                    <h4>Hinweis zur verantwortlichen Stelle</h4>
+                    <h3>Hinweis zur verantwortlichen Stelle</h3>
                     <p>
                         Die verantwortliche Stelle für die Datenverarbeitung auf dieser Website ist:<br /><br />
                         Michael Pzillas<br />
                         Lahnstraße 96<br />
                         60326 Frankfurt am Main<br /><br />
-                        E-Mail: pzillas2@gmail.com
+                        E-Mail: hello@expose.ae
                     </p>
+
+                    <div className="my-16 border-t border-zinc-200 dark:border-zinc-800" />
+
+                    <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Allgemeine Geschäftsbedingungen (AGB)</h1>
+
+                    <h3>1. Geltungsbereich</h3>
+                    <p>
+                        Diese Allgemeinen Geschäftsbedingungen (nachfolgend „AGB“) gelten für die Nutzung der Plattform „Exposé“ (nachfolgend „Plattform“), betrieben von Michael Pzillas, Lahnstraße 96, 60326 Frankfurt am Main (nachfolgend „Anbieter“).
+                    </p>
+
+                    <h3>2. Vertragsgegenstand und Leistungen</h3>
+                    <p>
+                        Exposé ist ein KI-gestützter Workspace zur Generierung und Bearbeitung von Bildern. Der Anbieter stellt den Nutzern Werkzeuge zur Verfügung, um mittels künstlicher Intelligenz visuelle Inhalte zu erstellen. Die Nutzung bestimmter Funktionen erfordert den Erwerb von „Credits“.
+                    </p>
+
+                    <h3>3. Registrierung und Account</h3>
+                    <p>
+                        Für die Nutzung der Plattform ist eine Registrierung erforderlich. Der Nutzer ist verpflichtet, seine Zugangsdaten geheim zu halten und vor dem Zugriff durch Dritte zu schützen.
+                    </p>
+
+                    <h3>4. Credits und Zahlungsbedingungen</h3>
+                    <p>
+                        Die Generierung von Bildern verbraucht Credits. Credits können über die Plattform erworben werden. Erworbene Credits sind an den jeweiligen Account gebunden und nicht übertragbar. Eine Auszahlung von Credits in bar ist ausgeschlossen.
+                    </p>
+
+                    <h3>5. Nutzungsrechte an generierten Inhalten</h3>
+                    <p>
+                        Anbieter räumt dem Nutzer an den mit der Plattform generierten Bildern die vollumfänglichen Nutzungsrechte ein, soweit dies technisch und rechtlich durch die zugrundeliegenden KI-Modelle möglich ist. Der Nutzer ist für die Einhaltung von Urheberrechten und anderen rechtlichen Bestimmungen bei der Verwendung der Bilder selbst verantwortlich.
+                    </p>
+
+                    <h3>6. Pflichten des Nutzers</h3>
+                    <p>
+                        Der Nutzer verpflichtet sich, die Plattform nicht missbräuchlich zu nutzen. Insbesondere ist es untersagt, Inhalte zu generieren, die gegen geltendes Recht verstoßen, pornografisch, gewaltverherrlichend oder diskriminierend sind.
+                    </p>
+
+                    <h3>7. Haftung und Gewährleistung</h3>
+                    <p>
+                        Der Anbieter übernimmt keine Gewähr für die ständige Verfügbarkeit der Plattform oder die Ergebnisse der KI-Generierung. Die Haftung des Anbieters ist auf Vorsatz und grobe Fahrlässigkeit beschränkt, sofern keine Verletzung von Leben, Körper oder Gesundheit vorliegt.
+                    </p>
+
+                    <h3>8. Widerrufsbelehrung</h3>
+                    <p>
+                        Da es sich bei den Leistungen um digitale Inhalte handelt, die sofort nach dem Erwerb bzw. der Generierung zur Verfügung stehen, erlischt das Widerrufsrecht des Nutzers vorzeitig, sobald er mit der Ausführung des Vertrags (z.B. Start einer Generierung) ausdrücklich einverstanden war.
+                    </p>
+
+                    <h3>9. Schlussbestimmungen</h3>
+                    <p>
+                        Es gilt das Recht der Bundesrepublik Deutschland. Sollten einzelne Bestimmungen dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.
+                    </p>
+
+                    <div className="my-16 border-t border-zinc-200 dark:border-zinc-800" />
 
                     <h4>Widerruf Ihrer Einwilligung zur Datenverarbeitung</h4>
                     <p>
