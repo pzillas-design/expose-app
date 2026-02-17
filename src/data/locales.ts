@@ -372,7 +372,9 @@ export const translations = {
     delete_account_permanently: 'Delete Account',
     slug_label: "Sharing URL slug",
     regenerate: "Regenerate",
-    share: "Share"
+    share: "Share",
+    copy_link: "Share link",
+    name_already_exists: "A template with this name already exists!"
   },
   de: {
     // General
@@ -474,6 +476,8 @@ export const translations = {
     slug_label: "Sharing URL-Kürzel",
     regenerate: "Neu generieren",
     share: "Teilen",
+    copy_link: "Link teilen",
+    name_already_exists: "Eine Vorlage mit diesem Namen existiert bereits!",
     create_preset: "Preset erstellen",
     update_preset: "Preset aktualisieren",
     delete_preset: "Löschen",

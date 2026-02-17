@@ -678,11 +678,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <PresetLibrary
                     templates={templates}
                     onSelect={handleSelectPreset}
-                    onTogglePin={onDeleteTemplate || (() => { })}
-                    onShare={(t) => {
-                        setSharingTemplate(t);
-                        setIsShareModalOpen(true);
-                    }}
+                    onTogglePin={onTogglePin || (() => { })}
                     onRequestCreate={openCreatePreset}
                     onRequestEdit={openEditPreset}
                     t={t}

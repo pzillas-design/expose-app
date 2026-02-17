@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { IconButton, Button, Input, TextArea, Theme, Typo } from '@/components/ui/DesignSystem';
-import { Plus, Trash, Check, X, Pencil, Share2, Sparkles } from 'lucide-react';
+import { Plus, Trash, Check, X, Pencil, Share2, Sparkles, Copy, AlertCircle } from 'lucide-react';
 import { generateId } from '@/utils/ids';
-import { generateSlug } from '@/utils/shareUtils';
+import { generateSlug, getTemplateShareUrl } from '@/utils/shareUtils';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 
 interface PresetEditorModalProps {
     isOpen: boolean;
@@ -13,10 +14,9 @@ interface PresetEditorModalProps {
     scope: 'admin' | 'user';
     currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
-    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
+    existingTemplates?: PromptTemplate[];
     onSave: (templates: { title: string; prompt: string; slug?: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
     onDelete?: (id: string) => void;
-    onShare?: (template: PromptTemplate) => void;
     t: TranslationFunction;
 }
 
@@ -27,7 +27,8 @@ const LanguageForm = ({
     slug, setSlug,
     controls, setControls,
     showHeader,
-    onShare,
+    existingTemplates,
+    currentId,
     t
 }: {
     lang: 'de' | 'en';
@@ -36,9 +37,11 @@ const LanguageForm = ({
     slug: string; setSlug: (s: string) => void;
     controls: PresetControl[]; setControls: React.Dispatch<React.SetStateAction<PresetControl[]>>;
     showHeader: boolean;
-    onShare?: () => void;
+    existingTemplates?: PromptTemplate[];
+    currentId?: string;
     t: TranslationFunction;
 }) => {
+    const { showToast } = useToast();
     const [isAddingControl, setIsAddingControl] = useState(false);
     const [editingControlId, setEditingControlId] = useState<string | null>(null);
     const [newControlLabel, setNewControlLabel] = useState('');
@@ -92,46 +95,47 @@ const LanguageForm = ({
             <div className={`px-6 pb-6 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
-                        {t('title_label')}
-                    </label>
-                    <Input value={title} onChange={e => {
-                        const newTitle = e.target.value;
-                        setTitle(newTitle);
-                        if (!slug) setSlug(generateSlug(newTitle));
-                    }} placeholder={t('title_placeholder')} />
-                </div>
+                    <div className="relative flex items-center">
+                        <Input
+                            value={title}
+                            onChange={e => {
+                                const newTitle = e.target.value;
+                                setTitle(newTitle);
+                                setSlug(generateSlug(newTitle));
+                            }}
+                            placeholder={t('title_placeholder')}
+                            className="pr-24"
+                        />
+                        <div className="absolute right-1 flex items-center gap-1">
+                            <button
+                                onClick={async () => {
+                                    if (!title.trim()) return;
+                                    const currentSlug = generateSlug(title);
 
-                {/* Slug & Share */}
-                <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider flex items-center justify-between`}>
-                        <span>{t('slug_label')}</span>
-                        <button
-                            onClick={() => setSlug(generateSlug(title))}
-                            className="text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors flex items-center gap-1"
-                        >
-                            <Sparkles className="w-3 h-3" /> {t('regenerate')}
-                        </button>
-                    </label>
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-xs font-mono">/s/</span>
-                            <Input
-                                value={slug}
-                                onChange={e => setSlug(generateSlug(e.target.value))}
-                                placeholder="my-cool-template"
-                                className="pl-8 font-mono text-zinc-500"
-                            />
+                                    // Check for uniqueness (excluding current template if editing)
+                                    const isDuplicate = existingTemplates?.some(t =>
+                                        generateSlug(t.title) === currentSlug && t.id !== currentId
+                                    );
+
+                                    if (isDuplicate) {
+                                        showToast(t('name_already_exists') || 'Name existiert bereits!', 'error');
+                                        return;
+                                    }
+
+                                    const url = `${window.location.origin}/#${currentSlug}`;
+                                    await navigator.clipboard.writeText(url);
+                                    showToast(t('copied_to_clipboard') || 'Link kopiert!', 'success');
+                                }}
+                                disabled={!title.trim()}
+                                className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5
+                                    ${title.trim()
+                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90'
+                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'}`}
+                            >
+                                <Copy className="w-3 h-3" />
+                                {t('copy_link') || 'Link teilen'}
+                            </button>
                         </div>
-                        {onShare && (
-                            <Button
-                                variant="secondary"
-                                onClick={onShare}
-                                className="px-3"
-                                icon={<Share2 className="w-4 h-4" />}
-                                tooltip={t('share')}
-                            />
-                        )}
                     </div>
                 </div>
 
@@ -251,9 +255,9 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     scope,
     currentLang = 'en',
     initialTemplate,
+    existingTemplates,
     onSave,
     onDelete,
-    onShare,
     t
 }) => {
     const [titleDe, setTitleDe] = useState('');
@@ -351,13 +355,6 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 tooltip={t('delete')}
                             />
                         )}
-                        {mode === 'edit' && onShare && initialTemplate && (
-                            <IconButton
-                                icon={<Share2 className="w-5 h-5" />}
-                                onClick={() => onShare(initialTemplate)}
-                                tooltip={t('share') || 'Teilen'}
-                            />
-                        )}
                         <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                     </div>
                 </div>
@@ -373,7 +370,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 slug={slugDe} setSlug={setSlugDe}
                                 controls={controlsDe} setControls={setControlsDe}
                                 showHeader={scope === 'admin'}
-                                onShare={mode === 'edit' && onShare && initialTemplate ? () => onShare(initialTemplate) : undefined}
+                                existingTemplates={existingTemplates}
+                                currentId={initialTemplate?.id}
                                 t={t}
                             />
                         </div>
@@ -389,7 +387,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 slug={slugEn} setSlug={setSlugEn}
                                 controls={controlsEn} setControls={setControlsEn}
                                 showHeader={scope === 'admin'}
-                                onShare={mode === 'edit' && onShare && initialTemplate ? () => onShare(initialTemplate) : undefined}
+                                existingTemplates={existingTemplates}
+                                currentId={initialTemplate?.id}
                                 t={t}
                             />
                         </div>
