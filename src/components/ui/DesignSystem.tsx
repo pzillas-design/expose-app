@@ -3,8 +3,6 @@ import React, { ButtonHTMLAttributes, InputHTMLAttributes, TextareaHTMLAttribute
 import { createPortal } from 'react-dom';
 import { X, Loader2 } from 'lucide-react';
 
-export { Loader2 };
-
 // --- 0. CENTRAL THEME CONFIGURATION ---
 // STRICT ZINC PALETTE - CONSOLIDATED
 

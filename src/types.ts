@@ -98,8 +98,8 @@ export interface PresetControl {
 
 export interface PromptTemplate {
   id: string;
+  slug?: string; // New: for sharing
   title: string;
-  slug?: string; // New: human-readable URL identifier
   prompt: string;
   emoji?: string; // Optional
   tags: string[];

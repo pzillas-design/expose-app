@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
-import { IconButton, Button, Input, TextArea, Theme, Typo } from '@/components/ui/DesignSystem';
-import { Plus, Trash, Check, X, Pencil, Share2, Sparkles, Copy, AlertCircle } from 'lucide-react';
+import { Button, Input, Theme, Typo, IconButton, TextArea } from '@/components/ui/DesignSystem';
+import { X, Trash, Check, Plus, Minus, Settings2, Share2, Pencil } from 'lucide-react';
+import { ShareTemplateModal } from './ShareTemplateModal';
 import { generateId } from '@/utils/ids';
-import { generateSlug, getTemplateShareUrl } from '@/utils/shareUtils';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { useToast } from '@/components/ui/Toast';
 
 interface PresetEditorModalProps {
     isOpen: boolean;
@@ -14,8 +13,8 @@ interface PresetEditorModalProps {
     scope: 'admin' | 'user';
     currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
-    existingTemplates?: PromptTemplate[];
-    onSave: (templates: { title: string; prompt: string; slug?: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
+    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
+    onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
     onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
@@ -24,28 +23,31 @@ const LanguageForm = ({
     lang,
     title, setTitle,
     prompt, setPrompt,
-    slug, setSlug,
     controls, setControls,
     showHeader,
-    existingTemplates,
-    currentId,
     t
 }: {
     lang: 'de' | 'en';
     title: string; setTitle: (s: string) => void;
     prompt: string; setPrompt: (s: string) => void;
-    slug: string; setSlug: (s: string) => void;
     controls: PresetControl[]; setControls: React.Dispatch<React.SetStateAction<PresetControl[]>>;
     showHeader: boolean;
-    existingTemplates?: PromptTemplate[];
-    currentId?: string;
     t: TranslationFunction;
 }) => {
-    const { showToast } = useToast();
     const [isAddingControl, setIsAddingControl] = useState(false);
     const [editingControlId, setEditingControlId] = useState<string | null>(null);
     const [newControlLabel, setNewControlLabel] = useState('');
     const [newControlOptions, setNewControlOptions] = useState('');
+    const editFormRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll when editing or adding
+    useEffect(() => {
+        if (isAddingControl || editingControlId) {
+            setTimeout(() => {
+                editFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+    }, [isAddingControl, editingControlId]);
 
     const handleSaveControl = () => {
         if (!newControlLabel.trim()) return;
@@ -92,60 +94,13 @@ const LanguageForm = ({
                 </div>
             )}
 
-            <div className={`px-6 pb-6 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
+            <div className={`px-6 pb-32 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-2">
                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
                         {t('title_label')}
                     </label>
-                    <div className="relative flex items-center">
-                        <Input
-                            value={title}
-                            onChange={e => {
-                                const newTitle = e.target.value;
-                                setTitle(newTitle);
-                                setSlug(generateSlug(newTitle));
-                            }}
-                            placeholder={t('title_placeholder')}
-                            className="pr-36"
-                        />
-                        <div className="absolute right-1 flex items-center gap-1">
-                            <button
-                                onClick={async () => {
-                                    if (!title.trim()) return;
-                                    let currentSlug = generateSlug(title);
-
-                                    // Auto-suffix logic if name exists
-                                    let suffix = 0;
-                                    let isDuplicate = true;
-                                    while (isDuplicate) {
-                                        const testSlug = suffix === 0 ? currentSlug : `${currentSlug}-${suffix}`;
-                                        const found = existingTemplates?.find(t =>
-                                            generateSlug(t.title) === testSlug && t.id !== currentId
-                                        );
-                                        if (!found) {
-                                            if (suffix > 0) currentSlug = testSlug;
-                                            isDuplicate = false;
-                                        } else {
-                                            suffix++;
-                                        }
-                                    }
-
-                                    const url = `${window.location.origin}/#${currentSlug}`;
-                                    await navigator.clipboard.writeText(url);
-                                    showToast(t('template_copied') || 'Vorlage kopiert!', 'success');
-                                }}
-                                disabled={!title.trim()}
-                                className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-md transition-all flex items-center gap-1.5
-                                    ${title.trim()
-                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90'
-                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'}`}
-                            >
-                                <Copy className="w-3 h-3" />
-                                {t('copy_link') || 'Link teilen'}
-                            </button>
-                        </div>
-                    </div>
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} />
                 </div>
 
                 {/* Prompt */}
@@ -165,7 +120,10 @@ const LanguageForm = ({
                         {controls.map((ctrl) => (
                             <React.Fragment key={ctrl.id}>
                                 {editingControlId === ctrl.id ? (
-                                    <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative`}>
+                                    <div
+                                        ref={editFormRef}
+                                        className={`p-4 border-2 border-zinc-200 dark:border-zinc-700 ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative ring-4 ring-zinc-100/50 dark:ring-zinc-800/20`}
+                                    >
                                         <div className="flex flex-col gap-1.5">
                                             <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
                                                 Titel
@@ -271,31 +229,28 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 }) => {
     const [titleDe, setTitleDe] = useState('');
     const [promptDe, setPromptDe] = useState('');
-    const [slugDe, setSlugDe] = useState('');
     const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
 
     const [titleEn, setTitleEn] = useState('');
     const [promptEn, setPromptEn] = useState('');
-    const [slugEn, setSlugEn] = useState('');
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
-            setTitleDe(''); setPromptDe(''); setSlugDe(''); setControlsDe([]);
-            setTitleEn(''); setPromptEn(''); setSlugEn(''); setControlsEn([]);
+            setTitleDe(''); setPromptDe(''); setControlsDe([]);
+            setTitleEn(''); setPromptEn(''); setControlsEn([]);
 
             if (mode === 'edit' && initialTemplate) {
                 const isEn = initialTemplate.lang === 'en';
                 if (isEn) {
                     setTitleEn(initialTemplate.title);
                     setPromptEn(initialTemplate.prompt);
-                    setSlugEn(initialTemplate.slug || '');
                     setControlsEn(initialTemplate.controls || []);
                 } else {
                     setTitleDe(initialTemplate.title);
                     setPromptDe(initialTemplate.prompt);
-                    setSlugDe(initialTemplate.slug || '');
                     setControlsDe(initialTemplate.controls || []);
                 }
             }
@@ -303,24 +258,24 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     }, [isOpen, mode, initialTemplate]);
 
     const handleSave = () => {
-        const results: { title: string; prompt: string; slug?: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
+        const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
         if (scope === 'user') {
             if (currentLang === 'de') {
                 if (promptDe.trim()) {
-                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, slug: slugDe, tags: [], controls: controlsDe, lang: 'de' });
+                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
                 }
             } else {
                 if (promptEn.trim()) {
-                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, slug: slugEn, tags: [], controls: controlsEn, lang: 'en' });
+                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
                 }
             }
         } else {
             if (promptDe.trim()) {
-                results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, slug: slugDe, tags: [], controls: controlsDe, lang: 'de' });
+                results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             }
             if (promptEn.trim()) {
-                results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, slug: slugEn, tags: [], controls: controlsEn, lang: 'en' });
+                results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
         onSave(results);
@@ -350,19 +305,27 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
+                <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
                     <div className="flex flex-col gap-1">
                         <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
                             {mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        {mode === 'edit' && onDelete && initialTemplate && (
-                            <IconButton
-                                icon={<Trash className="w-5 h-5" />}
-                                onClick={() => setIsDeleteDialogOpen(true)}
-                                tooltip={t('delete')}
-                            />
+                        {mode === 'edit' && initialTemplate && (
+                            <>
+                                <IconButton
+                                    icon={<Share2 className="w-5 h-5" />}
+                                    onClick={() => setIsShareModalOpen(true)}
+                                    tooltip="Teilen"
+                                    disabled={!(titleDe || titleEn)}
+                                />
+                                <IconButton
+                                    icon={<Trash className="w-5 h-5" />}
+                                    onClick={() => setIsDeleteDialogOpen(true)}
+                                    tooltip={t('delete')}
+                                />
+                            </>
                         )}
                         <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                     </div>
@@ -376,11 +339,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 lang="de"
                                 title={titleDe} setTitle={setTitleDe}
                                 prompt={promptDe} setPrompt={setPromptDe}
-                                slug={slugDe} setSlug={setSlugDe}
                                 controls={controlsDe} setControls={setControlsDe}
                                 showHeader={scope === 'admin'}
-                                existingTemplates={existingTemplates}
-                                currentId={initialTemplate?.id}
                                 t={t}
                             />
                         </div>
@@ -393,11 +353,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                                 lang="en"
                                 title={titleEn} setTitle={setTitleEn}
                                 prompt={promptEn} setPrompt={setPromptEn}
-                                slug={slugEn} setSlug={setSlugEn}
                                 controls={controlsEn} setControls={setControlsEn}
                                 showHeader={scope === 'admin'}
-                                existingTemplates={existingTemplates}
-                                currentId={initialTemplate?.id}
                                 t={t}
                             />
                         </div>
@@ -429,7 +386,13 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                         onClose();
                     }}
                     onCancel={() => setIsDeleteDialogOpen(false)}
-                    variant="danger"
+                />
+
+                <ShareTemplateModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    templateName={initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
+                    slug={initialTemplate?.slug}
                 />
             </div>
         </div>

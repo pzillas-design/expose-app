@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
-import { TranslationFunction } from '@/types';
+import { TranslationFunction, PromptTemplate } from '@/types';
 import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash, Camera } from 'lucide-react';
 
 interface CreationModalProps {
@@ -9,6 +9,7 @@ interface CreationModalProps {
     onGenerate: (prompt: string, model: string, ratio: string, attachments: string[]) => void;
     t: TranslationFunction;
     lang: 'de' | 'en';
+    initialTemplate?: PromptTemplate | null;
 }
 
 const ASPECT_RATIOS = [
@@ -37,7 +38,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     onClose,
     onGenerate,
     t,
-    lang
+    lang,
+    initialTemplate
 }) => {
     const MODELS = [
         { id: 'fast', name: 'Nano Banana', price: t('price_free'), res: '1024 px' },
@@ -57,12 +59,17 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     // Reset state on open
     useEffect(() => {
         if (isOpen) {
-            setPrompt('');
+            if (initialTemplate) {
+                setPrompt(initialTemplate.prompt);
+                // Also could set ratio/model if stored in template
+            } else {
+                setPrompt('');
+            }
             setAttachments([]);
             dragCounter.current = 0;
             setIsDragging(false);
         }
-    }, [isOpen]);
+    }, [isOpen, initialTemplate]);
 
     const processFilesLocally = (files: FileList | File[]) => {
         Array.from(files).forEach(file => {
@@ -136,7 +143,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-start justify-between px-6 pt-6 pb-2 shrink-0">
+                <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
                     <div className="flex flex-col gap-1">
                         <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>{t('gen_modal_title')}</h2>
                     </div>

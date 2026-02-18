@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { AdminUser } from '../types';
+import { slugify } from '../utils/stringUtils';
 
 export const adminService = {
     /**
@@ -198,10 +199,10 @@ export const adminService = {
             isPinned: p.is_pinned,
             isCustom: p.is_custom,
             isDefault: p.is_default || false,
-            slug: p.slug, // New: slug mapping
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
             lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
+            slug: p.slug
         };
     },
 
@@ -222,6 +223,9 @@ export const adminService = {
             category = 'recent';
         }
 
+        // Generate slug if not present
+        const slug = preset.slug || (preset.title ? `${slugify(preset.title)}-${Math.floor(Math.random() * 10000)}` : null);
+
         // FORKING LOGIC: If a user edits a system preset, create a fork
         const dbPreset: any = {
             id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : (preset.id || crypto.randomUUID()),
@@ -234,12 +238,12 @@ export const adminService = {
             is_custom: userId ? true : (preset.isCustom ?? false),
             usage_count: preset.usageCount || 0,
             lang: preset.lang || 'en',
+            slug: slug,
             updated_at: new Date().toISOString(),
             last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls || [],
             user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
-            category: category,
-            slug: preset.slug || null // New: persist slug
+            category: category
         };
 
         const { error } = await supabase.from('global_presets').upsert(dbPreset);
@@ -268,24 +272,6 @@ export const adminService = {
     async deleteGlobalPreset(id: string): Promise<void> {
         const { error } = await supabase.from('global_presets').delete().eq('id', id);
         if (error) throw error;
-    },
-
-    /**
-     * Fetch a single preset by its slug
-     */
-    async getPresetBySlug(slug: string): Promise<any | null> {
-        const { data, error } = await supabase
-            .from('global_presets')
-            .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
-
-        if (error) {
-            console.error('AdminService: getPresetBySlug failed!', error);
-            return null;
-        }
-
-        return this._mapDbPreset(data);
     },
 
     /**
@@ -361,5 +347,23 @@ export const adminService = {
     async deleteObjectItem(id: string): Promise<void> {
         const { error } = await supabase.from('global_objects_items').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    /**
+     * Fetch a single preset by its unique slug
+     */
+    async getPresetBySlug(slug: string): Promise<any | null> {
+        const { data, error } = await supabase
+            .from('global_presets')
+            .select('*')
+            .eq('slug', slug)
+            .maybeSingle();
+
+        if (error) {
+            console.error('AdminService: getPresetBySlug failed!', error);
+            throw error;
+        }
+
+        return data ? this._mapDbPreset(data) : null;
     }
 };

@@ -71,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
             >
                 {/* Header */}
                 {showHeader && (
-                    <div className="flex items-start justify-between px-6 pt-6 pb-2">
+                    <div className="flex items-center justify-between px-6 pt-6 pb-2">
                         {headerContent || (
                             <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
                                 {title}

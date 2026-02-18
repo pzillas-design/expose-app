@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Pen, Trash, Share2 } from 'lucide-react';
+import { Plus, Pen, Trash } from 'lucide-react';
 import { PromptTemplate, TranslationFunction } from '@/types';
-import { Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
+import { Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { SidebarAccordion, SidebarAccordionItem } from '@/components/ui/SidebarAccordion';
+import { createPortal } from 'react-dom';
 
 interface PresetLibraryProps {
     templates: PromptTemplate[];

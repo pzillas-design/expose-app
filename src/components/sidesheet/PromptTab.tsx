@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
-import { PresetShareModal } from '@/components/modals/PresetShareModal';
-import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download, Share2 } from 'lucide-react';
+import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
@@ -72,8 +71,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [annotationLabelValue, setAnnotationLabelValue] = useState('');
     const [presetModalMode, setPresetModalMode] = useState<'create' | 'edit'>('create');
     const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
-    const [sharingTemplate, setSharingTemplate] = useState<PromptTemplate | null>(null);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
@@ -678,23 +675,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <PresetLibrary
                     templates={templates}
                     onSelect={handleSelectPreset}
-                    onTogglePin={onTogglePin || (() => { })}
+                    onTogglePin={onDeleteTemplate || (() => { })}
                     onRequestCreate={openCreatePreset}
                     onRequestEdit={openEditPreset}
                     t={t}
                     currentLang={currentLang}
                 />
             </div>
-
-            {sharingTemplate && (
-                <PresetShareModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    template={sharingTemplate}
-                    t={t}
-                    currentLang={currentLang}
-                />
-            )}
 
             <PresetEditorModal
                 isOpen={isPresetModalOpen}
