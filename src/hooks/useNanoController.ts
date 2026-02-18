@@ -121,6 +121,7 @@ export const useNanoController = () => {
         selectedImages,
         selectAndSnap,
         selectMultiple,
+        deselectAll,
         handleSelection,
         moveSelection,
         moveRowSelection,
@@ -179,7 +180,8 @@ export const useNanoController = () => {
                     if (newest) {
                         // Use requestAnimationFrame to trigger selection as soon as DOM is ready
                         requestAnimationFrame(() => {
-                            selectAndSnap(newest.id, true);
+                            setActiveId(newest.id);
+                            snapToItem(newest.id, true);
                         });
                     }
                 }
@@ -435,6 +437,7 @@ export const useNanoController = () => {
         deleteUserItem,
         selectAndSnap,
         selectMultiple,
+        deselectAll,
         handleSelection,
         moveSelection,
         moveRowSelection,

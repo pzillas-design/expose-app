@@ -146,10 +146,39 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Mobile Bottom Sheet Logic
     const isMobile = useMobile();
     const [sheetLevel, setSheetLevel] = useState<'closed' | 'peek' | 'expanded'>('peek');
-    const [dragOffset, setDragOffset] = useState(0);
+    const [dragY, setDragY] = useState(0);
     const isDragging = useRef(false);
     const startY = useRef(0);
-    const startOffset = useRef(0);
+    const lastY = useRef(0);
+    const startTime = useRef(0);
+    const velocity = useRef(0);
+
+    // Levels in pixels from bottom
+    const PEEK_HEIGHT = 320;
+    const CLOSED_HEIGHT = 0;
+
+    // We'll use a CSS variable for the full height to handle mobile bars correctly
+    useEffect(() => {
+        const updateHeight = () => {
+            const vh = window.innerHeight;
+            document.documentElement.style.setProperty('--expanded-height', `${vh * 0.94}px`);
+            document.documentElement.style.setProperty('--full-vh', `${vh}px`);
+        };
+        updateHeight();
+        window.addEventListener('resize', updateHeight);
+        return () => window.removeEventListener('resize', updateHeight);
+    }, []);
+
+    const getLevelHeight = (level: 'closed' | 'peek' | 'expanded') => {
+        if (level === 'expanded') return window.innerHeight * 0.94;
+        if (level === 'peek') return PEEK_HEIGHT;
+        return CLOSED_HEIGHT;
+    };
+
+    const targetHeight = getLevelHeight(sheetLevel);
+    // On mobile, the sheet is always '--expanded-height' tall.
+    // We translate it so only 'targetHeight' is visible from the bottom.
+    const currentTranslate = (window.innerHeight * 0.94) - targetHeight + dragY;
 
     // Sync sheetLevel with selection
     useEffect(() => {
@@ -162,43 +191,66 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
         if (!isMobile) return;
+
         // If touching content, only drag if at the top
         if (contentRef.current && contentRef.current.contains(e.target as Node)) {
             if (contentRef.current.scrollTop > 0 && sheetLevel === 'expanded') return;
         }
+
         isDragging.current = true;
-        const cy = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const cy = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
         startY.current = cy;
-        startOffset.current = dragOffset;
+        lastY.current = cy;
+        startTime.current = Date.now();
+        velocity.current = 0;
     };
 
     const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
         if (!isDragging.current || !isMobile) return;
-        const cy = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const cy = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
         const delta = cy - startY.current;
+        const now = Date.now();
+        const dt = now - startTime.current;
 
-        // Prevent dragging above expanded or below closed
-        const newOffset = startOffset.current + delta;
-        setDragOffset(newOffset);
+        if (dt > 0) {
+            velocity.current = (cy - lastY.current) / dt;
+        }
+
+        lastY.current = cy;
+        startTime.current = now;
+
+        // Apply drag with resistance when pulling above EXPANDED
+        let newY = delta;
+        if (sheetLevel === 'expanded' && delta < 0) {
+            newY = delta * 0.3; // Resistance
+        }
+
+        setDragY(newY);
     };
 
     const handleTouchEnd = () => {
         if (!isDragging.current || !isMobile) return;
         isDragging.current = false;
 
-        const threshold = window.innerHeight * 0.15;
-        if (dragOffset < -threshold) {
-            setSheetLevel('expanded');
-        } else if (dragOffset > threshold) {
-            // If dragging down from expanded, go to peek
-            if (sheetLevel === 'expanded') {
-                setSheetLevel('peek');
-            } else {
+        const totalDelta = dragY;
+        const absVelocity = Math.abs(velocity.current);
+        const flickThreshold = 0.5;
+
+        // Determine next state based on position AND velocity
+        if (sheetLevel === 'peek') {
+            if (totalDelta < -60 || (velocity.current < -flickThreshold)) {
+                setSheetLevel('expanded');
+            } else if (totalDelta > 60 || (velocity.current > flickThreshold)) {
                 onDeselectAll?.();
                 setSheetLevel('closed');
             }
+        } else if (sheetLevel === 'expanded') {
+            if (totalDelta > 60 || (velocity.current > flickThreshold)) {
+                setSheetLevel('peek');
+            }
         }
-        setDragOffset(0);
+
+        setDragY(0);
     };
 
     const setActiveAnnotationId = (id: string | null) => {
@@ -907,25 +959,37 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     };
 
-    const sheetHeight = sheetLevel === 'expanded' ? '90vh' : (sheetLevel === 'peek' ? '320px' : '0px');
-    const transform = isMobile ? `translateY(${dragOffset}px)` : 'none';
+    const transform = isMobile ? `translateY(${currentTranslate}px)` : 'none';
 
     return (
         <>
+            {/* Mobile Backdrop */}
+            {isMobile && sheetLevel !== 'closed' && (
+                <div
+                    className={`fixed inset-0 z-[90] bg-black/40 transition-opacity duration-500 ease-in-out ${sheetLevel === 'expanded' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => {
+                        if (sheetLevel === 'expanded') setSheetLevel('peek');
+                    }}
+                />
+            )}
             <div
                 className={`
                     ${Theme.Colors.PanelBg} flex flex-col z-[100] relative transition-colors duration-200
                     ${isMobile
-                        ? `fixed bottom-0 left-0 right-0 rounded-t-3xl border-t shadow-[0_-20px_50px_rgba(0,0,0,0.1)] overflow-hidden transition-[height] duration-300 ease-out`
+                        ? `fixed bottom-0 left-0 right-0 z-[100] transition-transform duration-500 cubic-bezier(0.32,0.72,0,1) pointer-events-auto`
                         : `h-full border-l`
                     }
                     ${Theme.Colors.Border}
                 `}
                 style={{
                     width: isMobile ? '100%' : width,
-                    height: isMobile ? sheetHeight : '100%',
+                    height: isMobile ? 'var(--expanded-height)' : '100%',
                     transform: transform,
-                    transitionProperty: isDragging.current ? 'none' : 'height, transform, background-color'
+                    transitionProperty: isDragging.current ? 'none' : 'transform, background-color',
+                    borderTopLeftRadius: isMobile ? '24px' : '0',
+                    borderTopRightRadius: isMobile ? '24px' : '0',
+                    boxShadow: isMobile ? '0 -20px 50px rgba(0,0,0,0.1)' : 'none',
+                    borderTop: isMobile ? '1px solid rgba(0,0,0,0.1)' : 'none'
                 }}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={handleDrop}

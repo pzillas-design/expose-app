@@ -113,6 +113,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
     const [coords, setCoords] = useState({ top: 0, left: 0 });
 
     const handleMouseEnter = (e: React.MouseEvent) => {
+        // Only show tooltips if using a mouse/precise pointer
+        if (window.matchMedia('(pointer: coarse)').matches) return;
+
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 

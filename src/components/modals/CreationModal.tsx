@@ -141,6 +141,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
@@ -150,7 +152,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
 
-                <div className="flex-1 overflow-visible p-6 flex flex-col gap-8">
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar">
 
                     {/* Unified Prompt & Upload Area */}
                     <div

@@ -96,6 +96,8 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             animate-in zoom-in-95 duration-200
                         `}
                         onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 pt-6 pb-2">
@@ -106,7 +108,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         </div>
 
                         {/* Content */}
-                        <div className="px-6 pb-6 flex flex-col gap-4">
+                        <div className="px-6 pb-6 flex flex-col gap-4 overflow-y-auto max-h-[70vh] custom-scrollbar">
                             {options.description && (
                                 <p className={`text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed`}>
                                     {options.description}

@@ -134,9 +134,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             <div
                 className={`
                     w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-md overflow-hidden relative z-10 animate-in zoom-in-95 duration-200
+                    shadow-md overflow-y-auto max-h-[90vh] custom-scrollbar relative z-10 animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="p-8 pt-[72px] pb-2 flex flex-col items-center text-center relative z-10">

@@ -207,15 +207,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
         if (!isActive || activeTab !== 'brush') return;
         if ((e.target as HTMLElement).closest('.annotation-ui')) return;
-        e.stopPropagation();
 
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        const { x, y } = getCoordinates(clientX, clientY);
-
-        // Only brush tool works via canvas click now
-        // Text and shapes are placed via buttons in the sidebar
+        // ONLY stop propagation if we are actually using the brush/drawing
         if (maskTool === 'brush') {
+            e.stopPropagation();
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+            const { x, y } = getCoordinates(clientX, clientY);
+
             setIsDrawing(true);
             currentPathRef.current = [{ x, y }];
             setActiveMaskId(null);
@@ -353,7 +352,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     return (
         <div ref={containerRef} className="absolute inset-0 z-10 w-full h-full" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
-            <canvas ref={canvasRef} className={`absolute inset-0 w-full h-full touch-none ${activeTab === 'brush' ? (maskTool === 'brush' ? 'cursor-none' : 'cursor-default') : 'cursor-default'}`} />
+            <canvas
+                ref={canvasRef}
+                className={`
+                    absolute inset-0 w-full h-full 
+                    ${activeTab === 'brush' && maskTool === 'brush' ? 'touch-none cursor-none' : 'cursor-default'}
+                `}
+            />
 
             {/* Sticky Brush Preview when resizing */}
             {activeTab === 'brush' && isBrushResizing && (

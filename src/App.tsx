@@ -383,7 +383,7 @@ export function App() {
                         handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
                     }
                 } else {
-                    selectMultiple([]);
+                    actions.deselectAll();
                 }
             }
 
@@ -747,7 +747,7 @@ export function App() {
                         selectedImages={selectedImages}
                         sideSheetMode={sideSheetMode}
                         onModeChange={handleModeChange}
-                        onDeselectAll={() => selectMultiple([])}
+                        onDeselectAll={actions.deselectAll}
                         brushSize={brushSize}
                         onBrushSizeChange={setBrushSize}
                         onBrushResizeStart={() => setIsBrushResizing(true)}
@@ -810,10 +810,8 @@ export function App() {
                         onDownload={handleDownload}
                         onDelete={requestDelete}
                         onSelect={(id) => selectAndSnap(id)}
+                        onDeselectAll={actions.deselectAll}
                         onAddToSelection={handleAddToSelection}
-                        onRemoveFromSelection={handleRemoveFromSelection}
-                        onSelectAll={() => selectMultiple(allImages.map(img => img.id))}
-                        onDeselectAll={() => selectMultiple([])}
                         onResetView={() => smoothZoomTo(1, 0, 0)}
                         onUpload={() => processFile()}
                         onCreateNew={() => setIsCreationModalOpen(true)}

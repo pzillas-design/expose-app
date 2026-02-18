@@ -63,11 +63,13 @@ export const Modal: React.FC<ModalProps> = ({
                     relative w-full ${maxWidthClasses[maxWidth]}
                     ${Theme.Colors.ModalBg}
                     border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-                    shadow-2xl flex flex-col
+                    shadow-2xl flex flex-col max-h-[90vh] overflow-hidden
                     animate-in zoom-in-95 duration-200
                     ${className}
                 `}
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 {showHeader && (

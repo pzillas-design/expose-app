@@ -336,6 +336,75 @@ export const useCanvasNavigation = ({
         return () => container.removeEventListener('wheel', onWheel);
     }, [scrollContainerRef, currentBoardId, allImages]);
 
+    // Touch Pinch Zoom Listener
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        let initialDistance: number | null = null;
+        let initialZoom: number = 1.0;
+        let initialFocalX = 0;
+        let initialFocalY = 0;
+
+        const getDistance = (t1: Touch, t2: Touch) => {
+            return Math.sqrt(Math.pow(t2.clientX - t1.clientX, 2) + Math.pow(t2.clientY - t1.clientY, 2));
+        };
+
+        const onTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                initialDistance = getDistance(t1, t2);
+                initialZoom = zoomRef.current;
+
+                const rect = container.getBoundingClientRect();
+                initialFocalX = (t1.clientX + t2.clientX) / 2 - rect.left;
+                initialFocalY = (t1.clientY + t2.clientY) / 2 - rect.top;
+
+                const padX = window.innerWidth * 0.3;
+                const padY = window.innerHeight * 0.2;
+
+                focalPointRef.current = {
+                    contentX: (container.scrollLeft + initialFocalX - padX) / initialZoom,
+                    contentY: (container.scrollTop + initialFocalY - padY) / initialZoom,
+                    screenX: initialFocalX,
+                    screenY: initialFocalY
+                };
+            }
+        };
+
+        const onTouchMove = (e: TouchEvent) => {
+            if (e.touches.length === 2 && initialDistance !== null) {
+                // Prevent browser-level pinch zoom
+                e.preventDefault();
+
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const currentDistance = getDistance(t1, t2);
+
+                const ratio = currentDistance / initialDistance;
+                const nextZoom = Math.min(Math.max(initialZoom * ratio, MIN_ZOOM), MAX_ZOOM);
+
+                // Update zoom state - useLayoutEffect handles the scroll adjustment based on focalPointRef
+                setZoom(nextZoom);
+            }
+        };
+
+        const onTouchEnd = () => {
+            initialDistance = null;
+        };
+
+        container.addEventListener('touchstart', onTouchStart, { passive: true });
+        container.addEventListener('touchmove', onTouchMove, { passive: false });
+        container.addEventListener('touchend', onTouchEnd);
+
+        return () => {
+            container.removeEventListener('touchstart', onTouchStart);
+            container.removeEventListener('touchmove', onTouchMove);
+            container.removeEventListener('touchend', onTouchEnd);
+        };
+    }, [scrollContainerRef, setZoom]);
+
     return {
         zoom,
         setZoom,

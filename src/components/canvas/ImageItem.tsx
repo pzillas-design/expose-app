@@ -412,7 +412,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Bottom Navigation Buttons - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${(isActive && !image.isGenerating)
+                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${isActive
                         ? 'opacity-100 translate-y-0'
                         : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}

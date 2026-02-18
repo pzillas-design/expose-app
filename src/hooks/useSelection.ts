@@ -58,12 +58,18 @@ export const useSelection = ({
     }, [snapToItem, setActiveId, setSelectedIds, isMobile]);
 
     const selectMultiple = useCallback((ids: string[]) => {
-        if (isMobile) return;
+        if (isMobile && ids.length > 0) return;
         setSelectedIds(ids);
         if (ids.length > 0) {
             lastSelectedIdRef.current = ids[ids.length - 1];
         }
     }, [setSelectedIds, isMobile]);
+
+    const deselectAll = useCallback(() => {
+        setSelectedIds([]);
+        setActiveId(null);
+        lastSelectedIdRef.current = null;
+    }, [setSelectedIds, setActiveId]);
 
     const handleSelection = useCallback((id: string, multi: boolean, range: boolean) => {
         if (isMobile) {
@@ -114,56 +120,84 @@ export const useSelection = ({
     const lastZoomFinishedRef = useRef<number>(0);
 
     const handleScroll = useCallback(() => {
-        // Allow selection when 0 or 1 items are selected
-        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current || selectedIds.length > 1) return;
+        // Skip if not ready
+        if (!scrollContainerRef.current || isAutoScrollingRef.current || isZoomingRef.current) return;
 
-        // Skip if we just finished zooming to let the browser snap settle without switching selection
+        // Skip if we just finished zooming to let the browser snap settle
         if (Date.now() - lastZoomFinishedRef.current < 500) return;
 
         const container = scrollContainerRef.current;
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
 
         focusCheckRafRef.current = requestAnimationFrame(() => {
-            if (isZoomingRef.current || isAutoScrollingRef.current || !isSnapEnabledRef.current) return;
+            if (isZoomingRef.current || isAutoScrollingRef.current) return;
 
             const containerRect = container.getBoundingClientRect();
-            const viewportCenterX = containerRect.left + (containerRect.width / 2);
-            const viewportCenterY = containerRect.top + (containerRect.height / 2);
 
-            const rowElements = Array.from(container.querySelectorAll('[data-row-id]')) as HTMLElement[];
-            let closestRow: HTMLElement | null = null;
-            let minRowDist = Infinity;
+            // 1. DESELECT IF ACTIVE ITEM LEAVES VIEWPORT
+            // This should happen on BOTH desktop and mobile if we have a focus.
+            // On Mobile, the "middle-focus" logic below might re-select another one,
+            // but on Desktop it will just clear the side panel.
+            if (primarySelectedId) {
+                const activeEl = container.querySelector(`[data-image-id="${primarySelectedId}"]`) as HTMLElement;
+                if (activeEl) {
+                    const rect = activeEl.getBoundingClientRect();
+                    // Check if there is NO overlap between the image and the container viewport
+                    const isVisible = (
+                        rect.right > containerRect.left &&
+                        rect.left < containerRect.right &&
+                        rect.bottom > containerRect.top &&
+                        rect.top < containerRect.bottom
+                    );
 
-            for (const rowEl of rowElements) {
-                const rect = rowEl.getBoundingClientRect();
-                const dist = Math.abs((rect.top + rect.height / 2) - viewportCenterY);
-                if (dist < minRowDist) {
-                    minRowDist = dist;
-                    closestRow = rowEl;
+                    if (!isVisible) {
+                        deselectAll();
+                        return; // Stop here
+                    }
                 }
             }
 
-            if (!closestRow) return;
+            // 2. AUTO-SELECT CENTER ITEM (Mobile Only, when Snapping is enabled)
+            if (isMobile && isSnapEnabledRef.current && selectedIds.length <= 1) {
 
-            const imagesInRow = Array.from(closestRow.querySelectorAll('[data-image-id]')) as HTMLElement[];
-            let closestImageId: string | null = null;
-            let minImgDist = Infinity;
+                const viewportCenterX = containerRect.left + (containerRect.width / 2);
+                const viewportCenterY = containerRect.top + (containerRect.height / 2);
 
-            for (const img of imagesInRow) {
-                const rect = img.getBoundingClientRect();
-                const dist = Math.abs((rect.left + rect.width / 2) - viewportCenterX);
+                const rowElements = Array.from(container.querySelectorAll('[data-row-id]')) as HTMLElement[];
+                let closestRow: HTMLElement | null = null;
+                let minRowDist = Infinity;
 
-                if (dist < minImgDist) {
-                    minImgDist = dist;
-                    closestImageId = img.getAttribute('data-image-id');
+                for (const rowEl of rowElements) {
+                    const rect = rowEl.getBoundingClientRect();
+                    const dist = Math.abs((rect.top + rect.height / 2) - viewportCenterY);
+                    if (dist < minRowDist) {
+                        minRowDist = dist;
+                        closestRow = rowEl;
+                    }
                 }
-            }
 
-            if (closestImageId && primarySelectedId !== closestImageId) {
-                setActiveId(closestImageId);
+                if (!closestRow) return;
+
+                const imagesInRow = Array.from(closestRow.querySelectorAll('[data-image-id]')) as HTMLElement[];
+                let closestImageId: string | null = null;
+                let minImgDist = Infinity;
+
+                for (const img of imagesInRow) {
+                    const rect = img.getBoundingClientRect();
+                    const dist = Math.abs((rect.left + rect.width / 2) - viewportCenterX);
+
+                    if (dist < minImgDist) {
+                        minImgDist = dist;
+                        closestImageId = img.getAttribute('data-image-id');
+                    }
+                }
+
+                if (closestImageId && primarySelectedId !== closestImageId) {
+                    setActiveId(closestImageId);
+                }
             }
         });
-    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setActiveId, zoom]);
+    }, [primarySelectedId, selectedIds.length, scrollContainerRef, isAutoScrollingRef, isZoomingRef, setActiveId, zoom, isMobile, deselectAll]);
 
     useEffect(() => {
         if (isZoomingRef.current) {
@@ -225,6 +259,7 @@ export const useSelection = ({
         selectedImages,
         selectAndSnap,
         selectMultiple,
+        deselectAll,
         handleSelection,
         moveSelection,
         moveRowSelection,

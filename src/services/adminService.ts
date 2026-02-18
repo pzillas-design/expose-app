@@ -180,7 +180,11 @@ export const adminService = {
         // 2. Keep system presets (user_id IS NULL) ONLY IF:
         //    - Not hidden by user
         //    - Not forked by user (user has their own version)
+        // 3. EXCLUDE 'recent' category unless specifically requested (handled by separate history logic)
         const filteredPresets = allPresets?.filter(p => {
+            // Never show 'recent' items in the main preset library
+            if (p.category === 'recent') return false;
+
             const isSystem = p.user_id === null;
             if (!isSystem) return p.user_id === userId; // Own presets always shown
 
@@ -190,7 +194,15 @@ export const adminService = {
             return !isHidden && !isForked;
         });
 
-        return (filteredPresets || []).map(p => this._mapDbPreset(p));
+        // Deduplicate by ID just in case
+        const seen = new Set();
+        const uniquePresets = (filteredPresets || []).filter(p => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+        });
+
+        return uniquePresets.map(p => this._mapDbPreset(p));
     },
 
     _mapDbPreset(p: any) {
