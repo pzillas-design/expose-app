@@ -372,7 +372,7 @@ export const translations = {
     delete_account_permanently: 'Delete Account',
     shared_template_label: "Shared Template",
     shared_template_desc: "Use this exclusive template to take your images to the next level directly in exposé.",
-    shared_template_cta: "Try Now",
+    shared_template_cta: "Add Template",
   },
   de: {
     // General
@@ -746,6 +746,6 @@ export const translations = {
     delete_account_permanently: 'Konto löschen',
     shared_template_label: "geteilte Vorlage",
     shared_template_desc: "Nutze diese exklusive Vorlage, um deine Bilder direkt in exposé auf das nächste Level zu heben.",
-    shared_template_cta: "Jetzt ausprobieren",
+    shared_template_cta: "Vorlage hinzufügen",
   }
 };

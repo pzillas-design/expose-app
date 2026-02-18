@@ -51,7 +51,7 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
         }
     };
 
-    const handleTryNow = () => {
+    const handleAddTemplate = () => {
         if (template) {
             // Store template data to be picked up by App.tsx
             localStorage.setItem('expose_shared_template', JSON.stringify({
@@ -59,7 +59,14 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                 isImported: true
             }));
         }
-        navigate('/', { state: { skipRedirect: true } });
+
+        if (!user) {
+            if (onSignIn) {
+                onSignIn();
+            }
+        } else {
+            navigate('/', { state: { skipRedirect: true } });
+        }
     };
 
     return (
@@ -104,7 +111,7 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                                     <Button
                                         variant="primary"
                                         className="w-full !h-14 !text-[11px] font-black uppercase tracking-[0.1em]"
-                                        onClick={handleTryNow}
+                                        onClick={handleAddTemplate}
                                     >
                                         {t('shared_template_cta' as any)}
                                     </Button>

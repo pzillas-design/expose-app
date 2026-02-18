@@ -189,7 +189,7 @@ export function App() {
 
         // Check on mount and also when location changes (in case of redirect)
         checkSharedTemplate();
-    }, [location.pathname, currentLang, actions]);
+    }, [location.pathname, currentLang, actions, user]);
 
     // Initial Scroll Centering to prevent bottom-right jumping on load
     React.useLayoutEffect(() => {
