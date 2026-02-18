@@ -163,33 +163,6 @@ export function App() {
         };
     }, [location.search, navigate, actions, t]);
 
-    // Handle Shared Template Import
-    useEffect(() => {
-        const checkSharedTemplate = () => {
-            const stored = localStorage.getItem('expose_shared_template');
-            if (stored) {
-                try {
-                    const template = JSON.parse(stored);
-                    setPendingSharedTemplate(template);
-                    setIsCreationModalOpen(true);
-                    localStorage.removeItem('expose_shared_template');
-
-                    // Show a welcoming toast
-                    actions.showToast(
-                        currentLang === 'de'
-                            ? `Vorlage "${template.title}" geladen!`
-                            : `Template "${template.title}" loaded!`,
-                        'success'
-                    );
-                } catch (e) {
-                    console.error('Failed to parse shared template', e);
-                }
-            }
-        };
-
-        // Check on mount and also when location changes (in case of redirect)
-        checkSharedTemplate();
-    }, [location.pathname, currentLang, actions, user]);
 
     // Initial Scroll Centering to prevent bottom-right jumping on load
     React.useLayoutEffect(() => {
@@ -545,6 +518,45 @@ export function App() {
             t={t}
         />
     );
+
+    // Handle Shared Template Import
+    useEffect(() => {
+        const checkSharedTemplate = async () => {
+            const stored = localStorage.getItem('expose_shared_template');
+            if (stored) {
+                try {
+                    const template = JSON.parse(stored);
+
+                    // If user is logged in but we are NOT in a project yet, create one
+                    if (user && !currentBoardId) {
+                        // If we are on Home or a Shared page, create project first
+                        if (location.pathname === '/' || location.pathname.startsWith('/s/')) {
+                            const newBoard = await createBoard();
+                            if (newBoard) {
+                                navigate(`/projects/${newBoard.id}`);
+                                return; // Stop here, the effect will re-run on the new path
+                            }
+                        }
+                    }
+
+                    // Apply template and open modal
+                    setPendingSharedTemplate(template);
+                    setIsCreationModalOpen(true);
+                    localStorage.removeItem('expose_shared_template');
+
+                    // Show a welcoming toast
+                    actions.showToast(
+                        currentLang === 'de' ? "Vorlage hinzugefügt" : "Template added",
+                        'success'
+                    );
+                } catch (e) {
+                    console.error('Failed to parse shared template', e);
+                }
+            }
+        };
+
+        checkSharedTemplate();
+    }, [location.pathname, currentLang, actions, user, currentBoardId]);
 
     const boardsPage = (
         <BoardsPage
