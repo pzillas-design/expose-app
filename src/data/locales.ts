@@ -745,7 +745,7 @@ export const translations = {
     delete_account_section: 'Sonstiges',
     delete_account_permanently: 'Konto löschen',
     shared_template_label: "geteilte Vorlage",
-    shared_template_desc: "nutze diese vorlage, um deine bilder mit exposé zu bearbeiten.",
+    shared_template_desc: "Nutze diese Vorlage, um deine Bilder mit exposé zu bearbeiten.",
     shared_template_cta: "Jetzt ausprobieren",
   }
 };
