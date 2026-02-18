@@ -65,7 +65,8 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                 onSignIn();
             }
         } else {
-            navigate('/', { state: { skipRedirect: true } });
+            // Already logged in: navigate to root to trigger the import logic in App.tsx
+            navigate('/');
         }
     };
 

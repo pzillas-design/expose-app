@@ -527,36 +527,50 @@ export function App() {
 
             try {
                 const template = JSON.parse(stored);
+                console.log('[SHARED_IMPORT] Found template:', template.title);
 
                 // For logged-in users: Save to library and redirect to new project
                 if (user) {
+                    console.log('[SHARED_IMPORT] User authenticated, cloning to library...');
                     await actions.savePreset({
                         ...template,
-                        id: undefined // Force new ID creation/fork
+                        id: undefined, // Force new ID creation
+                        slug: undefined // IMPORTANT: Remove slug to avoid UNIQUE constraint clash in DB!
                     });
 
                     localStorage.removeItem('expose_shared_template');
+                    console.log('[SHARED_IMPORT] Saved to library and cleared storage.');
 
                     actions.showToast(
                         currentLang === 'de' ? "Vorlage hinzugefügt" : "Template added",
                         'success'
                     );
 
-                    if (!currentBoardId && (location.pathname === '/' || location.pathname.startsWith('/s/'))) {
+                    // Robust path check: Home, Shared, or Projects list
+                    const canRedirect = !currentBoardId && (
+                        location.pathname === '/' ||
+                        location.pathname === '/projects' ||
+                        location.pathname.startsWith('/s/')
+                    );
+
+                    if (canRedirect) {
+                        console.log('[SHARED_IMPORT] Creating new project for template...');
                         const newBoard = await createBoard();
                         if (newBoard) {
+                            console.log('[SHARED_IMPORT] Board created, navigating to:', newBoard.id);
                             navigate(`/projects/${newBoard.id}`);
                         }
+                    } else {
+                        console.log('[SHARED_IMPORT] No redirect needed. Current path:', location.pathname);
                     }
 
-                    // Don't open the creation modal anymore
                     setPendingSharedTemplate(null);
                     setIsCreationModalOpen(false);
+                } else {
+                    console.log('[SHARED_IMPORT] No user yet, import deferred.');
                 }
-                // Note: Guests are handled by the SharedTemplatePage which redirects them to 
-                // login/signup first. Once they return as 'user', this block triggers.
             } catch (e) {
-                console.error('Failed to parse shared template', e);
+                console.error('[SHARED_IMPORT] Error during import:', e);
             }
         };
 
