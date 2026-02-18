@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Download, Trash, CheckSquare, XSquare, Plus, Minus, Copy, RotateCcw, Upload, Info } from 'lucide-react';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
+import { useMobile } from '@/hooks/useMobile';
 import { TranslationFunction, CanvasImage } from '@/types';
 
 export interface ContextMenuState {
@@ -40,6 +41,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     menu, images, onClose, onDownload, onDelete, onSelect, onAddToSelection, onRemoveFromSelection, onSelectAll, onDeselectAll, onResetView,
     selectedIds, onDownloadSelected, onDeleteSelected, onGenerateVariations, onUpload, onCreateNew, onShowInfo, t
 }) => {
+    const isMobile = useMobile();
     if (!menu) return null;
 
     // Determine current state of the clicked target relative to selection
@@ -107,11 +109,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                             <span className={textClass}>{t('generate_new')}</span>
                         </button>
 
-                        <button onClick={() => { onSelectAll(); onClose(); }} className={itemClass}>
-                            <span className={textClass}>{t('ctx_select_all')}</span>
-                        </button>
+                        {!isMobile && (
+                            <button onClick={() => { onSelectAll(); onClose(); }} className={itemClass}>
+                                <span className={textClass}>{t('ctx_select_all')}</span>
+                            </button>
+                        )}
 
-                        {selectedIds.length > 0 && (
+                        {!isMobile && selectedIds.length > 0 && (
                             <button onClick={() => { onDeselectAll(); onClose(); }} className={itemClass}>
                                 <span className={textClass}>{t('ctx_deselect')}</span>
                             </button>
@@ -194,10 +198,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                     </button>
                                 )}
 
-                                <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
-                                    <span className={textClass}>{t('ctx_add_to_selection')}</span>
-                                    <CheckSquare className={iconClass} />
-                                </button>
+                                {!isMobile && (
+                                    <button onClick={() => { onAddToSelection(menu.targetId!); onClose(); }} className={itemClass}>
+                                        <span className={textClass}>{t('ctx_add_to_selection')}</span>
+                                        <CheckSquare className={iconClass} />
+                                    </button>
+                                )}
 
                                 {onShowInfo && (
                                     <button onClick={() => { onShowInfo(menu.targetId!); onClose(); }} className={itemClass}>

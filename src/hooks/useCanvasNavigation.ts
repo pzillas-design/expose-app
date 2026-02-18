@@ -237,6 +237,65 @@ export const useCanvasNavigation = ({
         }, 50);
     }, []);
 
+    const getMostVisibleItem = useCallback(() => {
+        if (!scrollContainerRef.current) return null;
+        const container = scrollContainerRef.current;
+        const items = Array.from(container.querySelectorAll('[data-image-id]')) as HTMLElement[];
+
+        const containerRect = container.getBoundingClientRect();
+        const containerCenterX = containerRect.left + containerRect.width / 2;
+        const containerCenterY = containerRect.top + containerRect.height / 2;
+
+        let closestId = null;
+        let minDistance = Infinity;
+
+        for (const item of items) {
+            const rect = item.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.sqrt(Math.pow(centerX - containerCenterX, 2) + Math.pow(centerY - containerCenterY, 2));
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestId = item.getAttribute('data-image-id');
+            }
+        }
+        return closestId;
+    }, [scrollContainerRef]);
+
+    const zoomToItem = useCallback((id: string, targetZoom = 1.0, sidebarWidth = 0, bottomOffset = 0) => {
+        if (!scrollContainerRef.current) return;
+        const container = scrollContainerRef.current;
+        const el = container.querySelector(`[data-image-id="${id}"]`);
+        if (!el) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const itemRect = el.getBoundingClientRect();
+
+        const currentScrollLeft = container.scrollLeft;
+        const currentScrollTop = container.scrollTop;
+
+        const itemCenterX = (itemRect.left - containerRect.left + currentScrollLeft) + (itemRect.width / 2);
+        const itemCenterY = (itemRect.top - containerRect.top + currentScrollTop) + (itemRect.height / 2);
+
+        const padX = window.innerWidth * 0.3;
+        const padY = window.innerHeight * 0.2;
+
+        const unzoomedCenterX = (itemCenterX - padX) / zoomRef.current;
+        const unzoomedCenterY = (itemCenterY - padY) / zoomRef.current;
+
+        const availableWidth = containerRect.width - sidebarWidth;
+        const availableHeight = containerRect.height - bottomOffset;
+
+        const targetScreenX = sidebarWidth + (availableWidth / 2);
+        const targetScreenY = availableHeight / 2;
+
+        const targetScrollLeft = (unzoomedCenterX * targetZoom) + padX - targetScreenX;
+        const targetScrollTop = (unzoomedCenterY * targetZoom) + padY - targetScreenY;
+
+        smoothZoomTo(targetZoom, { x: targetScrollLeft, y: targetScrollTop });
+    }, [smoothZoomTo, scrollContainerRef]);
+
     // Wheel Zoom Listener
     useEffect(() => {
         const container = scrollContainerRef.current;
@@ -275,7 +334,7 @@ export const useCanvasNavigation = ({
 
         container.addEventListener('wheel', onWheel, { passive: false });
         return () => container.removeEventListener('wheel', onWheel);
-    }, [scrollContainerRef, currentBoardId, allImages]); // Remove zoom, add allImages to ensure attachment after mount/load
+    }, [scrollContainerRef, currentBoardId, allImages]);
 
     return {
         zoom,
@@ -283,7 +342,10 @@ export const useCanvasNavigation = ({
         smoothZoomTo,
         fitSelectionToView,
         snapToItem,
+        getMostVisibleItem,
+        zoomToItem,
         isZoomingRef,
         isAutoScrollingRef
     };
+
 };

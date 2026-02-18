@@ -6,6 +6,7 @@ import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { storageService } from '@/services/storageService';
+import { useMobile } from '@/hooks/useMobile';
 
 interface ImageItemProps {
     image: CanvasImage;
@@ -229,6 +230,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     isContextMenuOpen,
     t
 }) => {
+    const isMobile = useMobile();
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
 
@@ -273,32 +275,40 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
-                        {/* Unified Selection Button */}
-                        <Tooltip text={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onSelect) onSelect(image.id, true, false);
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onMouseUp={(e) => e.stopPropagation()}
-                                className={`flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
-                                    ${(isContextMenuOpen || isMarked)
-                                        ? 'text-black dark:text-white opacity-100'
-                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                            >
-                                {isMarked ? (
-                                    <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
-                                ) : (
-                                    <Square className="w-4 h-4 shrink-0" />
-                                )}
+                        {!isMobile && (
+                            <Tooltip text={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onSelect) onSelect(image.id, true, false);
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onMouseUp={(e) => e.stopPropagation()}
+                                    className={`flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
+                                        ${(isContextMenuOpen || isMarked)
+                                            ? 'text-black dark:text-white opacity-100'
+                                            : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                                >
+                                    {isMarked ? (
+                                        <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
+                                    ) : (
+                                        <Square className="w-4 h-4 shrink-0" />
+                                    )}
 
-                                <span className="truncate text-[10px] tracking-wider transition-colors">
+                                    <span className="truncate text-[10px] tracking-wider transition-colors">
+                                        {image.title || 'Untitled'}.jpg
+                                    </span>
+                                </button>
+                            </Tooltip>
+                        )}
+                        {isMobile && (
+                            <div className="flex items-center gap-2 py-2 px-0 text-zinc-400 dark:text-zinc-500">
+                                <span className="truncate text-[10px] tracking-wider">
                                     {image.title || 'Untitled'}.jpg
                                 </span>
-                            </button>
-                        </Tooltip>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Group: Meatballs */}

@@ -12,6 +12,7 @@ import { generateId } from '@/utils/ids';
 import { downloadImage } from '@/utils/imageUtils';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { useItemDialog } from '@/components/ui/Dialog';
+import { useMobile } from '@/hooks/useMobile';
 
 // Sub Components
 import { PromptTab } from './PromptTab';
@@ -140,6 +141,65 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const { confirm } = useItemDialog();
     const lastAutoOpenedId = useRef<string | null>(null);
     const isInteracting = useRef(false);
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    // Mobile Bottom Sheet Logic
+    const isMobile = useMobile();
+    const [sheetLevel, setSheetLevel] = useState<'closed' | 'peek' | 'expanded'>('peek');
+    const [dragOffset, setDragOffset] = useState(0);
+    const isDragging = useRef(false);
+    const startY = useRef(0);
+    const startOffset = useRef(0);
+
+    // Sync sheetLevel with selection
+    useEffect(() => {
+        if (selectedImage || (selectedImages && selectedImages.length > 0)) {
+            if (sheetLevel === 'closed') setSheetLevel('peek');
+        } else {
+            setSheetLevel('closed');
+        }
+    }, [selectedImage, selectedImages]);
+
+    const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+        if (!isMobile) return;
+        // If touching content, only drag if at the top
+        if (contentRef.current && contentRef.current.contains(e.target as Node)) {
+            if (contentRef.current.scrollTop > 0 && sheetLevel === 'expanded') return;
+        }
+        isDragging.current = true;
+        const cy = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        startY.current = cy;
+        startOffset.current = dragOffset;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+        if (!isDragging.current || !isMobile) return;
+        const cy = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        const delta = cy - startY.current;
+
+        // Prevent dragging above expanded or below closed
+        const newOffset = startOffset.current + delta;
+        setDragOffset(newOffset);
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging.current || !isMobile) return;
+        isDragging.current = false;
+
+        const threshold = window.innerHeight * 0.15;
+        if (dragOffset < -threshold) {
+            setSheetLevel('expanded');
+        } else if (dragOffset > threshold) {
+            // If dragging down from expanded, go to peek
+            if (sheetLevel === 'expanded') {
+                setSheetLevel('peek');
+            } else {
+                onDeselectAll?.();
+                setSheetLevel('closed');
+            }
+        }
+        setDragOffset(0);
+    };
 
     const setActiveAnnotationId = (id: string | null) => {
         setActiveAnnotationIdInternal(id);
@@ -730,7 +790,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             </div>
                         </div>
 
-                        <div className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}>
+                        <div
+                            ref={contentRef}
+                            className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}
+                            onTouchStart={handleTouchStart}
+                            onMouseDown={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onMouseMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseUp={handleTouchEnd}
+                        >
 
                             <PromptTab
                                 prompt={prompt}
@@ -781,7 +850,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 return (
                     <div className="flex flex-col h-full overflow-hidden">
                         <SubHeader title={t('annotate')} onBack={() => handleExitBrushMode(false)} />
-                        <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}>
+                        <div
+                            ref={contentRef}
+                            className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}
+                            onTouchStart={handleTouchStart}
+                            onMouseDown={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onMouseMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseUp={handleTouchEnd}
+                        >
                             <BrushTab
                                 brushSize={brushSize}
                                 onBrushSizeChange={onBrushSizeChange}
@@ -829,11 +907,26 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     };
 
+    const sheetHeight = sheetLevel === 'expanded' ? '90vh' : (sheetLevel === 'peek' ? '320px' : '0px');
+    const transform = isMobile ? `translateY(${dragOffset}px)` : 'none';
+
     return (
         <>
             <div
-                className={`${Theme.Colors.PanelBg} border-l ${Theme.Colors.Border} flex flex-col h-full z-20 relative transition-colors duration-200`}
-                style={{ width: width }}
+                className={`
+                    ${Theme.Colors.PanelBg} flex flex-col z-[100] relative transition-colors duration-200
+                    ${isMobile
+                        ? `fixed bottom-0 left-0 right-0 rounded-t-3xl border-t shadow-[0_-20px_50px_rgba(0,0,0,0.1)] overflow-hidden transition-[height] duration-300 ease-out`
+                        : `h-full border-l`
+                    }
+                    ${Theme.Colors.Border}
+                `}
+                style={{
+                    width: isMobile ? '100%' : width,
+                    height: isMobile ? sheetHeight : '100%',
+                    transform: transform,
+                    transitionProperty: isDragging.current ? 'none' : 'height, transform, background-color'
+                }}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={handleDrop}
                 onContextMenu={(e) => e.stopPropagation()}
@@ -858,10 +951,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     </div>
                 )}
 
-                <div
-                    className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-zinc-400 dark:hover:bg-zinc-700 transition-colors z-50"
-                    onMouseDown={startResizing}
-                />
+                {/* Mobile Drag Indicator */}
+                {isMobile && (
+                    <div
+                        className="h-10 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                        onTouchStart={handleTouchStart}
+                        onMouseDown={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onMouseMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onMouseUp={handleTouchEnd}
+                    >
+                        <div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+                    </div>
+                )}
 
                 {renderSelectedContent()}
             </div>

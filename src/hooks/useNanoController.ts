@@ -18,6 +18,7 @@ import { usePersistence } from './usePersistence';
 import { useBoards } from './useBoards';
 import { usePresets } from './usePresets';
 import { useAutoSave } from './useAutoSave';
+import { useMobile } from './useMobile';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -110,6 +111,8 @@ export const useNanoController = () => {
         isZooming, isAutoScrolling,
         isZoomingRef, isAutoScrollingRef, getMostVisibleItem, zoomToItem
     } = canvasNav as any;
+
+    const isMobile = useMobile();
 
     // --- Selection ---
     const {
@@ -275,8 +278,8 @@ export const useNanoController = () => {
             }
 
             if (targetImg) {
-                // Smooth zoom into the image (sidebar width 360)
-                zoomToItem(targetImg.id, 0.9, 360);
+                // Smooth zoom into the image (sidebar width 360, bottom offset 320 for mobile "peek")
+                zoomToItem(targetImg.id, 0.9, isMobile ? 0 : 360, isMobile ? 320 : 0);
             }
         } else if (newMode === 'prompt' && (oldMode === 'brush' || oldMode === 'objects')) {
             // Leaving annotation mode: Restore previous state

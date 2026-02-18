@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
+import { useMobile } from './useMobile';
 import { ImageRow } from '../types';
 
 interface UseSelectionProps {
@@ -32,6 +33,7 @@ export const useSelection = ({
     setActiveId,
     getMostVisibleItem
 }: UseSelectionProps) => {
+    const isMobile = useMobile();
 
     // Refs
     const isSnapEnabledRef = useRef(true);
@@ -50,19 +52,30 @@ export const useSelection = ({
         if (focusCheckRafRef.current) cancelAnimationFrame(focusCheckRafRef.current);
         isSnapEnabledRef.current = true;
         lastSelectedIdRef.current = id;
-        setSelectedIds([id]);
+        setSelectedIds(isMobile ? [] : [id]); // Clear marks on mobile, or just use activeId
         setActiveId(id);
         snapToItem(id, instant);
-    }, [snapToItem, setActiveId, setSelectedIds]);
+    }, [snapToItem, setActiveId, setSelectedIds, isMobile]);
 
     const selectMultiple = useCallback((ids: string[]) => {
+        if (isMobile) return;
         setSelectedIds(ids);
         if (ids.length > 0) {
             lastSelectedIdRef.current = ids[ids.length - 1];
         }
-    }, [setSelectedIds]);
+    }, [setSelectedIds, isMobile]);
 
     const handleSelection = useCallback((id: string, multi: boolean, range: boolean) => {
+        if (isMobile) {
+            // Mobile: Only single selection (active focus)
+            isSnapEnabledRef.current = true;
+            lastSelectedIdRef.current = id;
+            setActiveId(id);
+            snapToItem(id);
+            setSelectedIds([]); // Ensure no multi-select residues
+            return;
+        }
+
         if (range && lastSelectedIdRef.current) {
             // Shift Click
             const lastIdx = allImages.findIndex(i => i.id === lastSelectedIdRef.current);
@@ -93,7 +106,7 @@ export const useSelection = ({
             setActiveId(id);
             snapToItem(id);
         }
-    }, [allImages, setSelectedIds, setActiveId, snapToItem]);
+    }, [allImages, setSelectedIds, setActiveId, snapToItem, isMobile]);
 
     // fitSelectionToView removed to allow free movement during multi-select as requested
 
