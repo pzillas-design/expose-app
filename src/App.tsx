@@ -523,35 +523,40 @@ export function App() {
     useEffect(() => {
         const checkSharedTemplate = async () => {
             const stored = localStorage.getItem('expose_shared_template');
-            if (stored) {
-                try {
-                    const template = JSON.parse(stored);
+            if (!stored) return;
 
-                    // If user is logged in but we are NOT in a project yet, create one
-                    if (user && !currentBoardId) {
-                        // If we are on Home or a Shared page, create project first
-                        if (location.pathname === '/' || location.pathname.startsWith('/s/')) {
-                            const newBoard = await createBoard();
-                            if (newBoard) {
-                                navigate(`/projects/${newBoard.id}`);
-                                return; // Stop here, the effect will re-run on the new path
-                            }
-                        }
-                    }
+            try {
+                const template = JSON.parse(stored);
 
-                    // Apply template and open modal
-                    setPendingSharedTemplate(template);
-                    setIsCreationModalOpen(true);
+                // For logged-in users: Save to library and redirect to new project
+                if (user) {
+                    await actions.savePreset({
+                        ...template,
+                        id: undefined // Force new ID creation/fork
+                    });
+
                     localStorage.removeItem('expose_shared_template');
 
-                    // Show a welcoming toast
                     actions.showToast(
                         currentLang === 'de' ? "Vorlage hinzugefügt" : "Template added",
                         'success'
                     );
-                } catch (e) {
-                    console.error('Failed to parse shared template', e);
+
+                    if (!currentBoardId && (location.pathname === '/' || location.pathname.startsWith('/s/'))) {
+                        const newBoard = await createBoard();
+                        if (newBoard) {
+                            navigate(`/projects/${newBoard.id}`);
+                        }
+                    }
+
+                    // Don't open the creation modal anymore
+                    setPendingSharedTemplate(null);
+                    setIsCreationModalOpen(false);
                 }
+                // Note: Guests are handled by the SharedTemplatePage which redirects them to 
+                // login/signup first. Once they return as 'user', this block triggers.
+            } catch (e) {
+                console.error('Failed to parse shared template', e);
             }
         };
 
