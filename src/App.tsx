@@ -172,11 +172,60 @@ export function App() {
             const container = refs.scrollContainerRef.current;
             // Only set if at 0,0 to avoid fighting with user scroll
             if (container.scrollLeft === 0 && container.scrollTop === 0) {
-                container.scrollLeft = window.innerWidth * 2.0;
-                container.scrollTop = window.innerHeight * 2.0;
+                if (isMobile) {
+                    // Scroll to content origin: padding is 30vw left and 20vh top
+                    // Position so the first image is visible on screen
+                    container.scrollLeft = Math.max(0, window.innerWidth * 0.25);
+                    container.scrollTop = Math.max(0, window.innerHeight * 0.15);
+                } else {
+                    container.scrollLeft = window.innerWidth * 2.0;
+                    container.scrollTop = window.innerHeight * 2.0;
+                }
             }
         }
-    }, [currentBoardId, refs.scrollContainerRef]);
+    }, [currentBoardId, isMobile, refs.scrollContainerRef]);
+
+    // Mobile recovery: if viewport has no visible image (e.g. after mode switch),
+    // jump back to a valid item so canvas never appears empty.
+    const lastImageId = allImages.length > 0 ? allImages[allImages.length - 1].id : null;
+    useEffect(() => {
+        if (!isMobile || !currentBoardId || allImages.length === 0 || !refs.scrollContainerRef.current) return;
+
+        // Use a small delay (instead of rAF) to ensure DOM has rendered rows
+        const timeout = setTimeout(() => {
+            const container = refs.scrollContainerRef.current;
+            if (!container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const sheetEl = document.querySelector('[data-mobile-sheet="true"]') as HTMLElement | null;
+            const visibleBottom = sheetEl
+                ? Math.max(containerRect.top + 120, Math.min(containerRect.bottom, sheetEl.getBoundingClientRect().top))
+                : containerRect.bottom;
+            const visibleItems = Array.from(container.querySelectorAll('[data-image-id]')).some((node) => {
+                const rect = (node as HTMLElement).getBoundingClientRect();
+                return (
+                    rect.right > containerRect.left &&
+                    rect.left < containerRect.right &&
+                    rect.bottom > containerRect.top &&
+                    rect.top < visibleBottom
+                );
+            });
+
+            if (visibleItems) return;
+
+            const targetId = activeId || lastImageId;
+
+            if (targetId) {
+                selectAndSnap(targetId, true);
+            } else {
+                // Fallback: scroll to content area even without a target image
+                container.scrollLeft = Math.max(0, window.innerWidth * 0.25);
+                container.scrollTop = Math.max(0, window.innerHeight * 0.15);
+            }
+        }, 150);
+
+        return () => clearTimeout(timeout);
+    }, [isMobile, currentBoardId, allImages.length, activeId, lastImageId, selectAndSnap, refs.scrollContainerRef]);
 
     // URL Routing Sync
     useEffect(() => {
@@ -301,37 +350,40 @@ export function App() {
     };
 
     // --- Pan (Hand Tool) Logic ---
-    const panState = useRef<{ isPanning: boolean, startX: number, startY: number, scrollLeft: number, scrollTop: number, hasMoved: boolean } | null>(null);
+    const panState = useRef<{ isPanning: boolean, pointerId: number | null, startX: number, startY: number, scrollLeft: number, scrollTop: number, hasMoved: boolean } | null>(null);
 
-    const handleBackgroundMouseDown = (e: React.MouseEvent) => {
+    const handleBackgroundPointerDown = (e: React.PointerEvent) => {
         if (contextMenu) setContextMenu(null);
-        if (e.button !== 0) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('a') || target.closest('input')) return;
-
-        // Disable panning in annotation mode to prevent conflicts
+        if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('textarea') || target.closest('[contenteditable="true"]')) return;
         if (sideSheetMode === 'brush' || sideSheetMode === 'objects') return;
+        if (!refs.scrollContainerRef.current) return;
 
-        e.preventDefault();
+        panState.current = {
+            isPanning: true,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            scrollLeft: refs.scrollContainerRef.current.scrollLeft,
+            scrollTop: refs.scrollContainerRef.current.scrollTop,
+            hasMoved: false
+        };
 
-        if (refs.scrollContainerRef.current) {
-            panState.current = {
-                isPanning: true,
-                startX: e.clientX,
-                startY: e.clientY,
-                scrollLeft: refs.scrollContainerRef.current.scrollLeft,
-                scrollTop: refs.scrollContainerRef.current.scrollTop,
-                hasMoved: false
-            };
+        if (e.pointerType !== 'mouse') {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } else {
             document.body.style.cursor = 'grabbing';
-            setEnableSnap(false);
-            actions.setSnapEnabled(false);
         }
+        setEnableSnap(false);
+        actions.setSnapEnabled(false);
     };
 
-    const handleBackgroundMouseMove = (e: React.MouseEvent) => {
+    const handleBackgroundPointerMove = (e: React.PointerEvent) => {
         if (!panState.current || !panState.current.isPanning || !refs.scrollContainerRef.current) return;
-        e.preventDefault();
+        if (panState.current.pointerId !== null && panState.current.pointerId !== e.pointerId) return;
+
         const deltaX = e.clientX - panState.current.startX;
         const deltaY = e.clientY - panState.current.startY;
 
@@ -343,28 +395,44 @@ export function App() {
             }
         }
 
+        if (e.cancelable) e.preventDefault();
         refs.scrollContainerRef.current.scrollLeft = panState.current.scrollLeft - deltaX;
         refs.scrollContainerRef.current.scrollTop = panState.current.scrollTop - deltaY;
     };
 
-    const handleBackgroundMouseUp = (e: React.MouseEvent) => {
-        if (panState.current) {
-            if (!panState.current.hasMoved) {
-                const target = e.target as HTMLElement;
-                const imageWrapper = target.closest('[data-image-id]');
-                if (imageWrapper) {
-                    const id = imageWrapper.getAttribute('data-image-id');
-                    if (id) {
-                        handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
-                    }
-                } else {
-                    actions.deselectAll();
-                }
-            }
+    const handleBackgroundPointerUp = (e: React.PointerEvent) => {
+        if (!panState.current) return;
+        if (panState.current.pointerId !== null && panState.current.pointerId !== e.pointerId) return;
 
-            panState.current = null;
-            document.body.style.cursor = '';
+        if (!panState.current.hasMoved && e.pointerType === 'mouse') {
+            const target = e.target as HTMLElement;
+            const imageWrapper = target.closest('[data-image-id]');
+            if (imageWrapper) {
+                const id = imageWrapper.getAttribute('data-image-id');
+                if (id) {
+                    handleSelection(id, e.metaKey || e.ctrlKey, e.shiftKey);
+                }
+            } else {
+                actions.deselectAll();
+            }
         }
+
+        if (panState.current.pointerId !== null && e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+
+        panState.current = null;
+        document.body.style.cursor = '';
+    };
+
+    const handleBackgroundPointerCancel = (e: React.PointerEvent) => {
+        if (!panState.current) return;
+        if (panState.current.pointerId !== null && panState.current.pointerId !== e.pointerId) return;
+        if (panState.current.pointerId !== null && e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+        panState.current = null;
+        document.body.style.cursor = '';
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -619,10 +687,9 @@ export function App() {
 
     const canvasView = (
         <div
-            className={`flex h-screen w-screen ${Theme.Colors.CanvasBg} overflow-hidden ${Theme.Colors.TextPrimary} ${Theme.Fonts.Main} selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black`}
+            className={`flex ${isMobile ? 'flex-col' : 'flex-row'} h-screen w-screen ${Theme.Colors.CanvasBg} overflow-hidden ${Theme.Colors.TextPrimary} ${Theme.Fonts.Main} selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black`}
             onDragLeave={handleDragLeave}
             onDragOver={(e) => e.preventDefault()}
-            onMouseUp={handleBackgroundMouseUp}
             onContextMenu={handleContextMenu}
         >
             <ProgressBar isVisible={isCanvasLoading || !!resolvingBoardId} progress={loadingProgress || (resolvingBoardId ? 30 : 0)} />
@@ -672,12 +739,15 @@ export function App() {
                 <div
                     ref={refs.scrollContainerRef}
                     className={`w-full h-full overflow-auto no-scrollbar bg-transparent overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling && (isMobile ? zoom <= 1.35 : Math.abs(zoom - 1) < 0.01) ? 'snap-both snap-mandatory' : ''}`}
-                    style={{ overflowAnchor: 'none' }}
+                    style={{ overflowAnchor: 'none', touchAction: 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleCanvasDrop}
-                    onMouseDown={handleBackgroundMouseDown}
-                    onMouseMove={handleBackgroundMouseMove}
+                    onPointerDown={handleBackgroundPointerDown}
+                    onPointerMove={handleBackgroundPointerMove}
+                    onPointerUp={handleBackgroundPointerUp}
+                    onPointerCancel={handleBackgroundPointerCancel}
+                    onLostPointerCapture={handleBackgroundPointerCancel}
                     onContextMenu={handleContextMenu}
                 >
                     <div

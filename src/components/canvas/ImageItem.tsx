@@ -262,7 +262,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 height: finalHeight, // Stable height!
             }}
         >
-            {zoom > 0.4 && (
+            {zoom > 0.4 && !isMobile && (
                 <div
                     className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-40"
                     onClick={(e) => {
@@ -417,8 +417,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}
                 >
-                    {/* Previous Image - Square Button */}
-                    {hasLeft && (
+                    {/* Previous Image - Square Button (desktop only) */}
+                    {!isMobile && hasLeft && (
                         <Tooltip text={t('previous') || 'Previous'}>
                             <button
                                 onClick={(e) => {
@@ -450,28 +450,30 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     </button>
                                 </Tooltip>
 
-                                {/* Separator */}
-                                <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+                                {/* Separator (desktop only) */}
+                                {!isMobile && <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />}
                             </>
                         )}
 
-                        {/* Save/Download */}
-                        <Tooltip text={t('tt_save') || 'Download image'}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDownload) onDownload(image.id);
-                                }}
-                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                                <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
-                            </button>
-                        </Tooltip>
+                        {/* Save/Download (desktop only) */}
+                        {!isMobile && (
+                            <Tooltip text={t('tt_save') || 'Download image'}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onDownload) onDownload(image.id);
+                                    }}
+                                    className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
+                                </button>
+                            </Tooltip>
+                        )}
                     </div>
 
-                    {/* Next Image - Square Button */}
-                    {hasRight && (
+                    {/* Next Image - Square Button (desktop only) */}
+                    {!isMobile && hasRight && (
                         <Tooltip text={t('next') || 'Next'}>
                             <button
                                 onClick={(e) => {
