@@ -715,7 +715,7 @@ export function App() {
                 />
             </div>
 
-            <div className={`${isMobile ? 'sticky top-0 h-screen z-10' : 'flex-1 h-full'} relative overflow-hidden`}>
+            <div className={`${isMobile ? 'sticky top-0 h-screen z-10 shrink-0' : 'flex-1 h-full'} relative overflow-hidden`}>
                 {isDragOver && (
                     <div
                         onClick={() => { setIsDragOver(false); setIsCanvasZoneActive(false); }}
