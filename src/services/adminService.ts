@@ -368,14 +368,16 @@ export const adminService = {
         const { data, error } = await supabase
             .from('global_presets')
             .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
+            .eq('slug', slug.toLowerCase())
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
         if (error) {
             console.error('AdminService: getPresetBySlug failed!', error);
             throw error;
         }
 
-        return data ? this._mapDbPreset(data) : null;
+        if (!data || data.length === 0) return null;
+        return this._mapDbPreset(data[0]);
     }
 };
