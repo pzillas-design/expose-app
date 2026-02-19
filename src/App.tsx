@@ -687,7 +687,7 @@ export function App() {
 
     const canvasView = (
         <div
-            className={`flex ${isMobile ? 'flex-col' : 'flex-row'} h-screen w-screen ${Theme.Colors.CanvasBg} overflow-hidden ${Theme.Colors.TextPrimary} ${Theme.Fonts.Main} selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black`}
+            className={`flex ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row overflow-hidden'} h-screen w-screen ${Theme.Colors.CanvasBg} ${Theme.Colors.TextPrimary} ${Theme.Fonts.Main} selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black`}
             onDragLeave={handleDragLeave}
             onDragOver={(e) => e.preventDefault()}
             onContextMenu={handleContextMenu}
@@ -715,7 +715,7 @@ export function App() {
                 />
             </div>
 
-            <div className="flex-1 relative h-full overflow-hidden">
+            <div className={`${isMobile ? 'sticky top-0 h-screen z-10' : 'flex-1 h-full'} relative overflow-hidden`}>
                 {isDragOver && (
                     <div
                         onClick={() => { setIsDragOver(false); setIsCanvasZoneActive(false); }}

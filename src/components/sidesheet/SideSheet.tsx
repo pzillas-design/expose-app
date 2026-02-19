@@ -796,16 +796,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 return (
                     <div
                         ref={contentRef}
-                        className={`flex-1 min-h-0 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}
-                        style={{
-                            WebkitOverflowScrolling: 'touch',
-                            overscrollBehaviorY: 'contain',
-                            willChange: 'transform',
-                            transform: 'translateZ(0)',
-                        }}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
+                        className={`flex-1 ${Theme.Colors.PanelBg}`}
                     >
                         {/* Drag Handle */}
                         {isMobile && (
@@ -954,8 +945,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     };
 
-    const currentTranslate = isMobile ? (getExpandedHeight() - sheetVisibleHeight) : 0;
-    const transform = isMobile ? `translateY(${currentTranslate}px)` : 'none';
+    const currentTranslate = isMobile ? 0 : 0;
+    const transform = 'none';
     return (
         <>
             <div
@@ -963,16 +954,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 className={`
                     ${Theme.Colors.PanelBg} flex flex-col z-[100] transition-colors duration-200
                     ${isMobile
-                        ? `fixed bottom-0 left-0 right-0 z-[100] transition-transform duration-200 ease-out pointer-events-auto overflow-hidden`
+                        ? `relative w-full`
                         : `h-full border-l relative`
                     }
                     ${Theme.Colors.Border}
                 `}
                 style={{
                     width: isMobile ? '100%' : width,
-                    height: isMobile ? 'var(--expanded-height)' : '100%',
-                    transform: transform,
-                    transitionProperty: isDragging.current ? 'none' : 'transform, background-color',
+                    height: isMobile ? 'auto' : '100%',
+                    minHeight: isMobile ? '90vh' : undefined,
                     borderTopLeftRadius: isMobile ? '24px' : '0',
                     borderTopRightRadius: isMobile ? '24px' : '0',
                     boxShadow: isMobile ? '0 -2px 8px rgba(0,0,0,0.03)' : 'none',
