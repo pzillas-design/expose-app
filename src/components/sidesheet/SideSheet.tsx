@@ -950,26 +950,24 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                ref={sheetRef}
                 data-mobile-sheet={isMobile ? 'true' : 'false'}
                 className={`
-                    ${Theme.Colors.PanelBg} flex flex-col z-[100]
+                    ${Theme.Colors.PanelBg} flex flex-col z-[100] transition-colors duration-200
                     ${isMobile
-                        ? `fixed bottom-0 left-0 right-0 pointer-events-auto`
+                        ? `relative w-full`
                         : `h-full border-l relative`
                     }
                     ${Theme.Colors.Border}
                 `}
                 style={{
                     width: isMobile ? '100%' : width,
-                    height: isMobile ? '90vh' : '100%',
-                    transform: isMobile ? (isSheetOpen ? 'translateY(0)' : 'translateY(calc(100% - 10vh))') : 'none',
-                    transition: isMobile ? 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s' : undefined,
-                    willChange: isMobile ? 'transform' : undefined,
-                    borderTopLeftRadius: isMobile ? '20px' : '0',
-                    borderTopRightRadius: isMobile ? '20px' : '0',
-                    boxShadow: isMobile ? '0 -4px 24px rgba(0,0,0,0.08)' : 'none',
-                    borderTop: isMobile ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                    height: isMobile ? 'auto' : '100%',
+                    minHeight: isMobile ? '90vh' : undefined,
+                    marginTop: isMobile ? '-10vh' : undefined,
+                    borderTopLeftRadius: isMobile ? '24px' : '0',
+                    borderTopRightRadius: isMobile ? '24px' : '0',
+                    boxShadow: isMobile ? '0 -2px 8px rgba(0,0,0,0.03)' : 'none',
+                    borderTop: isMobile ? '1px solid rgba(0,0,0,0.1)' : 'none',
                     paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0'
                 }}
                 onDragOver={(e) => { e.preventDefault(); }}
