@@ -435,6 +435,33 @@ export function App() {
         document.body.style.cursor = '';
     };
 
+    // --- Mobile Swipe Gesture Navigation ---
+    const swipeState = useRef<{ startX: number; startY: number } | null>(null);
+    const SWIPE_THRESHOLD = 50; // px min to register a swipe
+
+    const handleCanvasTouchStart = (e: React.TouchEvent) => {
+        swipeState.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY };
+    };
+
+    const handleCanvasTouchEnd = (e: React.TouchEvent) => {
+        if (!swipeState.current) return;
+        const dx = e.changedTouches[0].clientX - swipeState.current.startX;
+        const dy = e.changedTouches[0].clientY - swipeState.current.startY;
+        swipeState.current = null;
+
+        if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return;
+
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            // Horizontal swipe: left = next, right = prev
+            if (dx < 0) moveSelection(1);
+            else moveSelection(-1);
+        } else {
+            // Vertical swipe: up = next row, down = prev row
+            if (dy < 0) moveRowSelection(1);
+            else moveRowSelection(-1);
+        }
+    };
+
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY, type: 'background' });
@@ -715,7 +742,11 @@ export function App() {
                 />
             </div>
 
-            <div className={`${isMobile ? 'sticky top-0 h-screen z-10 shrink-0' : 'flex-1 h-full'} relative overflow-hidden`}>
+            <div
+                className={`${isMobile ? 'sticky top-0 h-screen z-10 shrink-0' : 'flex-1 h-full'} relative overflow-hidden`}
+                onTouchStart={isMobile ? handleCanvasTouchStart : undefined}
+                onTouchEnd={isMobile ? handleCanvasTouchEnd : undefined}
+            >
                 {isDragOver && (
                     <div
                         onClick={() => { setIsDragOver(false); setIsCanvasZoneActive(false); }}
@@ -738,8 +769,8 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar bg-transparent overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling && (isMobile ? zoom <= 1.35 : Math.abs(zoom - 1) < 0.01) ? 'snap-both snap-mandatory' : ''}`}
-                    style={{ overflowAnchor: 'none', touchAction: 'none' }}
+                    className={`w-full h-full ${isMobile ? 'overflow-hidden' : 'overflow-auto'} no-scrollbar bg-transparent overscroll-none relative ${!isMobile && enableSnap && !isZooming && !isAutoScrolling && Math.abs(zoom - 1) < 0.01 ? 'snap-both snap-mandatory' : ''}`}
+                    style={{ overflowAnchor: 'none', touchAction: isMobile ? 'pan-y' : 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={handleCanvasDrop}
