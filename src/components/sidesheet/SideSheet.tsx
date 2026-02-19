@@ -154,7 +154,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const velocity = useRef(0);
 
     // Levels in pixels from bottom
-    const PEEK_HEIGHT = 320;
+    // Small peek state: show only handle + header area.
+    const getPeekHeight = () => 112;
     const CLOSED_HEIGHT = 0;
 
     // We'll use a CSS variable for the full height to handle mobile bars correctly
@@ -171,7 +172,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     const getLevelHeight = (level: 'closed' | 'peek' | 'expanded') => {
         if (level === 'expanded') return window.innerHeight * 0.94;
-        if (level === 'peek') return PEEK_HEIGHT;
+        if (level === 'peek') return getPeekHeight();
         return CLOSED_HEIGHT;
     };
 
@@ -843,12 +844,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     className="transition-colors z-50 text-zinc-400"
                                     tooltip="Info"
                                 />
-                                <IconButton
-                                    icon={<X className="w-[18px] h-[18px]" />}
-                                    onClick={() => onDeselectAll?.()}
-                                    className="transition-colors z-50 text-zinc-400"
-                                    tooltip={t('tt_deselect') || 'Auswahl aufheben'}
-                                />
+                                {!isMobile && (
+                                    <IconButton
+                                        icon={<X className="w-[18px] h-[18px]" />}
+                                        onClick={() => onDeselectAll?.()}
+                                        className="transition-colors z-50 text-zinc-400"
+                                        tooltip={t('tt_deselect') || 'Auswahl aufheben'}
+                                    />
+                                )}
                             </div>
                         </div>
 
@@ -971,6 +974,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 />
             )}
             <div
+                data-mobile-sheet={isMobile ? 'true' : 'false'}
                 className={`
                     ${Theme.Colors.PanelBg} flex flex-col z-[100] relative transition-colors duration-200
                     ${isMobile

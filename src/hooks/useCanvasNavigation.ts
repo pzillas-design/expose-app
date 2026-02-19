@@ -1,6 +1,7 @@
 
 import React, { useRef, useCallback, useEffect, useState, useLayoutEffect } from 'react';
 import { CanvasImage } from '../types';
+import { useMobile } from './useMobile';
 
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 3;
@@ -20,6 +21,7 @@ export const useCanvasNavigation = ({
     primarySelectedId,
     currentBoardId
 }: UseCanvasNavigationProps) => {
+    const isMobile = useMobile();
 
     const [zoom, setZoom] = useState(1.25);
     const zoomRef = useRef(zoom);
@@ -223,19 +225,81 @@ export const useCanvasNavigation = ({
     }, [selectedIds, zoom, smoothZoomTo, scrollContainerRef]);
 
     // Snap to single item logic
-    const snapToItem = useCallback((id: string) => {
+    const snapToItem = useCallback((id: string, instant = false) => {
         isAutoScrollingRef.current = true;
         if (autoScrollTimeoutRef.current) clearTimeout(autoScrollTimeoutRef.current);
         autoScrollTimeoutRef.current = window.setTimeout(() => { isAutoScrollingRef.current = false; }, 800);
 
-        // Simple scroll into view
-        setTimeout(() => {
-            const el = document.querySelector(`[data-image-id="${id}"]`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const el = container.querySelector(`[data-image-id="${id}"]`) as HTMLElement | null;
+        if (!el) return;
+
+        const run = () => {
+            const containerRect = container.getBoundingClientRect();
+            const itemRect = el.getBoundingClientRect();
+
+            // On mobile, the bottom sheet occludes part of the canvas.
+            // Center the target inside the actually visible canvas area.
+            let visibleHeight = containerRect.height;
+            if (isMobile) {
+                const sheetEl = document.querySelector('[data-mobile-sheet="true"]') as HTMLElement | null;
+                if (sheetEl) {
+                    const sheetTop = sheetEl.getBoundingClientRect().top;
+                    visibleHeight = Math.max(120, Math.min(containerRect.height, sheetTop - containerRect.top));
+                }
             }
-        }, 50);
-    }, []);
+
+            if (isMobile) {
+                // Mobile: gently bring image into visible area instead of hard-centering.
+                const pad = 20;
+                const safeLeft = containerRect.left + pad;
+                const safeRight = containerRect.right - pad;
+                const safeTop = containerRect.top + pad;
+                const safeBottom = containerRect.top + visibleHeight - pad;
+
+                let deltaX = 0;
+                let deltaY = 0;
+
+                if (itemRect.left < safeLeft) {
+                    deltaX = itemRect.left - safeLeft;
+                } else if (itemRect.right > safeRight) {
+                    deltaX = itemRect.right - safeRight;
+                }
+
+                if (itemRect.top < safeTop) {
+                    deltaY = itemRect.top - safeTop;
+                } else if (itemRect.bottom > safeBottom) {
+                    deltaY = itemRect.bottom - safeBottom;
+                }
+
+                if (deltaX !== 0 || deltaY !== 0) {
+                    container.scrollTo({
+                        left: Math.max(0, container.scrollLeft + deltaX),
+                        top: Math.max(0, container.scrollTop + deltaY),
+                        behavior: instant ? 'auto' : 'smooth'
+                    });
+                }
+                return;
+            }
+
+            // Desktop: keep centering behavior.
+            const targetCenterX = containerRect.width / 2;
+            const targetCenterY = visibleHeight / 2;
+            const itemCenterX = (itemRect.left - containerRect.left) + container.scrollLeft + (itemRect.width / 2);
+            const itemCenterY = (itemRect.top - containerRect.top) + container.scrollTop + (itemRect.height / 2);
+
+            container.scrollTo({
+                left: Math.max(0, itemCenterX - targetCenterX),
+                top: Math.max(0, itemCenterY - targetCenterY),
+                behavior: instant ? 'auto' : 'smooth'
+            });
+        };
+
+        // Wait one frame so layout (and mobile sheet state) can settle.
+        requestAnimationFrame(run);
+    }, [scrollContainerRef, isMobile]);
 
     const getMostVisibleItem = useCallback(() => {
         if (!scrollContainerRef.current) return null;

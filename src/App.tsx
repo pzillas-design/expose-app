@@ -66,7 +66,7 @@ export function App() {
         currentLang, allImages, fullLibrary, user, userProfile, isAuthLoading,
         authModalMode, isAuthModalOpen, authError, authEmail, isAutoScrolling, isZooming,
         currentBoardId, boards, isBoardsLoading, isCanvasLoading, templates,
-        resolvingBoardId, loadingProgress, isBrushResizing
+        resolvingBoardId, loadingProgress, isBrushResizing, isMobile
     } = state;
 
     const {
@@ -671,7 +671,7 @@ export function App() {
 
                 <div
                     ref={refs.scrollContainerRef}
-                    className={`w-full h-full overflow-auto no-scrollbar bg-transparent overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling && Math.abs(zoom - 1) < 0.01 ? 'snap-both snap-mandatory' : ''}`}
+                    className={`w-full h-full overflow-auto no-scrollbar bg-transparent overscroll-none relative ${enableSnap && !isZooming && !isAutoScrolling && (isMobile ? zoom <= 1.35 : Math.abs(zoom - 1) < 0.01) ? 'snap-both snap-mandatory' : ''}`}
                     style={{ overflowAnchor: 'none' }}
                     onScroll={handleScroll}
                     onDragOver={(e) => e.preventDefault()}
