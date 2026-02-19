@@ -963,6 +963,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     width: isMobile ? '100%' : width,
                     height: isMobile ? 'auto' : '100%',
                     minHeight: isMobile ? '90vh' : undefined,
+                    marginTop: isMobile ? '-15vh' : undefined,
                     borderTopLeftRadius: isMobile ? '24px' : '0',
                     borderTopRightRadius: isMobile ? '24px' : '0',
                     boxShadow: isMobile ? '0 -2px 8px rgba(0,0,0,0.03)' : 'none',
