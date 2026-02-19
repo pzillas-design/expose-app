@@ -794,23 +794,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         switch (sideSheetMode) {
             case 'prompt':
                 return (
-                    <div className={`flex flex-col h-full ${Theme.Colors.PanelBg}`} style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
-                        {/* Drag Handle - only this area responds to sheet drag gestures */}
+                    <div
+                        ref={contentRef}
+                        className={`flex-1 min-h-0 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}
+                        style={{
+                            WebkitOverflowScrolling: 'touch',
+                            overscrollBehaviorY: 'contain',
+                            willChange: 'transform',
+                            transform: 'translateZ(0)',
+                        }}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                    >
+                        {/* Drag Handle */}
                         {isMobile && (
-                            <div
-                                className="shrink-0 touch-none"
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
-                            >
-                                <div className="h-8 flex items-center justify-center">
-                                    <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
-                                </div>
+                            <div className="h-8 flex items-center justify-center">
+                                <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
                             </div>
                         )}
 
                         {/* Header */}
-                        <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} relative z-40`}>
+                        <div className={`h-14 flex items-center justify-between px-6 ${Theme.Colors.PanelBg} relative z-40`}>
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 {isMulti && selectedImages ? (
                                     <span className={`${Typo.Label} text-zinc-900 dark:text-zinc-100 truncate`}>
@@ -842,58 +847,48 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             </div>
                         </div>
 
-                        {/* Scrollable Content - pure native scroll, no drag handlers */}
-                        <div
-                            ref={contentRef}
-                            className={`flex-1 min-h-0 overflow-y-auto no-scrollbar ${Theme.Colors.PanelBg}`}
-                            style={{
-                                WebkitOverflowScrolling: 'touch',
-                                overscrollBehaviorY: 'contain',
-                                willChange: 'scroll-position',
+                        {/* Content */}
+                        <PromptTab
+                            prompt={prompt}
+                            setPrompt={handlePromptChange}
+                            selectedImage={selectedImage}
+                            selectedImages={selectedImages}
+                            onGenerate={handleGenerateWrapper}
+                            onDeselect={handleDeselectPreservingPrompt}
+                            templates={templates}
+                            onSelectTemplate={(t) => handlePromptChange(t.prompt)}
+                            onAddBrush={() => {
+                                // Auto-select shape tool if shapes exist
+                                const hasShapes = (selectedImage.annotations || []).some(a => a.type === 'shape');
+                                if (hasShapes) {
+                                    onMaskToolChange('shape');
+                                }
+                                onModeChange('brush');
                             }}
-                        >
-                            <PromptTab
-                                prompt={prompt}
-                                setPrompt={handlePromptChange}
-                                selectedImage={selectedImage}
-                                selectedImages={selectedImages}
-                                onGenerate={handleGenerateWrapper}
-                                onDeselect={handleDeselectPreservingPrompt}
-                                templates={templates}
-                                onSelectTemplate={(t) => handlePromptChange(t.prompt)}
-                                onAddBrush={() => {
-                                    // Auto-select shape tool if shapes exist
-                                    const hasShapes = (selectedImage.annotations || []).some(a => a.type === 'shape');
-                                    if (hasShapes) {
-                                        onMaskToolChange('shape');
-                                    }
-                                    onModeChange('brush');
-                                }}
-                                onAddObject={() => onModeChange('brush')}
-                                onAddReference={handleAddReferenceImage}
-                                annotations={selectedImage.annotations || []}
-                                onDeleteAnnotation={deleteAnnotation}
-                                onClearAnnotations={(ids) => {
-                                    if (!selectedImage || !selectedImage.annotations) return;
-                                    const newAnns = selectedImage.annotations.filter(a => !ids.includes(a.id));
-                                    updateAnnotationsWithHistory(newAnns);
-                                }}
-                                onUpdateAnnotation={updateAnnotation}
-                                onUpdateVariables={onUpdateVariables}
-                                onTogglePin={handleTogglePin}
-                                onDeleteTemplate={handleDeleteTemplate}
-                                onCreateTemplate={handleCreateTemplate}
-                                onUpdateTemplate={handleUpdateTemplate}
-                                onGenerateMore={onGenerateMore}
-                                onNavigateParent={onNavigateParent}
-                                qualityMode={qualityMode}
-                                onQualityModeChange={onQualityModeChange}
-                                onUpdateImageTitle={onUpdateImageTitle}
-                                t={t}
-                                currentLang={lang}
-                                userProfile={userProfile}
-                            />
-                        </div>
+                            onAddObject={() => onModeChange('brush')}
+                            onAddReference={handleAddReferenceImage}
+                            annotations={selectedImage.annotations || []}
+                            onDeleteAnnotation={deleteAnnotation}
+                            onClearAnnotations={(ids) => {
+                                if (!selectedImage || !selectedImage.annotations) return;
+                                const newAnns = selectedImage.annotations.filter(a => !ids.includes(a.id));
+                                updateAnnotationsWithHistory(newAnns);
+                            }}
+                            onUpdateAnnotation={updateAnnotation}
+                            onUpdateVariables={onUpdateVariables}
+                            onTogglePin={handleTogglePin}
+                            onDeleteTemplate={handleDeleteTemplate}
+                            onCreateTemplate={handleCreateTemplate}
+                            onUpdateTemplate={handleUpdateTemplate}
+                            onGenerateMore={onGenerateMore}
+                            onNavigateParent={onNavigateParent}
+                            qualityMode={qualityMode}
+                            onQualityModeChange={onQualityModeChange}
+                            onUpdateImageTitle={onUpdateImageTitle}
+                            t={t}
+                            currentLang={lang}
+                            userProfile={userProfile}
+                        />
                     </div>
                 );
             case 'brush':
