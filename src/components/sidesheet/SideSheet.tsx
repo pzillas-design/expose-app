@@ -145,95 +145,85 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     // Mobile Bottom Sheet Logic
     const isMobile = useMobile();
-    const [sheetVisibleHeight, setSheetVisibleHeight] = useState(112);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const sheetRef = useRef<HTMLDivElement>(null);
     const isDragging = useRef(false);
-    const shouldDragSheet = useRef(false);
-    const startY = useRef(0);
-    const startHeightRef = useRef(112);
+    const dragStartY = useRef(0);
+    const dragCurrentY = useRef(0);
+    const peekOffset = useRef('calc(100% - 10vh)');
 
-    // Levels in pixels from bottom
-    // Small peek state: show only handle + header area.
     const getPeekHeight = () => 112;
     const getExpandedHeight = () => window.innerHeight * 0.94;
-    const isSheetExpanded = sheetVisibleHeight >= getExpandedHeight() - 1;
 
-    // We'll use a CSS variable for the full height to handle mobile bars correctly
+    // Sync sheet visibility with image selection
     useEffect(() => {
-        const updateHeight = () => {
-            const vh = window.innerHeight;
-            document.documentElement.style.setProperty('--expanded-height', `${getExpandedHeight()}px`);
-            document.documentElement.style.setProperty('--full-vh', `${vh}px`);
-        };
-        updateHeight();
-        window.addEventListener('resize', updateHeight);
-        return () => window.removeEventListener('resize', updateHeight);
-    }, []);
-
-    // Sync sheet state with selection
-    useEffect(() => {
-        if (selectedImage || (selectedImages && selectedImages.length > 0)) {
-            setSheetVisibleHeight((prev) => prev <= 0 ? getPeekHeight() : prev);
-        } else {
-            setSheetVisibleHeight(0);
+        if (!selectedImage && !(selectedImages && selectedImages.length > 0)) {
+            setIsSheetOpen(false);
         }
     }, [selectedImage, selectedImages]);
 
-    const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+    // Handle drag on the sheet handle only
+    const handleSheetTouchStart = (e: React.TouchEvent) => {
         if (!isMobile) return;
-
         isDragging.current = true;
-        shouldDragSheet.current = !isSheetExpanded;
-        const cy = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        startY.current = cy;
-        startHeightRef.current = sheetVisibleHeight;
+        dragStartY.current = e.touches[0].clientY;
+        dragCurrentY.current = 0;
+        // Disable transition during active drag for instant response
+        if (sheetRef.current) {
+            sheetRef.current.style.transition = 'none';
+        }
     };
 
-    const handleTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
-        if (!isDragging.current || !isMobile) return;
-        const cy = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        const delta = cy - startY.current;
+    const handleSheetTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging.current || !isMobile || !sheetRef.current) return;
+        const delta = e.touches[0].clientY - dragStartY.current;
+        dragCurrentY.current = delta;
 
-        // Unified behavior: in expanded mode, content scroll is primary.
-        // Switch to sheet-drag only when user pulls down from top (collapse gesture).
-        if (!shouldDragSheet.current) {
-            const content = contentRef.current;
-            const atTop = !!content && content.scrollTop <= 0;
-            const pullingDown = delta > 0;
-            if (atTop && pullingDown) {
-                shouldDragSheet.current = true;
+        // From open: allow pulling down to close (positive delta)
+        // From closed (peek): allow pulling up to open (negative delta)
+        if (isSheetOpen) {
+            const clamped = Math.max(0, delta);
+            sheetRef.current.style.transform = `translateY(${clamped}px)`;
+        } else {
+            // Calculate the offset for peek position + drag
+            const peekPx = window.innerHeight * 0.1; // 10vh from bottom
+            const openDelta = peekPx + Math.min(0, delta); // only allow upward
+            sheetRef.current.style.transform = `translateY(calc(100% - 10vh - ${-Math.min(0, delta)}px))`;
+        }
+    };
+
+    const handleSheetTouchEnd = () => {
+        if (!isDragging.current || !isMobile || !sheetRef.current) return;
+        isDragging.current = false;
+        // Re-enable CSS transition for snap
+        sheetRef.current.style.transition = '';
+
+        const threshold = 60; // px needed to trigger state change
+        if (isSheetOpen) {
+            // If dragged down enough, close
+            if (dragCurrentY.current > threshold) {
+                setIsSheetOpen(false);
+                sheetRef.current.style.transform = '';
             } else {
-                return;
+                sheetRef.current.style.transform = '';
+            }
+        } else {
+            // If dragged up enough, open
+            if (dragCurrentY.current < -threshold) {
+                setIsSheetOpen(true);
+                sheetRef.current.style.transform = '';
+            } else {
+                sheetRef.current.style.transform = '';
             }
         }
-
-        const hasSelection = !!selectedImage || !!(selectedImages && selectedImages.length > 0);
-        const minHeight = hasSelection ? getPeekHeight() : 0;
-        const maxHeight = getExpandedHeight();
-        const nextHeight = Math.max(minHeight, Math.min(maxHeight, startHeightRef.current - delta));
-
-        // Seamless transition: same gesture first expands the sheet, then continues as content scroll.
-        if (nextHeight >= maxHeight - 0.5 && delta < 0) {
-            setSheetVisibleHeight(maxHeight);
-            shouldDragSheet.current = false;
-            startY.current = cy;
-            startHeightRef.current = maxHeight;
-            return;
-        }
-
-        // While dragging the sheet itself, keep inner content pinned.
-        if (contentRef.current) contentRef.current.scrollTop = 0;
-
-        if ('touches' in e && e.cancelable) {
-            e.preventDefault();
-        }
-        setSheetVisibleHeight(nextHeight);
     };
 
-    const handleTouchEnd = () => {
-        if (!isDragging.current || !isMobile) return;
-        isDragging.current = false;
-        shouldDragSheet.current = false;
-    };
+    // Legacy aliases (kept for non-prompt render functions that may reference them)
+    const sheetVisibleHeight = isSheetOpen ? getExpandedHeight() : getPeekHeight();
+    const handleTouchStart = handleSheetTouchStart as any;
+    const handleTouchMove = handleSheetTouchMove as any;
+    const handleTouchEnd = handleSheetTouchEnd;
+
 
     const setActiveAnnotationId = (id: string | null) => {
         setActiveAnnotationIdInternal(id);
@@ -796,11 +786,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 return (
                     <div
                         ref={contentRef}
-                        className={`flex-1 ${Theme.Colors.PanelBg}`}
+                        className={`flex-1 flex flex-col overflow-y-auto overscroll-contain ${Theme.Colors.PanelBg}`}
                     >
-                        {/* Drag Handle */}
+                        {/* Drag Handle — touch events only here, canvas untouched */}
                         {isMobile && (
-                            <div className="h-8 flex items-center justify-center">
+                            <div
+                                className="h-10 flex items-center justify-center shrink-0 cursor-grab active:cursor-grabbing"
+                                style={{ touchAction: 'none' }}
+                                onTouchStart={handleSheetTouchStart}
+                                onTouchMove={handleSheetTouchMove}
+                                onTouchEnd={handleSheetTouchEnd}
+                                onClick={(e) => {
+                                    // Suppress click if it was a drag gesture
+                                    if (Math.abs(dragCurrentY.current) > 10) return;
+                                    setIsSheetOpen(prev => !prev);
+                                }}
+                            >
                                 <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
                             </div>
                         )}
@@ -945,29 +946,30 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     };
 
-    const currentTranslate = isMobile ? 0 : 0;
-    const transform = 'none';
+
     return (
         <>
             <div
+                ref={sheetRef}
                 data-mobile-sheet={isMobile ? 'true' : 'false'}
                 className={`
-                    ${Theme.Colors.PanelBg} flex flex-col z-[100] transition-colors duration-200
+                    ${Theme.Colors.PanelBg} flex flex-col z-[100]
                     ${isMobile
-                        ? `relative w-full`
+                        ? `fixed bottom-0 left-0 right-0 pointer-events-auto`
                         : `h-full border-l relative`
                     }
                     ${Theme.Colors.Border}
                 `}
                 style={{
                     width: isMobile ? '100%' : width,
-                    height: isMobile ? 'auto' : '100%',
-                    minHeight: isMobile ? '90vh' : undefined,
-                    marginTop: isMobile ? '-10vh' : undefined,
-                    borderTopLeftRadius: isMobile ? '24px' : '0',
-                    borderTopRightRadius: isMobile ? '24px' : '0',
-                    boxShadow: isMobile ? '0 -2px 8px rgba(0,0,0,0.03)' : 'none',
-                    borderTop: isMobile ? '1px solid rgba(0,0,0,0.1)' : 'none',
+                    height: isMobile ? '90vh' : '100%',
+                    transform: isMobile ? (isSheetOpen ? 'translateY(0)' : 'translateY(calc(100% - 10vh))') : 'none',
+                    transition: isMobile ? 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s' : undefined,
+                    willChange: isMobile ? 'transform' : undefined,
+                    borderTopLeftRadius: isMobile ? '20px' : '0',
+                    borderTopRightRadius: isMobile ? '20px' : '0',
+                    boxShadow: isMobile ? '0 -4px 24px rgba(0,0,0,0.08)' : 'none',
+                    borderTop: isMobile ? '1px solid rgba(0,0,0,0.06)' : 'none',
                     paddingBottom: isMobile ? 'env(safe-area-inset-bottom)' : '0'
                 }}
                 onDragOver={(e) => { e.preventDefault(); }}
