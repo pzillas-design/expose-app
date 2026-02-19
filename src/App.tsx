@@ -404,7 +404,7 @@ export function App() {
         if (!panState.current) return;
         if (panState.current.pointerId !== null && panState.current.pointerId !== e.pointerId) return;
 
-        if (!panState.current.hasMoved && e.pointerType === 'mouse') {
+        if (!panState.current.hasMoved) {
             const target = e.target as HTMLElement;
             const imageWrapper = target.closest('[data-image-id]');
             if (imageWrapper) {
