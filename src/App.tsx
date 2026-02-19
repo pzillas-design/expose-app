@@ -5,7 +5,6 @@ import { ImageItem } from '@/components/canvas/ImageItem';
 import { CanvasSkeleton } from '@/components/canvas/CanvasSkeleton';
 import { CommandDock } from '@/components/canvas/CommandDock';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
-import { SettingsPage } from '@/components/settings/SettingsPage';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { ContextMenu, ContextMenuState } from '@/components/canvas/ContextMenu';
 import { AuthModal } from '@/components/modals/AuthModal';
@@ -17,7 +16,6 @@ import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { downloadImage } from '@/utils/imageUtils';
-import { BoardsPage } from '@/components/boards/BoardsPage';
 import { ProgressBar } from '@/components/ui/DesignSystem';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 
@@ -26,7 +24,9 @@ const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboar
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
-import { SharedTemplatePage } from './components/pages/SharedTemplatePage';
+const BoardsPage = React.lazy(() => import('@/components/boards/BoardsPage').then(m => ({ default: m.BoardsPage })));
+const SettingsPage = React.lazy(() => import('@/components/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTemplatePage').then(m => ({ default: m.SharedTemplatePage })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 
 
@@ -578,20 +578,22 @@ export function App() {
     }, [location.pathname, currentLang, actions, user, currentBoardId]);
 
     const boardsPage = (
-        <BoardsPage
-            boards={boards}
-            onSelectBoard={handleSelectBoard}
-            onCreateBoard={handleCreateBoardAndNavigate}
-            onDeleteBoard={deleteBoard}
-            onRenameBoard={(id, name) => updateBoard(id, { name })}
-            user={user}
-            userProfile={userProfile}
-            onOpenSettings={(tab) => navigate(`/settings/${tab || 'account'}`)}
-            t={t}
-            lang={currentLang}
-            isLoading={isBoardsLoading}
-            credits={credits}
-        />
+        <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+            <BoardsPage
+                boards={boards}
+                onSelectBoard={handleSelectBoard}
+                onCreateBoard={handleCreateBoardAndNavigate}
+                onDeleteBoard={deleteBoard}
+                onRenameBoard={(id, name) => updateBoard(id, { name })}
+                user={user}
+                userProfile={userProfile}
+                onOpenSettings={(tab) => navigate(`/settings/${tab || 'account'}`)}
+                t={t}
+                lang={currentLang}
+                isLoading={isBoardsLoading}
+                credits={credits}
+            />
+        </Suspense>
     );
 
     const canvasView = (
@@ -933,44 +935,48 @@ export function App() {
                 } />
                 <Route path="/settings" element={
                     <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <SettingsPage
-                            user={user}
-                            userProfile={userProfile}
-                            updateProfile={updateProfile}
-                            t={t}
-                            currentBalance={credits}
-                            onAddFunds={handleAddFunds}
-                            qualityMode={qualityMode}
-                            onQualityModeChange={setQualityMode}
-                            themeMode={themeMode}
-                            onThemeChange={setThemeMode}
-                            lang={lang}
-                            onLangChange={setLang}
-                            onSignOut={handleSignOut}
-                            onDeleteAccount={handleDeleteAccount}
-                            onCreateBoard={handleCreateBoardAndNavigate}
-                        />
+                        <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                            <SettingsPage
+                                user={user}
+                                userProfile={userProfile}
+                                updateProfile={updateProfile}
+                                t={t}
+                                currentBalance={credits}
+                                onAddFunds={handleAddFunds}
+                                qualityMode={qualityMode}
+                                onQualityModeChange={setQualityMode}
+                                themeMode={themeMode}
+                                onThemeChange={setThemeMode}
+                                lang={lang}
+                                onLangChange={setLang}
+                                onSignOut={handleSignOut}
+                                onDeleteAccount={handleDeleteAccount}
+                                onCreateBoard={handleCreateBoardAndNavigate}
+                            />
+                        </Suspense>
                     </ProtectedRoute>
                 } />
                 <Route path="/settings/:tab" element={
                     <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => { setIsAuthModalOpen(true); setAuthModalMode('signin'); }}>
-                        <SettingsPage
-                            user={user}
-                            userProfile={userProfile}
-                            updateProfile={updateProfile}
-                            t={t}
-                            currentBalance={credits}
-                            onAddFunds={handleAddFunds}
-                            qualityMode={qualityMode}
-                            onQualityModeChange={setQualityMode}
-                            themeMode={themeMode}
-                            onThemeChange={setThemeMode}
-                            lang={lang}
-                            onLangChange={setLang}
-                            onSignOut={handleSignOut}
-                            onDeleteAccount={handleDeleteAccount}
-                            onCreateBoard={handleCreateBoardAndNavigate}
-                        />
+                        <Suspense fallback={<div className="min-h-screen bg-zinc-50 dark:bg-zinc-950" />}>
+                            <SettingsPage
+                                user={user}
+                                userProfile={userProfile}
+                                updateProfile={updateProfile}
+                                t={t}
+                                currentBalance={credits}
+                                onAddFunds={handleAddFunds}
+                                qualityMode={qualityMode}
+                                onQualityModeChange={setQualityMode}
+                                themeMode={themeMode}
+                                onThemeChange={setThemeMode}
+                                lang={lang}
+                                onLangChange={setLang}
+                                onSignOut={handleSignOut}
+                                onDeleteAccount={handleDeleteAccount}
+                                onCreateBoard={handleCreateBoardAndNavigate}
+                            />
+                        </Suspense>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin" element={

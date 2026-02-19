@@ -174,9 +174,14 @@ export const useAutoSave = (
 
                     if (payload.length > 0) {
                         console.log('[AutoSave] Force save on unmount');
-                        supabase.from('canvas_images').upsert(payload, { onConflict: 'id' })
-                            .then(() => console.log('[AutoSave] Unmount save complete'))
-                            .catch(err => console.error('[AutoSave] Unmount save failed:', err));
+                        (async () => {
+                            try {
+                                await supabase.from('canvas_images').upsert(payload, { onConflict: 'id' });
+                                console.log('[AutoSave] Unmount save complete');
+                            } catch (err) {
+                                console.error('[AutoSave] Unmount save failed:', err);
+                            }
+                        })();
                     }
                 }
             }
