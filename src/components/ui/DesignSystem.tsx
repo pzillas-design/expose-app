@@ -184,10 +184,25 @@ export const SectionHeader: React.FC<{ children: React.ReactNode, className?: st
 );
 
 // -- Modal Header --
-export const ModalHeader: React.FC<{ title: string, onClose: () => void }> = ({ title, onClose }) => (
+export const ModalHeader: React.FC<{
+    title: string;
+    onClose: () => void;
+    actions?: React.ReactNode;
+    closeTooltip?: string;
+}> = ({ title, onClose, actions, closeTooltip = "Close" }) => (
     <div className={`p-6 flex items-center justify-between shrink-0 border-b border-transparent`}>
         <span className={Typo.H1}>{title}</span>
-        <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip="Close" />
+        <div className="flex items-center gap-2">
+            {actions}
+            <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={closeTooltip} />
+        </div>
+    </div>
+);
+
+// -- Modal Footer --
+export const ModalFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+    <div className={`p-6 flex items-center shrink-0 border-t border-zinc-100 dark:border-zinc-800 ${className}`}>
+        {children}
     </div>
 );
 

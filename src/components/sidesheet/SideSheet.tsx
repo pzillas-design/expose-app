@@ -64,7 +64,7 @@ interface SideSheetProps {
     onQualityModeChange: (mode: GenerationQuality) => void;
     templates: PromptTemplate[];
     onRefreshTemplates?: () => void;
-    onSaveTemplate?: (template: any) => Promise<void>;
+    onSaveTemplate?: (template: any) => Promise<any>;
     onDeleteTemplate?: (id: string) => Promise<void>;
     onSaveRecentPrompt?: (prompt: string) => Promise<void>;
     onUpdateImageTitle?: (id: string, title: string) => void;
@@ -728,15 +728,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onDeleteTemplate?.(id);
     };
 
-    const handleUpdateTemplate = (id: string, updates: Partial<PromptTemplate>) => {
+    const handleUpdateTemplate = async (id: string, updates: Partial<PromptTemplate>) => {
         const existing = templates.find(t => t.id === id);
         if (existing) {
-            onSaveTemplate?.({ ...existing, ...updates });
+            return await onSaveTemplate?.({ ...existing, ...updates });
         }
+        return null;
     };
 
-    const handleCreateTemplate = (newT: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => {
-        onSaveTemplate?.({ ...newT, category: 'user', isPinned: true });
+    const handleCreateTemplate = async (newT: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => {
+        return await onSaveTemplate?.({ ...newT, category: 'user', isPinned: true });
     };
 
     const handleExitBrushMode = async (forceSave: boolean = false) => {
@@ -811,7 +812,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         switch (sideSheetMode) {
             case 'prompt':
                 return (
-                    <>
+                    <div
+                        ref={contentRef}
+                        className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}
+                        onTouchStart={handleTouchStart}
+                        onMouseDown={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onMouseMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onMouseUp={handleTouchEnd}
+                    >
                         <div className={`h-14 flex items-center justify-between px-6 shrink-0 ${Theme.Colors.PanelBg} relative z-40`}>
                             <div className="flex items-center gap-2 flex-1 mr-2 overflow-hidden">
                                 {isMulti && selectedImages ? (
@@ -842,60 +852,48 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             </div>
                         </div>
 
-                        <div
-                            ref={contentRef}
-                            className={`flex-1 overflow-y-auto no-scrollbar relative ${Theme.Colors.PanelBg}`}
-                            onTouchStart={handleTouchStart}
-                            onMouseDown={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onMouseMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                            onMouseUp={handleTouchEnd}
-                        >
-
-                            <PromptTab
-                                prompt={prompt}
-                                setPrompt={handlePromptChange}
-                                selectedImage={selectedImage}
-                                selectedImages={selectedImages}
-                                onGenerate={handleGenerateWrapper}
-                                onDeselect={handleDeselectPreservingPrompt}
-                                templates={templates}
-                                onSelectTemplate={(t) => handlePromptChange(t.prompt)}
-                                onAddBrush={() => {
-                                    // Auto-select shape tool if shapes exist
-                                    const hasShapes = (selectedImage.annotations || []).some(a => a.type === 'shape');
-                                    if (hasShapes) {
-                                        onMaskToolChange('shape');
-                                    }
-                                    onModeChange('brush');
-                                }}
-                                onAddObject={() => onModeChange('brush')}
-                                onAddReference={handleAddReferenceImage}
-                                annotations={selectedImage.annotations || []}
-                                onDeleteAnnotation={deleteAnnotation}
-                                onClearAnnotations={(ids) => {
-                                    if (!selectedImage || !selectedImage.annotations) return;
-                                    const newAnns = selectedImage.annotations.filter(a => !ids.includes(a.id));
-                                    updateAnnotationsWithHistory(newAnns);
-                                }}
-                                onUpdateAnnotation={updateAnnotation}
-                                onUpdateVariables={onUpdateVariables}
-                                onTogglePin={handleTogglePin}
-                                onDeleteTemplate={handleDeleteTemplate}
-                                onCreateTemplate={handleCreateTemplate}
-                                onUpdateTemplate={handleUpdateTemplate}
-                                onGenerateMore={onGenerateMore}
-                                onNavigateParent={onNavigateParent}
-                                qualityMode={qualityMode}
-                                onQualityModeChange={onQualityModeChange}
-                                onUpdateImageTitle={onUpdateImageTitle}
-                                t={t}
-                                currentLang={lang}
-                                userProfile={userProfile}
-                            />
-                        </div>
-                    </>
+                        <PromptTab
+                            prompt={prompt}
+                            setPrompt={handlePromptChange}
+                            selectedImage={selectedImage}
+                            selectedImages={selectedImages}
+                            onGenerate={handleGenerateWrapper}
+                            onDeselect={handleDeselectPreservingPrompt}
+                            templates={templates}
+                            onSelectTemplate={(t) => handlePromptChange(t.prompt)}
+                            onAddBrush={() => {
+                                // Auto-select shape tool if shapes exist
+                                const hasShapes = (selectedImage.annotations || []).some(a => a.type === 'shape');
+                                if (hasShapes) {
+                                    onMaskToolChange('shape');
+                                }
+                                onModeChange('brush');
+                            }}
+                            onAddObject={() => onModeChange('brush')}
+                            onAddReference={handleAddReferenceImage}
+                            annotations={selectedImage.annotations || []}
+                            onDeleteAnnotation={deleteAnnotation}
+                            onClearAnnotations={(ids) => {
+                                if (!selectedImage || !selectedImage.annotations) return;
+                                const newAnns = selectedImage.annotations.filter(a => !ids.includes(a.id));
+                                updateAnnotationsWithHistory(newAnns);
+                            }}
+                            onUpdateAnnotation={updateAnnotation}
+                            onUpdateVariables={onUpdateVariables}
+                            onTogglePin={handleTogglePin}
+                            onDeleteTemplate={handleDeleteTemplate}
+                            onCreateTemplate={handleCreateTemplate}
+                            onUpdateTemplate={handleUpdateTemplate}
+                            onGenerateMore={onGenerateMore}
+                            onNavigateParent={onNavigateParent}
+                            qualityMode={qualityMode}
+                            onQualityModeChange={onQualityModeChange}
+                            onUpdateImageTitle={onUpdateImageTitle}
+                            t={t}
+                            currentLang={lang}
+                            userProfile={userProfile}
+                        />
+                    </div>
                 );
             case 'brush':
                 if (isMulti) return null;
@@ -1018,7 +1016,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 {/* Mobile Drag Indicator */}
                 {isMobile && (
                     <div
-                        className="h-10 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                        className="h-8 shrink-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
                         onTouchStart={handleTouchStart}
                         onMouseDown={handleTouchStart}
                         onTouchMove={handleTouchMove}
@@ -1026,7 +1024,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                         onTouchEnd={handleTouchEnd}
                         onMouseUp={handleTouchEnd}
                     >
-                        <div className="w-12 h-1.5 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+                        <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full" />
                     </div>
                 )}
 

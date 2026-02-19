@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
-import { Button, Input, Theme, Typo, IconButton, TextArea } from '@/components/ui/DesignSystem';
-import { X, Trash, Check, Plus, Minus, Settings2, Share2, Pencil } from 'lucide-react';
+import { Button, Input, Theme, Typo, IconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
+import { Trash, Plus, Minus, Settings2, Share2, Pencil, Link as LinkIcon } from 'lucide-react';
 import { ShareTemplateModal } from './ShareTemplateModal';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -14,7 +14,10 @@ interface PresetEditorModalProps {
     currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
     existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
-    onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
+    onSave: (
+        templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[],
+        options?: { closeOnSuccess?: boolean }
+    ) => Promise<PromptTemplate | null>;
     onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
@@ -236,11 +239,13 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [savedTemplateForShare, setSavedTemplateForShare] = useState<PromptTemplate | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setTitleDe(''); setPromptDe(''); setControlsDe([]);
             setTitleEn(''); setPromptEn(''); setControlsEn([]);
+            setSavedTemplateForShare(null);
 
             if (mode === 'edit' && initialTemplate) {
                 const isEn = initialTemplate.lang === 'en';
@@ -257,7 +262,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         }
     }, [isOpen, mode, initialTemplate]);
 
-    const handleSave = () => {
+    const handleSave = async (openShareAfterSave = false) => {
         const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
         if (scope === 'user') {
@@ -278,7 +283,11 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
-        onSave(results);
+        const saved = await onSave(results, { closeOnSuccess: !openShareAfterSave });
+        if (openShareAfterSave && saved) {
+            setSavedTemplateForShare(saved);
+            setIsShareModalOpen(true);
+        }
     };
 
     const isSaveDisabled = () => {
@@ -305,31 +314,38 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
-                    <div className="flex flex-col gap-1">
-                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
-                            {mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
-                        </h2>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {mode === 'edit' && initialTemplate && (
-                            <>
+                <ModalHeader
+                    title={mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
+                    onClose={onClose}
+                    closeTooltip={t('close')}
+                    actions={
+                        <>
+                            {mode === 'edit' && initialTemplate && (
+                                <>
+                                    <IconButton
+                                        icon={<Share2 className="w-5 h-5" />}
+                                        onClick={() => setIsShareModalOpen(true)}
+                                        tooltip="Teilen"
+                                        disabled={!(titleDe || titleEn)}
+                                    />
+                                    <IconButton
+                                        icon={<Trash className="w-5 h-5" />}
+                                        onClick={() => setIsDeleteDialogOpen(true)}
+                                        tooltip={t('delete')}
+                                    />
+                                </>
+                            )}
+                            {mode === 'create' && (
                                 <IconButton
-                                    icon={<Share2 className="w-5 h-5" />}
-                                    onClick={() => setIsShareModalOpen(true)}
-                                    tooltip="Teilen"
-                                    disabled={!(titleDe || titleEn)}
+                                    icon={<LinkIcon className="w-5 h-5" />}
+                                    onClick={() => handleSave(true)}
+                                    tooltip="Speichern & Teilen"
+                                    disabled={isSaveDisabled()}
                                 />
-                                <IconButton
-                                    icon={<Trash className="w-5 h-5" />}
-                                    onClick={() => setIsDeleteDialogOpen(true)}
-                                    tooltip={t('delete')}
-                                />
-                            </>
-                        )}
-                        <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
-                    </div>
-                </div>
+                            )}
+                        </>
+                    }
+                />
 
                 <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800' : 'flex flex-col'}`}>
                     {/* German Form */}
@@ -362,17 +378,16 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 flex items-center shrink-0 border-t border-zinc-100 dark:border-zinc-800">
+                <ModalFooter>
                     <Button
                         variant="primary"
-                        onClick={handleSave}
+                        onClick={() => handleSave(false)}
                         disabled={isSaveDisabled()}
-                        className="w-full text-xs font-bold"
-                        icon={<Check className="w-4 h-4" />}
+                        className="w-full"
                     >
                         {t('save')}
                     </Button>
-                </div>
+                </ModalFooter>
 
                 <ConfirmDialog
                     isOpen={isDeleteDialogOpen}
@@ -391,8 +406,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 <ShareTemplateModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
-                    templateName={initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
-                    slug={initialTemplate?.slug}
+                    templateName={savedTemplateForShare?.title || initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
+                    slug={savedTemplateForShare?.slug || initialTemplate?.slug}
                 />
             </div>
         </div>

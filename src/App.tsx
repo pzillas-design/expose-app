@@ -100,6 +100,8 @@ export function App() {
 
     // Shared Template Import State
     const [pendingSharedTemplate, setPendingSharedTemplate] = useState<any | null>(null);
+    const sharedImportInFlightRef = useRef(false);
+    const sharedImportHandledKeyRef = useRef<string | null>(null);
 
     // Stable Editor State Object to preserve ImageItem memoization during scroll
     const editorState = useMemo(() => ({
@@ -527,18 +529,33 @@ export function App() {
 
             try {
                 const template = JSON.parse(stored);
+                const importKey = String(template?.id || template?.slug || template?.title || stored);
                 console.log('[SHARED_IMPORT] Found template:', template.title);
 
                 // For logged-in users: Save to library and redirect to new project
                 if (user) {
+                    if (sharedImportInFlightRef.current) {
+                        console.log('[SHARED_IMPORT] Import already running, skip duplicate trigger.');
+                        return;
+                    }
+                    if (sharedImportHandledKeyRef.current === importKey) {
+                        console.log('[SHARED_IMPORT] Template already imported in this session, skip.');
+                        return;
+                    }
+
+                    sharedImportInFlightRef.current = true;
+                    sharedImportHandledKeyRef.current = importKey;
                     console.log('[SHARED_IMPORT] User authenticated, cloning to library...');
+                    // Remove immediately to prevent duplicate imports from re-renders/race conditions.
+                    localStorage.removeItem('expose_shared_template');
+
                     await actions.savePreset({
                         ...template,
                         id: undefined, // Force new ID creation
-                        slug: undefined // IMPORTANT: Remove slug to avoid UNIQUE constraint clash in DB!
+                        slug: undefined, // IMPORTANT: Remove slug to avoid UNIQUE constraint clash in DB!
+                        original_id: template?.id || template?.original_id || null
                     });
 
-                    localStorage.removeItem('expose_shared_template');
                     console.log('[SHARED_IMPORT] Saved to library and cleared storage.');
 
                     actions.showToast(
@@ -571,6 +588,10 @@ export function App() {
                 }
             } catch (e) {
                 console.error('[SHARED_IMPORT] Error during import:', e);
+                // Allow retry after a failed import.
+                sharedImportHandledKeyRef.current = null;
+            } finally {
+                sharedImportInFlightRef.current = false;
             }
         };
 

@@ -745,7 +745,7 @@ export const translations = {
     delete_account_section: 'Sonstiges',
     delete_account_permanently: 'Konto löschen',
     shared_template_label: "geteilte Vorlage",
-    shared_template_desc: "Nutze diese exklusive Vorlage, um deine Bilder direkt in exposé auf das nächste Level zu heben.",
+    shared_template_desc: "Verwende diese Vorlage, um deine Bilder einfach anzupassen.",
     shared_template_cta: "Vorlage hinzufügen",
     shared_template_not_found: "Vorlage nicht gefunden",
     shared_template_invalid: "Dieser Link scheint ungültig zu sein oder die Vorlage wurde entfernt.",

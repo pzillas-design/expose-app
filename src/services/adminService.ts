@@ -218,7 +218,7 @@ export const adminService = {
         };
     },
 
-    async updateGlobalPreset(preset: any, userId?: string): Promise<void> {
+    async updateGlobalPreset(preset: any, userId?: string): Promise<any> {
         const isSystemPreset = !preset.user_id;
         const isUserAction = userId && userId !== preset.user_id;
 
@@ -258,11 +258,17 @@ export const adminService = {
             category: category
         };
 
-        const { error } = await supabase.from('global_presets').upsert(dbPreset);
+        const { data, error } = await supabase
+            .from('global_presets')
+            .upsert(dbPreset)
+            .select('*')
+            .single();
         if (error) {
             console.error('AdminService: updateGlobalPreset failed!', error);
             throw error;
         }
+
+        return data ? this._mapDbPreset(data) : this._mapDbPreset(dbPreset);
     },
 
     async hideGlobalPreset(presetId: string, userId: string): Promise<void> {

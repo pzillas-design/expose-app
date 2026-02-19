@@ -29,8 +29,8 @@ interface PromptTabProps {
     onAddReference: (file: File, annotationId?: string) => void;
     onTogglePin?: (id: string) => void;
     onDeleteTemplate?: (id: string) => void;
-    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => void;
-    onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => void;
+    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => Promise<PromptTemplate | null>;
+    onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => Promise<PromptTemplate | null>;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
     qualityMode: GenerationQuality;
@@ -310,19 +310,30 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setIsPresetModalOpen(true);
     };
 
-    const handleSavePreset = async (items: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => {
+    const handleSavePreset = async (
+        items: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[],
+        options?: { closeOnSuccess?: boolean }
+    ): Promise<PromptTemplate | null> => {
+        const closeOnSuccess = options?.closeOnSuccess ?? true;
+        let lastSaved: PromptTemplate | null = null;
         try {
             for (const item of items) {
                 if (presetModalMode === 'edit' && editingTemplate && editingTemplate.lang === item.lang && onUpdateTemplate) {
-                    await onUpdateTemplate(editingTemplate.id, item);
+                    const updated = await onUpdateTemplate(editingTemplate.id, item);
+                    if (updated) lastSaved = updated;
                 } else if (onCreateTemplate) {
-                    await onCreateTemplate(item);
+                    const created = await onCreateTemplate(item);
+                    if (created) lastSaved = created;
                 }
             }
             showToast(t('save_success'), 'success');
-            setIsPresetModalOpen(false);
+            if (closeOnSuccess) {
+                setIsPresetModalOpen(false);
+            }
+            return lastSaved;
         } catch (err) {
             showToast(t('save_error'), 'error');
+            return null;
         }
     };
 

@@ -27,8 +27,9 @@ export const usePresets = (userId?: string) => {
 
     const saveTemplate = useCallback(async (template: any) => {
         try {
-            await adminService.updateGlobalPreset(template, userId);
+            const savedTemplate = await adminService.updateGlobalPreset(template, userId);
             await fetchTemplates();
+            return savedTemplate;
         } catch (error) {
             console.error('Failed to save template:', error);
             throw error;
