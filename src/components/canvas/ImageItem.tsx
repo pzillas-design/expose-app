@@ -82,7 +82,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
 
 const getDurationForQuality = (quality?: GenerationQuality): number => {
     switch (quality) {
-        case 'fast': return 12000;
+        case 'pro-1k': return 12000;
         case 'pro-2k': return 36000;
         case 'pro-4k': return 60000;
         default: return 23000;
@@ -285,7 +285,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     onPointerDown={(e) => e.stopPropagation()}
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onMouseUp={(e) => e.stopPropagation()}
-                                    className={`flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
+                                    className={`group/filename flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
  ${(isContextMenuOpen || isMarked)
                                             ? 'text-black dark:text-white opacity-100'
                                             : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
@@ -296,7 +296,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                         <Square className="w-4 h-4 shrink-0" />
                                     )}
 
-                                    <span className="truncate text-[10px] tracking-wider transition-colors">
+                                    <span className="truncate max-w-[180px] text-[12.5px] font-medium text-zinc-500 dark:text-zinc-400 group-hover/filename:text-zinc-900 dark:group-hover/filename:text-zinc-100 transition-colors">
                                         {image.title || 'Untitled'}.jpg
                                     </span>
                                 </button>
@@ -304,7 +304,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         )}
                         {isMobile && (
                             <div className="flex items-center gap-2 py-2 px-0 text-zinc-400 dark:text-zinc-500">
-                                <span className="truncate text-[10px] tracking-wider">
+                                <span className="truncate max-w-[180px] text-[12.5px] font-medium text-zinc-500 dark:text-zinc-400">
                                     {image.title || 'Untitled'}.jpg
                                 </span>
                             </div>

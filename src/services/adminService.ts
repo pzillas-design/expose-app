@@ -104,7 +104,7 @@ export const adminService = {
 
         if (jobIds.length > 0) {
             const { data: images } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('job_id, storage_path, width, height')
                 .in('job_id', jobIds);
 
@@ -332,8 +332,6 @@ export const adminService = {
      * Objects Library Management (Flat Stamps)
      */
     async getObjectCategories(): Promise<any[]> {
-        // Return a virtual 'All' category for backward compatibility if needed, 
-        // or just return empty as we are going flat.
         return [{ id: 'stamps', label_de: 'Stempel', label_en: 'Stamps', icon: '📦' }];
     },
 
@@ -356,9 +354,7 @@ export const adminService = {
     },
 
     async updateObjectItem(item: any): Promise<void> {
-        // Clean up item for flat table (remove category_id)
-        const { category_id, ...flatItem } = item;
-        const { error } = await supabase.from('global_objects_items').upsert(flatItem);
+        const { error } = await supabase.from('global_objects_items').upsert(item);
         if (error) throw error;
     },
 

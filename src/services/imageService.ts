@@ -39,7 +39,7 @@ export const imageService = {
         const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId, userEmail);
 
         // 4. Insert into DB with thumbnail path (still using userId for database)
-        const { error } = await supabase.from('canvas_images').insert({
+        const { error } = await supabase.from('images').insert({
             id: image.id,
             user_id: userId,
             storage_path: uploadResult.path,
@@ -90,7 +90,7 @@ export const imageService = {
 
         if (updates.activeTemplateId !== undefined || updates.variableValues !== undefined || updates.quality !== undefined) {
             const { data: results } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('generation_params')
                 .eq('id', imageId)
                 .limit(1);
@@ -114,7 +114,7 @@ export const imageService = {
         if (Object.keys(dbUpdates).length === 0) return;
 
         const { error } = await supabase
-            .from('canvas_images')
+            .from('images')
             .update({ ...dbUpdates, updated_at: new Date().toISOString() })
             .eq('id', imageId)
             .eq('user_id', userId);
@@ -133,14 +133,14 @@ export const imageService = {
 
         // 0. Fetch storage paths before deleting from DB
         const { data: images } = await supabase
-            .from('canvas_images')
+            .from('images')
             .select('storage_path, thumb_storage_path')
             .in('id', imageIds)
             .eq('user_id', userId);
 
-        // 1. Delete from canvas_images
+        // 1. Delete from images
         const { error: imgError } = await supabase
-            .from('canvas_images')
+            .from('images')
             .delete()
             .in('id', imageIds)
             .eq('user_id', userId);
@@ -423,7 +423,7 @@ export const imageService = {
 
         // 1. Get Completed Images & Active Jobs in parallel
         const imgsQuery = supabase
-            .from('canvas_images')
+            .from('images')
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
@@ -639,7 +639,7 @@ export const imageService = {
 
         // 1. Fetch the target image record
         const { data: targetRec, error: targetError } = await supabase
-            .from('canvas_images')
+            .from('images')
             .select('*')
             .eq('id', imageId)
             .single();
@@ -652,7 +652,7 @@ export const imageService = {
         // 2. Fetch the whole family (sharing the same base_name)
         // This ensures the row structure is preserved for navigation
         const { data: familyRecs, error: familyError } = await supabase
-            .from('canvas_images')
+            .from('images')
             .select('*')
             .eq('user_id', targetRec.user_id)
             .eq('base_name', targetRec.base_name);

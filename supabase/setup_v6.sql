@@ -4,7 +4,7 @@
 -- ============================================================================
 
 -- 1. Profiles Table
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   full_name TEXT,
@@ -29,12 +29,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 3. Canvas Images Table (Streamlined)
-CREATE TABLE public.canvas_images (
+-- 3. Images Table (Feed-based)
+CREATE TABLE IF NOT EXISTS public.images (
   id UUID PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   storage_path TEXT,
@@ -51,16 +52,17 @@ CREATE TABLE public.canvas_images (
   user_draft_prompt TEXT,
   parent_id UUID,
   job_id UUID,
+  board_id UUID,
   annotations JSONB,
   generation_params JSONB,
   model_version TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE public.canvas_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.images ENABLE ROW LEVEL SECURITY;
 
 -- 4. Generation Jobs Table
-CREATE TABLE public.generation_jobs (
+CREATE TABLE IF NOT EXISTS public.generation_jobs (
   id UUID PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   user_name TEXT,
@@ -75,14 +77,17 @@ CREATE TABLE public.generation_jobs (
   tokens_total INTEGER DEFAULT 0,
   prompt_preview TEXT,
   request_payload JSONB,
-  board_id UUID,
   parent_id UUID,
+  duration_ms INTEGER,
+  concurrent_jobs INTEGER,
+  quality_mode TEXT,
+  error TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE public.generation_jobs ENABLE ROW LEVEL SECURITY;
 
 -- 5. Global Presets Table
-CREATE TABLE public.global_presets (
+CREATE TABLE IF NOT EXISTS public.global_presets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
@@ -98,8 +103,39 @@ CREATE TABLE public.global_presets (
 );
 ALTER TABLE public.global_presets ENABLE ROW LEVEL SECURITY;
 
--- 6. User Objects Tables
-CREATE TABLE public.user_objects (
+-- 5.1 User Preset Preferences Table
+CREATE TABLE IF NOT EXISTS public.user_preset_preferences (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  preset_id UUID REFERENCES public.global_presets(id) ON DELETE CASCADE,
+  is_hidden BOOLEAN DEFAULT FALSE,
+  is_pinned BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, preset_id)
+);
+ALTER TABLE public.user_preset_preferences ENABLE ROW LEVEL SECURITY;
+
+-- 5.2 API Pricing Table
+CREATE TABLE IF NOT EXISTS public.api_pricing (
+  model_name TEXT PRIMARY KEY,
+  input_price_per_token DECIMAL NOT NULL,
+  output_price_per_token DECIMAL NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.api_pricing ENABLE ROW LEVEL SECURITY;
+
+-- 6. Global Objects/Stamps (Flat list)
+CREATE TABLE IF NOT EXISTS public.global_objects_items (
+  id TEXT PRIMARY KEY,
+  label_de TEXT NOT NULL,
+  label_en TEXT NOT NULL,
+  icon TEXT,
+  "order" INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE public.global_objects_items ENABLE ROW LEVEL SECURITY;
+
+-- 7. User Objects (Custom Stamps)
+CREATE TABLE IF NOT EXISTS public.user_objects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   label TEXT NOT NULL,
@@ -109,7 +145,7 @@ CREATE TABLE public.user_objects (
 );
 ALTER TABLE public.user_objects ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE public.user_hidden_objects (
+CREATE TABLE IF NOT EXISTS public.user_hidden_objects (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   object_id TEXT NOT NULL,
   PRIMARY KEY (user_id, object_id)
@@ -164,45 +200,99 @@ ON CONFLICT (id) DO NOTHING;
 
 -- 9. Setup RLS Security Policies
 -- Profiles
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Canvas Images
-CREATE POLICY "Users can view own images" ON public.canvas_images FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own images" ON public.canvas_images FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own images" ON public.canvas_images FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own images" ON public.canvas_images FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "Admins can view all images" ON public.canvas_images FOR SELECT USING (public.is_admin());
+-- Images
+DROP POLICY IF EXISTS "Users can view own images" ON public.images;
+CREATE POLICY "Users can view own images" ON public.images FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own images" ON public.images;
+CREATE POLICY "Users can insert own images" ON public.images FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own images" ON public.images;
+CREATE POLICY "Users can update own images" ON public.images FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own images" ON public.images;
+CREATE POLICY "Users can delete own images" ON public.images FOR DELETE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view all images" ON public.images;
+CREATE POLICY "Admins can view all images" ON public.images FOR SELECT USING (public.is_admin());
 
 -- Generation Jobs
+DROP POLICY IF EXISTS "Users can view own jobs" ON public.generation_jobs;
 CREATE POLICY "Users can view own jobs" ON public.generation_jobs FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own jobs" ON public.generation_jobs;
 CREATE POLICY "Users can insert own jobs" ON public.generation_jobs FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own jobs" ON public.generation_jobs;
 CREATE POLICY "Users can update own jobs" ON public.generation_jobs FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own jobs" ON public.generation_jobs;
 CREATE POLICY "Users can delete own jobs" ON public.generation_jobs FOR DELETE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view all jobs" ON public.generation_jobs;
 CREATE POLICY "Admins can view all jobs" ON public.generation_jobs FOR SELECT USING (public.is_admin());
 
 -- Global Presets
+DROP POLICY IF EXISTS "Anyone can view presets" ON public.global_presets;
 CREATE POLICY "Anyone can view presets" ON public.global_presets FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can create custom presets" ON public.global_presets;
 CREATE POLICY "Users can create custom presets" ON public.global_presets FOR INSERT WITH CHECK (auth.uid() = user_id AND is_custom = true);
+
+DROP POLICY IF EXISTS "Users can update own presets" ON public.global_presets;
 CREATE POLICY "Users can update own presets" ON public.global_presets FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own presets" ON public.global_presets;
 CREATE POLICY "Users can delete own presets" ON public.global_presets FOR DELETE USING (auth.uid() = user_id);
 
 -- User Objects
+DROP POLICY IF EXISTS "Users can manage own objects" ON public.user_objects;
 CREATE POLICY "Users can manage own objects" ON public.user_objects FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can manage own hidden objects" ON public.user_hidden_objects;
 CREATE POLICY "Users can manage own hidden objects" ON public.user_hidden_objects FOR ALL USING (auth.uid() = user_id);
 
 -- Storage Policies: user-content
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'user-content' );
+
+DROP POLICY IF EXISTS "Users can upload their own files" ON storage.objects;
 CREATE POLICY "Users can upload their own files" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'user-content' AND auth.role() = 'authenticated' );
-CREATE POLICY "Users can update own files" ON storage.objects FOR UPDATE USING ( bucket_id = 'user-content' AND auth.uid()::text = owner::text );
-CREATE POLICY "Users can delete own files" ON storage.objects FOR DELETE USING ( bucket_id = 'user-content' AND auth.uid()::text = owner::text );
+
+DROP POLICY IF EXISTS "Users can update own files" ON storage.objects;
+CREATE POLICY "Users can update own files" ON storage.objects FOR UPDATE USING ( bucket_id = 'user-content' AND auth.uid()::text = (storage.foldername(name))[1] );
+
+DROP POLICY IF EXISTS "Users can delete own files" ON storage.objects;
+CREATE POLICY "Users can delete own files" ON storage.objects FOR DELETE USING ( bucket_id = 'user-content' AND auth.uid()::text = (storage.foldername(name))[1] );
 
 -- Storage Policies: user-settings
+DROP POLICY IF EXISTS "Settings Public Access" ON storage.objects;
 CREATE POLICY "Settings Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'user-settings' );
+
+DROP POLICY IF EXISTS "Users can upload settings" ON storage.objects;
 CREATE POLICY "Users can upload settings" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'user-settings' AND auth.role() = 'authenticated' );
-CREATE POLICY "Users can update settings" ON storage.objects FOR UPDATE USING ( bucket_id = 'user-settings' AND auth.uid()::text = owner::text );
-CREATE POLICY "Users can delete settings" ON storage.objects FOR DELETE USING ( bucket_id = 'user-settings' AND auth.uid()::text = owner::text );
+
+DROP POLICY IF EXISTS "Users can update settings" ON storage.objects;
+CREATE POLICY "Users can update settings" ON storage.objects FOR UPDATE USING ( bucket_id = 'user-settings' AND auth.uid()::text = (storage.foldername(name))[1] );
+
+DROP POLICY IF EXISTS "Users can delete settings" ON storage.objects;
+CREATE POLICY "Users can delete settings" ON storage.objects FOR DELETE USING ( bucket_id = 'user-settings' AND auth.uid()::text = (storage.foldername(name))[1] );
+
+-- New Policies
+DROP POLICY IF EXISTS "Users can manage own preset preferences" ON public.user_preset_preferences;
+CREATE POLICY "Users can manage own preset preferences" ON public.user_preset_preferences FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view pricing" ON public.api_pricing;
+CREATE POLICY "Admins can view pricing" ON public.api_pricing FOR SELECT USING (public.is_admin());
 
 -- ============================================================================
 -- DONE!

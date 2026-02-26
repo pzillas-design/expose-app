@@ -99,7 +99,7 @@ export const useGeneration = ({
 
             // 1. Check if image exists in DB
             const { data: imgData } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('*')
                 .eq('id', jobId)
                 .maybeSingle();

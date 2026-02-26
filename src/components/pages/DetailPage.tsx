@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -309,37 +309,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         <div className={`absolute inset-0 flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                             {images.map(i => {
                                 const isActive = selectedId === i.id;
-                                const isGeneration = !!(i.parentId || i.generationPrompt);
                                 const previewSrc = i.thumbSrc || i.src;
                                 return (
-                                    <React.Fragment key={i.id}>
-                                        <button
-                                            onClick={() => onSelectImage(i.id)}
-                                            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-500 dark:ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
-                                        >
-                                            {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" />}
-                                        </button>
-
-                                        {/* + tile: animated gap opening for generator images */}
-                                        {isGeneration && (
-                                            <div
-                                                className={`relative flex items-center justify-center shrink-0 transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] overflow-hidden ${isActive ? 'w-8 opacity-100 mr-2 ml-2 delay-[1000ms] pointer-events-auto' : 'w-0 opacity-0 mr-0 ml-0 delay-0 pointer-events-none'}`}
-                                            >
-                                                <Tooltip text={state.currentLang === 'de' ? 'Mehr generieren' : 'Generate more'} side="top">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            actions.handleGenerateMore(i.id);
-                                                        }}
-                                                        disabled={!isActive}
-                                                        className={`relative group flex items-center justify-center w-[30px] h-[30px] rounded-full bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-500 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-all duration-150 hover:delay-0 ${isActive ? 'scale-100 opacity-100 delay-[1000ms]' : 'scale-50 opacity-0 delay-0'} ${!isActive ? 'pointer-events-none -z-10' : 'z-20'}`}
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </Tooltip>
-                                            </div>
-                                        )}
-                                    </React.Fragment>
+                                    <button
+                                        key={i.id}
+                                        onClick={() => onSelectImage(i.id)}
+                                        className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-500 dark:ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+                                    >
+                                        {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" />}
+                                    </button>
                                 );
                             })}
                         </div>

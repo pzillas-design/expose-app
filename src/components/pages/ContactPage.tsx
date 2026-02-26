@@ -8,12 +8,12 @@ interface ContactPageProps {
     user: any;
     userProfile: any;
     credits: number;
-    onCreateBoard: () => void;
+    onCreateNew: () => void;
     onSignIn?: () => void;
     t: TranslationFunction;
 }
 
-export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
+export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, credits, onCreateNew, onSignIn, t }) => {
     const email = "hello@expose.ae";
     const currentLang = typeof t('current_lang') === 'string' ? t('current_lang') : 'en';
 

@@ -141,7 +141,7 @@ export function App() {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
                     }}
-                    onToggleSettings={() => setIsSettingsModalOpen(true)}
+                    onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onSignOut={handleSignOut}
                     onSelectMode={() => actions.setIsSelectMode(true)}
                     isSelectMode={state.isSelectMode}
@@ -197,7 +197,8 @@ export function App() {
                                 <RoundIconButton
                                     icon={<Trash2 className="w-4 h-4" />}
                                     onClick={() => actions.handleDeleteImage(img.id)}
-                                    variant="danger"
+                                    variant="ghost"
+                                    className="hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
                                     tooltip={t('delete') || 'Löschen'}
                                 />
                             </div>
@@ -291,7 +292,7 @@ export function App() {
                             userProfile={userProfile}
                             credits={credits}
                             t={t}
-                            onCreateBoard={() => setIsCreationModalOpen(true)}
+                            onCreateNew={() => setIsCreationModalOpen(true)}
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
                         <Route path="/impressum" element={<ImpressumPage
@@ -299,7 +300,7 @@ export function App() {
                             userProfile={userProfile}
                             credits={credits}
                             t={t}
-                            onCreateBoard={() => setIsCreationModalOpen(true)}
+                            onCreateNew={() => setIsCreationModalOpen(true)}
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
                         <Route path="/s/:slug" element={<SharedTemplatePage />} />
@@ -333,8 +334,9 @@ export function App() {
             <CreditsModal
                 isOpen={isCreditsModalOpen}
                 onClose={() => setIsCreditsModalOpen(false)}
-                credits={credits || 0}
+                currentBalance={credits || 0}
                 onAddFunds={actions.handleAddFunds}
+                isReduced={true}
                 t={t}
             />
 

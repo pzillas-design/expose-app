@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
                 // Query database for all images with this baseName to find max version
                 try {
                     const { data: siblings, error: siblingsError } = await supabaseAdmin
-                        .from('canvas_images')
+                        .from('images')
                         .select('version, base_name, title')
                         .eq('user_id', user.id)
                         .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
             };
 
             const { error: dbError } = await supabaseAdmin
-                .from('canvas_images')
+                .from('images')
                 .insert(newImage);
 
             if (dbError) {

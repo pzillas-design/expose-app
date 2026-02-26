@@ -82,14 +82,14 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         <DropdownMenu
                             items={[
                                 {
-                                    label: currentLang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
-                                    icon: showRecent ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
-                                    onClick: () => { setShowRecent(true); setIsMenuOpen(false); }
-                                },
-                                {
                                     label: currentLang === 'de' ? 'Vorlagen' : 'Presets',
                                     icon: !showRecent ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
                                     onClick: () => { setShowRecent(false); setIsMenuOpen(false); }
+                                },
+                                {
+                                    label: currentLang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
+                                    icon: showRecent ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
+                                    onClick: () => { setShowRecent(true); setIsMenuOpen(false); }
                                 },
                                 {
                                     label: currentLang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets',

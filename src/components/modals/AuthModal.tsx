@@ -103,6 +103,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
         if (!err) return null;
         const e = err.toLowerCase();
 
+        // 0. Backend/Schema Errors
+        if (e.includes('database error querying schema')) return t('auth_error_schema');
+
         // 1. Password Errors
         if (e.includes('different from the old')) return t('auth_error_password_same');
         if (e.includes('mismatch')) return t('auth_error_password_mismatch');

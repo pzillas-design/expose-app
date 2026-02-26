@@ -18,6 +18,7 @@ interface AppNavbarProps {
     onDeleteSelected?: () => void;
     onGenerateMoreSelected?: () => void;
     onGenerateMoreDetail?: () => void;
+    onOpenCredits?: () => void;
     selectedCount?: number;
     t: (key: any) => string;
     mode?: 'grid' | 'detail';
@@ -40,6 +41,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onDeleteSelected,
     onGenerateMoreSelected,
     onGenerateMoreDetail,
+    onOpenCredits,
     selectedCount = 0,
     t,
     mode = 'grid',
@@ -75,14 +77,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const leftContent = isDetail ? (
         <div className="flex items-center gap-4">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
-            <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
-                <button
-                    onClick={onToggleSettings}
-                    className="text-[13px] font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                >
-                    {credits.toFixed(2)} €
-                </button>
-            </Tooltip>
         </div>
     ) : isSelectMode ? (
         <button
@@ -132,8 +126,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </button>
     );
 
+    const balanceDisplay = user && (
+        <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
+            <button
+                onClick={onOpenCredits}
+                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
+            >
+                {credits.toFixed(2)}€
+            </button>
+        </Tooltip>
+    );
+
     const rightContent = isDetail ? (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+            {balanceDisplay}
+            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
             {detailActions}
         </div>
     ) : isSelectMode ? (
@@ -165,26 +172,29 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {t('login_btn') || 'Login'}
                 </button>
             ) : (
-                <div className="relative" ref={gridMenuRef}>
-                    <RoundIconButton
-                        icon={<MoreHorizontal className="w-4 h-4" />}
-                        onClick={() => setIsGridMenuOpen(p => !p)}
-                        variant="ghost"
-                        active={isGridMenuOpen}
-                    />
-                    {isGridMenuOpen && (
-                        <div className="absolute top-full mt-2 right-0 z-50">
-                            <DropdownMenu
-                                items={[
-                                    { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                    { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                    { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); }, separator: true },
-                                    { label: 'Impressum', onClick: () => { setIsGridMenuOpen(false); window.open('/impressum', '_blank'); } },
-                                    { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); }, separator: true },
-                                ]}
-                            />
-                        </div>
-                    )}
+                <div className="flex items-center gap-3">
+                    {balanceDisplay}
+                    <div className="relative" ref={gridMenuRef}>
+                        <RoundIconButton
+                            icon={<MoreHorizontal className="w-4 h-4" />}
+                            onClick={() => setIsGridMenuOpen(p => !p)}
+                            variant="ghost"
+                            active={isGridMenuOpen}
+                        />
+                        {isGridMenuOpen && (
+                            <div className="absolute top-full mt-2 right-0 z-50">
+                                <DropdownMenu
+                                    items={[
+                                        { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                        { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); }, separator: true },
+                                        { label: 'Impressum', onClick: () => { setIsGridMenuOpen(false); window.open('/impressum', '_blank'); } },
+                                        { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); }, separator: true },
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </>

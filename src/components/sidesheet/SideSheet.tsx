@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Send, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Edit2
+    Undo2, Redo2, Layers, MoreHorizontal
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { CropModal } from '@/components/modals/CropModal';
@@ -103,6 +103,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [prompt, setPrompt] = useState('');
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
+    const [showPromptForm, setShowPromptForm] = useState(false);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isQualityOpen, setIsQualityOpen] = useState(false);
 
@@ -198,6 +199,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             setPrompt(selectedImage.userDraftPrompt || '');
             setActiveTemplateId(selectedImage.activeTemplateId || null);
             setControlValues(selectedImage.variableValues || {});
+            setShowPromptForm(false);
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id]);
@@ -519,281 +521,318 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                 <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 space-y-8">
 
-                    {/* ── REFINE Section ── */}
-                    <section className="space-y-3">
-                        {/* Prompt Header outside the box */}
-                        <div className="flex items-center justify-between px-1">
-                            <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
-                                {t('prompt') || 'Prompt'}
-                            </span>
+                    {selectedImage?.parentId && !showPromptForm ? (
+                        <div className="flex flex-col gap-3 mt-4 relative">
+                            <button
+                                onClick={() => {
+                                    if (selectedImage.parentId) onNavigateParent(selectedImage.parentId);
+                                }}
+                                className="absolute -top-8 -right-2 p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <Button
+                                onClick={() => handleGenerate()}
+                                variant="secondary"
+                                size="l"
+                                className="w-full justify-center"
+                            >
+                                {lang === 'de' ? 'Erneut generieren' : 'Generate again'}
+                            </Button>
+                            <Button
+                                onClick={() => setShowPromptForm(true)}
+                                variant="secondary"
+                                size="l"
+                                className="w-full justify-center"
+                            >
+                                {lang === 'de' ? 'Weiterbearbeiten' : 'Continue editing'}
+                            </Button>
+                            <Button
+                                onClick={() => onDownload?.(selectedImage.id)}
+                                variant="primary"
+                                size="l"
+                                className="w-full justify-center mt-4"
+                            >
+                                {lang === 'de' ? 'Herunterladen' : 'Download'}
+                            </Button>
                         </div>
-
-                        <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} border border-zinc-200/80 dark:border-zinc-800/50 p-5 space-y-5 transition-all`}>
-                            {/* Prompt Textarea */}
-                            <div>
-                                <textarea
-                                    ref={textareaRef}
-                                    value={prompt}
-                                    onChange={e => handlePromptChange(e.target.value)}
-                                    placeholder={t('describe_changes') || 'Describe your changes…'}
-                                    disabled={selectedImage?.isGenerating}
-                                    className="w-full bg-transparent outline-none text-[13px] leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
-                                />
-                            </div>
-
-                            {/* Reference images tray */}
-                            {referenceAnns.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                    {referenceAnns.map(ann => (
-                                        <div key={ann.id} className="group relative w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
-                                            <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
-                                            <button
-                                                onClick={() => deleteAnnotation(ann.id)}
-                                                className="absolute top-0.5 right-0.5 w-4 h-4 bg-zinc-950/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <X className="w-2.5 h-2.5" />
-                                            </button>
-                                        </div>
-                                    ))}
+                    ) : (
+                        <>
+                            {/* ── REFINE Section ── */}
+                            <section className="space-y-3">
+                                {/* Prompt Header outside the box */}
+                                <div className="flex items-center justify-between px-1">
+                                    <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
+                                        {t('prompt') || 'Prompt'}
+                                    </span>
                                 </div>
-                            )}
 
-                            {/* Active Template Variable Chips */}
-                            {activeTemplate?.controls?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
-                                const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
-                                const isEditing = editingControlId === ctrl.id;
-
-                                return (
-                                    <div key={ctrl.id} className="space-y-2.5 pt-1 relative group">
-                                        <div className="flex items-center gap-2">
-                                            {isEditing ? (
-                                                <input
-                                                    autoFocus
-                                                    value={editControlValue}
-                                                    onChange={e => setEditControlValue(e.target.value)}
-                                                    onBlur={saveControlLabel}
-                                                    onKeyDown={e => { if (e.key === 'Enter') saveControlLabel(); }}
-                                                    className="bg-transparent border-none outline-none text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-100 m-0 p-0"
-                                                />
-                                            ) : (
-                                                <Eyebrow>{displayLabel}</Eyebrow>
-                                            )}
-                                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => handleClearControl(ctrl.id)}
-                                                    className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                                >
-                                                    <X className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {ctrl.options.map(opt => {
-                                                const isActive = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                return (
-                                                    <button
-                                                        key={opt.id}
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            toggleControlOption(ctrl.id, opt.value);
-                                                        }}
-                                                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-100 shadow-sm' : 'bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
-                                                    >
-                                                        {opt.label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-
-                            {/* Annotations Chip */}
-                            {!isMulti && visibleAnns.length > 0 && (
-                                <div className="pt-1 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center justify-between">
-                                    <button
-                                        onClick={() => onModeChange('brush')}
-                                        className="flex items-center gap-2 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                                    >
-                                        <div className="w-5 h-5 rounded-md bg-orange-500/10 flex items-center justify-center">
-                                            <Pen className="w-3 h-3 text-orange-500" />
-                                        </div>
-                                        {visibleAnns.length} {lang === 'de' ? 'Anmerkungen' : 'Annotations'}
-                                        <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Bottom Controls + Generate */}
-                            <div className="flex items-center justify-between pt-2">
-                                <div className="flex items-center gap-2">
-                                    <Tooltip text={lang === 'de' ? 'Referenzbild' : 'Add Reference'}>
-                                        <button
-                                            onClick={() => fileInputRef.current?.click()}
+                                <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} border border-zinc-200/80 dark:border-zinc-800/50 p-5 space-y-5 transition-all`}>
+                                    {/* Prompt Textarea */}
+                                    <div>
+                                        <textarea
+                                            ref={textareaRef}
+                                            value={prompt}
+                                            onChange={e => handlePromptChange(e.target.value)}
+                                            placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
-                                            className="relative w-9 h-9 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
-                                        >
-                                            <Camera className="w-[18px] h-[18px]" />
-                                            {referenceAnns.length > 0 && (
-                                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
-                                                    {referenceAnns.length}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </Tooltip>
-                                    <Tooltip text={t('tt_annotate')}>
-                                        <button
-                                            onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
-                                            disabled={selectedImage?.isGenerating || isMulti}
-                                            className={`relative w-9 h-9 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
-                                        >
-                                            <Pen className="w-[18px] h-[18px]" />
-                                            {visibleAnns.length > 0 && (
-                                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
-                                                    {visibleAnns.length}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
-                                />
-
-                                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end mt-2 sm:mt-0">
-                                    {/* Quality Dropdown */}
-                                    <div className="relative shrink-0">
-                                        <button
-                                            onClick={() => setIsQualityOpen(p => !p)}
-                                            className="flex items-center gap-1 px-3 py-2 rounded-full text-[11px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-200/60 dark:bg-zinc-800/50 border border-zinc-300/50 dark:border-zinc-700/40 transition-colors"
-                                        >
-                                            {qualityMode === 'pro-1k' ? '1K' : qualityMode === 'pro-2k' ? '2K' : '4K'}
-                                            <ChevronDown className={`w-3 h-3 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
-                                        </button>
-                                        {isQualityOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
-                                                <div className="absolute bottom-full mb-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 min-w-[120px] animate-in fade-in slide-in-from-bottom-2 duration-150">
-                                                    {(['pro-1k', 'pro-2k', 'pro-4k'] as const).map(q => (
-                                                        <button
-                                                            key={q}
-                                                            onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
-                                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${qualityMode === q ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
-                                                        >
-                                                            {q === 'pro-1k' ? 'Pro 1K' : q === 'pro-2k' ? 'Pro 2K' : 'Pro 4K'}
-                                                            {qualityMode === q && <Check className="w-3 h-3 text-orange-500" />}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {/* Generate Button */}
-                                    <Button
-                                        onClick={handleGenerate}
-                                        disabled={selectedImage?.isGenerating}
-                                        variant="primary"
-                                        size="m"
-                                        className="px-5"
-                                    >
-                                        {selectedImage?.isGenerating ? (
-                                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
-                                        ) : (
-                                            t('generate')
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ── PRESETS Section ── */}
-                        <div className="mt-5 text-zinc-800 dark:text-zinc-200">
-                            <div className="flex items-center justify-between mb-3.5 relative" ref={presetsMenuRef}>
-                                <div className="flex items-center gap-1.5">
-                                    <Eyebrow>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
-                                    <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
-                                        <button
-                                            onClick={() => setIsPresetsMenuOpen(p => !p)}
-                                            className="p-1 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ml-1"
-                                        >
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
-                                    </Tooltip>
-                                </div>
-
-                                {isPresetsMenuOpen && (
-                                    <div className="absolute top-10 right-0 z-[60]">
-                                        <DropdownMenu
-                                            items={[
-                                                {
-                                                    label: lang === 'de' ? 'Vorlagen' : 'Presets',
-                                                    icon: !showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
-                                                    onClick: () => { setShowRecentPresets(false); setIsPresetsMenuOpen(false); }
-                                                },
-                                                {
-                                                    label: lang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
-                                                    icon: showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
-                                                    onClick: () => { setShowRecentPresets(true); setIsPresetsMenuOpen(false); },
-                                                    separator: true
-                                                },
-                                                {
-                                                    label: lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets',
-                                                    icon: <Edit2 className="w-4 h-4" />,
-                                                    onClick: () => {
-                                                        setIsPresetsMenuOpen(false);
-                                                        setEditingTemplate(null);
-                                                        setIsPresetModalOpen(true);
-                                                    }
-                                                }
-                                            ]}
+                                            className="w-full bg-transparent outline-none text-[13px] leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
                                         />
                                     </div>
-                                )}
-                            </div>
-                            <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                                {displayTemplates.length === 0 && (
-                                    <div className="py-2 px-4 text-[12px] text-zinc-400">{lang === 'de' ? 'Keine Einträge' : 'No entries'}</div>
-                                )}
-                                {displayTemplates.map(tpl => {
-                                    return (
-                                        <Tooltip text={lang === 'de' ? 'Vorlage anwenden' : 'Apply Preset'}>
-                                            <button
-                                                key={tpl.id}
-                                                onClick={() => handleSelectTemplate(tpl)}
-                                                className="flex items-center justify-between w-full px-4 py-3 rounded-[16px] transition-all duration-150 group bg-zinc-100/70 dark:bg-zinc-900/50 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 border border-transparent"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                    <span className="text-[12.5px] font-medium truncate max-w-[180px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
-                                                        {tpl.title}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
+
+                                    {/* Reference images tray */}
+                                    {referenceAnns.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-1">
+                                            {referenceAnns.map(ann => (
+                                                <div key={ann.id} className="group relative w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
+                                                    <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingTemplate(tpl);
-                                                            setIsPresetModalOpen(true);
-                                                        }}
-                                                        className={`p-1.5 rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                                        onClick={() => deleteAnnotation(ann.id)}
+                                                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-zinc-950/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
-                                                        <MoreHorizontal className="w-4 h-4" />
+                                                        <X className="w-2.5 h-2.5" />
                                                     </button>
                                                 </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Active Template Variable Chips */}
+                                    {activeTemplate?.controls?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
+                                        const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
+                                        const isEditing = editingControlId === ctrl.id;
+
+                                        return (
+                                            <div key={ctrl.id} className="space-y-2.5 pt-1 relative group">
+                                                <div className="flex items-center gap-2">
+                                                    {isEditing ? (
+                                                        <input
+                                                            autoFocus
+                                                            value={editControlValue}
+                                                            onChange={e => setEditControlValue(e.target.value)}
+                                                            onBlur={saveControlLabel}
+                                                            onKeyDown={e => { if (e.key === 'Enter') saveControlLabel(); }}
+                                                            className="bg-transparent border-none outline-none text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-100 m-0 p-0"
+                                                        />
+                                                    ) : (
+                                                        <Eyebrow>{displayLabel}</Eyebrow>
+                                                    )}
+                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleClearControl(ctrl.id)}
+                                                            className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {ctrl.options.map(opt => {
+                                                        const isActive = (controlValues[ctrl.id] || []).includes(opt.value);
+                                                        return (
+                                                            <button
+                                                                key={opt.id}
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    toggleControlOption(ctrl.id, opt.value);
+                                                                }}
+                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-100 shadow-sm' : 'bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                                                            >
+                                                                {opt.label}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+
+                                    {/* Annotations Chip */}
+                                    {!isMulti && visibleAnns.length > 0 && (
+                                        <div className="pt-1 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center justify-between">
+                                            <button
+                                                onClick={() => onModeChange('brush')}
+                                                className="flex items-center gap-2 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                            >
+                                                <div className="w-5 h-5 rounded-md bg-orange-500/10 flex items-center justify-center">
+                                                    <Pen className="w-3 h-3 text-orange-500" />
+                                                </div>
+                                                {visibleAnns.length} {lang === 'de' ? 'Anmerkungen' : 'Annotations'}
+                                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                                             </button>
-                                        </Tooltip>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </section>
+                                        </div>
+                                    )}
+
+                                    {/* Bottom Controls + Generate */}
+                                    <div className="flex items-center justify-between gap-3 pt-2">
+                                        <div className="flex items-center gap-2">
+                                            <Tooltip text={lang === 'de' ? 'Referenzbild' : 'Add Reference'}>
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    disabled={selectedImage?.isGenerating}
+                                                    className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
+                                                >
+                                                    <Camera className="w-4 h-4" />
+                                                    {referenceAnns.length > 0 && (
+                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
+                                                            {referenceAnns.length}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </Tooltip>
+                                            <Tooltip text={t('tt_annotate')}>
+                                                <button
+                                                    onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
+                                                    disabled={selectedImage?.isGenerating || isMulti}
+                                                    className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
+                                                >
+                                                    <Pen className="w-4 h-4" />
+                                                    {visibleAnns.length > 0 && (
+                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
+                                                            {visibleAnns.length}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </Tooltip>
+
+                                            {/* Quality Dropdown */}
+                                            <div className="relative shrink-0">
+                                                <button
+                                                    onClick={() => setIsQualityOpen(p => !p)}
+                                                    className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
+                                                >
+                                                    {qualityMode === 'pro-1k' ? '1K' : qualityMode === 'pro-2k' ? '2K' : '4K'}
+                                                    <ChevronDown className={`w-4 h-4 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
+                                                </button>
+                                                {isQualityOpen && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
+                                                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 min-w-[120px] animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                                            {(['pro-1k', 'pro-2k', 'pro-4k'] as const).map(q => (
+                                                                <button
+                                                                    key={q}
+                                                                    onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
+                                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${qualityMode === q ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
+                                                                >
+                                                                    {q === 'pro-1k' ? 'Pro 1K' : q === 'pro-2k' ? 'Pro 2K' : 'Pro 4K'}
+                                                                    {qualityMode === q && <Check className="w-3 h-3 text-orange-500" />}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
+                                        />
+
+                                        {/* Generate Button */}
+                                        <Button
+                                            onClick={handleGenerate}
+                                            disabled={selectedImage?.isGenerating}
+                                            variant="primary"
+                                            size="m"
+                                            className="px-5 shrink-0"
+                                        >
+                                            {selectedImage?.isGenerating ? (
+                                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                            ) : (
+                                                t('generate')
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* ── PRESETS Section ── */}
+                                <div className="mt-5 text-zinc-800 dark:text-zinc-200">
+                                    <div className="flex items-center justify-between mb-3.5 relative" ref={presetsMenuRef}>
+                                        <div className="flex items-center gap-1.5">
+                                            <Eyebrow>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
+                                            <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
+                                                <button
+                                                    onClick={() => setIsPresetsMenuOpen(p => !p)}
+                                                    className="p-1 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ml-1"
+                                                >
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+
+                                        {isPresetsMenuOpen && (
+                                            <div className="absolute top-10 right-0 z-[60]">
+                                                <DropdownMenu
+                                                    items={[
+                                                        {
+                                                            label: lang === 'de' ? 'Vorlagen' : 'Presets',
+                                                            icon: !showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
+                                                            onClick: () => { setShowRecentPresets(false); setIsPresetsMenuOpen(false); }
+                                                        },
+                                                        {
+                                                            label: lang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
+                                                            icon: showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
+                                                            onClick: () => { setShowRecentPresets(true); setIsPresetsMenuOpen(false); }
+                                                        },
+                                                        {
+                                                            label: lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets',
+                                                            onClick: () => {
+                                                                setIsPresetsMenuOpen(false);
+                                                                setEditingTemplate(null);
+                                                                setIsPresetModalOpen(true);
+                                                            },
+                                                            separator: true
+                                                        }
+                                                    ]}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                        {displayTemplates.length === 0 && (
+                                            <div className="py-2 px-4 text-[12px] text-zinc-400">{lang === 'de' ? 'Keine Einträge' : 'No entries'}</div>
+                                        )}
+                                        {displayTemplates.map(tpl => {
+                                            return (
+                                                <Tooltip text={lang === 'de' ? 'Vorlage anwenden' : 'Apply Preset'}>
+                                                    <button
+                                                        key={tpl.id}
+                                                        onClick={() => handleSelectTemplate(tpl)}
+                                                        className="flex items-center justify-between w-full px-4 py-3 rounded-[16px] transition-all duration-150 group bg-zinc-100/70 dark:bg-zinc-900/50 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 border border-transparent"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
+                                                            <span className="text-[12.5px] font-medium truncate max-w-[180px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                                                                {tpl.title}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEditingTemplate(tpl);
+                                                                    setIsPresetModalOpen(true);
+                                                                }}
+                                                                className={`p-1.5 rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                                                            >
+                                                                <MoreHorizontal className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    </button>
+                                                </Tooltip>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </section>
+                        </>
+                    )}
                 </div>
             </div>
         </>

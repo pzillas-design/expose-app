@@ -96,16 +96,20 @@ export const useAutoSave = (
                         annotations: JSON.stringify(img.annotations || []),
                         prompt: img.generationPrompt || '',
                         user_draft_prompt: img.userDraftPrompt || '',
-                        quality: img.quality || 'pro-1k',
+                        generation_params: {
+                            quality: img.quality || 'pro-1k',
+                            activeTemplateId: img.activeTemplateId,
+                            variableValues: img.variableValues
+                        },
                         parent_id: img.parentId || null,
-                        created_at: new Date(img.createdAt).toISOString(),
+                        created_at: new Date(img.createdAt || Date.now()).toISOString(),
                         updated_at: new Date().toISOString()
                     };
                 }).filter((item): item is NonNullable<typeof item> => item !== null);
 
                 if (payload.length > 0) {
                     const { error } = await supabase
-                        .from('canvas_images')
+                        .from('images')
                         .upsert(payload, { onConflict: 'id' });
 
                     if (error) {
@@ -162,9 +166,13 @@ export const useAutoSave = (
                             annotations: JSON.stringify(img.annotations || []),
                             prompt: img.generationPrompt || '',
                             user_draft_prompt: img.userDraftPrompt || '',
-                            quality: img.quality || 'pro-1k',
+                            generation_params: {
+                                quality: img.quality || 'pro-1k',
+                                activeTemplateId: img.activeTemplateId,
+                                variableValues: img.variableValues
+                            },
                             parent_id: img.parentId || null,
-                            created_at: new Date(img.createdAt).toISOString(),
+                            created_at: new Date(img.createdAt || Date.now()).toISOString(),
                             updated_at: new Date().toISOString()
                         };
                     }).filter(Boolean);
@@ -173,7 +181,7 @@ export const useAutoSave = (
                         console.log('[AutoSave] Force save on unmount');
                         (async () => {
                             try {
-                                await supabase.from('canvas_images').upsert(payload, { onConflict: 'id' });
+                                await supabase.from('images').upsert(payload, { onConflict: 'id' });
                                 console.log('[AutoSave] Unmount save complete');
                             } catch (err) {
                                 console.error('[AutoSave] Unmount save failed:', err);

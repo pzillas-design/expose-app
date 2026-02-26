@@ -33,19 +33,29 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
 
-    // Dynamically calculate columns based on CSS grid classes to feed into keyboard nav
+    // Dynamically calculate columns based on actual DOM layout
     const [columns, setColumns] = React.useState(2);
     React.useEffect(() => {
         const updateColumns = () => {
-            if (!gridRef.current) return;
-            const gridCompStyle = window.getComputedStyle(gridRef.current);
-            const colCount = gridCompStyle.getPropertyValue('grid-template-columns').split(' ').length;
-            setColumns(colCount);
+            if (!gridRef.current || !gridRef.current.children.length) return;
+            const children = Array.from(gridRef.current.children) as HTMLElement[];
+            if (children.length === 0) return;
+            const firstTop = children[0].offsetTop;
+            let colCount = 0;
+            for (const child of children) {
+                if (child.offsetTop === firstTop) {
+                    colCount++;
+                } else {
+                    break;
+                }
+            }
+            setColumns(colCount > 0 ? colCount : 2);
         };
-        updateColumns();
+        // Initial compute and resize listener
+        requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
         return () => window.removeEventListener('resize', updateColumns);
-    }, []);
+    }, [images]); // Re-calculate when images load
 
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
         itemCount: images.length,
