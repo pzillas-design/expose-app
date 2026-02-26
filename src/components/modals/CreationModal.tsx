@@ -42,7 +42,6 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     initialTemplate
 }) => {
     const MODELS = [
-        { id: 'fast', name: 'Nano Banana', price: t('price_free'), res: '1024 px' },
         { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.10 €', res: '1024 px' },
         { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '0.25 €', res: '2048 px' },
         { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '0.50 €', res: '4096 px' },
@@ -136,8 +135,8 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                 className={`
                     w-full max-w-lg ${Theme.Colors.ModalBg} 
-                    border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-2xl flex flex-col max-h-[90vh]
+                    border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
+                    flex flex-col max-h-[90vh]
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
@@ -157,9 +156,10 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     {/* Unified Prompt & Upload Area */}
                     <div
                         className={`
-                            relative flex flex-col gap-3 p-1 rounded-xl transition-all duration-300
-                            ${isDragging ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}
-                        `}
+ relative flex flex-col gap-3 p-1 rounded-xl transition-all duration-300
+ ${isDragging ? 'bg-blue-500/5 ring-2 ring-blue-500/20' : ''}
+ ${isDragging ? 'bg-orange-500/5 ring-2 ring-orange-500/20' : ''}
+ `}
                         onDragEnter={handleDragEnter}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDragLeave={handleDragLeave}
@@ -167,11 +167,11 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     >
                         {/* Unified Drop Overlay - Global to this section */}
                         {isDragging && (
-                            <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[3px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-blue-500/50 rounded-xl z-50 animate-in fade-in zoom-in-95 duration-200">
-                                <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white shadow-xl">
+                            <div className="absolute inset-0 bg-orange-500/10 backdrop-blur-[3px] flex flex-col items-center justify-center gap-2 pointer-events-none border-2 border-dashed border-orange-500/50 rounded-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="w-14 h-14 rounded-full bg-orange-500 flex items-center justify-center text-white ">
                                     <Paperclip className="w-7 h-7" />
                                 </div>
-                                <span className={`${Typo.Label} text-blue-600 dark:text-blue-400 font-bold text-base`}>{t('drop_here')}</span>
+                                <span className={`${Typo.Label} text-orange-600 dark:text-orange-400 font-bold text-base`}>{t('drop_here')}</span>
                             </div>
                         )}
                         <div className="flex flex-col gap-3">
@@ -180,10 +180,10 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                             </label>
 
                             <div className={`
-                                relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius} 
-                                transition-all duration-200 overflow-hidden
-                                ${isDragging ? 'border-blue-500 ring-4 ring-blue-500/10' : 'hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500'}
-                            `}>
+ relative flex flex-col ${Theme.Colors.PanelBg} ${Theme.Colors.Border} border ${Theme.Geometry.Radius}
+ transition-all duration-200 overflow-hidden
+ ${isDragging ? 'border-orange-500 ring-4 ring-orange-500/10' : 'hover:border-zinc-300 dark:hover:border-zinc-600 focus-within:!border-zinc-400 dark:focus-within:!border-zinc-500'}
+ `}>
                                 <textarea
                                     className={`w-full bg-transparent border-none outline-none p-4 ${Typo.Body} font-mono leading-relaxed resize-none h-48`}
                                     placeholder={t('creation_prompt_placeholder')}
@@ -204,7 +204,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 />
                                 <Button
                                     variant="secondary"
-                                    className={`w-full transition-colors ${isDragging ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-300 shadow-sm' : ''}`}
+                                    className={`w-full transition-colors ${isDragging ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 border-orange-300 ' : ''}`}
                                     icon={<Paperclip className="w-4 h-4" />}
                                     onClick={() => document.getElementById('creation-file-upload')?.click()}
                                 >
@@ -250,12 +250,12 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 <button
                                     onClick={() => setOpenDropdown(openDropdown === 'model' ? null : 'model')}
                                     className={`
-                                        w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
-                                        ${openDropdown === 'model'
+ w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
+ ${openDropdown === 'model'
                                             ? `border-zinc-400 dark:border-zinc-500 ring-4 ring-zinc-100 dark:ring-zinc-800/50`
                                             : `${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
                                         }
-                                    `}
+ `}
                                 >
                                     <span className={`${Typo.Body} font-medium px-1`}>
                                         {MODELS.find(m => m.id === selectedModel)?.name}
@@ -264,15 +264,15 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 </button>
 
                                 {openDropdown === 'model' && (
-                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
                                         {MODELS.map((model) => (
                                             <button
                                                 key={model.id}
                                                 onClick={() => { setSelectedModel(model.id); setOpenDropdown(null); }}
                                                 className={`
-                                                    flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
-                                                    ${selectedModel === model.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                `}
+ flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
+ ${selectedModel === model.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+ `}
                                             >
                                                 <div className="flex flex-col gap-0.5">
                                                     <span className={`${Typo.Body} font-medium ${selectedModel === model.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
@@ -299,12 +299,12 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 <button
                                     onClick={() => setOpenDropdown(openDropdown === 'ratio' ? null : 'ratio')}
                                     className={`
-                                        w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
-                                        ${openDropdown === 'ratio'
+ w-full flex items-center justify-between p-3 ${Theme.Geometry.Radius} border transition-all text-left bg-white dark:bg-zinc-900
+ ${openDropdown === 'ratio'
                                             ? `border-zinc-400 dark:border-zinc-500 ring-4 ring-zinc-100 dark:ring-zinc-800/50`
                                             : `${Theme.Colors.Border} hover:border-zinc-300 dark:hover:border-zinc-700`
                                         }
-                                    `}
+ `}
                                 >
                                     <div className="flex items-center gap-3 px-1">
                                         <div className="w-5 flex justify-center">
@@ -318,15 +318,15 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                 </button>
 
                                 {openDropdown === 'ratio' && (
-                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-xl flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
+                                    <div className={`absolute top-full left-0 right-0 mt-2 p-1.5 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-100 origin-top z-[100]`}>
                                         {ASPECT_RATIOS.map((r) => (
                                             <button
                                                 key={r.value}
                                                 onClick={() => { setSelectedRatio(r.value); setOpenDropdown(null); }}
                                                 className={`
-                                                    flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
-                                                    ${selectedRatio === r.value ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                                `}
+ flex items-center justify-between px-3 py-2.5 rounded-md text-left transition-colors
+ ${selectedRatio === r.value ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+ `}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-5 flex justify-center">

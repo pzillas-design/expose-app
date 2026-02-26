@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, Theme, Typo, RoundIconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
-import { Trash, Plus, Minus, Settings2, Share2, Pencil, Link as LinkIcon, X } from 'lucide-react';
+import { Trash, Plus, Minus, Settings2, Share2, Pencil, Link as LinkIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShareTemplateModal } from './ShareTemplateModal';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { useMobile } from '@/hooks/useMobile';
 
-interface PresetEditorModalProps {
+interface ManagePresetsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    mode: 'create' | 'edit';
-    scope: 'admin' | 'user';
     currentLang?: 'de' | 'en';
-    initialTemplate?: PromptTemplate | null;
-    existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
+    templates: PromptTemplate[];
+    initialTemplateId?: string | null;
     onSave: (
         templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[],
         options?: { closeOnSuccess?: boolean }
@@ -218,18 +217,20 @@ const LanguageForm = ({
 };
 
 
-export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
+export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     isOpen,
     onClose,
-    mode,
-    scope,
     currentLang = 'en',
-    initialTemplate,
-    existingTemplates,
+    templates,
+    initialTemplateId,
     onSave,
     onDelete,
     t
 }) => {
+    const isMobile = useMobile();
+    const [selectedId, setSelectedId] = useState<string | 'new' | null>(null);
+    const [mobileView, setMobileView] = useState<'list' | 'editor'>('list');
+
     const [titleDe, setTitleDe] = useState('');
     const [promptDe, setPromptDe] = useState('');
     const [controlsDe, setControlsDe] = useState<PresetControl[]>([]);
@@ -237,82 +238,173 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     const [titleEn, setTitleEn] = useState('');
     const [promptEn, setPromptEn] = useState('');
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
+
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [savedTemplateForShare, setSavedTemplateForShare] = useState<PromptTemplate | null>(null);
 
-    useEffect(() => {
-        if (isOpen) {
-            setTitleDe(''); setPromptDe(''); setControlsDe([]);
-            setTitleEn(''); setPromptEn(''); setControlsEn([]);
-            setSavedTemplateForShare(null);
+    const activeTemplate = templates.find(t => t.id === selectedId) || null;
 
-            if (mode === 'edit' && initialTemplate) {
-                // Determine if we should seed the EN or DE form based on the current UI lang
-                // If it's a user preset, we only show one form. It should be populated with the initialTemplate data regardless of its saved lang tag.
-                if (scope === 'user') {
-                    if (currentLang === 'en') {
-                        setTitleEn(initialTemplate.title);
-                        setPromptEn(initialTemplate.prompt);
-                        setControlsEn(initialTemplate.controls || []);
-                    } else {
-                        setTitleDe(initialTemplate.title);
-                        setPromptDe(initialTemplate.prompt);
-                        setControlsDe(initialTemplate.controls || []);
-                    }
+    useEffect(() => {
+        if (!isOpen) {
+            setSelectedId(null);
+            setMobileView('list');
+            return;
+        }
+
+        const initialSelected = initialTemplateId || null;
+        setSelectedId(initialSelected);
+        if (isMobile && initialSelected) {
+            setMobileView('editor');
+        } else if (isMobile) {
+            setMobileView('list');
+        }
+
+        setTitleDe(''); setPromptDe(''); setControlsDe([]);
+        setTitleEn(''); setPromptEn(''); setControlsEn([]);
+        setSavedTemplateForShare(null);
+
+        if (initialSelected && initialSelected !== 'new') {
+            const tmpl = templates.find(t => t.id === initialSelected);
+            if (tmpl) {
+                if (currentLang === 'en') {
+                    setTitleEn(tmpl.title);
+                    setPromptEn(tmpl.prompt);
+                    setControlsEn(tmpl.controls || []);
                 } else {
-                    // Admin mode shows both, populate accordingly
-                    const isEn = initialTemplate.lang === 'en';
-                    if (isEn) {
-                        setTitleEn(initialTemplate.title);
-                        setPromptEn(initialTemplate.prompt);
-                        setControlsEn(initialTemplate.controls || []);
-                    } else {
-                        setTitleDe(initialTemplate.title);
-                        setPromptDe(initialTemplate.prompt);
-                        setControlsDe(initialTemplate.controls || []);
-                    }
+                    setTitleDe(tmpl.title);
+                    setPromptDe(tmpl.prompt);
+                    setControlsDe(tmpl.controls || []);
                 }
             }
         }
-    }, [isOpen, mode, initialTemplate]);
+    }, [isOpen, initialTemplateId, currentLang, templates]);
 
     const handleSave = async (openShareAfterSave = false) => {
-        const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
+        const results: { id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
-        if (scope === 'user') {
-            if (currentLang === 'de') {
-                if (promptDe.trim()) {
-                    results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
-                }
-            } else {
-                if (promptEn.trim()) {
-                    results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
-                }
+        if (currentLang === 'de') {
+            if (promptDe.trim()) {
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             }
         } else {
-            if (promptDe.trim()) {
-                results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
-            }
             if (promptEn.trim()) {
-                results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
-        const saved = await onSave(results, { closeOnSuccess: !openShareAfterSave });
+
+        const saved = await onSave(results, { closeOnSuccess: false });
         if (openShareAfterSave && saved) {
             setSavedTemplateForShare(saved);
             setIsShareModalOpen(true);
+        } else if (saved) {
+            setSelectedId(saved.id);
+            if (isMobile) setMobileView('list');
         }
     };
 
     const isSaveDisabled = () => {
-        if (scope === 'user') {
-            return currentLang === 'de' ? !promptDe.trim() : !promptEn.trim();
-        }
-        return !promptDe.trim() && !promptEn.trim();
+        return currentLang === 'de' ? !promptDe.trim() : !promptEn.trim();
     };
 
     if (!isOpen) return null;
+
+    const renderEditor = () => (
+        <div className="flex flex-col h-full bg-white dark:bg-zinc-900/95 max-h-[90vh]">
+            <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
+                <div className="flex items-center gap-3">
+                    {isMobile && (
+                        <button onClick={() => setMobileView('list')} className="p-1 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors">
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    <span className={Typo.H3}>{selectedId === 'new' ? t('new_preset_title') : t('edit_preset_title')}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    {selectedId !== 'new' && selectedId && (
+                        <>
+                            <RoundIconButton
+                                icon={<Share2 className="w-4 h-4" />}
+                                onClick={() => setIsShareModalOpen(true)}
+                                tooltip="Teilen"
+                                disabled={!(titleDe || titleEn)}
+                                variant="ghost"
+                            />
+                            <RoundIconButton
+                                icon={<Trash className="w-4 h-4" />}
+                                onClick={() => setIsDeleteDialogOpen(true)}
+                                tooltip={t('delete')}
+                                variant="danger"
+                            />
+                        </>
+                    )}
+                    {selectedId === 'new' && (
+                        <RoundIconButton
+                            icon={<LinkIcon className="w-4 h-4" />}
+                            onClick={() => handleSave(true)}
+                            tooltip="Speichern & Teilen"
+                            disabled={isSaveDisabled()}
+                            variant="ghost"
+                        />
+                    )}
+                    <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-0 pt-4 scrollbar-hide bg-zinc-50/50 dark:bg-zinc-900/10">
+                <LanguageForm
+                    lang={currentLang as 'de' | 'en'}
+                    title={currentLang === 'de' ? titleDe : titleEn}
+                    setTitle={currentLang === 'de' ? setTitleDe : setTitleEn}
+                    prompt={currentLang === 'de' ? promptDe : promptEn}
+                    setPrompt={currentLang === 'de' ? setPromptDe : setPromptEn}
+                    controls={currentLang === 'de' ? controlsDe : controlsEn}
+                    setControls={currentLang === 'de' ? setControlsDe : setControlsEn}
+                    showHeader={false}
+                    t={t}
+                />
+            </div>
+
+            <ModalFooter>
+                <Button variant="primary" onClick={() => handleSave(false)} disabled={isSaveDisabled()} className="w-full">
+                    {t('save')}
+                </Button>
+            </ModalFooter>
+        </div>
+    );
+
+    const renderList = () => (
+        <div className="flex flex-col h-full overflow-hidden max-h-[90vh]">
+            <div className={`p-5 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
+                <span className={Typo.H3}>{currentLang === 'de' ? 'Vorlagen verwalten' : 'Manage Presets'}</span>
+                {isMobile ? (
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => { setSelectedId('new'); setMobileView('editor'); }} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><Plus className="w-5 h-5" /></button>
+                        <button onClick={onClose} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                    </div>
+                ) : (
+                    <button onClick={() => setSelectedId('new')} className="p-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                        <Plus className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                {templates.map(tmpl => (
+                    <button
+                        key={tmpl.id}
+                        onClick={() => {
+                            setSelectedId(tmpl.id);
+                            if (isMobile) setMobileView('editor');
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 border border-orange-200/50 dark:border-orange-500/20 shadow-sm' : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                    >
+                        <span className="text-[13px] font-medium truncate pr-2">{tmpl.title}</span>
+                        <ChevronRight className={`w-4 h-4 text-zinc-400 transition-opacity ${selectedId !== tmpl.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100 text-orange-500'}`} />
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
         <div
@@ -321,99 +413,43 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
         >
             <div
                 className={`
-                    w-full ${scope === 'admin' ? 'max-w-4xl' : 'max-w-lg'} 
+                    w-full ${isMobile ? 'max-w-md' : 'max-w-4xl h-[70vh] min-h-[500px]'} 
                     bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
-                    flex flex-col max-h-[90vh]
+                    flex overflow-hidden shadow-2xl
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
-                    <span className={Typo.H3}>{mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}</span>
-                    <div className="flex items-center gap-2">
-                        {mode === 'edit' && initialTemplate && (
-                            <>
-                                <RoundIconButton
-                                    icon={<Share2 className="w-4 h-4" />}
-                                    onClick={() => setIsShareModalOpen(true)}
-                                    tooltip="Teilen"
-                                    disabled={!(titleDe || titleEn)}
-                                    variant="ghost"
-                                />
-                                <RoundIconButton
-                                    icon={<Trash className="w-4 h-4" />}
-                                    onClick={() => setIsDeleteDialogOpen(true)}
-                                    tooltip={t('delete')}
-                                    variant="danger"
-                                />
-                            </>
-                        )}
-                        {mode === 'create' && (
-                            <RoundIconButton
-                                icon={<LinkIcon className="w-4 h-4" />}
-                                onClick={() => handleSave(true)}
-                                tooltip="Speichern & Teilen"
-                                disabled={isSaveDisabled()}
-                                variant="ghost"
-                            />
-                        )}
-                        <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                {isMobile ? (
+                    <div className="flex-1 w-full min-h-0">
+                        {mobileView === 'list' ? renderList() : renderEditor()}
                     </div>
-                </div>
-
-                <div className={`flex-1 overflow-hidden min-h-0 ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200/50 dark:divide-zinc-800/50' : 'flex flex-col'}`}>
-                    {/* German Form */}
-                    {(scope === 'admin' || currentLang === 'de') && (
-                        <div className="overflow-y-auto min-h-0 pt-4 scrollbar-hide">
-                            <LanguageForm
-                                lang="de"
-                                title={titleDe} setTitle={setTitleDe}
-                                prompt={promptDe} setPrompt={setPromptDe}
-                                controls={controlsDe} setControls={setControlsDe}
-                                showHeader={scope === 'admin'}
-                                t={t}
-                            />
+                ) : (
+                    <>
+                        <div className="w-[300px] border-r border-zinc-200/50 dark:border-zinc-800/50 shrink-0 bg-zinc-50/50 dark:bg-zinc-950/50">
+                            {renderList()}
                         </div>
-                    )}
-
-                    {/* English Form */}
-                    {(scope === 'admin' || currentLang === 'en') && (
-                        <div className={`overflow-y-auto min-h-0 pt-4 scrollbar-hide ${scope === 'admin' ? 'bg-zinc-50/50 dark:bg-zinc-900/10' : ''}`}>
-                            <LanguageForm
-                                lang="en"
-                                title={titleEn} setTitle={setTitleEn}
-                                prompt={promptEn} setPrompt={setPromptEn}
-                                controls={controlsEn} setControls={setControlsEn}
-                                showHeader={scope === 'admin'}
-                                t={t}
-                            />
+                        <div className="flex-1 min-w-0 bg-white dark:bg-zinc-900/95">
+                            {selectedId ? renderEditor() : (
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-400">
+                                    <span className="text-sm">Bitte wähle links eine Vorlage aus oder erstelle eine neue.</span>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <ModalFooter>
-                    <Button
-                        variant="primary"
-                        onClick={() => handleSave(false)}
-                        disabled={isSaveDisabled()}
-                        className="w-full"
-                    >
-                        {t('save')}
-                    </Button>
-                </ModalFooter>
+                    </>
+                )}
 
                 <ConfirmDialog
                     isOpen={isDeleteDialogOpen}
                     title={t('confirm_delete_preset')}
-                    description={initialTemplate?.title || ''}
+                    description={activeTemplate?.title || ''}
                     confirmLabel={t('delete')}
                     cancelLabel={t('cancel')}
                     onConfirm={() => {
-                        if (initialTemplate) onDelete?.(initialTemplate.id);
+                        if (selectedId && selectedId !== 'new') onDelete?.(selectedId);
                         setIsDeleteDialogOpen(false);
-                        onClose();
+                        setSelectedId(null);
+                        if (isMobile) setMobileView('list');
                     }}
                     onCancel={() => setIsDeleteDialogOpen(false)}
                 />
@@ -421,8 +457,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 <ShareTemplateModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
-                    templateName={savedTemplateForShare?.title || initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
-                    slug={savedTemplateForShare?.slug || initialTemplate?.slug}
+                    templateName={savedTemplateForShare?.title || activeTemplate?.title || titleDe || titleEn || 'Unbenannt'}
+                    slug={savedTemplateForShare?.slug || activeTemplate?.slug}
                 />
             </div>
         </div>

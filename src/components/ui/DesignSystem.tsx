@@ -9,9 +9,9 @@ import { X, Loader2 } from 'lucide-react';
 export const Theme = {
     Colors: {
         // Structural Backgrounds
-        CanvasBg: "bg-zinc-50 dark:bg-zinc-950",      // App Background
-        PanelBg: "bg-white dark:bg-zinc-900",        // Sidebars, Sheets
-        ModalBg: "bg-white dark:bg-zinc-900",        // Modals
+        CanvasBg: "bg-zinc-50 dark:bg-zinc-950", // App Background
+        PanelBg: "bg-white dark:bg-zinc-900", // Sidebars, Sheets
+        ModalBg: "bg-white dark:bg-zinc-900", // Modals
 
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",
@@ -27,9 +27,9 @@ export const Theme = {
         GridDot: "var(--grid-dot)",
 
         // Text Colors
-        TextPrimary: "text-zinc-900 dark:text-zinc-100",  // Almost Black / Almost White
-        TextSecondary: "text-zinc-500",                   // Unified Mid Gray for both modes
-        TextHighlight: "text-black dark:text-white",       // Pure Black / Pure White
+        TextPrimary: "text-zinc-900 dark:text-zinc-100", // Almost Black / Almost White
+        TextSecondary: "text-zinc-500", // Unified Mid Gray for both modes
+        TextHighlight: "text-black dark:text-white", // Pure Black / Pure White
         TextSubtle: "text-zinc-400 dark:text-zinc-500",
 
         // Interactive/Accents
@@ -40,24 +40,19 @@ export const Theme = {
         Danger: "text-red-600 dark:text-red-400",
         DangerBg: "bg-red-50 dark:bg-red-900/20",
         DangerBorder: "border-red-200 dark:border-red-800",
-
-        // Brand
-        Terracotta: "text-[#CC673F]",
-        TerracottaBg: "bg-[#CC673F]",
-        TerracottaBorder: "border-[#CC673F]",
-        TerracottaHex: "#CC673F",
     },
     Effects: {
         Glass: "bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm", // Slight blur for floating elements
         Overlay: "bg-black/40", // Dimming without blur
-        Transition: "transition-all duration-200 ease-in-out",
-        Shadow: "shadow-sm",
+        Transition: "transition-all duration-150 ease-in-out",
+        Shadow: "",
     },
     Geometry: {
-        // TIGHTER RADII AS REQUESTED
-        Radius: "rounded-md",     // 6px - Standard for inputs, buttons, list items
-        RadiusLg: "rounded-lg",   // 8px - For containers, modals, panels (was xl/2xl)
-        RadiusFull: "rounded-full",
+        RadiusSm: 'rounded-md',      // 6px
+        Radius: 'rounded-lg',        // 8px
+        RadiusLg: 'rounded-2xl',     // 16px - For Cards/side-sheets
+        RadiusXl: 'rounded-3xl',     // 24px - For Modals/Overlays
+        RadiusFull: 'rounded-full',  // For Pills/Buttons
     },
     Fonts: {
         Main: "font-sans",
@@ -155,11 +150,11 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {isVisible && createPortal(
                 <div
                     className={`
-                        fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
-                        bg-white dark:bg-zinc-950
-                        text-zinc-900 dark:text-zinc-100
-                        border border-zinc-200 dark:border-zinc-800 shadow-md
-                    `}
+ fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
+ bg-white dark:bg-zinc-950
+ text-zinc-900 dark:text-zinc-100
+ border border-zinc-200 dark:border-zinc-800 
+ `}
                     style={{
                         top: coords.top,
                         left: coords.left,
@@ -208,33 +203,45 @@ export const ModalFooter: React.FC<{ children: React.ReactNode; className?: stri
 
 // -- Buttons --
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    variant?: 'primary' | 'primary-mono' | 'secondary' | 'danger' | 'ghost' | 'white' | 'black';
+    size?: 's' | 'm' | 'l';
     icon?: React.ReactNode;
     isLoading?: boolean;
     tooltip?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children, variant = 'primary', icon, isLoading, className = '', disabled, tooltip, ...props
+    children, variant = 'primary', size = 'm', icon, isLoading, className = '', disabled, tooltip, ...props
 }) => {
     // Structural classes
-    const base = `flex items-center justify-center gap-2 ${Theme.Geometry.Radius} ${Theme.Effects.Transition} active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0`;
+    const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-semibold`;
 
-    // Aesthetic classes
+    // Size variants
+    const sizes = {
+        s: 'h-8 px-4 text-[11px]',
+        m: 'h-10 px-5 text-[12px]',
+        l: 'h-12 px-6 text-[14px]',
+    };
+
+    // Aesthetic variants
     const variants = {
-        primary: `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90 h-[42px] px-6 ${Typo.ButtonLabel}`,
-
-        secondary: `bg-zinc-100/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 h-[42px] px-6 ${Typo.ButtonLabel}`,
-
-        danger: `${Theme.Colors.DangerBg} ${Theme.Colors.Danger} hover:bg-red-500/20 h-[42px] px-6 ${Typo.ButtonLabel}`,
-
-        ghost: `${Theme.Colors.SurfaceHover} ${Theme.Colors.TextSecondary} hover:text-black dark:hover:text-white h-10 px-4 ${Typo.ButtonLabel}`
+        primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
+        'primary-mono': `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm hover:opacity-90`,
+        white: `bg-white text-zinc-900 shadow-sm hover:opacity-90`,
+        black: `bg-zinc-900 text-white shadow-sm hover:opacity-90`,
+        secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700`,
+        danger: `bg-red-500 text-white hover:bg-red-600 shadow-sm`,
+        ghost: `bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100`
     };
 
     const btn = (
-        <button className={`${base} ${variants[variant]} ${className}`} disabled={disabled || isLoading} {...props}>
-            {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            {!isLoading && icon}
+        <button
+            className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
+            disabled={disabled || isLoading}
+            {...props}
+        >
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {!isLoading && icon && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {children}
         </button>
     );
@@ -256,16 +263,52 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
     const btn = (
         <button
             className={`
-                w-10 h-10 flex items-center justify-center ${Theme.Geometry.Radius} ${Theme.Effects.Transition} shrink-0 
-                ${active
+  w-10 h-10 flex items-center justify-center ${Theme.Geometry.RadiusFull} ${Theme.Effects.Transition} shrink-0 
+  ${active
                     ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white'
                     : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white'
                 } 
-                ${className}
-            `}
+  ${className}
+  `}
             {...props}
         >
             {React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
+        </button>
+    );
+
+    if (tooltip) {
+        return <Tooltip text={tooltip}>{btn}</Tooltip>;
+    }
+    return btn;
+};
+
+// -- Round Icon Button (Apple Aesthetics) --
+interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    icon: React.ReactNode;
+    active?: boolean;
+    tooltip?: string;
+    variant?: 'default' | 'danger' | 'ghost';
+}
+
+export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, variant = 'default', className = '', ...props }) => {
+    // Structural classes
+    const base = `w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95`;
+
+    // Aesthetic classes
+    const variants = {
+        default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:`,
+        danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:`,
+        ghost: `bg-transparent border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+    };
+
+    const activeStyle = active ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white border-transparent' : variants[variant];
+
+    const btn = (
+        <button
+            className={`${base} ${activeStyle} ${className}`}
+            {...props}
+        >
+            {React.cloneElement(icon as React.ReactElement, { className: `w-[18px] h-[18px] ${(icon as React.ReactElement).props.className || ''}` })}
         </button>
     );
 

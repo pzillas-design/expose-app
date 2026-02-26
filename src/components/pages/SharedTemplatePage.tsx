@@ -76,8 +76,9 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                 user={user}
                 userProfile={userProfile}
                 credits={credits}
-                onCreateBoard={onCreateBoard}
+                onCreate={onCreateBoard}
                 onSignIn={onSignIn}
+                onToggleSettings={() => {}}
                 t={t}
             />
 

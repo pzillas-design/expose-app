@@ -19,20 +19,17 @@ interface UseGenerationProps {
     selectAndSnap: (id: string, instant?: boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
     showToast: (msg: string, type: "success" | "error", duration?: number) => void;
-    currentBoardId: string | null;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
 }
 
 const COSTS: Record<string, number> = {
-    'fast': 0.00,
     'pro-1k': 0.10,
     'pro-2k': 0.25,
     'pro-4k': 0.50
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'fast': 12000,
     'pro-1k': 23000,
     'pro-2k': 36000,
     'pro-4k': 60000
@@ -40,10 +37,9 @@ const ESTIMATED_DURATIONS: Record<string, number> = {
 
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
-    'fast': 'gemini-2.5-flash-image',
-    'pro-1k': 'gemini-3-pro-image-preview',
-    'pro-2k': 'gemini-3-pro-image-preview',
-    'pro-4k': 'gemini-3-pro-image-preview'
+    'pro-1k': 'google/nano-banana-pro',
+    'pro-2k': 'google/nano-banana-pro',
+    'pro-4k': 'google/nano-banana-pro'
 };
 
 const resolveTargetModel = (quality: string): string | undefined => {
@@ -83,7 +79,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
 
@@ -348,7 +344,6 @@ export const useGeneration = ({
                         cost: cost,
                         prompt: prompt,
                         concurrent_jobs: currentConcurrency,
-                        board_id: currentBoardId || null,
                         parent_id: sourceImage.id
                     }).then(() => attachedJobIds.current.add(newId));
                 }
@@ -365,7 +360,6 @@ export const useGeneration = ({
                         qualityMode,
                         modelName: resolveTargetModel(qualityMode),
                         newId,
-                        boardId: currentBoardId || undefined,
                         targetVersion: newVersion,
                         targetTitle: placeholder.title
                     }),
@@ -420,7 +414,7 @@ export const useGeneration = ({
         };
 
         processGenerationAsync();
-    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm]);
+    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
@@ -456,7 +450,7 @@ export const useGeneration = ({
             id: newId, src: '', storage_path: '', width: displayWidth, height: displayHeight, realWidth, realHeight,
             title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
-            annotations: creationAnns, boardId: currentBoardId || undefined, userId: user?.id
+            annotations: creationAnns, userId: user?.id
         };
 
         setRows(prev => [...prev, { id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }]);
@@ -466,8 +460,7 @@ export const useGeneration = ({
             try {
                 if (user && !isAuthDisabled) {
                     supabase.from('generation_jobs').insert({
-                        id: newId, user_id: user.id, user_name: user.email, type: 'Text2Img', model: modelId,
-                        status: 'processing', cost, prompt, board_id: currentBoardId || null
+                        status: 'processing', cost, prompt
                     });
                 }
 
@@ -478,7 +471,7 @@ export const useGeneration = ({
 
                 const finalImage = await imageService.processGeneration({
                     payload: structuredRequest, sourceImage: placeholder, qualityMode: modelId,
-                    modelName: resolveTargetModel(modelId), newId, boardId: currentBoardId || undefined, attachments, aspectRatio: ratio
+                    modelName: resolveTargetModel(modelId), newId, attachments, aspectRatio: ratio
                 });
 
                 if (finalImage) {
@@ -501,7 +494,7 @@ export const useGeneration = ({
         };
 
         processNewSync();
-    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t, confirm]);
+    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);
 
 
     return { performGeneration, performNewGeneration };

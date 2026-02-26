@@ -20,7 +20,7 @@ export interface EditorCanvasProps {
     activeAnnotationId?: string | null;
     onActiveAnnotationChange?: (id: string | null) => void;
     onInteractionStart?: () => void; // New: signal start of move/resize
-    onInteractionEnd?: () => void;   // New: signal end of move/resize
+    onInteractionEnd?: () => void; // New: signal end of move/resize
     onEditStart?: (mode: 'brush' | 'objects') => void;
     onContextMenu?: (e: React.MouseEvent) => void;
     t?: TranslationFunction;
@@ -31,12 +31,12 @@ const RES_SCALE = 3;
 // Styles moved to constants for cleanliness
 const OVERLAY_STYLES = {
     // No shadows, clean borders
-    ChipContainer: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} hover:border-zinc-500 group/chip shadow-sm`,
+    ChipContainer: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} hover:border-zinc-500 group/chip `,
 
-    ChipContainerActive: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} p-1.5 min-w-[120px] z-30 shadow-md`,
+    ChipContainerActive: `relative flex items-center gap-0 rounded-lg border transition-all ${Theme.Colors.ModalBg} ${Theme.Colors.Border} p-1.5 min-w-[120px] z-30 `,
 
-    ActionBtn: `flex items-center justify-center w-5 h-5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-black dark:hover:text-white transition-all shrink-0`,
-    SaveBtn: `flex items-center justify-center w-5 h-5 rounded bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all shrink-0 ml-1`,
+    ActionBtn: `flex items-center justify-center w-5 h-5 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-black dark:hover:text-white transition-all shrink-0`,
+    SaveBtn: `flex items-center justify-center w-5 h-5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-all shrink-0 ml-1`,
     RefThumb: `relative group/thumb shrink-0 w-6 h-6 mr-1.5`,
     RefImage: `w-full h-full object-cover rounded border border-zinc-200 dark:border-zinc-700`,
     Arrow: `absolute w-0 h-0 border-[6px] border-transparent pointer-events-none`
@@ -355,15 +355,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             <canvas
                 ref={canvasRef}
                 className={`
-                    absolute inset-0 w-full h-full 
-                    ${activeTab === 'brush' && maskTool === 'brush' ? 'touch-none cursor-none' : 'cursor-default'}
-                `}
+ absolute inset-0 w-full h-full 
+ ${activeTab === 'brush' && maskTool === 'brush' ? 'touch-none cursor-none' : 'cursor-default'}
+ `}
             />
 
             {/* Sticky Brush Preview when resizing */}
             {activeTab === 'brush' && isBrushResizing && (
                 <div
-                    className="absolute z-50 rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.7)] pointer-events-none transition-all duration-75"
+                    className="absolute z-50 rounded-full border border-white )] pointer-events-none transition-all duration-75"
                     style={{
                         width: brushSize * zoom,
                         height: brushSize * zoom,
@@ -376,7 +376,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             )}
 
             {/* Normal Cursor Brush Preview */}
-            {activeTab === 'brush' && maskTool === 'brush' && isActive && !isBrushResizing && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white shadow-[0_0_10px_rgba(255,255,255,0.5)] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize * zoom, height: brushSize * zoom, left: 0, top: 0 }} />}
+            {activeTab === 'brush' && maskTool === 'brush' && isActive && !isBrushResizing && <div ref={cursorRef} className={`absolute pointer-events-none rounded-full border border-white )] z-50 transition-opacity duration-150 ${isHovering ? 'opacity-100' : 'opacity-0'}`} style={{ width: brushSize * zoom, height: brushSize * zoom, left: 0, top: 0 }} />}
 
             {/* UI Overlay for Annotations */}
             {annotations.map(ann => {
@@ -412,11 +412,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 {isActiveItem && (
                                     <>
                                         {points.map((p, idx) => (
-                                            <div key={idx} className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
+                                            <div key={idx} className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                                 style={{ left: `${(p.x / width) * 100}%`, top: `${(p.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(maxX / width) * 100}%`, top: `${(minY / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -447,13 +447,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 </svg>
                                 {isActiveItem && (
                                     <>
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p0.x / width) * 100}%`, top: `${(p0.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
-                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] shadow-md pointer-events-auto"
+                                        <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p1.x / width) * 100}%`, top: `${(p1.y / height) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(Math.max(p0.x, p1.x) / width) * 100}%`, top: `${(Math.min(p0.y, p1.y) / height) * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -505,7 +505,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             { x: cx - rx, y: cy, cursor: 'w-resize', mode: 'tl' }
                                         ].map((h, i) => (
                                             <div key={i}
-                                                className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full z-[60] pointer-events-auto shadow-md"
+                                                className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full z-[60] pointer-events-auto "
                                                 style={{
                                                     left: `${(h.x / width) * 100}%`,
                                                     top: `${(h.y / height) * 100}%`,
@@ -516,7 +516,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             />
                                         ))}
 
-                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
+                                        <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                             style={{ left: `${(x + w) / width * 100}%`, top: `${y / height * 100}%`, transform: 'translate(10px, -30px)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
@@ -600,7 +600,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     />
                                 </svg>
                                 {isActiveItem && (
-                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-xl pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
+                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
                                         style={{ left: `${leftPct}%`, top: `${topPct}%`, transform: 'translate(10px, -30px)' }}
                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                         <Trash className="w-4 h-4" />

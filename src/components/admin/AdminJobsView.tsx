@@ -112,7 +112,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     if (modelName.includes('pro') || modelName.includes('3')) {
                                                         displayName = 'Nano Banana Pro';
                                                         quality = '1K'; // Default for Pro
-                                                        badgeColor = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
+                                                        badgeColor = 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
 
                                                         if (modelName.includes('4k')) {
                                                             quality = '4K';

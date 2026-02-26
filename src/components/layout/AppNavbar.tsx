@@ -1,111 +1,211 @@
-
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Plus, Settings, LayoutGrid, Wallet, Shield } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, MoreHorizontal, Plus, Upload, Wand2, Trash2, RefreshCcw, Settings, CheckSquare, LogOut, SquarePen, RotateCw } from 'lucide-react';
 import { Logo } from '../ui/Logo';
-import { Wordmark } from '../ui/Wordmark';
-import { Theme, Typo, Button } from '../ui/DesignSystem';
+import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
+import { DropdownMenu } from '../ui/DropdownMenu';
 
 interface AppNavbarProps {
     user: any;
     userProfile: any;
     credits: number;
-    onCreateBoard: () => void;
+    onCreate: () => void;
     onSignIn?: () => void;
+    onToggleSettings?: () => void;
+    onSignOut?: () => void;
+    onSelectMode?: () => void;
+    isSelectMode?: boolean;
+    onCancelSelectMode?: () => void;
+    onDeleteSelected?: () => void;
+    onGenerateMoreSelected?: () => void;
+    onGenerateMoreDetail?: () => void;
+    selectedCount?: number;
     t: (key: any) => string;
+    mode?: 'grid' | 'detail';
+    detailInfo?: string;
+    detailActions?: React.ReactNode;
+    onBack?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
     user,
     userProfile,
     credits,
-    onCreateBoard,
+    onCreate,
     onSignIn,
-    t
+    onToggleSettings,
+    onSignOut,
+    onSelectMode,
+    isSelectMode,
+    onCancelSelectMode,
+    onDeleteSelected,
+    onGenerateMoreSelected,
+    onGenerateMoreDetail,
+    selectedCount = 0,
+    t,
+    mode = 'grid',
+    detailInfo,
+    detailActions,
+    onBack
 }) => {
-    const getInitials = (name?: string, email?: string) => {
-        if (name && name.trim()) {
-            const parts = name.trim().split(' ');
-            const first = parts[0];
-            const second = parts[1];
-            if (first && second && second[0]) return (first[0] + second[0]).toUpperCase();
-            if (first && first[0]) return first[0].toUpperCase();
-        }
-        if (email && email[0]) return email[0].toUpperCase();
-        return '?';
-    };
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
+    const createDropdownRef = useRef<HTMLDivElement>(null);
+    const gridMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as Node;
+
+            if (isCreateOpen && createDropdownRef.current && !createDropdownRef.current.contains(target)) {
+                setIsCreateOpen(false);
+            }
+
+            if (isGridMenuOpen && gridMenuRef.current && !gridMenuRef.current.contains(target)) {
+                setIsGridMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isCreateOpen, isGridMenuOpen]);
+
+    const isDetail = mode === 'detail';
+    const isGerman = t('current_lang') === 'de';
+
+    const leftContent = isDetail ? (
+        <div className="flex items-center gap-4">
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
+            <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
+                <button
+                    onClick={onToggleSettings}
+                    className="text-[13px] font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+                >
+                    {credits.toFixed(2)} €
+                </button>
+            </Tooltip>
+        </div>
+    ) : isSelectMode ? (
+        <button
+            onClick={onCancelSelectMode}
+            className="px-4 h-8 text-[12px] font-medium bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-full transition-all"
+        >
+            {isGerman ? 'Abbrechen' : 'Cancel'}
+        </button>
+    ) : (
+        user && (
+            <div className="relative" ref={createDropdownRef}>
+                <RoundIconButton
+                    icon={<Plus className="w-5 h-5" />}
+                    onClick={() => setIsCreateOpen(!isCreateOpen)}
+                    variant="ghost"
+                    active={isCreateOpen}
+                />
+                {isCreateOpen && (
+                    <div className="absolute top-full left-0 mt-2 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); } },
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
+        )
+    );
+
+    const centerContent = isSelectMode ? (
+        <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-400 tabular-nums">
+            {selectedCount} {isGerman ? (selectedCount === 1 ? 'Bild ausgewählt' : 'Bilder ausgewählt') : (selectedCount === 1 ? 'image selected' : 'images selected')}
+        </span>
+    ) : isDetail && detailInfo ? (
+        <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
+            {detailInfo}
+        </span>
+    ) : (
+        <button
+            type="button"
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={onBack}
+        >
+            <Logo className="w-7 h-7" />
+        </button>
+    );
+
+    const rightContent = isDetail ? (
+        <div className="flex items-center gap-1">
+            {detailActions}
+        </div>
+    ) : isSelectMode ? (
+        <div className="flex items-center gap-1">
+            <Tooltip text={isGerman ? 'Löschen' : 'Delete'}>
+                <button
+                    onClick={onDeleteSelected}
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+            </Tooltip>
+            <Tooltip text={isGerman ? 'Neu generieren' : 'Regenerate'}>
+                <button
+                    onClick={onGenerateMoreSelected}
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                >
+                    <RefreshCcw className="w-4 h-4" />
+                </button>
+            </Tooltip>
+        </div>
+    ) : (
+        <>
+            {!user ? (
+                <button
+                    onClick={onSignIn}
+                    className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
+                >
+                    {t('login_btn') || 'Login'}
+                </button>
+            ) : (
+                <div className="relative" ref={gridMenuRef}>
+                    <RoundIconButton
+                        icon={<MoreHorizontal className="w-4 h-4" />}
+                        onClick={() => setIsGridMenuOpen(p => !p)}
+                        variant="ghost"
+                        active={isGridMenuOpen}
+                    />
+                    {isGridMenuOpen && (
+                        <div className="absolute top-full mt-2 right-0 z-50">
+                            <DropdownMenu
+                                items={[
+                                    { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                    { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                    { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); }, separator: true },
+                                    { label: 'Impressum', onClick: () => { setIsGridMenuOpen(false); window.open('/impressum', '_blank'); } },
+                                    { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); }, separator: true },
+                                ]}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+        </>
+    );
 
     return (
-        <header className="fixed top-0 z-50 w-full">
-            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-28 pt-4 flex items-center justify-between">
-                {/* Brand */}
-                <NavLink to="/" state={{ skipRedirect: true }} className="flex items-center gap-4 group transition-all duration-300">
-                    <Logo className="w-11 h-11 group-hover:scale-110 transition-transform duration-500" />
-                    <Wordmark className="h-6 text-zinc-900 dark:text-white" />
-                </NavLink>
+        <header className="absolute top-0 left-0 right-0 h-14 z-50 pointer-events-none">
+            {/* The background is completely transparent here to let canvas show through,
+                but we add a subtle gradient if needed, or just let the elements themselves have backgrounds */}
+            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-900">
 
-                {/* Navigation Links - Only for logged in users */}
-                {user && (
-                    <nav className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl backdrop-blur-xl bg-white/85 dark:bg-zinc-900/85 border border-zinc-200/30 dark:border-white/10">
-                        <NavLink
-                            to="/projects"
-                            className={({ isActive }) => `
-                                flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
-                                ${isActive
-                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
-                            `}
-                        >
-                            <LayoutGrid className="w-4 h-4" />
-                            {t('tab_projects')}
-                        </NavLink>
+                <div className="flex items-center w-1/3">
+                    {leftContent}
+                </div>
 
-                        <NavLink
-                            to="/settings"
-                            className={({ isActive }) => `
-                                flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
-                                ${isActive
-                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
-                            `}
-                        >
-                            <Settings className="w-4 h-4" />
-                            {t('tab_settings')}
-                        </NavLink>
-                    </nav>
-                )}
+                <div className="flex items-center justify-center gap-2 w-1/3">
+                    {centerContent}
+                </div>
 
-                {/* Right Side Actions */}
-                <div className="flex items-center gap-6">
-                    {user ? (
-                        <>
-                            {/* New Board Button */}
-                            <Button
-                                onClick={onCreateBoard}
-                                variant="primary"
-                                icon={<Plus className="w-4 h-4" />}
-                                className="px-6 h-11 hidden lg:flex"
-                            >
-                                {t('default_project_name')}
-                            </Button>
-
-                            {/* Compact New Board for small screens */}
-                            <button
-                                onClick={onCreateBoard}
-                                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all"
-                            >
-                                <Plus className="w-5 h-5" />
-                            </button>
-                        </>
-                    ) : (
-                        <Button
-                            onClick={onSignIn}
-                            variant="primary"
-                            className="px-8 h-11"
-                        >
-                            {t('login_btn') || 'Login'}
-                        </Button>
-                    )}
+                <div className="flex items-center justify-end gap-2 w-1/3">
+                    {rightContent}
                 </div>
             </div>
         </header>

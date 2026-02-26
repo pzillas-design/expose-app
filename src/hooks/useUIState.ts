@@ -10,6 +10,7 @@ export const useUIState = () => {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
     const [isBrushResizing, setIsBrushResizing] = useState(false);
     const [previousNav, setPreviousNav] = useState<{ zoom: number, scroll: { x: number, y: number } } | null>(null);
+    const [isSelectMode, setIsSelectMode] = useState(false);
 
     return {
         sideSheetMode,
@@ -29,6 +30,8 @@ export const useUIState = () => {
         isBrushResizing,
         setIsBrushResizing,
         previousNav,
-        setPreviousNav
+        setPreviousNav,
+        isSelectMode,
+        setIsSelectMode
     };
 };

@@ -18,7 +18,7 @@ const ChipGroup = ({ items, activeItem, pressedItem, targetItem, scale, hideOnMo
                 key={item}
                 className={`px-4 py-2.5 text-xs rounded-md transition-all duration-150 flex items-center justify-center leading-none font-medium ${hideOnMobile.includes(item) ? 'hidden lg:flex' : 'flex'
                     } ${activeItem === item
-                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md'
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 '
                         : pressedItem && item === targetItem
                             ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -90,7 +90,7 @@ const SidepanelMockup = ({
                 <div className="flex flex-col gap-3 lg:gap-4">
                     <div className="hidden lg:grid grid-cols-2 gap-2">
                         <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Pen className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" /> Anmerkung
+                            <Pen className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Anmerkung
                         </div>
                         <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
                             <Camera className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
@@ -102,7 +102,7 @@ const SidepanelMockup = ({
                         style={{ transform: `scale(${buttonScale})` }}
                     >
                         <span>Generieren</span>
-                        <div className="absolute right-3 p-1 rounded hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
+                        <div className="absolute right-3 p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
                             <TwoDotsVertical className="w-4 h-4" />
                         </div>
                     </div>
@@ -279,13 +279,13 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
 };
 
 const styleContent = `
-    .mockup-cursor {
-        animation: cursor-blink 1s steps(1, start) infinite;
-    }
-    @keyframes cursor-blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-    }
+ .mockup-cursor {
+ animation: cursor-blink 1s steps(1, start) infinite;
+ }
+ @keyframes cursor-blink {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0; }
+ }
 `;
 
 if (typeof document !== 'undefined') {

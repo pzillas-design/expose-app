@@ -57,7 +57,6 @@ export interface CanvasImage {
   modelVersion?: string; // Verified model version from API response
   estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
-  boardId?: string; // Link to board
   userId?: string; // Owner ID (mapped from DB user_id)
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep
@@ -65,23 +64,11 @@ export interface CanvasImage {
 
 export interface ImageRow {
   id: string;
-  board_id?: string; // Link to board
   title: string;
   items: CanvasImage[];
   createdAt?: number; // DB Prep
 }
 
-export interface Board {
-  id: string;
-  userId: string;
-  name: string;
-  thumbnail?: string;
-  previewImages?: string[]; // Added for dynamic multi-thumbnails
-  itemCount?: number;
-  createdAt: number;
-  updatedAt: number;
-  lastActivityAt?: number; // Timestamp of last image generation/upload (for auto-deletion)
-}
 
 export interface PresetOption {
   id: string;
@@ -137,7 +124,7 @@ export interface LibraryCategory {
   isUserCreated?: boolean; // New
 }
 
-export type GenerationQuality = 'fast' | 'pro-1k' | 'pro-2k' | 'pro-4k';
+export type GenerationQuality = 'pro-1k' | 'pro-2k' | 'pro-4k';
 
 // --- ADMIN TYPES ---
 

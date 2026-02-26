@@ -46,7 +46,12 @@ export const storageService = {
                 fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
             }
 
-            const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
+            const normalizedIdentifier = ((userIdentifier || '')
+                .trim()
+                .toLowerCase()
+                .replace(/\//g, '_')) || 'unknown-user';
+
+            const folderPath = subfolder ? `${normalizedIdentifier}/${subfolder}` : normalizedIdentifier;
             const filePath = `${folderPath}/${fileName}`;
 
             console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);

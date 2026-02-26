@@ -214,7 +214,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                     {items.map((item) => (
                         <div
                             key={item.id}
-                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center h-[52px] group ${draggedItemId === item.id ? 'opacity-50' : ''} ${selectedIds.has(item.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
+                            className={`grid ${gridTemplate} hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors items-center h-[52px] group ${draggedItemId === item.id ? 'opacity-50' : ''} ${selectedIds.has(item.id) ? 'bg-orange-50/30 dark:bg-orange-900/10' : ''}`}
                             draggable
                             onDragStart={(e) => onDragStart(e, item.id)}
                             onDragOver={(e) => onDragOver(e, item.id)}

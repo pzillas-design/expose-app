@@ -138,7 +138,7 @@ export const CropModal: React.FC<CropModalProps> = ({
         ctx.drawImage(
             img,
             cropX, cropY, cropW, cropH, // Source rect
-            0, 0, cropW, cropH          // Dest rect
+            0, 0, cropW, cropH // Dest rect
         );
 
         // 4. Export
@@ -151,7 +151,7 @@ export const CropModal: React.FC<CropModalProps> = ({
 
     return createPortal(
         <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center animate-in fade-in duration-300">
-            <div className={`${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} overflow-hidden flex flex-col max-w-[95vw] max-h-[90vh] w-auto h-auto`}>
+            <div className={`${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} overflow-hidden flex flex-col max-w-[95vw] max-h-[90vh] w-auto h-auto`}>
 
                 {/* Header */}
                 <div className={`flex items-center justify-between px-6 py-4 border-b ${Theme.Colors.Border} shrink-0 ${Theme.Colors.PanelBg} z-20`}>
@@ -224,19 +224,19 @@ export const CropModal: React.FC<CropModalProps> = ({
                             {/* Handles - Increased Click Area */}
                             {/* Corners - 24px Size for better grab */}
                             <div
-                                className="absolute -top-3 -left-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-nw-resize hover:scale-110 transition-transform shadow-sm"
+                                className="absolute -top-3 -left-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-nw-resize hover:scale-110 transition-transform "
                                 onMouseDown={(e) => handleMouseDown(e, 'nw')}
                             />
                             <div
-                                className="absolute -top-3 -right-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-ne-resize hover:scale-110 transition-transform shadow-sm"
+                                className="absolute -top-3 -right-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-ne-resize hover:scale-110 transition-transform "
                                 onMouseDown={(e) => handleMouseDown(e, 'ne')}
                             />
                             <div
-                                className="absolute -bottom-3 -left-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-sw-resize hover:scale-110 transition-transform shadow-sm"
+                                className="absolute -bottom-3 -left-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-sw-resize hover:scale-110 transition-transform "
                                 onMouseDown={(e) => handleMouseDown(e, 'sw')}
                             />
                             <div
-                                className="absolute -bottom-3 -right-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-se-resize hover:scale-110 transition-transform shadow-sm"
+                                className="absolute -bottom-3 -right-3 w-6 h-6 border-2 border-white bg-black rounded-full cursor-se-resize hover:scale-110 transition-transform "
                                 onMouseDown={(e) => handleMouseDown(e, 'se')}
                             />
 

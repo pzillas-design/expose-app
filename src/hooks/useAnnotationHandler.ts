@@ -30,7 +30,13 @@ export const useAnnotationHandler = ({
 
         // 2. Persistent upload to storage
         const import_storageService = await import('../services/storageService');
-        const uploadResult = await import_storageService.storageService.uploadImage(src, user.id);
+        const storageIdentifier = user.email || user.id;
+        const uploadResult = await import_storageService.storageService.uploadImage(
+            src,
+            storageIdentifier,
+            `reference_${Date.now()}.png`,
+            'user-settings/references'
+        );
 
         if (!uploadResult) {
             showToast(t('upload_failed'), "error");

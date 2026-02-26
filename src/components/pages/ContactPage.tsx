@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo, SectionHeader, Button } from '@/components/ui/DesignSystem';
@@ -36,14 +35,6 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
 
     return (
         <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
-            <AppNavbar
-                user={user}
-                userProfile={userProfile}
-                credits={credits}
-                onCreateBoard={onCreateBoard}
-                onSignIn={onSignIn}
-                t={t}
-            />
 
             <main className="flex-1 flex flex-col justify-center relative overflow-hidden">
                 {/* Visual Background Elements */}

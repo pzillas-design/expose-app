@@ -2,10 +2,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
-import { slugify } from './utils/slugify.ts';
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage } from './services/gemini.ts';
+import { generateImageKie } from './services/kie.ts';
 import { generateImageReplicate } from './services/replicate.ts';
 import { COSTS } from './types/index.ts';
 
@@ -36,6 +36,21 @@ const logInfo = (context: string, message: string, data?: any) => {
     if (data) {
         console.log(`[INFO] Data:`, JSON.stringify(data, null, 2));
     }
+};
+
+const sanitizeEmailForPath = (email?: string | null) => {
+    if (!email) return null;
+    return email
+        .trim()
+        .toLowerCase()
+        .replace(/\//g, '_');
+};
+
+const buildUploadDateFolder = (date: Date) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(date.getFullYear());
+    return `upload${dd}${mm}${yyyy}`;
 };
 
 Deno.serve(async (req) => {
@@ -147,9 +162,7 @@ Deno.serve(async (req) => {
 
             // Determine model
             let finalModelName = 'gemini-3-pro-image-preview';
-            if (qualityMode === 'fast' || modelName === 'fast') {
-                finalModelName = 'gemini-2.5-flash-image';
-            } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
+            if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/') || modelName.startsWith('google/'))) {
                 finalModelName = modelName;
             }
 
@@ -242,24 +255,18 @@ Deno.serve(async (req) => {
                 logInfo('Replicate Success', `Prediction ID: ${replicateResult.predictionId}`);
 
             } else {
-                // Call Gemini API
-                logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-                geminiResponse = await generateImage(
-                    Deno.env.get('GEMINI_API_KEY')!,
+                // Call Kie API (Gemini models)
+                logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
+
+                const kieResponse = await generateImageKie(
+                    Deno.env.get('KIE_API_KEY')!,
                     finalModelName,
-                    parts,
-                    generationConfig,
-                    requestType
+                    payload,
+                    finalSourceBase64
                 );
 
-                // Extract result
-                const candidate = geminiResponse.candidates?.[0];
-                const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
-
-                if (!imagePart) {
-                    const finishReason = candidate?.finishReason;
-                    const safetyRatings = candidate?.safetyRatings;
-                    logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
+                if (!kieResponse?.data?.[0]?.b64_json) {
+                    logError('Kie API Response', `No image returned.`, kieResponse);
 
                     // Refund credits
                     if (!isPro && cost > 0) {
@@ -268,32 +275,10 @@ Deno.serve(async (req) => {
                             .update({ credits: profile.credits })
                             .eq('id', user.id);
                     }
-                    throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
+                    throw new Error('Image generation failed natively on Kie.ai');
                 }
-                generatedBase64 = imagePart.inlineData.data;
-            }
 
-            // Prepare storage path
-            let subfolder = board_id || 'unorganized';
-            if (board_id) {
-                try {
-                    const { data: boardData, error: boardError } = await supabaseAdmin
-                        .from('boards')
-                        .select('name')
-                        .eq('id', board_id)
-                        .limit(1); // Use .limit(1) instead of .maybeSingle() for safer error handling
-
-                    if (boardError) {
-                        logError('Board Fetch Error', boardError, { board_id });
-                    } else if (boardData && boardData.length > 0) {
-                        const board = boardData[0];
-                        subfolder = `${slugify(board.name)}_${board_id}`;
-                    } else {
-                        logInfo('Board Not Found', `Board with ID ${board_id} not found, using 'unorganized' subfolder.`);
-                    }
-                } catch (e) {
-                    logError('Board Fetch Exception', e, { board_id });
-                }
+                generatedBase64 = kieResponse.data[0].b64_json;
             }
 
             let dbBaseName = "";
@@ -342,9 +327,12 @@ Deno.serve(async (req) => {
                 dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
             }
 
-            const titleSlug = slugify(dbBaseName);
-            const filename = `${titleSlug}_v${currentVersion}_${newId.substring(0, 8)}.jpg`;
-            const filePath = `${user.id}/${subfolder}/${filename}`;
+            const rootFolder = sanitizeEmailForPath(user.email) || user.id;
+            const uploadDateFolder = buildUploadDateFolder(new Date());
+            const isOriginal = currentVersion <= 1;
+            const variantLabel = isOriginal ? 'original' : `variante${currentVersion}`;
+            const filename = `${variantLabel}_${newId.substring(0, 8)}.jpg`;
+            const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
 
             // Upload to storage using efficient decoding
             const binaryData = decodeBase64(generatedBase64);
