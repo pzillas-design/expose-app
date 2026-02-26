@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   avatar_url TEXT,
   role TEXT DEFAULT 'user',
-  credits DECIMAL DEFAULT 100.0,
+  credits DECIMAL DEFAULT 10.0,
   total_spent DECIMAL DEFAULT 0.0,
   joined_at TIMESTAMPTZ DEFAULT NOW(),
   last_active_at TIMESTAMPTZ DEFAULT NOW(),

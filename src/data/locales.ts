@@ -148,6 +148,8 @@ export const translations = {
     empty_board_desc: "Upload images or use the generator to get started.",
     upload_image_edit: "Upload Image & Edit",
     generate_new: "Generate New",
+    empty_feed_title: "No images yet",
+    empty_feed_subtitle: "Click \"+\" to generate your first image.",
 
     // Settings / User
     login_btn: "Login",
@@ -523,6 +525,8 @@ export const translations = {
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
     upload_image_edit: "Hochladen",
     generate_new: "Bild generieren",
+    empty_feed_title: "Noch keine Bilder",
+    empty_feed_subtitle: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
 
     // Settings / User
     login_btn: "Anmelden",

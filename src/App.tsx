@@ -142,6 +142,7 @@ export function App() {
                         setIsAuthModalOpen(true);
                     }}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
+                    onToggleSettings={() => setIsSettingsModalOpen(true)}
                     onSignOut={handleSignOut}
                     onSelectMode={() => actions.setIsSelectMode(true)}
                     isSelectMode={state.isSelectMode}
