@@ -130,118 +130,108 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
 
     return (
         <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-black relative">
-                <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-[1.5px] bg-zinc-100 dark:bg-black p-[1.5px] ${isMobile ? 'pb-32' : ''}`}>
-                    {/* Create New Tile */}
-                    <div
-                        ref={createMenuRef}
-                        className="aspect-square cursor-pointer overflow-hidden group bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors relative"
-                        onClick={() => setIsCreateMenuOpen(p => !p)}
-                    >
-                        <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+            <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-black relative flex flex-col">
+                <div className="flex-1">
+                    <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-900 ${isMobile ? 'pb-32' : ''}`}>
+                        {/* Create New Tile */}
+                        <div
+                            ref={createMenuRef}
+                            className="aspect-square cursor-pointer group bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors relative"
+                            onClick={() => setIsCreateMenuOpen(p => !p)}
+                        >
+                            <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
 
-                        {isCreateMenuOpen && (
-                            <div className="absolute bottom-4 left-4 z-50">
-                                <DropdownMenu
-                                    items={[
-                                        { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
-                                        { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onUpload?.(); } },
-                                    ]}
-                                />
+                            {isCreateMenuOpen && (
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]">
+                                    <DropdownMenu
+                                        items={[
+                                            { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
+                                            { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onUpload?.(); } },
+                                        ]}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {images.length > 0 ? images.map((img, idx) => {
+                            const isSelected = selectedIds.includes(img.id);
+                            const isKeyboardActive = activeIndex === idx;
+                            const previewSrc = img.thumbSrc || img.src;
+
+                            return (
+                                <div
+                                    key={img.id}
+                                    onMouseEnter={() => setActiveIndex(idx)}
+                                    onClick={() => {
+                                        if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
+                                        else onSelectImage(img.id);
+                                    }}
+                                    className={`aspect-square cursor-pointer group relative bg-white dark:bg-zinc-950`}
+                                >
+                                    {previewSrc ? (
+                                        <img
+                                            src={previewSrc}
+                                            alt={img.title}
+                                            className={`w-full h-full object-cover transition-transform duration-200 ease-out ${isSelectMode && isSelected ? 'scale-[0.85]' : (isKeyboardActive ? 'scale-105' : 'group-hover:scale-105')}`}
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            {img.isGenerating ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Loader2 className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-700" />
+                                                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-800">Generating</span>
+                                                </div>
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Overlay – purely visual, never eats clicks */}
+                                    <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                        {/* Subtle dark tint */}
+                                        <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
+                                    </div>
+
+                                    {/* Checkbox – outside overlay so it's always clickable */}
+                                    <div
+                                        className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            if (!isSelectMode) {
+                                                actions?.setIsSelectMode?.(true);
+                                            }
+                                            if (onToggleSelect) {
+                                                onToggleSelect(img.id);
+                                            }
+                                        }}
+                                    >
+                                        {isSelectMode ? (
+                                            isSelected ? (
+                                                <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
+                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full h-full rounded-full bg-black/10 border border-white/40" />
+                                            )
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-black/20 border border-white/50 cursor-pointer hover:bg-black/30 transition-colors" />
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        }) : !isLoading && (
+                            <div className="col-span-full h-96 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-2">
+                                <p className="text-sm font-medium">{t?.('empty_feed_message') || 'Click "+" to generate your first image.'}</p>
                             </div>
                         )}
                     </div>
-
-                    {images.length > 0 ? images.map((img, idx) => {
-                        const isSelected = selectedIds.includes(img.id);
-                        const isKeyboardActive = activeIndex === idx;
-                        const previewSrc = img.thumbSrc || img.src;
-
-                        return (
-                            <div
-                                key={img.id}
-                                onMouseEnter={() => setActiveIndex(idx)}
-                                onClick={() => {
-                                    if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
-                                    else onSelectImage(img.id);
-                                }}
-                                className={`aspect-square cursor-pointer overflow-hidden group relative bg-white dark:bg-zinc-950`}
-                            >
-                                {previewSrc ? (
-                                    <img
-                                        src={previewSrc}
-                                        alt={img.title}
-                                        className={`w-full h-full object-cover transition-transform duration-200 ease-out ${isSelectMode && isSelected ? 'scale-[0.85]' : (isKeyboardActive ? 'scale-105' : 'group-hover:scale-105')}`}
-                                        loading="lazy"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        {img.isGenerating ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Loader2 className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-700" />
-                                                <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-800">Generating</span>
-                                            </div>
-                                        ) : (
-                                            <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Overlay – purely visual, never eats clicks */}
-                                <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    {/* Subtle dark tint */}
-                                    <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
-                                </div>
-
-                                {/* Checkbox – outside overlay so it's always clickable */}
-                                <div
-                                    className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        if (!isSelectMode) {
-                                            actions?.setIsSelectMode?.(true);
-                                        }
-                                        if (onToggleSelect) {
-                                            onToggleSelect(img.id);
-                                        }
-                                    }}
-                                >
-                                    {isSelectMode ? (
-                                        isSelected ? (
-                                            <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
-                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                            </div>
-                                        ) : (
-                                            <div className="w-full h-full rounded-full bg-black/10 border border-white/40" />
-                                        )
-                                    ) : (
-                                        <div className="w-full h-full rounded-full bg-black/20 border border-white/50 cursor-pointer hover:bg-black/30 transition-colors" />
-                                    )}
-                                </div>
-                            </div>
-                        )
-                    }) : !isLoading && (
-                        <div className="col-span-full h-96 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-2">
-                            <p className="text-sm font-medium">No images yet</p>
-                            <p className="text-xs">Click "Create" to generate your first one.</p>
-                        </div>
-                    )}
                 </div>
 
-                {/* Pagination Sentinel */}
-                {hasMore && (
-                    <div ref={sentinelRef} className="h-20 flex items-center justify-center py-8">
-                        {isLoading && <Loader2 className="w-6 h-6 animate-spin text-zinc-400 dark:text-zinc-800" />}
-                    </div>
-                )}
-
-                {/* Footer at the end of the list */}
-                {!hasMore && !isLoading && (
-                    <div className="mt-8">
-                        <GlobalFooter t={t || ((key: string) => key)} />
-                    </div>
-                )}
+                {/* Footer consistently at the bottom */}
+                <GlobalFooter t={t || ((key: string) => key)} />
             </div>
 
             {/* Selection SideSheet */}
