@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const url = 'https://nwxamngfnysostaefxif.supabase.co';
-const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWJhc2UiLCJyZWYiOiJud3hhbW5nZm55c29zdGFlZnhpZiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY1OTg0MzY2LCJleHAiOjIwODE1NjAzNjZ9.2EuIuz8VRQ5diWybBaDovA3Tdx50wiub-zJjnpOWOIc';
+const url = process.env.VITE_SUPABASE_URL || 'https://rhocpnetpxficxnrprsq.supabase.co';
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!key) {
+    console.error('❌ Error: Missing Supabase Key');
+    process.exit(1);
+}
 
 const supabase = createClient(url, key);
 

@@ -3,7 +3,8 @@ import { supabase } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject } from '../types';
 import { generateId } from '../utils/ids';
-import { useCanvasNavigation } from './useCanvasNavigation';
+import { downloadImage } from '../utils/imageUtils';
+// useCanvasNavigation.ts import removed - free canvas is no longer used
 import { useToast } from '../components/ui/Toast';
 import { useItemDialog } from '../components/ui/Dialog';
 
@@ -15,9 +16,9 @@ import { useUIState } from './useUIState';
 import { useFileHandler } from './useFileHandler';
 import { useGeneration } from './useGeneration';
 import { usePersistence } from './usePersistence';
-import { useBoards } from './useBoards';
 import { usePresets } from './usePresets';
 import { useAutoSave } from './useAutoSave';
+import { useMobile } from './useMobile';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -26,29 +27,20 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    // Keep a ref so loadFeed can read current selection without it being a dependency
+    const selectedIdsRef = useRef<string[]>([]);
+    React.useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
     const [activeId, setActiveId] = useState<string | null>(null); // viewed/focused image
-    const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
-    const [resolvingBoardId, setResolvingBoardId] = useState<string | null>(() => {
-        const path = window.location.pathname;
-        const parts = path.split('/');
-        if (parts[1] === 'projects' && parts[2]) {
-            return decodeURIComponent(parts[2]);
-        }
-        return null;
-    });
-    const [isCanvasLoading, setIsCanvasLoading] = useState(() => {
-        const path = window.location.pathname;
-        const parts = path.split('/');
-        return !!(parts[1] === 'projects' && parts[2]);
-    });
+    const [isCanvasLoading, setIsCanvasLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const offsetRef = useRef(0);
+    const PAGE_SIZE = 50;
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true' ||
         (typeof window !== 'undefined' && window.location.hostname === 'beta.expose.ae');
 
-    // Refs
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Derived
     const allImages = rows.flatMap(r => r.items);
@@ -92,120 +84,128 @@ export const useNanoController = () => {
         isSettingsOpen, setIsSettingsOpen,
         isAdminOpen, setIsAdminOpen,
         isBrushResizing, setIsBrushResizing,
-        previousNav, setPreviousNav
+        previousNav, setPreviousNav,
+        isSelectMode, setIsSelectMode
     } = useUIState();
 
-    // --- Navigation ---
-    // --- Navigation ---
-    const canvasNav = useCanvasNavigation({
-        scrollContainerRef,
-        selectedIds,
-        allImages,
-        primarySelectedId: activeId, // Navigate based on active image
-        currentBoardId
-    });
 
-    const {
-        zoom, setZoom, smoothZoomTo, fitSelectionToView, snapToItem,
-        isZooming, isAutoScrolling,
-        isZoomingRef, isAutoScrollingRef, getMostVisibleItem, zoomToItem
-    } = canvasNav as any;
+    const isMobile = useMobile();
 
-    // --- Selection ---
     const {
         primarySelectedId,
         selectedImage,
         selectedImages,
         selectAndSnap,
         selectMultiple,
+        deselectAll,
         handleSelection,
         moveSelection,
         moveRowSelection,
-        handleScroll,
-        setSnapEnabled
     } = useSelection({
         rows,
-        snapToItem,
-        fitSelectionToView,
-        scrollContainerRef,
-        zoom,
-        isAutoScrollingRef,
-        isZoomingRef,
         selectedIds,
         setSelectedIds,
         activeId,
         setActiveId,
-        getMostVisibleItem
     });
 
 
-    const {
-        boards, isLoading: isBoardsLoading, fetchBoards, createBoard, initializeNewBoard, deleteBoard, updateBoard, resolveBoardIdentifier
-    } = useBoards(user?.id);
-
     const { templates, refreshTemplates, saveTemplate, deleteTemplate, recordPresetUsage } = usePresets(user?.id);
 
-    // --- Board Image Loading ---
-    React.useEffect(() => {
-        console.log('[DEBUG_SYNC] Controller effect. User:', !!user, 'Board:', currentBoardId, 'Resolving:', resolvingBoardId);
-        if (user && currentBoardId) {
+    const loadFeed = useCallback(async (isInitial = false) => {
+        if (!user) return;
+
+        if (isInitial) {
             setIsCanvasLoading(true);
             setLoadingProgress(10);
+            offsetRef.current = 0;
+            setHasMore(true);
+        }
 
-            const progressInterval = setInterval(() => {
-                setLoadingProgress(prev => {
-                    if (prev >= 90) return 90;
-                    return prev + (90 - prev) * 0.1;
-                });
-            }, 200);
+        const currentOffset = offsetRef.current;
+        const progressInterval = isInitial ? setInterval(() => {
+            setLoadingProgress(prev => {
+                if (prev >= 90) return 90;
+                return prev + (90 - prev) * 0.1;
+            });
+        }, 200) : null;
 
-            imageService.loadUserImages(user.id, currentBoardId).then(loadedRows => {
-                console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows found for board ${currentBoardId}`);
-                clearInterval(progressInterval);
+        try {
+            const loadedRows = await imageService.loadUserImages(user.id, PAGE_SIZE, currentOffset);
+            console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows found for offset ${currentOffset}`);
+
+            if (progressInterval) clearInterval(progressInterval);
+            if (isInitial) {
                 setLoadingProgress(100);
                 setTimeout(() => setLoadingProgress(0), 500);
-
-                setRows(loadedRows);
-                setIsCanvasLoading(false);
-
-                // Auto-select newest image if nothing is selected
-                const allLoaded = loadedRows.flatMap(r => r.items);
-                if (allLoaded.length > 0 && selectedIds.length === 0) {
-                    // Sort to find newest
-                    const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
-                    if (newest) {
-                        // Use requestAnimationFrame to trigger selection as soon as DOM is ready
-                        requestAnimationFrame(() => {
-                            selectAndSnap(newest.id, true);
-                        });
-                    }
-                }
-            });
-        } else if (!resolvingBoardId) {
-            // WE REMOVED THE AUTO-CLEAR LOGIC HERE.
-            // Why? Because it caused race conditions on page refresh where the board would be cleared 
-            // even though we were on a valid project URL.
-            // Cleaning up rows is now exclusively handled by explicit navigation actions (handleSelectBoard).
-
-            // Only stop loading if we are NOT on a project page
-            const path = window.location.pathname;
-            const parts = path.split('/');
-            const isOnProjectPage = parts[1] === 'projects' && parts[2];
-
-            if (!isOnProjectPage) {
-                setIsCanvasLoading(false);
             }
+
+            if (loadedRows.length < PAGE_SIZE) {
+                setHasMore(false);
+            }
+
+            setRows(prev => isInitial ? loadedRows : [...prev, ...loadedRows]);
+            offsetRef.current += PAGE_SIZE;
+
+            if (isInitial && selectedIdsRef.current.length === 0) {
+                const allLoaded = loadedRows.flatMap(r => r.items);
+                if (allLoaded.length > 0) {
+                    const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+                    if (newest) requestAnimationFrame(() => setActiveId(newest.id));
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load feed:", err);
+            if (progressInterval) clearInterval(progressInterval);
+        } finally {
+            if (isInitial) setIsCanvasLoading(false);
         }
-    }, [user, currentBoardId, resolvingBoardId, selectAndSnap]);
+    }, [user, setActiveId, setRows]);
+
+    React.useEffect(() => {
+        if (user) {
+            loadFeed(true);
+        } else {
+            setRows([]);
+            setIsCanvasLoading(false);
+            setHasMore(false);
+            offsetRef.current = 0;
+        }
+    }, [user, loadFeed]);
+
+    const handleLoadMore = useCallback(() => {
+        if (!isCanvasLoading && hasMore) {
+            loadFeed(false);
+        }
+    }, [isCanvasLoading, hasMore, loadFeed]);
+
+    const ensureImageLoaded = useCallback(async (id: string) => {
+        if (!user || allImages.some(img => img.id === id)) return;
+
+        console.log(`[useNanoController] ensuring image ${id} is loaded...`);
+        try {
+            const extraRows = await imageService.loadImageById(id);
+            if (extraRows.length > 0) {
+                setRows(prev => {
+                    // Avoid duplicates
+                    const existingRowIds = new Set(prev.map(r => r.id));
+                    const newRows = extraRows.filter(r => !existingRowIds.has(r.id));
+                    return [...prev, ...newRows];
+                });
+            }
+        } catch (err) {
+            console.error("Failed to ensure image loaded:", err);
+        }
+    }, [user, allImages, setRows]);
 
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
-        user, isAuthDisabled, setRows, selectMultiple, snapToItem, showToast, currentBoardId, setIsSettingsOpen, t
+        user, isAuthDisabled, setRows, selectMultiple, showToast, setIsSettingsOpen, t
     });
 
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
@@ -226,68 +226,55 @@ export const useNanoController = () => {
         processFiles(files);
     }, [processFiles, setIsDragOver]);
 
-    const handleDeleteImage = useCallback((idOrIds: string | string[]) => {
-        const idsToDelete = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+    const handleDeleteImage = useCallback((id: string) => {
+        if (!user) {
+            showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
+            return;
+        }
 
         setRows(prev => {
-            const newRows = prev.map(row => ({
-                ...row,
-                items: row.items.filter(item => !idsToDelete.includes(item.id))
-            })).filter(row => row.items.length > 0);
-            return newRows;
+            return prev.map(row => {
+                if (row.items.some(i => i.id === id)) {
+                    return { ...row, items: row.items.filter(i => i.id !== id) };
+                }
+                return row;
+            }).filter(row => row.items.length > 0);
         });
-        setSelectedIds(prev => prev.filter(id => !idsToDelete.includes(id)));
 
-        if (user && !isAuthDisabled) {
-            imageService.deleteImages(idsToDelete, user.id).catch(err => {
-                showToast(`${t('delete_failed')}: ${err.message}`, "error");
+        if (activeId === id) {
+            setActiveId(null);
+        }
+
+        const imageToDelete = rows.flatMap(r => r.items).find(i => i.id === id);
+        if (imageToDelete) {
+            imageService.deleteImage(imageToDelete, user.id).catch(err => {
+                console.error("Delete failed:", err);
+                showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
             });
         }
-    }, [user, isAuthDisabled, showToast]);
+    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, showToast, currentLang]);
+
+    const handleDownload = useCallback(async (idOrIds: string | string[]) => {
+        const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+        const imagesToDownload = allImages.filter(img => ids.includes(img.id));
+
+        for (const img of imagesToDownload) {
+            const urlToDownload = img.storage_path || img.src || img.originalSrc;
+            if (urlToDownload && !img.isGenerating) {
+                const title = img.title || 'image';
+                await downloadImage(urlToDownload, `${title}`);
+            }
+        }
+    }, [allImages]);
 
     const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {
-        const oldMode = sideSheetMode;
-
-        let targetImg = selectedImage;
-        if (!targetImg && (newMode === 'brush' || newMode === 'objects')) {
-            const mostVisibleId = getMostVisibleItem();
-            if (mostVisibleId) {
-                targetImg = allImages.find(i => i.id === mostVisibleId) || null;
-                if (targetImg) {
-                    selectAndSnap(targetImg.id, true);
-                }
-            }
+        if ((newMode === 'brush' || newMode === 'objects') && !selectedImage) {
+            // If switching to brush/objects with no selection, select the first image
+            if (allImages.length > 0) selectAndSnap(allImages[0].id);
         }
-
         setSideSheetMode(newMode);
-
-        if ((newMode === 'brush' || newMode === 'objects') && oldMode === 'prompt') {
-            // Entering annotation mode: Refresh global library items to pick up any changes from Admin
-            syncGlobalItems();
-
-            // Store current state
-            const container = scrollContainerRef.current;
-            if (container) {
-                setPreviousNav({
-                    zoom: zoom,
-                    scroll: { x: container.scrollLeft, y: container.scrollTop }
-                });
-            }
-
-            if (targetImg) {
-                // Smooth zoom into the image (sidebar width 360)
-                zoomToItem(targetImg.id, 0.9, 360);
-            }
-        } else if (newMode === 'prompt' && (oldMode === 'brush' || oldMode === 'objects')) {
-            // Leaving annotation mode: Restore previous state
-            if (previousNav) {
-                smoothZoomTo(previousNav.zoom, previousNav.scroll, 300);
-                setPreviousNav(null);
-            } else {
-                smoothZoomTo(1.0, undefined, 300);
-            }
-        }
-    }, [sideSheetMode, selectedImage, zoom, scrollContainerRef, smoothZoomTo, zoomToItem, setSideSheetMode, previousNav, setPreviousNav, getMostVisibleItem, selectAndSnap, allImages, syncGlobalItems]);
+        if (newMode === 'brush' || newMode === 'objects') syncGlobalItems();
+    }, [sideSheetMode, selectedImage, allImages, selectAndSnap, setSideSheetMode, syncGlobalItems]);
 
     const handleGenerate = useCallback(async (
         prompt?: string,
@@ -369,16 +356,13 @@ export const useNanoController = () => {
         selectedImage,
         selectedImages,
         allImages,
-        zoom,
-        isZooming,
-        isAutoScrolling,
         qualityMode,
         themeMode,
-        lang,
+        // NOTE: lang (raw setting) intentionally NOT in state — use currentLang everywhere.
+        // Access raw lang via the top-level langSetting export (for Settings modal only).
         currentLang,
         sideSheetMode,
         isCanvasLoading,
-        resolvingBoardId,
         loadingProgress,
         brushSize,
         maskTool,
@@ -396,28 +380,22 @@ export const useNanoController = () => {
         isDragOver,
         isSettingsOpen,
         isAdminOpen,
-        currentBoardId,
         isAuthLoading,
-        boards,
-        isBoardsLoading,
         isBrushResizing,
-        templates
+        isMobile,
+        templates,
+        hasMore,
+        isSelectMode
     }), [
-        rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages, zoom, isZooming, isAutoScrolling,
-        qualityMode, themeMode, lang, currentLang, sideSheetMode, isCanvasLoading, resolvingBoardId, loadingProgress,
+        rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
+        qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
-        authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen, currentBoardId,
-        isAuthLoading, boards, isBoardsLoading, isBrushResizing, templates
+        authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
+        isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode
     ]);
 
     const actions = React.useMemo(() => ({
         setRows,
-        setZoom,
-        smoothZoomTo,
-        fitSelectionToView,
-        snapToItem,
-        handleScroll,
-        getMostVisibleItem,
         setQualityMode,
         setThemeMode,
         setLang,
@@ -432,6 +410,7 @@ export const useNanoController = () => {
         deleteUserItem,
         selectAndSnap,
         selectMultiple,
+        deselectAll,
         handleSelection,
         moveSelection,
         moveRowSelection,
@@ -447,8 +426,10 @@ export const useNanoController = () => {
         handleFileDrop,
         setIsSettingsOpen,
         setIsAdminOpen,
+        setIsSelectMode,
         processFile,
         handleDeleteImage,
+        handleDownload,
         handleUpdateAnnotations,
         handleUpdatePrompt,
         handleUpdateVariables,
@@ -456,15 +437,6 @@ export const useNanoController = () => {
         handleGenerate,
         handleGenerateMore,
         handleNavigateParent,
-        setSnapEnabled,
-        setCurrentBoardId,
-        createBoard,
-        initializeNewBoard,
-        deleteBoard,
-        updateBoard,
-        fetchBoards,
-        resolveBoardIdentifier,
-        setResolvingBoardId,
         setIsBrushResizing,
         handleCreateNew,
         recordPresetUsage,
@@ -472,27 +444,26 @@ export const useNanoController = () => {
         savePreset: saveTemplate,
         setIsCanvasLoading,
         deletePreset: deleteTemplate,
-        ensureValidSession
+        ensureValidSession,
+        handleLoadMore,
+        ensureImageLoaded
     }), [
-        setRows, setZoom, smoothZoomTo, fitSelectionToView, snapToItem, handleScroll, getMostVisibleItem, setQualityMode,
-        setThemeMode, setLang, handleModeChange, setSideSheetMode, setBrushSize, setMaskTool, setActiveShape,
+        setRows, setQualityMode, setThemeMode, setLang, handleModeChange, setSideSheetMode,
+        setBrushSize, setMaskTool, setActiveShape,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, selectAndSnap, selectMultiple,
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
-        setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop, setIsSettingsOpen,
-        setIsAdminOpen, processFile, handleDeleteImage, handleUpdateAnnotations, handleUpdatePrompt,
-        handleUpdateVariables, performGeneration, handleGenerate, handleGenerateMore,
-        handleNavigateParent, setSnapEnabled, setCurrentBoardId, createBoard, initializeNewBoard, deleteBoard,
-        updateBoard, fetchBoards, resolveBoardIdentifier, setResolvingBoardId, setIsBrushResizing, handleCreateNew,
+        setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
+        setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, processFile, handleDeleteImage, handleDownload,
+        handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, performGeneration, handleGenerate,
+        handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
-        ensureValidSession
+        ensureValidSession, handleLoadMore, ensureImageLoaded
     ]);
 
     return React.useMemo(() => ({
         state,
         actions,
-        refs: {
-            scrollContainerRef
-        },
+        langSetting: lang, // Raw 'auto'|'de'|'en' — only use for Settings modal dropdown
         t
-    }), [state, actions, scrollContainerRef, t]);
+    }), [state, actions, lang, t]);
 };

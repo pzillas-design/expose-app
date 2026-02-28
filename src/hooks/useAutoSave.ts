@@ -84,29 +84,32 @@ export const useAutoSave = (
                     return {
                         id: img.id,
                         user_id: user.id,
-                        thumb_src: (img.thumbSrc && !img.thumbSrc.startsWith('blob:')) ? img.thumbSrc : (isBlob ? null : img.src),
+                        thumb_storage_path: (img.thumbSrc && !img.thumbSrc.startsWith('blob:') && !img.thumbSrc.startsWith('http')) ? img.thumbSrc : null,
                         storage_path: img.storage_path || '',
-                        width: img.width,
-                        height: img.height,
+                        width: Math.round(img.width),
+                        height: Math.round(img.height),
                         real_width: img.realWidth || img.width,
                         real_height: img.realHeight || img.height,
                         title: img.title,
                         base_name: img.baseName || img.title,
                         version: img.version || 1,
-                        annotations: img.annotations || [],
-                        generation_prompt: img.generationPrompt || '',
+                        annotations: JSON.stringify(img.annotations || []),
+                        prompt: img.generationPrompt || '',
                         user_draft_prompt: img.userDraftPrompt || '',
-                        quality: img.quality || 'pro-1k',
+                        generation_params: {
+                            quality: img.quality || 'pro-1k',
+                            activeTemplateId: img.activeTemplateId,
+                            variableValues: img.variableValues
+                        },
                         parent_id: img.parentId || null,
-                        board_id: img.boardId || null,
-                        created_at: new Date(img.createdAt).toISOString(),
+                        created_at: new Date(img.createdAt || Date.now()).toISOString(),
                         updated_at: new Date().toISOString()
                     };
                 }).filter((item): item is NonNullable<typeof item> => item !== null);
 
                 if (payload.length > 0) {
                     const { error } = await supabase
-                        .from('canvas_images')
+                        .from('images')
                         .upsert(payload, { onConflict: 'id' });
 
                     if (error) {
@@ -151,32 +154,39 @@ export const useAutoSave = (
                         return {
                             id: img.id,
                             user_id: user.id,
-                            src: img.src,
-                            thumb_src: img.thumbSrc || img.src,
+                            thumb_storage_path: (img.thumbSrc && !img.thumbSrc.startsWith('blob:') && !img.thumbSrc.startsWith('http')) ? img.thumbSrc : null,
                             storage_path: img.storage_path || '',
-                            width: img.width,
-                            height: img.height,
+                            width: Math.round(img.width),
+                            height: Math.round(img.height),
                             real_width: img.realWidth || img.width,
                             real_height: img.realHeight || img.height,
                             title: img.title,
                             base_name: img.baseName || img.title,
                             version: img.version || 1,
-                            annotations: img.annotations || [],
-                            generation_prompt: img.generationPrompt || '',
+                            annotations: JSON.stringify(img.annotations || []),
+                            prompt: img.generationPrompt || '',
                             user_draft_prompt: img.userDraftPrompt || '',
-                            quality: img.quality || 'pro-1k',
+                            generation_params: {
+                                quality: img.quality || 'pro-1k',
+                                activeTemplateId: img.activeTemplateId,
+                                variableValues: img.variableValues
+                            },
                             parent_id: img.parentId || null,
-                            board_id: img.boardId || null,
-                            created_at: new Date(img.createdAt).toISOString(),
+                            created_at: new Date(img.createdAt || Date.now()).toISOString(),
                             updated_at: new Date().toISOString()
                         };
                     }).filter(Boolean);
 
                     if (payload.length > 0) {
                         console.log('[AutoSave] Force save on unmount');
-                        supabase.from('canvas_images').upsert(payload, { onConflict: 'id' })
-                            .then(() => console.log('[AutoSave] Unmount save complete'))
-                            .catch(err => console.error('[AutoSave] Unmount save failed:', err));
+                        (async () => {
+                            try {
+                                await supabase.from('images').upsert(payload, { onConflict: 'id' });
+                                console.log('[AutoSave] Unmount save complete');
+                            } catch (err) {
+                                console.error('[AutoSave] Unmount save failed:', err);
+                            }
+                        })();
                     }
                 }
             }

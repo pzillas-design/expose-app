@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build",
+    "cut:history": "node cut-history.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",

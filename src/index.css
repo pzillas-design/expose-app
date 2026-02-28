@@ -10,6 +10,8 @@ body {
   margin: 0;
   overflow: auto;
   font-family: 'Inter', sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   @apply bg-white text-zinc-900 dark:bg-black dark:text-zinc-100;
 }
 

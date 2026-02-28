@@ -6,6 +6,7 @@ import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { storageService } from '@/services/storageService';
+import { useMobile } from '@/hooks/useMobile';
 
 interface ImageItemProps {
     image: CanvasImage;
@@ -64,11 +65,11 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50">
             <div className="absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm" />
 
-            <div className="relative w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-500 z-10">
+            <div className="relative w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200 z-10">
                 <div className={`flex items-end justify-between ${Typo.Label}`}>
-                    <span className={`${Theme.Colors.TextPrimary} drop-shadow-md`}>{t('processing')}</span>
+                    <span className={`${Theme.Colors.TextPrimary} `}>{t('processing')}</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-200/50 dark:bg-white/20 rounded-full overflow-hidden shadow-sm">
+                <div className="h-0.5 w-full bg-zinc-200/50 dark:bg-white/20 rounded-full overflow-hidden ">
                     <div
                         className="h-full bg-zinc-900 dark:bg-white transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
@@ -81,7 +82,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
 
 const getDurationForQuality = (quality?: GenerationQuality): number => {
     switch (quality) {
-        case 'fast': return 12000;
+        case 'pro-1k': return 12000;
         case 'pro-2k': return 36000;
         case 'pro-4k': return 60000;
         default: return 23000;
@@ -178,7 +179,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         <img
             src={currentSrc || ''}
             alt={title}
-            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-500 ${!isHighRes ? 'blur-sm' : 'blur-0'}`}
+            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-200 ${!isHighRes ? 'blur-sm' : 'blur-0'}`}
             loading="lazy"
             onLoad={(e) => {
                 const img = e.currentTarget;
@@ -196,7 +197,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             style={{
                 imageRendering: (zoom > 1.5 && !isHighRes) ? 'pixelated' : 'auto',
                 opacity: (currentSrc && isLoaded) ? 1 : 0,
-                transition: 'opacity 0.3s ease-out'
+                transition: 'opacity 0.2s ease-out'
             }}
         />
     );
@@ -229,6 +230,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     isContextMenuOpen,
     t
 }) => {
+    const isMobile = useMobile();
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
 
@@ -244,66 +246,74 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     const finalWidth = (image.height * ratio) * zoom;
     const finalHeight = image.height * zoom;
 
-    const navIconBtnClass = `absolute flex items-center justify-center w-12 h-12 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-full hover:bg-white/90 dark:hover:bg-zinc-900/90 hover:backdrop-blur-md hover:shadow-xl pointer-events-auto z-[60]`;
+    const navIconBtnClass = `absolute flex items-center justify-center w-12 h-12 transition-all duration-200 text-zinc-400 hover:text-black dark:text-zinc-500 dark:hover:text-white rounded-full hover:bg-white/90 dark:hover:bg-zinc-900/90 hover:backdrop-blur-md hover: pointer-events-auto z-[60]`;
 
     return (
         <div
             data-image-id={image.id}
             onContextMenu={(e) => onContextMenu?.(e, image.id)}
             className={`relative shrink-0 select-none group snap-center transition-opacity duration-200 ease-out cursor-pointer
-                ${isActive ? 'z-30 opacity-100' : 'z-20'}
-                ${!isActive && isMarked ? 'opacity-100' : ''}
-                ${!isActive && !isMarked ? 'opacity-60 hover:opacity-100' : ''}
-            `}
+ ${isActive ? 'z-30 opacity-100' : 'z-20'}
+ ${!isActive && isMarked ? 'opacity-100' : ''}
+ ${!isActive && !isMarked ? 'opacity-60 hover:opacity-100' : ''}
+ `}
             style={{
                 width: finalWidth,
                 height: finalHeight, // Stable height!
             }}
         >
-            {zoom > 0.4 && (
+            {zoom > 0.4 && !isMobile && (
                 <div
-                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-300 cursor-pointer group/title z-40"
+                    className="absolute -top-12 left-0 flex items-center justify-between gap-1 w-full h-12 px-0 animate-in fade-in duration-200 cursor-pointer group/title z-40"
                     onClick={(e) => {
                         e.stopPropagation();
                     }}
                 >
                     {/* Left Group: Checkbox | Filename */}
                     <div className={`flex items-center gap-1 min-w-0 transition-opacity duration-200 
-                        ${(isContextMenuOpen || selectedCount >= 1 || isMarked)
+ ${(isContextMenuOpen || selectedCount >= 1 || isMarked)
                             ? 'opacity-100'
                             : 'opacity-0 group-hover/title:opacity-100'}`}
                     >
-                        {/* Unified Selection Button */}
-                        <Tooltip text={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onSelect) onSelect(image.id, true, false);
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onMouseUp={(e) => e.stopPropagation()}
-                                className={`flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
-                                    ${(isContextMenuOpen || isMarked)
-                                        ? 'text-black dark:text-white opacity-100'
-                                        : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
-                            >
-                                {isMarked ? (
-                                    <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
-                                ) : (
-                                    <Square className="w-4 h-4 shrink-0" />
-                                )}
+                        {!isMobile && (
+                            <Tooltip text={isMarked ? (t('deselect_image') || 'Deselect Image') : (t('select_image') || 'Select Image')}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onSelect) onSelect(image.id, true, false);
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onMouseUp={(e) => e.stopPropagation()}
+                                    className={`group/filename flex items-center gap-2 py-2 px-0 rounded-md transition-all max-w-full
+ ${(isContextMenuOpen || isMarked)
+                                            ? 'text-black dark:text-white opacity-100'
+                                            : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
+                                >
+                                    {isMarked ? (
+                                        <SquareCheck className="w-4 h-4 text-black dark:text-white shrink-0" />
+                                    ) : (
+                                        <Square className="w-4 h-4 shrink-0" />
+                                    )}
 
-                                <span className="truncate text-[10px] tracking-wider transition-colors">
+                                    <span className="truncate max-w-[180px] text-[12.5px] font-medium text-zinc-500 dark:text-zinc-400 group-hover/filename:text-zinc-900 dark:group-hover/filename:text-zinc-100 transition-colors">
+                                        {image.title || 'Untitled'}.jpg
+                                    </span>
+                                </button>
+                            </Tooltip>
+                        )}
+                        {isMobile && (
+                            <div className="flex items-center gap-2 py-2 px-0 text-zinc-400 dark:text-zinc-500">
+                                <span className="truncate max-w-[180px] text-[12.5px] font-medium text-zinc-500 dark:text-zinc-400">
                                     {image.title || 'Untitled'}.jpg
                                 </span>
-                            </button>
-                        </Tooltip>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Group: Meatballs */}
                     <div className={`transition-opacity duration-200 
-                        ${(isContextMenuOpen || isMarked || isActive)
+ ${(isContextMenuOpen || isMarked || isActive)
                             ? 'opacity-100'
                             : 'opacity-0 group-hover:opacity-100'}`}
                     >
@@ -317,7 +327,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onMouseUp={(e) => e.stopPropagation()}
                                 className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-all 
-                                    ${isContextMenuOpen
+ ${isContextMenuOpen
                                         ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                                         : 'text-zinc-400 dark:text-zinc-500 hover:text-black dark:hover:text-white'}`}
                             >
@@ -336,7 +346,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             >
                 {/* Loading Skeleton - overlay on top of parent image if available */}
                 <div
-                    className={`absolute inset-0 transition-opacity duration-500 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    className={`absolute inset-0 transition-opacity duration-200 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
                     {/* Background: Opaque if no src (fresh gen), semi-transparent if src exists (variation) */}
                     <div className={`absolute inset-0 ${image.src ? 'bg-white/30 dark:bg-black/30 backdrop-blur-[2px]' : 'bg-zinc-100 dark:bg-zinc-800'}`} />
@@ -402,20 +412,20 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             {/* Bottom Navigation Buttons - Absolute Overlay */}
             {zoom > 0.4 && (
                 <div
-                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${(isActive && !image.isGenerating)
+                    className={`absolute -bottom-14 left-0 right-0 flex items-center justify-center gap-2 px-0.5 transition-all duration-300 ${isActive
                         ? 'opacity-100 translate-y-0'
                         : 'opacity-0 translate-y-2 pointer-events-none'
                         }`}
                 >
-                    {/* Previous Image - Square Button */}
-                    {hasLeft && (
+                    {/* Previous Image - Square Button (desktop only) */}
+                    {!isMobile && hasLeft && (
                         <Tooltip text={t('previous') || 'Previous'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(-1, image.id);
                                 }}
-                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
@@ -423,7 +433,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     )}
 
                     {/* Center Action Group - Joined Pill */}
-                    <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
+                    <div className={`flex flex-row items-center h-9 overflow-hidden rounded-lg border ${Theme.Colors.Border} ${Theme.Effects.Glass}`}>
                         {/* Generate More */}
                         {image.parentId && (
                             <>
@@ -440,35 +450,37 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                                     </button>
                                 </Tooltip>
 
-                                {/* Separator */}
-                                <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />
+                                {/* Separator (desktop only) */}
+                                {!isMobile && <div className={`w-px h-4 ${Theme.Colors.BorderSubtle} border-r shrink-0`} />}
                             </>
                         )}
 
-                        {/* Save/Download */}
-                        <Tooltip text={t('tt_save') || 'Download image'}>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDownload) onDownload(image.id);
-                                }}
-                                className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                                <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
-                            </button>
-                        </Tooltip>
+                        {/* Save/Download (desktop only) */}
+                        {!isMobile && (
+                            <Tooltip text={t('tt_save') || 'Download image'}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onDownload) onDownload(image.id);
+                                    }}
+                                    className="flex items-center gap-2 px-4 h-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors shrink-0 rounded-none"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span className={Typo.Label}>{t('save') || 'SPEICHERN'}</span>
+                                </button>
+                            </Tooltip>
+                        )}
                     </div>
 
-                    {/* Next Image - Square Button */}
-                    {hasRight && (
+                    {/* Next Image - Square Button (desktop only) */}
+                    {!isMobile && hasRight && (
                         <Tooltip text={t('next') || 'Next'}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onNavigate?.(1, image.id);
                                 }}
-                                className={`h-9 w-9 flex items-center justify-center rounded-lg shadow-sm border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
+                                className={`h-9 w-9 flex items-center justify-center rounded-lg border ${Theme.Colors.Border} ${Theme.Effects.Glass} hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 transition-colors`}
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>

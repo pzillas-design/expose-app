@@ -1,9 +1,17 @@
 import { supabase } from './supabaseClient';
 import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
-import { boardService } from './boardService';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
+
+const buildUploadSubfolder = () => {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(now.getFullYear());
+    const dateFolder = `upload${dd}${mm}${yyyy}`;
+    return `user-content/${dateFolder}`;
+};
 
 export const imageService = {
     /**
@@ -13,24 +21,14 @@ export const imageService = {
     async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string; storage_path?: string; thumb_storage_path?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
-        // 1. Determine Path & Filename
-        const boardId = (image as any).boardId;
-        let subfolder = boardId;
-
-        if (boardId) {
-            await boardService.ensureBoardExists(userId, boardId);
-            const board = await boardService.getBoard(boardId);
-            if (board) {
-                subfolder = `${slugify(board.name)}_${boardId}`;
-            }
-        }
-
-        const titleSlug = slugify(image.title || 'image');
-        const customFileName = `${titleSlug}_v${image.version || 1}_${image.id.substring(0, 8)}.png`;
+        // 1. Determine path+filename
+        const isOriginal = (image.version || 1) <= 1;
+        const fileRole = isOriginal ? 'original' : `variante${image.version}`;
+        const customFileName = `${fileRole}_${image.id.substring(0, 8)}.png`;
+        const subfolder = buildUploadSubfolder();
+        const storageIdentifier = userEmail || userId;
 
         // 2. Upload Image (Compressed to 4K max via uploadImage)
-        // Use userEmail for storage path if available, otherwise fall back to userId
-        const storageIdentifier = userEmail || userId;
         const uploadResult = await storageService.uploadImage(image.src, storageIdentifier, customFileName, subfolder);
         if (!uploadResult) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
@@ -38,13 +36,12 @@ export const imageService = {
         }
 
         // 3. CLEAN UP ANNOTATIONS: Ensure reference images are storage paths, not signed URLs or Base64
-        const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId);
+        const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId, userEmail);
 
         // 4. Insert into DB with thumbnail path (still using userId for database)
-        const { error } = await supabase.from('canvas_images').insert({
+        const { error } = await supabase.from('images').insert({
             id: image.id,
             user_id: userId,
-            board_id: (image as any).boardId, // Use boardId if available
             storage_path: uploadResult.path,
             thumb_storage_path: uploadResult.thumbPath || null,
             width: Math.round(image?.width || 512),
@@ -93,7 +90,7 @@ export const imageService = {
 
         if (updates.activeTemplateId !== undefined || updates.variableValues !== undefined || updates.quality !== undefined) {
             const { data: results } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('generation_params')
                 .eq('id', imageId)
                 .limit(1);
@@ -117,7 +114,7 @@ export const imageService = {
         if (Object.keys(dbUpdates).length === 0) return;
 
         const { error } = await supabase
-            .from('canvas_images')
+            .from('images')
             .update({ ...dbUpdates, updated_at: new Date().toISOString() })
             .eq('id', imageId)
             .eq('user_id', userId);
@@ -136,14 +133,14 @@ export const imageService = {
 
         // 0. Fetch storage paths before deleting from DB
         const { data: images } = await supabase
-            .from('canvas_images')
+            .from('images')
             .select('storage_path, thumb_storage_path')
             .in('id', imageIds)
             .eq('user_id', userId);
 
-        // 1. Delete from canvas_images
+        // 1. Delete from images
         const { error: imgError } = await supabase
-            .from('canvas_images')
+            .from('images')
             .delete()
             .in('id', imageIds)
             .eq('user_id', userId);
@@ -214,7 +211,6 @@ export const imageService = {
         qualityMode,
         modelName,
         newId,
-        boardId,
         attachments,
         targetVersion,
         targetTitle,
@@ -226,7 +222,6 @@ export const imageService = {
         newId: string;
         sourceImage: CanvasImage;
         modelName?: string;
-        boardId?: string;
         attachments?: string[];
         targetVersion?: number;
         targetTitle?: string;
@@ -240,7 +235,6 @@ export const imageService = {
                 qualityMode,
                 newId,
                 modelName,
-                board_id: boardId,
                 attachments,
                 aspectRatio,
                 targetTitle,
@@ -337,7 +331,6 @@ export const imageService = {
             height: logicalHeight,
             realWidth: genWidth,
             realHeight: genHeight,
-            boardId: boardId,
             parentId: result.parent_id || (sourceImage.id !== newId ? sourceImage.id : sourceImage.parentId)
         };
     },
@@ -395,7 +388,7 @@ export const imageService = {
             id: record.id,
             src: signedUrl || '',
             storage_path: record.storage_path,
-            thumbSrc: thumbSignedUrl || undefined,
+            thumbSrc: thumbSignedUrl || signedUrl || undefined,
             width: normalizedWidth,
             height: targetHeight,
             realWidth: record.real_width,
@@ -424,34 +417,26 @@ export const imageService = {
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */
-    async loadUserImages(userId: string, boardId?: string): Promise<ImageRow[]> {
-        console.log(`[DEBUG] loadUserImages: boardId=${boardId}, userId=${userId}`);
+    async loadUserImages(userId: string, limit = 50, offset = 0): Promise<ImageRow[]> {
+        console.log(`[DEBUG] loadUserImages for userId=${userId}`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
         // 1. Get Completed Images & Active Jobs in parallel
-        let imgsQuery = supabase
-            .from('canvas_images')
+        const imgsQuery = supabase
+            .from('images')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
 
-        if (boardId) {
-            imgsQuery = imgsQuery.eq('board_id', boardId);
-        }
-
-
-        // Fetch jobs WITH board_id filter to ensure board isolation
-        let jobsQuery = supabase
+        const jobsQuery = supabase
             .from('generation_jobs')
             .select('*')
             .eq('user_id', userId)
             .eq('status', 'processing');
 
-        if (boardId) {
-            jobsQuery = jobsQuery.eq('board_id', boardId);
-        }
-
         const [imgsRes, jobsRes] = await Promise.all([
-            imgsQuery.order('created_at', { ascending: false }),
+            imgsQuery,
             jobsQuery.order('created_at', { ascending: false })
         ]);
 
@@ -494,9 +479,6 @@ export const imageService = {
                     // Add stored thumbnail if available
                     if (rec.thumb_storage_path) {
                         allPathsToSign.add(rec.thumb_storage_path);
-                    } else {
-                        // Fallback: Add optimized version key for on-the-fly transformation
-                        allPathsToSign.add(rec.storage_path + `_800xundefined_q75`);
                     }
                 }
                 // Add reference images from annotations
@@ -578,7 +560,6 @@ export const imageService = {
                 createdAt: startTime,
                 updatedAt: startTime,
                 annotations: [],
-                boardId: job.board_id,
                 userId: userId
             };
             loadedImages.push(skeleton);
@@ -643,8 +624,105 @@ export const imageService = {
             });
         });
 
-        // Sort rows by oldest first (newest will be at the bottom of the canvas)
-        rows.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        // Sort rows by newest first (Apple Photos style: newest groups at the top)
+        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        return rows;
+    },
+
+    /**
+     * Loads a specific image by ID and its "family" (siblings/versions).
+     * Used for deep-links to images that might not be in the initial feed page.
+     */
+    async loadImageById(imageId: string): Promise<ImageRow[]> {
+        console.log(`[ImageService] loadImageById: ${imageId}`);
+
+        // 1. Fetch the target image record
+        const { data: targetRec, error: targetError } = await supabase
+            .from('images')
+            .select('*')
+            .eq('id', imageId)
+            .single();
+
+        if (targetError || !targetRec) {
+            console.error(`[ImageService] Target image ${imageId} not found:`, targetError);
+            return [];
+        }
+
+        // 2. Fetch the whole family (sharing the same base_name)
+        // This ensures the row structure is preserved for navigation
+        const { data: familyRecs, error: familyError } = await supabase
+            .from('images')
+            .select('*')
+            .eq('user_id', targetRec.user_id)
+            .eq('base_name', targetRec.base_name);
+
+        if (familyError) {
+            console.error(`[ImageService] Family fetch failed for ${targetRec.base_name}:`, familyError);
+            return [];
+        }
+
+        const dbImages = familyRecs || [targetRec];
+
+        // 3. Resolve and Group (Simplified reuse of logic from loadUserImages)
+        const allPathsToSign = new Set<string>();
+        dbImages.forEach(rec => {
+            if (rec.storage_path) {
+                allPathsToSign.add(rec.storage_path);
+                if (rec.thumb_storage_path) allPathsToSign.add(rec.thumb_storage_path);
+            }
+            const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
+            rawAnns.forEach((ann: any) => {
+                if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
+                    allPathsToSign.add(ann.referenceImage);
+                }
+            });
+        });
+
+        const signedUrlMap: Record<string, string> = {};
+        const pathsArray = Array.from(allPathsToSign);
+        const [hdResults, optResults] = await Promise.all([
+            storageService.getSignedUrls(pathsArray),
+            storageService.getSignedUrls(pathsArray, { width: 600, quality: 75 })
+        ]);
+        Object.assign(signedUrlMap, hdResults);
+        Object.assign(signedUrlMap, optResults);
+
+        const loadedImages = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
+
+        // Group into rows
+        const rows: ImageRow[] = [];
+        const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
+        const groups = new Map<string, CanvasImage[]>();
+
+        const getRootId = (img: CanvasImage): string => {
+            let current = img;
+            let depth = 0;
+            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
+                current = imageMap.get(current.parentId)!;
+                depth++;
+            }
+            return current.parentId || current.id;
+        };
+
+        loadedImages.forEach(img => {
+            let groupId = getRootId(img);
+            if (!imageMap.has(groupId) && img.baseName) groupId = `baseName_${img.baseName}`;
+            if (!groups.has(groupId)) groups.set(groupId, []);
+            groups.get(groupId)!.push(img);
+        });
+
+        groups.forEach((items, groupId) => {
+            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            let rowTitle = items[0].baseName || items[0].title || 'untitled';
+            let rowCreatedAt = items[0].createdAt;
+            const root = imageMap.get(groupId);
+            if (root) {
+                rowTitle = root.baseName || root.title || 'untitled';
+                rowCreatedAt = root.createdAt;
+            }
+            rows.push({ id: groupId + '_row', title: rowTitle, items, createdAt: rowCreatedAt });
+        });
 
         return rows;
     },
@@ -654,7 +732,7 @@ export const imageService = {
      * 1. Uploading Base64 reference images to Storage
      * 2. Converting Signed URLs back to Storage Paths
      */
-    async _processAnnotationsForStorage(annotations: any[], userId: string): Promise<any[]> {
+    async _processAnnotationsForStorage(annotations: any[], userId: string, userEmail?: string): Promise<any[]> {
         if (!annotations) return [];
 
         return await Promise.all(annotations.map(async (ann) => {
@@ -664,7 +742,8 @@ export const imageService = {
                 // 1. If it's a Base64 string, upload it
                 if (src.startsWith('data:')) {
                     const fileName = `ref_${generateId().substring(0, 8)}.png`;
-                    const result = await storageService.uploadImage(src, userId, fileName, 'references');
+                    const storageIdentifier = userEmail || userId;
+                    const result = await storageService.uploadImage(src, storageIdentifier, fileName, 'user-settings/references');
                     if (result) {
                         return { ...ann, referenceImage: result.path };
                     }

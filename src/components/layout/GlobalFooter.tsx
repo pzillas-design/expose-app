@@ -9,7 +9,7 @@ interface GlobalFooterProps {
 
 export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
     return (
-        <footer className="w-full bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900/50 py-16 mt-auto">
+        <footer className={`w-full bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900/50 py-16 mt-auto`}>
             <div className="max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 flex flex-col items-center gap-8">
 
                 {/* Brand Section - Larger Colored Logo */}

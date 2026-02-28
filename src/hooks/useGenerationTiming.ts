@@ -10,7 +10,6 @@ interface GenerationAverage {
 
 // Fallback values if DB is empty or offline
 const FALLBACK_DURATIONS: Record<GenerationQuality, number> = {
-    'fast': 3000,
     'pro-1k': 5000,
     'pro-2k': 8000,
     'pro-4k': 15000

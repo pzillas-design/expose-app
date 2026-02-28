@@ -232,7 +232,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                     <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(true)} className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400 h-9 w-9 p-0 flex items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 transition-all">
                                         <Trash className="w-5 h-5" />
                                     </Button>
-                                    <Button onClick={handleSave} disabled={isSaving} className="h-8 px-5 rounded-md shadow-sm font-bold text-[11px]" icon={isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}>
+                                    <Button onClick={handleSave} disabled={isSaving} className="h-8 px-5 rounded-md font-bold text-[11px]" icon={isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}>
                                         {isSaving ? 'Speichert...' : t('save').toUpperCase()}
                                     </Button>
                                 </div>
@@ -287,7 +287,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                                 {/* EN Column */}
                                 <div className="space-y-10">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-3 w-1 rounded-full bg-blue-500" />
+                                        <div className="h-3 w-1 rounded-full bg-orange-500" />
                                         <span className="text-[10px] font-black text-zinc-900 dark:text-white uppercase tracking-[0.2em]">ENGLISH</span>
                                     </div>
 
@@ -414,7 +414,7 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
     const grid = "grid-cols-[1fr_2fr_32px]";
 
     return (
-        <div ref={containerRef} className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm transition-all shadow-zinc-200/5 dark:shadow-none">
+        <div ref={containerRef} className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 transition-all dark:">
             {/* Header */}
             <div className={`grid ${grid} bg-zinc-50/50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-500`}>
                 <div className="p-2.5 pl-4">Label</div>

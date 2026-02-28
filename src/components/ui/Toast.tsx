@@ -60,17 +60,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         <div
                             key={toast.id}
                             className={`
-                                pointer-events-auto w-80 p-4 ${Theme.Geometry.RadiusLg} shadow-sm border
-                                animate-in slide-in-from-bottom-5 fade-in duration-300
-                                flex items-center gap-3
-                                ${toast.type === 'error' ? 'border-red-200 dark:border-red-900/50 bg-red-50/90 dark:bg-red-950/50' :
+ pointer-events-auto w-80 p-4 ${Theme.Geometry.RadiusLg} border
+ animate-in slide-in-from-bottom-5 fade-in duration-300
+ flex items-center gap-3
+ ${toast.type === 'error' ? 'border-red-200 dark:border-red-900/50 bg-red-50/90 dark:bg-red-950/50' :
                                     toast.type === 'success' ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/90 dark:bg-emerald-950/50' :
                                         'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90'}
-                            `}
+ `}
                         >
                             <div className={`shrink-0 ${toast.type === 'error' ? 'text-red-500' :
-                                toast.type === 'success' ? 'text-emerald-500' :
-                                    'text-blue-500'
+                                toast.type === 'info' ? 'text-orange-500' :
+                                    toast.type === 'success' ? 'text-emerald-500' :
+                                        'text-blue-500'
                                 }`}>
                                 {toast.type === 'error' ? <AlertCircle size={18} /> :
                                     toast.type === 'success' ? <CheckCircle size={18} /> :

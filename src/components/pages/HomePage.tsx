@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
@@ -9,12 +8,12 @@ interface HomePageProps {
     user: any;
     userProfile: any;
     credits: number;
-    onCreateBoard: () => void;
+    onGetStarted: () => void;
     onSignIn?: () => void;
     t: TranslationFunction;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
+export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t }) => {
     const [progress, setProgress] = useState(0);
     const mainTrackRef = useRef<HTMLElement>(null);
 
@@ -44,14 +43,6 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
     return (
         <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
-            <AppNavbar
-                user={user}
-                userProfile={userProfile}
-                credits={credits}
-                onCreateBoard={onCreateBoard}
-                onSignIn={onSignIn}
-                t={t}
-            />
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
@@ -70,7 +61,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
                         <div className="flex flex-col items-center justify-center gap-6 mt-16">
                             <Button
-                                onClick={onCreateBoard}
+                                onClick={onGetStarted}
                                 variant="primary"
                                 className="scale-125"
                             >
