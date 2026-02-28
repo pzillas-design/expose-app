@@ -180,7 +180,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                                             else onSelectImage(img.id);
                                         }}
-                                        className={`aspect-square cursor-pointer group relative ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
+                                        className={`aspect-square cursor-pointer group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
                                     >
                                         {previewSrc ? (
                                             <img
