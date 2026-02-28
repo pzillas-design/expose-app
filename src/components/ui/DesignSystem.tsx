@@ -9,7 +9,7 @@ import { X, Loader2 } from 'lucide-react';
 export const Theme = {
     Colors: {
         // Structural Backgrounds
-        CanvasBg: "bg-zinc-50 dark:bg-zinc-950", // App Background
+        CanvasBg: "bg-white dark:bg-zinc-950", // App Background
         PanelBg: "bg-white dark:bg-zinc-900", // Sidebars, Sheets
         ModalBg: "bg-white dark:bg-zinc-900", // Modals
 
@@ -45,7 +45,12 @@ export const Theme = {
         Glass: "bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm", // Slight blur for floating elements
         Overlay: "bg-black/40", // Dimming without blur
         Transition: "transition-all duration-150 ease-in-out",
-        Shadow: "",
+        ShadowXs: "shadow-none",        // No shadow for flat elements
+        ShadowSm: "shadow-sm",           // Subtle lift for chips/cards
+        Shadow: "shadow",               // Default - subtle and clean
+        ShadowMd: "shadow",             // Same as default - avoid overuse
+        ShadowLg: "shadow-sm",          // For modals: crisp, native, not blurry
+        ShadowXl: "shadow-md",          // Max - only for the most prominent modals
     },
     Geometry: {
         RadiusSm: 'rounded-md',      // 6px
@@ -213,14 +218,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button: React.FC<ButtonProps> = ({
     children, variant = 'primary', size = 'm', icon, isLoading, className = '', disabled, tooltip, ...props
 }) => {
-    // Structural classes
-    const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 font-semibold`;
+    // Structural classes — typography from Typo.ButtonLabel
+    const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 text-[10px] font-bold uppercase tracking-widest`;
 
-    // Size variants
+    // Size variants — height & padding only, font is always from ButtonLabel
     const sizes = {
-        s: 'h-8 px-4 text-[11px]',
-        m: 'h-10 px-5 text-[12px]',
-        l: 'h-12 px-6 text-[14px]',
+        s: 'h-8 px-4',
+        m: 'h-10 px-5',
+        l: 'h-12 px-6',
     };
 
     // Aesthetic variants

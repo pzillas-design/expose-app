@@ -27,6 +27,9 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    // Keep a ref so loadFeed can read current selection without it being a dependency
+    const selectedIdsRef = useRef<string[]>([]);
+    React.useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
     const [activeId, setActiveId] = useState<string | null>(null); // viewed/focused image
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
@@ -144,7 +147,7 @@ export const useNanoController = () => {
             setRows(prev => isInitial ? loadedRows : [...prev, ...loadedRows]);
             offsetRef.current += PAGE_SIZE;
 
-            if (isInitial && selectedIds.length === 0) {
+            if (isInitial && selectedIdsRef.current.length === 0) {
                 const allLoaded = loadedRows.flatMap(r => r.items);
                 if (allLoaded.length > 0) {
                     const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
@@ -157,7 +160,7 @@ export const useNanoController = () => {
         } finally {
             if (isInitial) setIsCanvasLoading(false);
         }
-    }, [user, selectedIds.length, setActiveId, setRows]);
+    }, [user, setActiveId, setRows]);
 
     React.useEffect(() => {
         if (user) {

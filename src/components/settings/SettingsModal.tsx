@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import {
-    LogOut, Moon, Sun, Monitor, Check, ChevronDown, Trash2, Bell, Zap
-} from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';
 import { LocaleKey } from '@/data/locales';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -14,6 +12,7 @@ import {
     areNotificationsEnabled,
     setNotificationsEnabled
 } from '@/utils/notifications';
+import { Theme, Button } from '../ui/DesignSystem';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -74,9 +73,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     ];
 
     const THEMES = [
-        { id: 'light', label: t('mode_light'), icon: Sun },
-        { id: 'dark', label: t('mode_dark'), icon: Moon },
-        { id: 'auto', label: t('mode_system'), icon: Monitor }
+        { id: 'light', label: t('mode_light') },
+        { id: 'dark', label: t('mode_dark') },
+        { id: 'auto', label: t('mode_system') }
     ];
 
     const LANGUAGES = [
@@ -87,12 +86,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const userInitial = user?.email?.[0]?.toUpperCase() || 'U';
 
-    // Cards sit on white/black page, cards themselves are slightly grey
-    const card = "bg-zinc-100/70 dark:bg-zinc-900/70 rounded-2xl";
+    const card = "bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl";
     const pickerTrigger = "w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all";
-    const pickerMenu = "absolute top-full left-0 right-0 mt-1.5 p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150 z-50 text-left shadow-lg";
+    const pickerMenu = `absolute top-full left-0 right-0 mt-1.5 p-1 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150 z-50 text-left shadow-sm`;
 
-    // Section label — small, regular weight, no uppercase
     const SectionLabel = ({ children }: { children: React.ReactNode }) => (
         <p className="text-xs text-zinc-400 dark:text-zinc-500 px-1 mb-2">{children}</p>
     );
@@ -113,20 +110,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                         {/* Profile row */}
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
-                                <span className="text-base font-medium text-orange-500">{userInitial}</span>
+                            <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">{userInitial}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-zinc-400 mb-0.5">{t('settings_email_label')}</p>
                                 <p className="text-sm text-zinc-900 dark:text-zinc-100 truncate">{user?.email}</p>
                             </div>
-                            <button
-                                onClick={onSignOut}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                            >
-                                <LogOut className="w-3.5 h-3.5" />
+                            <Button variant="ghost" size="s" onClick={onSignOut}>
                                 {t('logout_btn')}
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
@@ -135,20 +128,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-xs text-zinc-400 mb-1">{t('balance')}</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-xl font-semibold text-zinc-900 dark:text-white tabular-nums">
-                                        {(currentBalance || 0).toFixed(2)}
-                                    </span>
-                                    <span className="text-sm text-orange-500">€</span>
-                                </div>
+                                <span className="text-xl font-semibold text-zinc-900 dark:text-white tabular-nums">
+                                    {(currentBalance || 0).toFixed(2)} €
+                                </span>
                             </div>
-                            <button
-                                onClick={() => setIsCreditsModalOpen(true)}
-                                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium transition-colors"
-                            >
-                                <Zap className="w-3.5 h-3.5" />
+                            <Button variant="primary-mono" size="s" onClick={() => setIsCreditsModalOpen(true)}>
                                 {t('top_up')}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </section>
@@ -179,13 +165,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                 <button
                                                     key={m.id}
                                                     onClick={() => { onQualityModeChange(m.id); setIsQualityDropdownOpen(false); }}
-                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${qualityMode === m.id ? 'bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
+                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
                                                 >
                                                     <div className="flex flex-col items-start">
-                                                        <span className={`text-[13px] ${qualityMode === m.id ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-700 dark:text-zinc-300'}`}>{m.label}</span>
+                                                        <span className={`text-[13px] ${qualityMode === m.id ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>{m.label}</span>
                                                         <span className="text-[10px] text-zinc-400">{m.desc} · {m.price}</span>
                                                     </div>
-                                                    {qualityMode === m.id && <Check className="w-4 h-4 text-orange-500 shrink-0" />}
+                                                    {qualityMode === m.id && <Check className="w-4 h-4 text-zinc-900 dark:text-zinc-100 shrink-0" />}
                                                 </button>
                                             ))}
                                         </div>
@@ -217,10 +203,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     <button
                                                         key={t_item.id}
                                                         onClick={() => { onThemeChange(t_item.id as any); setIsAppearanceDropdownOpen(false); }}
-                                                        className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${themeMode === t_item.id ? 'bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
+                                                        className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${themeMode === t_item.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
                                                     >
-                                                        <span className={`text-[13px] ${themeMode === t_item.id ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-700 dark:text-zinc-300'}`}>{t_item.label}</span>
-                                                        {themeMode === t_item.id && <Check className="w-3.5 h-3.5 text-orange-500" />}
+                                                        <span className={`text-[13px] ${themeMode === t_item.id ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>{t_item.label}</span>
+                                                        {themeMode === t_item.id && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />}
                                                     </button>
                                                 ))}
                                             </div>
@@ -250,10 +236,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     <button
                                                         key={l_item.id}
                                                         onClick={() => { onLangChange(l_item.id as any); setIsLangDropdownOpen(false); }}
-                                                        className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${lang === l_item.id ? 'bg-orange-50 dark:bg-orange-950/20' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
+                                                        className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${lang === l_item.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}
                                                     >
-                                                        <span className={`text-[13px] ${lang === l_item.id ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-700 dark:text-zinc-300'}`}>{l_item.label}</span>
-                                                        {lang === l_item.id && <Check className="w-3.5 h-3.5 text-orange-500" />}
+                                                        <span className={`text-[13px] ${lang === l_item.id ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>{l_item.label}</span>
+                                                        {lang === l_item.id && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100" />}
                                                     </button>
                                                 ))}
                                             </div>
@@ -276,20 +262,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             return (
                                 <div className={`${card} p-4`}>
                                     <div className="flex items-center justify-between gap-4">
-                                        <div className="flex items-start gap-3 min-w-0">
-                                            <Bell className="w-4 h-4 text-zinc-400 mt-0.5 shrink-0" />
-                                            <div className="min-w-0">
-                                                <p className="text-sm text-zinc-900 dark:text-white">Benachrichtigungen</p>
-                                                <p className={`text-xs mt-0.5 transition-colors ${showPermissionHint ? 'text-orange-500' : 'text-zinc-400'}`}>
-                                                    {showPermissionHint ? 'In den Browser-Einstellungen erlauben' : subtitle}
-                                                </p>
-                                            </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm text-zinc-900 dark:text-white">Benachrichtigungen</p>
+                                            <p className={`text-xs mt-0.5 transition-colors ${showPermissionHint ? 'text-red-500' : 'text-zinc-400'}`}>
+                                                {showPermissionHint ? 'In den Browser-Einstellungen erlauben' : subtitle}
+                                            </p>
                                         </div>
                                         <button
                                             onClick={() => handleNotificationToggle(!notificationsEnabled)}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${notificationsEnabled ? 'bg-orange-500' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${notificationsEnabled ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'}`}
                                         >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 shadow transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                                         </button>
                                     </div>
                                 </div>
@@ -301,7 +284,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* ── Danger ── */}
                 <section>
                     <SectionLabel>{t('delete_account_section')}</SectionLabel>
-                    <button
+                    <Button
+                        variant="danger"
+                        size="m"
+                        className="w-full"
                         onClick={async () => {
                             const confirmed = await confirm({
                                 title: t('delete'),
@@ -312,11 +298,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             });
                             if (confirmed) onDeleteAccount();
                         }}
-                        className="w-full h-10 px-4 rounded-xl text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-100 dark:border-red-900/30 transition-all text-sm flex items-center justify-center gap-2"
                     >
-                        <Trash2 className="w-4 h-4" />
                         {t('delete_account_permanently')}
-                    </button>
+                    </Button>
                 </section>
             </div>
 

@@ -25,6 +25,7 @@ interface AppNavbarProps {
     detailInfo?: string;
     detailActions?: React.ReactNode;
     onBack?: () => void;
+    hasImages?: boolean;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -47,7 +48,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     mode = 'grid',
     detailInfo,
     detailActions,
-    onBack
+    onBack,
+    hasImages = true,
 }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
@@ -116,7 +118,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
             {detailInfo}
         </span>
-    ) : (
+    ) : hasImages ? (
         <button
             type="button"
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -124,7 +126,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         >
             <Logo className="w-7 h-7" />
         </button>
-    );
+    ) : null;
 
     const balanceDisplay = user && (
         <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
@@ -187,9 +189,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     items={[
                                         { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); }, separator: true },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); } },
                                         { label: 'Impressum', onClick: () => { setIsGridMenuOpen(false); window.open('/impressum', '_blank'); } },
-                                        { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); }, separator: true },
+                                        { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
                             </div>
@@ -204,7 +206,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <header className="absolute top-0 left-0 right-0 h-14 z-50 pointer-events-none">
             {/* The background is completely transparent here to let canvas show through,
                 but we add a subtle gradient if needed, or just let the elements themselves have backgrounds */}
-            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-900">
+            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900/50">
 
                 <div className="flex items-center w-1/3">
                     {leftContent}

@@ -396,7 +396,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                             setSelectedId(tmpl.id);
                             if (isMobile) setMobileView('editor');
                         }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 border border-orange-200/50 dark:border-orange-500/20 shadow-sm' : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 border border-orange-200/50 dark:border-orange-500/20 ' + Theme.Effects.ShadowSm : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
                     >
                         <span className="text-[13px] font-medium truncate pr-2">{tmpl.title}</span>
                         <ChevronRight className={`w-4 h-4 text-zinc-400 transition-opacity ${selectedId !== tmpl.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100 text-orange-500'}`} />
@@ -415,7 +415,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                 className={`
                     w-full ${isMobile ? 'max-w-md' : 'max-w-4xl h-[70vh] min-h-[500px]'} 
                     bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
-                    flex overflow-hidden shadow-2xl
+                    flex overflow-hidden ${Theme.Effects.ShadowLg}
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}

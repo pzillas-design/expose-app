@@ -32,7 +32,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             onClick={onCancel}
         >
             <div
-                className={`w-full max-w-[340px] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} overflow-hidden animate-in zoom-in-95 duration-200`}
+                className={`w-full max-w-[340px] ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} overflow-hidden animate-in zoom-in-95 duration-200 ${Theme.Effects.ShadowLg}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="p-8 pb-6 flex flex-col items-center text-center">

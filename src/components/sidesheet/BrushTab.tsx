@@ -61,7 +61,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     onMaskToolChange?.('select');
                                     onAddText?.();
                                 }}
-                                className="flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all"
+                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Type className="w-4 h-4" />
                                 <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Text' : 'Text'}</span>
@@ -72,7 +72,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     onMaskToolChange?.('select');
                                     onAddShape?.('rect');
                                 }}
-                                className="flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all"
+                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Square className="w-4 h-4" />
                                 <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Form' : 'Shape'}</span>
@@ -83,7 +83,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     onMaskToolChange?.('select');
                                     onAddShape?.('circle');
                                 }}
-                                className="flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all"
+                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Circle className="w-4 h-4" />
                                 <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
@@ -94,7 +94,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     onMaskToolChange?.('select');
                                     onAddShape?.('line');
                                 }}
-                                className="flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all"
+                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Minus className="w-4 h-4" />
                                 <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
@@ -104,7 +104,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
 
                             <button
                                 onClick={() => onMaskToolChange?.(maskTool === 'brush' ? 'select' : 'brush')}
-                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] transition-all ${maskTool === 'brush' ? 'bg-white dark:bg-zinc-800 text-orange-500 shadow-sm ring-1 ring-black/5 dark:ring-white/5' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-transparent dark:hover:bg-zinc-800'}`}
+                                className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] transition-all ${maskTool === 'brush' ? 'bg-white dark:bg-zinc-800 text-orange-500 ' + Theme.Effects.ShadowSm + ' ring-1 ring-black/5 dark:ring-white/5' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-transparent dark:hover:bg-zinc-800'}`}
                             >
                                 <Pen className="w-4 h-4" />
                                 <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>

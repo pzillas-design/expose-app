@@ -4,9 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
-import { prepareParts, generateImage } from './services/gemini.ts';
 import { generateImageKie } from './services/kie.ts';
-import { generateImageReplicate } from './services/replicate.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -160,11 +158,8 @@ Deno.serve(async (req) => {
                 finalSourceBase64 = await prepareSourceImage(sourceToProcess);
             }
 
-            // Determine model
-            let finalModelName = 'gemini-3-pro-image-preview';
-            if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/') || modelName.startsWith('google/'))) {
-                finalModelName = modelName;
-            }
+            // Model: always Kie AI nano-banana-pro
+            const finalModelName = 'nano-banana-pro';
 
             // Determine aspect ratio
             let bestRatio = '1:1';
@@ -224,62 +219,31 @@ Deno.serve(async (req) => {
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'processing');
 
-            const concurrentJobs = concurrentJobCount || 0;
             const generationStartTime = Date.now();
 
-            // Call AI API (Gemini or Replicate)
-            let generatedBase64 = null;
-            let finalOutputModel = finalModelName;
-            let geminiResponse = null;
+            // Call Kie AI
+            logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
 
-            const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN');
-            const isReplicateModel = finalModelName.startsWith('replicate/');
+            const kieResponse = await generateImageKie(
+                Deno.env.get('KIE_API_KEY')!,
+                finalModelName,
+                payload,
+                finalSourceBase64
+            );
 
-            if (isReplicateModel && replicateApiToken) {
-                logInfo('Replicate API Call', `Model: ${finalModelName}`);
-                // Remove 'replicate/' prefix to get actual model ID (e.g. google/nano-banana-pro)
-                const replicateModel = finalModelName.replace('replicate/', '');
-
-                const replicateResult = await generateImageReplicate(
-                    replicateApiToken,
-                    replicateModel,
-                    parts, // Pass prepared parts; service extracts text/images
-                    {
-                        resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K'),
-                        aspect_ratio: explicitRatio || (isEditMode ? 'match_input_image' : undefined)
-                    }
-                );
-                generatedBase64 = replicateResult.data;
-
-                // Log prediction ID for debugging
-                logInfo('Replicate Success', `Prediction ID: ${replicateResult.predictionId}`);
-
-            } else {
-                // Call Kie API (Gemini models)
-                logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-
-                const kieResponse = await generateImageKie(
-                    Deno.env.get('KIE_API_KEY')!,
-                    finalModelName,
-                    payload,
-                    finalSourceBase64
-                );
-
-                if (!kieResponse?.data?.[0]?.b64_json) {
-                    logError('Kie API Response', `No image returned.`, kieResponse);
-
-                    // Refund credits
-                    if (!isPro && cost > 0) {
-                        await supabaseAdmin
-                            .from('profiles')
-                            .update({ credits: profile.credits })
-                            .eq('id', user.id);
-                    }
-                    throw new Error('Image generation failed natively on Kie.ai');
+            if (!kieResponse?.data?.[0]?.b64_json) {
+                logError('Kie API Response', `No image returned.`, kieResponse);
+                // Refund credits
+                if (!isPro && cost > 0) {
+                    await supabaseAdmin
+                        .from('profiles')
+                        .update({ credits: profile.credits })
+                        .eq('id', user.id);
                 }
-
-                generatedBase64 = kieResponse.data[0].b64_json;
+                throw new Error('Image generation failed on Kie.ai');
             }
+
+            const generatedBase64 = kieResponse.data[0].b64_json;
 
             let dbBaseName = "";
             let dbTitle = "";
@@ -394,10 +358,7 @@ Deno.serve(async (req) => {
             }
 
             // Update job status
-            const usage = (isReplicateModel ? {} : (geminiResponse as any).usageMetadata) || {};
-            const tokensPrompt = usage.promptTokenCount || 0;
-            const tokensCompletion = usage.candidatesTokenCount || 0;
-            const tokensTotal = usage.totalTokenCount || 0;
+            const durationMs = Date.now() - generationStartTime;
 
             // Fetch pricing
             let pricing = null;

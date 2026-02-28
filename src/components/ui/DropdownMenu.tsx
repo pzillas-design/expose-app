@@ -1,5 +1,5 @@
 import React from 'react';
-import { Typo } from '@/components/ui/DesignSystem';
+import { Typo, Theme } from '@/components/ui/DesignSystem';
 
 export interface DropdownItem {
     label: string;
@@ -22,22 +22,21 @@ const dangerIconClass = `w-4 h-4 text-red-400 group-hover:text-red-600 transitio
 const textClass = `${Typo.Body} text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white font-medium`;
 const dangerTextClass = `${Typo.Body} text-red-500 group-hover:text-red-600 dark:text-red-400 font-medium`;
 
-const Separator = () => <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />;
+
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, className = '' }) => (
     <div className={`
         min-w-[220px]
         bg-white dark:bg-zinc-950
         border border-zinc-200 dark:border-zinc-800
-        rounded-xl ring-1 ring-black/5
+        rounded-xl ring-1 ring-black/[0.02]
         p-1.5
-        shadow-lg
+        ${Theme.Effects.Shadow}
         animate-in fade-in slide-in-from-top-2 duration-150
         ${className}
     `}>
         {items.map((item, i) => (
             <React.Fragment key={i}>
-                {item.separator && <Separator />}
                 <button
                     onClick={item.onClick}
                     className={item.danger ? dangerClass : itemClass}

@@ -8,6 +8,8 @@ import { useMobile } from '@/hooks/useMobile';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
+import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
+import { Logo } from '@/components/ui/Logo';
 
 interface FeedPageProps {
     images: CanvasImage[];
@@ -15,7 +17,7 @@ interface FeedPageProps {
     hasMore: boolean;
     onSelectImage: (id: string) => void;
     onCreateNew: () => void;
-    onUpload?: () => void;
+    onUpload?: (files?: FileList) => void;
     onLoadMore: () => void;
     isSelectMode?: boolean;
     selectedIds?: string[];
@@ -128,106 +130,148 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
         );
     }
 
+    const triggerUpload = () => document.getElementById('feed-upload-input')?.click();
+
     return (
         <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-black relative flex flex-col">
-                <div className="flex-1">
-                    <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px bg-zinc-100 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-900 ${isMobile ? 'pb-32' : ''}`}>
-                        {/* Create New Tile */}
-                        <div
-                            ref={createMenuRef}
-                            className="aspect-square cursor-pointer group bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors relative"
-                            onClick={() => setIsCreateMenuOpen(p => !p)}
-                        >
-                            <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+            {/* Shared hidden file input for all upload triggers */}
+            <input
+                type="file"
+                id="feed-upload-input"
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
+            />
+            <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.CanvasBg} relative flex flex-col`}>
+                <div className="flex-1 flex flex-col">
+                    {images.length > 0 ? (
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px bg-zinc-200/50 dark:bg-zinc-900 border-b border-zinc-200/50 dark:border-zinc-900 ${isMobile ? 'pb-32' : ''}`}>
+                            {/* Create New Tile */}
+                            <div
+                                ref={createMenuRef}
+                                className="aspect-square cursor-pointer group bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors relative"
+                                onClick={() => setIsCreateMenuOpen(p => !p)}
+                            >
+                                <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
 
-                            {isCreateMenuOpen && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]">
-                                    <DropdownMenu
-                                        items={[
-                                            { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
-                                            { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onUpload?.(); } },
-                                        ]}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {images.length > 0 ? images.map((img, idx) => {
-                            const isSelected = selectedIds.includes(img.id);
-                            const isKeyboardActive = activeIndex === idx;
-                            const previewSrc = img.thumbSrc || img.src;
-
-                            return (
-                                <div
-                                    key={img.id}
-                                    onMouseEnter={() => setActiveIndex(idx)}
-                                    onClick={() => {
-                                        if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
-                                        else onSelectImage(img.id);
-                                    }}
-                                    className={`aspect-square cursor-pointer group relative bg-white dark:bg-zinc-950`}
-                                >
-                                    {previewSrc ? (
-                                        <img
-                                            src={previewSrc}
-                                            alt={img.title}
-                                            className={`w-full h-full object-cover transition-transform duration-200 ease-out ${isSelectMode && isSelected ? 'scale-[0.85]' : (isKeyboardActive ? 'scale-105' : 'group-hover:scale-105')}`}
-                                            loading="lazy"
+                                {isCreateMenuOpen && (
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]">
+                                        <DropdownMenu
+                                            items={[
+                                                { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
+                                                { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); triggerUpload(); } },
+                                            ]}
                                         />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center">
-                                            {img.isGenerating ? (
-                                                <div className="flex flex-col items-center gap-2">
-                                                    <Loader2 className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-700" />
-                                                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-800">Generating</span>
-                                                </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {images.map((img, idx) => {
+                                const isSelected = selectedIds.includes(img.id);
+                                const isKeyboardActive = activeIndex === idx;
+                                const previewSrc = img.thumbSrc || img.src;
+
+                                return (
+                                    <div
+                                        key={img.id}
+                                        onMouseEnter={() => setActiveIndex(idx)}
+                                        onClick={() => {
+                                            if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
+                                            else onSelectImage(img.id);
+                                        }}
+                                        className={`aspect-square cursor-pointer group relative ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
+                                    >
+                                        {previewSrc ? (
+                                            <img
+                                                src={previewSrc}
+                                                alt={img.title}
+                                                className={`w-full h-full object-cover transition-transform duration-200 ease-out ${isSelectMode && isSelected ? 'scale-[0.85]' : (isKeyboardActive ? 'scale-105' : 'group-hover:scale-105')}`}
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center">
+                                                {img.isGenerating ? (
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <Loader2 className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-700" />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-800">Generating</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Overlay – purely visual, never eats clicks */}
+                                        <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                            {/* Subtle dark tint */}
+                                            <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
+                                        </div>
+
+                                        {/* Checkbox – outside overlay so it's always clickable */}
+                                        <div
+                                            className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                                if (!isSelectMode) {
+                                                    actions?.setIsSelectMode?.(true);
+                                                }
+                                                if (onToggleSelect) {
+                                                    onToggleSelect(img.id);
+                                                }
+                                            }}
+                                        >
+                                            {isSelectMode ? (
+                                                isSelected ? (
+                                                    <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
+                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full h-full rounded-full bg-black/10 border border-white/40" />
+                                                )
                                             ) : (
-                                                <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
+                                                <div className="w-full h-full rounded-full bg-black/20 border border-white/50 cursor-pointer hover:bg-black/30 transition-colors" />
                                             )}
                                         </div>
-                                    )}
-
-                                    {/* Overlay – purely visual, never eats clicks */}
-                                    <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                        {/* Subtle dark tint */}
-                                        <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
                                     </div>
-
-                                    {/* Checkbox – outside overlay so it's always clickable */}
-                                    <div
-                                        className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            if (!isSelectMode) {
-                                                actions?.setIsSelectMode?.(true);
-                                            }
-                                            if (onToggleSelect) {
-                                                onToggleSelect(img.id);
-                                            }
-                                        }}
-                                    >
-                                        {isSelectMode ? (
-                                            isSelected ? (
-                                                <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
-                                                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                </div>
-                                            ) : (
-                                                <div className="w-full h-full rounded-full bg-black/10 border border-white/40" />
-                                            )
-                                        ) : (
-                                            <div className="w-full h-full rounded-full bg-black/20 border border-white/50 cursor-pointer hover:bg-black/30 transition-colors" />
-                                        )}
-                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : !isLoading && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-[70vh]">
+                            <div className="flex flex-col items-center gap-8">
+                                <Logo className="w-20 h-20" />
+                                <div className="space-y-4">
+                                    <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
+                                        {t?.('welcome_title') || (state?.lang === 'de' ? 'Willkommen bei exposé' : 'Welcome to exposé')}
+                                    </h1>
+                                    <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
+                                        {t?.('welcome_empty_desc') || (state?.lang === 'de' ? 'Laden Sie Fotos zum Bearbeiten hoch oder generieren Sie etwas Neues.' : 'Upload photos to edit or generate something new.')}
+                                    </p>
                                 </div>
-                            )
-                        }) : !isLoading && (
-                            <div className="col-span-full h-96 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 gap-2">
-                                <p className="text-sm font-medium">{t?.('empty_feed_message') || 'Click "+" to generate your first image.'}</p>
                             </div>
-                        )}
-                    </div>
+
+                            <div className="flex flex-col w-full gap-4 max-w-[320px]">
+                                <Button
+                                    variant="primary-mono"
+                                    size="l"
+                                    onClick={triggerUpload}
+                                    icon={<Upload className="w-5 h-5" />}
+                                >
+                                    {t?.('action_upload') || 'HOCHLADEN'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="l"
+                                    onClick={onCreateNew}
+                                    icon={<Plus className="w-5 h-5" />}
+                                >
+                                    {t?.('action_generate') || 'BILD GENERIEREN'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer consistently at the bottom */}
@@ -236,7 +280,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
 
             {/* Selection SideSheet */}
             {isSelectMode && !isMobile && (
-                <div className="w-[380px] shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 flex flex-col z-10 relative">
+                <div className={`w-[380px] shrink-0 border-l ${Theme.Colors.Border} ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));
                         const selectedImage = selectedImages.length > 0 ? selectedImages[selectedImages.length - 1] : null;

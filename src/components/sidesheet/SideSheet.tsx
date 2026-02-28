@@ -639,7 +639,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                     e.stopPropagation();
                                                                     toggleControlOption(ctrl.id, opt.value);
                                                                 }}
-                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-100 shadow-sm' : 'bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-100 ' + Theme.Effects.ShadowSm : 'bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
                                                             >
                                                                 {opt.label}
                                                             </button>
@@ -845,7 +845,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 <div className="lg:hidden fixed inset-0 z-[100] pointer-events-none">
                     <div
                         ref={sheetRef}
-                        className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto shadow-2xl ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
+                        className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
                         style={{ maxHeight: '90vh', overflow: 'hidden', paddingBottom: 'env(safe-area-inset-bottom)' }}
                         onDragOver={e => e.preventDefault()}
                         onDrop={handleDrop}

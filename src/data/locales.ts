@@ -149,6 +149,8 @@ export const translations = {
     upload_image_edit: "Upload Image & Edit",
     generate_new: "Generate New",
     empty_feed_message: "Click \"+\" to generate your first image.",
+    action_upload: "HOCHLADEN",
+    action_generate: "BILD GENERIEREN",
 
     // Settings / User
     login_btn: "Login",
@@ -525,6 +527,8 @@ export const translations = {
     upload_image_edit: "Hochladen",
     generate_new: "Bild generieren",
     empty_feed_message: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
+    action_upload: "HOCHLADEN",
+    action_generate: "BILD GENERIEREN",
 
     // Settings / User
     login_btn: "Anmelden",

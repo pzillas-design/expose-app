@@ -167,6 +167,7 @@ export function App() {
                     selectedCount={state.selectedIds?.length || 0}
                     t={t}
                     mode={location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
+                    hasImages={allImages.length > 0}
                     detailInfo={(() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
@@ -229,6 +230,7 @@ export function App() {
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={() => setIsCreationModalOpen(true)}
+                                    onUpload={(files) => Array.from(files ?? []).forEach(f => actions.processFile(f))}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
                                     selectedIds={state.selectedIds}

@@ -348,7 +348,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'shapes' && (
-                                    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <button
                                             onClick={() => {
                                                 actions.setMaskTool('select');
@@ -382,7 +382,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'brush' && (
-                                    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <span className="text-[11px] font-medium text-zinc-500 w-8">{state.brushSize}px</span>
                                         <input
                                             type="range"
@@ -404,7 +404,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
 
                             {/* Primary Row: 3 Tools + Done */}
-                            <div className="flex items-center gap-2 p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1)] rounded-full pointer-events-auto overflow-hidden">
+                            <div className={`flex items-center gap-2 p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
                                 <button
                                     onClick={() => {
                                         setSubMenu('text');
@@ -445,7 +445,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     onClick={() => actions.handleModeChange('prompt')}
                                     variant="primary-mono"
                                     size="l"
-                                    className="!h-[52px] !rounded-full shadow-md hover:shadow-lg"
+                                    className={`!h-[52px] !rounded-full ${Theme.Effects.ShadowSm} hover:${Theme.Effects.Shadow}`}
                                 >
                                     {t('done') || 'Fertig'}
                                 </Button>

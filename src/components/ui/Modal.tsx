@@ -65,6 +65,7 @@ export const Modal: React.FC<ModalProps> = ({
             border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}
             flex flex-col max-h-[90vh] overflow-hidden
             animate-in zoom-in-95 duration-200
+            ${Theme.Effects.ShadowLg}
             ${className}
         `}
                 onClick={(e) => e.stopPropagation()}

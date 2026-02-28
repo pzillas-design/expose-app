@@ -42,8 +42,9 @@ const QUALITY_TO_MODEL: Record<string, string> = {
     'pro-4k': 'google/nano-banana-pro'
 };
 
-const resolveTargetModel = (quality: string): string | undefined => {
-    return QUALITY_TO_MODEL[quality];
+const resolveTargetModel = (_quality: string): string | undefined => {
+    // Return undefined — let the Edge Function use its own default model ('gemini-3-pro-image-preview')
+    return undefined;
 };
 
 // HELPER: Map technical errors to user-friendly German
