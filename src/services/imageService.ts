@@ -230,9 +230,6 @@ export const imageService = {
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
-        // Ensure the session token is fresh before invoking the edge function
-        await supabase.auth.refreshSession().catch(() => {});
-
         const { data, error } = await supabase.functions.invoke('generate-image', {
             body: {
                 ...payload,
