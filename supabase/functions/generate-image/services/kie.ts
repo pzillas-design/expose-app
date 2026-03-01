@@ -97,7 +97,12 @@ export const generateImageKie = async (
                 } catch { /* fall through */ }
             }
 
-            // 2. Direct URL fields (nano-banana-2 may use these)
+            // 2. resultUrls array directly on taskData (recordInfo format)
+            if (!imageUrl && Array.isArray(taskData?.resultUrls) && taskData.resultUrls.length > 0) {
+                imageUrl = taskData.resultUrls[0] || null;
+            }
+
+            // 3. Direct URL fields
             if (!imageUrl && taskData?.resultUrl) {
                 imageUrl = typeof taskData.resultUrl === 'string' ? taskData.resultUrl : null;
             }
@@ -108,7 +113,7 @@ export const generateImageKie = async (
                 imageUrl = typeof taskData.url === 'string' ? taskData.url : null;
             }
 
-            // 3. Array/object output fields
+            // 4. Array/object output fields
             if (!imageUrl) {
                 const output = taskData?.output || taskData?.outputs || taskData?.images || taskData?.results;
                 if (Array.isArray(output) && output.length > 0) {

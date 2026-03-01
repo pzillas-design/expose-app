@@ -342,13 +342,13 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').insert({
                         id: newId,
                         user_id: currentUser.id,
-                        user_name: currentUser.email,
+                        user_email: currentUser.email,
                         type: maskDataUrl ? 'Edit' : 'Create',
                         model: qualityMode,
+                        quality_mode: qualityMode,
                         status: 'processing',
                         cost: cost,
-                        prompt: prompt,
-                        concurrent_jobs: currentConcurrency,
+                        prompt_preview: prompt,
                         parent_id: sourceImage.id
                     }).then(() => attachedJobIds.current.add(newId));
                 }
@@ -459,7 +459,14 @@ export const useGeneration = ({
             try {
                 if (user && !isAuthDisabled) {
                     supabase.from('generation_jobs').insert({
-                        status: 'processing', cost, prompt
+                        id: newId,
+                        user_id: user.id,
+                        user_email: user.email,
+                        status: 'processing',
+                        cost,
+                        prompt_preview: prompt,
+                        quality_mode: modelId,
+                        model: modelId
                     });
                 }
 

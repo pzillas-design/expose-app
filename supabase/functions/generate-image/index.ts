@@ -470,7 +470,6 @@ Deno.serve(async (req) => {
                     tokens_completion: tokensCompletion,
                     tokens_total: tokensTotal,
                     duration_ms: durationMs,
-                    concurrent_jobs: concurrentJobs,
                     quality_mode: qualityMode,
                     request_payload: apiRequestPayload
                 })
