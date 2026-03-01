@@ -230,6 +230,9 @@ export const imageService = {
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
+        // Ensure the session token is fresh before invoking the edge function
+        await supabase.auth.refreshSession().catch(() => {});
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
             body: {
                 ...payload,
@@ -249,18 +252,26 @@ export const imageService = {
             console.error("  Response data:", data);
 
             let errorMsg = "Unknown generation error";
-            if (error && (error as any).context) {
-                try {
-                    // Try to parse error body if it was a FunctionsHttpError
-                    const errorBody = await (error as any).context.json();
-                    errorMsg = errorBody.error || errorBody.message || JSON.stringify(errorBody);
-                } catch (e) {
-                    errorMsg = error.message;
+            if (error) {
+                // Try context.text() first (more reliable than .json() if body not yet consumed)
+                if ((error as any).context) {
+                    try {
+                        const text = await (error as any).context.text();
+                        try { const p = JSON.parse(text); errorMsg = p.error || p.message || text; }
+                        catch { errorMsg = text || error.message; }
+                    } catch {
+                        errorMsg = error.message;
+                    }
+                } else {
+                    // Newer Supabase SDK: error.message may already be the raw JSON body
+                    try { const p = JSON.parse(error.message); errorMsg = p.error || p.message || error.message; }
+                    catch { errorMsg = error.message; }
                 }
             } else {
-                errorMsg = error?.message || data?.error || errorMsg;
+                errorMsg = data?.error || errorMsg;
             }
 
+            console.error("  Parsed errorMsg:", errorMsg);
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
             throw new Error(`${errorMsg}${statusInfo}`);
         }
