@@ -271,7 +271,6 @@ export const imageService = {
                 errorMsg = data?.error || errorMsg;
             }
 
-            console.error("  Parsed errorMsg:", errorMsg);
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
             throw new Error(`${errorMsg}${statusInfo}`);
         }
