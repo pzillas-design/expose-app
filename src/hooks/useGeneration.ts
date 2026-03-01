@@ -18,7 +18,7 @@ interface UseGenerationProps {
     isAuthDisabled: boolean;
     selectAndSnap: (id: string, instant?: boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
-    showToast: (msg: string, type: "success" | "error", duration?: number) => void;
+    showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
 }
@@ -26,13 +26,19 @@ interface UseGenerationProps {
 const COSTS: Record<string, number> = {
     'pro-1k': 0.10,
     'pro-2k': 0.25,
-    'pro-4k': 0.50
+    'pro-4k': 0.50,
+    'nb2-1k': 0.07,
+    'nb2-2k': 0.17,
+    'nb2-4k': 0.35,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
     'pro-1k': 23000,
     'pro-2k': 36000,
-    'pro-4k': 60000
+    'pro-4k': 60000,
+    'nb2-1k': 15000,
+    'nb2-2k': 25000,
+    'nb2-4k': 45000,
 };
 
 // Map quality modes to model names for historical lookup
@@ -59,13 +65,15 @@ const translateError = (errorMsg: string): string => {
         return "Inhalt abgelehnt (Sicherheitsfilter).";
     } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
         return "Guthaben nicht ausreichend.";
+    } else if (msg.includes("failed to send") || msg.includes("edge function") || msg.includes("503") || msg.includes("502")) {
+        return "Server nicht erreichbar. Bitte erneut versuchen.";
     } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        return "Netzwerkfehler.";
+        return "Netzwerkfehler. Bitte erneut versuchen.";
     } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
         return "Fehler in der Anfrage.";
     }
 
-    return errorMsg.length > 60 ? errorMsg.substring(0, 60) + "..." : errorMsg;
+    return "Generierung fehlgeschlagen. Bitte erneut versuchen.";
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -291,11 +299,7 @@ export const useGeneration = ({
         }
 
         // --- ASYNC PROCESSING STARTS HERE ---
-
-        // Debit Credits Locally (for immediate UX)
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
+        // Credits are deducted server-side; local UI update happens only on success.
 
         // Heavy Canvas/DB operations in the background
         const processGenerationAsync = async () => {
@@ -378,12 +382,28 @@ export const useGeneration = ({
                         ...row,
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
+
+                    // Deduct credits locally after confirmed server-side success
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    // Success toast — click navigates to the generated image
+                    showToast('✓ Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
+                        selectAndSnap(newId);
+                    });
+
+                    // Fire-and-forget: generate + persist thumbnail to avoid transform API costs on future loads
+                    if (currentUser) {
+                        imageService.generateMissingThumbnail(finalImage, currentUser.id);
+                    }
                 }
             } catch (error: any) {
                 console.error("Generation failed:", error);
                 const translated = translateError(error.message || error);
                 showToast(translated, "error");
 
+                // Remove placeholder tile
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== newId)
@@ -392,25 +412,7 @@ export const useGeneration = ({
                 if (currentUser && !isAuthDisabled) {
                     supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
                 }
-
-                if (!isPro && cost > 0) {
-                    setCredits(prev => {
-                        const newCredits = prev + cost;
-                        if (currentUser) { // Only try to update if currentUser is defined
-                            supabase.from('profiles').update({ credits: newCredits }).eq('id', currentUser.id);
-                        }
-                        return newCredits;
-                    });
-
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => {
-                        if (shouldRetry) performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
-                    });
-                }
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 
@@ -423,10 +425,6 @@ export const useGeneration = ({
         const isPro = userProfile?.role === 'pro';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
-
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
 
         const newId = generateId();
         const baseName = t('new_generation') || 'Generation';
@@ -477,20 +475,27 @@ export const useGeneration = ({
 
                 if (finalImage) {
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
+
+                    // Deduct credits locally after confirmed server-side success
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    // Success toast — click navigates to the generated image
+                    showToast('✓ Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
+                        selectAndSnap(newId);
+                    });
+
+                    // Fire-and-forget thumbnail backfill
+                    if (user?.id) {
+                        imageService.generateMissingThumbnail(finalImage, user.id);
+                    }
                 }
             } catch (error: any) {
                 const translated = translateError(error.message || "");
                 showToast(translated, "error");
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
-                if (!isPro) {
-                    setCredits(prev => prev + cost);
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => { if (shouldRetry) performNewGeneration(prompt, modelId, ratio, attachments); });
-                }
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 

@@ -124,7 +124,7 @@ export interface LibraryCategory {
   isUserCreated?: boolean; // New
 }
 
-export type GenerationQuality = 'pro-1k' | 'pro-2k' | 'pro-4k';
+export type GenerationQuality = 'pro-1k' | 'pro-2k' | 'pro-4k' | 'nb2-1k' | 'nb2-2k' | 'nb2-4k';
 
 // --- ADMIN TYPES ---
 

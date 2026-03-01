@@ -143,10 +143,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 multiple
                 onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
             />
-            <div className={`flex-1 overflow-y-auto no-scrollbar ${Theme.Colors.CanvasBg} relative flex flex-col`}>
+            <div className="flex-1 overflow-y-auto no-scrollbar bg-zinc-200/50 dark:bg-zinc-950 relative flex flex-col">
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px bg-zinc-200/50 dark:bg-zinc-900 border-b border-zinc-200/50 dark:border-zinc-900 ${isMobile ? 'pb-32' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px ${isMobile ? 'pb-32' : ''}`}>
                             {/* Create New Tile */}
                             <div
                                 ref={createMenuRef}
@@ -156,11 +156,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
 
                                 {isCreateMenuOpen && (
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]">
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]" onClick={e => e.stopPropagation()}>
                                         <DropdownMenu
                                             items={[
-                                                { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
-                                                { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); triggerUpload(); } },
+                                                { label: t?.('generate_new') || 'Neues Bild generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
+                                                { label: t?.('action_upload') || 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); triggerUpload(); } },
                                             ]}
                                         />
                                     </div>
@@ -171,11 +171,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 const isSelected = selectedIds.includes(img.id);
                                 const isKeyboardActive = activeIndex === idx;
                                 const previewSrc = img.thumbSrc || img.src;
+                                const isGen = !!img.isGenerating;
+
+                                // Progress bar: how far through the estimated duration are we?
+                                const elapsed = isGen ? Math.max(0, Date.now() - (img.generationStartTime || Date.now())) : 0;
+                                const estimated = Math.max(1000, img.estimatedDuration || 30000);
 
                                 return (
                                     <div
                                         key={img.id}
                                         onMouseEnter={() => setActiveIndex(idx)}
+                                        onMouseLeave={() => setActiveIndex(null)}
                                         onClick={() => {
                                             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                                             else onSelectImage(img.id);
@@ -186,15 +192,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                             <img
                                                 src={previewSrc}
                                                 alt={img.title}
-                                                className={`w-full h-full object-cover transition-transform duration-200 ease-out ${isSelectMode && isSelected ? 'scale-[0.85]' : (isKeyboardActive ? 'scale-105' : 'group-hover:scale-105')}`}
+                                                className={`w-full h-full object-cover transition-all duration-300 ease-out ${
+                                                    isGen
+                                                        ? 'blur-sm scale-105 brightness-75'
+                                                        : isSelectMode && isSelected
+                                                            ? 'scale-[0.85]'
+                                                            : isKeyboardActive
+                                                                ? 'scale-105'
+                                                                : 'group-hover:scale-105'
+                                                }`}
                                                 loading="lazy"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center">
-                                                {img.isGenerating ? (
-                                                    <div className="flex flex-col items-center gap-2">
-                                                        <Loader2 className="w-4 h-4 animate-spin text-zinc-400 dark:text-zinc-700" />
-                                                        <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-800">Generating</span>
+                                                {isGen ? (
+                                                    /* Shimmer for new generations without source image */
+                                                    <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"
+                                                            style={{ animation: 'shimmer 1.8s ease-in-out infinite' }} />
                                                     </div>
                                                 ) : (
                                                     <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
@@ -202,38 +217,57 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                             </div>
                                         )}
 
-                                        {/* Overlay – purely visual, never eats clicks */}
-                                        <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                            {/* Subtle dark tint */}
-                                            <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
-                                        </div>
+                                        {/* Generation overlay: progress bar at bottom */}
+                                        {isGen && (
+                                            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-black/20 pointer-events-none">
+                                                <div
+                                                    className="h-full bg-orange-500"
+                                                    style={{
+                                                        animationName: 'gen-progress',
+                                                        animationDuration: `${estimated}ms`,
+                                                        animationDelay: `-${Math.min(elapsed, estimated * 0.92)}ms`,
+                                                        animationTimingFunction: 'linear',
+                                                        animationFillMode: 'both',
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
 
-                                        {/* Checkbox – outside overlay so it's always clickable */}
-                                        <div
-                                            className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                                if (!isSelectMode) {
-                                                    actions?.setIsSelectMode?.(true);
-                                                }
-                                                if (onToggleSelect) {
-                                                    onToggleSelect(img.id);
-                                                }
-                                            }}
-                                        >
-                                            {isSelectMode ? (
-                                                isSelected ? (
-                                                    <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
-                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                    </div>
+                                        {/* Hover/select overlay – only when not generating */}
+                                        {!isGen && (
+                                            <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                                <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
+                                            </div>
+                                        )}
+
+                                        {/* Checkbox – hidden while generating */}
+                                        {!isGen && (
+                                            <div
+                                                className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    if (!isSelectMode) {
+                                                        actions?.setIsSelectMode?.(true);
+                                                    }
+                                                    if (onToggleSelect) {
+                                                        onToggleSelect(img.id);
+                                                    }
+                                                }}
+                                            >
+                                                {isSelectMode ? (
+                                                    isSelected ? (
+                                                        <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
+                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="w-full h-full rounded-full bg-white/25" />
+                                                    )
                                                 ) : (
-                                                    <div className="w-full h-full rounded-full bg-black/10 border border-white/40" />
-                                                )
-                                            ) : (
-                                                <div className="w-full h-full rounded-full bg-black/20 border border-white/50 cursor-pointer hover:bg-black/30 transition-colors" />
-                                            )}
-                                        </div>
+                                                    <div className="w-full h-full rounded-full bg-white/25 cursor-pointer hover:bg-white/40 transition-colors" />
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}
@@ -274,8 +308,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                     )}
                 </div>
 
-                {/* Footer consistently at the bottom */}
-                <GlobalFooter t={t || ((key: string) => key)} />
+                <div className="mt-auto">
+                    <GlobalFooter t={t || ((key: string) => key)} />
+                </div>
             </div>
 
             {/* Selection SideSheet */}

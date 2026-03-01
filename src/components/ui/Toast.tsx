@@ -13,10 +13,11 @@ export interface Toast {
     message: string;
     type: ToastType;
     duration?: number;
+    onClick?: () => void;
 }
 
 interface ToastContextType {
-    showToast: (message: string, type?: ToastType, duration?: number) => void;
+    showToast: (message: string, type?: ToastType, duration?: number, onClick?: () => void) => void;
 }
 
 // --- Context ---
@@ -36,9 +37,9 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const showToast = useCallback((message: string, type: ToastType = 'info', duration = 6000) => {
+    const showToast = useCallback((message: string, type: ToastType = 'info', duration = 6000, onClick?: () => void) => {
         const id = Math.random().toString(36).substring(2, 9);
-        setToasts(prev => [...prev, { id, message, type, duration }]);
+        setToasts(prev => [...prev, { id, message, type, duration, onClick }]);
 
         if (duration > 0) {
             setTimeout(() => {
@@ -59,10 +60,12 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     {toasts.map(toast => (
                         <div
                             key={toast.id}
+                            onClick={toast.onClick ? () => { toast.onClick!(); removeToast(toast.id); } : undefined}
                             className={`
  pointer-events-auto w-80 p-4 ${Theme.Geometry.RadiusLg} border
  animate-in slide-in-from-bottom-5 fade-in duration-300
  flex items-center gap-3
+ ${toast.onClick ? 'cursor-pointer hover:brightness-[0.97] active:scale-[0.99] transition-all' : ''}
  ${toast.type === 'error' ? 'border-red-200 dark:border-red-900/50 bg-red-50/90 dark:bg-red-950/50' :
                                     toast.type === 'success' ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/90 dark:bg-emerald-950/50' :
                                         'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90'}

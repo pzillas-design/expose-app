@@ -83,3 +83,9 @@ html:not(.dark) {
     transform: translateX(-100%);
   }
 }
+
+/* Progress bar for image generation tiles: grows from 2% → 95% over estimatedDuration */
+@keyframes gen-progress {
+  from { width: 2%; }
+  to   { width: 95%; }
+}

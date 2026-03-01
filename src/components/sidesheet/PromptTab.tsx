@@ -85,6 +85,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 px', price: '0.10 €' },
         { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 px', price: '0.25 €' },
         { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 px', price: '0.50 €' },
+        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: '1024 px · schnell', price: '0.07 €' },
+        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: '2048 px · schnell', price: '0.17 €' },
+        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: '4096 px · schnell', price: '0.35 €' },
     ];
 
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
