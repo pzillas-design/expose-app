@@ -237,15 +237,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
             <main className="flex-1 overflow-hidden flex">
                 {/* Canvas Area */}
-                <div className="flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden">
-                    {/* Nav Arrows */}
+                <div className="flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group">
+                    {/* Nav Arrows — only visible on hover */}
                     {idx > 0 && (
-                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 ">
+                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 opacity-0 group-hover:opacity-100">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
                     {idx < images.length - 1 && (
-                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 ">
+                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 opacity-0 group-hover:opacity-100">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     )}
