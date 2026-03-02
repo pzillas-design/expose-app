@@ -416,13 +416,6 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
                 }
 
-                // JWT expired → silent sign-out (auth listener will redirect to login)
-                const errMsg = (error.message || '').toLowerCase();
-                if (errMsg.includes("invalid jwt") || errMsg.includes("jwt expired") || errMsg.includes("not authenticated") || errMsg.includes("user not found")) {
-                    supabase.auth.signOut();
-                    return;
-                }
-
                 const translated = translateError(error.message || error);
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
@@ -513,13 +506,6 @@ export const useGeneration = ({
                 }
             } catch (error: any) {
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
-
-                // JWT expired → silent sign-out (auth listener will redirect to login)
-                const errMsg = (error.message || '').toLowerCase();
-                if (errMsg.includes("invalid jwt") || errMsg.includes("jwt expired") || errMsg.includes("not authenticated") || errMsg.includes("user not found")) {
-                    supabase.auth.signOut();
-                    return;
-                }
 
                 const translated = translateError(error.message || "");
                 showToast(translated, "error");
