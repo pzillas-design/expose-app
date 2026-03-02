@@ -251,7 +251,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     )}
 
                     {/* Image Container with Progressive Loading */}
-                    <div className="flex-1 flex items-center justify-center p-4 lg:p-12 relative min-h-0">
+                    <div className="flex-1 flex items-center justify-center relative min-h-0">
                         {/* Centered Wrapper for Image + Canvas */}
                         <div className="relative flex items-center justify-center max-w-full max-h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
 
