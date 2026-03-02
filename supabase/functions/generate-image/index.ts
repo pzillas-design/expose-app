@@ -387,7 +387,6 @@ Deno.serve(async (req) => {
             const newImage: any = {
                 id: newId,
                 user_id: user.id,
-                board_id: board_id || null,
                 job_id: newId,
                 storage_path: filePath,
                 width: Math.round(sourceImage?.width || 512),

@@ -257,7 +257,9 @@ export const imageService = {
                         try { const p = JSON.parse(text); errorMsg = p.error || p.message || text; }
                         catch { errorMsg = text || error.message; }
                     } catch {
-                        errorMsg = error.message;
+                        // context.text() failed — try JSON-parsing error.message (SDK v2.89 behavior)
+                        try { const p = JSON.parse(error.message); errorMsg = p.error || p.message || error.message; }
+                        catch { errorMsg = error.message; }
                     }
                 } else {
                     // Newer Supabase SDK: error.message may already be the raw JSON body

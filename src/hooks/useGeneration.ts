@@ -71,9 +71,16 @@ const translateError = (errorMsg: string): string => {
         return "Netzwerkfehler. Bitte erneut versuchen.";
     } else if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("not authenticated") || msg.includes("user not found")) {
         return "Sitzung abgelaufen. Bitte neu einloggen.";
-    } else if (msg.includes("kie task failed:") || msg.includes("kie createtask") || msg.includes("kie recordinfo")) {
+    } else if (
+        msg.includes("kie task failed:") ||
+        msg.includes("kie createtask") ||
+        msg.includes("kie recordinfo") ||
+        msg.includes("kie task complete") ||
+        msg.includes("kie result download") ||
+        msg.includes("image generation failed on kie")
+    ) {
         // Show raw Kie.ai error for debugging — strip the "(Status: 400)" suffix
-        return errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 120);
+        return errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 150);
     } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
         return "Fehler in der Anfrage.";
     }
