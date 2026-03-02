@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, MoreHorizontal, Plus, Upload, Wand2, Trash2, RefreshCcw, Settings, CheckSquare, LogOut, SquarePen, RotateCw } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
@@ -21,6 +21,7 @@ interface AppNavbarProps {
     onOpenCredits?: () => void;
     selectedCount?: number;
     t: (key: any) => string;
+    lang?: string;
     mode?: 'grid' | 'detail';
     detailInfo?: string;
     detailActions?: React.ReactNode;
@@ -45,6 +46,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onOpenCredits,
     selectedCount = 0,
     t,
+    lang,
     mode = 'grid',
     detailInfo,
     detailActions,
@@ -55,6 +57,37 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const createDropdownRef = useRef<HTMLDivElement>(null);
     const gridMenuRef = useRef<HTMLDivElement>(null);
+
+    // Animated credit counter
+    const [displayCredits, setDisplayCredits] = useState(credits);
+    const prevCreditsRef = useRef(credits);
+    const animRafRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        const from = prevCreditsRef.current;
+        const to = credits;
+        if (from === to) return;
+        prevCreditsRef.current = to;
+
+        const duration = 900;
+        const startTime = performance.now();
+
+        const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplayCredits(from + (to - from) * eased);
+            if (progress < 1) {
+                animRafRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
+        animRafRef.current = requestAnimationFrame(animate);
+
+        return () => { if (animRafRef.current) cancelAnimationFrame(animRafRef.current); };
+    }, [credits]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -74,7 +107,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     }, [isCreateOpen, isGridMenuOpen]);
 
     const isDetail = mode === 'detail';
-    const isGerman = t('current_lang') === 'de';
+    const isGerman = lang === 'de';
 
     const leftContent = isDetail ? (
         <div className="flex items-center gap-4">
@@ -100,7 +133,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full left-0 mt-2 z-50">
                         <DropdownMenu
                             items={[
-                                { label: 'Generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
                                 { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); } },
                             ]}
                         />
@@ -134,7 +167,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 onClick={onOpenCredits}
                 className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
             >
-                {credits.toFixed(2)}€
+                {displayCredits.toFixed(2)}€
             </button>
         </Tooltip>
     );

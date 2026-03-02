@@ -3,6 +3,7 @@ import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
+import { generateThumbnail } from '../utils/imageUtils';
 
 const buildUploadSubfolder = () => {
     const now = new Date();
@@ -248,16 +249,23 @@ export const imageService = {
             console.error("  Response data:", data);
 
             let errorMsg = "Unknown generation error";
-            if (error && (error as any).context) {
-                try {
-                    // Try to parse error body if it was a FunctionsHttpError
-                    const errorBody = await (error as any).context.json();
-                    errorMsg = errorBody.error || errorBody.message || JSON.stringify(errorBody);
-                } catch (e) {
-                    errorMsg = error.message;
+            if (error) {
+                // Try context.text() first (more reliable than .json() if body not yet consumed)
+                if ((error as any).context) {
+                    try {
+                        const text = await (error as any).context.text();
+                        try { const p = JSON.parse(text); errorMsg = p.error || p.message || text; }
+                        catch { errorMsg = text || error.message; }
+                    } catch {
+                        errorMsg = error.message;
+                    }
+                } else {
+                    // Newer Supabase SDK: error.message may already be the raw JSON body
+                    try { const p = JSON.parse(error.message); errorMsg = p.error || p.message || error.message; }
+                    catch { errorMsg = error.message; }
                 }
             } else {
-                errorMsg = error?.message || data?.error || errorMsg;
+                errorMsg = data?.error || errorMsg;
             }
 
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';
@@ -275,6 +283,8 @@ export const imageService = {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+                img.onerror = () => resolve({ w: 1024, h: 1024 }); // fallback on load failure
+                setTimeout(() => resolve({ w: 1024, h: 1024 }), 15000); // 15s safety timeout
                 img.src = src;
             });
         };
@@ -470,15 +480,20 @@ export const imageService = {
 
         if (dbImages.length > 0) {
             const signStart = performance.now();
-            // Collect ALL paths that need signing
+            // Collect paths: all plain paths + only transform-sign storage_paths without a stored thumb
             const allPathsToSign = new Set<string>();
+            const transformPathsToSign = new Set<string>(); // Only for images lacking a stored thumbnail
+
             dbImages.forEach(rec => {
                 if (rec.storage_path) {
                     allPathsToSign.add(rec.storage_path);
 
-                    // Add stored thumbnail if available
                     if (rec.thumb_storage_path) {
+                        // Has a stored thumbnail – sign it plain, no transform needed
                         allPathsToSign.add(rec.thumb_storage_path);
+                    } else {
+                        // No thumbnail – need on-the-fly transform for this storage_path
+                        transformPathsToSign.add(rec.storage_path);
                     }
                 }
                 // Add reference images from annotations
@@ -489,33 +504,40 @@ export const imageService = {
                     }
                 });
             });
-            console.log(`[ImageService] Collected ${allPathsToSign.size} paths to sign`);
-
+            console.log(`[ImageService] Paths to sign: ${allPathsToSign.size} plain, ${transformPathsToSign.size} transform`);
 
             // Batch sign 100 paths at a time - PARALLELIZED for speed
-            const pathsArray = Array.from(allPathsToSign);
             const signedUrlMap: Record<string, string> = {};
 
-            const chunks: string[][] = [];
-            for (let i = 0; i < pathsArray.length; i += 100) {
-                chunks.push(pathsArray.slice(i, i + 100));
+            const plainChunks: string[][] = [];
+            const plainArray = Array.from(allPathsToSign);
+            for (let i = 0; i < plainArray.length; i += 100) {
+                plainChunks.push(plainArray.slice(i, i + 100));
             }
 
-            console.log(`[ImageService] Signing ${chunks.length} chunks in parallel...`);
+            const transformChunks: string[][] = [];
+            const transformArray = Array.from(transformPathsToSign);
+            for (let i = 0; i < transformArray.length; i += 100) {
+                transformChunks.push(transformArray.slice(i, i + 100));
+            }
+
+            console.log(`[ImageService] Signing ${plainChunks.length} plain + ${transformChunks.length} transform chunks in parallel...`);
 
             // Execute all chunks in parallel
-            await Promise.all(chunks.map(async (chunk, idx) => {
-                const chunkStart = performance.now();
-                const [hdResults, optResults] = await Promise.all([
-                    // 1. Sign original HD versions
-                    storageService.getSignedUrls(chunk),
-                    // 2. Pre-sign 600px optimized versions for immediate canvas display
-                    storageService.getSignedUrls(chunk, { width: 600, quality: 75 })
-                ]);
-                Object.assign(signedUrlMap, hdResults);
-                Object.assign(signedUrlMap, optResults);
-                console.log(`[ImageService] Chunk ${idx + 1}/${chunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
-            }));
+            await Promise.all([
+                ...plainChunks.map(async (chunk, idx) => {
+                    const chunkStart = performance.now();
+                    const results = await storageService.getSignedUrls(chunk);
+                    Object.assign(signedUrlMap, results);
+                    console.log(`[ImageService] Plain chunk ${idx + 1}/${plainChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
+                }),
+                ...transformChunks.map(async (chunk, idx) => {
+                    const chunkStart = performance.now();
+                    const results = await storageService.getSignedUrls(chunk, { width: 600, quality: 75 });
+                    Object.assign(signedUrlMap, results);
+                    console.log(`[ImageService] Transform chunk ${idx + 1}/${transformChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
+                })
+            ]);
             console.log(`[ImageService] All URLs signed in ${(performance.now() - signStart).toFixed(2)}ms`);
 
 
@@ -666,10 +688,15 @@ export const imageService = {
 
         // 3. Resolve and Group (Simplified reuse of logic from loadUserImages)
         const allPathsToSign = new Set<string>();
+        const transformPathsToSign = new Set<string>();
         dbImages.forEach(rec => {
             if (rec.storage_path) {
                 allPathsToSign.add(rec.storage_path);
-                if (rec.thumb_storage_path) allPathsToSign.add(rec.thumb_storage_path);
+                if (rec.thumb_storage_path) {
+                    allPathsToSign.add(rec.thumb_storage_path);
+                } else {
+                    transformPathsToSign.add(rec.storage_path);
+                }
             }
             const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
             rawAnns.forEach((ann: any) => {
@@ -680,10 +707,9 @@ export const imageService = {
         });
 
         const signedUrlMap: Record<string, string> = {};
-        const pathsArray = Array.from(allPathsToSign);
         const [hdResults, optResults] = await Promise.all([
-            storageService.getSignedUrls(pathsArray),
-            storageService.getSignedUrls(pathsArray, { width: 600, quality: 75 })
+            storageService.getSignedUrls(Array.from(allPathsToSign)),
+            transformPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(transformPathsToSign), { width: 600, quality: 75 }) : Promise.resolve({})
         ]);
         Object.assign(signedUrlMap, hdResults);
         Object.assign(signedUrlMap, optResults);
@@ -775,5 +801,43 @@ export const imageService = {
             }
             return ann;
         }));
+    },
+
+    /**
+     * Generates a thumbnail for a freshly generated image and persists it.
+     * Called fire-and-forget after generation completes to avoid transform API costs on future loads.
+     */
+    async generateMissingThumbnail(image: CanvasImage, userId: string): Promise<void> {
+        if (!image.src || !image.storage_path) return;
+
+        try {
+            const thumbBlob = await generateThumbnail(image.src, 200);
+
+            // Derive thumb path from storage_path
+            const pathParts = image.storage_path.split('/');
+            const filename = pathParts.pop()!;
+            const folder = pathParts.join('/');
+            const baseName = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '');
+            const thumbFilePath = `${folder}/thumb_${baseName}.jpg`;
+
+            const { data, error } = await supabase.storage
+                .from('user-content')
+                .upload(thumbFilePath, thumbBlob, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
+
+            if (error || !data) {
+                console.warn('[ImageService] Failed to upload generated thumbnail:', error);
+                return;
+            }
+
+            await supabase
+                .from('images')
+                .update({ thumb_storage_path: data.path })
+                .eq('id', image.id)
+                .eq('user_id', userId);
+
+            console.log(`[ImageService] Thumbnail backfilled for ${image.id} → ${data.path}`);
+        } catch (e) {
+            console.warn('[ImageService] Thumbnail backfill failed:', e);
+        }
     }
 };

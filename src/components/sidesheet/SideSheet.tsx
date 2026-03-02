@@ -704,20 +704,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     onClick={() => setIsQualityOpen(p => !p)}
                                                     className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
-                                                    {qualityMode === 'pro-1k' ? '1K' : qualityMode === 'pro-2k' ? '2K' : '4K'}
+                                                    {qualityMode === 'pro-1k' ? 'Pro 1K' : qualityMode === 'pro-2k' ? 'Pro 2K' : qualityMode === 'pro-4k' ? 'Pro 4K' : qualityMode === 'nb2-1k' ? 'NB2 1K' : qualityMode === 'nb2-2k' ? 'NB2 2K' : 'NB2 4K'}
                                                     <ChevronDown className={`w-4 h-4 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
                                                 </button>
                                                 {isQualityOpen && (
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
-                                                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 min-w-[120px] animate-in fade-in slide-in-from-bottom-2 duration-150">
-                                                            {(['pro-1k', 'pro-2k', 'pro-4k'] as const).map(q => (
+                                                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 min-w-[140px] animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                                            {(['pro-1k', 'pro-2k', 'pro-4k', 'nb2-1k', 'nb2-2k', 'nb2-4k'] as GenerationQuality[]).map(q => (
                                                                 <button
                                                                     key={q}
                                                                     onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
                                                                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${qualityMode === q ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
                                                                 >
-                                                                    {q === 'pro-1k' ? 'Pro 1K' : q === 'pro-2k' ? 'Pro 2K' : 'Pro 4K'}
+                                                                    {q === 'pro-1k' ? 'Pro 1K' : q === 'pro-2k' ? 'Pro 2K' : q === 'pro-4k' ? 'Pro 4K' : q === 'nb2-1k' ? 'NB2 1K' : q === 'nb2-2k' ? 'NB2 2K' : 'NB2 4K'}
                                                                     {qualityMode === q && <Check className="w-3 h-3 text-orange-500" />}
                                                                 </button>
                                                             ))}

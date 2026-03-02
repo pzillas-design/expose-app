@@ -22,6 +22,7 @@ const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTem
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
+import { useItemDialog } from '@/components/ui/Dialog';
 
 const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { user: any, isAuthLoading: boolean, children: React.ReactNode, onAuthRequired: () => void }) => {
     const location = useLocation();
@@ -43,6 +44,7 @@ const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { use
 
 export function App() {
     const { state, actions, langSetting, t } = useNanoController();
+    const { confirm } = useItemDialog();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -150,7 +152,18 @@ export function App() {
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
                     }}
-                    onDeleteSelected={() => {
+                    onDeleteSelected={async () => {
+                        const count = state.selectedIds?.length || 0;
+                        const confirmed = await confirm({
+                            title: t('delete') || 'Löschen',
+                            description: state.lang === 'de'
+                                ? `Möchtest du wirklich ${count} Bild${count !== 1 ? 'er' : ''} löschen?`
+                                : `Delete ${count} image${count !== 1 ? 's' : ''}?`,
+                            confirmLabel: t('delete') || 'LÖSCHEN',
+                            cancelLabel: t('cancel') || 'ABBRECHEN',
+                            variant: 'danger'
+                        });
+                        if (!confirmed) return;
                         state.selectedIds.forEach((id: string) => actions.handleDeleteImage(id));
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
@@ -166,6 +179,7 @@ export function App() {
                     }}
                     selectedCount={state.selectedIds?.length || 0}
                     t={t}
+                    lang={state.currentLang}
                     mode={location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
                     hasImages={allImages.length > 0}
                     detailInfo={(() => {
@@ -339,7 +353,6 @@ export function App() {
                 onClose={() => setIsCreditsModalOpen(false)}
                 currentBalance={credits || 0}
                 onAddFunds={actions.handleAddFunds}
-                isReduced={true}
                 t={t}
             />
 

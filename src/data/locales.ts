@@ -147,10 +147,10 @@ export const translations = {
     empty_board_title: "Your board is empty",
     empty_board_desc: "Upload images or use the generator to get started.",
     upload_image_edit: "Upload Image & Edit",
-    generate_new: "Generate New",
+    generate_new: "Generate new image",
     empty_feed_message: "Click \"+\" to generate your first image.",
-    action_upload: "HOCHLADEN",
-    action_generate: "BILD GENERIEREN",
+    action_upload: "Upload",
+    action_generate: "Generate image",
 
     // Settings / User
     login_btn: "Login",
@@ -527,8 +527,8 @@ export const translations = {
     upload_image_edit: "Hochladen",
     generate_new: "Bild generieren",
     empty_feed_message: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
-    action_upload: "HOCHLADEN",
-    action_generate: "BILD GENERIEREN",
+    action_upload: "Hochladen",
+    action_generate: "Bild generieren",
 
     // Settings / User
     login_btn: "Anmelden",
