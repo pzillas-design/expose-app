@@ -140,6 +140,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 }
             }
 
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                onBack();
+                return;
+            }
+
             switch (e.key) {
                 case 'ArrowLeft':
                     e.preventDefault();
@@ -234,12 +240,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 <div className="flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden">
                     {/* Nav Arrows */}
                     {idx > 0 && (
-                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 backdrop-blur-md ">
+                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 ">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
                     {idx < images.length - 1 && (
-                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 backdrop-blur-md ">
+                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-white/40 dark:bg-zinc-900/40 hover:bg-white dark:hover:bg-zinc-900 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-full flex items-center justify-center transition-all border border-zinc-200 dark:border-zinc-800/50 ">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     )}
