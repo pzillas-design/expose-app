@@ -290,7 +290,7 @@ export function App() {
                                     onSelectImage={handleSelectImage}
                                     onDelete={handleDeleteImage}
                                     onDownload={handleDownload}
-                                    onInfo={() => { }} // TODO: Add info modal
+                                    onInfo={(id) => setInfoImageId(id)}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -380,6 +380,20 @@ export function App() {
                         t={t}
                     />
                 )}
+            </Suspense>
+
+            <Suspense fallback={null}>
+                {infoImageId && (() => {
+                    const infoImg = allImages.find(i => i.id === infoImageId);
+                    return infoImg ? (
+                        <ImageInfoModal
+                            image={infoImg}
+                            onClose={() => setInfoImageId(null)}
+                            t={t}
+                            currentLang={langSetting as 'de' | 'en'}
+                        />
+                    ) : null;
+                })()}
             </Suspense>
         </div>
     );
