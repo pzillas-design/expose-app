@@ -198,7 +198,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             setPrompt(selectedImage.userDraftPrompt || '');
             setActiveTemplateId(selectedImage.activeTemplateId || null);
             setControlValues(selectedImage.variableValues || {});
-            setShowPromptForm(false);
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id]);
