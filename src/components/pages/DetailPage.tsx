@@ -313,14 +313,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
                                     </Button>
                                     {!img.isGenerating && (
-                                        <Button
-                                            onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
-                                            variant="secondary"
-                                            size="m"
-                                        >
-                                            <Repeat className="w-4 h-4" />
-                                            {state.currentLang === 'de' ? 'Erneut generieren' : 'Generate again'}
-                                        </Button>
+                                        <Tooltip text={state.currentLang === 'de' ? 'Erneut generieren' : 'Generate again'}>
+                                            <RoundIconButton
+                                                icon={<Repeat className="w-[18px] h-[18px]" />}
+                                                onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
+                                                variant="secondary"
+                                            />
+                                        </Tooltip>
                                     )}
                                 </div>
                             </div>
