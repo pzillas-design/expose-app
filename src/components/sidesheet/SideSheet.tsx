@@ -568,7 +568,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     </span>
                                 </div>
 
-                                <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} border border-zinc-200/80 dark:border-zinc-800/50 p-5 space-y-5 transition-all`}>
+                                <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} p-5 space-y-5 transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div>
                                         <textarea
@@ -639,7 +639,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                     e.stopPropagation();
                                                                     toggleControlOption(ctrl.id, opt.value);
                                                                 }}
-                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-100 ' + Theme.Effects.ShadowSm : 'bg-transparent border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 ' + Theme.Effects.ShadowSm : 'bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                                                             >
                                                                 {opt.label}
                                                             </button>
@@ -650,24 +650,82 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         )
                                     })}
 
-                                    {/* Annotations Chip */}
+                                    {/* Annotations Section */}
                                     {!isMulti && visibleAnns.length > 0 && (
-                                        <div className="pt-1 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center justify-between">
-                                            <button
-                                                onClick={() => onModeChange('brush')}
-                                                className="flex items-center gap-2 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                                            >
-                                                <div className="w-5 h-5 rounded-md bg-orange-500/10 flex items-center justify-center">
-                                                    <Pen className="w-3 h-3 text-orange-500" />
+                                        <>
+                                            <div className="h-0.5 bg-white dark:bg-zinc-950 -mx-5" />
+                                            <div className="space-y-2.5 relative group">
+                                                <div className="flex items-center gap-2">
+                                                    <Eyebrow>{lang === 'de' ? 'Anmerkungen' : 'Annotations'}</Eyebrow>
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => {
+                                                                if (!selectedImage?.annotations) return;
+                                                                updateAnnotationsWithHistory(selectedImage.annotations.filter(a => !['mask_path', 'stamp', 'shape'].includes(a.type)));
+                                                            }}
+                                                            className="p-1 rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                {visibleAnns.length} {lang === 'de' ? 'Anmerkungen' : 'Annotations'}
-                                                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-                                            </button>
-                                        </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {/* Mask strokes — grouped as one chip */}
+                                                    {(() => {
+                                                        const masks = visibleAnns.filter(a => a.type === 'mask_path');
+                                                        if (!masks.length) return null;
+                                                        return (
+                                                            <button
+                                                                key="masks"
+                                                                type="button"
+                                                                onClick={() => onModeChange('brush')}
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                            >
+                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Maske' : 'Mask'}</span>
+                                                                <span
+                                                                    role="button"
+                                                                    onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
+                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                                                >
+                                                                    <X className="w-2.5 h-2.5" />
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })()}
+                                                    {/* Shapes & stamps — individual chips */}
+                                                    {visibleAnns.filter(a => a.type !== 'mask_path').map(ann => {
+                                                        const a = ann as any;
+                                                        const label = ann.type === 'shape'
+                                                            ? (a.shapeType === 'rect' ? (lang === 'de' ? 'Rechteck' : 'Rect') : a.shapeType === 'circle' ? (lang === 'de' ? 'Kreis' : 'Circle') : (lang === 'de' ? 'Linie' : 'Line'))
+                                                            : (a.emoji || a.text?.slice(0, 12) || (lang === 'de' ? 'Stempel' : 'Stamp'));
+                                                        return (
+                                                            <button
+                                                                key={ann.id}
+                                                                type="button"
+                                                                onClick={() => onModeChange('brush')}
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                            >
+                                                                <span>{label}</span>
+                                                                <span
+                                                                    role="button"
+                                                                    onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                                                >
+                                                                    <X className="w-2.5 h-2.5" />
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
 
+                                    {/* Divider above footer */}
+                                    <div className="h-0.5 bg-white dark:bg-zinc-950 -mx-5" />
+
                                     {/* Bottom Controls + Generate */}
-                                    <div className="flex items-center justify-between gap-3 pt-2">
+                                    <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2">
                                             <Tooltip text={lang === 'de' ? 'Referenzbild' : 'Add Reference'}>
                                                 <button
@@ -704,23 +762,49 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     onClick={() => setIsQualityOpen(p => !p)}
                                                     className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
-                                                    {qualityMode === 'pro-1k' ? 'Pro 1K' : qualityMode === 'pro-2k' ? 'Pro 2K' : qualityMode === 'pro-4k' ? 'Pro 4K' : qualityMode === 'nb2-1k' ? 'NB2 1K' : qualityMode === 'nb2-2k' ? 'NB2 2K' : 'NB2 4K'}
+                                                    {qualityMode.split('-')[1].toUpperCase()}
                                                     <ChevronDown className={`w-4 h-4 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
                                                 </button>
                                                 {isQualityOpen && (
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
-                                                        <div className="absolute bottom-full mb-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-1 min-w-[140px] animate-in fade-in slide-in-from-bottom-2 duration-150">
-                                                            {(['pro-1k', 'pro-2k', 'pro-4k', 'nb2-1k', 'nb2-2k', 'nb2-4k'] as GenerationQuality[]).map(q => (
-                                                                <button
-                                                                    key={q}
-                                                                    onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
-                                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${qualityMode === q ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
-                                                                >
-                                                                    {q === 'pro-1k' ? 'Pro 1K' : q === 'pro-2k' ? 'Pro 2K' : q === 'pro-4k' ? 'Pro 4K' : q === 'nb2-1k' ? 'NB2 1K' : q === 'nb2-2k' ? 'NB2 2K' : 'NB2 4K'}
-                                                                    {qualityMode === q && <Check className="w-3 h-3 text-orange-500" />}
-                                                                </button>
-                                                            ))}
+                                                        <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                                                            {/* Resolution + Price */}
+                                                            {(['1k', '2k', '4k'] as const).map(res => {
+                                                                const model = qualityMode.startsWith('pro') ? 'pro' : 'nb2';
+                                                                const q = `${model}-${res}` as GenerationQuality;
+                                                                const COSTS: Record<string, number> = { 'pro-1k': 0.10, 'pro-2k': 0.25, 'pro-4k': 0.50, 'nb2-1k': 0.07, 'nb2-2k': 0.17, 'nb2-4k': 0.35 };
+                                                                const cost = COSTS[q];
+                                                                const isActive = qualityMode === q;
+                                                                return (
+                                                                    <button
+                                                                        key={res}
+                                                                        onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
+                                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${isActive ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
+                                                                    >
+                                                                        {res.toUpperCase()}
+                                                                        <span className="text-[11px] text-zinc-400">{lang === 'de' ? `${cost.toFixed(2)} €` : `$${cost.toFixed(2)}`}</span>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                            {/* Pro / Flash Switch */}
+                                                            <div className="flex items-center gap-1 mt-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                                                                {(['nb2', 'pro'] as const).map(model => {
+                                                                    const isModelActive = qualityMode.startsWith(model);
+                                                                    return (
+                                                                        <button
+                                                                            key={model}
+                                                                            onClick={() => {
+                                                                                const res = qualityMode.split('-')[1];
+                                                                                onQualityModeChange(`${model}-${res}` as GenerationQuality);
+                                                                            }}
+                                                                            className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors ${isModelActive ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                                                                        >
+                                                                            {model === 'pro' ? 'Pro' : 'Flash'}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
                                                     </>
                                                 )}
@@ -752,19 +836,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 </div>
 
                                 {/* ── PRESETS Section ── */}
-                                <div className="mt-5 text-zinc-800 dark:text-zinc-200">
-                                    <div className="flex items-center justify-between mb-3.5 relative" ref={presetsMenuRef}>
-                                        <div className="flex items-center gap-1.5">
-                                            <Eyebrow>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
-                                            <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
-                                                <button
-                                                    onClick={() => setIsPresetsMenuOpen(p => !p)}
-                                                    className="p-1 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors ml-1"
-                                                >
-                                                    <MoreHorizontal className="w-4 h-4" />
-                                                </button>
-                                            </Tooltip>
-                                        </div>
+                                <div className="!mt-12 text-zinc-800 dark:text-zinc-200">
+                                    <div className="flex items-center justify-between mb-3 relative" ref={presetsMenuRef}>
+                                        <Eyebrow>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
+                                        <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
+                                            <button
+                                                onClick={() => setIsPresetsMenuOpen(p => !p)}
+                                                className="p-1.5 rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+                                        </Tooltip>
 
                                         {isPresetsMenuOpen && (
                                             <div className="absolute top-10 right-0 z-[60]">
@@ -794,25 +876,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 overflow-hidden rounded-3xl">
                                         {displayTemplates.length === 0 && (
                                             <div className="py-2 px-4 text-[12px] text-zinc-400">{lang === 'de' ? 'Keine Einträge' : 'No entries'}</div>
                                         )}
-                                        {displayTemplates.map(tpl => {
+                                        {displayTemplates.map((tpl, i) => {
+                                            const isFirst = i === 0;
+                                            const isLast = i === displayTemplates.length - 1;
+                                            const radius = isFirst && isLast ? 'rounded-3xl' : isFirst ? 'rounded-t-[16px] rounded-b-none' : isLast ? 'rounded-t-none rounded-b-[16px]' : 'rounded-none';
                                             return (
-                                                <Tooltip text={lang === 'de' ? 'Vorlage anwenden' : 'Apply Preset'}>
-                                                    <button
-                                                        key={tpl.id}
-                                                        onClick={() => handleSelectTemplate(tpl)}
-                                                        className="flex items-center justify-between w-full px-4 py-3 rounded-[16px] transition-all duration-150 group bg-zinc-100/70 dark:bg-zinc-900/50 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 border border-transparent"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                            <span className="text-[12.5px] font-medium truncate max-w-[180px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
-                                                                {tpl.title}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
+                                                <button
+                                                    key={tpl.id}
+                                                    onClick={() => handleSelectTemplate(tpl)}
+                                                    className={`flex items-center justify-between w-full px-4 py-3 transition-all duration-150 group bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 ${radius} ${!isLast ? 'border-b-2 border-white dark:border-zinc-950' : ''}`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
+                                                        <span className="text-[12.5px] font-medium truncate max-w-[180px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                                                            {tpl.title}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -823,9 +908,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             >
                                                                 <MoreHorizontal className="w-4 h-4" />
                                                             </button>
-                                                        </div>
-                                                    </button>
-                                                </Tooltip>
+                                                        </Tooltip>
+                                                    </div>
+                                                </button>
                                             );
                                         })}
                                     </div>

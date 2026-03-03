@@ -16,6 +16,7 @@ interface DetailPageProps {
     onDelete: (id: string) => void;
     onDownload: (id: string) => void;
     onInfo: (id: string) => void;
+    onSidebarWidthChange?: (w: number) => void;
 
     // SideSheet Props (pass-through)
     state: any;
@@ -24,7 +25,7 @@ interface DetailPageProps {
 }
 
 export const DetailPage: React.FC<DetailPageProps> = ({
-    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, state, actions, t
+    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, state, actions, t
 }) => {
     const isMobile = useMobile();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
@@ -185,6 +186,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Resizable Sidebar States
     const [sidebarWidth, setSidebarWidth] = useState(380);
     const [isResizing, setIsResizing] = useState(false);
+    useEffect(() => { onSidebarWidthChange?.(380); }, []);
 
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
@@ -192,9 +194,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const resize = useCallback((e: MouseEvent) => {
         if (isResizing) {
             const newWidth = window.innerWidth - e.clientX;
-            if (newWidth >= 300 && newWidth <= 600) setSidebarWidth(newWidth);
+            if (newWidth >= 300 && newWidth <= 600) {
+                setSidebarWidth(newWidth);
+                onSidebarWidthChange?.(newWidth);
+            }
         }
-    }, [isResizing]);
+    }, [isResizing, onSidebarWidthChange]);
 
     useEffect(() => {
         if (isResizing) {
@@ -312,7 +317,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Bottom Area: Fixed space so canvas never jumps */}
                     <div className={`h-16 shrink-0 relative z-30 w-full overflow-visible transition-all duration-300 ${isMobile ? 'mb-[calc(10vh+12px)]' : 'mb-0'}`}>
                         {/* Thumbnail Strip */}
-                        <div className={`absolute inset-0 flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                        <div className={`absolute inset-0 flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                             {images.map(i => {
                                 const isActive = selectedId === i.id;
                                 const previewSrc = i.thumbSrc || i.src;

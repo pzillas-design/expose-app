@@ -63,6 +63,7 @@ export function App() {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
+    const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -181,6 +182,7 @@ export function App() {
                     t={t}
                     lang={state.currentLang}
                     mode={location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
+                    rightInset={location.pathname.startsWith('/image/') ? detailSidebarWidth : 0}
                     hasImages={allImages.length > 0}
                     detailInfo={(() => {
                         if (location.pathname.startsWith('/image/')) {
@@ -190,37 +192,38 @@ export function App() {
                         }
                         return undefined;
                     })()}
-                    detailActions={(() => {
-                        if (!location.pathname.startsWith('/image/')) return null;
-                        const id = location.pathname.split('/').pop();
-                        const img = allImages.find(i => i.id === id);
-                        if (!img) return null;
-
-                        return (
-                            <div className="flex items-center gap-1">
-                                <RoundIconButton
-                                    icon={<Download className="w-4 h-4" />}
-                                    onClick={() => actions.handleDownload(img.id)}
-                                    variant="ghost"
-                                    tooltip={t('download') || 'Herunterladen'}
-                                />
-                                <RoundIconButton
-                                    icon={<Info className="w-4 h-4" />}
-                                    onClick={() => setInfoImageId(img.id)}
-                                    variant="ghost"
-                                    tooltip={t('info') || 'Info'}
-                                />
-                                <RoundIconButton
-                                    icon={<Trash2 className="w-4 h-4" />}
-                                    onClick={() => actions.handleDeleteImage(img.id)}
-                                    variant="ghost"
-                                    className="hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
-                                    tooltip={t('delete') || 'Löschen'}
-                                />
-                            </div>
-                        );
-                    })()}
+                    detailActions={null}
                     onBack={handleBackToFeed}
+                    onDetailRename={() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            if (id) setInfoImageId(id);
+                        }
+                    }}
+                    onDetailDownload={() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            if (id) actions.handleDownload(id);
+                        }
+                    }}
+                    onDetailDelete={() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            if (id) actions.handleDeleteImage(id);
+                        }
+                    }}
+                    onDetailInfo={() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            if (id) setInfoImageId(id);
+                        }
+                    }}
+                    onDetailRegenerate={() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            if (id) actions.handleGenerateMore(id);
+                        }
+                    }}
                 />
             ) : (
                 <PublicNavbar
@@ -291,6 +294,7 @@ export function App() {
                                     onDelete={handleDeleteImage}
                                     onDownload={handleDownload}
                                     onInfo={(id) => setInfoImageId(id)}
+                                    onSidebarWidthChange={setDetailSidebarWidth}
                                     state={state}
                                     actions={actions}
                                     t={t}

@@ -208,9 +208,9 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                         </div>
                                         <button
                                             onClick={() => onDeleteUserItem(item.catId, item.id)}
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-300 dark:text-zinc-600 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                                         >
-                                            <Trash className="w-4 h-4" />
+                                            <Trash className="w-[18px] h-[18px]" />
                                         </button>
                                     </div>
                                 ))}

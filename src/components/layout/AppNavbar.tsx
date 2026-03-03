@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Plus, Upload, Wand2, Trash2, RefreshCcw, Settings, CheckSquare, LogOut, SquarePen, RotateCw } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Plus, Upload, Wand2, Trash2, Repeat, Settings, CheckSquare, LogOut, SquarePen, RotateCw, Download, Info, Pencil } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
@@ -27,6 +27,12 @@ interface AppNavbarProps {
     detailActions?: React.ReactNode;
     onBack?: () => void;
     hasImages?: boolean;
+    onDetailRename?: () => void;
+    onDetailDownload?: () => void;
+    onDetailDelete?: () => void;
+    onDetailInfo?: () => void;
+    onDetailRegenerate?: () => void;
+    rightInset?: number;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -52,11 +58,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     detailActions,
     onBack,
     hasImages = true,
+    onDetailRename,
+    onDetailDownload,
+    onDetailDelete,
+    onDetailInfo,
+    onDetailRegenerate,
+    rightInset = 0,
 }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
+    const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
     const createDropdownRef = useRef<HTMLDivElement>(null);
     const gridMenuRef = useRef<HTMLDivElement>(null);
+    const detailMenuRef = useRef<HTMLDivElement>(null);
 
     // Animated credit counter
     const [displayCredits, setDisplayCredits] = useState(credits);
@@ -96,21 +110,34 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             if (isCreateOpen && createDropdownRef.current && !createDropdownRef.current.contains(target)) {
                 setIsCreateOpen(false);
             }
-
             if (isGridMenuOpen && gridMenuRef.current && !gridMenuRef.current.contains(target)) {
                 setIsGridMenuOpen(false);
+            }
+            if (isDetailMenuOpen && detailMenuRef.current && !detailMenuRef.current.contains(target)) {
+                setIsDetailMenuOpen(false);
             }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isCreateOpen, isGridMenuOpen]);
+    }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen]);
 
     const isDetail = mode === 'detail';
     const isGerman = lang === 'de';
 
+    const balanceDisplay = user && (
+        <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
+            <button
+                onClick={onOpenCredits}
+                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
+            >
+                {displayCredits.toFixed(2)}€
+            </button>
+        </Tooltip>
+    );
+
     const leftContent = isDetail ? (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
         </div>
     ) : isSelectMode ? (
@@ -148,9 +175,30 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {selectedCount} {isGerman ? (selectedCount === 1 ? 'Bild ausgewählt' : 'Bilder ausgewählt') : (selectedCount === 1 ? 'image selected' : 'images selected')}
         </span>
     ) : isDetail && detailInfo ? (
-        <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
-            {detailInfo}
-        </span>
+        <div className="flex items-center gap-1 relative" ref={detailMenuRef}>
+            <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
+                {detailInfo}
+            </span>
+            <RoundIconButton
+                icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                onClick={() => setIsDetailMenuOpen(p => !p)}
+                variant="ghost"
+                active={isDetailMenuOpen}
+            />
+            {isDetailMenuOpen && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
+                    <DropdownMenu
+                        items={[
+                            { label: isGerman ? 'Umbenennen' : 'Rename', icon: <Pencil className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRename?.(); } },
+                            { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                            { label: isGerman ? 'Erneut generieren' : 'Regenerate', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                            { label: isGerman ? 'Infos' : 'Info', icon: <Info className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                            { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                        ]}
+                    />
+                </div>
+            )}
+        </div>
     ) : hasImages ? (
         <button
             type="button"
@@ -161,39 +209,37 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </button>
     ) : null;
 
-    const balanceDisplay = user && (
-        <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
-            <button
-                onClick={onOpenCredits}
-                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
-            >
-                {displayCredits.toFixed(2)}€
-            </button>
-        </Tooltip>
-    );
-
     const rightContent = isDetail ? (
-        <div className="flex items-center gap-2">
-            {balanceDisplay}
-            <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
-            {detailActions}
+        <div className="flex items-center gap-1">
+            <RoundIconButton
+                icon={<Download className="w-[18px] h-[18px]" />}
+                onClick={onDetailDownload}
+                variant="ghost"
+                tooltip={isGerman ? 'Herunterladen' : 'Download'}
+            />
+            <RoundIconButton
+                icon={<Repeat className="w-[18px] h-[18px]" />}
+                onClick={onDetailRegenerate}
+                variant="ghost"
+                tooltip={isGerman ? 'Erneut generieren' : 'Regenerate'}
+            />
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
             <Tooltip text={isGerman ? 'Löschen' : 'Delete'}>
                 <button
                     onClick={onDeleteSelected}
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
                 >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
             <Tooltip text={isGerman ? 'Neu generieren' : 'Regenerate'}>
                 <button
                     onClick={onGenerateMoreSelected}
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                 >
-                    <RefreshCcw className="w-4 h-4" />
+                    <Repeat className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
         </div>
@@ -237,8 +283,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     return (
         <header className="absolute top-0 left-0 right-0 h-14 z-50 pointer-events-none">
-            {/* The background is completely transparent here to let canvas show through,
-                but we add a subtle gradient if needed, or just let the elements themselves have backgrounds */}
             <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900/50">
 
                 <div className="flex items-center w-1/3">

@@ -129,7 +129,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                         icon={<Trash className="w-4 h-4" />}
                                         onClick={onClearBrushStrokes}
                                         tooltip={currentLang === 'de' ? 'Alle löschen' : 'Clear all'}
-                                        className="!rounded-full w-8 h-8 !bg-transparent text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0 -mr-1"
+                                        className="!rounded-full !w-9 !h-9 !bg-transparent text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0 -mr-1"
                                     />
                                 </div>
                             </div>
