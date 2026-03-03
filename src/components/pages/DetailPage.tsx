@@ -306,8 +306,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                         {/* Floating action buttons when sidesheet is collapsed */}
                         {!isSideSheetVisible && state.sideSheetMode !== 'brush' && (
-                            <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none z-30">
-                                <div className="flex items-center gap-2 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none z-40">
+                                <div className="flex items-center gap-2 pointer-events-auto">
                                     <Button onClick={() => setIsSideSheetVisible(true)} variant="secondary" size="m">
                                         <Pen className="w-4 h-4" />
                                         {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
