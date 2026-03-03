@@ -776,20 +776,33 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
                                         />
 
-                                        {/* Generate Button */}
-                                        <Button
-                                            onClick={handleGenerate}
-                                            disabled={selectedImage?.isGenerating}
-                                            variant="primary"
-                                            size="m"
-                                            className="px-5 shrink-0"
-                                        >
-                                            {selectedImage?.isGenerating ? (
-                                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
-                                            ) : (
-                                                t('generate')
-                                            )}
-                                        </Button>
+                                        {/* Generate Button — icon-only when sidesheet is narrow */}
+                                        {width && parseInt(width) < 340 ? (
+                                            <RoundIconButton
+                                                icon={selectedImage?.isGenerating
+                                                    ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                                    : <Send className="w-[18px] h-[18px]" />
+                                                }
+                                                onClick={handleGenerate}
+                                                disabled={selectedImage?.isGenerating}
+                                                variant="primary"
+                                                tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
+                                            />
+                                        ) : (
+                                            <Button
+                                                onClick={handleGenerate}
+                                                disabled={selectedImage?.isGenerating}
+                                                variant="primary"
+                                                size="m"
+                                                className="px-5 shrink-0"
+                                            >
+                                                {selectedImage?.isGenerating ? (
+                                                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                                ) : (
+                                                    t('generate')
+                                                )}
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
 
