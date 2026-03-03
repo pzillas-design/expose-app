@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat, Plus } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -308,20 +308,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {!isSideSheetVisible && state.sideSheetMode !== 'brush' && (
                             <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none z-40">
                                 <div className="flex items-center gap-2 pointer-events-auto">
-                                    <Button onClick={() => setIsSideSheetVisible(true)} variant="secondary" size="m">
-                                        <Pen className="w-4 h-4" />
-                                        {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
-                                    </Button>
                                     {!img.isGenerating && (
-                                        <Button
-                                            onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
-                                            variant="secondary"
-                                            size="m"
-                                        >
-                                            <Repeat className="w-4 h-4" />
-                                            {state.currentLang === 'de' ? 'Erneut generieren' : 'Generate again'}
+                                        <Button onClick={() => setIsSideSheetVisible(true)} variant="secondary" size="m">
+                                            {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
                                         </Button>
                                     )}
+                                    <Button
+                                        onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
+                                        disabled={img.isGenerating}
+                                        variant="secondary"
+                                        size="m"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        {state.currentLang === 'de' ? 'Mehr' : 'More'}
+                                    </Button>
                                 </div>
                             </div>
                         )}

@@ -292,7 +292,7 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
     tooltip?: string;
-    variant?: 'default' | 'danger' | 'ghost';
+    variant?: 'default' | 'danger' | 'ghost' | 'primary';
 }
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, variant = 'default', className = '', ...props }) => {
@@ -304,6 +304,7 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
         default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:`,
         danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:`,
         ghost: `bg-transparent border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
     };
 
     const activeStyle = active ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white border-transparent' : variants[variant];

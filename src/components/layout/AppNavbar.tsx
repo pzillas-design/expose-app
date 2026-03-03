@@ -191,7 +191,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         items={[
                             { label: isGerman ? 'Umbenennen' : 'Rename', icon: <Pencil className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRename?.(); } },
                             { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                            { label: isGerman ? 'Erneut generieren' : 'Regenerate', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                            { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Plus className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
                             { label: isGerman ? 'Infos' : 'Info', icon: <Info className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                             { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                         ]}
@@ -218,10 +218,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 tooltip={isGerman ? 'Herunterladen' : 'Download'}
             />
             <RoundIconButton
-                icon={<Repeat className="w-[18px] h-[18px]" />}
+                icon={<Plus className="w-[18px] h-[18px]" />}
                 onClick={onDetailRegenerate}
                 variant="ghost"
-                tooltip={isGerman ? 'Erneut generieren' : 'Regenerate'}
+                tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
             />
         </div>
     ) : isSelectMode ? (
@@ -239,7 +239,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     onClick={onGenerateMoreSelected}
                     className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                 >
-                    <Repeat className="w-[18px] h-[18px]" />
+                    <Plus className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
         </div>
