@@ -231,12 +231,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
 
+    const SNAP_CLOSE_THRESHOLD = 220;
+
     const resize = useCallback((e: MouseEvent) => {
         if (isResizing) {
             const newWidth = window.innerWidth - e.clientX;
-            if (newWidth >= 300 && newWidth <= 600) {
-                setSidebarWidth(newWidth);
-                onSidebarWidthChange?.(newWidth);
+            if (newWidth < SNAP_CLOSE_THRESHOLD) {
+                // Snap closed
+                setIsSideSheetVisible(false);
+                setIsResizing(false);
+            } else if (newWidth <= 600) {
+                setSidebarWidth(Math.max(newWidth, 300));
+                onSidebarWidthChange?.(Math.max(newWidth, 300));
             }
         }
     }, [isResizing, onSidebarWidthChange]);
@@ -537,7 +543,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Desktop Side Sheet */}
                 <aside
-                    className={`hidden md:flex ${isSideSheetVisible ? 'border-l border-zinc-100 dark:border-zinc-900' : ''} bg-zinc-50 dark:bg-zinc-950 flex-col shrink-0 relative overflow-hidden transition-[width] duration-300 ease-in-out ${isResizing ? 'select-none' : ''}`}
+                    className={`hidden md:flex ${isSideSheetVisible ? 'border-l border-zinc-100 dark:border-zinc-900' : ''} bg-zinc-50 dark:bg-zinc-950 flex-col shrink-0 relative overflow-hidden ${isResizing ? 'select-none' : 'transition-[width] duration-300 ease-in-out'}`}
                     style={{ width: isSideSheetVisible ? `${sidebarWidth}px` : '0px' }}
                 >
                     {/* Resizer Handle */}
@@ -547,15 +553,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     >
                         <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
                     </div>
-
-                    {/* X button to close sidesheet */}
-                    <button
-                        onClick={() => setIsSideSheetVisible(false)}
-                        className="absolute top-4 right-4 z-50 w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-                        title={state.currentLang === 'de' ? 'Schließen' : 'Close'}
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
 
                     <SideSheet
                         selectedImage={state.selectedImage}

@@ -682,9 +682,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         </>
                                     )}
 
-                                    {/* Divider above footer */}
-                                    <div className="h-0.5 bg-white dark:bg-zinc-950 -mx-5" />
-
                                     {/* Bottom Controls + Generate */}
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2">
