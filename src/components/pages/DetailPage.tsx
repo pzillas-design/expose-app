@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -24,6 +24,38 @@ interface DetailPageProps {
     t: any;
 }
 
+// ── Generating Skeleton Overlay ─────────────────────────────────────────────
+const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({ startTime, duration }) => {
+    const [progress, setProgress] = useState(0);
+    useEffect(() => {
+        const start = startTime || Date.now();
+        const tick = () => {
+            const elapsed = Date.now() - start;
+            let p = (elapsed / duration) * 100;
+            if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
+            setProgress(Math.min(p, 99.9));
+        };
+        const id = setInterval(tick, 30);
+        tick();
+        return () => clearInterval(id);
+    }, [startTime, duration]);
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-30 rounded-[2px] overflow-hidden">
+            <div className="absolute inset-0 bg-white/88 dark:bg-zinc-950/88 backdrop-blur-sm" />
+            <div className="relative z-10 flex flex-col gap-3 w-full max-w-[180px]">
+                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Generierung…</span>
+                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-zinc-900 dark:bg-white rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, state, actions, t
 }) => {
@@ -32,6 +64,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMainLoaded = loadedImageId === selectedId;
     const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
+    // SideSheet visibility — hidden by default for generated images (has parentId)
+    const [isSideSheetVisible, setIsSideSheetVisible] = useState(true);
 
     const img = images.find(i => i.id === selectedId);
     const idx = images.findIndex(i => i.id === selectedId);
@@ -90,6 +124,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             actions.ensureImageLoaded(selectedId);
         }
     }, [selectedId, img, actions.ensureImageLoaded]);
+
+    // Reset sidesheet visibility when navigating to a different image
+    useEffect(() => {
+        const currentImg = images.find(i => i.id === selectedId);
+        setIsSideSheetVisible(!currentImg?.parentId);
+    }, [selectedId]);
 
     // Reset load state on image change and check cache
     useEffect(() => {
@@ -257,6 +297,28 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                     {/* Image Container with Progressive Loading */}
                     <div className="flex-1 flex items-center justify-center relative min-h-0">
+
+                        {/* Floating action buttons when sidesheet is collapsed */}
+                        {!isSideSheetVisible && state.sideSheetMode !== 'brush' && (
+                            <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none z-30">
+                                <div className="flex items-center gap-2 pointer-events-auto animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                    <Button onClick={() => setIsSideSheetVisible(true)} variant="secondary" size="m">
+                                        <Pen className="w-4 h-4" />
+                                        {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
+                                    </Button>
+                                    {!img.isGenerating && (
+                                        <Button
+                                            onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
+                                            variant="secondary"
+                                            size="m"
+                                        >
+                                            <Repeat className="w-4 h-4" />
+                                            {state.currentLang === 'de' ? 'Erneut generieren' : 'Generate again'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         {/* Centered Wrapper for Image + Canvas */}
                         <div className="relative flex items-center justify-center max-w-full max-h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
 
@@ -289,6 +351,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     maxHeight: 'calc(100vh - 180px)', // Account for header and strip
                                 }}
                             />
+
+                            {/* Generating skeleton + progress bar */}
+                            {img.isGenerating && (
+                                <GeneratingOverlay
+                                    startTime={img.generationStartTime}
+                                    duration={img.estimatedDuration || 23000}
+                                />
+                            )}
 
                             {/* EditorCanvas Overlay */}
                             {!img.isGenerating && isMainLoaded && (
@@ -467,8 +537,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Desktop Side Sheet */}
                 <aside
-                    className={`hidden md:flex border-l border-zinc-100 dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-950 flex-col shrink-0 relative ${isResizing ? 'select-none' : ''}`}
-                    style={{ width: `${sidebarWidth}px` }}
+                    className={`hidden md:flex ${isSideSheetVisible ? 'border-l border-zinc-100 dark:border-zinc-900' : ''} bg-zinc-50 dark:bg-zinc-950 flex-col shrink-0 relative overflow-hidden transition-[width] duration-300 ease-in-out ${isResizing ? 'select-none' : ''}`}
+                    style={{ width: isSideSheetVisible ? `${sidebarWidth}px` : '0px' }}
                 >
                     {/* Resizer Handle */}
                     <div
@@ -477,6 +547,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     >
                         <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
                     </div>
+
+                    {/* X button to close sidesheet */}
+                    <button
+                        onClick={() => setIsSideSheetVisible(false)}
+                        className="absolute top-4 right-4 z-50 w-7 h-7 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                        title={state.currentLang === 'de' ? 'Schließen' : 'Close'}
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
 
                     <SideSheet
                         selectedImage={state.selectedImage}

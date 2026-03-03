@@ -103,7 +103,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [prompt, setPrompt] = useState('');
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
-    const [showPromptForm, setShowPromptForm] = useState(false);
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isQualityOpen, setIsQualityOpen] = useState(false);
 
@@ -521,44 +520,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                 <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 space-y-8">
 
-                    {selectedImage?.parentId && !showPromptForm ? (
-                        <div className="flex flex-col gap-3 mt-4 relative">
-                            <button
-                                onClick={() => {
-                                    if (selectedImage.parentId) onNavigateParent(selectedImage.parentId);
-                                }}
-                                className="absolute -top-8 -right-2 p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-
-                            <Button
-                                onClick={() => handleGenerate()}
-                                variant="secondary"
-                                size="l"
-                                className="w-full justify-center"
-                            >
-                                {lang === 'de' ? 'Erneut generieren' : 'Generate again'}
-                            </Button>
-                            <Button
-                                onClick={() => setShowPromptForm(true)}
-                                variant="secondary"
-                                size="l"
-                                className="w-full justify-center"
-                            >
-                                {lang === 'de' ? 'Weiterbearbeiten' : 'Continue editing'}
-                            </Button>
-                            <Button
-                                onClick={() => onDownload?.(selectedImage.id)}
-                                variant="primary"
-                                size="l"
-                                className="w-full justify-center mt-4"
-                            >
-                                {lang === 'de' ? 'Herunterladen' : 'Download'}
-                            </Button>
-                        </div>
-                    ) : (
-                        <>
+                    <>
                             {/* ── REFINE Section ── */}
                             <section className="space-y-3">
                                 {/* Prompt Header outside the box */}
@@ -916,8 +878,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     </div>
                                 </div>
                             </section>
-                        </>
-                    )}
+                    </>
                 </div>
             </div>
         </>

@@ -306,6 +306,7 @@ export const useGeneration = ({
             return newRows;
         });
 
+        // Navigate to the placeholder skeleton immediately
         if (shouldSnap) {
             setTimeout(() => selectAndSnap(newId), 50);
         }
@@ -400,10 +401,7 @@ export const useGeneration = ({
                         setCredits(prev => prev - cost);
                     }
 
-                    // Success toast — click navigates to the generated image
-                    showToast('✓ Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
-                        selectAndSnap(newId);
-                    });
+                    showToast('✓ Bild generiert', 'success', 6000);
 
                     // Fire-and-forget: generate + persist thumbnail to avoid transform API costs on future loads
                     if (currentUser) {
