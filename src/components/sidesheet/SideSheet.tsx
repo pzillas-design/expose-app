@@ -4,7 +4,7 @@ import {
     LibraryCategory, GenerationQuality
 } from '@/types';
 import {
-    Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Send, Plus, Check,
+    Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
     Undo2, Redo2, Layers, MoreHorizontal
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
@@ -69,6 +69,7 @@ interface SideSheetProps {
     onShowInfo?: (id: string) => void;
     userProfile: any;
     width?: string;
+    disableMobileSheet?: boolean;
 }
 
 // ─── Helper: Eyebrow Label ────────────────────────────────────────────────────
@@ -197,10 +198,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         if (selectedImage.id !== lastSelectedIdRef.current) {
             setPrompt(selectedImage.userDraftPrompt || '');
             setActiveTemplateId(selectedImage.activeTemplateId || null);
-            setControlValues(selectedImage.variableValues || {});
+            setControlValues(isMulti ? {} : (selectedImage.variableValues || {}));
             lastSelectedIdRef.current = selectedImage.id;
         }
-    }, [selectedImage?.id]);
+    }, [selectedImage?.id, isMulti]);
 
     // ── History initialization ──
     useEffect(() => {
@@ -474,7 +475,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const referenceAnns = annotations.filter(a => a.type === 'reference_image');
 
     // ─── PROMPT MODE (Main View) ───────────────────────────────────────────────
-    const isMobileSheet = isMobile;
+    const isMobileSheet = isMobile && !props.disableMobileSheet;
 
     const sheetContent = (
         <>
@@ -614,7 +615,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {/* Annotations Section */}
                                     {!isMulti && visibleAnns.length > 0 && (
                                         <>
-                                            <div className="h-0.5 bg-white dark:bg-zinc-950 -mx-5" />
                                             <div className="space-y-2.5 relative group">
                                                 <div className="flex items-center gap-2">
                                                     <Eyebrow>{lang === 'de' ? 'Anmerkungen' : 'Annotations'}</Eyebrow>
@@ -640,13 +640,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key="masks"
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
                                                             >
                                                                 <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Maske' : 'Mask'}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
-                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
                                                                 >
                                                                     <X className="w-2.5 h-2.5" />
                                                                 </span>
@@ -658,19 +658,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         const a = ann as any;
                                                         const label = ann.type === 'shape'
                                                             ? (a.shapeType === 'rect' ? (lang === 'de' ? 'Rechteck' : 'Rect') : a.shapeType === 'circle' ? (lang === 'de' ? 'Kreis' : 'Circle') : (lang === 'de' ? 'Linie' : 'Line'))
-                                                            : (a.emoji || a.text?.slice(0, 12) || (lang === 'de' ? 'Stempel' : 'Stamp'));
+                                                            : (a.emoji || a.text || (lang === 'de' ? 'Stempel' : 'Stamp'));
                                                         return (
                                                             <button
                                                                 key={ann.id}
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-full text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
                                                             >
                                                                 <span>{label}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
                                                                 >
                                                                     <X className="w-2.5 h-2.5" />
                                                                 </span>
@@ -706,12 +706,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
                                                 >
                                                     <Pen className="w-4 h-4" />
-                                                    {visibleAnns.length > 0 && (
-                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
-                                                            {visibleAnns.length}
-                                                        </span>
-                                                    )}
-                                                </button>
+                                                                </button>
                                             </Tooltip>
 
                                             {/* Quality Dropdown */}
@@ -781,7 +776,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <RoundIconButton
                                                 icon={selectedImage?.isGenerating
                                                     ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
-                                                    : <Send className="w-[18px] h-[18px]" />
+                                                    : <Play className="w-[18px] h-[18px]" />
                                                 }
                                                 onClick={handleGenerate}
                                                 disabled={selectedImage?.isGenerating}
@@ -933,7 +928,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                className="relative flex flex-col h-full overflow-hidden bg-white dark:bg-zinc-950"
+                className={`relative flex flex-col bg-white dark:bg-zinc-950 ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
                 style={{ width }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}

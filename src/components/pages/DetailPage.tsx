@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -17,6 +17,8 @@ interface DetailPageProps {
     onDownload: (id: string) => void;
     onInfo: (id: string) => void;
     onSidebarWidthChange?: (w: number) => void;
+    isSideSheetVisible?: boolean;
+    onSideSheetVisibleChange?: (v: boolean) => void;
 
     // SideSheet Props (pass-through)
     state: any;
@@ -42,12 +44,12 @@ const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({
 
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-30 rounded-[2px] overflow-hidden">
-            <div className="absolute inset-0 bg-white/88 dark:bg-zinc-950/88 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/88 backdrop-blur-md" />
             <div className="relative z-10 flex flex-col gap-3 w-full max-w-[180px]">
-                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Generierung…</span>
-                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Generierung…</span>
+                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full">
                     <div
-                        className="h-full bg-zinc-900 dark:bg-white rounded-full transition-all duration-300 ease-out"
+                        className="h-full bg-zinc-800 dark:bg-white rounded-full transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -57,15 +59,24 @@ const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({
 };
 
 export const DetailPage: React.FC<DetailPageProps> = ({
-    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, state, actions, t
+    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
+    isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange,
+    state, actions, t
 }) => {
     const isMobile = useMobile();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
     const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
-    // SideSheet visibility — hidden by default for generated images (has parentId)
-    const [isSideSheetVisible, setIsSideSheetVisible] = useState(true);
+    // SideSheet visibility — controlled from outside if prop provided
+    const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
+    const isSideSheetVisible = isSideSheetVisibleProp ?? isSideSheetVisibleLocal;
+    const setIsSideSheetVisible = (v: boolean) => {
+        setIsSideSheetVisibleLocal(v);
+        onSideSheetVisibleChange?.(v);
+    };
+    // Hide the SideSheet when in annotation/brush mode so the canvas has full space
+    const isSideSheetActuallyVisible = isSideSheetVisible && state.sideSheetMode !== 'brush';
 
     const img = images.find(i => i.id === selectedId);
     const idx = images.findIndex(i => i.id === selectedId);
@@ -81,8 +92,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
         if (!img) return;
-        const cx = imageDims.width / 2 || img.width / 2;
-        const cy = imageDims.height / 2 || img.height / 2;
+        const cx = img.width / 2;
+        const cy = img.height / 2;
         const newAnn: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: label, itemId, emoji: icon, color: '#fff', strokeWidth: 0, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newAnn]);
         actions.setMaskTool('select');
@@ -90,8 +101,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddText = () => {
         if (!img) return;
-        const cx = imageDims.width / 2 || img.width / 2;
-        const cy = imageDims.height / 2 || img.height / 2;
+        const cx = img.width / 2;
+        const cy = img.height / 2;
         const newText: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: '', color: '#fff', strokeWidth: 4, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newText]);
         actions.setMaskTool('select');
@@ -286,9 +297,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-black">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className="flex-1 overflow-hidden flex">
+            <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                 {/* Canvas Area */}
-                <div className="flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group">
+                <div className="flex-1 max-h-[48vh] md:max-h-none flex flex-col bg-white dark:bg-black relative overflow-hidden group">
                     {/* Nav Arrows — only visible on hover */}
                     {idx > 0 && (
                         <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
@@ -304,29 +315,27 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Image Container with Progressive Loading */}
                     <div className="flex-1 flex items-center justify-center relative min-h-0">
 
-                        {/* Floating action buttons when sidesheet is collapsed */}
-                        {!isSideSheetVisible && state.sideSheetMode !== 'brush' && (
-                            <div className="absolute bottom-20 left-0 right-0 flex justify-center pointer-events-none z-40">
+                        {/* Floating action buttons when sidesheet is collapsed (desktop only) */}
+                        {!isSideSheetVisible && !isMobile && state.sideSheetMode !== 'brush' && (
+                            <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <div className="flex items-center gap-2 pointer-events-auto">
                                     {!img.isGenerating && (
-                                        <Button onClick={() => setIsSideSheetVisible(true)} variant="secondary" size="m">
+                                        <button onClick={() => setIsSideSheetVisible(true)} className="h-9 px-4 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
                                             {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
-                                        </Button>
+                                        </button>
                                     )}
-                                    <Button
+                                    <button
                                         onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
-                                        disabled={img.isGenerating}
-                                        variant="secondary"
-                                        size="m"
+                                        className="h-9 px-4 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
                                     >
-                                        <Plus className="w-4 h-4" />
+                                        <Repeat className="w-3.5 h-3.5" />
                                         {state.currentLang === 'de' ? 'Mehr' : 'More'}
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         )}
                         {/* Centered Wrapper for Image + Canvas */}
-                        <div className="relative flex items-center justify-center max-w-full max-h-full" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+                        <div className="relative flex items-center justify-center w-full h-full overflow-hidden">
 
                             {/* Blurry Placeholder (Thumb) */}
                             {img.thumbSrc && !isMainLoaded && (
@@ -349,13 +358,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     setImageDims({ width: rect.width, height: rect.height });
                                     setLoadedImageId(img.id);
                                 }}
-                                className={`max-w-full max-h-full object-contain rounded-[2px] border border-black/5 dark:border-white/5 transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-                                style={{
-                                    width: 'auto',
-                                    height: 'auto',
-                                    maxWidth: '100%',
-                                    maxHeight: 'calc(100vh - 180px)', // Account for header and strip
-                                }}
+                                className={`w-full h-full object-contain rounded-[2px] transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                style={{ display: 'block' }}
                             />
 
                             {/* Generating skeleton + progress bar */}
@@ -372,6 +376,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     <EditorCanvas
                                         width={imageDims.width}
                                         height={imageDims.height}
+                                        annotationWidth={img.width}
+                                        annotationHeight={img.height}
                                         zoom={1} // Detail view is 1x zoom (real css pixels)
                                         annotations={img.annotations || []}
                                         onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
@@ -391,9 +397,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>
 
                     {/* Bottom Area: Fixed space so canvas never jumps */}
-                    <div className={`h-16 shrink-0 relative z-30 w-full overflow-visible transition-all duration-300 ${isMobile ? 'mb-[calc(10vh+12px)]' : 'mb-0'}`}>
-                        {/* Thumbnail Strip */}
-                        <div className={`absolute inset-0 flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                    <div className="h-16 shrink-0 relative z-30 w-full overflow-visible">
+                        {/* Thumbnail Strip — desktop only */}
+                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                             {images.map(i => {
                                 const isActive = selectedId === i.id;
                                 const previewSrc = i.thumbSrc || i.src;
@@ -541,21 +547,24 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>
                 </div>
 
-                {/* Desktop Side Sheet */}
+                {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`hidden md:flex ${isSideSheetVisible ? 'border-l border-zinc-100 dark:border-zinc-900' : ''} bg-zinc-50 dark:bg-zinc-950 flex-col shrink-0 relative overflow-hidden ${isResizing ? 'select-none' : 'transition-[width] duration-300 ease-in-out'}`}
-                    style={{ width: isSideSheetVisible ? `${sidebarWidth}px` : '0px' }}
+                    className={`flex flex-col relative overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
-                    {/* Resizer Handle */}
-                    <div
-                        onMouseDown={startResizing}
-                        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
-                    >
-                        <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
-                    </div>
+                    {/* Resizer Handle — desktop only */}
+                    {!isMobile && (
+                        <div
+                            onMouseDown={startResizing}
+                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
+                        >
+                            <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
+                        </div>
+                    )}
 
                     <SideSheet
-                        width={`${sidebarWidth}px`}
+                        width={isMobile ? '500px' : `${sidebarWidth}px`}
+                        disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}
                         sideSheetMode={state.sideSheetMode}

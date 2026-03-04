@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Plus, Upload, Wand2, Trash2, Repeat, Settings, CheckSquare, LogOut, SquarePen, RotateCw, Download, Info, Pencil } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings, CheckSquare, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
@@ -32,6 +32,8 @@ interface AppNavbarProps {
     onDetailDelete?: () => void;
     onDetailInfo?: () => void;
     onDetailRegenerate?: () => void;
+    isSideSheetVisible?: boolean;
+    onToggleSideSheet?: () => void;
     rightInset?: number;
 }
 
@@ -63,6 +65,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onDetailDelete,
     onDetailInfo,
     onDetailRegenerate,
+    isSideSheetVisible,
+    onToggleSideSheet,
     rightInset = 0,
 }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -189,10 +193,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
                     <DropdownMenu
                         items={[
-                            { label: isGerman ? 'Umbenennen' : 'Rename', icon: <Pencil className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRename?.(); } },
                             { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                            { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Plus className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
-                            { label: isGerman ? 'Infos' : 'Info', icon: <Info className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                            { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                            { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                             { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                         ]}
                     />
@@ -218,11 +221,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 tooltip={isGerman ? 'Herunterladen' : 'Download'}
             />
             <RoundIconButton
-                icon={<Plus className="w-[18px] h-[18px]" />}
+                icon={<Repeat className="w-[18px] h-[18px]" />}
                 onClick={onDetailRegenerate}
                 variant="ghost"
                 tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
             />
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<PanelRight className="w-[18px] h-[18px]" />}
+                    onClick={onToggleSideSheet}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Seitenleiste' : 'Sidebar'}
+                />
+            </span>
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
@@ -239,7 +250,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     onClick={onGenerateMoreSelected}
                     className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                 >
-                    <Plus className="w-[18px] h-[18px]" />
+                    <Repeat className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
         </div>
@@ -283,7 +294,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     return (
         <header className="absolute top-0 left-0 right-0 h-14 z-50 pointer-events-none">
-            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900/50">
+            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900">
 
                 <div className="flex items-center w-1/3">
                     {leftContent}

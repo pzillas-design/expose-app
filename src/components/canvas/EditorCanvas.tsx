@@ -8,6 +8,8 @@ import { generateId } from '@/utils/ids';
 export interface EditorCanvasProps {
     width: number;
     height: number;
+    annotationWidth?: number; // Stable coordinate space (CanvasImage.width, normalized ~512px)
+    annotationHeight?: number;
     zoom: number; // New: zoom for scaling
     annotations: AnnotationObject[];
     onChange: (newAnnotations: AnnotationObject[]) => void;
@@ -45,6 +47,8 @@ const OVERLAY_STYLES = {
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     width,
     height,
+    annotationWidth,
+    annotationHeight,
     zoom,
     annotations = [],
     onChange,
@@ -76,6 +80,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if (onActiveAnnotationChange) onActiveAnnotationChange(id);
         setInternalActiveMaskId(id);
     };
+
+    // Stable annotation coordinate space (CanvasImage.width/height, ~512px normalized)
+    // Using this instead of display width/height prevents chip drift on layout changes
+    const annW = annotationWidth && annotationWidth > 0 ? annotationWidth : width;
+    const annH = annotationHeight && annotationHeight > 0 ? annotationHeight : height;
 
     const [isHovering, setIsHovering] = useState(false);
 
@@ -247,6 +256,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 y: p.y + dy
                             }))
                         };
+                    }
+                    // Stamps use annotation-space coords (annW/annH); scale display-pixel delta
+                    if (ann.type === 'stamp') {
+                        return { ...ann, x: dragState.initialX + dx * (annW / width), y: dragState.initialY + dy * (annH / height) };
                     }
                     return { ...ann, x: dragState.initialX + dx, y: dragState.initialY + dy };
                 }
@@ -533,8 +546,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                 if (ann.type === 'stamp') {
                     if (ann.x === undefined || ann.y === undefined) return null;
-                    leftPct = (ann.x / width) * 100;
-                    topPct = (ann.y / height) * 100;
+                    leftPct = (ann.x / annW) * 100;
+                    topPct = (ann.y / annH) * 100;
                 } else if (ann.type === 'mask_path') {
                     let minX = Infinity, minY = Infinity;
                     if (!ann.points || ann.points.length === 0) return null;

@@ -401,7 +401,7 @@ export const useGeneration = ({
                         setCredits(prev => prev - cost);
                     }
 
-                    showToast('✓ Bild generiert', 'success', 6000);
+                    showToast('Bild generiert', 'success', 6000);
 
                     // Fire-and-forget: generate + persist thumbnail to avoid transform API costs on future loads
                     if (currentUser) {
@@ -500,7 +500,7 @@ export const useGeneration = ({
                     }
 
                     // Success toast — click navigates to the generated image
-                    showToast('✓ Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
+                    showToast('Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
                         selectAndSnap(newId);
                     });
 

@@ -64,6 +64,7 @@ export function App() {
     const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
+    const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -157,7 +158,7 @@ export function App() {
                         const count = state.selectedIds?.length || 0;
                         const confirmed = await confirm({
                             title: t('delete') || 'Löschen',
-                            description: state.lang === 'de'
+                            description: state.currentLang === 'de'
                                 ? `Möchtest du wirklich ${count} Bild${count !== 1 ? 'er' : ''} löschen?`
                                 : `Delete ${count} image${count !== 1 ? 's' : ''}?`,
                             confirmLabel: t('delete') || 'LÖSCHEN',
@@ -224,6 +225,8 @@ export function App() {
                             if (id) actions.handleGenerateMore(id);
                         }
                     }}
+                    isSideSheetVisible={detailSideSheetVisible}
+                    onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
                 />
             ) : (
                 <PublicNavbar
@@ -295,6 +298,8 @@ export function App() {
                                     onDownload={handleDownload}
                                     onInfo={(id) => setInfoImageId(id)}
                                     onSidebarWidthChange={setDetailSidebarWidth}
+                                    isSideSheetVisible={detailSideSheetVisible}
+                                    onSideSheetVisibleChange={setDetailSideSheetVisible}
                                     state={state}
                                     actions={actions}
                                     t={t}
