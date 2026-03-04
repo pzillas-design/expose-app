@@ -75,6 +75,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const createDropdownRef = useRef<HTMLDivElement>(null);
     const gridMenuRef = useRef<HTMLDivElement>(null);
     const detailMenuRef = useRef<HTMLDivElement>(null);
+    const mobileDetailMenuRef = useRef<HTMLDivElement>(null);
 
     // Animated credit counter
     const [displayCredits, setDisplayCredits] = useState(credits);
@@ -117,7 +118,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             if (isGridMenuOpen && gridMenuRef.current && !gridMenuRef.current.contains(target)) {
                 setIsGridMenuOpen(false);
             }
-            if (isDetailMenuOpen && detailMenuRef.current && !detailMenuRef.current.contains(target)) {
+            if (isDetailMenuOpen
+                && (!detailMenuRef.current || !detailMenuRef.current.contains(target))
+                && (!mobileDetailMenuRef.current || !mobileDetailMenuRef.current.contains(target))) {
                 setIsDetailMenuOpen(false);
             }
         };
@@ -183,24 +186,27 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
                 {detailInfo}
             </span>
-            <RoundIconButton
-                icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
-                onClick={() => setIsDetailMenuOpen(p => !p)}
-                variant="ghost"
-                active={isDetailMenuOpen}
-            />
-            {isDetailMenuOpen && (
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
-                    <DropdownMenu
-                        items={[
-                            { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                            { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
-                            { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                            { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
-                        ]}
-                    />
-                </div>
-            )}
+            {/* Desktop-only 3-dot menu in center */}
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsDetailMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isDetailMenuOpen}
+                />
+                {isDetailMenuOpen && (
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                            ]}
+                        />
+                    </div>
+                )}
+            </span>
         </div>
     ) : hasImages ? (
         <button
@@ -214,18 +220,44 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const rightContent = isDetail ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton
-                icon={<Download className="w-[18px] h-[18px]" />}
-                onClick={onDetailDownload}
-                variant="ghost"
-                tooltip={isGerman ? 'Herunterladen' : 'Download'}
-            />
-            <RoundIconButton
-                icon={<Repeat className="w-[18px] h-[18px]" />}
-                onClick={onDetailRegenerate}
-                variant="ghost"
-                tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
-            />
+            {/* Mobile: 3-dot menu in the right corner */}
+            <div className="relative md:hidden" ref={mobileDetailMenuRef}>
+                <RoundIconButton
+                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsDetailMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isDetailMenuOpen}
+                />
+                {isDetailMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
+            {/* Desktop: individual icons */}
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<Download className="w-[18px] h-[18px]" />}
+                    onClick={onDetailDownload}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                />
+            </span>
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<Repeat className="w-[18px] h-[18px]" />}
+                    onClick={onDetailRegenerate}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
+                />
+            </span>
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<PanelRight className="w-[18px] h-[18px]" />}

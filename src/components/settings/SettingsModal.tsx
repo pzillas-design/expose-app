@@ -31,12 +31,17 @@ interface SettingsModalProps {
     user: any;
     userProfile: any;
     t: TranslationFunction;
+    imageCount?: number;
+    imageLimit?: number;
+    storageAutoDelete?: boolean;
+    onStorageAutoDeleteChange?: (val: boolean) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose,
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
-    themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t
+    themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t,
+    imageCount = 0, imageLimit = 100, storageAutoDelete = false, onStorageAutoDeleteChange
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const [isQualityDropdownOpen, setIsQualityDropdownOpen] = useState(false);
@@ -281,6 +286,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 </div>
                             );
                         })()}
+                    </div>
+                </section>
+
+                {/* ── Storage ── */}
+                <section>
+                    <SectionLabel>{lang === 'de' ? 'Speicher' : 'Storage'}</SectionLabel>
+                    <div className={`${card} p-4 space-y-3`}>
+                        {/* Progress bar */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm text-zinc-900 dark:text-white">
+                                    {imageCount} / {imageLimit} {lang === 'de' ? 'Bilder' : 'images'}
+                                </p>
+                                <p className="text-xs text-zinc-400">
+                                    {Math.round((imageCount / imageLimit) * 100)}%
+                                </p>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        imageCount >= imageLimit ? 'bg-red-500' :
+                                        imageCount >= imageLimit * 0.8 ? 'bg-orange-400' :
+                                        'bg-zinc-800 dark:bg-white'
+                                    }`}
+                                    style={{ width: `${Math.min((imageCount / imageLimit) * 100, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="h-px bg-zinc-200/60 dark:bg-zinc-800/60" />
+
+                        {/* Auto-delete toggle */}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                                <p className="text-sm text-zinc-900 dark:text-white">
+                                    {lang === 'de' ? 'Ältestes automatisch löschen' : 'Auto-delete oldest'}
+                                </p>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                    {lang === 'de'
+                                        ? 'Löscht das älteste Bild wenn das Limit erreicht wird'
+                                        : 'Deletes oldest image when limit is reached'}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => onStorageAutoDeleteChange?.(!storageAutoDelete)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${storageAutoDelete ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+                            >
+                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-zinc-900 shadow transition-transform ${storageAutoDelete ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </button>
+                        </div>
                     </div>
                 </section>
 

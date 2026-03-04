@@ -66,7 +66,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMobile = useMobile();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
-    const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
@@ -75,12 +74,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         setIsSideSheetVisibleLocal(v);
         onSideSheetVisibleChange?.(v);
     };
-    // Hide the SideSheet when in annotation/brush mode so the canvas has full space
+    // Brush mode visually hides the sidesheet to give canvas full width
     const isSideSheetActuallyVisible = isSideSheetVisible && state.sideSheetMode !== 'brush';
 
     const img = images.find(i => i.id === selectedId);
     const idx = images.findIndex(i => i.id === selectedId);
     const { confirm } = useItemDialog();
+
+    // Track actual image dimensions from the loaded <img> element
+    const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
+    useEffect(() => {
+        const el = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
+        if (el && el.naturalWidth > 0 && el.naturalHeight > 0) {
+            setImgNaturalDims({ width: el.naturalWidth, height: el.naturalHeight });
+        }
+    }, [selectedId]);
 
     useEffect(() => {
         if (state.sideSheetMode === 'brush') {
@@ -92,8 +100,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
         if (!img) return;
-        const cx = img.width / 2;
-        const cy = img.height / 2;
+        const cx = imgNaturalDims.width / 2;
+        const cy = imgNaturalDims.height / 2;
         const newAnn: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: label, itemId, emoji: icon, color: '#fff', strokeWidth: 0, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newAnn]);
         actions.setMaskTool('select');
@@ -101,8 +109,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddText = () => {
         if (!img) return;
-        const cx = img.width / 2;
-        const cy = img.height / 2;
+        const cx = imgNaturalDims.width / 2;
+        const cy = imgNaturalDims.height / 2;
         const newText: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: '', color: '#fff', strokeWidth: 4, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newText]);
         actions.setMaskTool('select');
@@ -110,9 +118,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddShape = (shape: 'rect' | 'circle' | 'line') => {
         if (!img) return;
-        const cx = imageDims.width / 2 || img.width / 2;
-        const cy = imageDims.height / 2 || img.height / 2;
-        const size = Math.min(imageDims.width || img.width, imageDims.height || img.height) * 0.3;
+        // Use normalized image space (imgNaturalDims.width/height) — consistent regardless of display size
+        const cx = imgNaturalDims.width / 2;
+        const cy = imgNaturalDims.height / 2;
+        const size = Math.min(imgNaturalDims.width, imgNaturalDims.height) * 0.3;
         const half = size / 2;
         let newShape: any;
         if (shape === 'line') {
@@ -136,11 +145,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }
     }, [selectedId, img, actions.ensureImageLoaded]);
 
-    // Reset sidesheet visibility when navigating to a different image
-    useEffect(() => {
-        const currentImg = images.find(i => i.id === selectedId);
-        setIsSideSheetVisible(!currentImg?.parentId);
-    }, [selectedId]);
 
     // Reset load state on image change and check cache
     useEffect(() => {
@@ -149,22 +153,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         const imEl = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
         if (imEl && imEl.complete && imEl.naturalWidth > 0 && imEl.src && !imEl.src.includes('data:image/gif')) {
             setLoadedImageId(selectedId);
-            const rect = imEl.getBoundingClientRect();
-            setImageDims({ width: rect.width, height: rect.height });
         } else {
             setLoadedImageId(null);
-            setImageDims({ width: 0, height: 0 });
         }
 
-        // Fallback to ensure image doesn't stay blurry forever if onLoad never fires
+        // Fallback in case onLoad never fires (cached images, etc.)
         const fallbackTimer = setTimeout(() => {
             const el = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
-            if (el && el.naturalWidth > 0) {
-                setLoadedImageId(selectedId);
-                setImageDims({ width: el.getBoundingClientRect().width, height: el.getBoundingClientRect().height });
-            } else if (el) {
-                setLoadedImageId(selectedId); // Force reveal
-            }
+            if (el) setLoadedImageId(selectedId);
         }, 800);
 
         return () => clearTimeout(fallbackTimer);
@@ -272,18 +268,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         };
     }, [isResizing, resize, stopResizing]);
 
-    /* Resize listener for canvas dimensions */
-    useEffect(() => {
-        const updateDims = () => {
-            const imEl = document.getElementById(`detail-img-${selectedId}`);
-            if (imEl) {
-                const rect = imEl.getBoundingClientRect();
-                setImageDims({ width: rect.width, height: rect.height });
-            }
-        };
-        window.addEventListener('resize', updateDims);
-        return () => window.removeEventListener('resize', updateDims);
-    }, [selectedId]);
 
     if (!img) {
         return (
@@ -298,22 +282,32 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             {/* Removed internal header - handled by AppNavbar */}
 
             <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-                {/* Canvas Area */}
-                <div className="flex-1 max-h-[48vh] md:max-h-none flex flex-col bg-white dark:bg-black relative overflow-hidden group">
-                    {/* Nav Arrows — only visible on hover */}
+                {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
+                <div
+                    className="md:flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group shrink-0 md:shrink"
+                    style={isMobile
+                        ? {
+                            height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
+                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width) + 64}px`
+                                : `${window.innerWidth + 64}px` // square fallback for images with missing dimensions
+                        }
+                        : undefined
+                    }
+                >
+                    {/* Nav Arrows — desktop only, visible on hover */}
                     {idx > 0 && (
-                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
                     {idx < images.length - 1 && (
-                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     )}
 
-                    {/* Image Container with Progressive Loading */}
-                    <div className="flex-1 flex items-center justify-center relative min-h-0">
+                    {/* Image Container */}
+                    <div className="flex-1 relative overflow-hidden min-h-0">
 
                         {/* Floating action buttons when sidesheet is collapsed (desktop only) */}
                         {!isSideSheetVisible && !isMobile && state.sideSheetMode !== 'brush' && (
@@ -334,15 +328,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 </div>
                             </div>
                         )}
-                        {/* Centered Wrapper for Image + Canvas */}
-                        <div className="relative flex items-center justify-center w-full h-full overflow-hidden">
 
+                        {/* Sizing wrapper: absolute inset-0 gives definite dimensions for image centering */}
+                        <div className="absolute inset-0 flex items-center justify-center">
                             {/* Blurry Placeholder (Thumb) */}
                             {img.thumbSrc && !isMainLoaded && (
                                 <img
                                     src={img.thumbSrc}
-                                    className="absolute max-w-full max-h-full rounded-[2px] opacity-20 pointer-events-none"
-                                    style={{ width: 'auto', height: 'auto', maxWidth: '90%', maxHeight: '90%' }}
+                                    className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none"
                                     alt=""
                                 />
                             )}
@@ -354,12 +347,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 src={img.src}
                                 alt={img.title}
                                 onLoad={(e) => {
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setImageDims({ width: rect.width, height: rect.height });
+                                    const imgEl = e.target as HTMLImageElement;
+                                    setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
                                     setLoadedImageId(img.id);
                                 }}
-                                className={`w-full h-full object-contain rounded-[2px] transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-                                style={{ display: 'block' }}
+                                className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                style={{ objectFit: 'contain' }}
                             />
 
                             {/* Generating skeleton + progress bar */}
@@ -370,15 +363,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 />
                             )}
 
-                            {/* EditorCanvas Overlay */}
+                            {/* EditorCanvas Overlay — absolute inset-0 always perfectly aligned */}
                             {!img.isGenerating && isMainLoaded && (
-                                <div className="absolute inset-0 z-20" style={{ width: imageDims.width, height: imageDims.height, margin: 'auto' }}>
+                                <div className="absolute inset-0 z-20">
                                     <EditorCanvas
-                                        width={imageDims.width}
-                                        height={imageDims.height}
-                                        annotationWidth={img.width}
-                                        annotationHeight={img.height}
-                                        zoom={1} // Detail view is 1x zoom (real css pixels)
+                                        width={imgNaturalDims.width}
+                                        height={imgNaturalDims.height}
+                                        zoom={1}
                                         annotations={img.annotations || []}
                                         onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
                                         brushSize={state.brushSize}
@@ -393,8 +384,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
                                 </div>
                             )}
-                        </div>
-                    </div>
+                        </div>{/* closes sizing wrapper */}
+                    </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps */}
                     <div className="h-16 shrink-0 relative z-30 w-full overflow-visible">
@@ -549,7 +540,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
                     style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
                     {/* Resizer Handle — desktop only */}
@@ -563,7 +554,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     )}
 
                     <SideSheet
-                        width={isMobile ? '500px' : `${sidebarWidth}px`}
+                        width={isMobile ? '100%' : `${sidebarWidth}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}
@@ -577,7 +568,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onActiveShapeChange={actions.setActiveShape}
                         onBrushResizeStart={() => actions.setIsBrushResizing(true)}
                         onBrushResizeEnd={() => actions.setIsBrushResizing(false)}
-                        onGenerate={actions.handleGenerate}
+                        onGenerate={(...args: Parameters<typeof actions.handleGenerate>) => { setIsSideSheetVisible(false); actions.handleGenerate(...args); }}
                         onUpdateAnnotations={actions.handleUpdateAnnotations}
                         onUpdatePrompt={actions.handleUpdatePrompt}
                         onUpdateVariables={actions.handleUpdateVariables}

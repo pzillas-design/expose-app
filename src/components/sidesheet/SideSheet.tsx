@@ -74,8 +74,8 @@ interface SideSheetProps {
 
 // ─── Helper: Eyebrow Label ────────────────────────────────────────────────────
 
-const Eyebrow: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-    <span className={`text-[11px] font-medium text-zinc-400 dark:text-zinc-500 ${className}`}>
+const Eyebrow: React.FC<{ children: React.ReactNode; className?: string; muted?: boolean }> = ({ children, className = '', muted = false }) => (
+    <span className={`text-sm font-normal ${muted ? 'text-zinc-500 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'} ${className}`}>
         {children}
     </span>
 );
@@ -525,9 +525,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             <section className="space-y-3">
                                 {/* Prompt Header outside the box */}
                                 <div className="flex items-center justify-between px-1">
-                                    <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">
-                                        {t('prompt') || 'Prompt'}
-                                    </span>
+                                    <Eyebrow muted>{t('prompt') || 'Prompt'}</Eyebrow>
                                 </div>
 
                                 <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} p-5 space-y-5 transition-all`}>
@@ -803,16 +801,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                                 {/* ── PRESETS Section ── */}
                                 <div className="!mt-12 text-zinc-800 dark:text-zinc-200">
-                                    <div className="flex items-center justify-between mb-3 relative" ref={presetsMenuRef}>
-                                        <Eyebrow>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
-                                        <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
-                                            <button
-                                                onClick={() => setIsPresetsMenuOpen(p => !p)}
-                                                className="p-1.5 rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                                            >
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
+                                    <div className="flex items-center justify-between px-4 py-3 relative" ref={presetsMenuRef}>
+                                        <Eyebrow muted>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
+                                        <RoundIconButton
+                                            icon={<MoreHorizontal className="w-4 h-4" />}
+                                            onClick={() => setIsPresetsMenuOpen(p => !p)}
+                                            variant="ghost"
+                                            active={isPresetsMenuOpen}
+                                        />
 
                                         {isPresetsMenuOpen && (
                                             <div className="absolute top-10 right-0 z-[60]">
@@ -862,20 +858,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             {tpl.title}
                                                         </span>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Tooltip text={lang === 'de' ? 'Optionen' : 'Options'}>
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setEditingTemplate(tpl);
-                                                                    setIsPresetModalOpen(true);
-                                                                }}
-                                                                className={`p-1.5 rounded-full text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
-                                                            >
-                                                                <MoreHorizontal className="w-4 h-4" />
-                                                            </button>
-                                                        </Tooltip>
-                                                    </div>
+                                                    <RoundIconButton
+                                                        icon={<MoreHorizontal className="w-4 h-4" />}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingTemplate(tpl);
+                                                            setIsPresetModalOpen(true);
+                                                        }}
+                                                        variant="ghost"
+                                                        className={isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
+                                                    />
                                                 </button>
                                             );
                                         })}

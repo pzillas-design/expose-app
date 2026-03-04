@@ -37,6 +37,14 @@ export const useNanoController = () => {
     const offsetRef = useRef(0);
     const PAGE_SIZE = 50;
 
+    // --- Storage Limits ---
+    const IMAGE_LIMIT = 100;
+    const IMAGE_WARNING_THRESHOLD = 80;
+    const [storageAutoDelete, setStorageAutoDelete] = useState(() =>
+        localStorage.getItem('expose_storage_auto_delete') === 'true'
+    );
+    const storageWarnedRef = useRef(false);
+
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true' ||
         (typeof window !== 'undefined' && window.location.hostname === 'beta.expose.ae');
@@ -217,15 +225,6 @@ export const useNanoController = () => {
 
     // --- Actions --- (Integrated via Hooks above)
 
-
-    const handleFileDrop = useCallback(async (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragOver(false);
-        const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
-        if (files.length === 0) return;
-        processFiles(files);
-    }, [processFiles, setIsDragOver]);
-
     const handleDeleteImage = useCallback((id: string) => {
         if (!user) {
             showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
@@ -253,6 +252,66 @@ export const useNanoController = () => {
             });
         }
     }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, showToast, currentLang]);
+
+    const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
+        setStorageAutoDelete(val);
+        localStorage.setItem('expose_storage_auto_delete', val ? 'true' : 'false');
+    }, []);
+
+    const checkStorageLimit = useCallback(async (): Promise<boolean> => {
+        const count = allImages.length;
+
+        if (count >= IMAGE_LIMIT) {
+            if (storageAutoDelete) {
+                const oldest = [...allImages]
+                    .filter(img => !img.isGenerating)
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
+                if (oldest) handleDeleteImage(oldest.id);
+                return true;
+            }
+            const confirmed = await confirm({
+                title: currentLang === 'de' ? 'Speicher voll' : 'Storage full',
+                description: currentLang === 'de'
+                    ? `Du hast ${IMAGE_LIMIT} Bilder erreicht. Aktiviere automatisches Löschen oder lösche Bilder manuell.`
+                    : `You've reached ${IMAGE_LIMIT} images. Enable auto-delete or remove images manually.`,
+                confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN AKTIVIEREN' : 'ENABLE AUTO-DELETE',
+                cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
+                variant: 'danger'
+            });
+            if (confirmed) {
+                handleStorageAutoDeleteChange(true);
+                const oldest = [...allImages]
+                    .filter(img => !img.isGenerating)
+                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
+                if (oldest) handleDeleteImage(oldest.id);
+                return true;
+            }
+            return false;
+        }
+
+        if (count >= IMAGE_WARNING_THRESHOLD && !storageWarnedRef.current) {
+            storageWarnedRef.current = true;
+            showToast(
+                currentLang === 'de'
+                    ? `${count} von ${IMAGE_LIMIT} Bildern – Speicher fast voll.`
+                    : `${count} of ${IMAGE_LIMIT} images – storage nearly full.`,
+                'error',
+                5000
+            );
+        }
+
+        return true;
+    }, [allImages, storageAutoDelete, handleDeleteImage, handleStorageAutoDeleteChange, confirm, showToast, currentLang]);
+
+    const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
+        processFiles(files);
+    }, [processFiles, setIsDragOver, checkStorageLimit]);
 
     const handleDownload = useCallback(async (idOrIds: string | string[]) => {
         const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
@@ -282,6 +341,9 @@ export const useNanoController = () => {
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>
     ) => {
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
+
         if (activeTemplateId) {
             recordPresetUsage(activeTemplateId);
         }
@@ -304,7 +366,7 @@ export const useNanoController = () => {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
-    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, checkStorageLimit]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -339,9 +401,17 @@ export const useNanoController = () => {
         }
     }, [allImages, performGeneration, currentLang, showToast]);
 
-    const handleCreateNew = useCallback((prompt: string, model: string, ratio: string, attachments: string[] = []) => {
+    const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
         performNewGeneration(prompt, model, ratio, attachments);
-    }, [performNewGeneration]);
+    }, [performNewGeneration, checkStorageLimit]);
+
+    const handleProcessFile = useCallback(async (file: File) => {
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
+        processFile(file);
+    }, [processFile, checkStorageLimit]);
 
     const handleNavigateParent = useCallback((parentId: string) => {
         const parent = allImages.find(i => i.id === parentId);
@@ -385,13 +455,16 @@ export const useNanoController = () => {
         isMobile,
         templates,
         hasMore,
-        isSelectMode
+        isSelectMode,
+        storageAutoDelete,
+        imageLimit: IMAGE_LIMIT,
+        imageWarningThreshold: IMAGE_WARNING_THRESHOLD,
     }), [
         rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
         qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
-        isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode
+        isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode, storageAutoDelete
     ]);
 
     const actions = React.useMemo(() => ({
@@ -427,8 +500,9 @@ export const useNanoController = () => {
         setIsSettingsOpen,
         setIsAdminOpen,
         setIsSelectMode,
-        processFile,
+        processFile: handleProcessFile,
         handleDeleteImage,
+        handleStorageAutoDeleteChange,
         handleDownload,
         handleUpdateAnnotations,
         handleUpdatePrompt,
@@ -453,7 +527,7 @@ export const useNanoController = () => {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, selectAndSnap, selectMultiple,
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
         setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
-        setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, processFile, handleDeleteImage, handleDownload,
+        setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, handleProcessFile, handleDeleteImage, handleStorageAutoDeleteChange, handleDownload,
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
