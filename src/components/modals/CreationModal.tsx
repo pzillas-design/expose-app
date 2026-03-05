@@ -131,16 +131,16 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[60] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[60] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
             onClick={onClose}
         >
             <div
 
                 className={`
-                    w-full max-w-lg ${Theme.Colors.ModalBg} 
-                    border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
-                    flex flex-col max-h-[90vh]
-                    animate-in zoom-in-95 duration-200
+                    w-full max-w-lg ${Theme.Colors.ModalBg}
+                    border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}
+                    flex flex-col max-h-[calc(100vh-2rem)]
+                    animate-in zoom-in-95 duration-200 my-auto
                 `}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -154,7 +154,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8 custom-scrollbar min-w-0">
 
                     {/* Unified Prompt & Upload Area */}
                     <div
@@ -245,7 +245,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         )}
 
                         {/* Model Dropdown */}
-                        <div className={`flex flex-col gap-3 relative ${openDropdown === 'model' ? 'z-[60]' : 'z-20'}`}>
+                        <div className={`flex flex-col gap-3 relative overflow-visible ${openDropdown === 'model' ? 'z-[100]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 {t('creation_quality_label')}
                             </label>
@@ -293,7 +293,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                         </div>
 
                         {/* Aspect Ratio Dropdown */}
-                        <div className={`flex flex-col gap-3 relative ${openDropdown === 'ratio' ? 'z-[60]' : 'z-20'}`}>
+                        <div className={`flex flex-col gap-3 relative overflow-visible ${openDropdown === 'ratio' ? 'z-[100]' : 'z-20'}`}>
                             <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
                                 {t('creation_ratio_label')}
                             </label>
