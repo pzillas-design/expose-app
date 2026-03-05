@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { GenerationQuality } from '../types';
@@ -12,7 +11,10 @@ interface GenerationAverage {
 const FALLBACK_DURATIONS: Record<GenerationQuality, number> = {
     'pro-1k': 5000,
     'pro-2k': 8000,
-    'pro-4k': 15000
+    'pro-4k': 15000,
+    'nb2-1k': 4000,
+    'nb2-2k': 7000,
+    'nb2-4k': 12000
 };
 
 export const useGenerationTiming = () => {
