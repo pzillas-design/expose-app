@@ -345,11 +345,6 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 flex flex-col px-6 pt-6 pb-6 gap-3">
                 <div className="flex flex-col gap-3">
                     {/* 1. MAIN PROMPT BLOCK (Always Visible) */}
-                    <div className="flex items-center justify-between mt-2">
-                        <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
-                            Prompt
-                        </span>
-                    </div>
                     <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Colors.PanelBg} transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
                         <textarea
                             ref={textAreaRef}
