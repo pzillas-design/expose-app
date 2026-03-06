@@ -75,13 +75,13 @@ interface SideSheetProps {
 // ─── Helper: Eyebrow Label ────────────────────────────────────────────────────
 
 const Eyebrow: React.FC<{ children: React.ReactNode; className?: string; muted?: boolean }> = ({ children, className = '', muted = false }) => (
-    <span className={`text-sm font-normal ${muted ? 'text-zinc-500 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'} ${className}`}>
+    <span className={`text-xs font-normal ${muted ? 'text-zinc-500 dark:text-zinc-600' : 'text-zinc-600 dark:text-zinc-400'} ${className}`}>
         {children}
     </span>
 );
 
 // ─── Main SideSheet ───────────────────────────────────────────────────────────
-
+// Main component
 export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const {
         selectedImage, selectedImages, sideSheetMode, onModeChange,
@@ -518,15 +518,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 space-y-8">
+                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-8">
 
                     <>
                             {/* ── REFINE Section ── */}
                             <section className="space-y-3">
-                                {/* Prompt Header outside the box */}
-                                <div className="flex items-center justify-between px-1">
-                                    <Eyebrow muted>{t('prompt') || 'Prompt'}</Eyebrow>
-                                </div>
 
                                 <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} p-5 space-y-5 transition-all`}>
                                     {/* Prompt Textarea */}
@@ -644,9 +640,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
-                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
+                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
                                                                 >
-                                                                    <X className="w-2.5 h-2.5" />
+                                                                    <X className="w-3 h-3" />
                                                                 </span>
                                                             </button>
                                                         );
@@ -668,9 +664,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                                                    className="w-4 h-4 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
+                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
                                                                 >
-                                                                    <X className="w-2.5 h-2.5" />
+                                                                    <X className="w-3 h-3" />
                                                                 </span>
                                                             </button>
                                                         );
@@ -681,7 +677,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     )}
 
                                     {/* Bottom Controls + Generate */}
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="mt-6 flex items-center gap-3">
                                         <div className="flex items-center gap-2">
                                             <Tooltip text={lang === 'de' ? 'Referenzbild' : 'Add Reference'}>
                                                 <button
@@ -704,9 +700,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
                                                 >
                                                     <Pen className="w-4 h-4" />
-                                                                </button>
+                                                </button>
                                             </Tooltip>
+                                        </div>
 
+                                        {/* Quality Dropdown + Generate */}
+                                        <div className="ml-auto flex items-center gap-3">
                                             {/* Quality Dropdown */}
                                             <div className="relative shrink-0">
                                                 <button
@@ -719,7 +718,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 {isQualityOpen && (
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
-                                                        <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                                                        <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
                                                             {/* Resolution + Price */}
                                                             {(['1k', '2k', '4k'] as const).map(res => {
                                                                 const model = qualityMode.startsWith('pro') ? 'pro' : 'nb2';
@@ -760,55 +759,59 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     </>
                                                 )}
                                             </div>
-                                        </div>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
-                                        />
 
-                                        {/* Generate Button — icon-only when sidesheet is narrow */}
-                                        {width && parseInt(width) < 340 ? (
-                                            <RoundIconButton
-                                                icon={selectedImage?.isGenerating
-                                                    ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
-                                                    : <Play className="w-[18px] h-[18px]" />
-                                                }
-                                                onClick={handleGenerate}
-                                                disabled={selectedImage?.isGenerating}
-                                                variant="primary"
-                                                tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
                                             />
-                                        ) : (
-                                            <Button
-                                                onClick={handleGenerate}
-                                                disabled={selectedImage?.isGenerating}
-                                                variant="primary"
-                                                size="m"
-                                                className="px-5 shrink-0"
-                                            >
-                                                {selectedImage?.isGenerating ? (
-                                                    <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
-                                                ) : (
-                                                    t('generate')
-                                                )}
-                                            </Button>
-                                        )}
+
+                                            {/* Generate Button — icon-only when sidesheet is very narrow */}
+                                            {width && parseInt(width) < 280 ? (
+                                                <RoundIconButton
+                                                    icon={selectedImage?.isGenerating
+                                                        ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                                        : <Play className="w-[18px] h-[18px]" />
+                                                    }
+                                                    onClick={handleGenerate}
+                                                    disabled={selectedImage?.isGenerating}
+                                                    variant="primary"
+                                                    tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
+                                                />
+                                            ) : (
+                                                <Button
+                                                    onClick={handleGenerate}
+                                                    disabled={selectedImage?.isGenerating}
+                                                    variant="primary"
+                                                    size="m"
+                                                    className="px-5 shrink-0"
+                                                >
+                                                    {selectedImage?.isGenerating ? (
+                                                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                                    ) : (
+                                                        t('generate')
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
+                            </section>
 
                                 {/* ── PRESETS Section ── */}
-                                <div className="!mt-12 text-zinc-800 dark:text-zinc-200">
-                                    <div className="flex items-center justify-between px-4 py-3 relative" ref={presetsMenuRef}>
+                                <div className="mt-auto pt-2 text-zinc-800 dark:text-zinc-200">
+                                    <div className="flex items-center gap-1.5 py-3 relative" ref={presetsMenuRef}>
                                         <Eyebrow muted>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
-                                        <RoundIconButton
-                                            icon={<MoreHorizontal className="w-4 h-4" />}
-                                            onClick={() => setIsPresetsMenuOpen(p => !p)}
-                                            variant="ghost"
-                                            active={isPresetsMenuOpen}
-                                        />
+                                        <Tooltip text={lang === 'de' ? 'Vorlagen verwalten' : 'Manage presets'}>
+                                            <RoundIconButton
+                                                icon={<MoreHorizontal className="w-4 h-4" />}
+                                                onClick={() => setIsPresetsMenuOpen(p => !p)}
+                                                variant="ghost"
+                                                active={isPresetsMenuOpen}
+                                            />
+                                        </Tooltip>
 
                                         {isPresetsMenuOpen && (
                                             <div className="absolute top-10 right-0 z-[60]">
@@ -838,42 +841,24 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 overflow-hidden rounded-3xl">
+                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
                                         {displayTemplates.length === 0 && (
                                             <div className="py-2 px-4 text-[12px] text-zinc-400">{lang === 'de' ? 'Keine Einträge' : 'No entries'}</div>
                                         )}
-                                        {displayTemplates.map((tpl, i) => {
-                                            const isFirst = i === 0;
-                                            const isLast = i === displayTemplates.length - 1;
-                                            const radius = isFirst && isLast ? 'rounded-3xl' : isFirst ? 'rounded-t-[16px] rounded-b-none' : isLast ? 'rounded-t-none rounded-b-[16px]' : 'rounded-none';
-                                            return (
-                                                <button
-                                                    key={tpl.id}
-                                                    onClick={() => handleSelectTemplate(tpl)}
-                                                    className={`flex items-center justify-between w-full px-4 py-3 transition-all duration-150 group bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 ${radius} ${!isLast ? 'border-b-2 border-white dark:border-zinc-950' : ''}`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                        <span className="text-[12.5px] font-medium truncate max-w-[180px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
-                                                            {tpl.title}
-                                                        </span>
-                                                    </div>
-                                                    <RoundIconButton
-                                                        icon={<MoreHorizontal className="w-4 h-4" />}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingTemplate(tpl);
-                                                            setIsPresetModalOpen(true);
-                                                        }}
-                                                        variant="ghost"
-                                                        className={isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}
-                                                    />
-                                                </button>
-                                            );
-                                        })}
+                                        {displayTemplates.map((tpl) => (
+                                            <button
+                                                key={tpl.id}
+                                                onClick={() => handleSelectTemplate(tpl)}
+                                                className="flex items-center gap-2 px-3 py-2 rounded-full bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 group text-[12px] font-medium"
+                                            >
+                                                {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
+                                                <span className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                                                    {tpl.title}
+                                                </span>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            </section>
                     </>
                 </div>
             </div>

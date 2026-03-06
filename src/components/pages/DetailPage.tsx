@@ -288,19 +288,19 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     style={isMobile
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
-                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width) + 64}px`
-                                : `${window.innerWidth + 64}px` // square fallback for images with missing dimensions
+                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width) + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
+                                : `${window.innerWidth + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
                         }
                         : undefined
                     }
                 >
-                    {/* Nav Arrows — desktop only, visible on hover */}
-                    {idx > 0 && (
+                    {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
+                    {idx > 0 && state.sideSheetMode !== 'brush' && (
                         <button onClick={() => onSelectImage(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
-                    {idx < images.length - 1 && (
+                    {idx < images.length - 1 && state.sideSheetMode !== 'brush' && (
                         <button onClick={() => onSelectImage(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronRight className="w-5 h-5" />
                         </button>
@@ -388,7 +388,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps */}
-                    <div className="h-16 shrink-0 relative z-30 w-full overflow-visible">
+                    <div className={`${state.sideSheetMode === 'brush' ? 'h-16' : 'h-0'} md:h-16 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                             {images.map(i => {
