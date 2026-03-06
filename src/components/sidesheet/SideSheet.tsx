@@ -595,7 +595,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                     e.stopPropagation();
                                                                     toggleControlOption(ctrl.id, opt.value);
                                                                 }}
-                                                                className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 ' + Theme.Effects.ShadowSm : 'bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+                                                                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 ' + Theme.Effects.ShadowSm : 'bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
                                                             >
                                                                 {opt.label}
                                                             </button>
