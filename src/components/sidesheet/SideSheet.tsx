@@ -849,7 +849,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <button
                                                 key={tpl.id}
                                                 onClick={() => handleSelectTemplate(tpl)}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-400/15 dark:bg-orange-500/15 hover:bg-orange-400/25 dark:hover:bg-orange-500/25 transition-all duration-150 group text-[12px] font-medium"
+                                                className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-400/10 dark:bg-orange-500/10 hover:bg-orange-400/15 dark:hover:bg-orange-500/15 transition-all duration-150 group text-[12px] font-medium"
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
                                                 <span className="text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300">
