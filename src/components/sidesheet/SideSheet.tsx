@@ -813,10 +813,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <button
                                                 key={tpl.id}
                                                 onClick={() => handleSelectTemplate(tpl)}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-400/10 dark:bg-orange-500/10 hover:bg-orange-400/15 dark:hover:bg-orange-500/15 transition-all duration-150 group text-[12px] font-medium"
+                                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 group text-[12px] font-medium"
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                <span className="text-orange-600/60 dark:text-orange-400/60 group-hover:text-orange-600 dark:group-hover:text-orange-400">
+                                                <span className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
                                                     {tpl.title}
                                                 </span>
                                             </button>
@@ -827,7 +827,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     setEditingTemplate(null);
                                                     setIsPresetModalOpen(true);
                                                 }}
-                                                className="flex items-center justify-center w-9 h-9 rounded-full bg-orange-400/10 dark:bg-orange-500/10 hover:bg-orange-400/15 dark:hover:bg-orange-500/15 transition-all duration-150 text-orange-600 dark:text-orange-400"
+                                                className="flex items-center justify-center px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 text-zinc-500 dark:text-zinc-400"
                                             >
                                                 <MoreHorizontal className="w-4 h-4" />
                                             </button>
