@@ -802,44 +802,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                                 {/* ── PRESETS Section ── */}
                                 <div className="mt-auto pt-2 text-zinc-800 dark:text-zinc-200">
-                                    <div className="flex items-center gap-1.5 py-3 relative" ref={presetsMenuRef}>
-                                        <Eyebrow muted>{showRecentPresets ? (lang === 'de' ? 'Zuletzt verwendet' : 'Recently used') : (lang === 'de' ? 'Vorlagen' : 'Presets')}</Eyebrow>
-                                        <Tooltip text={lang === 'de' ? 'Vorlagen verwalten' : 'Manage presets'}>
-                                            <RoundIconButton
-                                                icon={<MoreHorizontal className="w-4 h-4" />}
-                                                onClick={() => setIsPresetsMenuOpen(p => !p)}
-                                                variant="ghost"
-                                                active={isPresetsMenuOpen}
-                                            />
-                                        </Tooltip>
-
-                                        {isPresetsMenuOpen && (
-                                            <div className="absolute top-10 right-0 z-[60]">
-                                                <DropdownMenu
-                                                    items={[
-                                                        {
-                                                            label: lang === 'de' ? 'Vorlagen' : 'Presets',
-                                                            icon: !showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
-                                                            onClick: () => { setShowRecentPresets(false); setIsPresetsMenuOpen(false); }
-                                                        },
-                                                        {
-                                                            label: lang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
-                                                            icon: showRecentPresets ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
-                                                            onClick: () => { setShowRecentPresets(true); setIsPresetsMenuOpen(false); }
-                                                        },
-                                                        {
-                                                            label: lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets',
-                                                            onClick: () => {
-                                                                setIsPresetsMenuOpen(false);
-                                                                setEditingTemplate(null);
-                                                                setIsPresetModalOpen(true);
-                                                            },
-                                                            separator: true
-                                                        }
-                                                    ]}
-                                                />
-                                            </div>
-                                        )}
+                                    <div className="py-3">
+                                        <Eyebrow muted>{lang === 'de' ? 'Vorlagen' : 'Presets'}</Eyebrow>
                                     </div>
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
                                         {displayTemplates.length === 0 && (
@@ -852,11 +816,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 className="flex items-center gap-2 px-3 py-2 rounded-full bg-orange-400/10 dark:bg-orange-500/10 hover:bg-orange-400/15 dark:hover:bg-orange-500/15 transition-all duration-150 group text-[12px] font-medium"
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                <span className="text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300">
+                                                <span className="text-orange-600/60 dark:text-orange-400/60 group-hover:text-orange-600 dark:group-hover:text-orange-400">
                                                     {tpl.title}
                                                 </span>
                                             </button>
                                         ))}
+                                        <Tooltip text={lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets'}>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingTemplate(null);
+                                                    setIsPresetModalOpen(true);
+                                                }}
+                                                className="flex items-center justify-center w-9 h-9 rounded-full bg-orange-400/10 dark:bg-orange-500/10 hover:bg-orange-400/15 dark:hover:bg-orange-500/15 transition-all duration-150 text-orange-600 dark:text-orange-400"
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+                                        </Tooltip>
                                     </div>
                                 </div>
                     </>
