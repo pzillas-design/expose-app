@@ -78,11 +78,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const mobileDetailMenuRef = useRef<HTMLDivElement>(null);
 
     // Animated credit counter
-    const [displayCredits, setDisplayCredits] = useState(credits);
+    const [displayCredits, setDisplayCredits] = useState<number | null>(null);
+    const isInitialLoadRef = useRef(true);
     const prevCreditsRef = useRef(credits);
     const animRafRef = useRef<number | null>(null);
 
     useEffect(() => {
+        // Initial load: just set the value without animation
+        if (isInitialLoadRef.current) {
+            setDisplayCredits(credits);
+            prevCreditsRef.current = credits;
+            isInitialLoadRef.current = false;
+            return;
+        }
+
+        // Subsequent changes: animate
         const from = prevCreditsRef.current;
         const to = credits;
         if (from === to) return;
@@ -132,7 +142,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isDetail = mode === 'detail';
     const isGerman = lang === 'de';
 
-    const balanceDisplay = user && (
+    const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
             <button
                 onClick={onOpenCredits}
