@@ -150,7 +150,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                             {/* Create New Tile */}
                             <div
                                 ref={createMenuRef}
-                                className="aspect-square cursor-pointer group bg-white dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors relative"
+                                className="aspect-square cursor-pointer group bg-zinc-100/50 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors relative"
                                 onClick={() => setIsCreateMenuOpen(p => !p)}
                             >
                                 <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
