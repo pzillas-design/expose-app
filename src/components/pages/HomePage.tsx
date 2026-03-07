@@ -62,10 +62,11 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                         <div className="flex flex-col items-center justify-center gap-6 mt-16">
                             <Button
                                 onClick={onGetStarted}
-                                variant="primary"
+                                variant="primary-mono"
+                                size="l"
                                 className="scale-125"
                             >
-                                Projekt starten
+                                App starten
                             </Button>
                         </div>
                     </div>

@@ -378,6 +378,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <EditorCanvas
                             width={finalWidth / zoom}
                             height={finalHeight / zoom}
+                            annotationWidth={image.width}
+                            annotationHeight={image.height}
                             zoom={zoom}
                             annotations={image.annotations || []}
                             onChange={(anns) => onUpdateAnnotations(image.id, anns)}

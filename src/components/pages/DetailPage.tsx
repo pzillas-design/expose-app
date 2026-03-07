@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
@@ -80,6 +80,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const img = images.find(i => i.id === selectedId);
     const idx = images.findIndex(i => i.id === selectedId);
     const { confirm } = useItemDialog();
+    const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Track actual image dimensions from the loaded <img> element
     const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
@@ -89,6 +90,47 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             setImgNaturalDims({ width: el.naturalWidth, height: el.naturalHeight });
         }
     }, [selectedId]);
+
+    const logicalDims = useMemo(() => ({
+        width: img?.width || 0,
+        height: img?.height || 0
+    }), [img?.width, img?.height]);
+
+    const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
+
+    const updateDisplayBox = useCallback(() => {
+        const viewport = imageViewportRef.current;
+        if (!viewport || imgNaturalDims.width <= 0 || imgNaturalDims.height <= 0) return;
+
+        const viewportWidth = viewport.clientWidth;
+        const viewportHeight = viewport.clientHeight;
+        if (viewportWidth <= 0 || viewportHeight <= 0) return;
+
+        const scale = Math.min(
+            viewportWidth / imgNaturalDims.width,
+            viewportHeight / imgNaturalDims.height
+        );
+
+        setDisplayBox({
+            width: Math.max(1, Math.round(imgNaturalDims.width * scale)),
+            height: Math.max(1, Math.round(imgNaturalDims.height * scale))
+        });
+    }, [imgNaturalDims.height, imgNaturalDims.width]);
+
+    useEffect(() => {
+        updateDisplayBox();
+        const viewport = imageViewportRef.current;
+        if (!viewport) return;
+
+        const observer = new ResizeObserver(() => updateDisplayBox());
+        observer.observe(viewport);
+        window.addEventListener('resize', updateDisplayBox);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', updateDisplayBox);
+        };
+    }, [updateDisplayBox]);
 
     useEffect(() => {
         if (state.sideSheetMode === 'brush') {
@@ -100,8 +142,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddObjectCenter = (label: string, itemId: string, icon?: string) => {
         if (!img) return;
-        const cx = imgNaturalDims.width / 2;
-        const cy = imgNaturalDims.height / 2;
+        const cx = logicalDims.width / 2;
+        const cy = logicalDims.height / 2;
         const newAnn: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: label, itemId, emoji: icon, color: '#fff', strokeWidth: 0, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newAnn]);
         actions.setMaskTool('select');
@@ -109,8 +151,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddText = () => {
         if (!img) return;
-        const cx = imgNaturalDims.width / 2;
-        const cy = imgNaturalDims.height / 2;
+        const cx = logicalDims.width / 2;
+        const cy = logicalDims.height / 2;
         const newText: any = { id: generateId(), type: 'stamp', x: cx, y: cy, text: '', color: '#fff', strokeWidth: 4, points: [], createdAt: Date.now() };
         actions.handleUpdateAnnotations(img.id, [...(img.annotations || []), newText]);
         actions.setMaskTool('select');
@@ -118,10 +160,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const handleAddShape = (shape: 'rect' | 'circle' | 'line') => {
         if (!img) return;
-        // Use normalized image space (imgNaturalDims.width/height) — consistent regardless of display size
-        const cx = imgNaturalDims.width / 2;
-        const cy = imgNaturalDims.height / 2;
-        const size = Math.min(imgNaturalDims.width, imgNaturalDims.height) * 0.3;
+        // Use the logical image space that is persisted and exported.
+        const cx = logicalDims.width / 2;
+        const cy = logicalDims.height / 2;
+        const size = Math.min(logicalDims.width, logicalDims.height) * 0.3;
         const half = size / 2;
         let newShape: any;
         if (shape === 'line') {
@@ -329,69 +371,64 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         )}
 
-                        {/* Sizing wrapper: absolute inset-0 gives definite dimensions for image centering */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            {/* Blurry Placeholder (Thumb) */}
-                            {img.thumbSrc && !isMainLoaded && (
-                                <img
-                                    src={img.thumbSrc}
-                                    className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none"
-                                    alt=""
-                                />
-                            )}
-
-                            {/* Main Image */}
-                            <img
-                                id={`detail-img-${img.id}`}
-                                key={img.id}
-                                src={img.src}
-                                alt={img.title}
-                                onLoad={(e) => {
-                                    const imgEl = e.target as HTMLImageElement;
-                                    setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
-                                    setLoadedImageId(img.id);
-                                }}
-                                className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
-                                style={{ objectFit: 'contain' }}
-                            />
-
-                            {/* Generating skeleton + progress bar */}
-                            {img.isGenerating && (
-                                <GeneratingOverlay
-                                    startTime={img.generationStartTime}
-                                    duration={img.estimatedDuration || 23000}
-                                />
-                            )}
-
-                            {/* EditorCanvas Overlay — matches image contain sizing with aspect-ratio */}
-                            {!img.isGenerating && isMainLoaded && imgNaturalDims.width > 0 && (
-                                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-                                    <div
-                                        className="relative pointer-events-auto"
-                                        style={{
-                                            aspectRatio: `${imgNaturalDims.width} / ${imgNaturalDims.height}`,
-                                            width: '100%',
-                                            maxHeight: '100%',
-                                            flexShrink: 0,
-                                        }}
-                                    >
-                                        <EditorCanvas
-                                            width={imgNaturalDims.width}
-                                            height={imgNaturalDims.height}
-                                            zoom={1}
-                                            annotations={img.annotations || []}
-                                            onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
-                                            brushSize={state.brushSize}
-                                            activeTab={state.sideSheetMode === 'brush' ? 'brush' : 'none'}
-                                            maskTool={state.maskTool}
-                                            activeShape={state.activeShape}
-                                            isBrushResizing={state.isBrushResizing}
-                                            isActive={state.sideSheetMode === 'brush'}
-                                            activeAnnotationId={state.activeAnnotationId}
-                                            onActiveAnnotationChange={actions.onActiveAnnotationChange}
-                                            t={t}
+                        {/* Sizing wrapper: image and annotations share the exact same fitted box */}
+                        <div ref={imageViewportRef} className="absolute inset-0 flex items-center justify-center">
+                            {displayBox.width > 0 && displayBox.height > 0 && (
+                                <div
+                                    className="relative shrink-0"
+                                    style={{ width: displayBox.width, height: displayBox.height }}
+                                >
+                                    {img.thumbSrc && !isMainLoaded && (
+                                        <img
+                                            src={img.thumbSrc}
+                                            className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none"
+                                            alt=""
                                         />
-                                    </div>
+                                    )}
+
+                                    <img
+                                        id={`detail-img-${img.id}`}
+                                        key={img.id}
+                                        src={img.src}
+                                        alt={img.title}
+                                        onLoad={(e) => {
+                                            const imgEl = e.target as HTMLImageElement;
+                                            setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
+                                            setLoadedImageId(img.id);
+                                        }}
+                                        className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                        style={{ objectFit: 'contain' }}
+                                    />
+
+                                    {img.isGenerating && (
+                                        <GeneratingOverlay
+                                            startTime={img.generationStartTime}
+                                            duration={img.estimatedDuration || 23000}
+                                        />
+                                    )}
+
+                                    {!img.isGenerating && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
+                                        <div className="absolute inset-0 z-20 pointer-events-auto">
+                                            <EditorCanvas
+                                                width={logicalDims.width}
+                                                height={logicalDims.height}
+                                                annotationWidth={logicalDims.width}
+                                                annotationHeight={logicalDims.height}
+                                                zoom={1}
+                                                annotations={img.annotations || []}
+                                                onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
+                                                brushSize={state.brushSize}
+                                                activeTab={state.sideSheetMode === 'brush' ? 'brush' : 'none'}
+                                                maskTool={state.maskTool}
+                                                activeShape={state.activeShape}
+                                                isBrushResizing={state.isBrushResizing}
+                                                isActive={state.sideSheetMode === 'brush'}
+                                                activeAnnotationId={state.activeAnnotationId}
+                                                onActiveAnnotationChange={actions.onActiveAnnotationChange}
+                                                t={t}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>{/* closes sizing wrapper */}

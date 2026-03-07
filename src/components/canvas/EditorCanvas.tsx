@@ -81,10 +81,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         setInternalActiveMaskId(id);
     };
 
-    // Stable annotation coordinate space (CanvasImage.width/height, ~512px normalized)
-    // Using this instead of display width/height prevents chip drift on layout changes
+    // Stable logical annotation coordinate space (CanvasImage.width/height, ~512px normalized).
+    // CSS scales the canvas to the currently displayed image box.
     const annW = annotationWidth && annotationWidth > 0 ? annotationWidth : width;
     const annH = annotationHeight && annotationHeight > 0 ? annotationHeight : height;
+    const getRectPoints = (ann: AnnotationObject) => {
+        if (ann.points && ann.points.length >= 4) return ann.points;
+        const x = ann.x || 0;
+        const y = ann.y || 0;
+        const w = ann.width || 0;
+        const h = ann.height || 0;
+        return [
+            { x, y },
+            { x: x + w, y },
+            { x: x + w, y: y + h },
+            { x, y: y + h }
+        ];
+    };
 
     const [isHovering, setIsHovering] = useState(false);
 
@@ -99,7 +112,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const [dragState, setDragState] = useState<{
         id: string;
-        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 'rotate' | 'vertex';
+        mode: 'move' | 'tl' | 'tr' | 'bl' | 'br' | 'n' | 'e' | 's' | 'w' | 'rotate' | 'vertex';
         vertexIndex?: number;
         startX: number;
         startY: number;
@@ -121,8 +134,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
 
-        // Canvas renders in annotation space directly (width = annW = img.width, scaleX = 1)
-        // CSS scales the canvas element to fill its container
+        // Render into the logical annotation space; CSS maps it onto the visible image box.
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.scale(RES_SCALE, RES_SCALE);
@@ -146,10 +158,11 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 ctx.lineWidth = ann.strokeWidth || 4;
 
                 if (ann.shapeType === 'rect') {
-                    if (ann.points && ann.points.length >= 3) {
+                    const rectPoints = getRectPoints(ann);
+                    if (rectPoints.length >= 3) {
                         ctx.beginPath();
-                        ctx.moveTo(ann.points[0].x, ann.points[0].y);
-                        for (let i = 1; i < ann.points.length; i++) ctx.lineTo(ann.points[i].x, ann.points[i].y);
+                        ctx.moveTo(rectPoints[0].x, rectPoints[0].y);
+                        for (let i = 1; i < rectPoints.length; i++) ctx.lineTo(rectPoints[i].x, rectPoints[i].y);
                         ctx.closePath();
                         ctx.fill();
                         ctx.stroke();
@@ -183,17 +196,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             for (let i = 1; i < currentPathRef.current.length; i++) ctx.lineTo(currentPathRef.current[i].x, currentPathRef.current[i].y);
             ctx.stroke();
         }
-    }, [annotations, isDrawing, width, activeTab, maskTool]);
+    }, [annotations, isDrawing, annW, annH, activeTab, maskTool]);
 
-    useEffect(() => { renderCanvas(); }, [renderCanvas, width, height]);
+    useEffect(() => { renderCanvas(); }, [renderCanvas, annW, annH]);
 
     useEffect(() => {
         if (canvasRef.current) {
-            canvasRef.current.width = width * RES_SCALE;
-            canvasRef.current.height = height * RES_SCALE;
+            canvasRef.current.width = annW * RES_SCALE;
+            canvasRef.current.height = annH * RES_SCALE;
             renderCanvas();
         }
-    }, [width, height, renderCanvas]);
+    }, [annW, annH, renderCanvas]);
 
     // Returns coordinates in normalized annotation space (annW × annH)
     const getCoordinates = (clientX: number, clientY: number) => {
@@ -228,7 +241,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             // Compute normalized brush size: brushSize (display px) → annotation space
             if (canvasRef.current) {
                 const rect = canvasRef.current.getBoundingClientRect();
-                brushSizeNormalizedRef.current = rect.width > 0 ? brushSize * (annW / rect.width) : brushSize;
+                const scaleX = rect.width > 0 ? annW / rect.width : 1;
+                const scaleY = rect.height > 0 ? annH / rect.height : 1;
+                brushSizeNormalizedRef.current = brushSize * ((scaleX + scaleY) / 2);
             }
 
             setIsDrawing(true);
@@ -278,15 +293,65 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 }
 
                 // Resize Logic
-                if (['tl', 'tr', 'bl', 'br'].includes(dragState.mode)) {
+                if (['tl', 'tr', 'bl', 'br', 'n', 'e', 's', 'w'].includes(dragState.mode)) {
                     const ix = dragState.initialX;
                     const iy = dragState.initialY;
                     const iw = dragState.initialW;
                     const ih = dragState.initialH;
-
-                    let nx = ix, ny = iy, nw = iw, nh = ih;
                     const dx = x - dragState.startX;
                     const dy = y - dragState.startY;
+
+                    if (ann.shapeType === 'circle') {
+                        let nx = ix;
+                        let ny = iy;
+                        let nw = iw;
+                        let nh = ih;
+
+                        if (dragState.mode === 'e') {
+                            nw = iw + dx;
+                        } else if (dragState.mode === 'w') {
+                            nx = ix + dx;
+                            nw = iw - dx;
+                        } else if (dragState.mode === 's') {
+                            nh = ih + dy;
+                        } else if (dragState.mode === 'n') {
+                            ny = iy + dy;
+                            nh = ih - dy;
+                        } else if (dragState.mode === 'br') {
+                            nw = iw + dx;
+                            nh = ih + dy;
+                        } else if (dragState.mode === 'bl') {
+                            nx = ix + dx;
+                            nw = iw - dx;
+                            nh = ih + dy;
+                        } else if (dragState.mode === 'tr') {
+                            ny = iy + dy;
+                            nh = ih - dy;
+                            nw = iw + dx;
+                        } else if (dragState.mode === 'tl') {
+                            nx = ix + dx;
+                            nw = iw - dx;
+                            ny = iy + dy;
+                            nh = ih - dy;
+                        }
+
+                        if (nw < 10) {
+                            if (dragState.mode === 'w' || dragState.mode === 'bl' || dragState.mode === 'tl') {
+                                nx = ix + iw - 10;
+                            }
+                            nw = 10;
+                        }
+                        if (nh < 10) {
+                            if (dragState.mode === 'n' || dragState.mode === 'tr' || dragState.mode === 'tl') {
+                                ny = iy + ih - 10;
+                            }
+                            nh = 10;
+                        }
+
+                        return { ...ann, x: nx, y: ny, width: nw, height: nh };
+                    }
+
+                    let nx = ix, ny = iy, nw = iw, nh = ih;
 
                     if (dragState.mode === 'br') {
                         nw = iw + dx;
@@ -326,11 +391,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         if (cursorRef.current && containerRef.current && activeTab === 'brush' && maskTool === 'brush') {
             const rect = containerRef.current.getBoundingClientRect();
             const cx = clientX - rect.left; const cy = clientY - rect.top;
-            // Compute display px size of brush from live container dimensions
-            const displayScale = rect.width > 0 ? rect.width / annW : 1;
-            const cursorPx = brushSize * displayScale;
-            cursorRef.current.style.width = `${cursorPx}px`;
-            cursorRef.current.style.height = `${cursorPx}px`;
+            // brushSize is already expressed in on-screen pixels, so the preview
+            // should match it directly instead of being scaled a second time.
+            cursorRef.current.style.width = `${brushSize}px`;
+            cursorRef.current.style.height = `${brushSize}px`;
             cursorRef.current.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
         }
 
@@ -384,14 +448,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
             {/* Sticky Brush Preview when resizing */}
             {activeTab === 'brush' && isBrushResizing && (() => {
-                const cw = containerRef.current?.getBoundingClientRect().width ?? annW;
-                const ch = containerRef.current?.getBoundingClientRect().height ?? annH;
-                const displayScale = cw / annW;
-                const px = brushSize * displayScale;
                 return (
                     <div
                         className="absolute z-50 rounded-full border border-white pointer-events-none"
-                        style={{ width: px, height: px, left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                        style={{ width: brushSize, height: brushSize, left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
                     />
                 );
             })()}
@@ -403,16 +463,24 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             {annotations.map(ann => {
                 const isEditMode = activeTab === 'brush';
                 const isActiveItem = currentActiveId === ann.id;
+                const getPointsCenter = (points: { x: number; y: number }[]) => {
+                    const minX = Math.min(...points.map(p => p.x));
+                    const minY = Math.min(...points.map(p => p.y));
+                    const maxX = Math.max(...points.map(p => p.x));
+                    const maxY = Math.max(...points.map(p => p.y));
+                    return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+                };
 
                 if (ann.type === 'shape') {
                     if (ann.shapeType === 'rect') {
-                        const points = ann.points || [];
+                        const points = getRectPoints(ann);
                         const xs = points.map(p => p.x);
                         const ys = points.map(p => p.y);
                         const minX = Math.min(...xs);
                         const maxX = Math.max(...xs);
                         const minY = Math.min(...ys);
                         const maxY = Math.max(...ys);
+                        const center = getPointsCenter(points);
 
                         return (
                             <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
@@ -438,7 +506,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
-                                            style={{ left: `${(maxX / annW) * 100}%`, top: `${(minY / annH) * 100}%`, transform: 'translate(10px, -30px)' }}
+                                            style={{ left: `${(center.x / annW) * 100}%`, top: `${(center.y / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
                                         </button>
@@ -451,6 +519,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     if (ann.shapeType === 'line') {
                         const p0 = ann.points[0];
                         const p1 = ann.points[1];
+                        const centerX = (p0.x + p1.x) / 2;
+                        const centerY = (p0.y + p1.y) / 2;
                         return (
                             <div key={ann.id} className={`absolute pointer-events-none annotation-ui ${isActiveItem ? 'z-50' : 'z-20'}`} style={{ left: 0, top: 0, width: '100%', height: '100%' }}>
                                 <svg width="100%" height="100%" viewBox={`0 0 ${annW} ${annH}`} className="overflow-visible pointer-events-none absolute inset-0">
@@ -475,7 +545,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             style={{ left: `${(p1.x / annW) * 100}%`, top: `${(p1.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
                                             onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
-                                            style={{ left: `${(Math.max(p0.x, p1.x) / annW) * 100}%`, top: `${(Math.min(p0.y, p1.y) / annH) * 100}%`, transform: 'translate(10px, -30px)' }}
+                                            style={{ left: `${(centerX / annW) * 100}%`, top: `${(centerY / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
                                         </button>
@@ -520,10 +590,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     <>
                                         {/* 4 Cardinal Handles for Circle Resize (top, right, bottom, left) */}
                                         {[
-                                            { x: cx, y: cy - ry, cursor: 'n-resize', mode: 'tr' },
-                                            { x: cx + rx, y: cy, cursor: 'e-resize', mode: 'br' },
-                                            { x: cx, y: cy + ry, cursor: 's-resize', mode: 'bl' },
-                                            { x: cx - rx, y: cy, cursor: 'w-resize', mode: 'tl' }
+                                            { x: cx, y: cy - ry, cursor: 'n-resize', mode: 'n' },
+                                            { x: cx + rx, y: cy, cursor: 'e-resize', mode: 'e' },
+                                            { x: cx, y: cy + ry, cursor: 's-resize', mode: 's' },
+                                            { x: cx - rx, y: cy, cursor: 'w-resize', mode: 'w' }
                                         ].map((h, i) => (
                                             <div key={i}
                                                 className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full z-[60] pointer-events-auto "
@@ -538,7 +608,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         ))}
 
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
-                                            style={{ left: `${(x + w) / annW * 100}%`, top: `${y / annH * 100}%`, transform: 'translate(10px, -30px)' }}
+                                            style={{ left: `${(cx / annW) * 100}%`, top: `${(cy / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                             <Trash className="w-4 h-4" />
                                         </button>
@@ -551,6 +621,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                 // Coordinate Calculation for Chips
                 let leftPct = 0, topPct = 0, isTopEdge = false;
+                let maskCenterPct: { left: number; top: number } | null = null;
 
                 if (ann.type === 'stamp') {
                     if (ann.x === undefined || ann.y === undefined) return null;
@@ -558,10 +629,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                     topPct = (ann.y / annH) * 100;
                 } else if (ann.type === 'mask_path') {
                     let minX = Infinity, minY = Infinity;
+                    let maxX = -Infinity, maxY = -Infinity;
                     if (!ann.points || ann.points.length === 0) return null;
-                    ann.points.forEach(p => { if (p.x < minX) minX = p.x; if (p.y < minY) minY = p.y; });
+                    ann.points.forEach(p => {
+                        if (p.x < minX) minX = p.x;
+                        if (p.y < minY) minY = p.y;
+                        if (p.x > maxX) maxX = p.x;
+                        if (p.y > maxY) maxY = p.y;
+                    });
                     leftPct = (minX / annW) * 100;
                     topPct = (minY / annH) * 100;
+                    maskCenterPct = {
+                        left: (((minX + maxX) / 2) / annW) * 100,
+                        top: (((minY + maxY) / 2) / annH) * 100
+                    };
                     isTopEdge = (minY / annH) < 0.1;
                 }
 
@@ -621,8 +702,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     />
                                 </svg>
                                 {isActiveItem && (
-                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-8 h-8"
-                                        style={{ left: `${leftPct}%`, top: `${topPct}%`, transform: 'translate(10px, -30px)' }}
+                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
+                                        style={{ left: `${maskCenterPct?.left ?? leftPct}%`, top: `${maskCenterPct?.top ?? topPct}%`, transform: 'translate(-50%, -50%)' }}
                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                         <Trash className="w-4 h-4" />
                                     </button>

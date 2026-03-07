@@ -122,13 +122,14 @@ export function App() {
     };
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/'));
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
     const outerContainerClasses = isAppLayout
         ? "h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
         ? "flex-1 flex flex-col overflow-hidden pt-14"
-        : "flex-1 flex flex-col pt-14";
+        : "flex-1 flex flex-col";
 
     const showGlobalNavbar = true;
 
@@ -231,10 +232,21 @@ export function App() {
             ) : (
                 <PublicNavbar
                     user={user}
+                    currentLang={state.currentLang}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
                     }}
+                    onStartApp={() => {
+                        if (user) {
+                            navigate('/');
+                            return;
+                        }
+                        setAuthModalMode('signup');
+                        setIsAuthModalOpen(true);
+                    }}
+                    onOpenSettings={() => setIsSettingsModalOpen(true)}
+                    onSignOut={handleSignOut}
                     t={t}
                 />
             )}
@@ -283,6 +295,26 @@ export function App() {
                                 />
                             )
                         } />
+                        <Route path="/about" element={
+                            <HomePage
+                                user={user}
+                                userProfile={userProfile}
+                                credits={credits}
+                                t={t}
+                                onSignIn={() => {
+                                    setAuthModalMode('signin');
+                                    setIsAuthModalOpen(true);
+                                }}
+                                onGetStarted={() => {
+                                    if (user) {
+                                        navigate('/');
+                                        return;
+                                    }
+                                    setAuthModalMode('signup');
+                                    setIsAuthModalOpen(true);
+                                }}
+                            />
+                        } />
 
                         <Route path="/image/:id" element={
                             <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => {
@@ -317,6 +349,7 @@ export function App() {
                             user={user}
                             userProfile={userProfile}
                             credits={credits}
+                            currentLang={state.currentLang}
                             t={t}
                             onCreateNew={() => setIsCreationModalOpen(true)}
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
@@ -329,6 +362,7 @@ export function App() {
                             onCreateNew={() => setIsCreationModalOpen(true)}
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
+                        <Route path="/legal" element={<Navigate to="/impressum" replace />} />
                         <Route path="/s/:slug" element={<SharedTemplatePage />} />
 
                         {/* Legacy Redirects */}

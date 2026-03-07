@@ -211,12 +211,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'primary-mono' | 'secondary' | 'danger' | 'ghost' | 'white' | 'black';
     size?: 's' | 'm' | 'l';
     icon?: React.ReactNode;
+    iconPosition?: 'left' | 'right';
     isLoading?: boolean;
     tooltip?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children, variant = 'primary', size = 'm', icon, isLoading, className = '', disabled, tooltip, ...props
+    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, ...props
 }) => {
     // Structural classes — typography from Typo.ButtonLabel
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 text-[10px] font-bold uppercase tracking-widest`;
@@ -246,8 +247,9 @@ export const Button: React.FC<ButtonProps> = ({
             {...props}
         >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {!isLoading && icon && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
+            {!isLoading && icon && iconPosition === 'left' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {children}
+            {!isLoading && icon && iconPosition === 'right' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
         </button>
     );
 

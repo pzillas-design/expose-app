@@ -1,5 +1,43 @@
 import { AnnotationObject } from '../types';
 
+const getRectPoints = (ann: AnnotationObject) => {
+    if (ann.points && ann.points.length > 0) return ann.points;
+    const x = ann.x || 0;
+    const y = ann.y || 0;
+    const width = ann.width || 0;
+    const height = ann.height || 0;
+    return [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height }
+    ];
+};
+
+const getShapeLabelAnchor = (ann: AnnotationObject) => {
+    if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
+        return {
+            x: (ann.points[0].x + ann.points[1].x) / 2,
+            y: (ann.points[0].y + ann.points[1].y) / 2
+        };
+    }
+
+    if (ann.shapeType === 'circle') {
+        return {
+            x: (ann.x || 0) + (ann.width || 0) / 2,
+            y: (ann.y || 0) + (ann.height || 0) / 2
+        };
+    }
+
+    const points = getRectPoints(ann);
+    if (points.length === 0) return null;
+
+    return {
+        x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+        y: points.reduce((sum, point) => sum + point.y, 0) / points.length
+    };
+};
+
 /**
  * Generates a composite "Annotation Image" from the original image and current annotations.
  * Following logic from generation_logic.md:
@@ -25,6 +63,7 @@ export async function generateAnnotationImage(
     // Calculate scaling factors from canvas dimensions to real dimensions
     const scaleX = dimensions.width / canvasDimensions.width;
     const scaleY = dimensions.height / canvasDimensions.height;
+    const strokeScale = (scaleX + scaleY) / 2;
 
     console.log('[AnnotationUtils] Scaling coordinates:', {
         canvasDims: canvasDimensions,
@@ -58,35 +97,35 @@ export async function generateAnnotationImage(
 
     // First: Draw shapes
     for (const ann of annotations) {
-        if (ann.type === 'shape' && ann.points && ann.points.length > 0) {
+        if (ann.type === 'shape') {
             ctx.strokeStyle = ANNOTATION_COLOR;
-            ctx.lineWidth = ann.strokeWidth || 4;
+            ctx.lineWidth = (ann.strokeWidth || 4) * strokeScale;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
-            if (ann.shapeType === 'rect' && ann.points.length >= 2) {
-                // Draw rectangle - scale coordinates
-                const scaledPoints = ann.points.map(scalePoint);
+            if (ann.shapeType === 'rect') {
+                const rectPoints = getRectPoints(ann);
+                const scaledPoints = rectPoints.map(scalePoint);
                 const minX = Math.min(...scaledPoints.map(p => p.x));
                 const minY = Math.min(...scaledPoints.map(p => p.y));
                 const maxX = Math.max(...scaledPoints.map(p => p.x));
                 const maxY = Math.max(...scaledPoints.map(p => p.y));
                 ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
-            } else if (ann.shapeType === 'circle' && ann.points.length >= 2) {
-                // Draw circle - scale coordinates
-                const p0 = scalePoint(ann.points[0]);
-                const p1 = scalePoint(ann.points[1]);
-                const centerX = (p0.x + p1.x) / 2;
-                const centerY = (p0.y + p1.y) / 2;
-                const radius = Math.sqrt(
-                    Math.pow(p1.x - p0.x, 2) +
-                    Math.pow(p1.y - p0.y, 2)
-                ) / 2;
+            } else if (ann.shapeType === 'circle') {
+                const centerX = ((ann.x || 0) + (ann.width || 0) / 2) * scaleX;
+                const centerY = ((ann.y || 0) + (ann.height || 0) / 2) * scaleY;
+                const radiusX = Math.abs((ann.width || 0) / 2) * scaleX;
+                const radiusY = Math.abs((ann.height || 0) / 2) * scaleY;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
                 ctx.stroke();
-            } else {
-                // Draw polygon - scale coordinates
+            } else if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
+                const scaledPoints = ann.points.map(scalePoint);
+                ctx.beginPath();
+                ctx.moveTo(scaledPoints[0].x, scaledPoints[0].y);
+                ctx.lineTo(scaledPoints[1].x, scaledPoints[1].y);
+                ctx.stroke();
+            } else if (ann.points && ann.points.length > 0) {
                 const scaledPoints = ann.points.map(scalePoint);
                 ctx.beginPath();
                 ctx.moveTo(scaledPoints[0].x, scaledPoints[0].y);
@@ -106,7 +145,7 @@ export async function generateAnnotationImage(
             const scaledPoints = ann.points.map(scalePoint);
             ctx.beginPath();
             ctx.strokeStyle = ANNOTATION_COLOR;
-            ctx.lineWidth = (ann.strokeWidth || 4) * scaleX; // Scale stroke width too
+            ctx.lineWidth = (ann.strokeWidth || 4) * strokeScale;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.moveTo(scaledPoints[0].x, scaledPoints[0].y);
@@ -163,11 +202,12 @@ export async function generateAnnotationImage(
         }
 
         // Also draw text labels for shapes
-        if (ann.type === 'shape' && ann.text && ann.points && ann.points.length > 0) {
-            // Calculate center of shape - scale coordinates
-            const scaledPoints = ann.points.map(scalePoint);
-            const centerX = scaledPoints.reduce((sum, p) => sum + p.x, 0) / scaledPoints.length;
-            const centerY = scaledPoints.reduce((sum, p) => sum + p.y, 0) / scaledPoints.length;
+        if (ann.type === 'shape' && ann.text) {
+            const labelAnchor = getShapeLabelAnchor(ann);
+            if (!labelAnchor) continue;
+            const center = scalePoint(labelAnchor);
+            const centerX = center.x;
+            const centerY = center.y;
 
             const fontSize = 20 * scaleX; // Scale font size
             ctx.font = `bold ${fontSize}px sans-serif`;

@@ -171,45 +171,24 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         >
             {isGerman ? 'Abbrechen' : 'Cancel'}
         </button>
-    ) : (
-        user && (
-            <div className="relative" ref={createDropdownRef}>
-                <RoundIconButton
-                    icon={<Plus className="w-5 h-5" />}
-                    onClick={() => setIsCreateOpen(!isCreateOpen)}
-                    variant="ghost"
-                    active={isCreateOpen}
-                />
-                {isCreateOpen && (
-                    <div className="absolute top-full left-0 mt-2 z-50">
-                        <DropdownMenu
-                            items={[
-                                { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); } },
-                            ]}
-                        />
-                    </div>
-                )}
-            </div>
-        )
-    );
+    ) : null;
 
     const centerContent = isSelectMode ? (
         <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-400 tabular-nums">
             {selectedCount} {isGerman ? (selectedCount === 1 ? 'Bild ausgewählt' : 'Bilder ausgewählt') : (selectedCount === 1 ? 'image selected' : 'images selected')}
         </span>
     ) : isDetail && detailInfo ? (
-        <div className="flex items-center gap-1 relative" ref={detailMenuRef}>
+        <div className="flex items-center gap-1.5 relative" ref={detailMenuRef}>
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
                 {detailInfo}
             </span>
-            {/* Desktop-only 3-dot menu in center */}
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
                     onClick={() => setIsDetailMenuOpen(p => !p)}
                     variant="ghost"
                     active={isDetailMenuOpen}
+                    tooltip={isGerman ? 'Menü' : 'Menu'}
                 />
                 {isDetailMenuOpen && (
                     <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
@@ -314,6 +293,25 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </button>
             ) : (
                 <div className="flex items-center gap-3">
+                    <div className="relative" ref={createDropdownRef}>
+                        <RoundIconButton
+                            icon={<Plus className="w-5 h-5" />}
+                            onClick={() => setIsCreateOpen(!isCreateOpen)}
+                            variant="ghost"
+                            active={isCreateOpen}
+                            tooltip={isGerman ? 'Erstellen' : 'Create'}
+                        />
+                        {isCreateOpen && (
+                            <div className="absolute top-full mt-2 right-0 z-50">
+                                <DropdownMenu
+                                    items={[
+                                        { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                        { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); } },
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </div>
                     {balanceDisplay}
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
@@ -321,6 +319,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             onClick={() => setIsGridMenuOpen(p => !p)}
                             variant="ghost"
                             active={isGridMenuOpen}
+                            tooltip={isGerman ? 'Menü' : 'Menu'}
                         />
                         {isGridMenuOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
@@ -328,9 +327,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     items={[
                                         { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: isGerman ? 'Kontakt' : 'Contact', onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); } },
-                                        { label: 'Impressum', onClick: () => { setIsGridMenuOpen(false); window.open('/impressum', '_blank'); } },
-                                        { label: isGerman ? 'Abmelden' : 'Sign out', icon: <LogOut className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); } },
+                                        { label: isGerman ? 'Abmelden' : 'Sign out', onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
                             </div>
@@ -342,7 +340,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     );
 
     return (
-        <header className="absolute top-0 left-0 right-0 h-14 z-50 pointer-events-none">
+        <header className="fixed top-0 left-0 right-0 h-14 z-50 pointer-events-none">
             <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900">
 
                 <div className="flex items-center w-1/3">

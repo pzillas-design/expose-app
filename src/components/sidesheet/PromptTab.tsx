@@ -451,7 +451,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     onClearAnnotations(activeAnns.map(a => a.id));
                                                 }
                                             }}
-                                            className="p-1.5 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                                            className="p-1.5 rounded-full text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-400 dark:hover:text-zinc-500 transition-all opacity-0 group-hover:opacity-100"
                                         >
                                             <X className="w-3.5 h-3.5" />
                                         </button>

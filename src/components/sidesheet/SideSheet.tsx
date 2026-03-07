@@ -636,7 +636,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 onClick={() => onModeChange('brush')}
                                                                 className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
                                                             >
-                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Maske' : 'Mask'}</span>
+                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Pinselstrich' : 'Brush Stroke'}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
