@@ -79,22 +79,20 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     // Animated credit counter
     const [displayCredits, setDisplayCredits] = useState<number | null>(null);
-    const hasLoadedRealValueRef = useRef(credits > 0);
+    const isFirstLoadRef = useRef(true);
     const prevCreditsRef = useRef(credits);
     const animRafRef = useRef<number | null>(null);
 
     useEffect(() => {
-        // Wait for first non-zero value, then show instantly
-        if (!hasLoadedRealValueRef.current) {
-            if (credits > 0) {
-                setDisplayCredits(credits);
-                hasLoadedRealValueRef.current = true;
-                prevCreditsRef.current = credits;
-            }
+        // First load: display instantly without animation
+        if (isFirstLoadRef.current) {
+            setDisplayCredits(credits);
+            isFirstLoadRef.current = false;
+            prevCreditsRef.current = credits;
             return;
         }
 
-        // After first load, animate on changes
+        // Subsequent changes: animate
         const from = prevCreditsRef.current;
         const to = credits;
         if (from === to) return;
