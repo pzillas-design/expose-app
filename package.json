@@ -6,7 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build",
+    "cut:history": "node cut-history.mjs",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
@@ -23,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "@playwright/test": "^1.53.2",
     "@vercel/node": "^5.5.32",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.20",

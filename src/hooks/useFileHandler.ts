@@ -9,9 +9,7 @@ interface UseFileHandlerProps {
     isAuthDisabled: boolean;
     setRows: React.Dispatch<React.SetStateAction<ImageRow[]>>;
     selectMultiple: (ids: string[]) => void;
-    snapToItem: (id: string, instant?: boolean) => void;
     showToast: (msg: string, type: "success" | "error") => void;
-    currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;
     t: (key: any) => string;
 }
@@ -21,9 +19,7 @@ export const useFileHandler = ({
     isAuthDisabled,
     setRows,
     selectMultiple,
-    snapToItem,
     showToast,
-    currentBoardId,
     setIsSettingsOpen,
     t
 }: UseFileHandlerProps) => {
@@ -50,8 +46,7 @@ export const useFileHandler = ({
                 version: 1,
                 isGenerating: true, // This triggers the skeleton/shimmer UI
                 createdAt: Date.now(),
-                updatedAt: Date.now(),
-                boardId: currentBoardId || undefined
+                updatedAt: Date.now()
             };
 
             setRows(prev => [...prev, {
@@ -131,7 +126,6 @@ export const useFileHandler = ({
                                 isGenerating: false,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now(),
-                                boardId: currentBoardId || undefined,
                                 storage_path: '',
                             };
 
@@ -174,7 +168,7 @@ export const useFileHandler = ({
                 })).filter(r => r.items.length > 0));
             });
         }
-    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
+    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, t]);
 
     const processFile = useCallback((file: File) => {
         processFiles([file]);

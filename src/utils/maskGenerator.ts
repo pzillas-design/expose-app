@@ -1,5 +1,43 @@
 import { CanvasImage, AnnotationObject } from '../types';
 
+const getRectPoints = (ann: AnnotationObject) => {
+    if (ann.points && ann.points.length > 0) return ann.points;
+    const x = ann.x || 0;
+    const y = ann.y || 0;
+    const width = ann.width || 0;
+    const height = ann.height || 0;
+    return [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height }
+    ];
+};
+
+const getShapeLabelAnchor = (ann: AnnotationObject) => {
+    if (ann.shapeType === 'line' && ann.points && ann.points.length >= 2) {
+        return {
+            x: (ann.points[0].x + ann.points[1].x) / 2,
+            y: (ann.points[0].y + ann.points[1].y) / 2
+        };
+    }
+
+    if (ann.shapeType === 'circle') {
+        return {
+            x: (ann.x || 0) + (ann.width || 0) / 2,
+            y: (ann.y || 0) + (ann.height || 0) / 2
+        };
+    }
+
+    const points = getRectPoints(ann);
+    if (points.length === 0) return null;
+
+    return {
+        x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+        y: points.reduce((sum, point) => sum + point.y, 0) / points.length
+    };
+};
+
 export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSrc?: string): Promise<string> => {
     if (!img.annotations || img.annotations.length === 0) return '';
 
@@ -36,14 +74,20 @@ export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSr
     // 2.5 Draw Shapes
     img.annotations.forEach(ann => {
         if (ann.type === 'shape') {
-            const lw = Math.max(4, img.width * 0.005);
+            const lw = ann.strokeWidth || Math.max(4, img.width * 0.005);
             ctx.lineWidth = lw;
             ctx.strokeStyle = '#ffffff';
             ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
 
             if (ann.shapeType === 'rect') {
+                const points = getRectPoints(ann);
+                if (points.length < 4) return;
+                const minX = Math.min(...points.map(point => point.x));
+                const minY = Math.min(...points.map(point => point.y));
+                const maxX = Math.max(...points.map(point => point.x));
+                const maxY = Math.max(...points.map(point => point.y));
                 ctx.beginPath();
-                ctx.rect(ann.x || 0, ann.y || 0, ann.width || 0, ann.height || 0);
+                ctx.rect(minX, minY, maxX - minX, maxY - minY);
                 ctx.fill();
                 ctx.stroke();
             } else if (ann.shapeType === 'circle') {
@@ -91,13 +135,10 @@ export const generateMaskFromAnnotations = async (img: CanvasImage, customBaseSr
         let x = 0, y = 0;
         if (ann.type === 'stamp') { x = ann.x!; y = ann.y!; }
         else if (ann.type === 'shape') {
-            if (ann.shapeType === 'line' && ann.points) {
-                x = (ann.points[0].x + ann.points[1].x) / 2;
-                y = (ann.points[0].y + ann.points[1].y) / 2;
-            } else {
-                x = (ann.x || 0) + (ann.width || 0) / 2;
-                y = (ann.y || 0) + (ann.height || 0) / 2;
-            }
+            const labelAnchor = getShapeLabelAnchor(ann);
+            if (!labelAnchor) return;
+            x = labelAnchor.x;
+            y = labelAnchor.y;
         }
         else if (ann.type === 'mask_path') { x = ann.points[0].x; y = ann.points[0].y; }
         else return;

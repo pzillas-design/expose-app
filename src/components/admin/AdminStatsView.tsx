@@ -203,7 +203,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <button
                             onClick={handleSyncPricing}
                             disabled={syncingPricing}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-orange-600 transition-colors disabled:opacity-50"
                             title="Aktuelle Preise von Google API abrufen"
                         >
                             <RefreshCw className={`w-3 h-3 ${syncingPricing ? 'animate-spin' : ''}`} />
@@ -215,7 +215,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             <div key={p.model_name} className="p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1">
                                 <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{p.model_name}</div>
                                 <div className="flex justify-between items-baseline">
-                                    <span className="text-[11px] font-mono text-blue-500">${(parseFloat(p.input_price_per_token) * 1000000).toFixed(2)} / 1M Input</span>
+                                    <span className="text-[11px] font-mono text-orange-500">${(parseFloat(p.input_price_per_token) * 1000000).toFixed(2)} / 1M Input</span>
                                     <span className="text-[11px] font-mono text-amber-500">${(parseFloat(p.output_price_per_token) * 1000000).toFixed(2)} / 1M Output</span>
                                 </div>
                             </div>
@@ -241,13 +241,13 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 <SummaryCard
                     title="Gesamtertrag"
                     value={`${stats.profit.toFixed(2)}€`}
-                    icon={<TrendingUp className="w-4 h-4 text-blue-500" />}
+                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />}
                     sub="Dein Profit nach API-Abzug"
                 />
             </div>
 
             {/* Chart Section */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 ">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className={Typo.H2}>Finanzverlauf (14 Tage)</h3>
                     <div className="flex gap-4">
@@ -324,7 +324,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             </div>
 
             {/* Performance Table */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden ">
                 <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                     <h3 className={Typo.H2}>Performance nach Qualitätsstufe</h3>
                     <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400">
@@ -366,7 +366,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${tier.margin > 50 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                            tier.margin > 20 ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                            tier.margin > 20 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
                                                 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
                                             }`}>
                                             {tier.margin.toFixed(0)}%
@@ -383,7 +383,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 };
 
 const SummaryCard = ({ title, value, icon, sub }: { title: string, value: string, icon: React.ReactNode, sub: string }) => (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 shadow-sm">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 ">
         <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">{title}</span>
             <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">

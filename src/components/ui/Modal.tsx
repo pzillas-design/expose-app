@@ -33,7 +33,7 @@ const maxWidthClasses = {
  * 
  * @example
  * <Modal isOpen={isOpen} onClose={onClose} title="My Modal">
- *   <div className="p-8">Content here</div>
+ * <div className="p-8">Content here</div>
  * </Modal>
  */
 export const Modal: React.FC<ModalProps> = ({
@@ -60,14 +60,17 @@ export const Modal: React.FC<ModalProps> = ({
             {/* Modal Container */}
             <div
                 className={`
-                    relative w-full ${maxWidthClasses[maxWidth]}
-                    ${Theme.Colors.ModalBg}
-                    border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-                    shadow-2xl flex flex-col
-                    animate-in zoom-in-95 duration-200
-                    ${className}
-                `}
+            relative w-full ${maxWidthClasses[maxWidth]}
+            ${Theme.Colors.ModalBg}
+            border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}
+            flex flex-col max-h-[90vh] overflow-hidden
+            animate-in zoom-in-95 duration-200
+            ${Theme.Effects.ShadowLg}
+            ${className}
+        `}
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 {showHeader && (

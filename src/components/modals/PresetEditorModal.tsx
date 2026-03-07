@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
-import { Button, Input, Theme, Typo, IconButton, TextArea } from '@/components/ui/DesignSystem';
-import { X, Trash, Check, Plus, Minus, Settings2, Share2, Pencil } from 'lucide-react';
+import { Button, Input, Theme, Typo, RoundIconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
+import { Trash, Plus, Minus, Settings2, Share2, Pencil, Link as LinkIcon, X } from 'lucide-react';
 import { ShareTemplateModal } from './ShareTemplateModal';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -14,7 +14,10 @@ interface PresetEditorModalProps {
     currentLang?: 'de' | 'en';
     initialTemplate?: PromptTemplate | null;
     existingTemplates?: PromptTemplate[]; // Kept for interface compatibility
-    onSave: (templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => void;
+    onSave: (
+        templates: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[],
+        options?: { closeOnSuccess?: boolean }
+    ) => Promise<PromptTemplate | null>;
     onDelete?: (id: string) => void;
     t: TranslationFunction;
 }
@@ -90,30 +93,30 @@ const LanguageForm = ({
             {showHeader && (
                 <div className={`px-6 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>{lang}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-orange-100 text-orange-800'}`}>{lang}</span>
                 </div>
             )}
 
             <div className={`px-6 pb-32 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
                         {t('title_label')}
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                 </div>
 
                 {/* Prompt */}
                 <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                 </div>
 
                 {/* Controls */}
                 <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
                         {t('variables_label')}
                     </label>
                     <div className="space-y-3">
@@ -122,33 +125,33 @@ const LanguageForm = ({
                                 {editingControlId === ctrl.id ? (
                                     <div
                                         ref={editFormRef}
-                                        className={`p-4 border-2 border-zinc-200 dark:border-zinc-700 ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative ring-4 ring-zinc-100/50 dark:ring-zinc-800/20`}
+                                        className={`p-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] space-y-4 relative overflow-hidden`}
                                     >
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                                 Titel
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                                 Optionen
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-2">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteControl(editingControlId); }}
-                                                className="p-2 text-zinc-400 hover:text-red-500 transition-colors"
+                                                className="p-2 rounded-full text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                                                 title={t('delete')}
                                             >
                                                 <Trash className="w-4 h-4" />
                                             </button>
                                             <div className="flex-1" />
-                                            <Button variant="secondary" onClick={resetForm} className="px-6">
+                                            <Button variant="secondary" onClick={resetForm} className="px-6 rounded-full">
                                                 {t('cancel')}
                                             </Button>
-                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8">
+                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8 rounded-full">
                                                 {t('save')}
                                             </Button>
                                         </div>
@@ -156,13 +159,13 @@ const LanguageForm = ({
                                 ) : (
                                     <div
                                         onClick={() => startEditing(ctrl)}
-                                        className={`flex items-start justify-between p-3 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
+                                        className={`flex items-start justify-between p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
                                             <div className="flex flex-wrap gap-1">
                                                 {ctrl.options.map(o => (
-                                                    <span key={o.id} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                                                    <span key={o.id} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300">
                                                         {o.label}
                                                     </span>
                                                 ))}
@@ -177,33 +180,33 @@ const LanguageForm = ({
                         ))}
 
                         {isAddingControl && !editingControlId ? (
-                            <div className={`p-4 border ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.Radius} space-y-4 shadow-sm relative`}>
+                            <div className={`p-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] space-y-4 relative overflow-hidden`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black`}>
+                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-2">
                                     <div className="flex-1" />
-                                    <Button variant="secondary" onClick={resetForm} className="px-6">
+                                    <Button variant="secondary" onClick={resetForm} className="px-6 rounded-full">
                                         {t('cancel')}
                                     </Button>
-                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8">
+                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8 rounded-full">
                                         {t('add_btn')}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-300 dark:border-zinc-700 ${Theme.Geometry.Radius} text-zinc-500 text-xs ${Theme.Colors.SurfaceHover} transition-colors`}>
-                                    <Plus className="w-3.5 h-3.5" /> {t('add_variable')}
+                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-3 flex items-center justify-center gap-2 border border-transparent bg-zinc-50 dark:bg-zinc-900/30 rounded-full text-zinc-500 font-medium ${Theme.Colors.SurfaceHover} transition-colors hover:text-zinc-900 dark:hover:text-zinc-100`}>
+                                    <Plus className="w-4 h-4" /> {t('add_variable')}
                                 </button>
                             )
                         )}
@@ -236,28 +239,45 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
     const [controlsEn, setControlsEn] = useState<PresetControl[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [savedTemplateForShare, setSavedTemplateForShare] = useState<PromptTemplate | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setTitleDe(''); setPromptDe(''); setControlsDe([]);
             setTitleEn(''); setPromptEn(''); setControlsEn([]);
+            setSavedTemplateForShare(null);
 
             if (mode === 'edit' && initialTemplate) {
-                const isEn = initialTemplate.lang === 'en';
-                if (isEn) {
-                    setTitleEn(initialTemplate.title);
-                    setPromptEn(initialTemplate.prompt);
-                    setControlsEn(initialTemplate.controls || []);
+                // Determine if we should seed the EN or DE form based on the current UI lang
+                // If it's a user preset, we only show one form. It should be populated with the initialTemplate data regardless of its saved lang tag.
+                if (scope === 'user') {
+                    if (currentLang === 'en') {
+                        setTitleEn(initialTemplate.title);
+                        setPromptEn(initialTemplate.prompt);
+                        setControlsEn(initialTemplate.controls || []);
+                    } else {
+                        setTitleDe(initialTemplate.title);
+                        setPromptDe(initialTemplate.prompt);
+                        setControlsDe(initialTemplate.controls || []);
+                    }
                 } else {
-                    setTitleDe(initialTemplate.title);
-                    setPromptDe(initialTemplate.prompt);
-                    setControlsDe(initialTemplate.controls || []);
+                    // Admin mode shows both, populate accordingly
+                    const isEn = initialTemplate.lang === 'en';
+                    if (isEn) {
+                        setTitleEn(initialTemplate.title);
+                        setPromptEn(initialTemplate.prompt);
+                        setControlsEn(initialTemplate.controls || []);
+                    } else {
+                        setTitleDe(initialTemplate.title);
+                        setPromptDe(initialTemplate.prompt);
+                        setControlsDe(initialTemplate.controls || []);
+                    }
                 }
             }
         }
     }, [isOpen, mode, initialTemplate]);
 
-    const handleSave = () => {
+    const handleSave = async (openShareAfterSave = false) => {
         const results: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
         if (scope === 'user') {
@@ -278,7 +298,11 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
-        onSave(results);
+        const saved = await onSave(results, { closeOnSuccess: !openShareAfterSave });
+        if (openShareAfterSave && saved) {
+            setSavedTemplateForShare(saved);
+            setIsShareModalOpen(true);
+        }
     };
 
     const isSaveDisabled = () => {
@@ -298,43 +322,50 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
             <div
                 className={`
                     w-full ${scope === 'admin' ? 'max-w-4xl' : 'max-w-lg'} 
-                    ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-2xl flex flex-col max-h-[90vh]
+                    bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
+                    flex flex-col max-h-[90vh]
                     animate-in zoom-in-95 duration-200
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-6 pb-2 shrink-0">
-                    <div className="flex flex-col gap-1">
-                        <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
-                            {mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}
-                        </h2>
-                    </div>
+                <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
+                    <span className={Typo.H3}>{mode === 'create' ? t('new_preset_title') : t('edit_preset_title')}</span>
                     <div className="flex items-center gap-2">
                         {mode === 'edit' && initialTemplate && (
                             <>
-                                <IconButton
-                                    icon={<Share2 className="w-5 h-5" />}
+                                <RoundIconButton
+                                    icon={<Share2 className="w-4 h-4" />}
                                     onClick={() => setIsShareModalOpen(true)}
                                     tooltip="Teilen"
                                     disabled={!(titleDe || titleEn)}
+                                    variant="ghost"
                                 />
-                                <IconButton
-                                    icon={<Trash className="w-5 h-5" />}
+                                <RoundIconButton
+                                    icon={<Trash className="w-4 h-4" />}
                                     onClick={() => setIsDeleteDialogOpen(true)}
                                     tooltip={t('delete')}
+                                    variant="danger"
                                 />
                             </>
                         )}
-                        <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+                        {mode === 'create' && (
+                            <RoundIconButton
+                                icon={<LinkIcon className="w-4 h-4" />}
+                                onClick={() => handleSave(true)}
+                                tooltip="Speichern & Teilen"
+                                disabled={isSaveDisabled()}
+                                variant="ghost"
+                            />
+                        )}
+                        <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
                     </div>
                 </div>
 
-                <div className={`flex-1 overflow-hidden ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800' : 'flex flex-col'}`}>
+                <div className={`flex-1 overflow-hidden min-h-0 ${scope === 'admin' ? 'grid grid-cols-2 divide-x divide-zinc-200/50 dark:divide-zinc-800/50' : 'flex flex-col'}`}>
                     {/* German Form */}
                     {(scope === 'admin' || currentLang === 'de') && (
-                        <div className="overflow-y-auto no-scrollbar pt-4">
+                        <div className="overflow-y-auto min-h-0 pt-4 scrollbar-hide">
                             <LanguageForm
                                 lang="de"
                                 title={titleDe} setTitle={setTitleDe}
@@ -348,7 +379,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 
                     {/* English Form */}
                     {(scope === 'admin' || currentLang === 'en') && (
-                        <div className={`overflow-y-auto no-scrollbar pt-4 ${scope === 'admin' ? 'bg-zinc-50/50 dark:bg-zinc-900/10' : ''}`}>
+                        <div className={`overflow-y-auto min-h-0 pt-4 scrollbar-hide ${scope === 'admin' ? 'bg-zinc-50/50 dark:bg-zinc-900/10' : ''}`}>
                             <LanguageForm
                                 lang="en"
                                 title={titleEn} setTitle={setTitleEn}
@@ -362,17 +393,16 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 flex items-center shrink-0 border-t border-zinc-100 dark:border-zinc-800">
+                <ModalFooter>
                     <Button
                         variant="primary"
-                        onClick={handleSave}
+                        onClick={() => handleSave(false)}
                         disabled={isSaveDisabled()}
-                        className="w-full text-xs font-bold"
-                        icon={<Check className="w-4 h-4" />}
+                        className="w-full"
                     >
                         {t('save')}
                     </Button>
-                </div>
+                </ModalFooter>
 
                 <ConfirmDialog
                     isOpen={isDeleteDialogOpen}
@@ -391,8 +421,8 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                 <ShareTemplateModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
-                    templateName={initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
-                    slug={initialTemplate?.slug}
+                    templateName={savedTemplateForShare?.title || initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
+                    slug={savedTemplateForShare?.slug || initialTemplate?.slug}
                 />
             </div>
         </div>

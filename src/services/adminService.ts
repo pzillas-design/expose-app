@@ -104,7 +104,7 @@ export const adminService = {
 
         if (jobIds.length > 0) {
             const { data: images } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('job_id, storage_path, width, height')
                 .in('job_id', jobIds);
 
@@ -180,7 +180,11 @@ export const adminService = {
         // 2. Keep system presets (user_id IS NULL) ONLY IF:
         //    - Not hidden by user
         //    - Not forked by user (user has their own version)
+        // 3. EXCLUDE 'recent' category unless specifically requested (handled by separate history logic)
         const filteredPresets = allPresets?.filter(p => {
+            // Never show 'recent' items in the main preset library
+            if (p.category === 'recent') return false;
+
             const isSystem = p.user_id === null;
             if (!isSystem) return p.user_id === userId; // Own presets always shown
 
@@ -190,7 +194,15 @@ export const adminService = {
             return !isHidden && !isForked;
         });
 
-        return (filteredPresets || []).map(p => this._mapDbPreset(p));
+        // Deduplicate by ID just in case
+        const seen = new Set();
+        const uniquePresets = (filteredPresets || []).filter(p => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+        });
+
+        return uniquePresets.map(p => this._mapDbPreset(p));
     },
 
     _mapDbPreset(p: any) {
@@ -206,7 +218,7 @@ export const adminService = {
         };
     },
 
-    async updateGlobalPreset(preset: any, userId?: string): Promise<void> {
+    async updateGlobalPreset(preset: any, userId?: string): Promise<any> {
         const isSystemPreset = !preset.user_id;
         const isUserAction = userId && userId !== preset.user_id;
 
@@ -246,11 +258,17 @@ export const adminService = {
             category: category
         };
 
-        const { error } = await supabase.from('global_presets').upsert(dbPreset);
+        const { data, error } = await supabase
+            .from('global_presets')
+            .upsert(dbPreset)
+            .select('*')
+            .single();
         if (error) {
             console.error('AdminService: updateGlobalPreset failed!', error);
             throw error;
         }
+
+        return data ? this._mapDbPreset(data) : this._mapDbPreset(dbPreset);
     },
 
     async hideGlobalPreset(presetId: string, userId: string): Promise<void> {
@@ -314,8 +332,6 @@ export const adminService = {
      * Objects Library Management (Flat Stamps)
      */
     async getObjectCategories(): Promise<any[]> {
-        // Return a virtual 'All' category for backward compatibility if needed, 
-        // or just return empty as we are going flat.
         return [{ id: 'stamps', label_de: 'Stempel', label_en: 'Stamps', icon: '📦' }];
     },
 
@@ -338,9 +354,7 @@ export const adminService = {
     },
 
     async updateObjectItem(item: any): Promise<void> {
-        // Clean up item for flat table (remove category_id)
-        const { category_id, ...flatItem } = item;
-        const { error } = await supabase.from('global_objects_items').upsert(flatItem);
+        const { error } = await supabase.from('global_objects_items').upsert(item);
         if (error) throw error;
     },
 
@@ -356,14 +370,16 @@ export const adminService = {
         const { data, error } = await supabase
             .from('global_presets')
             .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
+            .eq('slug', slug.toLowerCase())
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
         if (error) {
             console.error('AdminService: getPresetBySlug failed!', error);
             throw error;
         }
 
-        return data ? this._mapDbPreset(data) : null;
+        if (!data || data.length === 0) return null;
+        return this._mapDbPreset(data[0]);
     }
 };

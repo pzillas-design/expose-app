@@ -18,36 +18,39 @@ interface UseGenerationProps {
     isAuthDisabled: boolean;
     selectAndSnap: (id: string, instant?: boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
-    showToast: (msg: string, type: "success" | "error", duration?: number) => void;
-    currentBoardId: string | null;
+    showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
 }
 
 const COSTS: Record<string, number> = {
-    'fast': 0.00,
     'pro-1k': 0.10,
     'pro-2k': 0.25,
-    'pro-4k': 0.50
+    'pro-4k': 0.50,
+    'nb2-1k': 0.07,
+    'nb2-2k': 0.17,
+    'nb2-4k': 0.35,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'fast': 12000,
     'pro-1k': 23000,
     'pro-2k': 36000,
-    'pro-4k': 60000
+    'pro-4k': 60000,
+    'nb2-1k': 15000,
+    'nb2-2k': 25000,
+    'nb2-4k': 45000,
 };
 
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
-    'fast': 'gemini-2.5-flash-image',
-    'pro-1k': 'gemini-3-pro-image-preview',
-    'pro-2k': 'gemini-3-pro-image-preview',
-    'pro-4k': 'gemini-3-pro-image-preview'
+    'pro-1k': 'google/nano-banana-pro',
+    'pro-2k': 'google/nano-banana-pro',
+    'pro-4k': 'google/nano-banana-pro'
 };
 
-const resolveTargetModel = (quality: string): string | undefined => {
-    return QUALITY_TO_MODEL[quality];
+const resolveTargetModel = (_quality: string): string | undefined => {
+    // Return undefined — let the Edge Function use its own default model ('gemini-3-pro-image-preview')
+    return undefined;
 };
 
 // HELPER: Map technical errors to user-friendly German
@@ -62,13 +65,27 @@ const translateError = (errorMsg: string): string => {
         return "Inhalt abgelehnt (Sicherheitsfilter).";
     } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
         return "Guthaben nicht ausreichend.";
+    } else if (msg.includes("failed to send") || msg.includes("edge function") || msg.includes("503") || msg.includes("502")) {
+        return "Server nicht erreichbar. Bitte erneut versuchen.";
     } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        return "Netzwerkfehler.";
+        return "Netzwerkfehler. Bitte erneut versuchen.";
+    } else if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("not authenticated") || msg.includes("user not found")) {
+        return "Sitzung abgelaufen. Bitte neu einloggen.";
+    } else if (
+        msg.includes("kie task failed:") ||
+        msg.includes("kie createtask") ||
+        msg.includes("kie recordinfo") ||
+        msg.includes("kie task complete") ||
+        msg.includes("kie result download") ||
+        msg.includes("image generation failed on kie")
+    ) {
+        // Show raw Kie.ai error for debugging — strip the "(Status: 400)" suffix
+        return errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 150);
     } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
         return "Fehler in der Anfrage.";
     }
 
-    return errorMsg.length > 60 ? errorMsg.substring(0, 60) + "..." : errorMsg;
+    return "Generierung fehlgeschlagen. Bitte erneut versuchen.";
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -83,7 +100,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
 
@@ -103,7 +120,7 @@ export const useGeneration = ({
 
             // 1. Check if image exists in DB
             const { data: imgData } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('*')
                 .eq('id', jobId)
                 .maybeSingle();
@@ -289,16 +306,13 @@ export const useGeneration = ({
             return newRows;
         });
 
+        // Navigate to the placeholder skeleton immediately
         if (shouldSnap) {
             setTimeout(() => selectAndSnap(newId), 50);
         }
 
         // --- ASYNC PROCESSING STARTS HERE ---
-
-        // Debit Credits Locally (for immediate UX)
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
+        // Credits are deducted server-side; local UI update happens only on success.
 
         // Heavy Canvas/DB operations in the background
         const processGenerationAsync = async () => {
@@ -341,14 +355,13 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').insert({
                         id: newId,
                         user_id: currentUser.id,
-                        user_name: currentUser.email,
+                        user_email: currentUser.email,
                         type: maskDataUrl ? 'Edit' : 'Create',
                         model: qualityMode,
+                        quality_mode: qualityMode,
                         status: 'processing',
                         cost: cost,
-                        prompt: prompt,
-                        concurrent_jobs: currentConcurrency,
-                        board_id: currentBoardId || null,
+                        prompt_preview: prompt,
                         parent_id: sourceImage.id
                     }).then(() => attachedJobIds.current.add(newId));
                 }
@@ -365,7 +378,6 @@ export const useGeneration = ({
                         qualityMode,
                         modelName: resolveTargetModel(qualityMode),
                         newId,
-                        boardId: currentBoardId || undefined,
                         targetVersion: newVersion,
                         targetTitle: placeholder.title
                     }),
@@ -383,12 +395,23 @@ export const useGeneration = ({
                         ...row,
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
+
+                    // Deduct credits locally after confirmed server-side success
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    showToast('Bild generiert', 'success', 6000);
+
+                    // Fire-and-forget: generate + persist thumbnail to avoid transform API costs on future loads
+                    if (currentUser) {
+                        imageService.generateMissingThumbnail(finalImage, currentUser.id);
+                    }
                 }
             } catch (error: any) {
                 console.error("Generation failed:", error);
-                const translated = translateError(error.message || error);
-                showToast(translated, "error");
 
+                // Remove placeholder tile
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== newId)
@@ -398,29 +421,14 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
                 }
 
-                if (!isPro && cost > 0) {
-                    setCredits(prev => {
-                        const newCredits = prev + cost;
-                        if (currentUser) { // Only try to update if currentUser is defined
-                            supabase.from('profiles').update({ credits: newCredits }).eq('id', currentUser.id);
-                        }
-                        return newCredits;
-                    });
-
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => {
-                        if (shouldRetry) performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
-                    });
-                }
+                const translated = translateError(error.message || error);
+                showToast(translated, "error");
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 
         processGenerationAsync();
-    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm]);
+    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
@@ -428,10 +436,6 @@ export const useGeneration = ({
         const isPro = userProfile?.role === 'pro';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
-
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
 
         const newId = generateId();
         const baseName = t('new_generation') || 'Generation';
@@ -456,7 +460,7 @@ export const useGeneration = ({
             id: newId, src: '', storage_path: '', width: displayWidth, height: displayHeight, realWidth, realHeight,
             title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
-            annotations: creationAnns, boardId: currentBoardId || undefined, userId: user?.id
+            annotations: creationAnns, userId: user?.id
         };
 
         setRows(prev => [...prev, { id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }]);
@@ -466,8 +470,14 @@ export const useGeneration = ({
             try {
                 if (user && !isAuthDisabled) {
                     supabase.from('generation_jobs').insert({
-                        id: newId, user_id: user.id, user_name: user.email, type: 'Text2Img', model: modelId,
-                        status: 'processing', cost, prompt, board_id: currentBoardId || null
+                        id: newId,
+                        user_id: user.id,
+                        user_email: user.email,
+                        status: 'processing',
+                        cost,
+                        prompt_preview: prompt,
+                        quality_mode: modelId,
+                        model: modelId
                     });
                 }
 
@@ -478,30 +488,38 @@ export const useGeneration = ({
 
                 const finalImage = await imageService.processGeneration({
                     payload: structuredRequest, sourceImage: placeholder, qualityMode: modelId,
-                    modelName: resolveTargetModel(modelId), newId, boardId: currentBoardId || undefined, attachments, aspectRatio: ratio
+                    modelName: resolveTargetModel(modelId), newId, attachments, aspectRatio: ratio
                 });
 
                 if (finalImage) {
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
+
+                    // Deduct credits locally after confirmed server-side success
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    // Success toast — click navigates to the generated image
+                    showToast('Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
+                        selectAndSnap(newId);
+                    });
+
+                    // Fire-and-forget thumbnail backfill
+                    if (user?.id) {
+                        imageService.generateMissingThumbnail(finalImage, user.id);
+                    }
                 }
             } catch (error: any) {
+                setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
+
                 const translated = translateError(error.message || "");
                 showToast(translated, "error");
-                setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
-                if (!isPro) {
-                    setCredits(prev => prev + cost);
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => { if (shouldRetry) performNewGeneration(prompt, modelId, ratio, attachments); });
-                }
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 
         processNewSync();
-    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t, confirm]);
+    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);
 
 
     return { performGeneration, performNewGeneration };

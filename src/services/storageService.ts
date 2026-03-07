@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { compressImage, generateThumbnail } from '../utils/imageUtils';
 
 export const storageService = {
     /**
@@ -18,7 +19,6 @@ export const storageService = {
                 const response = await fetch(imageSrc);
                 blob = await response.blob();
             } else {
-                const { compressImage } = await import('../utils/imageUtils');
                 // Optmize: Max 4K (4096px) and 80% Quality (0.8)
                 blob = await compressImage(imageSrc, 4096, 0.8);
                 shouldGenerateThumb = true; // Generate thumbnail for full-size images
@@ -46,7 +46,12 @@ export const storageService = {
                 fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
             }
 
-            const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
+            const normalizedIdentifier = ((userIdentifier || '')
+                .trim()
+                .toLowerCase()
+                .replace(/\//g, '_')) || 'unknown-user';
+
+            const folderPath = subfolder ? `${normalizedIdentifier}/${subfolder}` : normalizedIdentifier;
             const filePath = `${folderPath}/${fileName}`;
 
             console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);
@@ -69,7 +74,6 @@ export const storageService = {
             let thumbPath: string | undefined;
             if (shouldGenerateThumb) {
                 try {
-                    const { generateThumbnail } = await import('../utils/imageUtils');
                     const thumbBlob = await generateThumbnail(imageSrc, 200);
                     const thumbFileName = `thumb_${fileName}`;
                     const thumbFilePath = `${folderPath}/${thumbFileName}`;

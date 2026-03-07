@@ -2,11 +2,10 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
-import { slugify } from './utils/slugify.ts';
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
-import { prepareParts, generateImage } from './services/gemini.ts';
-import { generateImageReplicate } from './services/replicate.ts';
+import { generateImageKie } from './services/kie.ts';
+import { prepareParts } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -38,6 +37,41 @@ const logInfo = (context: string, message: string, data?: any) => {
     }
 };
 
+const sanitizeEmailForPath = (email?: string | null) => {
+    if (!email) return null;
+    return email
+        .trim()
+        .toLowerCase()
+        .replace(/\//g, '_');
+};
+
+const buildUploadDateFolder = (date: Date) => {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(date.getFullYear());
+    return `upload${dd}${mm}${yyyy}`;
+};
+
+/**
+ * Uploads a base64 image to temp Supabase storage and returns a signed URL for Kie.ai
+ */
+const uploadTempForKie = async (supabaseAdmin: any, base64: string, jobId: string, idx: number): Promise<string | null> => {
+    try {
+        const binaryData = decodeBase64(base64);
+        const tempPath = `_temp_kie/${jobId}_${idx}.jpg`;
+        const { error } = await supabaseAdmin.storage
+            .from('user-content')
+            .upload(tempPath, binaryData, { contentType: 'image/jpeg', upsert: true });
+        if (error) return null;
+        const { data } = await supabaseAdmin.storage
+            .from('user-content')
+            .createSignedUrl(tempPath, 3600);
+        return data?.signedUrl || null;
+    } catch {
+        return null;
+    }
+};
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
@@ -45,11 +79,14 @@ Deno.serve(async (req) => {
 
     let newId = null;
     let supabaseAdmin = null;
+    // Stored after deduction so the outer catch can always refund on any failure
+    let refundData: { userId: string; originalCredits: number } | null = null;
 
-    // Global timeout to prevent resource exhaustion and ungraceful termination
-    const TIMEOUT_MS = 55000;
+    // Global timeout — Kie.ai can take up to 2min to generate, plus overhead (~15s).
+    // Supabase hard limit is 150s; we use 145s to stay safely under.
+    const TIMEOUT_MS = 145000;
     const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Generation Timeout: Job took too long (>55s)')), TIMEOUT_MS)
+        setTimeout(() => reject(new Error('Generation Timeout: Job took too long (>145s)')), TIMEOUT_MS)
     );
 
     try {
@@ -130,12 +167,13 @@ Deno.serve(async (req) => {
                 throw new Error('Insufficient credits');
             }
 
-            // Deduct credits
+            // Deduct credits and store original balance for outer-catch refund
             if (!isPro && cost > 0) {
                 await supabaseAdmin
                     .from('profiles')
                     .update({ credits: profile.credits - cost })
                     .eq('id', user.id);
+                refundData = { userId: user.id, originalCredits: profile.credits };
             }
 
             // Prepare source image (base64)
@@ -145,13 +183,8 @@ Deno.serve(async (req) => {
                 finalSourceBase64 = await prepareSourceImage(sourceToProcess);
             }
 
-            // Determine model
-            let finalModelName = 'gemini-3-pro-image-preview';
-            if (qualityMode === 'fast' || modelName === 'fast') {
-                finalModelName = 'gemini-2.5-flash-image';
-            } else if (modelName && (modelName.startsWith('gemini-') || modelName.startsWith('replicate/'))) {
-                finalModelName = modelName;
-            }
+            // Model: nano-banana-2 for nb2-* quality modes, else nano-banana-pro
+            const finalModelName = qualityMode.startsWith('nb2-') ? 'nano-banana-2' : 'nano-banana-pro';
 
             // Determine aspect ratio
             let bestRatio = '1:1';
@@ -211,90 +244,69 @@ Deno.serve(async (req) => {
                 .select('*', { count: 'exact', head: true })
                 .eq('status', 'processing');
 
-            const concurrentJobs = concurrentJobCount || 0;
             const generationStartTime = Date.now();
 
-            // Call AI API (Gemini or Replicate)
-            let generatedBase64 = null;
-            let finalOutputModel = finalModelName;
-            let geminiResponse = null;
+            // Prepare image URLs for Kie.ai (image_input requires URLs, not base64)
+            const kieImageUrls: string[] = [];
 
-            const replicateApiToken = Deno.env.get('REPLICATE_API_TOKEN');
-            const isReplicateModel = finalModelName.startsWith('replicate/');
+            // Source image — use original URL if available, else upload base64 to temp storage
+            const sourceHttpUrl = (payloadOriginalImage && payloadOriginalImage.startsWith('http'))
+                ? payloadOriginalImage
+                : (sourceImage?.src && sourceImage.src.startsWith('http')) ? sourceImage.src : null;
 
-            if (isReplicateModel && replicateApiToken) {
-                logInfo('Replicate API Call', `Model: ${finalModelName}`);
-                // Remove 'replicate/' prefix to get actual model ID (e.g. google/nano-banana-pro)
-                const replicateModel = finalModelName.replace('replicate/', '');
-
-                const replicateResult = await generateImageReplicate(
-                    replicateApiToken,
-                    replicateModel,
-                    parts, // Pass prepared parts; service extracts text/images
-                    {
-                        resolution: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-1k' ? '1K' : '2K'),
-                        aspect_ratio: explicitRatio || (isEditMode ? 'match_input_image' : undefined)
-                    }
-                );
-                generatedBase64 = replicateResult.data;
-
-                // Log prediction ID for debugging
-                logInfo('Replicate Success', `Prediction ID: ${replicateResult.predictionId}`);
-
-            } else {
-                // Call Gemini API
-                logInfo('Gemini API Call', `Model: ${finalModelName}, Quality: ${qualityMode}`);
-                geminiResponse = await generateImage(
-                    Deno.env.get('GEMINI_API_KEY')!,
-                    finalModelName,
-                    parts,
-                    generationConfig,
-                    requestType
-                );
-
-                // Extract result
-                const candidate = geminiResponse.candidates?.[0];
-                const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
-
-                if (!imagePart) {
-                    const finishReason = candidate?.finishReason;
-                    const safetyRatings = candidate?.safetyRatings;
-                    logError('Gemini Response', `No image returned. Reason: ${finishReason}`, { safetyRatings });
-
-                    // Refund credits
-                    if (!isPro && cost > 0) {
-                        await supabaseAdmin
-                            .from('profiles')
-                            .update({ credits: profile.credits })
-                            .eq('id', user.id);
-                    }
-                    throw new Error(`Gemini: No image returned. Reason: ${finishReason || 'Unknown'}`);
-                }
-                generatedBase64 = imagePart.inlineData.data;
+            if (sourceHttpUrl) {
+                kieImageUrls.push(sourceHttpUrl);
+            } else if (finalSourceBase64) {
+                const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+                if (tempUrl) kieImageUrls.push(tempUrl);
             }
 
-            // Prepare storage path
-            let subfolder = board_id || 'unorganized';
-            if (board_id) {
-                try {
-                    const { data: boardData, error: boardError } = await supabaseAdmin
-                        .from('boards')
-                        .select('name')
-                        .eq('id', board_id)
-                        .limit(1); // Use .limit(1) instead of .maybeSingle() for safer error handling
+            // Annotation image (canvas base64) — upload to temp storage
+            if (payloadAnnotationImage) {
+                const annBase64 = payloadAnnotationImage.startsWith('data:')
+                    ? payloadAnnotationImage.split(',')[1]
+                    : payloadAnnotationImage;
+                const annUrl = await uploadTempForKie(supabaseAdmin, annBase64, newId, kieImageUrls.length);
+                if (annUrl) kieImageUrls.push(annUrl);
+            }
 
-                    if (boardError) {
-                        logError('Board Fetch Error', boardError, { board_id });
-                    } else if (boardData && boardData.length > 0) {
-                        const board = boardData[0];
-                        subfolder = `${slugify(board.name)}_${board_id}`;
-                    } else {
-                        logInfo('Board Not Found', `Board with ID ${board_id} not found, using 'unorganized' subfolder.`);
+            // References that are already HTTP URLs
+            if (payloadReferences?.length) {
+                for (const ref of payloadReferences) {
+                    if (ref.src?.startsWith('http') && kieImageUrls.length < 8) {
+                        kieImageUrls.push(ref.src);
                     }
-                } catch (e) {
-                    logError('Board Fetch Exception', e, { board_id });
                 }
             }
+
+            const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
+                : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
+
+            // Call Kie AI
+            logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
+
+            const kieResponse = await generateImageKie(
+                (Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai'))!,
+                finalModelName,
+                payload,
+                kieImageUrls,
+                bestRatio,
+                kieResolution
+            );
+
+            if (!kieResponse?.data?.[0]?.b64_json) {
+                logError('Kie API Response', `No image returned.`, kieResponse);
+                // Refund credits
+                if (!isPro && cost > 0) {
+                    await supabaseAdmin
+                        .from('profiles')
+                        .update({ credits: profile.credits })
+                        .eq('id', user.id);
+                }
+                throw new Error('Image generation failed on Kie.ai');
+            }
+
+            const generatedBase64 = kieResponse.data[0].b64_json;
 
             let dbBaseName = "";
             let dbTitle = "";
@@ -314,7 +326,7 @@ Deno.serve(async (req) => {
                 // Query database for all images with this baseName to find max version
                 try {
                     const { data: siblings, error: siblingsError } = await supabaseAdmin
-                        .from('canvas_images')
+                        .from('images')
                         .select('version, base_name, title')
                         .eq('user_id', user.id)
                         .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
@@ -342,9 +354,12 @@ Deno.serve(async (req) => {
                 dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
             }
 
-            const titleSlug = slugify(dbBaseName);
-            const filename = `${titleSlug}_v${currentVersion}_${newId.substring(0, 8)}.jpg`;
-            const filePath = `${user.id}/${subfolder}/${filename}`;
+            const rootFolder = sanitizeEmailForPath(user.email) || user.id;
+            const uploadDateFolder = buildUploadDateFolder(new Date());
+            const isOriginal = currentVersion <= 1;
+            const variantLabel = isOriginal ? 'original' : `variante${currentVersion}`;
+            const filename = `${variantLabel}_${newId.substring(0, 8)}.jpg`;
+            const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
 
             // Upload to storage using efficient decoding
             const binaryData = decodeBase64(generatedBase64);
@@ -372,7 +387,6 @@ Deno.serve(async (req) => {
             const newImage: any = {
                 id: newId,
                 user_id: user.id,
-                board_id: board_id || null,
                 job_id: newId,
                 storage_path: filePath,
                 width: Math.round(sourceImage?.width || 512),
@@ -397,7 +411,7 @@ Deno.serve(async (req) => {
             };
 
             const { error: dbError } = await supabaseAdmin
-                .from('canvas_images')
+                .from('images')
                 .insert(newImage);
 
             if (dbError) {
@@ -406,10 +420,16 @@ Deno.serve(async (req) => {
             }
 
             // Update job status
-            const usage = (isReplicateModel ? {} : (geminiResponse as any).usageMetadata) || {};
-            const tokensPrompt = usage.promptTokenCount || 0;
-            const tokensCompletion = usage.candidatesTokenCount || 0;
-            const tokensTotal = usage.totalTokenCount || 0;
+            // Prefer Kie's costTime (actual model time) over wall-clock for accurate smart estimates
+            const wallClockMs = Date.now() - generationStartTime;
+            const durationMs = kieResponse.costTime || wallClockMs;
+            logInfo('Duration', `Wall: ${wallClockMs}ms, Kie costTime: ${kieResponse.costTime ?? 'n/a'}ms → stored: ${durationMs}ms`);
+
+            // Kie.ai does not expose token usage metrics
+            const tokensPrompt = 0;
+            const tokensCompletion = 0;
+            const tokensTotal = 0;
+            const concurrentJobs = concurrentJobCount || 0;
 
             // Fetch pricing
             let pricing = null;
@@ -438,7 +458,6 @@ Deno.serve(async (req) => {
             }
 
             const estimatedApiCost = (tokensPrompt * pricing.input) + (tokensCompletion * pricing.output);
-            const durationMs = Date.now() - generationStartTime;
 
             await supabaseAdmin
                 .from('generation_jobs')
@@ -450,13 +469,27 @@ Deno.serve(async (req) => {
                     tokens_completion: tokensCompletion,
                     tokens_total: tokensTotal,
                     duration_ms: durationMs,
-                    concurrent_jobs: concurrentJobs,
                     quality_mode: qualityMode,
                     request_payload: apiRequestPayload
                 })
                 .eq('id', newId);
 
             logInfo('Generation Success', `Job: ${newId}, Duration: ${durationMs}ms, Tokens: ${tokensTotal}, Cost: $${estimatedApiCost.toFixed(6)}`);
+
+            // Fire-and-forget: log remaining Kie.ai credits for monitoring
+            (async () => {
+                try {
+                    const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
+                    if (!kieApiKey) return;
+                    const r = await fetch('https://api.kie.ai/api/v1/chat/credit', {
+                        headers: { 'Authorization': `Bearer ${kieApiKey}` }
+                    });
+                    if (r.ok) {
+                        const j = await r.json();
+                        console.log(`[INFO] Kie.ai remaining credits: ${j?.data ?? 'unknown'}`);
+                    }
+                } catch { /* non-critical */ }
+            })();
 
             return new Response(JSON.stringify({
                 success: true,
@@ -477,6 +510,19 @@ Deno.serve(async (req) => {
     } catch (error: any) {
         const errorMsg = error?.message || (typeof error === 'string' ? error : "Unknown error occurred");
         logError('Edge Function', errorMsg, { jobId: newId });
+
+        // Always refund credits on any failure (timeout, Kie error, DB error, etc.)
+        if (refundData && supabaseAdmin) {
+            try {
+                await supabaseAdmin
+                    .from('profiles')
+                    .update({ credits: refundData.originalCredits })
+                    .eq('id', refundData.userId);
+                logInfo('Credits Refunded', `Restored ${refundData.originalCredits} for user ${refundData.userId}`);
+            } catch (e) {
+                logError('Credit Refund Failed', e);
+            }
+        }
 
         // Mark job as failed
         if (newId && supabaseAdmin) {
