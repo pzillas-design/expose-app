@@ -143,7 +143,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 multiple
                 onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
             />
-            <div className="flex-1 overflow-y-auto no-scrollbar bg-zinc-200/50 dark:bg-zinc-950 relative flex flex-col">
+            <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
                         <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px ${isMobile ? 'pb-32' : ''}`}>
