@@ -146,7 +146,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-px ${isMobile ? 'pb-32' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 ${isMobile ? 'pb-32' : ''}`}>
                             {/* Create New Tile */}
                             <div
                                 ref={createMenuRef}
