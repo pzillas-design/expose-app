@@ -363,25 +363,35 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 />
                             )}
 
-                            {/* EditorCanvas Overlay — absolute inset-0 always perfectly aligned */}
-                            {!img.isGenerating && isMainLoaded && (
-                                <div className="absolute inset-0 z-20">
-                                    <EditorCanvas
-                                        width={imgNaturalDims.width}
-                                        height={imgNaturalDims.height}
-                                        zoom={1}
-                                        annotations={img.annotations || []}
-                                        onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
-                                        brushSize={state.brushSize}
-                                        activeTab={state.sideSheetMode === 'brush' ? 'brush' : 'none'}
-                                        maskTool={state.maskTool}
-                                        activeShape={state.activeShape}
-                                        isBrushResizing={state.isBrushResizing}
-                                        isActive={state.sideSheetMode === 'brush'}
-                                        activeAnnotationId={state.activeAnnotationId}
-                                        onActiveAnnotationChange={actions.onActiveAnnotationChange}
-                                        t={t}
-                                    />
+                            {/* EditorCanvas Overlay — matches image contain sizing with aspect-ratio */}
+                            {!img.isGenerating && isMainLoaded && imgNaturalDims.width > 0 && (
+                                <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                                    <div
+                                        className="relative pointer-events-auto"
+                                        style={{
+                                            aspectRatio: `${imgNaturalDims.width} / ${imgNaturalDims.height}`,
+                                            width: '100%',
+                                            maxHeight: '100%',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <EditorCanvas
+                                            width={imgNaturalDims.width}
+                                            height={imgNaturalDims.height}
+                                            zoom={1}
+                                            annotations={img.annotations || []}
+                                            onChange={(anns) => actions.handleUpdateAnnotations(img.id, anns)}
+                                            brushSize={state.brushSize}
+                                            activeTab={state.sideSheetMode === 'brush' ? 'brush' : 'none'}
+                                            maskTool={state.maskTool}
+                                            activeShape={state.activeShape}
+                                            isBrushResizing={state.isBrushResizing}
+                                            isActive={state.sideSheetMode === 'brush'}
+                                            activeAnnotationId={state.activeAnnotationId}
+                                            onActiveAnnotationChange={actions.onActiveAnnotationChange}
+                                            t={t}
+                                        />
+                                    </div>
                                 </div>
                             )}
                         </div>{/* closes sizing wrapper */}
