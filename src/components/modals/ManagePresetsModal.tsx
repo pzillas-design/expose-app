@@ -398,6 +398,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
         <div className="flex flex-col h-full overflow-hidden max-h-[90vh]">
             <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
                 <span className={Typo.H3}>{currentLang === 'de' ? 'Vorlagen' : 'Presets'}</span>
+                <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" className={isMobile ? '' : 'opacity-0 pointer-events-none'} />
             </div>
             <div className="flex flex-col h-full overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-3 space-y-1">
