@@ -96,47 +96,47 @@ const LanguageForm = ({
                 </div>
             )}
 
-            <div className={`px-6 pb-32 space-y-5 ${!showHeader ? 'pt-4' : 'pt-6'}`}>
+            <div className={`px-6 pb-32 space-y-4 ${!showHeader ? 'pt-4' : 'pt-6'}`}>
                 {/* Title */}
-                <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                <div className="flex flex-col gap-2">
+                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                         {t('title_label')}
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-none" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
                 </div>
 
                 {/* Prompt */}
-                <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                <div className="flex flex-col gap-2">
+                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-none" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="text-sm min-h-[120px] font-normal scrollbar-hide bg-transparent border-none focus:outline-none focus:ring-0 resize-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                <div className="flex flex-col gap-2">
+                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                         {t('variables_label')}
                     </label>
-                    <div className="space-y-2.5">
+                    <div className="space-y-2">
                         {controls.map((ctrl) => (
                             <React.Fragment key={ctrl.id}>
                                 {editingControlId === ctrl.id ? (
                                     <div
                                         ref={editFormRef}
-                                        className={`p-5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl space-y-3.5 relative overflow-hidden`}
+                                        className={`p-4 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-2xl space-y-3 relative overflow-hidden`}
                                     >
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                                            <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                                                 Titel
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                                            <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                                                 Optionen
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-1">
                                             <button
@@ -158,7 +158,7 @@ const LanguageForm = ({
                                 ) : (
                                     <div
                                         onClick={() => startEditing(ctrl)}
-                                        className={`flex items-start justify-between p-3.5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-xl cursor-pointer group transition-all hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 active:scale-[0.98]`}
+                                        className={`flex items-start justify-between p-3.5 bg-zinc-100/50 dark:bg-zinc-900/40 rounded-xl cursor-pointer group transition-all hover:bg-zinc-100/70 dark:hover:bg-zinc-900/60 active:scale-[0.98]`}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1.5 truncate`}>{ctrl.label}</div>
@@ -179,18 +179,18 @@ const LanguageForm = ({
                         ))}
 
                         {isAddingControl && !editingControlId ? (
-                            <div className={`p-5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl space-y-3.5 relative overflow-hidden`}>
+                            <div className={`p-4 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-2xl space-y-3 relative overflow-hidden`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
+                                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-1">
                                     <div className="flex-1" />
@@ -204,7 +204,7 @@ const LanguageForm = ({
                             </div>
                         ) : (
                             !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2.5 flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 font-medium transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98]`}>
+                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 rounded-lg text-zinc-700 dark:text-zinc-300 text-sm font-medium transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98]`}>
                                     <Plus className="w-4 h-4" /> {t('add_variable')}
                                 </button>
                             )
