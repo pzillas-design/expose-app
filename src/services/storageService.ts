@@ -170,13 +170,11 @@ export const storageService = {
         // Generate a cache key suffix based on options
         const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
 
-        // 1. Check Cache - with aggressive expiration check
+        // 1. Check Cache - only use if not expired
         paths.forEach(path => {
             const cacheKey = path + optionsKey;
             const cached = storageService._urlCache.get(cacheKey);
-            // Check if cached AND not expired AND has at least 5 minutes remaining
-            const hasValidCache = cached && cached.expires > Date.now() + (5 * 60 * 1000);
-            if (hasValidCache) {
+            if (cached && cached.expires > Date.now()) {
                 results[cacheKey] = cached.url;
             } else if (path) {
                 toFetch.push(path);
