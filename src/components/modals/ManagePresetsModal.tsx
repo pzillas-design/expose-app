@@ -99,23 +99,23 @@ const LanguageForm = ({
             <div className={`px-6 pb-32 space-y-5 ${!showHeader ? 'pt-4' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
+                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                         {t('title_label')}
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                 </div>
 
                 {/* Prompt */}
                 <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
+                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                 </div>
 
                 {/* Controls */}
                 <div className="flex flex-col gap-1.5">
-                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
+                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                         {t('variables_label')}
                     </label>
                     <div className="space-y-2.5">
@@ -124,19 +124,19 @@ const LanguageForm = ({
                                 {editingControlId === ctrl.id ? (
                                     <div
                                         ref={editFormRef}
-                                        className={`p-5 bg-white dark:bg-zinc-950 rounded-2xl space-y-3.5 relative overflow-hidden border border-zinc-200 dark:border-zinc-800`}
+                                        className={`p-5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl space-y-3.5 relative overflow-hidden`}
                                     >
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
+                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                                 Titel
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
+                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                                 Optionen
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-1">
                                             <button
@@ -147,10 +147,10 @@ const LanguageForm = ({
                                                 <Trash className="w-4 h-4" />
                                             </button>
                                             <div className="flex-1" />
-                                            <Button variant="secondary" onClick={resetForm} className="px-5 py-1.5 rounded-lg text-sm font-medium">
+                                            <Button variant="secondary" onClick={resetForm}>
                                                 {t('cancel')}
                                             </Button>
-                                            <Button variant="secondary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-5 py-1.5 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel}>
                                                 {t('save')}
                                             </Button>
                                         </div>
@@ -158,13 +158,13 @@ const LanguageForm = ({
                                 ) : (
                                     <div
                                         onClick={() => startEditing(ctrl)}
-                                        className={`flex items-start justify-between p-3.5 bg-white dark:bg-zinc-950 rounded-xl cursor-pointer group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 active:scale-[0.98]`}
+                                        className={`flex items-start justify-between p-3.5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-xl cursor-pointer group transition-all hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 active:scale-[0.98]`}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1.5 truncate`}>{ctrl.label}</div>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {ctrl.options.map(o => (
-                                                    <span key={o.id} className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
+                                                    <span key={o.id} className="text-[11px] px-2.5 py-0.5 rounded text-zinc-700 dark:text-zinc-300">
                                                         {o.label}
                                                     </span>
                                                 ))}
@@ -179,32 +179,32 @@ const LanguageForm = ({
                         ))}
 
                         {isAddingControl && !editingControlId ? (
-                            <div className={`p-5 bg-white dark:bg-zinc-950 rounded-2xl space-y-3.5 relative overflow-hidden border border-zinc-200 dark:border-zinc-800`}>
+                            <div className={`p-5 bg-zinc-50/50 dark:bg-zinc-900/30 rounded-2xl space-y-3.5 relative overflow-hidden`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
+                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
+                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-1">
                                     <div className="flex-1" />
-                                    <Button variant="secondary" onClick={resetForm} className="px-5 py-1.5 rounded-lg text-sm font-medium">
+                                    <Button variant="secondary" onClick={resetForm}>
                                         {t('cancel')}
                                     </Button>
-                                    <Button variant="secondary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-5 py-1.5 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel}>
                                         {t('add_btn')}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2.5 flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-lg text-zinc-700 dark:text-zinc-300 font-medium transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-[0.98]`}>
+                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2.5 flex items-center justify-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-700 dark:text-zinc-300 font-medium transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98]`}>
                                     <Plus className="w-4 h-4" /> {t('add_variable')}
                                 </button>
                             )
@@ -383,7 +383,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
             </div>
 
             <ModalFooter>
-                <Button variant="secondary" onClick={() => handleSave(false)} disabled={isSaveDisabled()} className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50">
+                <Button variant="primary" onClick={() => handleSave(false)} disabled={isSaveDisabled()} className="w-full">
                     {t('save')}
                 </Button>
             </ModalFooter>

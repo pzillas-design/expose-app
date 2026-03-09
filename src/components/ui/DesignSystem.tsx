@@ -231,7 +231,7 @@ export const Button: React.FC<ButtonProps> = ({
 
     // Aesthetic variants
     const variants = {
-        primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
+        primary: `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm hover:opacity-90`,
         'primary-mono': `bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm hover:opacity-90`,
         white: `bg-white text-zinc-900 shadow-sm hover:opacity-90`,
         black: `bg-zinc-900 text-white shadow-sm hover:opacity-90`,
