@@ -743,7 +743,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             }}
                                                                             className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors ${isModelActive ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
                                                                         >
-                                                                            {model === 'pro' ? 'Pro' : 'Flash'}
+                                                                            {model === 'pro' ? '🍌pro' : '🍌v2'}
                                                                         </button>
                                                                     );
                                                                 })}
