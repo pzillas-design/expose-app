@@ -735,8 +735,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 {(['nb2', 'pro'] as const).map(model => {
                                                                     const isModelActive = qualityMode.startsWith(model);
                                                                     const tooltipText = model === 'pro'
-                                                                        ? lang === 'de' ? 'Höchste Qualität – ideal für finale Ergebnisse' : 'Highest quality – best for final results'
-                                                                        : lang === 'de' ? 'Schneller & günstiger – ideal zum Erkunden' : 'Faster & cheaper – best for exploring';
+                                                                        ? lang === 'de' ? 'Höchste Qualität' : 'Highest quality'
+                                                                        : lang === 'de' ? 'Schneller & günstiger' : 'Faster & cheaper';
                                                                     return (
                                                                         <Tooltip key={model} text={tooltipText} side="top">
                                                                             <button
