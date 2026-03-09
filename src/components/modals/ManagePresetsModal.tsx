@@ -91,8 +91,8 @@ const LanguageForm = ({
         <div className="flex flex-col gap-0 h-full">
             {showHeader && (
                 <div className={`px-6 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-orange-100 text-orange-800'}`}>{lang}</span>
+                    <span className="text-xs font-medium text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-orange-100 text-orange-800'}`}>{lang.toUpperCase()}</span>
                 </div>
             )}
 
