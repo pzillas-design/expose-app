@@ -73,6 +73,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
     const createDropdownRef = useRef<HTMLDivElement>(null);
+    const mobileCreateDropdownRef = useRef<HTMLDivElement>(null);
     const gridMenuRef = useRef<HTMLDivElement>(null);
     const detailMenuRef = useRef<HTMLDivElement>(null);
     const mobileDetailMenuRef = useRef<HTMLDivElement>(null);
@@ -129,7 +130,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         const handleClickOutside = (e: MouseEvent) => {
             const target = e.target as Node;
 
-            if (isCreateOpen && createDropdownRef.current && !createDropdownRef.current.contains(target)) {
+            if (isCreateOpen
+                && (!createDropdownRef.current || !createDropdownRef.current.contains(target))
+                && (!mobileCreateDropdownRef.current || !mobileCreateDropdownRef.current.contains(target))) {
                 setIsCreateOpen(false);
             }
             if (isGridMenuOpen && gridMenuRef.current && !gridMenuRef.current.contains(target)) {
@@ -171,7 +174,31 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         >
             {isGerman ? 'Abbrechen' : 'Cancel'}
         </button>
-    ) : null;
+    ) : (
+        <div className="md:hidden">
+            {user && (
+                <div className="relative" ref={mobileCreateDropdownRef}>
+                    <RoundIconButton
+                        icon={<Plus className="w-5 h-5" />}
+                        onClick={() => setIsCreateOpen(!isCreateOpen)}
+                        variant="ghost"
+                        active={isCreateOpen}
+                        tooltip={isGerman ? 'Erstellen' : 'Create'}
+                    />
+                    {isCreateOpen && (
+                        <div className="absolute top-full mt-2 left-0 z-50">
+                            <DropdownMenu
+                                items={[
+                                    { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                    { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
+                                ]}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 
     const centerContent = isSelectMode ? (
         <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-400 tabular-nums">
@@ -293,7 +320,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </button>
             ) : (
                 <div className="flex items-center gap-3">
-                    <div className="relative" ref={createDropdownRef}>
+                    <div className="relative hidden md:block" ref={createDropdownRef}>
                         <RoundIconButton
                             icon={<Plus className="w-5 h-5" />}
                             onClick={() => setIsCreateOpen(!isCreateOpen)}
@@ -306,7 +333,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 <DropdownMenu
                                     items={[
                                         { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                        { label: 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); } },
+                                        { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
                                     ]}
                                 />
                             </div>
@@ -327,7 +354,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     items={[
                                         { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); } },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                         { label: isGerman ? 'Abmelden' : 'Sign out', onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
