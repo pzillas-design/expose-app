@@ -69,7 +69,7 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
                 <div className={`flex items-end justify-between ${Typo.Label}`}>
                     <span className={`${Theme.Colors.TextPrimary} `}>{t('processing')}</span>
                 </div>
-                <div className="h-0.5 w-full bg-zinc-200/50 dark:bg-white/20 rounded-full overflow-hidden ">
+                <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600 rounded-full overflow-hidden ">
                     <div
                         className="h-full bg-zinc-900 dark:bg-white transition-all duration-300 ease-out"
                         style={{ width: `${progress}%` }}
