@@ -327,7 +327,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     items={[
                                         { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.open('/contact', '_blank'); } },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                         { label: isGerman ? 'Abmelden' : 'Sign out', onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
