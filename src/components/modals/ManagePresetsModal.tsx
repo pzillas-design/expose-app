@@ -102,7 +102,7 @@ const LanguageForm = ({
                     <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                         {t('title_label')}
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-none" />
                 </div>
 
                 {/* Prompt */}
@@ -110,7 +110,7 @@ const LanguageForm = ({
                     <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-none" />
                 </div>
 
                 {/* Controls */}
@@ -130,13 +130,13 @@ const LanguageForm = ({
                                             <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                                 Titel
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                                 Optionen
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-1">
                                             <button
@@ -184,13 +184,13 @@ const LanguageForm = ({
                                     <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-white dark:bg-zinc-950 border-none" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-1">
                                     <div className="flex-1" />
