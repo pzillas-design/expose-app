@@ -99,7 +99,7 @@ const LanguageForm = ({
             <div className={`px-6 pb-32 space-y-4 ${!showHeader ? 'pt-4' : 'pt-6'}`}>
                 {/* Title */}
                 <div className="flex flex-col gap-2">
-                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                         {t('title_label')}
                     </label>
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
@@ -107,7 +107,7 @@ const LanguageForm = ({
 
                 {/* Prompt */}
                 <div className="flex flex-col gap-2">
-                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                         {t('prompt_label_editor')}
                     </label>
                     <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="text-sm min-h-[120px] font-normal scrollbar-hide bg-transparent border-none focus:outline-none focus:ring-0 resize-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
@@ -115,7 +115,7 @@ const LanguageForm = ({
 
                 {/* Controls */}
                 <div className="flex flex-col gap-2">
-                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                    <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                         {t('variables_label')}
                     </label>
                     <div className="space-y-2">
@@ -127,13 +127,13 @@ const LanguageForm = ({
                                         className={`p-4 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-2xl space-y-3 relative overflow-hidden`}
                                     >
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                                            <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                                                 Titel
                                             </label>
                                             <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                                            <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                                                 Optionen
                                             </label>
                                             <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
@@ -181,13 +181,13 @@ const LanguageForm = ({
                         {isAddingControl && !editingControlId ? (
                             <div className={`p-4 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-2xl space-y-3 relative overflow-hidden`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                                    <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                                         Titel
                                     </label>
                                     <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider`}>
+                                    <label className={`text-sm font-medium text-zinc-700 dark:text-zinc-300`}>
                                         Optionen
                                     </label>
                                     <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 px-0" />
