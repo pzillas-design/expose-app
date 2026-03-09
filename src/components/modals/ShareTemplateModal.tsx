@@ -59,7 +59,7 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
             onClick={onClose}
         >
             <div
-                className={`w-full max-w-md ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} flex flex-col p-8 gap-6 animate-in zoom-in-95 duration-200`}
+                className={`w-full max-w-md ${Theme.Colors.ModalBg} border border-zinc-900/10 dark:border-zinc-100/10 ${Theme.Geometry.RadiusXl} flex flex-col p-8 gap-6 animate-in zoom-in-95 duration-200`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
