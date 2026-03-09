@@ -734,17 +734,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             <div className="flex items-center gap-1 mt-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                                                                 {(['nb2', 'pro'] as const).map(model => {
                                                                     const isModelActive = qualityMode.startsWith(model);
+                                                                    const tooltipText = model === 'pro'
+                                                                        ? lang === 'de' ? 'Höchste Qualität – ideal für finale Ergebnisse' : 'Highest quality – best for final results'
+                                                                        : lang === 'de' ? 'Schneller & günstiger – ideal zum Erkunden' : 'Faster & cheaper – best for exploring';
                                                                     return (
-                                                                        <button
-                                                                            key={model}
-                                                                            onClick={() => {
-                                                                                const res = qualityMode.split('-')[1];
-                                                                                onQualityModeChange(`${model}-${res}` as GenerationQuality);
-                                                                            }}
-                                                                            className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors ${isModelActive ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-                                                                        >
-                                                                            {model === 'pro' ? '🍌pro' : '🍌v2'}
-                                                                        </button>
+                                                                        <Tooltip key={model} text={tooltipText} side="top">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const res = qualityMode.split('-')[1];
+                                                                                    onQualityModeChange(`${model}-${res}` as GenerationQuality);
+                                                                                }}
+                                                                                className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors ${isModelActive ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
+                                                                            >
+                                                                                {model === 'pro' ? '🍌pro' : '🍌v2'}
+                                                                            </button>
+                                                                        </Tooltip>
                                                                     );
                                                                 })}
                                                             </div>
