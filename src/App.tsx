@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 import { RotateCw, Download, Info, Trash2, Loader2 } from 'lucide-react';
 import { RoundIconButton } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
+import { storageService } from '@/services/storageService';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
@@ -66,10 +67,15 @@ export function App() {
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
 
+    // Clear URL cache on app initialization to ensure fresh signed URLs on page load
+    useEffect(() => {
+        storageService.clearUrlCache();
+    }, []);
+
     // Initial auth check / redirect logic
     useEffect(() => {
         if (!isAuthLoading && user && location.pathname === '/') {
-            // Keep on home for now, or redirect to feed? 
+            // Keep on home for now, or redirect to feed?
             // The user said: "bild feed is jetz die startseite für angemeldete user"
             // So if logged in and on /, show feed.
         }

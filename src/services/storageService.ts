@@ -3,6 +3,19 @@ import { compressImage, generateThumbnail } from '../utils/imageUtils';
 
 export const storageService = {
     /**
+     * Clears the URL cache - should be called on app initialization to ensure fresh URLs
+     */
+    clearUrlCache(): void {
+        console.log('[StorageService] Clearing URL cache');
+        storageService._urlCache.clear();
+        try {
+            sessionStorage.removeItem('nano_url_cache');
+        } catch (e) {
+            console.warn('[StorageService] Failed to clear session cache:', e);
+        }
+    },
+
+    /**
      * Uploads a base64 image or Blob to Supabase Storage
      * @param imageSrc Base64 string or BlobUrl (we will fetch it to get the blob)
      * @param userIdentifier User email (preferred) or user ID
@@ -157,11 +170,13 @@ export const storageService = {
         // Generate a cache key suffix based on options
         const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
 
-        // 1. Check Cache
+        // 1. Check Cache - with aggressive expiration check
         paths.forEach(path => {
             const cacheKey = path + optionsKey;
             const cached = storageService._urlCache.get(cacheKey);
-            if (cached && cached.expires > Date.now()) {
+            // Check if cached AND not expired AND has at least 5 minutes remaining
+            const hasValidCache = cached && cached.expires > Date.now() + (5 * 60 * 1000);
+            if (hasValidCache) {
                 results[cacheKey] = cached.url;
             } else if (path) {
                 toFetch.push(path);
