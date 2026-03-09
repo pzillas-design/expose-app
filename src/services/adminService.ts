@@ -213,7 +213,6 @@ export const adminService = {
             isDefault: p.is_default || false,
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
-            lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
             slug: p.slug
         };
     },
@@ -252,7 +251,6 @@ export const adminService = {
             lang: preset.lang || 'en',
             slug: slug,
             updated_at: new Date().toISOString(),
-            last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls || [],
             user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
             category: category
@@ -305,7 +303,7 @@ export const adminService = {
     },
 
     /**
-     * Update the usage count and last used timestamp for a preset
+     * Update the usage count for a preset
      */
     async updatePresetUsage(id: string): Promise<void> {
         const { data: preset } = await supabase
@@ -318,7 +316,6 @@ export const adminService = {
             .from('global_presets')
             .update({
                 usage_count: (preset?.usage_count || 0) + 1,
-                last_used: new Date().toISOString()
             })
             .eq('id', id);
 

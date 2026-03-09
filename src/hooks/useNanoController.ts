@@ -123,6 +123,36 @@ export const useNanoController = () => {
     const loadFeed = useCallback(async (isInitial = false) => {
         if (!user) return;
 
+        // Beta/local mode: restore from localStorage instead of Supabase.
+        // This matches useAutoSave() behavior when auth is disabled.
+        if (isAuthDisabled) {
+            try {
+                const stored = localStorage.getItem('beta_canvas_state');
+                const parsedRows: ImageRow[] = stored ? JSON.parse(stored) : [];
+                setRows(parsedRows);
+                setHasMore(false);
+
+                if (isInitial && selectedIdsRef.current.length === 0) {
+                    const allLoaded = parsedRows.flatMap(r => r.items);
+                    if (allLoaded.length > 0) {
+                        const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+                        if (newest) requestAnimationFrame(() => setActiveId(newest.id));
+                    }
+                }
+            } catch (err) {
+                console.error('[useNanoController] Failed to restore beta canvas state:', err);
+                setRows([]);
+                setHasMore(false);
+            } finally {
+                if (isInitial) {
+                    setLoadingProgress(100);
+                    setTimeout(() => setLoadingProgress(0), 300);
+                    setIsCanvasLoading(false);
+                }
+            }
+            return;
+        }
+
         if (isInitial) {
             setIsCanvasLoading(true);
             setLoadingProgress(10);
@@ -168,7 +198,7 @@ export const useNanoController = () => {
         } finally {
             if (isInitial) setIsCanvasLoading(false);
         }
-    }, [user, setActiveId, setRows]);
+    }, [user, isAuthDisabled, setActiveId, setRows]);
 
     React.useEffect(() => {
         if (user) {

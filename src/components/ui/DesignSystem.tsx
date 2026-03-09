@@ -158,7 +158,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
  fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
  bg-white dark:bg-zinc-950
  text-zinc-900 dark:text-zinc-100
- border border-zinc-200 dark:border-zinc-800 
+ border border-zinc-200 dark:border-zinc-800
  `}
                     style={{
                         top: coords.top,
@@ -305,7 +305,7 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
     const variants = {
         default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:`,
         danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:`,
-        ghost: `bg-transparent border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        ghost: `bg-transparent backdrop-blur-none border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
         primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
     };
 

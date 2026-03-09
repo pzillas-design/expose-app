@@ -93,7 +93,6 @@ export interface PromptTemplate {
   isPinned: boolean;
   isCustom: boolean;
   usageCount: number;
-  lastUsed?: number;
   controls?: PresetControl[];
   lang?: 'de' | 'en'; // Localization
   isHistory?: boolean; // New: to distinguish on-the-fly prompts

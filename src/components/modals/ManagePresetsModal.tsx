@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, Theme, Typo, RoundIconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
-import { Trash, Plus, Minus, Settings2, Share2, Pencil, Link as LinkIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash, Plus, Minus, Settings2, Share, Pencil, Link as LinkIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ShareTemplateModal } from './ShareTemplateModal';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -88,7 +88,7 @@ const LanguageForm = ({
     };
 
     return (
-        <div className="flex flex-col gap-6 h-full">
+        <div className="flex flex-col gap-0 h-full">
             {showHeader && (
                 <div className={`px-6 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
                     <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
@@ -96,49 +96,49 @@ const LanguageForm = ({
                 </div>
             )}
 
-            <div className={`px-6 pb-32 space-y-6 ${!showHeader ? 'pt-2' : 'pt-6'}`}>
+            <div className={`px-6 pb-32 space-y-5 ${!showHeader ? 'pt-4' : 'pt-6'}`}>
                 {/* Title */}
-                <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
+                <div className="flex flex-col gap-1.5">
+                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
                         {t('title_label')}
                     </label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="rounded-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700" />
                 </div>
 
                 {/* Prompt */}
-                <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
+                <div className="flex flex-col gap-1.5">
+                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-40 font-mono scrollbar-hide rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700" />
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col gap-2">
-                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
+                <div className="flex flex-col gap-1.5">
+                    <label className={`text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400`}>
                         {t('variables_label')}
                     </label>
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                         {controls.map((ctrl) => (
                             <React.Fragment key={ctrl.id}>
                                 {editingControlId === ctrl.id ? (
                                     <div
                                         ref={editFormRef}
-                                        className={`p-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] space-y-4 relative overflow-hidden`}
+                                        className={`p-5 bg-white dark:bg-zinc-950 rounded-2xl space-y-3.5 relative overflow-hidden border border-zinc-200 dark:border-zinc-800`}
                                     >
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
+                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
                                                 Titel
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
+                                            <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
                                                 Optionen
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" />
                                         </div>
-                                        <div className="flex items-center gap-2 pt-2">
+                                        <div className="flex items-center gap-2 pt-1">
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteControl(editingControlId); }}
                                                 className="p-2 rounded-full text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -147,10 +147,10 @@ const LanguageForm = ({
                                                 <Trash className="w-4 h-4" />
                                             </button>
                                             <div className="flex-1" />
-                                            <Button variant="secondary" onClick={resetForm} className="px-6 rounded-full">
+                                            <Button variant="secondary" onClick={resetForm} className="px-5 py-1.5 rounded-lg text-sm font-medium">
                                                 {t('cancel')}
                                             </Button>
-                                            <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8 rounded-full">
+                                            <Button variant="secondary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-5 py-1.5 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
                                                 {t('save')}
                                             </Button>
                                         </div>
@@ -158,20 +158,20 @@ const LanguageForm = ({
                                 ) : (
                                     <div
                                         onClick={() => startEditing(ctrl)}
-                                        className={`flex items-start justify-between p-3 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] cursor-pointer group transition-all hover:bg-zinc-100 dark:hover:bg-white/5 active:scale-[0.99]`}
+                                        className={`flex items-start justify-between p-3.5 bg-white dark:bg-zinc-950 rounded-xl cursor-pointer group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 active:scale-[0.98]`}
                                     >
                                         <div className="min-w-0 flex-1">
-                                            <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1 truncate`}>{ctrl.label}</div>
-                                            <div className="flex flex-wrap gap-1">
+                                            <div className={`text-sm font-medium ${Theme.Colors.TextHighlight} mb-1.5 truncate`}>{ctrl.label}</div>
+                                            <div className="flex flex-wrap gap-1.5">
                                                 {ctrl.options.map(o => (
-                                                    <span key={o.id} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300">
+                                                    <span key={o.id} className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">
                                                         {o.label}
                                                     </span>
                                                 ))}
                                             </div>
                                         </div>
                                         <div className="text-zinc-400 opacity-0 group-hover:opacity-100 transition-all p-2 shrink-0">
-                                            <Pencil className="w-3.5 h-3.5" />
+                                            <Pencil className="w-4 h-4" />
                                         </div>
                                     </div>
                                 )}
@@ -179,32 +179,32 @@ const LanguageForm = ({
                         ))}
 
                         {isAddingControl && !editingControlId ? (
-                            <div className={`p-6 bg-zinc-50 dark:bg-zinc-900/50 rounded-[28px] space-y-4 relative overflow-hidden`}>
+                            <div className={`p-5 bg-white dark:bg-zinc-950 rounded-2xl space-y-3.5 relative overflow-hidden border border-zinc-200 dark:border-zinc-800`}>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
+                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
+                                    <label className={`text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wide`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800" />
                                 </div>
-                                <div className="flex items-center gap-2 pt-2">
+                                <div className="flex items-center gap-2 pt-1">
                                     <div className="flex-1" />
-                                    <Button variant="secondary" onClick={resetForm} className="px-6 rounded-full">
+                                    <Button variant="secondary" onClick={resetForm} className="px-5 py-1.5 rounded-lg text-sm font-medium">
                                         {t('cancel')}
                                     </Button>
-                                    <Button variant="primary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-8 rounded-full">
+                                    <Button variant="secondary" onClick={handleSaveControl} disabled={!newControlLabel} className="px-5 py-1.5 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
                                         {t('add_btn')}
                                     </Button>
                                 </div>
                             </div>
                         ) : (
                             !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-3 flex items-center justify-center gap-2 border border-transparent bg-zinc-50 dark:bg-zinc-900/30 rounded-full text-zinc-500 font-medium ${Theme.Colors.SurfaceHover} transition-colors hover:text-zinc-900 dark:hover:text-zinc-100`}>
+                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2.5 flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-lg text-zinc-700 dark:text-zinc-300 font-medium transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 active:scale-[0.98]`}>
                                     <Plus className="w-4 h-4" /> {t('add_variable')}
                                 </button>
                             )
@@ -280,6 +280,23 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
         }
     }, [isOpen, initialTemplateId, currentLang, templates]);
 
+    // Load template when selectedId changes (e.g., clicking in list)
+    useEffect(() => {
+        if (!selectedId || selectedId === 'new') return;
+        const tmpl = templates.find(t => t.id === selectedId);
+        if (tmpl) {
+            if (currentLang === 'en') {
+                setTitleEn(tmpl.title);
+                setPromptEn(tmpl.prompt);
+                setControlsEn(tmpl.controls || []);
+            } else {
+                setTitleDe(tmpl.title);
+                setPromptDe(tmpl.prompt);
+                setControlsDe(tmpl.controls || []);
+            }
+        }
+    }, [selectedId, currentLang, templates]);
+
     const handleSave = async (openShareAfterSave = false) => {
         const results: { id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
@@ -324,7 +341,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                     {selectedId !== 'new' && selectedId && (
                         <>
                             <RoundIconButton
-                                icon={<Share2 className="w-4 h-4" />}
+                                icon={<Share className="w-4 h-4" />}
                                 onClick={() => setIsShareModalOpen(true)}
                                 tooltip="Teilen"
                                 disabled={!(titleDe || titleEn)}
@@ -366,7 +383,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
             </div>
 
             <ModalFooter>
-                <Button variant="primary" onClick={() => handleSave(false)} disabled={isSaveDisabled()} className="w-full">
+                <Button variant="secondary" onClick={() => handleSave(false)} disabled={isSaveDisabled()} className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50">
                     {t('save')}
                 </Button>
             </ModalFooter>
@@ -379,13 +396,11 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                 <span className={Typo.H3}>{currentLang === 'de' ? 'Vorlagen verwalten' : 'Manage Presets'}</span>
                 {isMobile ? (
                     <div className="flex items-center gap-2">
-                        <button onClick={() => { setSelectedId('new'); setMobileView('editor'); }} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><Plus className="w-5 h-5" /></button>
-                        <button onClick={onClose} className="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                        <RoundIconButton icon={<Plus className="w-5 h-5" />} onClick={() => { setSelectedId('new'); setMobileView('editor'); }} tooltip={currentLang === 'de' ? 'Neue Vorlage' : 'New preset'} variant="ghost" />
+                        <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
                     </div>
                 ) : (
-                    <button onClick={() => setSelectedId('new')} className="p-1 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
-                        <Plus className="w-4 h-4" />
-                    </button>
+                    <RoundIconButton icon={<Plus className="w-4 h-4" />} onClick={() => setSelectedId('new')} tooltip={currentLang === 'de' ? 'Neue Vorlage' : 'New preset'} variant="ghost" />
                 )}
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -396,10 +411,10 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                             setSelectedId(tmpl.id);
                             if (isMobile) setMobileView('editor');
                         }}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 border border-orange-200/50 dark:border-orange-500/20 ' + Theme.Effects.ShadowSm : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-transparent' : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
                     >
                         <span className="text-[13px] font-medium truncate pr-2">{tmpl.title}</span>
-                        <ChevronRight className={`w-4 h-4 text-zinc-400 transition-opacity ${selectedId !== tmpl.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100 text-orange-500'}`} />
+                        <ChevronRight className={`w-4 h-4 text-zinc-400 transition-opacity ${selectedId !== tmpl.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`} />
                     </button>
                 ))}
             </div>

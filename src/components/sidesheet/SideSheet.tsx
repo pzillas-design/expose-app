@@ -109,7 +109,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     // Preset Menu State
     const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
-    const [showRecentPresets, setShowRecentPresets] = useState(false);
     const presetsMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -174,14 +173,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // User-created presets are always shown regardless of lang (DB may have saved them as 'en' by default).
         // System presets are filtered by the current language.
         const filtered = templates.filter(t => t.isCustom || !t.lang || t.lang === lang);
-        if (showRecentPresets) {
-            return [...filtered]
-                .filter(t => t.lastUsed)
-                .sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0))
-                .slice(0, 12);
-        }
         return filtered.slice(0, 12);
-    }, [templates, lang, showRecentPresets]);
+    }, [templates, lang]);
 
 
     // ── Prompt auto-resize ──
@@ -636,7 +629,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 onClick={() => onModeChange('brush')}
                                                                 className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
                                                             >
-                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Pinselstrich' : 'Brush Stroke'}</span>
+                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Pinsel' : 'Brush'}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
@@ -769,40 +762,43 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             />
 
                                             {/* Generate Button — collapses progressively as the sidesheet gets narrow */}
-                                            {width && parseInt(width) < 320 ? (
-                                                <RoundIconButton
-                                                    icon={selectedImage?.isGenerating
-                                                        ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
-                                                        : <Play className="w-[18px] h-[18px]" />
-                                                    }
-                                                    onClick={handleGenerate}
-                                                    disabled={selectedImage?.isGenerating}
-                                                    variant="primary"
-                                                    tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
-                                                />
-                                            ) : (
-                                                <Button
-                                                    onClick={handleGenerate}
-                                                    disabled={selectedImage?.isGenerating}
-                                                    variant="primary"
-                                                    size="m"
-                                                    className={`${width && parseInt(width) < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
-                                                >
-                                                    {selectedImage?.isGenerating ? (
-                                                        width && parseInt(width) < 360 ? (
-                                                            <span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                            {(() => {
+                                                const w = width && !width.includes('%') ? parseInt(width) : Infinity;
+                                                return w < 320 ? (
+                                                    <RoundIconButton
+                                                        icon={selectedImage?.isGenerating
+                                                            ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                                            : <Play className="w-[18px] h-[18px]" />
+                                                        }
+                                                        onClick={handleGenerate}
+                                                        disabled={selectedImage?.isGenerating}
+                                                        variant="primary"
+                                                        tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
+                                                    />
+                                                ) : (
+                                                    <Button
+                                                        onClick={handleGenerate}
+                                                        disabled={selectedImage?.isGenerating}
+                                                        variant="primary"
+                                                        size="m"
+                                                        className={`${w < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
+                                                    >
+                                                        {selectedImage?.isGenerating ? (
+                                                            w < 360 ? (
+                                                                <span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                                            ) : (
+                                                                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                                            )
                                                         ) : (
-                                                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
-                                                        )
-                                                    ) : (
-                                                        width && parseInt(width) < 360 ? (
-                                                            <Play className="w-[18px] h-[18px]" />
-                                                        ) : (
-                                                            t('generate')
-                                                        )
-                                                    )}
-                                                </Button>
-                                            )}
+                                                            w < 360 ? (
+                                                                <Play className="w-[18px] h-[18px]" />
+                                                            ) : (
+                                                                t('generate')
+                                                            )
+                                                        )}
+                                                    </Button>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
@@ -829,17 +825,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 </span>
                                             </button>
                                         ))}
-                                        <Tooltip text={lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets'}>
-                                            <button
-                                                onClick={() => {
-                                                    setEditingTemplate(null);
-                                                    setIsPresetModalOpen(true);
-                                                }}
-                                                className="flex items-center justify-center px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 text-zinc-500 dark:text-zinc-400"
-                                            >
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
+                                        <RoundIconButton
+                                            icon={<MoreHorizontal className="w-4 h-4" />}
+                                            onClick={() => {
+                                                setEditingTemplate(null);
+                                                setIsPresetModalOpen(true);
+                                            }}
+                                            tooltip={lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets'}
+                                            variant="ghost"
+                                        />
                                     </div>
                                 </div>
                     </>

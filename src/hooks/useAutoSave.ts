@@ -16,6 +16,12 @@ export const useAutoSave = (
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isSavingRef = useRef(false);
 
+    // Keep a ref to the latest rows so the unmount hook can access current state
+    const rowsRef = useRef(rows);
+    useEffect(() => {
+        rowsRef.current = rows;
+    }, [rows]);
+
     // Helper to extract saveable images
     const getImagesToSave = (currentRows: ImageRow[]): CanvasImage[] => {
         return currentRows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
@@ -43,6 +49,18 @@ export const useAutoSave = (
 
             return () => {
                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+                // Force save on unmount if there's pending state
+                const currentUnmountState = JSON.stringify(rowsRef.current);
+                if (currentUnmountState !== lastSavedRef.current) {
+                    try {
+                        console.log('[AutoSave] Force saving to localStorage on unmount...');
+                        localStorage.setItem('beta_canvas_state', currentUnmountState);
+                        lastSavedRef.current = currentUnmountState;
+                    } catch (err) {
+                        console.error('[AutoSave] Unmount localStorage save failed:', err);
+                    }
+                }
             };
         }
 
@@ -140,11 +158,9 @@ export const useAutoSave = (
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
             // Trigger immediate save on unmount if we have unsaved work
-            // Note: We can't easily check 'currentState vs lastSaved' here because of closure staleness,
-            // but we can check if we have valuable data.
-            // Ideally we blindly save on unmount to be safe.
+            // Using rowsRef instead of rows to prevent stale closure data on unmount
             if (user && !isAuthDisabled && !isSavingRef.current) {
-                const imagesToSave = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+                const imagesToSave = rowsRef.current.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
 
                 if (imagesToSave.length > 0) {
                     const payload = imagesToSave.map(img => {

@@ -65,7 +65,6 @@ export const usePresets = (userId?: string) => {
                     return {
                         ...t,
                         usageCount: (t.usageCount || 0) + 1,
-                        lastUsed: Date.now()
                     };
                 }
                 return t;

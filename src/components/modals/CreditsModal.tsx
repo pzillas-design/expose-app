@@ -46,8 +46,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
         }
     };
 
-    console.log('[CreditsModal] currentBalance:', currentBalance, 'type:', typeof currentBalance);
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
             <div className="p-8 flex flex-col gap-8">

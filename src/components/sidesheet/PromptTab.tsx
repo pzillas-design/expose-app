@@ -30,7 +30,7 @@ interface PromptTabProps {
     onAddReference: (file: File, annotationId?: string) => void;
     onTogglePin?: (id: string) => void;
     onDeleteTemplate?: (id: string) => void;
-    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => Promise<PromptTemplate | null>;
+    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom'>) => Promise<PromptTemplate | null>;
     onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => Promise<PromptTemplate | null>;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
