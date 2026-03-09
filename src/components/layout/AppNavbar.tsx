@@ -150,7 +150,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isGerman = lang === 'de';
 
     const balanceDisplay = user && displayCredits !== null && (
-        <Tooltip text={isGerman ? 'Guthaben anzeigen' : 'Show balance'}>
+        <Tooltip text={isGerman ? 'Guthaben' : 'Balance'}>
             <button
                 onClick={onOpenCredits}
                 className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"

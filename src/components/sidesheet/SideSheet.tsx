@@ -768,8 +768,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
                                             />
 
-                                            {/* Generate Button — icon-only when sidesheet is very narrow */}
-                                            {width && parseInt(width) < 280 ? (
+                                            {/* Generate Button — collapses progressively as the sidesheet gets narrow */}
+                                            {width && parseInt(width) < 320 ? (
                                                 <RoundIconButton
                                                     icon={selectedImage?.isGenerating
                                                         ? <span className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
@@ -786,12 +786,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     disabled={selectedImage?.isGenerating}
                                                     variant="primary"
                                                     size="m"
-                                                    className="px-5 shrink-0"
+                                                    className={`${width && parseInt(width) < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
                                                 >
                                                     {selectedImage?.isGenerating ? (
-                                                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                                        width && parseInt(width) < 360 ? (
+                                                            <span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                                                        ) : (
+                                                            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />{t('processing')}</span>
+                                                        )
                                                     ) : (
-                                                        t('generate')
+                                                        width && parseInt(width) < 360 ? (
+                                                            <Play className="w-[18px] h-[18px]" />
+                                                        ) : (
+                                                            t('generate')
+                                                        )
                                                     )}
                                                 </Button>
                                             )}
