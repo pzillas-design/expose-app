@@ -204,9 +204,9 @@ const LanguageForm = ({
                             </div>
                         ) : (
                             !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-2 flex items-center justify-center gap-2 bg-black/5 dark:bg-white/5 rounded-lg text-zinc-700 dark:text-zinc-300 text-sm font-medium transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98]`}>
+                                <Button variant="secondary" onClick={() => setIsAddingControl(true)} className="w-full gap-2">
                                     <Plus className="w-4 h-4" /> {t('add_variable')}
-                                </button>
+                                </Button>
                             )
                         )}
                     </div>
