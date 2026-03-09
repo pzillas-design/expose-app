@@ -280,19 +280,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
 
-    const SNAP_CLOSE_THRESHOLD = 220;
+    const MIN_SIDEBAR_WIDTH = 300;
+    const MAX_SIDEBAR_WIDTH = 600;
 
     const resize = useCallback((e: MouseEvent) => {
         if (isResizing) {
             const newWidth = window.innerWidth - e.clientX;
-            if (newWidth < SNAP_CLOSE_THRESHOLD) {
-                // Snap closed
-                setIsSideSheetVisible(false);
-                setIsResizing(false);
-            } else if (newWidth <= 600) {
-                setSidebarWidth(Math.max(newWidth, 300));
-                onSidebarWidthChange?.(Math.max(newWidth, 300));
-            }
+            const clampedWidth = Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+            setSidebarWidth(clampedWidth);
+            onSidebarWidthChange?.(clampedWidth);
         }
     }, [isResizing, onSidebarWidthChange]);
 

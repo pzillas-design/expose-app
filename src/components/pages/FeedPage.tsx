@@ -273,7 +273,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                             })}
                         </div>
                     ) : !isLoading && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-screen">
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                             <div className="flex flex-col items-center gap-8">
                                 <div className="space-y-4">
                                     <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">

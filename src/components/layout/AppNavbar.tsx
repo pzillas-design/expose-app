@@ -204,7 +204,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 )}
             </span>
         </div>
-    ) : hasImages ? (
+    ) : (
         <button
             type="button"
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -212,7 +212,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         >
             <Logo className="w-7 h-7" />
         </button>
-    ) : null;
+    );
 
     const rightContent = isDetail ? (
         <div className="flex items-center gap-1">
