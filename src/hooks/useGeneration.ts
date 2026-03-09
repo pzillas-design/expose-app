@@ -114,6 +114,12 @@ export const useGeneration = ({
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
+                // Timeout: Edge Function likely died (status 546) — clean up stuck job
+                showToast(translateError('timeout'), 'error');
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== jobId)
+                })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 return;
             }
@@ -174,6 +180,17 @@ export const useGeneration = ({
                 const jobError = (jobData as any).error || "";
                 const translated = translateError(jobError);
                 showToast(translated, "error");
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== jobId)
+                })).filter(r => r.items.length > 0));
+                attachedJobIds.current.delete(jobId);
+                return;
+            }
+
+            // 2b. Detect stuck "processing" jobs (Edge Function killed by Supabase before catch ran)
+            if (jobData?.status === 'processing' && attempts >= 36) { // ~3 minutes
+                showToast(translateError('timeout'), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)

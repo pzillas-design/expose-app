@@ -1,7 +1,7 @@
 import { encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 
 const POLL_INTERVAL_MS = 3000; // 3 seconds between polls
-const MAX_POLLS = 40;          // ~120 seconds total before timeout (2 min)
+const MAX_POLLS = 25;          // ~75 seconds total before timeout (stay under Supabase wall-clock limit)
 
 export const generateImageKie = async (
     apiKey: string,

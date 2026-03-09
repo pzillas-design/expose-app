@@ -82,11 +82,11 @@ Deno.serve(async (req) => {
     // Stored after deduction so the outer catch can always refund on any failure
     let refundData: { userId: string; originalCredits: number } | null = null;
 
-    // Global timeout — Kie.ai can take up to 2min to generate, plus overhead (~15s).
-    // Supabase hard limit is 150s; we use 145s to stay safely under.
-    const TIMEOUT_MS = 145000;
+    // Global timeout — Kie polling is ~75s max, plus overhead (~15s for upload/download/DB).
+    // Supabase wall-clock limit killed function at ~98s, so stay well under that.
+    const TIMEOUT_MS = 90000;
     const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Generation Timeout: Job took too long (>145s)')), TIMEOUT_MS)
+        setTimeout(() => reject(new Error('Generation Timeout: Job took too long (>90s)')), TIMEOUT_MS)
     );
 
     try {
