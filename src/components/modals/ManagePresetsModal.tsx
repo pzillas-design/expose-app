@@ -441,7 +441,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
             <div
                 className={`
                     w-full ${isMobile ? 'max-w-md' : 'max-w-4xl h-[70vh] min-h-[500px]'}
-                    bg-white dark:bg-zinc-900 backdrop-blur-2xl border border-zinc-900/10 dark:border-zinc-100/10 ${Theme.Geometry.RadiusXl}
+                    bg-white dark:bg-zinc-900 backdrop-blur-2xl ${Theme.Geometry.RadiusXl}
                     flex overflow-hidden ${Theme.Effects.ShadowLg}
                     animate-in zoom-in-95 duration-200
                 `}
@@ -481,13 +481,14 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                     onCancel={() => setIsDeleteDialogOpen(false)}
                 />
 
-                <ShareTemplateModal
-                    isOpen={isShareModalOpen}
-                    onClose={() => setIsShareModalOpen(false)}
-                    templateName={savedTemplateForShare?.title || activeTemplate?.title || titleDe || titleEn || 'Unbenannt'}
-                    slug={savedTemplateForShare?.slug || activeTemplate?.slug}
-                />
             </div>
+
+            <ShareTemplateModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                templateName={savedTemplateForShare?.title || activeTemplate?.title || titleDe || titleEn || 'Unbenannt'}
+                slug={savedTemplateForShare?.slug || activeTemplate?.slug}
+            />
         </div>
     );
 };
