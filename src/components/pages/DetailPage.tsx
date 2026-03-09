@@ -44,7 +44,7 @@ const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({
 
     return (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-30 rounded-[2px] overflow-hidden">
-            <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/88 backdrop-blur-md" />
+            <div className="absolute inset-0 bg-white/70 dark:bg-black/90 backdrop-blur-md" />
             <div className="relative z-10 flex flex-col gap-3 w-full max-w-[180px]">
                 <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Generierung…</span>
                 <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full">
