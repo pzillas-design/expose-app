@@ -75,8 +75,8 @@ export const translations = {
     add_sticker: "Insert",
 
     // Prompt Tab
-    prompt_label: "PROMPT",
-    context_label: "CONTEXT",
+    prompt_label: "Prompt",
+    context_label: "Context",
     annotations: "Annotations",
     reset_tooltip: "Reset Preset",
     describe_changes: "Describe changes...",
@@ -109,11 +109,11 @@ export const translations = {
     preset_deleted: "Preset deleted",
     new_preset_title: "Create New Preset",
     edit_preset_title: "Edit Preset",
-    title_label: "TITLE",
+    title_label: "Title",
     title_placeholder: "e.g. Cinematic Light",
-    prompt_label_editor: "PROMPT",
+    prompt_label_editor: "Prompt",
     prompt_placeholder: "e.g. add cinematic lighting",
-    variables_label: "VARIABLES",
+    variables_label: "Variables",
     add_variable: "Add Variable",
     version_de: "German Version",
     version_en: "English Version",
@@ -122,7 +122,7 @@ export const translations = {
     add_btn: "Add",
 
     // Variables
-    vars_label: "VARIABLES",
+    vars_label: "Variables",
     add_var: "Add Var",
     var_placeholder: "Value...",
 
@@ -490,11 +490,11 @@ export const translations = {
     preset_deleted: "Preset gelöscht",
     new_preset_title: "Neue Vorlage erstellen",
     edit_preset_title: "Vorlage bearbeiten",
-    title_label: "TITEL",
+    title_label: "Titel",
     title_placeholder: "z.B. Cinematic Light",
-    prompt_label_editor: "PROMPT",
+    prompt_label_editor: "Prompt",
     prompt_placeholder: "z.B. füge cinematisches Licht hinzu",
-    variables_label: "VARIABLEN",
+    variables_label: "Variablen",
     add_variable: "Variable hinzufügen",
     version_de: "Deutsche Version",
     version_en: "Englische Version",
@@ -503,7 +503,7 @@ export const translations = {
     add_btn: "Hinzufügen",
 
     // Variables
-    vars_label: "VARIABLEN",
+    vars_label: "Variablen",
     add_var: "Variable",
     var_placeholder: "Wert...",
 
