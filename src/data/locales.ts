@@ -150,6 +150,7 @@ export const translations = {
     generate_new: "Generate new image",
     empty_feed_message: "Click \"+\" to generate your first image.",
     action_upload: "Upload",
+    drop_files_here: "Drop files here",
     action_generate: "Generate image",
 
     // Settings / User
@@ -531,6 +532,7 @@ export const translations = {
     generate_new: "Bild generieren",
     empty_feed_message: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
     action_upload: "Hochladen",
+    drop_files_here: "Dateien hier ablegen",
     action_generate: "Bild generieren",
 
     // Settings / User

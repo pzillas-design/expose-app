@@ -1,11 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CanvasImage } from '@/types';
-import { Loader2, Plus, SquarePen, Layers, Upload } from 'lucide-react';
+import { Loader2, Plus, Layers, Upload } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
-import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
@@ -30,10 +29,48 @@ interface FeedPageProps {
 export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onUpload, onLoadMore, isSelectMode, selectedIds = [], onToggleSelect, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
-    const [isCreateMenuOpen, setIsCreateMenuOpen] = React.useState(false);
-    const createMenuRef = React.useRef<HTMLDivElement>(null);
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
+
+    // Drag & drop file upload
+    const [isDropActive, setIsDropActive] = React.useState(false);
+    const dragCounter = React.useRef(0);
+
+    const handleDragEnter = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current++;
+        if (e.dataTransfer.types.includes('Files')) {
+            setIsDropActive(true);
+        }
+    }, []);
+
+    const handleDragLeave = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current--;
+        if (dragCounter.current <= 0) {
+            dragCounter.current = 0;
+            setIsDropActive(false);
+        }
+    }, []);
+
+    const handleDragOver = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter.current = 0;
+        setIsDropActive(false);
+
+        const files = e.dataTransfer.files;
+        if (files?.length && onUpload) {
+            onUpload(files);
+        }
+    }, [onUpload]);
 
     // Dynamically calculate columns based on actual DOM layout
     const [columns, setColumns] = React.useState(2);
@@ -83,28 +120,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             const toDelete = isSelectMode && selectedIds.includes(img.id) ? selectedIds : [img.id];
 
             const confirmed = await confirm({
-                title: 'Bild(er) löschen',
-                description: `Möchtest du wirklich ${toDelete.length} Bild(er) löschen?`,
-                confirmLabel: 'LÖSCHEN',
-                cancelLabel: 'ABBRECHEN',
+                title: toDelete.length > 1 ? (state?.lang === 'de' ? 'Bilder löschen' : 'Delete images') : (state?.lang === 'de' ? 'Bild löschen' : 'Delete image'),
+                description: state?.lang === 'de'
+                    ? `Möchtest du wirklich ${toDelete.length} Bild(er) löschen?`
+                    : `Do you really want to delete ${toDelete.length} image(s)?`,
+                confirmLabel: state?.lang === 'de' ? 'LÖSCHEN' : 'DELETE',
+                cancelLabel: state?.lang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'danger'
             });
             if (confirmed && actions?.handleDeleteImage) {
-                toDelete.forEach(id => actions.handleDeleteImage(id));
+                toDelete.forEach(id => actions.handleDeleteImage(id, true));
                 if (isSelectMode) actions?.setIsSelectMode?.(false);
             }
         }
     });
 
-    React.useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (createMenuRef.current && !createMenuRef.current.contains(e.target as Node)) {
-                setIsCreateMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     React.useEffect(() => {
         if (!hasMore || isLoading) return;
@@ -133,7 +163,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
     const triggerUpload = () => document.getElementById('feed-upload-input')?.click();
 
     return (
-        <div className="flex-1 flex overflow-hidden">
+        <div
+            className="flex-1 flex overflow-hidden"
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+        >
             {/* Shared hidden file input for all upload triggers */}
             <input
                 type="file"
@@ -144,27 +180,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
             />
             <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
+                {/* Drag & drop overlay */}
+                {isDropActive && (
+                    <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                        <div className="absolute inset-0 bg-zinc-950/60" />
+                        <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
+                            <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                            <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
+                                {t?.('drop_files_here') || 'Dateien hier ablegen'}
+                            </p>
+                        </div>
+                    </div>
+                )}
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
                         <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 ${isMobile ? 'pb-32' : ''}`}>
-                            {/* Create New Tile */}
+                            {/* Upload Tile */}
                             <div
-                                ref={createMenuRef}
                                 className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
-                                onClick={() => setIsCreateMenuOpen(p => !p)}
+                                onClick={triggerUpload}
                             >
-                                <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
-
-                                {isCreateMenuOpen && (
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 mt-4 z-[100]" onClick={e => e.stopPropagation()}>
-                                        <DropdownMenu
-                                            items={[
-                                                { label: t?.('generate_new') || 'Neues Bild generieren', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); onCreateNew(); } },
-                                                { label: t?.('action_upload') || 'Hochladen', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateMenuOpen(false); triggerUpload(); } },
-                                            ]}
-                                        />
-                                    </div>
-                                )}
+                                <Upload className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
                             </div>
 
                             {images.map((img, idx) => {
@@ -183,10 +219,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                         onMouseEnter={() => setActiveIndex(idx)}
                                         onMouseLeave={() => setActiveIndex(null)}
                                         onClick={() => {
+                                            if (isGen) return; // generating images are not clickable
                                             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                                             else onSelectImage(img.id);
                                         }}
-                                        className={`aspect-square cursor-pointer group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
+                                        className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
                                     >
                                         {previewSrc ? (
                                             <img
@@ -329,7 +366,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 onBrushSizeChange={actions?.setBrushSize || (() => { })}
                                 onBrushResizeStart={() => actions?.setIsBrushResizing?.(true)}
                                 onBrushResizeEnd={() => actions?.setIsBrushResizing?.(false)}
-                                onGenerate={(Math.random as any)} /* multi-generate is handled elsewhere or suppressed for now */
+                                onGenerate={actions?.handleGenerate || (() => { })}
                                 onUpdateAnnotations={actions?.handleUpdateAnnotations || (() => { })}
                                 onUpdatePrompt={actions?.handleUpdatePrompt || (() => { })}
                                 onUpdateVariables={actions?.handleUpdateVariables || (() => { })}

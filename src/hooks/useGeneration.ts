@@ -323,10 +323,8 @@ export const useGeneration = ({
             return newRows;
         });
 
-        // Navigate to the placeholder skeleton immediately
-        if (shouldSnap) {
-            setTimeout(() => selectAndSnap(newId), 50);
-        }
+        // Stay on source image — detail view shows generating modal overlay.
+        // Navigation to the finished image happens automatically via DetailPage.
 
         // --- ASYNC PROCESSING STARTS HERE ---
         // Credits are deducted server-side; local UI update happens only on success.

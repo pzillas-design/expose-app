@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Loader2, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus as MinusIcon, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
-import { Theme, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
+import { Theme, Typo, Tooltip, RoundIconButton, IconButton, Button } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
@@ -26,8 +26,15 @@ interface DetailPageProps {
     t: any;
 }
 
-// ── Generating Skeleton Overlay ─────────────────────────────────────────────
-const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({ startTime, duration }) => {
+// ── Generating Modal Overlay ─────────────────────────────────────────────
+const GeneratingModal: React.FC<{
+    startTime?: number;
+    duration: number;
+    isMinimized: boolean;
+    onMinimize: () => void;
+    onGenerateMore?: () => void;
+    lang?: string;
+}> = ({ startTime, duration, isMinimized, onMinimize, onGenerateMore, lang }) => {
     const [progress, setProgress] = useState(0);
     useEffect(() => {
         const start = startTime || Date.now();
@@ -42,17 +49,43 @@ const GeneratingOverlay: React.FC<{ startTime?: number; duration: number }> = ({
         return () => clearInterval(id);
     }, [startTime, duration]);
 
+    if (isMinimized) return null;
+
     return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-30 rounded-[2px] overflow-hidden">
-            <div className="absolute inset-0 bg-white/70 dark:bg-black/90 backdrop-blur-md" />
-            <div className="relative z-10 flex flex-col gap-3 w-full max-w-[180px]">
-                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">Generierung…</span>
-                <div className="h-0.5 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full">
-                    <div
-                        className="h-full bg-zinc-800 dark:bg-white rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${progress}%` }}
-                    />
+        <div className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-auto">
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-zinc-950/60" />
+
+            {/* Modal */}
+            <div className={`relative w-full max-w-xs ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg} flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200`}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 pt-6 pb-2">
+                    <h2 className={`${Typo.H2} text-xl`}>
+                        {lang === 'de' ? 'Generieren' : 'Generating'}
+                    </h2>
+                    <IconButton icon={<MinusIcon className="w-5 h-5" />} onClick={onMinimize} />
                 </div>
+
+                {/* Progress */}
+                <div className="px-6 py-6">
+                    <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-zinc-800 dark:bg-white rounded-full transition-all duration-300 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                </div>
+
+                {/* Footer */}
+                {onGenerateMore && (
+                    <div className="px-6 pb-6">
+                        <Tooltip text={lang === 'de' ? 'Mehr generieren' : 'Generate more'}>
+                            <Button variant="secondary" size="m" className="w-full" onClick={onGenerateMore} icon={<Repeat className="w-3.5 h-3.5" />}>
+                                {lang === 'de' ? 'Mehr' : 'More'}
+                            </Button>
+                        </Tooltip>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -67,6 +100,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
+    const [isGenModalMinimized, setIsGenModalMinimized] = useState(false);
+    // Reset minimize state when switching images
+    useEffect(() => { setIsGenModalMinimized(false); }, [selectedId]);
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
     const isSideSheetVisible = isSideSheetVisibleProp ?? isSideSheetVisibleLocal;
@@ -80,6 +116,27 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const img = images.find(i => i.id === selectedId);
     const idx = images.findIndex(i => i.id === selectedId);
     const { confirm } = useItemDialog();
+
+    // Track generating children of current image
+    const generatingChild = useMemo(() =>
+        img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
+        [images, img]
+    );
+    // Auto-navigate to finished child: was generating → now done
+    const prevGeneratingChildId = useRef<string | null>(null);
+    useEffect(() => {
+        if (generatingChild) {
+            prevGeneratingChildId.current = generatingChild.id;
+        } else if (prevGeneratingChildId.current) {
+            const finishedId = prevGeneratingChildId.current;
+            prevGeneratingChildId.current = null;
+            // Child finished — navigate to it
+            const finishedImage = images.find(i => i.id === finishedId && !i.isGenerating);
+            if (finishedImage) {
+                onSelectImage(finishedId);
+            }
+        }
+    }, [generatingChild, images, onSelectImage]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Track actual image dimensions from the loaded <img> element
@@ -249,20 +306,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 case 'Delete':
                     e.preventDefault();
                     if (selectedId) {
-                        const confirmed = await confirm({
-                            title: 'Bild löschen',
-                            description: 'Möchtest du dieses Bild wirklich löschen?',
-                            confirmLabel: 'LÖSCHEN',
-                            cancelLabel: 'ABBRECHEN',
-                            variant: 'danger'
-                        });
-                        if (confirmed) {
-                            onDelete(selectedId);
-                            // Auto-navigate to next or previous if available
-                            if (idx < images.length - 1) onSelectImage(images[idx + 1].id);
-                            else if (idx > 0) onSelectImage(images[idx - 1].id);
-                            else onBack();
-                        }
+                        await onDelete(selectedId);
+                        // Auto-navigate to next or previous if available
+                        if (idx < images.length - 1) onSelectImage(images[idx + 1].id);
+                        else if (idx > 0) onSelectImage(images[idx - 1].id);
+                        else onBack();
                     }
                     break;
             }
@@ -307,13 +355,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, [isResizing, resize, stopResizing]);
 
 
-    if (!img) {
-        return (
-            <div className="flex-1 flex items-center justify-center bg-white dark:bg-black">
-                <Loader2 className="w-8 h-8 animate-spin text-zinc-400 dark:text-zinc-800" />
-            </div>
-        );
-    }
+    // No image found — go back, this page shouldn't exist without a valid image
+    useEffect(() => {
+        if (!img) onBack();
+    }, [img, onBack]);
+    if (!img) return null;
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-black">
@@ -347,22 +393,28 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Image Container */}
                     <div className="flex-1 relative overflow-hidden min-h-0">
 
-                        {/* Floating action buttons when sidesheet is collapsed (desktop only) */}
-                        {!isSideSheetVisible && !isMobile && state.sideSheetMode !== 'brush' && (
+                        {/* Floating action buttons (desktop only) */}
+                        {!isMobile && state.sideSheetMode !== 'brush' && (
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <div className="flex items-center gap-2 pointer-events-auto">
-                                    {!img.isGenerating && (
-                                        <button onClick={() => setIsSideSheetVisible(true)} className="h-9 px-4 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
-                                            {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
-                                        </button>
+                                    {!isSideSheetVisible && !img.isGenerating && (
+                                        <Tooltip text={state.currentLang === 'de' ? 'Bearbeitungspanel öffnen' : 'Open editing panel'}>
+                                            <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
+                                                {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
+                                            </button>
+                                        </Tooltip>
                                     )}
-                                    <button
-                                        onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
-                                        className="h-9 px-4 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
-                                    >
-                                        <Repeat className="w-3.5 h-3.5" />
-                                        {state.currentLang === 'de' ? 'Mehr' : 'More'}
-                                    </button>
+                                    {img.generationPrompt && (
+                                        <Tooltip text={state.currentLang === 'de' ? 'Mehr generieren' : 'Generate more'}>
+                                            <button
+                                                onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
+                                                className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
+                                            >
+                                                <Repeat className="w-3.5 h-3.5" />
+                                                {state.currentLang === 'de' ? 'Mehr' : 'More'}
+                                            </button>
+                                        </Tooltip>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -396,10 +448,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         style={{ objectFit: 'contain' }}
                                     />
 
-                                    {img.isGenerating && (
-                                        <GeneratingOverlay
-                                            startTime={img.generationStartTime}
-                                            duration={img.estimatedDuration || 23000}
+                                    {generatingChild && (
+                                        <GeneratingModal
+                                            startTime={generatingChild.generationStartTime}
+                                            duration={generatingChild.estimatedDuration || 23000}
+                                            isMinimized={isGenModalMinimized}
+                                            onMinimize={() => setIsGenModalMinimized(true)}
+                                            onGenerateMore={img.generationPrompt ? () => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues) : undefined}
+                                            lang={state.currentLang}
                                         />
                                     )}
 

@@ -255,10 +255,21 @@ export const useNanoController = () => {
 
     // --- Actions --- (Integrated via Hooks above)
 
-    const handleDeleteImage = useCallback((id: string) => {
+    const handleDeleteImage = useCallback(async (id: string, skipConfirm = false) => {
         if (!user) {
             showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
             return;
+        }
+
+        if (!skipConfirm) {
+            const confirmed = await confirm({
+                title: currentLang === 'de' ? 'Bild löschen' : 'Delete image',
+                description: currentLang === 'de' ? 'Möchtest du dieses Bild wirklich löschen?' : 'Do you really want to delete this image?',
+                confirmLabel: currentLang === 'de' ? 'LÖSCHEN' : 'DELETE',
+                cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
+                variant: 'danger'
+            });
+            if (!confirmed) return;
         }
 
         setRows(prev => {
@@ -281,7 +292,7 @@ export const useNanoController = () => {
                 showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
             });
         }
-    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, showToast, currentLang]);
+    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, showToast, currentLang, confirm]);
 
     const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
         setStorageAutoDelete(val);
@@ -296,7 +307,7 @@ export const useNanoController = () => {
                 const oldest = [...allImages]
                     .filter(img => !img.isGenerating)
                     .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
-                if (oldest) handleDeleteImage(oldest.id);
+                if (oldest) handleDeleteImage(oldest.id, true);
                 return true;
             }
             const confirmed = await confirm({
@@ -313,7 +324,7 @@ export const useNanoController = () => {
                 const oldest = [...allImages]
                     .filter(img => !img.isGenerating)
                     .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
-                if (oldest) handleDeleteImage(oldest.id);
+                if (oldest) handleDeleteImage(oldest.id, true);
                 return true;
             }
             return false;

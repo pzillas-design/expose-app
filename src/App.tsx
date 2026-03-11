@@ -167,7 +167,7 @@ export function App() {
                             variant: 'danger'
                         });
                         if (!confirmed) return;
-                        state.selectedIds.forEach((id: string) => actions.handleDeleteImage(id));
+                        state.selectedIds.forEach((id: string) => actions.handleDeleteImage(id, true));
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
                     }}
