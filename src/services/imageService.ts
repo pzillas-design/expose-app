@@ -230,6 +230,9 @@ export const imageService = {
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
+        // Ensure fresh JWT before calling edge function (prevents 401 from expired tokens)
+        await supabase.auth.refreshSession();
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
             body: {
                 ...payload,
