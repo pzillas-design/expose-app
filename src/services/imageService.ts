@@ -274,6 +274,13 @@ export const imageService = {
             throw new Error(`${errorMsg}${statusInfo}`);
         }
 
+        // Async pattern: Edge Function returns immediately with { success, jobId, status: 'processing' }
+        // The actual image generation happens in a background task — pollForJob handles completion.
+        if (data.status === 'processing' && !data.image) {
+            console.log(`Generation: Job ${newId} accepted, background processing started. Polling will handle completion.`);
+            return null as any; // Caller handles null = "still processing"
+        }
+
         const result = data.image; // Server returns partially populated CanvasImage
 
         // We skip manual thumbnail generation now, as we use dynamic transformations.

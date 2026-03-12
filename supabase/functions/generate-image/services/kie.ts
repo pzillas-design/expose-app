@@ -1,16 +1,20 @@
 import { encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 
-const POLL_INTERVAL_MS = 3000; // 3 seconds between polls
-const MAX_POLLS = 25;          // ~75 seconds total before timeout (stay under Supabase wall-clock limit)
+const POLL_INTERVAL_MS = 5000; // 5 seconds between polls
+const MAX_POLLS = 60;          // 60 × 5s = 300s (5 minutes) — runs in background via EdgeRuntime.waitUntil
 
-export const generateImageKie = async (
+/**
+ * Creates a Kie.ai generation task and returns the taskId immediately.
+ * Does NOT poll — use pollKieTask() separately (in a background task).
+ */
+export const createKieTask = async (
     apiKey: string,
     modelName: string,
     payload: any,
     imageUrls: string[],
     aspectRatio: string,
     resolution: string
-) => {
+): Promise<string> => {
     const { prompt, variables, annotationImage } = payload;
 
     // Build prompt
@@ -42,7 +46,6 @@ export const generateImageKie = async (
 
     console.log('[DEBUG] Kie createTask | model:', modelName, '| AR:', aspectRatio, '| Res:', resolution, '| Images:', imageUrls.length);
 
-    // Step 1: Create the generation task
     const createRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
         method: 'POST',
         headers: {
@@ -64,7 +67,17 @@ export const generateImageKie = async (
     }
     console.log('[DEBUG] Kie taskId created:', taskId);
 
-    // Step 2: Poll until complete
+    return taskId;
+};
+
+/**
+ * Polls Kie.ai for task completion, downloads the result image, and returns it as base64.
+ * Designed to run inside EdgeRuntime.waitUntil() for up to 5 minutes.
+ */
+export const pollKieTask = async (
+    apiKey: string,
+    taskId: string
+): Promise<{ data: { b64_json: string }[]; costTime?: number }> => {
     for (let poll = 0; poll < MAX_POLLS; poll++) {
         await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
 
@@ -83,7 +96,6 @@ export const generateImageKie = async (
         console.log(`[DEBUG] Kie poll ${poll + 1}/${MAX_POLLS} | state: ${state}`);
 
         if (state === 'success' || state === 'completed') {
-            // Log full taskData so we can see the exact response shape in Supabase logs
             console.log('[DEBUG] Kie success taskData keys:', Object.keys(taskData || {}).join(', '));
             console.log('[DEBUG] Kie success taskData (truncated):', JSON.stringify(taskData).substring(0, 600));
 
@@ -131,12 +143,11 @@ export const generateImageKie = async (
             }
             console.log('[DEBUG] Kie result URL:', imageUrl.substring(0, 80));
 
-            // Download and return as base64 (same format index.ts expects)
+            // Download and return as base64
             const imgRes = await fetch(imageUrl);
             if (!imgRes.ok) throw new Error(`Kie result download failed: ${imgRes.status}`);
             const b64 = encodeBase64(new Uint8Array(await imgRes.arrayBuffer()));
 
-            // costTime = actual Kie model processing time in ms (excludes our polling overhead)
             const costTime: number | undefined = typeof taskData?.costTime === 'number' ? taskData.costTime : undefined;
             console.log('[DEBUG] Kie costTime:', costTime, 'ms');
 
@@ -150,4 +161,19 @@ export const generateImageKie = async (
     }
 
     throw new Error(`Kie task timed out after ${(MAX_POLLS * POLL_INTERVAL_MS / 1000).toFixed(0)}s`);
+};
+
+/**
+ * Legacy combined function — creates task AND polls. Kept for reference but no longer used.
+ */
+export const generateImageKie = async (
+    apiKey: string,
+    modelName: string,
+    payload: any,
+    imageUrls: string[],
+    aspectRatio: string,
+    resolution: string
+) => {
+    const taskId = await createKieTask(apiKey, modelName, payload, imageUrls, aspectRatio, resolution);
+    return pollKieTask(apiKey, taskId);
 };

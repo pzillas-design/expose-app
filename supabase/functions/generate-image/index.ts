@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage } from './utils/imageProcessing.ts';
-import { generateImageKie } from './services/kie.ts';
+import { createKieTask, pollKieTask } from './services/kie.ts';
 import { prepareParts } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
 
@@ -79,408 +79,400 @@ Deno.serve(async (req) => {
 
     let newId = null;
     let supabaseAdmin = null;
-    // Stored after deduction so the outer catch can always refund on any failure
+    // Stored after deduction so error handlers can refund on failure
     let refundData: { userId: string; originalCredits: number } | null = null;
 
-    // Global timeout — Kie polling is ~75s max, plus overhead (~15s for upload/download/DB).
-    // Supabase wall-clock limit killed function at ~98s, so stay well under that.
-    const TIMEOUT_MS = 90000;
-    const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Generation Timeout: Job took too long (>90s)')), TIMEOUT_MS)
-    );
-
     try {
-        const generationPromise = (async () => {
-            // Initialize Supabase clients
-            supabaseAdmin = createClient(
-                Deno.env.get('SUPABASE_URL') ?? '',
-                Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            );
+        // Initialize Supabase clients
+        supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-            const supabaseUser = createClient(
-                Deno.env.get('SUPABASE_URL') ?? '',
-                Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-                { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-            );
+        const supabaseUser = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+        );
 
-            // Authenticate user
-            const { data: { user } } = await supabaseUser.auth.getUser();
-            if (!user) {
-                throw new Error('User not found');
-            }
+        // Authenticate user
+        const { data: { user } } = await supabaseUser.auth.getUser();
+        if (!user) {
+            throw new Error('User not found');
+        }
 
-            // Parse payload
-            const payload = await req.json();
-            newId = payload.newId;
+        // Parse payload
+        const payload = await req.json();
+        newId = payload.newId;
 
-            // New Structured Payload extraction
-            const {
-                type: requestType,
-                prompt,
-                variables,
-                originalImage: payloadOriginalImage,
-                annotationImage: payloadAnnotationImage,
-                references: payloadReferences,
+        // New Structured Payload extraction
+        const {
+            type: requestType,
+            prompt,
+            variables,
+            originalImage: payloadOriginalImage,
+            annotationImage: payloadAnnotationImage,
+            references: payloadReferences,
 
-                // Core metadata
-                qualityMode,
-                modelName,
-                board_id,
-                aspectRatio: explicitRatio,
-                targetTitle,
+            // Core metadata
+            qualityMode,
+            modelName,
+            board_id,
+            aspectRatio: explicitRatio,
+            targetTitle,
 
-                // Legacy/Fallback fields
-                sourceImage,
-                attachments: legacyAttachments
-            } = payload;
+            // Legacy/Fallback fields
+            sourceImage,
+            attachments: legacyAttachments
+        } = payload;
 
-            logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
-            console.log(`[DEBUG] Request Type: ${requestType}`);
-            console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
-            console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
-            if (sourceImage) {
-                console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
-                console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
-                console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
-            }
+        logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
+        console.log(`[DEBUG] Request Type: ${requestType}`);
+        console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
+        console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
+        if (sourceImage) {
+            console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
+            console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
+            console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
+        }
 
-            // Check credits and profile
-            const cost = COSTS[qualityMode] || 0;
-            let { data: profile } = await supabaseAdmin
+        // Check credits and profile
+        const cost = COSTS[qualityMode] || 0;
+        let { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('credits, role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (!profile) {
+            logInfo('Profile Creation', `Creating profile for user ${user.id}`);
+            const { data: newProfile } = await supabaseAdmin
                 .from('profiles')
-                .select('credits, role')
-                .eq('id', user.id)
-                .maybeSingle();
+                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 10 })
+                .select()
+                .single();
+            profile = newProfile;
+        }
 
-            if (!profile) {
-                logInfo('Profile Creation', `Creating profile for user ${user.id}`);
-                const { data: newProfile } = await supabaseAdmin
-                    .from('profiles')
-                    .insert({ id: user.id, email: user.email, full_name: 'User', credits: 10 })
-                    .select()
-                    .single();
-                profile = newProfile;
+        const isPro = profile.role === 'pro';
+        if (!isPro && (profile.credits || 0) < cost) {
+            throw new Error('Insufficient credits');
+        }
+
+        // Deduct credits and store original balance for refund on failure
+        if (!isPro && cost > 0) {
+            await supabaseAdmin
+                .from('profiles')
+                .update({ credits: profile.credits - cost })
+                .eq('id', user.id);
+            refundData = { userId: user.id, originalCredits: profile.credits };
+        }
+
+        // Prepare source image (base64)
+        let finalSourceBase64 = null;
+        const sourceToProcess = payloadOriginalImage || sourceImage?.src;
+        if (sourceToProcess) {
+            finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+        }
+
+        // Model: nano-banana-2 for nb2-* quality modes, else nano-banana-pro
+        const finalModelName = qualityMode.startsWith('nb2-') ? 'nano-banana-2' : 'nano-banana-pro';
+
+        // Determine aspect ratio
+        let bestRatio = '1:1';
+        let isEditMode = false;
+
+        if (explicitRatio) {
+            bestRatio = findClosestValidRatio(explicitRatio);
+            logInfo('Aspect Ratio', `Explicit ratio '${explicitRatio}' mapped to '${bestRatio}'`);
+        } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
+            isEditMode = true;
+            const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
+            const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
+            bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
+            logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH} (mapped to ${bestRatio})`);
+        } else if (requestType === 'edit' || payloadOriginalImage) {
+            isEditMode = true;
+            logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
+        }
+
+        // Prepare generation config (Standard AI Studio format)
+        const generationConfig: any = {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192,
+            imageConfig: {
+                ...(isEditMode ? {} : { aspectRatio: bestRatio }),
+                ...(finalModelName === 'gemini-3-pro-image-preview' ? {
+                    imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
+                } : {})
             }
+        };
 
-            const isPro = profile.role === 'pro';
-            if (!isPro && (profile.credits || 0) < cost) {
-                throw new Error('Insufficient credits');
-            }
+        // Prepare parts array (Multimodal Interleaving)
+        const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
+            payload,
+            finalSourceBase64
+        );
 
-            // Deduct credits and store original balance for outer-catch refund
-            if (!isPro && cost > 0) {
-                await supabaseAdmin
-                    .from('profiles')
-                    .update({ credits: profile.credits - cost })
-                    .eq('id', user.id);
-                refundData = { userId: user.id, originalCredits: profile.credits };
-            }
+        logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
 
-            // Prepare source image (base64)
-            let finalSourceBase64 = null;
-            const sourceToProcess = payloadOriginalImage || sourceImage?.src;
-            if (sourceToProcess) {
-                finalSourceBase64 = await prepareSourceImage(sourceToProcess);
-            }
+        // Store API request for debugging
+        const apiRequestPayload = {
+            model: finalModelName,
+            userPrompt: prompt,
+            hasSourceImage: !!finalSourceBase64,
+            hasMask,
+            hasReferenceImages: hasRefs,
+            referenceImagesCount: allRefs.length,
+            generationConfig,
+            timestamp: new Date().toISOString()
+        };
 
-            // Model: nano-banana-2 for nb2-* quality modes, else nano-banana-pro
-            const finalModelName = qualityMode.startsWith('nb2-') ? 'nano-banana-2' : 'nano-banana-pro';
+        // Count concurrent jobs
+        const { count: concurrentJobCount } = await supabaseAdmin
+            .from('generation_jobs')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'processing');
 
-            // Determine aspect ratio
-            let bestRatio = '1:1';
-            let isEditMode = false;
+        const generationStartTime = Date.now();
 
-            if (explicitRatio) {
-                bestRatio = findClosestValidRatio(explicitRatio);
-                logInfo('Aspect Ratio', `Explicit ratio '${explicitRatio}' mapped to '${bestRatio}'`);
-            } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
-                isEditMode = true;
-                const sourceW = sourceImage.realWidth || sourceImage.width || 1024;
-                const sourceH = sourceImage.realHeight || sourceImage.height || 1024;
-                bestRatio = getClosestAspectRatioFromDims(sourceW, sourceH);
-                logInfo('Aspect Ratio', `Edit mode (Legacy) - preserving ${sourceW}x${sourceH} (mapped to ${bestRatio})`);
-            } else if (requestType === 'edit' || payloadOriginalImage) {
-                isEditMode = true;
-                logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
-            }
+        // Prepare image URLs for Kie.ai (image_input requires URLs, not base64)
+        const kieImageUrls: string[] = [];
 
-            // Prepare generation config (Standard AI Studio format)
-            const generationConfig: any = {
-                temperature: 0.7,
-                topP: 0.95,
-                topK: 40,
-                maxOutputTokens: 8192,
-                imageConfig: {
-                    ...(isEditMode ? {} : { aspectRatio: bestRatio }),
-                    ...(finalModelName === 'gemini-3-pro-image-preview' ? {
-                        imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
-                    } : {})
+        // Source image — use original URL if available, else upload base64 to temp storage
+        const sourceHttpUrl = (payloadOriginalImage && payloadOriginalImage.startsWith('http'))
+            ? payloadOriginalImage
+            : (sourceImage?.src && sourceImage.src.startsWith('http')) ? sourceImage.src : null;
+
+        if (sourceHttpUrl) {
+            kieImageUrls.push(sourceHttpUrl);
+        } else if (finalSourceBase64) {
+            const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+            if (tempUrl) kieImageUrls.push(tempUrl);
+        }
+
+        // Annotation image (canvas base64) — upload to temp storage
+        if (payloadAnnotationImage) {
+            const annBase64 = payloadAnnotationImage.startsWith('data:')
+                ? payloadAnnotationImage.split(',')[1]
+                : payloadAnnotationImage;
+            const annUrl = await uploadTempForKie(supabaseAdmin, annBase64, newId, kieImageUrls.length);
+            if (annUrl) kieImageUrls.push(annUrl);
+        }
+
+        // References that are already HTTP URLs
+        if (payloadReferences?.length) {
+            for (const ref of payloadReferences) {
+                if (ref.src?.startsWith('http') && kieImageUrls.length < 8) {
+                    kieImageUrls.push(ref.src);
                 }
-            };
-
-            // Prepare parts array (Multimodal Interleaving)
-            const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
-                payload,
-                finalSourceBase64
-            );
-
-            logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
-
-            // Store API request for debugging
-            const apiRequestPayload = {
-                model: finalModelName,
-                userPrompt: prompt,
-                hasSourceImage: !!finalSourceBase64,
-                hasMask,
-                hasReferenceImages: hasRefs,
-                referenceImagesCount: allRefs.length,
-                generationConfig,
-                timestamp: new Date().toISOString()
-            };
-
-            // Count concurrent jobs
-            const { count: concurrentJobCount } = await supabaseAdmin
-                .from('generation_jobs')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'processing');
-
-            const generationStartTime = Date.now();
-
-            // Prepare image URLs for Kie.ai (image_input requires URLs, not base64)
-            const kieImageUrls: string[] = [];
-
-            // Source image — use original URL if available, else upload base64 to temp storage
-            const sourceHttpUrl = (payloadOriginalImage && payloadOriginalImage.startsWith('http'))
-                ? payloadOriginalImage
-                : (sourceImage?.src && sourceImage.src.startsWith('http')) ? sourceImage.src : null;
-
-            if (sourceHttpUrl) {
-                kieImageUrls.push(sourceHttpUrl);
-            } else if (finalSourceBase64) {
-                const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
-                if (tempUrl) kieImageUrls.push(tempUrl);
             }
+        }
 
-            // Annotation image (canvas base64) — upload to temp storage
-            if (payloadAnnotationImage) {
-                const annBase64 = payloadAnnotationImage.startsWith('data:')
-                    ? payloadAnnotationImage.split(',')[1]
-                    : payloadAnnotationImage;
-                const annUrl = await uploadTempForKie(supabaseAdmin, annBase64, newId, kieImageUrls.length);
-                if (annUrl) kieImageUrls.push(annUrl);
-            }
+        const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
+            : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
 
-            // References that are already HTTP URLs
-            if (payloadReferences?.length) {
-                for (const ref of payloadReferences) {
-                    if (ref.src?.startsWith('http') && kieImageUrls.length < 8) {
-                        kieImageUrls.push(ref.src);
+        // ═══════════════════════════════════════════════════════════════════
+        // Phase 1: Create Kie.ai task (synchronous — fast, <5s)
+        // ═══════════════════════════════════════════════════════════════════
+        logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
+
+        const kieApiKey = (Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai'))!;
+        const kieTaskId = await createKieTask(
+            kieApiKey,
+            finalModelName,
+            payload,
+            kieImageUrls,
+            bestRatio,
+            kieResolution
+        );
+
+        logInfo('Kie Task Created', `taskId: ${kieTaskId}, starting background polling`);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Phase 2: Background task — poll Kie, process result (up to 5 min)
+        // ═══════════════════════════════════════════════════════════════════
+        const backgroundTask = async () => {
+            try {
+                const kieResponse = await pollKieTask(kieApiKey, kieTaskId);
+
+                if (!kieResponse?.data?.[0]?.b64_json) {
+                    logError('Kie API Response', `No image returned.`, kieResponse);
+                    if (!isPro && cost > 0) {
+                        await supabaseAdmin
+                            .from('profiles')
+                            .update({ credits: profile.credits })
+                            .eq('id', user.id);
                     }
-                }
-            }
-
-            const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
-                : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
-
-            // Call Kie AI
-            logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
-
-            const kieResponse = await generateImageKie(
-                (Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai'))!,
-                finalModelName,
-                payload,
-                kieImageUrls,
-                bestRatio,
-                kieResolution
-            );
-
-            if (!kieResponse?.data?.[0]?.b64_json) {
-                logError('Kie API Response', `No image returned.`, kieResponse);
-                // Refund credits
-                if (!isPro && cost > 0) {
                     await supabaseAdmin
-                        .from('profiles')
-                        .update({ credits: profile.credits })
-                        .eq('id', user.id);
+                        .from('generation_jobs')
+                        .update({ status: 'failed', error: 'Image generation failed on Kie.ai' })
+                        .eq('id', newId);
+                    return;
                 }
-                throw new Error('Image generation failed on Kie.ai');
-            }
 
-            const generatedBase64 = kieResponse.data[0].b64_json;
+                const generatedBase64 = kieResponse.data[0].b64_json;
 
-            let dbBaseName = "";
-            let dbTitle = "";
-            let currentVersion = 1;
+                let dbBaseName = "";
+                let dbTitle = "";
+                let currentVersion = 1;
 
-            if (requestType === 'create') {
-                // NEW GENERATION: Use first 15 chars of prompt as baseName
-                const promptSnippet = prompt.substring(0, 15).trim();
-                dbBaseName = targetTitle || promptSnippet || 'Image';
-                dbTitle = dbBaseName;
-                currentVersion = 1;
-            } else {
-                // EDIT/VERSION: Inherit baseName from source, but calculate version globally
-                const rawBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
-                dbBaseName = rawBaseName.replace(/_v\d+$/, ''); // Clean any existing version suffix
+                if (requestType === 'create') {
+                    const promptSnippet = prompt.substring(0, 15).trim();
+                    dbBaseName = targetTitle || promptSnippet || 'Image';
+                    dbTitle = dbBaseName;
+                    currentVersion = 1;
+                } else {
+                    const rawBaseName = sourceImage?.baseName || sourceImage?.title || "Image";
+                    dbBaseName = rawBaseName.replace(/_v\d+$/, '');
 
-                // Query database for all images with this baseName to find max version
+                    try {
+                        const { data: siblings, error: siblingsError } = await supabaseAdmin
+                            .from('images')
+                            .select('version, base_name, title')
+                            .eq('user_id', user.id)
+                            .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
+
+                        if (siblingsError) {
+                            logError('Siblings Query', siblingsError);
+                            currentVersion = (sourceImage?.version || 0) + 1;
+                        } else if (siblings && siblings.length > 0) {
+                            const maxVersion = siblings.reduce((max, img) => {
+                                const imgBaseName = (img.base_name || img.title || '').replace(/_v\d+$/, '');
+                                if (imgBaseName === dbBaseName) {
+                                    return Math.max(max, img.version || 1);
+                                }
+                                return max;
+                            }, 0);
+                            currentVersion = maxVersion + 1;
+                        } else {
+                            currentVersion = (sourceImage?.version || 0) + 1;
+                        }
+                    } catch (err) {
+                        logError('Version Calculation', err);
+                        currentVersion = (sourceImage?.version || 0) + 1;
+                    }
+
+                    dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
+                }
+
+                const rootFolder = sanitizeEmailForPath(user.email) || user.id;
+                const uploadDateFolder = buildUploadDateFolder(new Date());
+                const isOriginal = currentVersion <= 1;
+                const variantLabel = isOriginal ? 'original' : `variante${currentVersion}`;
+                const filename = `${variantLabel}_${newId.substring(0, 8)}.jpg`;
+                const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
+
+                // Upload to storage
+                const binaryData = decodeBase64(generatedBase64);
+                const { error: uploadError } = await supabaseAdmin.storage
+                    .from('user-content')
+                    .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true });
+
+                if (uploadError) {
+                    logError('Storage Upload', uploadError);
+                    throw uploadError;
+                }
+
+                // Get signed URL
+                const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+                    .from('user-content')
+                    .createSignedUrl(filePath, 3600);
+
+                if (signedUrlError) {
+                    logError('Signed URL', signedUrlError);
+                }
+
+                // Insert into database
+                const newImage: any = {
+                    id: newId,
+                    user_id: user.id,
+                    job_id: newId,
+                    storage_path: filePath,
+                    width: Math.round(sourceImage?.width || 512),
+                    height: Math.round(sourceImage?.height || 512),
+                    real_width: Math.round(sourceImage?.realWidth || sourceImage?.width || 1024),
+                    real_height: Math.round(sourceImage?.realHeight || sourceImage?.height || 1024),
+                    model_version: finalModelName,
+                    title: dbTitle,
+                    base_name: dbBaseName,
+                    version: currentVersion,
+                    prompt: prompt,
+                    parent_id: (requestType === 'edit' || payloadOriginalImage) ? (sourceImage?.id || null) : null,
+                    annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
+                        id: crypto.randomUUID(),
+                        type: 'reference_image',
+                        referenceImage: r.src,
+                        text: r.instruction || ''
+                    }))) : '[]',
+                    generation_params: { quality: qualityMode }
+                };
+
+                const { error: dbError } = await supabaseAdmin
+                    .from('images')
+                    .insert(newImage);
+
+                if (dbError) {
+                    logError('Database Insert', dbError);
+                    throw dbError;
+                }
+
+                // Update job status
+                const wallClockMs = Date.now() - generationStartTime;
+                const durationMs = kieResponse.costTime || wallClockMs;
+                logInfo('Duration', `Wall: ${wallClockMs}ms, Kie costTime: ${kieResponse.costTime ?? 'n/a'}ms → stored: ${durationMs}ms`);
+
+                const tokensPrompt = 0;
+                const tokensCompletion = 0;
+                const tokensTotal = 0;
+
+                let pricing = null;
                 try {
-                    const { data: siblings, error: siblingsError } = await supabaseAdmin
-                        .from('images')
-                        .select('version, base_name, title')
-                        .eq('user_id', user.id)
-                        .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
+                    const { data: pricingData } = await supabaseAdmin
+                        .from('api_pricing')
+                        .select('input_price_per_token, output_price_per_token')
+                        .eq('model_name', finalModelName)
+                        .single();
 
-                    if (siblingsError) {
-                        logError('Siblings Query', siblingsError);
-                        currentVersion = (sourceImage?.version || 0) + 1;
-                    } else if (siblings && siblings.length > 0) {
-                        const maxVersion = siblings.reduce((max, img) => {
-                            const imgBaseName = (img.base_name || img.title || '').replace(/_v\d+$/, '');
-                            if (imgBaseName === dbBaseName) {
-                                return Math.max(max, img.version || 1);
-                            }
-                            return max;
-                        }, 0);
-                        currentVersion = maxVersion + 1;
-                    } else {
-                        currentVersion = (sourceImage?.version || 0) + 1;
+                    if (pricingData) {
+                        pricing = {
+                            input: parseFloat(pricingData.input_price_per_token),
+                            output: parseFloat(pricingData.output_price_per_token)
+                        };
                     }
                 } catch (err) {
-                    logError('Version Calculation', err);
-                    currentVersion = (sourceImage?.version || 0) + 1;
+                    logError('Pricing Fetch', err);
                 }
 
-                dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
-            }
-
-            const rootFolder = sanitizeEmailForPath(user.email) || user.id;
-            const uploadDateFolder = buildUploadDateFolder(new Date());
-            const isOriginal = currentVersion <= 1;
-            const variantLabel = isOriginal ? 'original' : `variante${currentVersion}`;
-            const filename = `${variantLabel}_${newId.substring(0, 8)}.jpg`;
-            const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
-
-            // Upload to storage using efficient decoding
-            const binaryData = decodeBase64(generatedBase64);
-            const { error: uploadError } = await supabaseAdmin.storage
-                .from('user-content')
-                .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true });
-
-            if (uploadError) {
-                logError('Storage Upload', uploadError);
-                throw uploadError;
-            }
-
-            // Get signed URL
-            const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
-                .from('user-content')
-                .createSignedUrl(filePath, 3600);
-
-            if (signedUrlError) {
-                logError('Signed URL', signedUrlError);
-            }
-
-            const finalUrl = signedUrlData?.signedUrl || `data:image/jpeg;base64,${generatedBase64}`;
-
-            // Insert into database
-            const newImage: any = {
-                id: newId,
-                user_id: user.id,
-                job_id: newId,
-                storage_path: filePath,
-                width: Math.round(sourceImage?.width || 512),
-                height: Math.round(sourceImage?.height || 512),
-                real_width: Math.round(sourceImage?.realWidth || sourceImage?.width || 1024),
-                real_height: Math.round(sourceImage?.realHeight || sourceImage?.height || 1024),
-                model_version: finalModelName,
-                title: dbTitle,
-                base_name: dbBaseName,
-                version: currentVersion,
-                prompt: prompt,
-                parent_id: (requestType === 'edit' || payloadOriginalImage) ? (sourceImage?.id || null) : null,
-                // CRITICAL: Newly generated images should NOT inherit annotations from source
-                // Only 'create' requests with references should have annotations
-                annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map(r => ({
-                    id: crypto.randomUUID(),
-                    type: 'reference_image',
-                    referenceImage: r.src,
-                    text: r.instruction || ''
-                }))) : '[]',
-                generation_params: { quality: qualityMode }
-            };
-
-            const { error: dbError } = await supabaseAdmin
-                .from('images')
-                .insert(newImage);
-
-            if (dbError) {
-                logError('Database Insert', dbError);
-                throw dbError;
-            }
-
-            // Update job status
-            // Prefer Kie's costTime (actual model time) over wall-clock for accurate smart estimates
-            const wallClockMs = Date.now() - generationStartTime;
-            const durationMs = kieResponse.costTime || wallClockMs;
-            logInfo('Duration', `Wall: ${wallClockMs}ms, Kie costTime: ${kieResponse.costTime ?? 'n/a'}ms → stored: ${durationMs}ms`);
-
-            // Kie.ai does not expose token usage metrics
-            const tokensPrompt = 0;
-            const tokensCompletion = 0;
-            const tokensTotal = 0;
-            const concurrentJobs = concurrentJobCount || 0;
-
-            // Fetch pricing
-            let pricing = null;
-            try {
-                const { data: pricingData } = await supabaseAdmin
-                    .from('api_pricing')
-                    .select('input_price_per_token, output_price_per_token')
-                    .eq('model_name', finalModelName)
-                    .single();
-
-                if (pricingData) {
-                    pricing = {
-                        input: parseFloat(pricingData.input_price_per_token),
-                        output: parseFloat(pricingData.output_price_per_token)
-                    };
+                if (!pricing) {
+                    pricing = finalModelName === 'gemini-2.5-flash-image'
+                        ? { input: 0.0000001, output: 0.0000004 }
+                        : { input: 0.00000125, output: 0.000005 };
                 }
-            } catch (err) {
-                logError('Pricing Fetch', err);
-            }
 
-            // Fallback pricing
-            if (!pricing) {
-                pricing = finalModelName === 'gemini-2.5-flash-image'
-                    ? { input: 0.0000001, output: 0.0000004 }
-                    : { input: 0.00000125, output: 0.000005 };
-            }
+                const estimatedApiCost = (tokensPrompt * pricing.input) + (tokensCompletion * pricing.output);
 
-            const estimatedApiCost = (tokensPrompt * pricing.input) + (tokensCompletion * pricing.output);
+                await supabaseAdmin
+                    .from('generation_jobs')
+                    .update({
+                        status: 'completed',
+                        model: finalModelName,
+                        api_cost: estimatedApiCost,
+                        tokens_prompt: tokensPrompt,
+                        tokens_completion: tokensCompletion,
+                        tokens_total: tokensTotal,
+                        duration_ms: durationMs,
+                        quality_mode: qualityMode,
+                        request_payload: apiRequestPayload
+                    })
+                    .eq('id', newId);
 
-            await supabaseAdmin
-                .from('generation_jobs')
-                .update({
-                    status: 'completed',
-                    model: finalModelName,
-                    api_cost: estimatedApiCost,
-                    tokens_prompt: tokensPrompt,
-                    tokens_completion: tokensCompletion,
-                    tokens_total: tokensTotal,
-                    duration_ms: durationMs,
-                    quality_mode: qualityMode,
-                    request_payload: apiRequestPayload
-                })
-                .eq('id', newId);
+                logInfo('Generation Success', `Job: ${newId}, Duration: ${durationMs}ms, Tokens: ${tokensTotal}, Cost: $${estimatedApiCost.toFixed(6)}`);
 
-            logInfo('Generation Success', `Job: ${newId}, Duration: ${durationMs}ms, Tokens: ${tokensTotal}, Cost: $${estimatedApiCost.toFixed(6)}`);
-
-            // Fire-and-forget: log remaining Kie.ai credits for monitoring
-            (async () => {
+                // Log remaining Kie.ai credits
                 try {
-                    const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
-                    if (!kieApiKey) return;
                     const r = await fetch('https://api.kie.ai/api/v1/chat/credit', {
                         headers: { 'Authorization': `Bearer ${kieApiKey}` }
                     });
@@ -489,29 +481,55 @@ Deno.serve(async (req) => {
                         console.log(`[INFO] Kie.ai remaining credits: ${j?.data ?? 'unknown'}`);
                     }
                 } catch { /* non-critical */ }
-            })();
 
-            return new Response(JSON.stringify({
-                success: true,
-                image: {
-                    ...newImage,
-                    src: finalUrl,
-                    isGenerating: false
+            } catch (bgError: any) {
+                const errorMsg = bgError?.message || 'Unknown background error';
+                logError('Background Task', errorMsg, { jobId: newId });
+
+                // Refund credits
+                if (refundData) {
+                    try {
+                        await supabaseAdmin
+                            .from('profiles')
+                            .update({ credits: refundData.originalCredits })
+                            .eq('id', refundData.userId);
+                        logInfo('Credits Refunded', `Restored ${refundData.originalCredits} for user ${refundData.userId}`);
+                    } catch (e) {
+                        logError('Credit Refund Failed', e);
+                    }
                 }
-            }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 200,
-            });
+
+                // Mark job as failed
+                try {
+                    await supabaseAdmin
+                        .from('generation_jobs')
+                        .update({ status: 'failed', error: errorMsg })
+                        .eq('id', newId);
+                } catch (e) {
+                    logError('Job Update Failed', e);
+                }
+            }
+        };
+
+        // Start background task — function keeps running after response is sent
+        EdgeRuntime.waitUntil(backgroundTask());
+
+        // Respond immediately — client will poll generation_jobs for completion
+        return new Response(JSON.stringify({
+            success: true,
+            jobId: newId,
+            status: 'processing'
+        }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
         });
 
-        // Race the generation against the timeout
-        return await Promise.race([generationPromise(), timeoutPromise]) as Response;
-
     } catch (error: any) {
+        // This only catches Phase 1 errors (auth, credits, createTask)
         const errorMsg = error?.message || (typeof error === 'string' ? error : "Unknown error occurred");
         logError('Edge Function', errorMsg, { jobId: newId });
 
-        // Always refund credits on any failure (timeout, Kie error, DB error, etc.)
+        // Refund credits on Phase 1 failure
         if (refundData && supabaseAdmin) {
             try {
                 await supabaseAdmin

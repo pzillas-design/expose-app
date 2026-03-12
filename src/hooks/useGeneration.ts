@@ -189,7 +189,7 @@ export const useGeneration = ({
             }
 
             // 2b. Detect stuck "processing" jobs (Edge Function killed by Supabase before catch ran)
-            if (jobData?.status === 'processing' && attempts >= 36) { // ~3 minutes
+            if (jobData?.status === 'processing' && attempts >= 55) { // ~4.5 minutes (background task has up to 5 min)
                 showToast(translateError('timeout'), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
@@ -381,25 +381,18 @@ export const useGeneration = ({
                     }).then(() => attachedJobIds.current.add(newId));
                 }
 
-                const timeoutMs = batchSize > 1 ? 600000 : 180000;
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error(`Timeout (${timeoutMs / 60000}m)`)), timeoutMs);
+                const finalImage = await imageService.processGeneration({
+                    payload: structuredRequest,
+                    sourceImage,
+                    qualityMode,
+                    modelName: resolveTargetModel(qualityMode),
+                    newId,
+                    targetVersion: newVersion,
+                    targetTitle: placeholder.title
                 });
 
-                const finalImage = await Promise.race([
-                    imageService.processGeneration({
-                        payload: structuredRequest,
-                        sourceImage,
-                        qualityMode,
-                        modelName: resolveTargetModel(qualityMode),
-                        newId,
-                        targetVersion: newVersion,
-                        targetTitle: placeholder.title
-                    }),
-                    timeoutPromise
-                ]) as CanvasImage;
-
                 if (finalImage) {
+                    // Synchronous completion (legacy path — Edge Function returned finished image)
                     const cacheBuster = `?t=${Date.now()}`;
                     const refreshedImage = {
                         ...finalImage,
@@ -411,20 +404,27 @@ export const useGeneration = ({
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
 
-                    // Deduct credits locally after confirmed server-side success
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
                     }
 
                     showToast('Bild generiert', 'success', 6000);
 
-                    // Fire-and-forget: generate + persist thumbnail to avoid transform API costs on future loads
                     if (currentUser) {
                         imageService.generateMissingThumbnail(finalImage, currentUser.id);
+                    }
+                } else {
+                    // Async pattern: Edge Function accepted job, background processing started.
+                    // pollForJob (via useEffect) handles completion, credit deduction, and toast.
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
                     }
                 }
             } catch (error: any) {
                 console.error("Generation failed:", error);
+
+                // Stop poller from showing a duplicate error toast
+                attachedJobIds.current.delete(newId);
 
                 // Remove placeholder tile
                 setRows(prev => prev.map(row => ({
@@ -493,7 +493,7 @@ export const useGeneration = ({
                         prompt_preview: prompt,
                         quality_mode: modelId,
                         model: modelId
-                    });
+                    }).then(() => attachedJobIds.current.add(newId));
                 }
 
                 const structuredRequest: StructuredGenerationRequest = {
@@ -507,24 +507,30 @@ export const useGeneration = ({
                 });
 
                 if (finalImage) {
+                    // Synchronous completion (legacy path)
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
-                    // Deduct credits locally after confirmed server-side success
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
                     }
 
-                    // Success toast — click navigates to the generated image
                     showToast('Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
                         selectAndSnap(newId);
                     });
 
-                    // Fire-and-forget thumbnail backfill
                     if (user?.id) {
                         imageService.generateMissingThumbnail(finalImage, user.id);
                     }
+                } else {
+                    // Async pattern: background processing started, pollForJob handles completion
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
                 }
             } catch (error: any) {
+                // Stop poller from showing a duplicate error toast
+                attachedJobIds.current.delete(newId);
+
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
                 const translated = translateError(error.message || "");
