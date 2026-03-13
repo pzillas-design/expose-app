@@ -70,11 +70,11 @@ export const storageService = {
                 throw error;
             }
 
-            // 5. Generate and Upload Thumbnail (600px width for optimal quality/size balance)
+            // 5. Generate and Upload Thumbnail (300px width for optimal quality/size balance)
             let thumbPath: string | undefined;
             if (shouldGenerateThumb) {
                 try {
-                    const thumbBlob = await generateThumbnail(imageSrc, 200);
+                    const thumbBlob = await generateThumbnail(imageSrc, 300);
                     const thumbFileName = `thumb_${fileName}`;
                     const thumbFilePath = `${folderPath}/${thumbFileName}`;
 
@@ -154,8 +154,8 @@ export const storageService = {
         const results: Record<string, string> = {};
         const toFetch: string[] = [];
 
-        // Generate a cache key suffix based on options
-        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+        // Generate a cache key suffix based on options (only include defined values)
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}${options.resize ? `_${options.resize}` : ''}` : '';
 
         // 1. Check Cache
         paths.forEach(path => {
@@ -182,15 +182,20 @@ export const storageService = {
 
             // 2. Fetch missing in one call
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
+            // Build transform object only with defined fields (avoid 'undefined' strings in URLs)
+            const transform = options ? Object.fromEntries(
+                Object.entries({
+                    width: options.width,
+                    height: options.height,
+                    quality: options.quality,
+                    resize: options.resize
+                }).filter(([, v]) => v !== undefined)
+            ) : undefined;
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .createSignedUrls(toFetch, 60 * 60 * 24 * 7, {
-                    transform: options ? {
-                        width: options.width,
-                        height: options.height,
-                        quality: options.quality,
-                        resize: options.resize
-                    } : undefined
+                    transform
                 } as any);
 
             if (error) throw error;
@@ -227,8 +232,8 @@ export const storageService = {
     async getSignedUrl(path: string, options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<string | null> {
         if (!path) return null;
 
-        // Generate a cache key suffix based on options
-        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+        // Generate a cache key suffix based on options (only include defined values)
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}${options.resize ? `_${options.resize}` : ''}` : '';
 
         // 1. Check Cache
         const cached = storageService._urlCache.get(path + optionsKey);
@@ -240,15 +245,20 @@ export const storageService = {
             // Ensure session is fresh before signing
             await supabase.auth.getSession();
 
+            // Build transform object only with defined fields (avoid 'undefined' strings in URLs)
+            const transform = options ? Object.fromEntries(
+                Object.entries({
+                    width: options.width,
+                    height: options.height,
+                    quality: options.quality,
+                    resize: options.resize
+                }).filter(([, v]) => v !== undefined)
+            ) : undefined;
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .createSignedUrl(path, 60 * 60 * 24 * 7, {
-                    transform: options ? {
-                        width: options.width,
-                        height: options.height,
-                        quality: options.quality,
-                        resize: options.resize
-                    } : undefined
+                    transform
                 } as any);
 
             if (error) throw error;

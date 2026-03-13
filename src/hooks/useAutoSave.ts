@@ -102,7 +102,7 @@ export const useAutoSave = (
                     return {
                         id: img.id,
                         user_id: user.id,
-                        thumb_storage_path: (img.thumbSrc && !img.thumbSrc.startsWith('blob:') && !img.thumbSrc.startsWith('http')) ? img.thumbSrc : null,
+                        thumb_storage_path: img.thumb_storage_path || null,
                         storage_path: img.storage_path || '',
                         width: Math.round(img.width),
                         height: Math.round(img.height),
@@ -170,7 +170,7 @@ export const useAutoSave = (
                         return {
                             id: img.id,
                             user_id: user.id,
-                            thumb_storage_path: (img.thumbSrc && !img.thumbSrc.startsWith('blob:') && !img.thumbSrc.startsWith('http')) ? img.thumbSrc : null,
+                            thumb_storage_path: img.thumb_storage_path || null,
                             storage_path: img.storage_path || '',
                             width: Math.round(img.width),
                             height: Math.round(img.height),

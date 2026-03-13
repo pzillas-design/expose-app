@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CanvasImage } from '@/types';
 import { Loader2, Plus, Layers, Upload } from 'lucide-react';
@@ -9,6 +9,118 @@ import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
 import { Logo } from '@/components/ui/Logo';
+
+/* ── Memoised grid item ── */
+interface FeedGridItemProps {
+    img: CanvasImage;
+    idx: number;
+    isSelected: boolean;
+    isKeyboardActive: boolean;
+    isSelectMode: boolean;
+    onSelectImage: (id: string) => void;
+    onToggleSelect?: (id: string) => void;
+    setActiveIndex: (idx: number | null) => void;
+    actions?: any;
+}
+
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions }) => {
+    const previewSrc = img.thumbSrc || img.src;
+    const isGen = !!img.isGenerating;
+    const elapsed = isGen ? Math.max(0, Date.now() - (img.generationStartTime || Date.now())) : 0;
+    const estimated = Math.max(1000, img.estimatedDuration || 30000);
+
+    return (
+        <div
+            key={img.id}
+            onMouseEnter={() => setActiveIndex(idx)}
+            onMouseLeave={() => setActiveIndex(null)}
+            onClick={() => {
+                if (isGen) return;
+                if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
+                else onSelectImage(img.id);
+            }}
+            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
+        >
+            {previewSrc ? (
+                <img
+                    src={previewSrc}
+                    alt={img.title}
+                    className={`w-full h-full object-cover transition-all duration-300 ease-out ${
+                        isGen
+                            ? 'blur-sm scale-105 brightness-75'
+                            : isSelectMode && isSelected
+                                ? 'scale-[0.85]'
+                                : isKeyboardActive
+                                    ? 'scale-105'
+                                    : 'group-hover:scale-105'
+                    }`}
+                    loading="lazy"
+                />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                    {isGen ? (
+                        <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"
+                                style={{ animation: 'shimmer 1.8s ease-in-out infinite' }} />
+                        </div>
+                    ) : (
+                        <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
+                    )}
+                </div>
+            )}
+
+            {isGen && (
+                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-black/20 pointer-events-none">
+                    <div
+                        className="h-full bg-orange-500"
+                        style={{
+                            animationName: 'gen-progress',
+                            animationDuration: `${estimated}ms`,
+                            animationDelay: `-${Math.min(elapsed, estimated * 0.92)}ms`,
+                            animationTimingFunction: 'linear',
+                            animationFillMode: 'both',
+                        }}
+                    />
+                </div>
+            )}
+
+            {!isGen && (
+                <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
+                </div>
+            )}
+
+            {!isGen && (
+                <div
+                    className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        if (!isSelectMode) {
+                            actions?.setIsSelectMode?.(true);
+                        }
+                        if (onToggleSelect) {
+                            onToggleSelect(img.id);
+                        }
+                    }}
+                >
+                    {isSelectMode ? (
+                        isSelected ? (
+                            <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                        ) : (
+                            <div className="w-full h-full rounded-full bg-white/25" />
+                        )
+                    ) : (
+                        <div className="w-full h-full rounded-full bg-white/25 cursor-pointer hover:bg-white/40 transition-colors" />
+                    )}
+                </div>
+            )}
+        </div>
+    );
+});
+FeedGridItem.displayName = 'FeedGridItem';
 
 interface FeedPageProps {
     images: CanvasImage[];
@@ -31,6 +143,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
+
+    // O(1) lookups instead of O(n) per item
+    const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
     // Drag & drop file upload
     const [isDropActive, setIsDropActive] = React.useState(false);
@@ -117,7 +232,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
 
             // If in select mode and multiple are selected, we might want to delete all selected.
             // For now, let's delete the actively focused one, or all selected if that one is selected
-            const toDelete = isSelectMode && selectedIds.includes(img.id) ? selectedIds : [img.id];
+            const toDelete = isSelectMode && selectedIdSet.has(img.id) ? selectedIds : [img.id];
 
             const confirmed = await confirm({
                 title: toDelete.length > 1 ? (state?.lang === 'de' ? 'Bilder löschen' : 'Delete images') : (state?.lang === 'de' ? 'Bild löschen' : 'Delete image'),
@@ -203,111 +318,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 <Upload className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
                             </div>
 
-                            {images.map((img, idx) => {
-                                const isSelected = selectedIds.includes(img.id);
-                                const isKeyboardActive = activeIndex === idx;
-                                const previewSrc = img.thumbSrc || img.src;
-                                const isGen = !!img.isGenerating;
-
-                                // Progress bar: how far through the estimated duration are we?
-                                const elapsed = isGen ? Math.max(0, Date.now() - (img.generationStartTime || Date.now())) : 0;
-                                const estimated = Math.max(1000, img.estimatedDuration || 30000);
-
-                                return (
-                                    <div
-                                        key={img.id}
-                                        onMouseEnter={() => setActiveIndex(idx)}
-                                        onMouseLeave={() => setActiveIndex(null)}
-                                        onClick={() => {
-                                            if (isGen) return; // generating images are not clickable
-                                            if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
-                                            else onSelectImage(img.id);
-                                        }}
-                                        className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
-                                    >
-                                        {previewSrc ? (
-                                            <img
-                                                src={previewSrc}
-                                                alt={img.title}
-                                                className={`w-full h-full object-cover transition-all duration-300 ease-out ${
-                                                    isGen
-                                                        ? 'blur-sm scale-105 brightness-75'
-                                                        : isSelectMode && isSelected
-                                                            ? 'scale-[0.85]'
-                                                            : isKeyboardActive
-                                                                ? 'scale-105'
-                                                                : 'group-hover:scale-105'
-                                                }`}
-                                                loading="lazy"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                {isGen ? (
-                                                    /* Shimmer for new generations without source image */
-                                                    <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                                                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"
-                                                            style={{ animation: 'shimmer 1.8s ease-in-out infinite' }} />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Generation overlay: progress bar at bottom */}
-                                        {isGen && (
-                                            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-black/20 pointer-events-none">
-                                                <div
-                                                    className="h-full bg-orange-500"
-                                                    style={{
-                                                        animationName: 'gen-progress',
-                                                        animationDuration: `${estimated}ms`,
-                                                        animationDelay: `-${Math.min(elapsed, estimated * 0.92)}ms`,
-                                                        animationTimingFunction: 'linear',
-                                                        animationFillMode: 'both',
-                                                    }}
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* Hover/select overlay – only when not generating */}
-                                        {!isGen && (
-                                            <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
-                                            </div>
-                                        )}
-
-                                        {/* Checkbox – hidden while generating */}
-                                        {!isGen && (
-                                            <div
-                                                className={`absolute top-2 right-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    e.preventDefault();
-                                                    if (!isSelectMode) {
-                                                        actions?.setIsSelectMode?.(true);
-                                                    }
-                                                    if (onToggleSelect) {
-                                                        onToggleSelect(img.id);
-                                                    }
-                                                }}
-                                            >
-                                                {isSelectMode ? (
-                                                    isSelected ? (
-                                                        <div className="w-full h-full rounded-full bg-orange-500 flex items-center justify-center">
-                                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-full h-full rounded-full bg-white/25" />
-                                                    )
-                                                ) : (
-                                                    <div className="w-full h-full rounded-full bg-white/25 cursor-pointer hover:bg-white/40 transition-colors" />
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                            {images.map((img, idx) => (
+                                <FeedGridItem
+                                    key={img.id}
+                                    img={img}
+                                    idx={idx}
+                                    isSelected={selectedIdSet.has(img.id)}
+                                    isKeyboardActive={activeIndex === idx}
+                                    isSelectMode={!!isSelectMode}
+                                    onSelectImage={onSelectImage}
+                                    onToggleSelect={onToggleSelect}
+                                    setActiveIndex={setActiveIndex}
+                                    actions={actions}
+                                />
+                            ))}
                         </div>
                     ) : !isLoading && (
                         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">

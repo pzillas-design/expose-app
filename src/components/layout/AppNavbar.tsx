@@ -3,6 +3,8 @@ import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings, C
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
+import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
     user: any;
@@ -35,6 +37,9 @@ interface AppNavbarProps {
     isSideSheetVisible?: boolean;
     onToggleSideSheet?: () => void;
     rightInset?: number;
+    generatingImages?: CanvasImage[];
+    onNavigateToImage?: (id: string) => void;
+    onGenerateMoreById?: (id: string) => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -68,6 +73,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     isSideSheetVisible,
     onToggleSideSheet,
     rightInset = 0,
+    generatingImages = [],
+    onNavigateToImage,
+    onGenerateMoreById,
 }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
@@ -163,19 +171,33 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </Tooltip>
     );
 
+    const progressRing = (
+        <GenerationProgressRing
+            generatingImages={generatingImages}
+            lang={lang}
+            onNavigateToImage={onNavigateToImage}
+            onGenerateMore={onGenerateMoreById}
+        />
+    );
+
     const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
+            {progressRing}
         </div>
     ) : isSelectMode ? (
-        <button
-            onClick={onCancelSelectMode}
-            className="px-4 h-8 text-[12px] font-medium bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-full transition-all"
-        >
-            {isGerman ? 'Abbrechen' : 'Cancel'}
-        </button>
+        <div className="flex items-center gap-1">
+            <button
+                onClick={onCancelSelectMode}
+                className="px-4 h-8 text-[12px] font-medium bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-full transition-all"
+            >
+                {isGerman ? 'Abbrechen' : 'Cancel'}
+            </button>
+            {progressRing}
+        </div>
     ) : (
-        <div className="md:hidden">
+        <div className="flex items-center gap-1">
+            <div className="md:hidden">
             {user && (
                 <div className="relative" ref={mobileCreateDropdownRef}>
                     <RoundIconButton
@@ -197,6 +219,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     )}
                 </div>
             )}
+            </div>
+            {progressRing}
         </div>
     );
 

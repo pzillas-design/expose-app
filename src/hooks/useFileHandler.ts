@@ -49,12 +49,12 @@ export const useFileHandler = ({
                 updatedAt: Date.now()
             };
 
-            setRows(prev => [...prev, {
+            setRows(prev => [{
                 id: generateId(),
                 title: baseName,
                 items: [skeleton],
                 createdAt: Date.now()
-            }]);
+            }, ...prev]);
 
             newImageIds.push(skeletonId);
 
@@ -86,7 +86,7 @@ export const useFileHandler = ({
                     const h = targetHeight;
 
                     try {
-                        const thumbBlob = await generateThumbnail(src, 200);
+                        const thumbBlob = await generateThumbnail(src, 300);
                         const thumbSrc = URL.createObjectURL(thumbBlob);
 
                         // 3. UPDATE SKELETON WITH REAL DATA
@@ -136,7 +136,7 @@ export const useFileHandler = ({
                                         items: row.items.map(item => item.id === skeletonId ? {
                                             ...item,
                                             storage_path: res.storage_path,
-                                            thumb_storage_path: res.thumb_storage_path
+                                            thumb_storage_path: res.thumb_storage_path || undefined,
                                         } : item)
                                     })));
                                 }

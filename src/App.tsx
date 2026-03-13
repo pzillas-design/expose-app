@@ -228,6 +228,9 @@ export function App() {
                     }}
                     isSideSheetVisible={detailSideSheetVisible}
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
+                    generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
+                    onNavigateToImage={(id) => { setDetailSideSheetVisible(false); handleSelectImage(id); }}
+                    onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
                 />
             ) : (
                 <PublicNavbar

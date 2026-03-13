@@ -49,16 +49,17 @@ const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: Tra
 
     useEffect(() => {
         const start = startTime || Date.now();
+        let rafId: number;
         const update = () => {
             const now = Date.now();
             const elapsed = now - start;
             let p = (elapsed / duration) * 100;
             if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
             setProgress(Math.min(p, 99.9));
+            rafId = requestAnimationFrame(update);
         };
-        const interval = setInterval(update, 30);
-        update();
-        return () => clearInterval(interval);
+        rafId = requestAnimationFrame(update);
+        return () => cancelAnimationFrame(rafId);
     }, [startTime, duration]);
 
     return (
@@ -147,7 +148,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             fetchLock.current = true;
             try {
                 // Load thumbnail (600px) by default, full resolution only when selected
-                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75 });
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75, resize: 'contain' });
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {

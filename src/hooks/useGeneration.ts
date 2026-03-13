@@ -478,7 +478,7 @@ export const useGeneration = ({
             annotations: creationAnns, userId: user?.id
         };
 
-        setRows(prev => [...prev, { id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }]);
+        setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         setTimeout(() => selectAndSnap(newId), 50);
 
         const processNewSync = async () => {

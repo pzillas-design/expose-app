@@ -231,9 +231,15 @@ export const imageService = {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
         // Ensure fresh JWT before calling edge function (prevents 401 from expired tokens)
-        await supabase.auth.refreshSession();
+        const { data: sessionData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !sessionData?.session?.access_token) {
+            throw new Error(`Session refresh failed: ${refreshError?.message || 'no access token'}`);
+        }
 
         const { data, error } = await supabase.functions.invoke('generate-image', {
+            headers: {
+                Authorization: `Bearer ${sessionData.session.access_token}`,
+            },
             body: {
                 ...payload,
                 qualityMode,
@@ -379,12 +385,12 @@ export const imageService = {
                 thumbSignedUrl = await storageService.getSignedUrl(record.thumb_storage_path);
             }
         } else {
-            // Fallback to on-the-fly 600px transformation
-            const thumbOptionsKey = `_600xundefined_q75`;
+            // Fallback to on-the-fly 480px transformation (retina-safe for ~240px grid tiles)
+            const thumbOptionsKey = `_w480h_q75_contain`;
             thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
 
             if (!thumbSignedUrl && record.storage_path) {
-                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 600, quality: 75 });
+                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 480, quality: 75, resize: 'contain' });
             }
         }
 
@@ -410,6 +416,7 @@ export const imageService = {
             id: record.id,
             src: signedUrl || '',
             storage_path: record.storage_path,
+            thumb_storage_path: record.thumb_storage_path || undefined,
             thumbSrc: thumbSignedUrl || signedUrl || undefined,
             width: normalizedWidth,
             height: targetHeight,
@@ -545,7 +552,7 @@ export const imageService = {
                 }),
                 ...transformChunks.map(async (chunk, idx) => {
                     const chunkStart = performance.now();
-                    const results = await storageService.getSignedUrls(chunk, { width: 600, quality: 75 });
+                    const results = await storageService.getSignedUrls(chunk, { width: 480, quality: 75, resize: 'contain' });
                     Object.assign(signedUrlMap, results);
                     console.log(`[ImageService] Transform chunk ${idx + 1}/${transformChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
                 })
@@ -721,7 +728,7 @@ export const imageService = {
         const signedUrlMap: Record<string, string> = {};
         const [hdResults, optResults] = await Promise.all([
             storageService.getSignedUrls(Array.from(allPathsToSign)),
-            transformPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(transformPathsToSign), { width: 600, quality: 75 }) : Promise.resolve({})
+            transformPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(transformPathsToSign), { width: 480, quality: 75, resize: 'contain' }) : Promise.resolve({})
         ]);
         Object.assign(signedUrlMap, hdResults);
         Object.assign(signedUrlMap, optResults);
@@ -823,7 +830,7 @@ export const imageService = {
         if (!image.src || !image.storage_path) return;
 
         try {
-            const thumbBlob = await generateThumbnail(image.src, 200);
+            const thumbBlob = await generateThumbnail(image.src, 300);
 
             // Derive thumb path from storage_path
             const pathParts = image.storage_path.split('/');

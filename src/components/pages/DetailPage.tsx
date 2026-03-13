@@ -1,12 +1,25 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus as MinusIcon, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
-import { Theme, Typo, Tooltip, RoundIconButton, IconButton, Button } from '@/components/ui/DesignSystem';
+import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
+
+/* ── Memoised thumbnail button ── */
+const ThumbButton = memo<{ id: string; src: string; isActive: boolean; onSelect: (id: string) => void }>(
+    ({ id, src, isActive, onSelect }) => (
+        <button
+            onClick={() => onSelect(id)}
+            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-500 dark:ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+        >
+            <img src={src} className="w-full h-full object-cover" loading="lazy" />
+        </button>
+    )
+);
+ThumbButton.displayName = 'ThumbButton';
 
 interface DetailPageProps {
     images: CanvasImage[];
@@ -26,71 +39,6 @@ interface DetailPageProps {
     t: any;
 }
 
-// ── Generating Modal Overlay ─────────────────────────────────────────────
-const GeneratingModal: React.FC<{
-    startTime?: number;
-    duration: number;
-    isMinimized: boolean;
-    onMinimize: () => void;
-    onGenerateMore?: () => void;
-    lang?: string;
-}> = ({ startTime, duration, isMinimized, onMinimize, onGenerateMore, lang }) => {
-    const [progress, setProgress] = useState(0);
-    useEffect(() => {
-        const start = startTime || Date.now();
-        const tick = () => {
-            const elapsed = Date.now() - start;
-            let p = (elapsed / duration) * 100;
-            if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
-            setProgress(Math.min(p, 99.9));
-        };
-        const id = setInterval(tick, 30);
-        tick();
-        return () => clearInterval(id);
-    }, [startTime, duration]);
-
-    if (isMinimized) return null;
-
-    return (
-        <div className="absolute inset-0 z-[60] flex items-center justify-center pointer-events-auto">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-zinc-950/60" />
-
-            {/* Modal */}
-            <div className={`relative w-full max-w-xs ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg} flex flex-col overflow-hidden animate-in zoom-in-95 fade-in duration-200`}>
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-6 pb-2">
-                    <h2 className={`${Typo.H2} text-xl`}>
-                        {lang === 'de' ? 'Generieren' : 'Generating'}
-                    </h2>
-                    <IconButton icon={<MinusIcon className="w-5 h-5" />} onClick={onMinimize} />
-                </div>
-
-                {/* Progress */}
-                <div className="px-6 py-6">
-                    <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-zinc-800 dark:bg-white rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                </div>
-
-                {/* Footer */}
-                {onGenerateMore && (
-                    <div className="px-6 pb-6">
-                        <Tooltip text={lang === 'de' ? 'Mehr generieren' : 'Generate more'}>
-                            <Button variant="secondary" size="m" className="w-full" onClick={onGenerateMore} icon={<Repeat className="w-3.5 h-3.5" />}>
-                                {lang === 'de' ? 'Mehr' : 'More'}
-                            </Button>
-                        </Tooltip>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange,
@@ -100,9 +48,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
-    const [isGenModalMinimized, setIsGenModalMinimized] = useState(false);
-    // Reset minimize state when switching images
-    useEffect(() => { setIsGenModalMinimized(false); }, [selectedId]);
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
     const isSideSheetVisible = isSideSheetVisibleProp ?? isSideSheetVisibleLocal;
@@ -113,8 +58,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Brush mode visually hides the sidesheet to give canvas full width
     const isSideSheetActuallyVisible = isSideSheetVisible && state.sideSheetMode !== 'brush';
 
-    const img = images.find(i => i.id === selectedId);
-    const idx = images.findIndex(i => i.id === selectedId);
+    // O(1) lookups via Map instead of O(n) find/findIndex on every render
+    const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
+    const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
+
+    const img = imageMap.get(selectedId);
+    const idx = imageIndexMap.get(selectedId) ?? -1;
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
@@ -131,8 +80,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             const finishedId = prevGeneratingChildId.current;
             prevGeneratingChildId.current = null;
             // Child finished — navigate to it
-            const finishedImage = images.find(i => i.id === finishedId && !i.isGenerating);
-            if (finishedImage) {
+            const finishedImage = imageMap.get(finishedId);
+            const isFinished = finishedImage && !finishedImage.isGenerating;
+            if (isFinished) {
                 onSelectImage(finishedId);
             }
         }
@@ -448,17 +398,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         style={{ objectFit: 'contain' }}
                                     />
 
-                                    {generatingChild && (
-                                        <GeneratingModal
-                                            startTime={generatingChild.generationStartTime}
-                                            duration={generatingChild.estimatedDuration || 23000}
-                                            isMinimized={isGenModalMinimized}
-                                            onMinimize={() => setIsGenModalMinimized(true)}
-                                            onGenerateMore={img.generationPrompt ? () => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues) : undefined}
-                                            lang={state.currentLang}
-                                        />
-                                    )}
-
                                     {!img.isGenerating && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
                                         <div className="absolute inset-0 z-20 pointer-events-auto">
                                             <EditorCanvas
@@ -490,19 +429,32 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-16' : 'h-0'} md:h-16 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {images.map(i => {
-                                const isActive = selectedId === i.id;
-                                const previewSrc = i.thumbSrc || i.src;
+                            {/* Windowed: only render ±10 thumbnails around active image */}
+                            {(() => {
+                                const thumbImages = images.filter(i => i.thumbSrc || i.src);
+                                const activeThumbIdx = thumbImages.findIndex(i => i.id === selectedId);
+                                const WINDOW = 10;
+                                const start = Math.max(0, activeThumbIdx - WINDOW);
+                                const end = Math.min(thumbImages.length, activeThumbIdx + WINDOW + 1);
+                                // Spacer for clipped items before window
+                                const spacerBefore = start > 0 ? start * (36 + 8) : 0; // 9*4=36px + 8px margin
+                                const spacerAfter = end < thumbImages.length ? (thumbImages.length - end) * (36 + 8) : 0;
                                 return (
-                                    <button
-                                        key={i.id}
-                                        onClick={() => onSelectImage(i.id)}
-                                        className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-500 dark:ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
-                                    >
-                                        {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" />}
-                                    </button>
+                                    <>
+                                        {spacerBefore > 0 && <div style={{ minWidth: spacerBefore }} className="shrink-0" />}
+                                        {thumbImages.slice(start, end).map(i => (
+                                            <ThumbButton
+                                                key={i.id}
+                                                id={i.id}
+                                                src={i.thumbSrc || i.src}
+                                                isActive={selectedId === i.id}
+                                                onSelect={onSelectImage}
+                                            />
+                                        ))}
+                                        {spacerAfter > 0 && <div style={{ minWidth: spacerAfter }} className="shrink-0" />}
+                                    </>
                                 );
-                            })}
+                            })()}
                         </div>
 
                         {/* Annotations Toolbar */}
@@ -667,7 +619,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onActiveShapeChange={actions.setActiveShape}
                         onBrushResizeStart={() => actions.setIsBrushResizing(true)}
                         onBrushResizeEnd={() => actions.setIsBrushResizing(false)}
-                        onGenerate={(...args: Parameters<typeof actions.handleGenerate>) => { setIsSideSheetVisible(false); actions.handleGenerate(...args); }}
+                        onGenerate={actions.handleGenerate}
                         onUpdateAnnotations={actions.handleUpdateAnnotations}
                         onUpdatePrompt={actions.handleUpdatePrompt}
                         onUpdateVariables={actions.handleUpdateVariables}

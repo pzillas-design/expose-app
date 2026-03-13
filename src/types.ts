@@ -30,6 +30,7 @@ export interface CanvasImage {
   src: string;
   storage_path: string;
   thumbSrc?: string; // Low-res thumbnail for LOD performance
+  thumb_storage_path?: string; // Storage path to pre-generated thumbnail
   width: number;
   height: number;
   realWidth?: number;
