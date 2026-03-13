@@ -92,7 +92,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
             {!isGen && (
                 <div
-                    className={`absolute top-2 left-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${!isSelectMode && !isKeyboardActive ? 'opacity-0 group-hover:opacity-100' : ''}`}
+                    className={`absolute top-2 left-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${isSelected ? '' : 'opacity-0 group-hover:opacity-100'}`}
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
