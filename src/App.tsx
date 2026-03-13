@@ -198,6 +198,14 @@ export function App() {
                         return undefined;
                     })()}
                     detailActions={null}
+                    detailHasPrompt={(() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            const img = allImages.find(i => i.id === id);
+                            return !!(img?.generationPrompt);
+                        }
+                        return false;
+                    })()}
                     onBack={handleBackToFeed}
                     onDetailRename={() => {
                         if (location.pathname.startsWith('/image/')) {

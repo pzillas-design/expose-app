@@ -35,6 +35,7 @@ interface AppNavbarProps {
     onDetailDelete?: () => void;
     onDetailInfo?: () => void;
     onDetailRegenerate?: () => void;
+    detailHasPrompt?: boolean;
     isSideSheetVisible?: boolean;
     onToggleSideSheet?: () => void;
     rightInset?: number;
@@ -72,6 +73,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onDetailDelete,
     onDetailInfo,
     onDetailRegenerate,
+    detailHasPrompt,
     isSideSheetVisible,
     onToggleSideSheet,
     rightInset = 0,
@@ -248,7 +250,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         <DropdownMenu
                             items={[
                                 { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                                 { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
@@ -282,7 +284,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         <DropdownMenu
                             items={[
                                 { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                { label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } },
+                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                                 { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
@@ -299,14 +301,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     tooltip={isGerman ? 'Herunterladen' : 'Download'}
                 />
             </span>
-            <span className="hidden md:contents">
-                <RoundIconButton
-                    icon={<Repeat className="w-[18px] h-[18px]" />}
-                    onClick={onDetailRegenerate}
-                    variant="ghost"
-                    tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
-                />
-            </span>
+            {detailHasPrompt && (
+                <span className="hidden md:contents">
+                    <RoundIconButton
+                        icon={<Repeat className="w-[18px] h-[18px]" />}
+                        onClick={onDetailRegenerate}
+                        variant="ghost"
+                        tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
+                    />
+                </span>
+            )}
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<PanelRight className="w-[18px] h-[18px]" />}
