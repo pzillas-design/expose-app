@@ -29,8 +29,7 @@ export interface CanvasImage {
   id: string;
   src: string;
   storage_path: string;
-  thumbSrc?: string; // Low-res thumbnail for LOD performance
-  thumb_storage_path?: string; // Storage path to pre-generated thumbnail
+  thumbSrc?: string; // Low-res thumbnail for LOD performance (Supabase on-the-fly transform URL)
   width: number;
   height: number;
   realWidth?: number;

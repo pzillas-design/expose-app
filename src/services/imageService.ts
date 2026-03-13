@@ -3,7 +3,6 @@ import { storageService } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
-import { generateThumbnail } from '../utils/imageUtils';
 
 const buildUploadSubfolder = () => {
     const now = new Date();
@@ -19,7 +18,7 @@ export const imageService = {
      * Saves a newly generated image to Storage and DB.
      * This is intended to be called in the background (fire and forget from UI perspective).
      */
-    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string; storage_path?: string; thumb_storage_path?: string }> {
+    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string; storage_path?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
         // 1. Determine path+filename
@@ -39,12 +38,11 @@ export const imageService = {
         // 3. CLEAN UP ANNOTATIONS: Ensure reference images are storage paths, not signed URLs or Base64
         const cleanedAnnotations = await imageService._processAnnotationsForStorage(image.annotations || [], userId, userEmail);
 
-        // 4. Insert into DB with thumbnail path (still using userId for database)
+        // 4. Insert into DB (still using userId for database)
         const { error } = await supabase.from('images').insert({
             id: image.id,
             user_id: userId,
             storage_path: uploadResult.path,
-            thumb_storage_path: uploadResult.thumbPath || null,
             width: Math.round(image?.width || 512),
             height: Math.round(image?.height || 512),
             real_width: image.realWidth,
@@ -68,8 +66,7 @@ export const imageService = {
             console.log(`Deep Sync: Success! Image ${image.id} is safe.`);
             return {
                 success: true,
-                storage_path: uploadResult.path,
-                thumb_storage_path: uploadResult.thumbPath || undefined
+                storage_path: uploadResult.path
             };
         }
     },
@@ -135,7 +132,7 @@ export const imageService = {
         // 0. Fetch storage paths before deleting from DB
         const { data: images } = await supabase
             .from('images')
-            .select('storage_path, thumb_storage_path')
+            .select('storage_path')
             .in('id', imageIds)
             .eq('user_id', userId);
 
@@ -169,16 +166,9 @@ export const imageService = {
 
         // 3. Delete files from Storage (both original and thumbnail)
         if (images && images.length > 0) {
-            const pathsToDelete: string[] = [];
-
-            images.forEach(img => {
-                if (img.storage_path) {
-                    pathsToDelete.push(img.storage_path);
-                }
-                if (img.thumb_storage_path) {
-                    pathsToDelete.push(img.thumb_storage_path);
-                }
-            });
+            const pathsToDelete: string[] = images
+                .filter(img => img.storage_path)
+                .map(img => img.storage_path);
 
             if (pathsToDelete.length > 0) {
                 console.log(`[ImageService] Deleting ${pathsToDelete.length} files from storage...`);
@@ -375,23 +365,13 @@ export const imageService = {
             signedUrl = await storageService.getSignedUrl(record.storage_path);
         }
 
-        // PREFER STORED THUMBNAIL if available, otherwise use on-the-fly transformation
+        // On-the-fly 600px transform for grid thumbnails (Supabase CDN caches this automatically)
         let thumbSignedUrl: string | undefined;
+        const thumbOptionsKey = `_w600h_q80`;
+        thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
 
-        if (record.thumb_storage_path) {
-            // Use stored thumbnail (faster, no pixelation!)
-            thumbSignedUrl = preSignedUrls[record.thumb_storage_path];
-            if (!thumbSignedUrl) {
-                thumbSignedUrl = await storageService.getSignedUrl(record.thumb_storage_path);
-            }
-        } else {
-            // Fallback to on-the-fly 480px transformation (retina-safe for ~240px grid tiles)
-            const thumbOptionsKey = `_w480h_q75_contain`;
-            thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
-
-            if (!thumbSignedUrl && record.storage_path) {
-                thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 480, quality: 75, resize: 'contain' });
-            }
+        if (!thumbSignedUrl && record.storage_path) {
+            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 600, quality: 80 });
         }
 
         const targetHeight = 512;
@@ -416,7 +396,6 @@ export const imageService = {
             id: record.id,
             src: signedUrl || '',
             storage_path: record.storage_path,
-            thumb_storage_path: record.thumb_storage_path || undefined,
             thumbSrc: thumbSignedUrl || signedUrl || undefined,
             width: normalizedWidth,
             height: targetHeight,
@@ -499,62 +478,54 @@ export const imageService = {
 
         if (dbImages.length > 0) {
             const signStart = performance.now();
-            // Collect paths: all plain paths + only transform-sign storage_paths without a stored thumb
-            const allPathsToSign = new Set<string>();
-            const transformPathsToSign = new Set<string>(); // Only for images lacking a stored thumbnail
+            const fullPathsToSign = new Set<string>();
+            const thumbPathsToSign = new Set<string>();
 
             dbImages.forEach(rec => {
                 if (rec.storage_path) {
-                    allPathsToSign.add(rec.storage_path);
-
-                    if (rec.thumb_storage_path) {
-                        // Has a stored thumbnail – sign it plain, no transform needed
-                        allPathsToSign.add(rec.thumb_storage_path);
-                    } else {
-                        // No thumbnail – need on-the-fly transform for this storage_path
-                        transformPathsToSign.add(rec.storage_path);
-                    }
+                    fullPathsToSign.add(rec.storage_path);
+                    thumbPathsToSign.add(rec.storage_path);
                 }
                 // Add reference images from annotations
                 const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
                 rawAnns.forEach((ann: any) => {
                     if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                        allPathsToSign.add(ann.referenceImage);
+                        fullPathsToSign.add(ann.referenceImage);
                     }
                 });
             });
-            console.log(`[ImageService] Paths to sign: ${allPathsToSign.size} plain, ${transformPathsToSign.size} transform`);
+            console.log(`[ImageService] Paths to sign: ${fullPathsToSign.size} full, ${thumbPathsToSign.size} thumb`);
 
             // Batch sign 100 paths at a time - PARALLELIZED for speed
             const signedUrlMap: Record<string, string> = {};
 
-            const plainChunks: string[][] = [];
-            const plainArray = Array.from(allPathsToSign);
-            for (let i = 0; i < plainArray.length; i += 100) {
-                plainChunks.push(plainArray.slice(i, i + 100));
+            const fullChunks: string[][] = [];
+            const fullArray = Array.from(fullPathsToSign);
+            for (let i = 0; i < fullArray.length; i += 100) {
+                fullChunks.push(fullArray.slice(i, i + 100));
             }
 
-            const transformChunks: string[][] = [];
-            const transformArray = Array.from(transformPathsToSign);
-            for (let i = 0; i < transformArray.length; i += 100) {
-                transformChunks.push(transformArray.slice(i, i + 100));
+            const thumbChunks: string[][] = [];
+            const thumbArray = Array.from(thumbPathsToSign);
+            for (let i = 0; i < thumbArray.length; i += 100) {
+                thumbChunks.push(thumbArray.slice(i, i + 100));
             }
 
-            console.log(`[ImageService] Signing ${plainChunks.length} plain + ${transformChunks.length} transform chunks in parallel...`);
+            console.log(`[ImageService] Signing ${fullChunks.length} full + ${thumbChunks.length} thumb chunks in parallel...`);
 
             // Execute all chunks in parallel
             await Promise.all([
-                ...plainChunks.map(async (chunk, idx) => {
+                ...fullChunks.map(async (chunk, idx) => {
                     const chunkStart = performance.now();
                     const results = await storageService.getSignedUrls(chunk);
                     Object.assign(signedUrlMap, results);
-                    console.log(`[ImageService] Plain chunk ${idx + 1}/${plainChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
+                    console.log(`[ImageService] Full chunk ${idx + 1}/${fullChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
                 }),
-                ...transformChunks.map(async (chunk, idx) => {
+                ...thumbChunks.map(async (chunk, idx) => {
                     const chunkStart = performance.now();
-                    const results = await storageService.getSignedUrls(chunk, { width: 480, quality: 75, resize: 'contain' });
+                    const results = await storageService.getSignedUrls(chunk, { width: 600, quality: 80 });
                     Object.assign(signedUrlMap, results);
-                    console.log(`[ImageService] Transform chunk ${idx + 1}/${transformChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
+                    console.log(`[ImageService] Thumb chunk ${idx + 1}/${thumbChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
                 })
             ]);
             console.log(`[ImageService] All URLs signed in ${(performance.now() - signStart).toFixed(2)}ms`);
@@ -705,33 +676,29 @@ export const imageService = {
 
         const dbImages = familyRecs || [targetRec];
 
-        // 3. Resolve and Group (Simplified reuse of logic from loadUserImages)
-        const allPathsToSign = new Set<string>();
-        const transformPathsToSign = new Set<string>();
+        // 3. Resolve and Group
+        const fullPathsToSign = new Set<string>();
+        const thumbPathsToSign = new Set<string>();
         dbImages.forEach(rec => {
             if (rec.storage_path) {
-                allPathsToSign.add(rec.storage_path);
-                if (rec.thumb_storage_path) {
-                    allPathsToSign.add(rec.thumb_storage_path);
-                } else {
-                    transformPathsToSign.add(rec.storage_path);
-                }
+                fullPathsToSign.add(rec.storage_path);
+                thumbPathsToSign.add(rec.storage_path);
             }
             const rawAnns = rec.annotations ? (typeof rec.annotations === 'string' ? JSON.parse(rec.annotations) : rec.annotations) : [];
             rawAnns.forEach((ann: any) => {
                 if (ann.referenceImage && !ann.referenceImage.startsWith('data:') && !ann.referenceImage.startsWith('http')) {
-                    allPathsToSign.add(ann.referenceImage);
+                    fullPathsToSign.add(ann.referenceImage);
                 }
             });
         });
 
         const signedUrlMap: Record<string, string> = {};
-        const [hdResults, optResults] = await Promise.all([
-            storageService.getSignedUrls(Array.from(allPathsToSign)),
-            transformPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(transformPathsToSign), { width: 480, quality: 75, resize: 'contain' }) : Promise.resolve({})
+        const [fullResults, thumbResults] = await Promise.all([
+            storageService.getSignedUrls(Array.from(fullPathsToSign)),
+            thumbPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(thumbPathsToSign), { width: 600, quality: 80 }) : Promise.resolve({})
         ]);
-        Object.assign(signedUrlMap, hdResults);
-        Object.assign(signedUrlMap, optResults);
+        Object.assign(signedUrlMap, fullResults);
+        Object.assign(signedUrlMap, thumbResults);
 
         const loadedImages = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
 
@@ -822,41 +789,4 @@ export const imageService = {
         }));
     },
 
-    /**
-     * Generates a thumbnail for a freshly generated image and persists it.
-     * Called fire-and-forget after generation completes to avoid transform API costs on future loads.
-     */
-    async generateMissingThumbnail(image: CanvasImage, userId: string): Promise<void> {
-        if (!image.src || !image.storage_path) return;
-
-        try {
-            const thumbBlob = await generateThumbnail(image.src, 300);
-
-            // Derive thumb path from storage_path
-            const pathParts = image.storage_path.split('/');
-            const filename = pathParts.pop()!;
-            const folder = pathParts.join('/');
-            const baseName = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '');
-            const thumbFilePath = `${folder}/thumb_${baseName}.jpg`;
-
-            const { data, error } = await supabase.storage
-                .from('user-content')
-                .upload(thumbFilePath, thumbBlob, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
-
-            if (error || !data) {
-                console.warn('[ImageService] Failed to upload generated thumbnail:', error);
-                return;
-            }
-
-            await supabase
-                .from('images')
-                .update({ thumb_storage_path: data.path })
-                .eq('id', image.id)
-                .eq('user_id', userId);
-
-            console.log(`[ImageService] Thumbnail backfilled for ${image.id} → ${data.path}`);
-        } catch (e) {
-            console.warn('[ImageService] Thumbnail backfill failed:', e);
-        }
-    }
 };

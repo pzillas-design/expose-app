@@ -4,6 +4,7 @@ import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject } from '../types';
 import { generateId } from '../utils/ids';
 import { downloadImage } from '../utils/imageUtils';
+import { storageService } from '../services/storageService';
 // useCanvasNavigation.ts import removed - free canvas is no longer used
 import { useToast } from '../components/ui/Toast';
 import { useItemDialog } from '../components/ui/Dialog';
@@ -359,10 +360,17 @@ export const useNanoController = () => {
         const imagesToDownload = allImages.filter(img => ids.includes(img.id));
 
         for (const img of imagesToDownload) {
-            const urlToDownload = img.storage_path || img.src || img.originalSrc;
-            if (urlToDownload && !img.isGenerating) {
+            if (img.isGenerating) continue;
+
+            // Prefer the full-res signed URL already in memory; fall back to signing storage_path
+            let urlToDownload = img.src || img.originalSrc;
+            if ((!urlToDownload || urlToDownload.startsWith('blob:')) && img.storage_path) {
+                urlToDownload = await storageService.getSignedUrl(img.storage_path) || urlToDownload || '';
+            }
+
+            if (urlToDownload) {
                 const title = img.title || 'image';
-                await downloadImage(urlToDownload, `${title}`);
+                await downloadImage(urlToDownload, title);
             }
         }
     }, [allImages]);

@@ -148,7 +148,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             fetchLock.current = true;
             try {
                 // Load thumbnail (600px) by default, full resolution only when selected
-                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75, resize: 'contain' });
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75 });
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {
@@ -242,8 +242,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
         }
     }, [image.isGenerating, image.id]);
 
-    // Use aspect ratio for stable Layout - minimal reflows
-    const ratio = naturalAspectRatio || (image.width / image.height);
+    // Use DB dimensions as authoritative source; naturalAspectRatio only as fallback
+    // (thumbnail pixel dimensions must not override correct DB aspect ratio)
+    const ratio = (image.width > 0 && image.height > 0)
+        ? image.width / image.height
+        : (naturalAspectRatio || 1);
     const finalWidth = (image.height * ratio) * zoom;
     const finalHeight = image.height * zoom;
 

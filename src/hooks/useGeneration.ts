@@ -409,10 +409,6 @@ export const useGeneration = ({
                     }
 
                     showToast('Bild generiert', 'success', 6000);
-
-                    if (currentUser) {
-                        imageService.generateMissingThumbnail(finalImage, currentUser.id);
-                    }
                 } else {
                     // Async pattern: Edge Function accepted job, background processing started.
                     // pollForJob (via useEffect) handles completion, credit deduction, and toast.
@@ -517,10 +513,6 @@ export const useGeneration = ({
                     showToast('Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
                         selectAndSnap(newId);
                     });
-
-                    if (user?.id) {
-                        imageService.generateMissingThumbnail(finalImage, user.id);
-                    }
                 } else {
                     // Async pattern: background processing started, pollForJob handles completion
                     if (!isPro && cost > 0) {

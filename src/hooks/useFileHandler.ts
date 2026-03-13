@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { generateId } from '@/utils/ids';
-import { generateThumbnail } from '@/utils/imageUtils';
 import { imageService } from '@/services/imageService';
 import { CanvasImage, ImageRow } from '@/types';
 
@@ -86,16 +85,13 @@ export const useFileHandler = ({
                     const h = targetHeight;
 
                     try {
-                        const thumbBlob = await generateThumbnail(src, 300);
-                        const thumbSrc = URL.createObjectURL(thumbBlob);
-
                         // 3. UPDATE SKELETON WITH REAL DATA
                         setRows(prev => prev.map(row => ({
                             ...row,
                             items: row.items.map(item => item.id === skeletonId ? {
                                 ...item,
                                 src: src,
-                                thumbSrc: thumbSrc,
+                                thumbSrc: src, // Use full src as thumb during local session (no storage yet)
                                 width: w,
                                 height: h,
                                 realWidth: img.width,
@@ -115,7 +111,7 @@ export const useFileHandler = ({
                             const finalImage: CanvasImage = {
                                 id: skeletonId,
                                 src: src,
-                                thumbSrc: thumbSrc,
+                                thumbSrc: src,
                                 width: w,
                                 height: h,
                                 realWidth: img.width,
@@ -136,7 +132,6 @@ export const useFileHandler = ({
                                         items: row.items.map(item => item.id === skeletonId ? {
                                             ...item,
                                             storage_path: res.storage_path,
-                                            thumb_storage_path: res.thumb_storage_path || undefined,
                                         } : item)
                                     })));
                                 }

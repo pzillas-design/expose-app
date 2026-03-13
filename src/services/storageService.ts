@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { compressImage, generateThumbnail } from '../utils/imageUtils';
+import { compressImage } from '../utils/imageUtils';
 
 export const storageService = {
     /**
@@ -12,17 +12,8 @@ export const storageService = {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
-            let blob: Blob;
-            let shouldGenerateThumb = false;
-
-            if (customFileName?.startsWith('thumb_')) {
-                const response = await fetch(imageSrc);
-                blob = await response.blob();
-            } else {
-                // Optmize: Max 4K (4096px) and 80% Quality (0.8)
-                blob = await compressImage(imageSrc, 4096, 0.8);
-                shouldGenerateThumb = true; // Generate thumbnail for full-size images
-            }
+            // Optimize: Max 4K (4096px) and 80% Quality (0.8)
+            const blob = await compressImage(imageSrc, 4096, 0.8);
 
             // 2. Detect format from blob MIME type
             const mimeType = blob.type;
@@ -70,33 +61,7 @@ export const storageService = {
                 throw error;
             }
 
-            // 5. Generate and Upload Thumbnail (300px width for optimal quality/size balance)
-            let thumbPath: string | undefined;
-            if (shouldGenerateThumb) {
-                try {
-                    const thumbBlob = await generateThumbnail(imageSrc, 300);
-                    const thumbFileName = `thumb_${fileName}`;
-                    const thumbFilePath = `${folderPath}/${thumbFileName}`;
-
-                    const { data: thumbData, error: thumbError } = await supabase.storage
-                        .from('user-content')
-                        .upload(thumbFilePath, thumbBlob, {
-                            cacheControl: '3600',
-                            upsert: true,
-                            contentType: 'image/jpeg' // Thumbnails are always JPEG for efficiency
-                        });
-
-                    if (!thumbError && thumbData) {
-                        thumbPath = thumbData.path;
-                        console.log(`[Storage] Thumbnail generated: ${thumbPath}`);
-                    }
-                } catch (thumbErr) {
-                    console.warn('[Storage] Thumbnail generation failed:', thumbErr);
-                    // Continue without thumbnail - not critical
-                }
-            }
-
-            return { path: data.path, thumbPath };
+            return { path: data.path };
         } catch (error: any) {
             console.error('Storage Upload Failed:', error.message || error, error);
             return null;
@@ -155,7 +120,7 @@ export const storageService = {
         const toFetch: string[] = [];
 
         // Generate a cache key suffix based on options (only include defined values)
-        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}${options.resize ? `_${options.resize}` : ''}` : '';
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
         paths.forEach(path => {
@@ -233,7 +198,7 @@ export const storageService = {
         if (!path) return null;
 
         // Generate a cache key suffix based on options (only include defined values)
-        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}${options.resize ? `_${options.resize}` : ''}` : '';
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
         const cached = storageService._urlCache.get(path + optionsKey);

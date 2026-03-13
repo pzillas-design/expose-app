@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal
+    Undo2, Redo2, Layers, MoreHorizontal, Download
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { CropModal } from '@/components/modals/CropModal';
@@ -514,6 +514,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-8">
 
                     <>
+                            {/* ── Multi-select action bar ── */}
+                            {isMulti && selectedImages && (
+                                <div className="flex items-center gap-1 bg-zinc-100/80 dark:bg-zinc-900/80 rounded-xl shrink-0 overflow-hidden">
+                                    <span className="flex-1 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 px-3 py-2">
+                                        {selectedImages.length} {lang === 'de' ? 'ausgewählt' : 'selected'}
+                                    </span>
+                                    <button
+                                        onClick={() => onDownload?.(selectedImages.map(img => img.id))}
+                                        className="flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                    >
+                                        <Download className="w-3.5 h-3.5" />
+                                        {lang === 'de' ? 'Herunterladen' : 'Download'}
+                                    </button>
+                                </div>
+                            )}
+
                             {/* ── REFINE Section ── */}
                             <section className="space-y-3">
 

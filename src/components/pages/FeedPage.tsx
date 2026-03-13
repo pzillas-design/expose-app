@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CanvasImage } from '@/types';
-import { Loader2, Plus, Layers, Upload } from 'lucide-react';
+import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -372,6 +372,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                     <GlobalFooter t={t || ((key: string) => key)} />
                 </div>
             </div>
+
+            {/* Mobile selection action bar */}
+            {isSelectMode && isMobile && selectedIds.length > 0 && (
+                <div className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} rounded-full shadow-xl backdrop-blur-md`}>
+                    <button
+                        onClick={() => actions?.handleDownload?.(selectedIds)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-black dark:text-white"
+                    >
+                        <Download className="w-4 h-4" />
+                        {selectedIds.length > 1 ? `${selectedIds.length} herunterladen` : 'Herunterladen'}
+                    </button>
+                    <div className={`w-px h-5 ${Theme.Colors.Border} bg-current opacity-20`} />
+                    <button
+                        onClick={() => actions?.setIsSelectMode?.(false)}
+                        className="flex items-center justify-center w-8 h-8 text-zinc-500 dark:text-zinc-400"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            )}
 
             {/* Selection SideSheet */}
             {isSelectMode && !isMobile && (
