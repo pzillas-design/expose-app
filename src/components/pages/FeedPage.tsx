@@ -110,10 +110,10 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             </div>
                         ) : (
-                            <div className="w-full h-full rounded-full bg-white/25" />
+                            <div className="w-full h-full rounded-full bg-white/50" />
                         )
                     ) : (
-                        <div className="w-full h-full rounded-full bg-white/25 cursor-pointer hover:bg-white/40 transition-colors" />
+                        <div className="w-full h-full rounded-full bg-white/50 cursor-pointer hover:bg-white/70 transition-colors" />
                     )}
                 </div>
             )}
