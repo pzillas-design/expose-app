@@ -18,6 +18,7 @@ interface AppNavbarProps {
     isSelectMode?: boolean;
     onCancelSelectMode?: () => void;
     onDeleteSelected?: () => void;
+    onDownloadSelected?: () => void;
     onGenerateMoreSelected?: () => void;
     onGenerateMoreDetail?: () => void;
     onOpenCredits?: () => void;
@@ -54,6 +55,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     isSelectMode,
     onCancelSelectMode,
     onDeleteSelected,
+    onDownloadSelected,
     onGenerateMoreSelected,
     onGenerateMoreDetail,
     onOpenCredits,
@@ -316,6 +318,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
+            {selectedCount > 0 && (
+                <RoundIconButton
+                    icon={<Download className="w-[18px] h-[18px]" />}
+                    onClick={onDownloadSelected}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                />
+            )}
             <Tooltip text={isGerman ? 'Löschen' : 'Delete'}>
                 <button
                     onClick={onDeleteSelected}

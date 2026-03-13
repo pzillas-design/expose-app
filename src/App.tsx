@@ -171,6 +171,9 @@ export function App() {
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
                     }}
+                    onDownloadSelected={() => {
+                        if (state.selectedIds?.length) actions.handleDownload(state.selectedIds);
+                    }}
                     onGenerateMoreSelected={() => {
                         state.selectedIds.forEach((id: string) => actions.handleGenerateMore(id));
                     }}
