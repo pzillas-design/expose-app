@@ -5,7 +5,7 @@ import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
-import { storageService } from '@/services/storageService';
+import { storageService, THUMB_OPTIONS } from '@/services/storageService';
 import { useMobile } from '@/hooks/useMobile';
 
 interface ImageItemProps {
@@ -148,7 +148,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
             fetchLock.current = true;
             try {
                 // Load thumbnail (600px) by default, full resolution only when selected
-                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : { width: 600, quality: 75 });
+                const url = await storageService.getSignedUrl(path, needsHQ ? undefined : THUMB_OPTIONS);
                 if (url) {
                     // Reset loaded state when switching images
                     if (path !== lastPath.current) {

@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { storageService } from './storageService';
+import { storageService, THUMB_OPTIONS, THUMB_OPTIONS_KEY } from './storageService';
 import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
@@ -367,11 +367,10 @@ export const imageService = {
 
         // On-the-fly 600px transform for grid thumbnails (Supabase CDN caches this automatically)
         let thumbSignedUrl: string | undefined;
-        const thumbOptionsKey = `_w600h_q80`;
-        thumbSignedUrl = preSignedUrls[record.storage_path + thumbOptionsKey];
+        thumbSignedUrl = preSignedUrls[record.storage_path + THUMB_OPTIONS_KEY];
 
         if (!thumbSignedUrl && record.storage_path) {
-            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, { width: 600, quality: 80 });
+            thumbSignedUrl = await storageService.getSignedUrl(record.storage_path, THUMB_OPTIONS);
         }
 
         const targetHeight = 512;
@@ -523,7 +522,7 @@ export const imageService = {
                 }),
                 ...thumbChunks.map(async (chunk, idx) => {
                     const chunkStart = performance.now();
-                    const results = await storageService.getSignedUrls(chunk, { width: 600, quality: 80 });
+                    const results = await storageService.getSignedUrls(chunk, THUMB_OPTIONS);
                     Object.assign(signedUrlMap, results);
                     console.log(`[ImageService] Thumb chunk ${idx + 1}/${thumbChunks.length} signed in ${(performance.now() - chunkStart).toFixed(2)}ms`);
                 })
@@ -695,7 +694,7 @@ export const imageService = {
         const signedUrlMap: Record<string, string> = {};
         const [fullResults, thumbResults] = await Promise.all([
             storageService.getSignedUrls(Array.from(fullPathsToSign)),
-            thumbPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(thumbPathsToSign), { width: 600, quality: 80 }) : Promise.resolve({})
+            thumbPathsToSign.size > 0 ? storageService.getSignedUrls(Array.from(thumbPathsToSign), THUMB_OPTIONS) : Promise.resolve({})
         ]);
         Object.assign(signedUrlMap, fullResults);
         Object.assign(signedUrlMap, thumbResults);
