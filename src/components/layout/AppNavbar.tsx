@@ -334,14 +334,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
-            <Tooltip text={isGerman ? 'Neu generieren' : 'Regenerate'}>
-                <button
-                    onClick={onGenerateMoreSelected}
-                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                >
-                    <Repeat className="w-[18px] h-[18px]" />
-                </button>
-            </Tooltip>
         </div>
     ) : (
         <>
