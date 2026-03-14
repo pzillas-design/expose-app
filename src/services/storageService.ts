@@ -1,8 +1,8 @@
 import { supabase } from './supabaseClient';
 import { compressImage } from '../utils/imageUtils';
 
-export const THUMB_OPTIONS = { width: 400, quality: 50 } as const;
-export const THUMB_OPTIONS_KEY = `_w${THUMB_OPTIONS.width}h_q${THUMB_OPTIONS.quality}`;
+export const THUMB_OPTIONS = { width: 400, quality: 50, resize: 'contain' as const } as const;
+export const THUMB_OPTIONS_KEY = `_w${THUMB_OPTIONS.width}h_q${THUMB_OPTIONS.quality}_contain`;
 
 export const storageService = {
     /**
