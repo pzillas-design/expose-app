@@ -148,44 +148,49 @@ export const storageService = {
             // Ensure session is fresh before batch signing
             await supabase.auth.getSession();
 
-            // 2. Fetch missing in one call
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
-            // Build transform object only with defined fields (avoid 'undefined' strings in URLs)
-            const transform = options ? Object.fromEntries(
-                Object.entries({
-                    width: options.width,
-                    height: options.height,
-                    quality: options.quality,
-                    resize: options.resize
-                }).filter(([, v]) => v !== undefined)
-            ) : undefined;
 
-            const { data, error } = await supabase.storage
-                .from('user-content')
-                .createSignedUrls(toFetch, 60 * 60 * 24 * 7, {
-                    transform
-                } as any);
-
-            if (error) throw error;
-
-            if (data) {
-                data.forEach((item: any) => {
-                    if (item.signedUrl) {
-                        const fullKey = (item.path || item.error === null && item.signedUrl ? toFetch[data.indexOf(item)] : item.path) + optionsKey;
-                        // Supabase sometimes returns the path differently in the result, so we fallback to the input path index if needed
-                        const resolvedPath = item.path || toFetch[data.indexOf(item)];
-                        const finalKey = resolvedPath + optionsKey;
-
-                        results[finalKey] = item.signedUrl;
-                        storageService._urlCache.set(finalKey, {
-                            url: item.signedUrl,
-                            expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
-                        });
+            if (options) {
+                // createSignedUrls (batch) does NOT support transform — use parallel singular calls
+                const transform = Object.fromEntries(
+                    Object.entries({
+                        width: options.width,
+                        height: options.height,
+                        quality: options.quality,
+                        resize: options.resize
+                    }).filter(([, v]) => v !== undefined)
+                );
+                await Promise.all(toFetch.map(async (path) => {
+                    const { data, error } = await supabase.storage
+                        .from('user-content')
+                        .createSignedUrl(path, 60 * 60 * 24 * 7, { transform } as any);
+                    if (!error && data?.signedUrl) {
+                        const key = path + optionsKey;
+                        results[key] = data.signedUrl;
+                        storageService._urlCache.set(key, { url: data.signedUrl, expires: Date.now() + 1000 * 60 * 60 * 24 * 7 });
                     }
-                });
-                storageService._savePersistentCache();
+                }));
+            } else {
+                // No transform — use fast batch endpoint
+                const { data, error } = await supabase.storage
+                    .from('user-content')
+                    .createSignedUrls(toFetch, 60 * 60 * 24 * 7);
+
+                if (error) throw error;
+
+                if (data) {
+                    data.forEach((item: any, idx: number) => {
+                        if (item.signedUrl) {
+                            const resolvedPath = item.path || toFetch[idx];
+                            const key = resolvedPath + optionsKey;
+                            results[key] = item.signedUrl;
+                            storageService._urlCache.set(key, { url: item.signedUrl, expires: Date.now() + 1000 * 60 * 60 * 24 * 7 });
+                        }
+                    });
+                }
             }
 
+            storageService._savePersistentCache();
             console.log(`[StorageService] Batch signed ${toFetch.length} URLs in ${(performance.now() - perfStart).toFixed(2)}ms`);
             return results;
         } catch (error) {
