@@ -45,14 +45,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 <img
                     src={previewSrc}
                     alt={img.title}
-                    className={`w-full h-full object-cover transition-all duration-300 ease-out ${
+                    className={`w-full h-full object-cover transition-all duration-150 ease-out ${
                         isGen
                             ? 'blur-sm scale-105 brightness-75'
                             : isSelectMode && isSelected
                                 ? 'opacity-75'
                                 : isKeyboardActive
-                                    ? 'brightness-110'
-                                    : 'group-hover:opacity-90'
+                                    ? 'brightness-110 scale-105'
+                                    : 'group-hover:scale-105'
                     }`}
                     loading="lazy"
                 />

@@ -358,7 +358,7 @@ export function App() {
                         } />
 
                         <Route path="/admin" element={
-                            <AdminRoute user={user}>
+                            <AdminRoute user={user} userProfile={userProfile}>
                                 <AdminDashboard />
                             </AdminRoute>
                         } />
