@@ -38,6 +38,7 @@ interface AppNavbarProps {
     detailHasPrompt?: boolean;
     isSideSheetVisible?: boolean;
     onToggleSideSheet?: () => void;
+    onToggleFeedSideSheet?: () => void;
     rightInset?: number;
     generatingImages?: CanvasImage[];
     onNavigateToImage?: (id: string) => void;
@@ -76,6 +77,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     detailHasPrompt,
     isSideSheetVisible,
     onToggleSideSheet,
+    onToggleFeedSideSheet,
     rightInset = 0,
     generatingImages = [],
     onNavigateToImage,
@@ -191,12 +193,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
-            <button
-                onClick={onCancelSelectMode}
-                className="px-4 h-8 text-[12px] font-medium bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white rounded-full transition-all"
-            >
-                {isGerman ? 'Abbrechen' : 'Cancel'}
-            </button>
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="ghost" />
             {progressRing}
         </div>
     ) : (
@@ -338,6 +335,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
+            <button
+                onClick={onToggleFeedSideSheet}
+                className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
+            >
+                {isGerman ? 'Bearbeiten' : 'Edit'}
+            </button>
         </div>
     ) : (
         <>

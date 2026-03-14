@@ -180,7 +180,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
         <img
             src={currentSrc || ''}
             alt={title}
-            className={`absolute inset-0 w-full h-full object-contain pointer-events-none block transition-all duration-200 ${!isHighRes ? 'blur-sm' : 'blur-0'}`}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none block"
             loading="lazy"
             onLoad={(e) => {
                 const img = e.currentTarget;

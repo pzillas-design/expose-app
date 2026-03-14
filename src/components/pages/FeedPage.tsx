@@ -131,6 +131,7 @@ interface FeedPageProps {
     onUpload?: (files?: FileList) => void;
     onLoadMore: () => void;
     isSelectMode?: boolean;
+    isSelectionSideSheetOpen?: boolean;
     selectedIds?: string[];
     onToggleSelect?: (id: string) => void;
     state?: any;
@@ -138,7 +139,7 @@ interface FeedPageProps {
     t?: any;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onUpload, onLoadMore, isSelectMode, selectedIds = [], onToggleSelect, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -394,7 +395,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             )}
 
             {/* Selection SideSheet */}
-            {isSelectMode && !isMobile && (
+            {isSelectMode && !isMobile && isSelectionSideSheetOpen && (
                 <div className={`w-[380px] shrink-0 border-l ${Theme.Colors.Border} ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));

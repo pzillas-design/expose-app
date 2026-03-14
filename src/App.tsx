@@ -65,6 +65,7 @@ export function App() {
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
+    const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -154,6 +155,7 @@ export function App() {
                     onCancelSelectMode={() => {
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
+                        setFeedSideSheetVisible(false);
                     }}
                     onDeleteSelected={async () => {
                         const count = state.selectedIds?.length || 0;
@@ -239,6 +241,7 @@ export function App() {
                     }}
                     isSideSheetVisible={detailSideSheetVisible}
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
+                    onToggleFeedSideSheet={() => setFeedSideSheetVisible(v => !v)}
                     generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
                     onNavigateToImage={(id) => { setDetailSideSheetVisible(false); handleSelectImage(id); }}
                     onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
@@ -279,6 +282,7 @@ export function App() {
                                     onUpload={(files) => Array.from(files ?? []).forEach(f => actions.processFile(f))}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
+                                    isSelectionSideSheetOpen={feedSideSheetVisible}
                                     selectedIds={state.selectedIds}
                                     onToggleSelect={(id) => {
                                         const isCurrentlySelected = state.selectedIds.includes(id);
