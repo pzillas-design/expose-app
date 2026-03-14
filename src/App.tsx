@@ -358,7 +358,7 @@ export function App() {
                         } />
 
                         <Route path="/admin" element={
-                            <AdminRoute user={user} userProfile={userProfile}>
+                            <AdminRoute user={user} userProfile={userProfile} isAuthLoading={isAuthLoading}>
                                 <AdminDashboard />
                             </AdminRoute>
                         } />
