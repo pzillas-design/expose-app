@@ -458,7 +458,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         </div>
 
                         {/* Annotations Toolbar */}
-                        <div className={`absolute bottom-6 left-0 right-0 z-50 flex flex-col items-center gap-3 transition-all duration-150 ease-in-out ${state.sideSheetMode === 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                        {state.sideSheetMode === 'brush' && <div className="absolute bottom-6 left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
                             {/* Secondary Row: Contextual Sub-Menu */}
                             <div className="w-full flex justify-center pointer-events-none">
                                 {subMenu === 'text' && (
@@ -585,7 +585,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {t('done') || 'Fertig'}
                                 </Button>
                             </div>
-                        </div>
+                        </div>}
                     </div>
                 </div>
 
