@@ -335,9 +335,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
-            <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
-                {isGerman ? 'Bearbeiten' : 'Edit'}
-            </Button>
+            {!isSideSheetVisible && (
+                <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
+                    {isGerman ? 'Bearbeiten' : 'Edit'}
+                </Button>
+            )}
         </div>
     ) : (
         <>

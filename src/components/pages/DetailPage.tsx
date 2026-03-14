@@ -13,9 +13,9 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; onSelect:
     ({ id, src, isActive, onSelect }) => (
         <button
             onClick={() => onSelect(id)}
-            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-500 dark:ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
         >
-            <img src={src} className="w-full h-full object-cover" loading="lazy" />
+            <img src={src} className="w-full h-full object-cover" />
         </button>
     )
 );
@@ -426,35 +426,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps */}
-                    <div className={`${state.sideSheetMode === 'brush' ? 'h-16' : 'h-0'} md:h-16 shrink-0 relative z-30 w-full overflow-visible`}>
+                    <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
-                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black border-t border-zinc-100 dark:border-zinc-900 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {/* Windowed: only render ±10 thumbnails around active image */}
-                            {(() => {
-                                const thumbImages = images.filter(i => i.thumbSrc || i.src);
-                                const activeThumbIdx = thumbImages.findIndex(i => i.id === selectedId);
-                                const WINDOW = 10;
-                                const start = Math.max(0, activeThumbIdx - WINDOW);
-                                const end = Math.min(thumbImages.length, activeThumbIdx + WINDOW + 1);
-                                // Spacer for clipped items before window
-                                const spacerBefore = start > 0 ? start * (36 + 8) : 0; // 9*4=36px + 8px margin
-                                const spacerAfter = end < thumbImages.length ? (thumbImages.length - end) * (36 + 8) : 0;
-                                return (
-                                    <>
-                                        {spacerBefore > 0 && <div style={{ minWidth: spacerBefore }} className="shrink-0" />}
-                                        {thumbImages.slice(start, end).map(i => (
-                                            <ThumbButton
-                                                key={i.id}
-                                                id={i.id}
-                                                src={i.thumbSrc || i.src}
-                                                isActive={selectedId === i.id}
-                                                onSelect={onSelectImage}
-                                            />
-                                        ))}
-                                        {spacerAfter > 0 && <div style={{ minWidth: spacerAfter }} className="shrink-0" />}
-                                    </>
-                                );
-                            })()}
+                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                            {images.filter(i => i.thumbSrc || i.src).map(i => (
+                                <ThumbButton
+                                    key={i.id}
+                                    id={i.id}
+                                    src={i.thumbSrc || i.src}
+                                    isActive={selectedId === i.id}
+                                    onSelect={onSelectImage}
+                                />
+                            ))}
                         </div>
 
                         {/* Annotations Toolbar */}

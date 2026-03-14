@@ -778,7 +778,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 ) : (
                                                     <Button
                                                         onClick={handleGenerate}
-                                                        variant="primary"
+                                                        variant="generate"
                                                         size="m"
                                                         className={`${w < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
                                                     >
