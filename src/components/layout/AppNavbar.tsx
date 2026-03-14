@@ -335,12 +335,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
-            <button
-                onClick={onToggleFeedSideSheet}
-                className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
-            >
+            <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
                 {isGerman ? 'Bearbeiten' : 'Edit'}
-            </button>
+            </Button>
         </div>
     ) : (
         <>
