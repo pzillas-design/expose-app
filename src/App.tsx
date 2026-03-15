@@ -359,7 +359,13 @@ export function App() {
 
                         <Route path="/admin" element={
                             <AdminRoute user={user} userProfile={userProfile} isAuthLoading={isAuthLoading}>
-                                <AdminDashboard />
+                                <AdminDashboard
+                                    user={user}
+                                    userProfile={userProfile}
+                                    credits={credits}
+                                    onCreateBoard={() => setIsCreationModalOpen(true)}
+                                    t={t}
+                                />
                             </AdminRoute>
                         } />
 
