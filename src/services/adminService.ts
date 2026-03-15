@@ -98,38 +98,37 @@ export const adminService = {
         const { data, error } = await query;
         if (error) throw error;
 
-        // Fetch related images for all jobs (if job_id is set)
+        // Batch-fetch profiles + images in parallel
         const jobIds = (data || []).map(j => j.id);
+        const userIds = [...new Set((data || []).map(j => j.user_id).filter(Boolean))];
         let imagesMap: Record<string, any> = {};
+        let profilesMap: Record<string, string> = {};
 
-        if (jobIds.length > 0) {
-            const { data: images } = await supabase
-                .from('canvas_images')
+        await Promise.all([
+            jobIds.length > 0 ? supabase
+                .from('images')
                 .select('job_id, storage_path, width, height')
-                .in('job_id', jobIds);
-
-            // Create a map: job_id -> image
-            if (images) {
-                images.forEach(img => {
-                    if (img.job_id) {
-                        imagesMap[img.job_id] = img;
-                    }
-                });
-            }
-        }
+                .in('job_id', jobIds)
+                .then(({ data: images }) => {
+                    if (images) images.forEach(img => { if (img.job_id) imagesMap[img.job_id] = img; });
+                }) : Promise.resolve(),
+            userIds.length > 0 ? supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .in('id', userIds)
+                .then(({ data: profiles }) => {
+                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+                }) : Promise.resolve(),
+        ]);
 
         return (data || []).map(job => ({
             id: job.id,
-            userName: job.user_name || 'Unknown',
+            userName: profilesMap[job.user_id] || job.user_name || 'Unknown',
             type: job.type || 'Generation',
             model: job.model || 'unknown', // This already contains 'pro-1k', 'pro-2k' etc from DB
             status: job.status || 'completed',
             promptPreview: job.prompt_preview || '',
             cost: job.cost || 0,
-            apiCost: job.api_cost || 0,
-            tokensPrompt: job.tokens_prompt || 0,
-            tokensCompletion: job.tokens_completion || 0,
-            tokensTotal: job.tokens_total || 0,
             createdAt: new Date(job.created_at).getTime(),
             resultImage: imagesMap[job.id] || null,  // Attach result image if available
             requestPayload: job.request_payload || null  // Attach API request for debugging
@@ -180,6 +179,7 @@ export const adminService = {
         // 2. Keep system presets (user_id IS NULL) ONLY IF:
         //    - Not hidden by user
         //    - Not forked by user (user has their own version)
+        // 3. EXCLUDE 'recent' category unless specifically requested (handled by separate history logic)
         const filteredPresets = allPresets?.filter(p => {
             const isSystem = p.user_id === null;
             if (!isSystem) return p.user_id === userId; // Own presets always shown
@@ -190,67 +190,61 @@ export const adminService = {
             return !isHidden && !isForked;
         });
 
-        return (filteredPresets || []).map(p => this._mapDbPreset(p));
+        // Deduplicate by ID just in case
+        const seen = new Set();
+        const uniquePresets = (filteredPresets || []).filter(p => {
+            if (seen.has(p.id)) return false;
+            seen.add(p.id);
+            return true;
+        });
+
+        return uniquePresets.map(p => this._mapDbPreset(p));
     },
 
     _mapDbPreset(p: any) {
         return {
             ...p,
-            isPinned: p.is_pinned,
             isCustom: p.is_custom,
-            isDefault: p.is_default || false,
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
-            lastUsed: p.last_used ? new Date(p.last_used).getTime() : undefined,
-            slug: p.slug
         };
     },
 
-    async updateGlobalPreset(preset: any, userId?: string): Promise<void> {
+    async updateGlobalPreset(preset: any, userId?: string): Promise<any> {
         const isSystemPreset = !preset.user_id;
-        const isUserAction = userId && userId !== preset.user_id;
-
-        // Determine category: system presets stay 'system', user presets are 'user'
-        let category = 'system';
-        if (userId) {
-            // If user is creating/editing, it's a user preset
-            category = 'user';
-        } else if (preset.user_id) {
-            // If preset has a user_id, it's a user preset
-            category = 'user';
-        } else if (preset.category === 'recent') {
-            // Preserve 'recent' category for history
-            category = 'recent';
-        }
+        const isUserAction = !!userId && userId !== preset.user_id;
 
         // Generate slug if not present
         const slug = preset.slug || (preset.title ? `${slugify(preset.title)}-${Math.floor(Math.random() * 10000)}` : null);
 
-        // FORKING LOGIC: If a user edits a system preset, create a fork
+        // FORKING LOGIC: If a user edits a system preset, create a personal copy
         const dbPreset: any = {
             id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : (preset.id || crypto.randomUUID()),
             original_id: (isSystemPreset && isUserAction) ? preset.id : (preset.original_id || null),
             title: preset.title,
-            label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
+            emoji: preset.emoji || null,
             tags: preset.tags || [],
-            is_pinned: preset.isPinned ?? (category === 'user' ? true : false),
-            is_custom: userId ? true : (preset.isCustom ?? false),
+            is_custom: isUserAction ? true : (preset.isCustom ?? false),
             usage_count: preset.usageCount || 0,
-            lang: preset.lang || 'en',
+            lang: preset.lang || 'de',
             slug: slug,
             updated_at: new Date().toISOString(),
-            last_used: preset.lastUsed ? new Date(preset.lastUsed).toISOString() : null,
             controls: preset.controls || [],
-            user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
-            category: category
+            user_id: userId || preset.user_id || null,
         };
 
-        const { error } = await supabase.from('global_presets').upsert(dbPreset);
+        const { data, error } = await supabase
+            .from('global_presets')
+            .upsert(dbPreset)
+            .select('*')
+            .single();
         if (error) {
             console.error('AdminService: updateGlobalPreset failed!', error);
             throw error;
         }
+
+        return data ? this._mapDbPreset(data) : this._mapDbPreset(dbPreset);
     },
 
     async hideGlobalPreset(presetId: string, userId: string): Promise<void> {
@@ -287,7 +281,7 @@ export const adminService = {
     },
 
     /**
-     * Update the usage count and last used timestamp for a preset
+     * Update the usage count for a preset
      */
     async updatePresetUsage(id: string): Promise<void> {
         const { data: preset } = await supabase
@@ -300,7 +294,6 @@ export const adminService = {
             .from('global_presets')
             .update({
                 usage_count: (preset?.usage_count || 0) + 1,
-                last_used: new Date().toISOString()
             })
             .eq('id', id);
 
@@ -314,8 +307,6 @@ export const adminService = {
      * Objects Library Management (Flat Stamps)
      */
     async getObjectCategories(): Promise<any[]> {
-        // Return a virtual 'All' category for backward compatibility if needed, 
-        // or just return empty as we are going flat.
         return [{ id: 'stamps', label_de: 'Stempel', label_en: 'Stamps', icon: '📦' }];
     },
 
@@ -338,9 +329,7 @@ export const adminService = {
     },
 
     async updateObjectItem(item: any): Promise<void> {
-        // Clean up item for flat table (remove category_id)
-        const { category_id, ...flatItem } = item;
-        const { error } = await supabase.from('global_objects_items').upsert(flatItem);
+        const { error } = await supabase.from('global_objects_items').upsert(item);
         if (error) throw error;
     },
 
@@ -356,14 +345,16 @@ export const adminService = {
         const { data, error } = await supabase
             .from('global_presets')
             .select('*')
-            .eq('slug', slug)
-            .maybeSingle();
+            .eq('slug', slug.toLowerCase())
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
         if (error) {
             console.error('AdminService: getPresetBySlug failed!', error);
             throw error;
         }
 
-        return data ? this._mapDbPreset(data) : null;
+        if (!data || data.length === 0) return null;
+        return this._mapDbPreset(data[0]);
     }
 };

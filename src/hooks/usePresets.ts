@@ -1,25 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { PromptTemplate } from '../types';
 import { adminService } from '../services/adminService';
-import { DEFAULT_TEMPLATES } from '../data/promptTemplates';
 
 export const usePresets = (userId?: string) => {
-    const [templates, setTemplates] = useState<PromptTemplate[]>(DEFAULT_TEMPLATES);
+    const [templates, setTemplates] = useState<PromptTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const fetchTemplates = useCallback(async () => {
         setIsLoading(true);
         try {
             const globalPresets = await adminService.getGlobalPresets(userId);
-
-            if (globalPresets && globalPresets.length > 0) {
-                setTemplates(globalPresets);
-            } else {
-                setTemplates(DEFAULT_TEMPLATES);
-            }
+            setTemplates(globalPresets || []);
         } catch (error) {
             console.error('Failed to fetch global presets:', error);
-            setTemplates(DEFAULT_TEMPLATES);
+            setTemplates([]);
         } finally {
             setIsLoading(false);
         }
@@ -27,8 +21,9 @@ export const usePresets = (userId?: string) => {
 
     const saveTemplate = useCallback(async (template: any) => {
         try {
-            await adminService.updateGlobalPreset(template, userId);
+            const savedTemplate = await adminService.updateGlobalPreset(template, userId);
             await fetchTemplates();
+            return savedTemplate;
         } catch (error) {
             console.error('Failed to save template:', error);
             throw error;
@@ -64,7 +59,6 @@ export const usePresets = (userId?: string) => {
                     return {
                         ...t,
                         usageCount: (t.usageCount || 0) + 1,
-                        lastUsed: Date.now()
                     };
                 }
                 return t;

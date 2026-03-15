@@ -6,15 +6,16 @@ interface AdminRouteProps {
     children: ReactNode;
     user: any;
     userProfile: any;
+    isAuthLoading?: boolean;
 }
 
 /**
  * Protected route wrapper for admin-only pages
  * Redirects to /projects if user is not an admin
  */
-export const AdminRoute: React.FC<AdminRouteProps> = ({ children, user, userProfile }) => {
-    // 1. If we have a user session but the profile is still loading, show a loading state
-    if (user && !userProfile) {
+export const AdminRoute: React.FC<AdminRouteProps> = ({ children, user, userProfile, isAuthLoading }) => {
+    // 1. Auth still initializing — wait before making any decisions
+    if (isAuthLoading || (user && !userProfile)) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />

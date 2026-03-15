@@ -4,8 +4,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 
-const supabaseUrl = 'https://nwxamngfnysostaefxif.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53eGFtbmdmbnlzb3N0YWVmeGlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5ODQzNjYsImV4cCI6MjA4MTU2MDM2Nn0.2EuIuz8VRQ5diWybBaDovA3Tdx50wiub-zJjnpOWOIc';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://rhocpnetpxficxnrprsq.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseKey) {
+    console.error('❌ Error: Missing Supabase Key (SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_ANON_KEY)');
+    process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

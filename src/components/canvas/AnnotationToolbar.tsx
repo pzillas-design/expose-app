@@ -20,16 +20,16 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
 }) => {
     return (
         <div className={`
-            absolute bottom-6 left-1/2 -translate-x-1/2 z-50
-            flex flex-col items-center gap-2
-            animate-in slide-in-from-bottom-4 duration-200
-        `}>
+ absolute bottom-6 left-1/2 -translate-x-1/2 z-50
+ flex flex-col items-center gap-2
+ animate-in slide-in-from-bottom-4 duration-200
+ `}>
             {/* Sub-Toolbar for Options */}
             {maskTool === 'brush' && (
                 <div className={`
-                    flex items-center gap-3 px-3 py-2 rounded-full
-                    bg-black/80 backdrop-blur-md border border-white/10 shadow-xl mb-1
-                `}>
+ flex items-center gap-3 px-3 py-2 rounded-full
+ bg-black/80 backdrop-blur-md border border-white/10 mb-1
+ `}>
                     <div className="w-2 h-2 rounded-full bg-white" />
                     <input
                         type="range"
@@ -45,9 +45,9 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
 
             {maskTool === 'shape' && (
                 <div className={`
-                    flex items-center gap-1 px-2 py-1.5 rounded-full
-                    bg-black/80 backdrop-blur-md border border-white/10 shadow-xl mb-1
-                `}>
+ flex items-center gap-1 px-2 py-1.5 rounded-full
+ bg-black/80 backdrop-blur-md border border-white/10 mb-1
+ `}>
                     <Tooltip text="Rechteck">
                         <button
                             onClick={() => onAddShape('rect')}
@@ -77,16 +77,16 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
 
             {/* Main Tools */}
             <div className={`
-                flex items-center gap-1 p-1.5 rounded-full
-                bg-zinc-900 border border-zinc-800 shadow-2xl
-            `}>
+ flex items-center gap-1 p-1.5 rounded-full
+ bg-zinc-900 border border-zinc-800 
+ `}>
                 <Tooltip text="Text">
                     <button
                         onClick={() => setMaskTool('text')}
                         className={`
-                            p-2.5 rounded-full transition-all
-                            ${maskTool === 'text' ? 'bg-white text-black shadow-md' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
-                        `}
+ p-2.5 rounded-full transition-all
+ ${maskTool === 'text' ? 'bg-white text-black ' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
+ `}
                     >
                         <Type className="w-5 h-5" />
                     </button>
@@ -98,9 +98,9 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
                     <button
                         onClick={() => setMaskTool('brush')}
                         className={`
-                            p-2.5 rounded-full transition-all
-                            ${maskTool === 'brush' ? 'bg-white text-black shadow-md' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
-                        `}
+ p-2.5 rounded-full transition-all
+ ${maskTool === 'brush' ? 'bg-white text-black ' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
+ `}
                     >
                         <Brush className="w-5 h-5" />
                     </button>
@@ -113,9 +113,9 @@ export const AnnotationToolbar: React.FC<AnnotationToolbarProps> = ({
                     <button
                         onClick={() => setMaskTool('shape')}
                         className={`
-                            p-2.5 rounded-full transition-all
-                            ${maskTool === 'shape' ? 'bg-white text-black shadow-md' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
-                        `}
+ p-2.5 rounded-full transition-all
+ ${maskTool === 'shape' ? 'bg-white text-black ' : 'text-zinc-400 hover:text-white hover:bg-white/10'}
+ `}
                     >
                         <Shapes className="w-5 h-5" />
                     </button>

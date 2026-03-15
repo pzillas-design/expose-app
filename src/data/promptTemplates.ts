@@ -62,7 +62,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
         controls: [
             {
                 id: 'c-season',
-                label: 'SAISON',
+                label: 'Saison',
                 options: [
                     { id: 'opt-summer', label: 'Sommer', value: 'Sommer' },
                     { id: 'opt-autumn', label: 'Herbst', value: 'Herbst' },
@@ -72,7 +72,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
             },
             {
                 id: 'c-time',
-                label: 'UHRZEIT',
+                label: 'Uhrzeit',
                 options: [
                     { id: 'opt-noon', label: 'Mittag', value: 'Mittag' },
                     { id: 'opt-afternoon', label: 'Nachmittag', value: 'Nachmittag' },
@@ -83,7 +83,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
             },
             {
                 id: 'c-mood',
-                label: 'MOOD',
+                label: 'Mood',
                 options: [
                     { id: 'opt-realistic', label: 'realistisch', value: 'realistisch' },
                     { id: 'opt-atmos', label: 'atmosphärisch', value: 'atmosphärisch' }
@@ -171,7 +171,7 @@ export const DEFAULT_TEMPLATES: PromptTemplate[] = [
             },
             {
                 id: 'c-mood',
-                label: 'MOOD',
+                label: 'Mood',
                 options: [
                     { id: 'opt-realistic', label: 'realistic', value: 'realistic' },
                     { id: 'opt-atmos', label: 'atmospheric', value: 'atmospheric' }

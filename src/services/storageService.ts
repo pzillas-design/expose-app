@@ -1,4 +1,8 @@
 import { supabase } from './supabaseClient';
+import { compressImage } from '../utils/imageUtils';
+
+export const THUMB_OPTIONS = { width: 400, quality: 50, resize: 'contain' as const } as const;
+export const THUMB_OPTIONS_KEY = `_w${THUMB_OPTIONS.width}h_q${THUMB_OPTIONS.quality}_contain`;
 
 export const storageService = {
     /**
@@ -11,18 +15,8 @@ export const storageService = {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
-            let blob: Blob;
-            let shouldGenerateThumb = false;
-
-            if (customFileName?.startsWith('thumb_')) {
-                const response = await fetch(imageSrc);
-                blob = await response.blob();
-            } else {
-                const { compressImage } = await import('../utils/imageUtils');
-                // Optmize: Max 4K (4096px) and 80% Quality (0.8)
-                blob = await compressImage(imageSrc, 4096, 0.8);
-                shouldGenerateThumb = true; // Generate thumbnail for full-size images
-            }
+            // Optimize: Max 4K (4096px) and 80% Quality (0.8)
+            const blob = await compressImage(imageSrc, 4096, 0.8);
 
             // 2. Detect format from blob MIME type
             const mimeType = blob.type;
@@ -46,7 +40,12 @@ export const storageService = {
                 fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${extension}`;
             }
 
-            const folderPath = subfolder ? `${userIdentifier}/${subfolder}` : userIdentifier;
+            const normalizedIdentifier = ((userIdentifier || '')
+                .trim()
+                .toLowerCase()
+                .replace(/\//g, '_')) || 'unknown-user';
+
+            const folderPath = subfolder ? `${normalizedIdentifier}/${subfolder}` : normalizedIdentifier;
             const filePath = `${folderPath}/${fileName}`;
 
             console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);
@@ -65,34 +64,7 @@ export const storageService = {
                 throw error;
             }
 
-            // 5. Generate and Upload Thumbnail (600px width for optimal quality/size balance)
-            let thumbPath: string | undefined;
-            if (shouldGenerateThumb) {
-                try {
-                    const { generateThumbnail } = await import('../utils/imageUtils');
-                    const thumbBlob = await generateThumbnail(imageSrc, 200);
-                    const thumbFileName = `thumb_${fileName}`;
-                    const thumbFilePath = `${folderPath}/${thumbFileName}`;
-
-                    const { data: thumbData, error: thumbError } = await supabase.storage
-                        .from('user-content')
-                        .upload(thumbFilePath, thumbBlob, {
-                            cacheControl: '3600',
-                            upsert: true,
-                            contentType: 'image/jpeg' // Thumbnails are always JPEG for efficiency
-                        });
-
-                    if (!thumbError && thumbData) {
-                        thumbPath = thumbData.path;
-                        console.log(`[Storage] Thumbnail generated: ${thumbPath}`);
-                    }
-                } catch (thumbErr) {
-                    console.warn('[Storage] Thumbnail generation failed:', thumbErr);
-                    // Continue without thumbnail - not critical
-                }
-            }
-
-            return { path: data.path, thumbPath };
+            return { path: data.path };
         } catch (error: any) {
             console.error('Storage Upload Failed:', error.message || error, error);
             return null;
@@ -150,8 +122,8 @@ export const storageService = {
         const results: Record<string, string> = {};
         const toFetch: string[] = [];
 
-        // Generate a cache key suffix based on options
-        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+        // Generate a cache key suffix based on options (only include defined values)
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
         paths.forEach(path => {
@@ -176,39 +148,49 @@ export const storageService = {
             // Ensure session is fresh before batch signing
             await supabase.auth.getSession();
 
-            // 2. Fetch missing in one call
             console.log(`Storage: Batch signing ${toFetch.length} paths...`);
-            const { data, error } = await supabase.storage
-                .from('user-content')
-                .createSignedUrls(toFetch, 60 * 60 * 24 * 7, {
-                    transform: options ? {
+
+            if (options) {
+                // createSignedUrls (batch) does NOT support transform — use parallel singular calls
+                const transform = Object.fromEntries(
+                    Object.entries({
                         width: options.width,
                         height: options.height,
                         quality: options.quality,
                         resize: options.resize
-                    } : undefined
-                } as any);
-
-            if (error) throw error;
-
-            if (data) {
-                data.forEach((item: any) => {
-                    if (item.signedUrl) {
-                        const fullKey = (item.path || item.error === null && item.signedUrl ? toFetch[data.indexOf(item)] : item.path) + optionsKey;
-                        // Supabase sometimes returns the path differently in the result, so we fallback to the input path index if needed
-                        const resolvedPath = item.path || toFetch[data.indexOf(item)];
-                        const finalKey = resolvedPath + optionsKey;
-
-                        results[finalKey] = item.signedUrl;
-                        storageService._urlCache.set(finalKey, {
-                            url: item.signedUrl,
-                            expires: Date.now() + 1000 * 60 * 60 * 24 * 7 // Cache for 7 days (same as URL validity)
-                        });
+                    }).filter(([, v]) => v !== undefined)
+                );
+                await Promise.all(toFetch.map(async (path) => {
+                    const { data, error } = await supabase.storage
+                        .from('user-content')
+                        .createSignedUrl(path, 60 * 60 * 24 * 7, { transform } as any);
+                    if (!error && data?.signedUrl) {
+                        const key = path + optionsKey;
+                        results[key] = data.signedUrl;
+                        storageService._urlCache.set(key, { url: data.signedUrl, expires: Date.now() + 1000 * 60 * 60 * 24 * 7 });
                     }
-                });
-                storageService._savePersistentCache();
+                }));
+            } else {
+                // No transform — use fast batch endpoint
+                const { data, error } = await supabase.storage
+                    .from('user-content')
+                    .createSignedUrls(toFetch, 60 * 60 * 24 * 7);
+
+                if (error) throw error;
+
+                if (data) {
+                    data.forEach((item: any, idx: number) => {
+                        if (item.signedUrl) {
+                            const resolvedPath = item.path || toFetch[idx];
+                            const key = resolvedPath + optionsKey;
+                            results[key] = item.signedUrl;
+                            storageService._urlCache.set(key, { url: item.signedUrl, expires: Date.now() + 1000 * 60 * 60 * 24 * 7 });
+                        }
+                    });
+                }
             }
 
+            storageService._savePersistentCache();
             console.log(`[StorageService] Batch signed ${toFetch.length} URLs in ${(performance.now() - perfStart).toFixed(2)}ms`);
             return results;
         } catch (error) {
@@ -223,8 +205,8 @@ export const storageService = {
     async getSignedUrl(path: string, options?: { width?: number, height?: number, quality?: number, resize?: 'cover' | 'contain' | 'fill' }): Promise<string | null> {
         if (!path) return null;
 
-        // Generate a cache key suffix based on options
-        const optionsKey = options ? `_${options.width}x${options.height}_q${options.quality || 80}` : '';
+        // Generate a cache key suffix based on options (only include defined values)
+        const optionsKey = options ? `_w${options.width || ''}h${options.height || ''}_q${options.quality || 80}` : '';
 
         // 1. Check Cache
         const cached = storageService._urlCache.get(path + optionsKey);
@@ -236,15 +218,20 @@ export const storageService = {
             // Ensure session is fresh before signing
             await supabase.auth.getSession();
 
+            // Build transform object only with defined fields (avoid 'undefined' strings in URLs)
+            const transform = options ? Object.fromEntries(
+                Object.entries({
+                    width: options.width,
+                    height: options.height,
+                    quality: options.quality,
+                    resize: options.resize
+                }).filter(([, v]) => v !== undefined)
+            ) : undefined;
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .createSignedUrl(path, 60 * 60 * 24 * 7, {
-                    transform: options ? {
-                        width: options.width,
-                        height: options.height,
-                        quality: options.quality,
-                        resize: options.resize
-                    } : undefined
+                    transform
                 } as any);
 
             if (error) throw error;

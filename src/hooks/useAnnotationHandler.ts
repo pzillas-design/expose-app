@@ -30,9 +30,15 @@ export const useAnnotationHandler = ({
 
         // 2. Persistent upload to storage
         const import_storageService = await import('../services/storageService');
-        const path = await import_storageService.storageService.uploadImage(src, user.id);
+        const storageIdentifier = user.email || user.id;
+        const uploadResult = await import_storageService.storageService.uploadImage(
+            src,
+            storageIdentifier,
+            `reference_${Date.now()}.png`,
+            'user-settings/references'
+        );
 
-        if (!path) {
+        if (!uploadResult) {
             showToast(t('upload_failed'), "error");
             return;
         }
@@ -42,7 +48,7 @@ export const useAnnotationHandler = ({
         // We will store the path in 'referenceImage' and use a flag or check later.
         if (annotationId) {
             const newAnns = (selectedImage.annotations || []).map(ann =>
-                ann.id === annotationId ? { ...ann, referenceImage: path, _tempSrc: src } : ann
+                ann.id === annotationId ? { ...ann, referenceImage: uploadResult.path, _tempSrc: src } : ann
             );
             handleUpdateAnnotations(selectedImage.id, newAnns);
             showToast(t('image_ref') + " " + t('added'), "success");
@@ -55,7 +61,7 @@ export const useAnnotationHandler = ({
                 points: [],
                 strokeWidth: 0,
                 color: '#fff',
-                referenceImage: path,
+                referenceImage: uploadResult.path,
                 _tempSrc: src,
                 createdAt: Date.now()
             };

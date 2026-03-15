@@ -24,6 +24,30 @@ git push origin staging
 
 ---
 
+## Database Environments (Supabase v5 vs v6)
+
+Currently, the application runs on two different Supabase projects:
+- **Production (v5)**: `nwxamngfnysostaefxif` (Used by `main` and `beta` branches)
+- **Staging/Preview (v6)**: `rhocpnetpxficxnrprsq` (Used by `staging` branch)
+
+This separation is managed via **Vercel Environment Variables**:
+- `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are strictly bound to either the `Production` or `Preview` environment in Vercel.
+- When Vercel builds `main`, it injects the v5 keys.
+- When Vercel builds `staging`, it injects the v6 keys.
+
+### Upgrading `main` to v6 (Future)
+When the v6 database is ready for production, follow these steps to migrate `main`:
+1. Open the Vercel Dashboard for `expose-app`.
+2. Go to **Settings > Environment Variables**.
+3. Locate the v6 variables (which are currently set to `Preview`):
+   - `VITE_SUPABASE_URL` (`https://rhocpnetpxficxnrprsq...`)
+   - `VITE_SUPABASE_ANON_KEY` (`sb_publishable_R1GRVHb1...`)
+4. Edit them and check the **Production** box (so they apply to `Production`, `Preview`, and `Development`).
+5. Delete the old v5 variables (with the `nwxamngfnysostaefxif` URL).
+6. Trigger a Redeploy for the Production environment on Vercel.
+
+---
+
 ## Manual Deployment: Staging → Main (Production)
 
 **Only deploy to main after thorough testing on staging.**
@@ -41,12 +65,14 @@ git checkout main && git pull origin main && git merge staging && git push origi
 
 ## Edge Functions
 
-Edge Functions are shared across all environments (staging, main, beta).
+Edge Functions must be deployed to the correct Supabase project depending on the environment you are modifying.
 
-To deploy Edge Functions:
+To deploy to Production (v5):
 ```bash
 npx supabase functions deploy <function-name> --project-ref nwxamngfnysostaefxif
 ```
 
-> [!NOTE]
-> Edge Function changes affect **all environments** immediately.
+To deploy to Staging (v6):
+```bash
+npx supabase functions deploy <function-name> --project-ref rhocpnetpxficxnrprsq
+```

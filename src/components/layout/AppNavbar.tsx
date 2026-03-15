@@ -1,111 +1,417 @@
-
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Plus, Settings, LayoutGrid, Wallet, Shield } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings, CheckSquare, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus } from 'lucide-react';
 import { Logo } from '../ui/Logo';
-import { Wordmark } from '../ui/Wordmark';
-import { Theme, Typo, Button } from '../ui/DesignSystem';
+import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
+import { DropdownMenu } from '../ui/DropdownMenu';
+import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
     user: any;
     userProfile: any;
     credits: number;
-    onCreateBoard: () => void;
+    onCreate: () => void;
     onSignIn?: () => void;
+    onToggleSettings?: () => void;
+    onSignOut?: () => void;
+    onSelectMode?: () => void;
+    isSelectMode?: boolean;
+    onCancelSelectMode?: () => void;
+    onDeleteSelected?: () => void;
+    onDownloadSelected?: () => void;
+    onGenerateMoreSelected?: () => void;
+    onGenerateMoreDetail?: () => void;
+    onOpenCredits?: () => void;
+    selectedCount?: number;
     t: (key: any) => string;
+    lang?: string;
+    mode?: 'grid' | 'detail';
+    detailInfo?: string;
+    detailActions?: React.ReactNode;
+    onBack?: () => void;
+    hasImages?: boolean;
+    onDetailRename?: () => void;
+    onDetailDownload?: () => void;
+    onDetailDelete?: () => void;
+    onDetailInfo?: () => void;
+    onDetailRegenerate?: () => void;
+    detailHasPrompt?: boolean;
+    isSideSheetVisible?: boolean;
+    onToggleSideSheet?: () => void;
+    onToggleFeedSideSheet?: () => void;
+    rightInset?: number;
+    generatingImages?: CanvasImage[];
+    onNavigateToImage?: (id: string) => void;
+    onGenerateMoreById?: (id: string) => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
     user,
     userProfile,
     credits,
-    onCreateBoard,
+    onCreate,
     onSignIn,
-    t
+    onToggleSettings,
+    onSignOut,
+    onSelectMode,
+    isSelectMode,
+    onCancelSelectMode,
+    onDeleteSelected,
+    onDownloadSelected,
+    onGenerateMoreSelected,
+    onGenerateMoreDetail,
+    onOpenCredits,
+    selectedCount = 0,
+    t,
+    lang,
+    mode = 'grid',
+    detailInfo,
+    detailActions,
+    onBack,
+    hasImages = true,
+    onDetailRename,
+    onDetailDownload,
+    onDetailDelete,
+    onDetailInfo,
+    onDetailRegenerate,
+    detailHasPrompt,
+    isSideSheetVisible,
+    onToggleSideSheet,
+    onToggleFeedSideSheet,
+    rightInset = 0,
+    generatingImages = [],
+    onNavigateToImage,
+    onGenerateMoreById,
 }) => {
-    const getInitials = (name?: string, email?: string) => {
-        if (name && name.trim()) {
-            const parts = name.trim().split(' ');
-            const first = parts[0];
-            const second = parts[1];
-            if (first && second && second[0]) return (first[0] + second[0]).toUpperCase();
-            if (first && first[0]) return first[0].toUpperCase();
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
+    const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
+    const createDropdownRef = useRef<HTMLDivElement>(null);
+    const mobileCreateDropdownRef = useRef<HTMLDivElement>(null);
+    const gridMenuRef = useRef<HTMLDivElement>(null);
+    const detailMenuRef = useRef<HTMLDivElement>(null);
+    const mobileDetailMenuRef = useRef<HTMLDivElement>(null);
+
+    // Animated credit counter
+    const [displayCredits, setDisplayCredits] = useState<number | null>(null);
+    const renderCountRef = useRef(0);
+    const prevCreditsRef = useRef(credits);
+    const animRafRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        renderCountRef.current++;
+
+        // Skip first render - don't show initial 0 from props
+        if (renderCountRef.current === 1) {
+            prevCreditsRef.current = credits;
+            return;
         }
-        if (email && email[0]) return email[0].toUpperCase();
-        return '?';
-    };
+
+        // Second render: display the first real value without animation
+        if (renderCountRef.current === 2) {
+            setDisplayCredits(credits);
+            prevCreditsRef.current = credits;
+            return;
+        }
+
+        // Third+ renders: animate on changes
+        const from = prevCreditsRef.current;
+        const to = credits;
+        if (from === to) return;
+        prevCreditsRef.current = to;
+
+        const duration = 900;
+        const startTime = performance.now();
+
+        const animate = (now: number) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplayCredits(from + (to - from) * eased);
+            if (progress < 1) {
+                animRafRef.current = requestAnimationFrame(animate);
+            }
+        };
+
+        if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
+        animRafRef.current = requestAnimationFrame(animate);
+
+        return () => { if (animRafRef.current) cancelAnimationFrame(animRafRef.current); };
+    }, [credits]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as Node;
+
+            if (isCreateOpen
+                && (!createDropdownRef.current || !createDropdownRef.current.contains(target))
+                && (!mobileCreateDropdownRef.current || !mobileCreateDropdownRef.current.contains(target))) {
+                setIsCreateOpen(false);
+            }
+            if (isGridMenuOpen && gridMenuRef.current && !gridMenuRef.current.contains(target)) {
+                setIsGridMenuOpen(false);
+            }
+            if (isDetailMenuOpen
+                && (!detailMenuRef.current || !detailMenuRef.current.contains(target))
+                && (!mobileDetailMenuRef.current || !mobileDetailMenuRef.current.contains(target))) {
+                setIsDetailMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen]);
+
+    const isDetail = mode === 'detail';
+    const isGerman = lang === 'de';
+
+    const balanceDisplay = user && displayCredits !== null && (
+        <Tooltip text={isGerman ? 'Guthaben' : 'Balance'}>
+            <button
+                onClick={onOpenCredits}
+                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
+            >
+                {displayCredits.toFixed(2)}€
+            </button>
+        </Tooltip>
+    );
+
+    const progressRing = (
+        <GenerationProgressRing
+            generatingImages={generatingImages}
+            lang={lang}
+            onNavigateToImage={onNavigateToImage}
+            onGenerateMore={onGenerateMoreById}
+        />
+    );
+
+    const leftContent = isDetail ? (
+        <div className="flex items-center gap-1">
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
+            {progressRing}
+        </div>
+    ) : isSelectMode ? (
+        <div className="flex items-center gap-1">
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="ghost" />
+            {progressRing}
+        </div>
+    ) : (
+        <div className="flex items-center gap-1">
+            <div className="md:hidden">
+            {user && (
+                <div className="relative" ref={mobileCreateDropdownRef}>
+                    <RoundIconButton
+                        icon={<Plus className="w-5 h-5" />}
+                        onClick={() => setIsCreateOpen(!isCreateOpen)}
+                        variant="ghost"
+                        active={isCreateOpen}
+                        tooltip={isGerman ? 'Erstellen' : 'Create'}
+                    />
+                    {isCreateOpen && (
+                        <div className="absolute top-full mt-2 left-0 z-50">
+                            <DropdownMenu
+                                items={[
+                                    { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                    { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
+                                ]}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
+            </div>
+            {progressRing}
+        </div>
+    );
+
+    const centerContent = isSelectMode ? (
+        <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-400 tabular-nums">
+            {selectedCount} {isGerman ? (selectedCount === 1 ? 'Bild ausgewählt' : 'Bilder ausgewählt') : (selectedCount === 1 ? 'image selected' : 'images selected')}
+        </span>
+    ) : isDetail && detailInfo ? (
+        <div className="flex items-center gap-1.5 relative" ref={detailMenuRef}>
+            <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
+                {detailInfo}
+            </span>
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsDetailMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isDetailMenuOpen}
+                    tooltip={isGerman ? 'Menü' : 'Menu'}
+                />
+                {isDetailMenuOpen && (
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
+                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                            ]}
+                        />
+                    </div>
+                )}
+            </span>
+        </div>
+    ) : (
+        <button
+            type="button"
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={onBack}
+        >
+            <Logo className="w-7 h-7" />
+        </button>
+    );
+
+    const rightContent = isDetail ? (
+        <div className="flex items-center gap-1">
+            {/* Mobile: 3-dot menu in the right corner */}
+            <div className="relative md:hidden" ref={mobileDetailMenuRef}>
+                <RoundIconButton
+                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsDetailMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isDetailMenuOpen}
+                />
+                {isDetailMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
+                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
+            {/* Desktop: individual icons */}
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<Download className="w-[18px] h-[18px]" />}
+                    onClick={onDetailDownload}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                />
+            </span>
+            {detailHasPrompt && (
+                <span className="hidden md:contents">
+                    <RoundIconButton
+                        icon={<Repeat className="w-[18px] h-[18px]" />}
+                        onClick={onDetailRegenerate}
+                        variant="ghost"
+                        tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
+                    />
+                </span>
+            )}
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<PanelRight className="w-[18px] h-[18px]" />}
+                    onClick={onToggleSideSheet}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Seitenleiste' : 'Sidebar'}
+                />
+            </span>
+        </div>
+    ) : isSelectMode ? (
+        <div className="flex items-center gap-1">
+            {selectedCount > 0 && (
+                <RoundIconButton
+                    icon={<Download className="w-[18px] h-[18px]" />}
+                    onClick={onDownloadSelected}
+                    variant="ghost"
+                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                />
+            )}
+            <Tooltip text={isGerman ? 'Löschen' : 'Delete'}>
+                <button
+                    onClick={onDeleteSelected}
+                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                >
+                    <Trash2 className="w-[18px] h-[18px]" />
+                </button>
+            </Tooltip>
+            {!isSideSheetVisible && (
+                <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
+                    {isGerman ? 'Bearbeiten' : 'Edit'}
+                </Button>
+            )}
+        </div>
+    ) : (
+        <>
+            {!user ? (
+                <button
+                    onClick={onSignIn}
+                    className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
+                >
+                    {t('login_btn') || 'Login'}
+                </button>
+            ) : (
+                <div className="flex items-center gap-3">
+                    <div className="relative hidden md:block" ref={createDropdownRef}>
+                        <RoundIconButton
+                            icon={<Plus className="w-5 h-5" />}
+                            onClick={() => setIsCreateOpen(!isCreateOpen)}
+                            variant="ghost"
+                            active={isCreateOpen}
+                            tooltip={isGerman ? 'Erstellen' : 'Create'}
+                        />
+                        {isCreateOpen && (
+                            <div className="absolute top-full mt-2 right-0 z-50">
+                                <DropdownMenu
+                                    items={[
+                                        { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                        { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </div>
+                    {balanceDisplay}
+                    <div className="relative" ref={gridMenuRef}>
+                        <RoundIconButton
+                            icon={<MoreHorizontal className="w-4 h-4" />}
+                            onClick={() => setIsGridMenuOpen(p => !p)}
+                            variant="ghost"
+                            active={isGridMenuOpen}
+                            tooltip={isGerman ? 'Menü' : 'Menu'}
+                        />
+                        {isGridMenuOpen && (
+                            <div className="absolute top-full mt-2 right-0 z-50">
+                                <DropdownMenu
+                                    items={[
+                                        { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                        { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                        { label: isGerman ? 'Abmelden' : 'Sign out', onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </>
+    );
 
     return (
-        <header className="fixed top-0 z-50 w-full">
-            <div className="max-w-[1700px] mx-auto w-full px-8 lg:px-12 2xl:px-16 h-28 pt-4 flex items-center justify-between">
-                {/* Brand */}
-                <NavLink to="/" state={{ skipRedirect: true }} className="flex items-center gap-4 group transition-all duration-300">
-                    <Logo className="w-11 h-11 group-hover:scale-110 transition-transform duration-500" />
-                    <Wordmark className="h-6 text-zinc-900 dark:text-white" />
-                </NavLink>
+        <header className="fixed top-0 left-0 right-0 h-14 z-50 pointer-events-none">
+            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900">
 
-                {/* Navigation Links - Only for logged in users */}
-                {user && (
-                    <nav className="hidden md:flex items-center gap-2 p-1.5 rounded-2xl backdrop-blur-xl bg-white/85 dark:bg-zinc-900/85 border border-zinc-200/30 dark:border-white/10">
-                        <NavLink
-                            to="/projects"
-                            className={({ isActive }) => `
-                                flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
-                                ${isActive
-                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
-                            `}
-                        >
-                            <LayoutGrid className="w-4 h-4" />
-                            {t('tab_projects')}
-                        </NavLink>
+                <div className="flex items-center w-1/3">
+                    {leftContent}
+                </div>
 
-                        <NavLink
-                            to="/settings"
-                            className={({ isActive }) => `
-                                flex items-center gap-2.5 px-6 py-2 rounded-xl text-[13px] font-medium transition-all duration-300
-                                ${isActive
-                                    ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'}
-                            `}
-                        >
-                            <Settings className="w-4 h-4" />
-                            {t('tab_settings')}
-                        </NavLink>
-                    </nav>
-                )}
+                <div className="flex items-center justify-center gap-2 w-1/3">
+                    {centerContent}
+                </div>
 
-                {/* Right Side Actions */}
-                <div className="flex items-center gap-6">
-                    {user ? (
-                        <>
-                            {/* New Board Button */}
-                            <Button
-                                onClick={onCreateBoard}
-                                variant="primary"
-                                icon={<Plus className="w-4 h-4" />}
-                                className="px-6 h-11 hidden lg:flex"
-                            >
-                                {t('default_project_name')}
-                            </Button>
-
-                            {/* Compact New Board for small screens */}
-                            <button
-                                onClick={onCreateBoard}
-                                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 active:scale-95 transition-all"
-                            >
-                                <Plus className="w-5 h-5" />
-                            </button>
-                        </>
-                    ) : (
-                        <Button
-                            onClick={onSignIn}
-                            variant="primary"
-                            className="px-8 h-11"
-                        >
-                            {t('login_btn') || 'Login'}
-                        </Button>
-                    )}
+                <div className="flex items-center justify-end gap-2 w-1/3">
+                    {rightContent}
                 </div>
             </div>
         </header>
