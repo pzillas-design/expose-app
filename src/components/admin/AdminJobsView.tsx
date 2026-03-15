@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, ChevronDown } from 'lucide-react';
+import { Search, Loader2, ChevronDown, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Typo, Input, Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -87,9 +87,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('id_label')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
-                                        <th className="px-5 py-4 font-medium">{t('admin_job_status')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_api_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
+                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -103,46 +103,16 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
                                             <td className="px-5 py-5">
                                                 {(() => {
-                                                    const modelName = j.model || 'unknown';
-                                                    let displayName = 'Nano Banana';
-                                                    let badgeColor = 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
-                                                    let quality = 'Fast';
-
-                                                    // Determine Quality & Base Name
-                                                    if (modelName.includes('pro') || modelName.includes('3')) {
-                                                        displayName = 'Nano Banana Pro';
-                                                        quality = '1K'; // Default for Pro
-                                                        badgeColor = 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
-
-                                                        if (modelName.includes('4k')) {
-                                                            quality = '4K';
-                                                            badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
-                                                        } else if (modelName.includes('2k')) {
-                                                            quality = '2K';
-                                                            badgeColor = 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
-                                                        } else if (modelName.includes('1k')) {
-                                                            quality = '1K';
-                                                            badgeColor = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
-                                                        }
-
-                                                        // Fallback check dimensions if quality is still default 1K but might be higher
-                                                        if (quality === '1K' && j.resultImage?.width) {
-                                                            const maxDim = Math.max(j.resultImage.width, j.resultImage.height || 0);
-                                                            if (maxDim > 3000) {
-                                                                quality = '4K';
-                                                                badgeColor = 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
-                                                            } else if (maxDim > 1800) {
-                                                                quality = '2K';
-                                                                badgeColor = 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300';
-                                                            }
-                                                        }
-                                                    } else {
-                                                        // Non-pro / Fast
-                                                        displayName = 'Nano Banana';
-                                                        quality = 'Fast';
-                                                        badgeColor = 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700';
-                                                    }
-
+                                                    const m = j.model || 'unknown';
+                                                    const isNb2 = m.startsWith('nb2');
+                                                    const isPro = m.includes('pro');
+                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'Nano Banana Pro' : 'Nano Banana';
+                                                    const quality = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : 'Fast';
+                                                    const badgeColor = quality === 'Fast'
+                                                        ? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
+                                                        : quality === '1K' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                        : quality === '2K' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
                                                     return (
                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
                                                             {displayName} • {quality}
@@ -150,29 +120,18 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     );
                                                 })()}
                                             </td>
-                                            <td className="px-5 py-5">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
-                                                ${j.status?.toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' :
-                                                        j.status?.toLowerCase() === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
-                                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
-                                                    {j.status?.toLowerCase() === 'completed' ? (t('admin_job_completed') || "Completed") :
-                                                        j.status?.toLowerCase() === 'failed' ? (t('admin_job_failed') || "Failed") :
-                                                            (t('admin_job_processing') || "Processing")}
-                                                </span>
-                                            </td>
-                                            <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300">
-                                                <div className="flex flex-col items-end">
-                                                    {j.apiCost !== undefined && j.apiCost !== null ? (
-                                                        <span className="text-xs font-medium">
-                                                            ${Number(j.apiCost).toFixed(6)}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-xs text-zinc-400">-</span>
-                                                    )}
-                                                </div>
+                                            <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300 text-xs">
+                                                {j.apiCost ? `$${Number(j.apiCost).toFixed(6)}` : <span className="text-zinc-400">—</span>}
                                             </td>
                                             <td className="px-5 py-5 text-right text-zinc-500 text-xs">
                                                 {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="px-5 py-5 text-right">
+                                                {j.status?.toLowerCase() === 'completed'
+                                                    ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
+                                                    : j.status?.toLowerCase() === 'failed'
+                                                    ? <XCircle className="w-4 h-4 text-red-500 ml-auto" />
+                                                    : <Clock className="w-4 h-4 text-amber-500 ml-auto" />}
                                             </td>
                                         </tr>
                                     ))}
