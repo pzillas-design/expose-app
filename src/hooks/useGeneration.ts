@@ -166,10 +166,16 @@ export const useGeneration = ({
                 .maybeSingle();
 
             if (imgData) {
-                // Record actual duration for future estimates
+                // Record actual duration — locally and write back to DB for global stats
                 const timing = jobTimingRef.current[jobId];
                 if (timing) {
-                    recordActualDuration(timing.quality, Date.now() - timing.startTime);
+                    const actualMs = Date.now() - timing.startTime;
+                    recordActualDuration(timing.quality, actualMs);
+                    // Write duration_ms to generation_jobs so get_smart_generation_estimates has real data
+                    supabase.from('generation_jobs')
+                        .update({ duration_ms: Math.round(actualMs) })
+                        .eq('id', jobId)
+                        .then(() => {});
                     delete jobTimingRef.current[jobId];
                 }
 
