@@ -74,47 +74,36 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
         ? (profit / stripeRevenue) * 100 : null;
 
-    // Chart data: last 8 weeks grouped by week
+    // Chart data: last 6 months grouped by month
     const chartData = React.useMemo(() => {
-        const weeks: Record<string, any> = {};
-        // Last 8 weeks
-        for (let i = 7; i >= 0; i--) {
+        const months: Record<string, any> = {};
+        // Build last 6 months in order
+        for (let i = 5; i >= 0; i--) {
             const d = new Date();
-            d.setDate(d.getDate() - i * 7);
-            const key = `KW${getWeekNumber(d)}`;
-            weeks[key] = { week: key };
+            d.setDate(1);
+            d.setMonth(d.getMonth() - i);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const label = d.toLocaleString('de-DE', { month: 'short' });
+            months[key] = { month: label };
         }
 
+        // Kie AI costs by model per month
         completedJobs.forEach(job => {
             const d = new Date(job.createdAt);
-            const key = `KW${getWeekNumber(d)}`;
-            if (weeks[key]) {
-                const modelKey = job.model || 'unknown';
-                weeks[key][modelKey] = (weeks[key][modelKey] || 0) + (KIE_COST[modelKey]?.eur ?? 0);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            if (!months[key]) return;
+            const modelKey = job.model || 'unknown';
+            months[key][modelKey] = (months[key][modelKey] || 0) + (KIE_COST[modelKey]?.eur ?? 0);
+        });
+
+        // Stripe revenue per month from Edge Function data
+        Object.entries(stripeMonthly).forEach(([key, rev]) => {
+            if (months[key]) {
+                months[key]['_stripe'] = rev;
             }
         });
 
-        // Add Stripe revenue by month → distribute to weeks roughly
-        Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
-            const [year, month] = monthKey.split('-').map(Number);
-            // Find weeks in this month and distribute evenly
-            const weeksInMonth = Object.keys(weeks).filter(k => {
-                // Simple: just add to last week of month key
-                return true; // will handle separately
-            });
-        });
-
-        // For simplicity: add monthly Stripe revenue to the chart as a separate field
-        // Map month → week by approximate date
-        completedJobs.forEach(job => {
-            const d = new Date(job.createdAt);
-            const key = `KW${getWeekNumber(d)}`;
-            if (!weeks[key]) return;
-            // revenue per job = job.cost
-            weeks[key]['_revenue'] = (weeks[key]['_revenue'] || 0) + (job.cost || 0);
-        });
-
-        return Object.values(weeks);
+        return Object.values(months);
     }, [completedJobs, stripeMonthly]);
 
     // Unique model keys found in jobs, in fixed display order
@@ -168,32 +157,32 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h3 className="text-sm font-bold">Verlauf (letzte 8 Wochen)</h3>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">Gestapelte Balken = Kie AI Kosten nach Modell · Linie = Credit-Verbrauch der User</p>
+                        <h3 className="text-sm font-bold">Verlauf (letzte 6 Monate)</h3>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Gestapelte Balken = Kie AI Kosten nach Modell · Linie = Stripe Einnahmen</p>
                     </div>
                 </div>
                 <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={chartData} barSize={28}>
+                        <ComposedChart data={chartData} barSize={32}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" className="dark:stroke-zinc-800" />
-                            <XAxis dataKey="week" axisLine={false} tickLine={false}
+                            <XAxis dataKey="month" axisLine={false} tickLine={false}
                                 tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
                             <YAxis yAxisId="left" axisLine={false} tickLine={false}
                                 tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                tickFormatter={v => `${v.toFixed(2)}€`} />
+                                tickFormatter={v => `${v.toFixed(0)}€`} />
                             <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
                                 tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                tickFormatter={v => `${v.toFixed(2)}€`} />
+                                tickFormatter={v => `${v.toFixed(0)}€`} />
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
                                 formatter={(value: any, name: string) => {
-                                    if (name === '_revenue') return [`${Number(value).toFixed(2)}€`, 'Credit-Verbrauch'];
+                                    if (name === '_stripe') return [`${Number(value).toFixed(2)}€`, 'Stripe Einnahmen'];
                                     const m = KIE_COST[name];
                                     return [`${Number(value).toFixed(3)}€`, m?.label ?? name];
                                 }}
                             />
                             <Legend formatter={(value) => {
-                                if (value === '_revenue') return 'Credit-Verbrauch';
+                                if (value === '_stripe') return 'Stripe Einnahmen';
                                 return KIE_COST[value]?.label ?? value;
                             }} />
                             {modelKeys.map((modelId, i) => (
@@ -201,8 +190,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     fill={KIE_COST[modelId]?.color ?? '#a1a1aa'}
                                     radius={i === modelKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
                             ))}
-                            <Line yAxisId="right" type="monotone" dataKey="_revenue"
-                                stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
+                            <Line yAxisId="right" type="monotone" dataKey="_stripe"
+                                stroke="#10b981" strokeWidth={2.5} dot={{ r: 4, fill: '#10b981', strokeWidth: 0 }} />
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>
