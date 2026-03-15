@@ -87,6 +87,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('id_label')}</th>
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
+                                        <th className="px-5 py-4 font-medium">Auflösung</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_api_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_status')}</th>
@@ -106,18 +107,25 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const m = j.model || 'unknown';
                                                     const isNb2 = m.startsWith('nb2');
                                                     const isPro = m.includes('pro');
-                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'Nano Banana Pro' : 'Nano Banana';
-                                                    const quality = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : 'Fast';
-                                                    const badgeColor = quality === 'Fast'
-                                                        ? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700'
-                                                        : quality === '1K' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                                                        : quality === '2K' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                                                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300';
+                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'NB Pro' : 'NB';
+                                                    const color = isNb2
+                                                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
+                                                        : isPro
+                                                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                                        : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
                                                     return (
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${badgeColor}`}>
-                                                            {displayName} • {quality}
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${color}`}>
+                                                            {displayName}
                                                         </span>
                                                     );
+                                                })()}
+                                            </td>
+                                            <td className="px-5 py-5">
+                                                {(() => {
+                                                    const m = j.model || '';
+                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : 'Fast';
+                                                    const color = res === 'Fast' ? 'text-zinc-400' : res === '1K' ? 'text-emerald-500' : res === '2K' ? 'text-purple-500' : 'text-rose-500';
+                                                    return <span className={`text-[11px] font-bold uppercase ${color}`}>{res}</span>;
                                                 })()}
                                             </td>
                                             <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300 text-xs">

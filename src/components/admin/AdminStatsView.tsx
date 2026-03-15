@@ -5,10 +5,6 @@ import {
     TrendingUp,
     DollarSign,
     Activity,
-    RefreshCw,
-    ChevronDown,
-    ChevronUp,
-    Database
 } from 'lucide-react';
 import {
     XAxis,
@@ -22,232 +18,94 @@ import {
 import { TranslationFunction } from '@/types';
 import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
-import { supabase } from '@/services/supabaseClient';
 
 interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-const USD_TO_EUR = 0.8621; // Based on 1€ = 1.16$ (Estimation)
+const TIERS = [
+    { id: 'fast',     name: 'NB Fast',    cost: 0.00, color: 'text-zinc-500' },
+    { id: 'nb2-fast', name: 'NB2 Fast',   cost: 0.00, color: 'text-zinc-400' },
+    { id: 'nb2-1k',   name: 'NB2 • 1K',  cost: 0.07, color: 'text-emerald-500' },
+    { id: 'nb2-2k',   name: 'NB2 • 2K',  cost: 0.17, color: 'text-purple-500' },
+    { id: 'nb2-4k',   name: 'NB2 • 4K',  cost: 0.35, color: 'text-rose-500' },
+    { id: 'pro-1k',   name: 'NB Pro • 1K', cost: 0.10, color: 'text-indigo-500' },
+    { id: 'pro-2k',   name: 'NB Pro • 2K', cost: 0.25, color: 'text-violet-500' },
+    { id: 'pro-4k',   name: 'NB Pro • 4K', cost: 0.50, color: 'text-pink-500' },
+];
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [pricing, setPricing] = useState<any[]>([]);
-    const [syncingPricing, setSyncingPricing] = useState(false);
-    const [isPricingExpanded, setIsPricingExpanded] = useState(false);
 
     useEffect(() => {
-        fetchData();
-        fetchPricing();
+        adminService.getJobs().then(setJobs).catch(console.error).finally(() => setLoading(false));
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const jobsData = await adminService.getJobs();
-            setJobs(jobsData);
-        } catch (error) {
-            console.error('Failed to fetch stats:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchPricing = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('api_pricing')
-                .select('*')
-                .order('model_name');
-
-            if (error) throw error;
-            setPricing(data || []);
-        } catch (error) {
-            console.error('Failed to fetch pricing:', error);
-        }
-    };
-
-    const handleSyncPricing = async () => {
-        setSyncingPricing(true);
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error('Not authenticated');
-
-            const response = await supabase.functions.invoke('sync-pricing', {
-                headers: { Authorization: `Bearer ${session.access_token}` }
-            });
-
-            if (response.error) throw response.error;
-            await fetchPricing();
-        } catch (error: any) {
-            console.error('Failed to sync pricing:', error);
-        } finally {
-            setSyncingPricing(false);
-        }
-    };
-
     const stats = React.useMemo(() => {
-        const completedJobs = jobs.filter(j => j.status === 'completed');
-        const revenue = completedJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
-        const apiCostUsd = completedJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-        const apiCostEur = apiCostUsd * USD_TO_EUR;
-        const profit = revenue - apiCostEur;
+        const completed = jobs.filter(j => j.status === 'completed');
+        const revenue = completed.reduce((acc, j) => acc + (j.cost || 0), 0);
+        const apiCost = completed.reduce((acc, j) => acc + (j.apiCost || 0), 0);
+        const profit = revenue - apiCost;
         const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-
-        return {
-            revenue,
-            apiCostUsd,
-            profit,
-            margin,
-            totalJobs: completedJobs.length,
-            totalTokens: completedJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0)
-        };
+        return { revenue, apiCost, profit, margin, totalJobs: completed.length };
     }, [jobs]);
 
     const dailyStats = React.useMemo(() => {
-        const completedJobs = jobs.filter(j => j.status === 'completed');
-        const groups: Record<string, { date: string, revenue: number, cost: number }> = {};
-
-        // Last 14 days
-        const last14Days = Array.from({ length: 14 }, (_, i) => {
+        const completed = jobs.filter(j => j.status === 'completed');
+        const last14 = Array.from({ length: 14 }, (_, i) => {
             const d = new Date();
             d.setDate(d.getDate() - (13 - i));
             return d.toISOString().split('T')[0];
         });
-
-        last14Days.forEach(date => {
-            groups[date] = { date, revenue: 0, cost: 0 };
-        });
-
-        completedJobs.forEach(job => {
+        const groups: Record<string, { date: string; revenue: number; cost: number }> = {};
+        last14.forEach(date => { groups[date] = { date, revenue: 0, cost: 0 }; });
+        completed.forEach(job => {
             const date = new Date(job.createdAt).toISOString().split('T')[0];
             if (groups[date]) {
-                groups[date].revenue += (job.cost || 0);
-                groups[date].cost += (job.apiCost || 0) * USD_TO_EUR;
+                groups[date].revenue += job.cost || 0;
+                groups[date].cost += job.apiCost || 0;
             }
         });
-
         return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
     }, [jobs]);
 
-    const tierStats = React.useMemo(() => {
-        const TIERS = [
-            { id: 'fast', name: 'Nano Banana', cost: 0.0, color: 'text-zinc-500' },
-            { id: 'pro-1k', name: 'Pro 1K', cost: 0.1, color: 'text-indigo-500' },
-            { id: 'pro-2k', name: 'Pro 2K', cost: 0.25, color: 'text-purple-500' },
-            { id: 'pro-4k', name: 'Pro 4K', cost: 0.5, color: 'text-pink-500' }
-        ];
-
-        return TIERS.map(tier => {
-            const tierJobs = jobs.filter(j => {
-                if (j.status !== 'completed') return false;
-                if (tier.id === 'fast') {
-                    return (j.model === 'gemini-2.5-flash-image' || j.model === 'fast');
-                } else {
-                    return (j.model === 'gemini-3-pro-image-preview' || j.model?.startsWith('pro-')) &&
-                        Math.abs((j.cost || 0) - tier.cost) < 0.01;
-                }
-            });
-
+    const tierStats = React.useMemo(() =>
+        TIERS.map(tier => {
+            const tierJobs = jobs.filter(j => j.status === 'completed' && j.model === tier.id);
             const revenue = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
-            const apiCostUsd = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-            const apiCostEur = apiCostUsd * USD_TO_EUR;
-            const profit = revenue - apiCostEur;
+            const apiCost = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
+            const profit = revenue - apiCost;
             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
+            return { ...tier, count: tierJobs.length, revenue, apiCost, profit, margin };
+        }),
+    [jobs]);
 
-            return {
-                ...tier,
-                count: tierJobs.length,
-                tokens: tierJobs.reduce((acc, j) => acc + (j.tokensTotal || 0), 0),
-                revenue,
-                apiCostUsd,
-                profit,
-                margin
-            };
-        });
-    }, [jobs]);
-
-    if (loading) {
-        return (
-            <div className="h-full flex items-center justify-center bg-zinc-50/50 dark:bg-zinc-950/50">
-                <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
-            </div>
-        );
-    }
+    if (loading) return (
+        <div className="h-full flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+        </div>
+    );
 
     return (
         <div className="p-8 flex-1 min-h-0 space-y-8 overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className={Typo.H1}>Kosten & Performance</h2>
-                    <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard auf Basis echter Gemini-Tokens</p>
-                </div>
-                <button
-                    onClick={() => setIsPricingExpanded(!isPricingExpanded)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-                >
-                    {isPricingExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    API Tarife
-                </button>
+            <div>
+                <h2 className={Typo.H1}>Kosten & Performance</h2>
+                <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard · Kie AI Generierungen</p>
             </div>
 
-            {/* API Pricing Section (Collapsible) */}
-            {isPricingExpanded && (
-                <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden animate-in slide-in-from-top duration-300">
-                    <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">Google API Preise</h3>
-                            <p className="text-[10px] text-zinc-500 mt-0.5">Aktuelle Tarife der Gemini-Modelle</p>
-                        </div>
-                        <button
-                            onClick={handleSyncPricing}
-                            disabled={syncingPricing}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-orange-600 transition-colors disabled:opacity-50"
-                            title="Aktuelle Preise von Google API abrufen"
-                        >
-                            <RefreshCw className={`w-3 h-3 ${syncingPricing ? 'animate-spin' : ''}`} />
-                            Preise Aktualisieren
-                        </button>
-                    </div>
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {pricing.map(p => (
-                            <div key={p.model_name} className="p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 flex flex-col gap-1">
-                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{p.model_name}</div>
-                                <div className="flex justify-between items-baseline">
-                                    <span className="text-[11px] font-mono text-orange-500">${(parseFloat(p.input_price_per_token) * 1000000).toFixed(2)} / 1M Input</span>
-                                    <span className="text-[11px] font-mono text-amber-500">${(parseFloat(p.output_price_per_token) * 1000000).toFixed(2)} / 1M Output</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Summary Banner */}
+            {/* Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SummaryCard
-                    title="Gesamtumsatz"
-                    value={`${stats.revenue.toFixed(2)}€`}
-                    icon={<Coins className="w-4 h-4 text-emerald-500" />}
-                    sub="Verrechneter Credit-Gegenwert"
-                />
-                <SummaryCard
-                    title="Google Kosten"
-                    value={`$${stats.apiCostUsd.toFixed(4)}`}
-                    icon={<DollarSign className="w-4 h-4 text-red-500" />}
-                    sub={`${(stats.apiCostUsd * USD_TO_EUR).toFixed(4)}€ (ca. Umrechnung)`}
-                />
-                <SummaryCard
-                    title="Gesamtertrag"
-                    value={`${stats.profit.toFixed(2)}€`}
-                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />}
-                    sub="Dein Profit nach API-Abzug"
-                />
+                <SummaryCard title="Gesamtumsatz" value={`${stats.revenue.toFixed(2)}€`}
+                    icon={<Coins className="w-4 h-4 text-emerald-500" />} sub="Verrechneter Credit-Gegenwert" />
+                <SummaryCard title="API Kosten" value={stats.apiCost > 0 ? `${stats.apiCost.toFixed(4)}€` : '—'}
+                    icon={<DollarSign className="w-4 h-4 text-red-500" />} sub="Tatsächliche Kie AI Kosten" />
+                <SummaryCard title="Gesamtertrag" value={`${stats.profit.toFixed(2)}€`}
+                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />} sub="Profit nach API-Abzug" />
             </div>
 
-            {/* Chart Section */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 ">
+            {/* Chart */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className={Typo.H2}>Finanzverlauf (14 Tage)</h3>
                     <div className="flex gap-4">
@@ -275,60 +133,29 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="0" vertical={false} stroke="#F4F4F5" className="dark:stroke-zinc-800" />
-                            <XAxis
-                                dataKey="date"
-                                axisLine={false}
-                                tickLine={false}
+                            <XAxis dataKey="date" axisLine={false} tickLine={false}
                                 tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
-                                tickFormatter={(str) => {
-                                    const date = new Date(str);
-                                    return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                                }}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
+                                tickFormatter={str => new Date(str).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} />
+                            <YAxis axisLine={false} tickLine={false}
                                 tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
-                                tickFormatter={(val) => `${val}€`}
-                            />
+                                tickFormatter={val => `${val}€`} />
                             <Tooltip
-                                contentStyle={{
-                                    backgroundColor: '#FFFFFF',
-                                    border: '1px solid #F1F1F1',
-                                    borderRadius: '8px',
-                                    fontSize: '11px',
-                                    fontWeight: 'bold'
-                                }}
+                                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #F1F1F1', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
                                 formatter={(value: any) => [`${value.toFixed(2)}€`]}
-                                labelFormatter={(label) => new Date(label).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="revenue"
-                                stroke="#10b981"
-                                strokeWidth={2}
-                                fillOpacity={1}
-                                fill="url(#colorRev)"
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="cost"
-                                stroke="#ef4444"
-                                strokeWidth={2}
-                                fillOpacity={1}
-                                fill="url(#colorCost)"
-                            />
+                                labelFormatter={label => new Date(label).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })} />
+                            <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
+                            <Area type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorCost)" />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
             {/* Performance Table */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden ">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
                 <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <h3 className={Typo.H2}>Performance nach Qualitätsstufe</h3>
+                    <h3 className={Typo.H2}>Performance nach Modell</h3>
                     <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400">
-                        <Database className="w-3 h-3" />
+                        <Activity className="w-3 h-3" />
                         Live DB Sync
                     </div>
                 </div>
@@ -336,44 +163,39 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                                <th className="px-6 py-4">Stufe</th>
+                                <th className="px-6 py-4">Modell</th>
                                 <th className="px-6 py-4 text-right">Jobs</th>
-                                <th className="px-6 py-4 text-right">Tokens</th>
                                 <th className="px-6 py-4 text-right">Umsatz (€)</th>
-                                <th className="px-6 py-4 text-right">Google ($)</th>
+                                <th className="px-6 py-4 text-right">API Kosten</th>
                                 <th className="px-6 py-4 text-right">Gewinn (€)</th>
                                 <th className="px-6 py-4 text-right">Marge</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            {tierStats.map(tier => (
-                                <tr key={tier.id} className="text-sm border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                            {tierStats.filter(t => t.count > 0).map(tier => (
+                                <tr key={tier.id} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                     <td className="px-6 py-4">
                                         <span className={`font-bold uppercase text-[11px] tracking-tight ${tier.color}`}>{tier.name}</span>
                                     </td>
                                     <td className="px-6 py-4 text-right font-medium">{tier.count}</td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs text-zinc-500">
-                                        {tier.tokens >= 1000 ? `${(tier.tokens / 1000).toFixed(1)}k` : tier.tokens}
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                                        {tier.revenue.toFixed(2)}€
-                                    </td>
+                                    <td className="px-6 py-4 text-right font-mono text-xs text-emerald-600 dark:text-emerald-400">{tier.revenue.toFixed(2)}€</td>
                                     <td className="px-6 py-4 text-right font-mono text-xs text-red-500">
-                                        ${tier.apiCostUsd.toFixed(4)}
+                                        {tier.apiCost > 0 ? `${tier.apiCost.toFixed(4)}€` : '—'}
                                     </td>
-                                    <td className="px-6 py-4 text-right font-bold text-base text-zinc-900 dark:text-zinc-100">
-                                        {tier.profit.toFixed(2)}€
-                                    </td>
+                                    <td className="px-6 py-4 text-right font-bold text-base text-zinc-900 dark:text-zinc-100">{tier.profit.toFixed(2)}€</td>
                                     <td className="px-6 py-4 text-right">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${tier.margin > 50 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                                            tier.margin > 50 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                                             tier.margin > 20 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                                                'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'
-                                            }`}>
-                                            {tier.margin.toFixed(0)}%
+                                            'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                                            {tier.margin > 0 ? `${tier.margin.toFixed(0)}%` : '—'}
                                         </span>
                                     </td>
                                 </tr>
                             ))}
+                            {tierStats.every(t => t.count === 0) && (
+                                <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-zinc-400">Keine abgeschlossenen Jobs</td></tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -382,13 +204,11 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 };
 
-const SummaryCard = ({ title, value, icon, sub }: { title: string, value: string, icon: React.ReactNode, sub: string }) => (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 ">
+const SummaryCard = ({ title, value, icon, sub }: { title: string; value: string; icon: React.ReactNode; sub: string }) => (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">{title}</span>
-            <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">
-                {icon}
-            </div>
+            <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">{icon}</div>
         </div>
         <div>
             <div className="text-2xl font-bold font-mono tracking-tighter">{value}</div>
