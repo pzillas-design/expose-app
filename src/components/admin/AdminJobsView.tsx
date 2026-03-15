@@ -106,7 +106,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const m = j.model || 'unknown';
                                                     const isNb2 = m.startsWith('nb2');
                                                     const isPro = m.includes('pro');
-                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'NB Pro' : 'NB';
+                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'NB Pro' : 'Legacy';
                                                     const color = isNb2
                                                         ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
                                                         : isPro

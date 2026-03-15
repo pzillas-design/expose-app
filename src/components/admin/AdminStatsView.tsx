@@ -23,21 +23,17 @@ interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-// User price (€) and Kie AI API cost ($) per generation
 // Kie AI pricing source: kie.ai/nano-banana + kie.ai/nano-banana-pro (March 2026)
-// NB (Gemini 2.5 Flash): $0.02/image (4 credits @ $0.005)
-// NB Pro 1K/2K (Gemini 3 Pro): $0.09/image (18 credits), 4K: $0.12/image (24 credits)
-// NB2 uses same Nano Banana base engine → $0.02/image
+// NB2 (Nano Banana 2, Gemini 2.5 Flash): $0.02/image
+// NB Pro (Nano Banana Pro, Gemini 3 Pro): $0.09 (1K/2K), $0.12 (4K)
 const USD_TO_EUR = 0.92;
 const TIERS = [
-    { id: 'fast',     name: 'NB Fast',      userCost: 0.00, apiCostUsd: 0.02, color: 'text-zinc-500' },
-    { id: 'nb2-fast', name: 'NB2 Fast',     userCost: 0.00, apiCostUsd: 0.02, color: 'text-zinc-400' },
-    { id: 'nb2-1k',   name: 'NB2 • 1K',    userCost: 0.07, apiCostUsd: 0.02, color: 'text-emerald-500' },
-    { id: 'nb2-2k',   name: 'NB2 • 2K',    userCost: 0.17, apiCostUsd: 0.02, color: 'text-purple-500' },
-    { id: 'nb2-4k',   name: 'NB2 • 4K',    userCost: 0.35, apiCostUsd: 0.02, color: 'text-rose-500' },
-    { id: 'pro-1k',   name: 'NB Pro • 1K', userCost: 0.10, apiCostUsd: 0.09, color: 'text-indigo-500' },
-    { id: 'pro-2k',   name: 'NB Pro • 2K', userCost: 0.25, apiCostUsd: 0.09, color: 'text-violet-500' },
-    { id: 'pro-4k',   name: 'NB Pro • 4K', userCost: 0.50, apiCostUsd: 0.12, color: 'text-pink-500' },
+    { id: 'nb2-1k',  name: 'NB2 • 1K',    userCost: 0.07, apiCostUsd: 0.02, color: 'text-emerald-500' },
+    { id: 'nb2-2k',  name: 'NB2 • 2K',    userCost: 0.17, apiCostUsd: 0.02, color: 'text-purple-500' },
+    { id: 'nb2-4k',  name: 'NB2 • 4K',    userCost: 0.35, apiCostUsd: 0.02, color: 'text-rose-500' },
+    { id: 'pro-1k',  name: 'NB Pro • 1K', userCost: 0.10, apiCostUsd: 0.09, color: 'text-indigo-500' },
+    { id: 'pro-2k',  name: 'NB Pro • 2K', userCost: 0.25, apiCostUsd: 0.09, color: 'text-violet-500' },
+    { id: 'pro-4k',  name: 'NB Pro • 4K', userCost: 0.50, apiCostUsd: 0.12, color: 'text-pink-500' },
 ];
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
