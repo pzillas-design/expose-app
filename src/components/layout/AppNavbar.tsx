@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings, CheckSquare, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Zap, Square, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
@@ -355,10 +355,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
                                     items={[
-                                        { label: t('nav_settings'), icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                        { label: t('nav_select'), icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: t('nav_select'), icon: <Square className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: t('nav_settings'), icon: <Zap className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: t('nav_contact'), separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
-                                        { label: t('nav_sign_out'), onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
                             </div>
