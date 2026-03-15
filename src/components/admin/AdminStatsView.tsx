@@ -15,17 +15,23 @@ interface AdminStatsViewProps {
 // Actual model names as stored in DB
 const USD_TO_EUR = 0.92;
 const KIE_COST: Record<string, { eur: number; label: string; color: string }> = {
-    'nano-banana-2':   { eur: 0.02 * USD_TO_EUR, label: 'NB2',    color: '#8b5cf6' },
-    'nano-banana-pro': { eur: 0.09 * USD_TO_EUR, label: 'NB Pro', color: '#f97316' },
-    'nb2-1k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 1K', color: '#8b5cf6' },
-    'nb2-2k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 2K', color: '#a78bfa' },
-    'nb2-4k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 4K', color: '#c4b5fd' },
-    'pro-1k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 1K', color: '#f97316' },
-    'pro-2k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 2K', color: '#fb923c' },
-    'pro-4k':          { eur: 0.12 * USD_TO_EUR, label: 'NB Pro 4K', color: '#fdba74' },
+    // NB2 family — violet, darker → lighter for higher resolution
+    'nano-banana-2':   { eur: 0.02 * USD_TO_EUR, label: 'NB2 1K', color: '#7c3aed' },
+    'nb2-1k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 1K', color: '#7c3aed' },
+    'nb2-2k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 2K', color: '#8b5cf6' },
+    'nb2-4k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 4K', color: '#a78bfa' },
+    // NB Pro family — orange, darker → lighter for higher resolution
+    'nano-banana-pro': { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 1K', color: '#ea580c' },
+    'pro-1k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 1K', color: '#ea580c' },
+    'pro-2k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 2K', color: '#f97316' },
+    'pro-4k':          { eur: 0.12 * USD_TO_EUR, label: 'NB Pro 4K', color: '#fb923c' },
 };
 
-const MODEL_COLORS = ['#8b5cf6', '#f97316', '#a78bfa', '#fb923c', '#c4b5fd', '#fdba74'];
+// Fixed display order: NB2 (1K→4K) then NB Pro (1K→4K)
+const MODEL_ORDER = [
+    'nano-banana-2', 'nb2-1k', 'nb2-2k', 'nb2-4k',
+    'nano-banana-pro', 'pro-1k', 'pro-2k', 'pro-4k',
+];
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
@@ -111,10 +117,11 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         return Object.values(weeks);
     }, [completedJobs, stripeMonthly]);
 
-    // Unique model keys found in jobs
-    const modelKeys = React.useMemo(() =>
-        [...new Set(completedJobs.map(j => j.model).filter(m => KIE_COST[m]))],
-    [completedJobs]);
+    // Unique model keys found in jobs, in fixed display order
+    const modelKeys = React.useMemo(() => {
+        const found = new Set(completedJobs.map(j => j.model).filter(m => KIE_COST[m]));
+        return MODEL_ORDER.filter(m => found.has(m));
+    }, [completedJobs]);
 
     if (loading) return (
         <div className="h-full flex items-center justify-center">
@@ -191,7 +198,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             }} />
                             {modelKeys.map((modelId, i) => (
                                 <Bar key={modelId} yAxisId="left" dataKey={modelId} stackId="cost"
-                                    fill={MODEL_COLORS[i % MODEL_COLORS.length]} radius={i === modelKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                                    fill={KIE_COST[modelId]?.color ?? '#a1a1aa'}
+                                    radius={i === modelKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
                             ))}
                             <Line yAxisId="right" type="monotone" dataKey="_revenue"
                                 stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
