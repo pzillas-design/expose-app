@@ -1,93 +1,63 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Loader2,
-    Coins,
-    TrendingUp,
-    DollarSign,
-    Activity,
-} from 'lucide-react';
-import {
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    AreaChart,
-    Area
-} from 'recharts';
+import { Loader2, Coins, TrendingUp, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { TranslationFunction } from '@/types';
-import { Typo } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
+import { supabase } from '@/services/supabaseClient';
 
 interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-// Kie AI pricing source: kie.ai/nano-banana + kie.ai/nano-banana-pro (March 2026)
-// NB2 (Nano Banana 2, Gemini 2.5 Flash): $0.02/image
-// NB Pro (Nano Banana Pro, Gemini 3 Pro): $0.09 (1K/2K), $0.12 (4K)
+// Kie AI fixed costs per generation (source: kie.ai, March 2026)
 const USD_TO_EUR = 0.92;
-const TIERS = [
-    { id: 'nb2-1k',  name: 'NB2 • 1K',    userCost: 0.07, apiCostUsd: 0.02, color: 'text-emerald-500' },
-    { id: 'nb2-2k',  name: 'NB2 • 2K',    userCost: 0.17, apiCostUsd: 0.02, color: 'text-purple-500' },
-    { id: 'nb2-4k',  name: 'NB2 • 4K',    userCost: 0.35, apiCostUsd: 0.02, color: 'text-rose-500' },
-    { id: 'pro-1k',  name: 'NB Pro • 1K', userCost: 0.10, apiCostUsd: 0.09, color: 'text-indigo-500' },
-    { id: 'pro-2k',  name: 'NB Pro • 2K', userCost: 0.25, apiCostUsd: 0.09, color: 'text-violet-500' },
-    { id: 'pro-4k',  name: 'NB Pro • 4K', userCost: 0.50, apiCostUsd: 0.12, color: 'text-pink-500' },
-];
+const KIE_COST: Record<string, number> = {
+    'nb2-1k':  0.02 * USD_TO_EUR,
+    'nb2-2k':  0.02 * USD_TO_EUR,
+    'nb2-4k':  0.02 * USD_TO_EUR,
+    'pro-1k':  0.09 * USD_TO_EUR,
+    'pro-2k':  0.09 * USD_TO_EUR,
+    'pro-4k':  0.12 * USD_TO_EUR,
+};
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
+    const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
+    const [stripePaymentCount, setStripePaymentCount] = useState<number>(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        adminService.getJobs().then(setJobs).catch(console.error).finally(() => setLoading(false));
-    }, []);
+        const fetchAll = async () => {
+            setLoading(true);
+            try {
+                const [jobsData, { data: { session } }] = await Promise.all([
+                    adminService.getJobs(),
+                    supabase.auth.getSession()
+                ]);
+                setJobs(jobsData);
 
-    const tierCostMap = React.useMemo(() => {
-        const m: Record<string, number> = {};
-        TIERS.forEach(t => { m[t.id] = t.apiCostUsd * USD_TO_EUR; });
-        return m;
-    }, []);
-
-    const stats = React.useMemo(() => {
-        const completed = jobs.filter(j => j.status === 'completed');
-        const revenue = completed.reduce((acc, j) => acc + (j.cost || 0), 0);
-        const apiCostEur = completed.reduce((acc, j) => acc + (tierCostMap[j.model] ?? 0), 0);
-        const profit = revenue - apiCostEur;
-        const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-        return { revenue, apiCostEur, profit, margin, totalJobs: completed.length };
-    }, [jobs, tierCostMap]);
-
-    const dailyStats = React.useMemo(() => {
-        const completed = jobs.filter(j => j.status === 'completed');
-        const last14 = Array.from({ length: 14 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (13 - i));
-            return d.toISOString().split('T')[0];
-        });
-        const groups: Record<string, { date: string; revenue: number; cost: number }> = {};
-        last14.forEach(date => { groups[date] = { date, revenue: 0, cost: 0 }; });
-        completed.forEach(job => {
-            const date = new Date(job.createdAt).toISOString().split('T')[0];
-            if (groups[date]) {
-                groups[date].revenue += job.cost || 0;
-                groups[date].cost += tierCostMap[job.model] ?? 0;
+                if (session?.access_token) {
+                    const res = await supabase.functions.invoke('admin-stats', {
+                        headers: { Authorization: `Bearer ${session.access_token}` }
+                    });
+                    if (!res.error && res.data) {
+                        setStripeRevenue(res.data.totalRevenue ?? null);
+                        setStripePaymentCount(res.data.paymentCount ?? 0);
+                    }
+                }
+            } catch (e) {
+                console.error('AdminStatsView fetch error:', e);
+            } finally {
+                setLoading(false);
             }
-        });
-        return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
-    }, [jobs, tierCostMap]);
+        };
+        fetchAll();
+    }, []);
 
-    const tierStats = React.useMemo(() =>
-        TIERS.map(tier => {
-            const tierJobs = jobs.filter(j => j.status === 'completed' && j.model === tier.id);
-            const revenue = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
-            const apiCostEur = tierJobs.length * (tier.apiCostUsd * USD_TO_EUR);
-            const profit = revenue - apiCostEur;
-            const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-            return { ...tier, count: tierJobs.length, revenue, apiCostEur, profit, margin };
-        }),
-    [jobs]);
+    const completedJobs = jobs.filter(j => j.status === 'completed');
+    const kieAiCost = completedJobs.reduce((acc, j) => acc + (KIE_COST[j.model] ?? 0), 0);
+    const profit = stripeRevenue != null ? stripeRevenue - kieAiCost : null;
+    const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
+        ? (profit / stripeRevenue) * 100 : null;
 
     if (loading) return (
         <div className="h-full flex items-center justify-center">
@@ -96,147 +66,127 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="p-8 flex-1 min-h-0 space-y-8 overflow-y-auto no-scrollbar">
+        <div className="p-8 flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-8">
             <div>
-                <h2 className={Typo.H1}>Kosten & Performance</h2>
-                <p className="text-xs text-zinc-500 font-medium">Finanz-Dashboard · Kie AI Generierungen</p>
+                <h2 className="text-xl font-bold tracking-tight">Kosten & Einnahmen</h2>
+                <p className="text-xs text-zinc-500 mt-1">Stripe-Einnahmen vs. Kie AI Ausgaben</p>
             </div>
 
-            {/* Summary */}
+            {/* Main 3-card comparison */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SummaryCard title="Gesamtumsatz" value={`${stats.revenue.toFixed(2)}€`}
-                    icon={<Coins className="w-4 h-4 text-emerald-500" />} sub="Verrechneter Credit-Gegenwert" />
-                <SummaryCard title="Kie AI Kosten (est.)" value={`${stats.apiCostEur.toFixed(2)}€`}
-                    icon={<DollarSign className="w-4 h-4 text-red-500" />} sub="Basierend auf Kie AI Festpreisen" />
-                <SummaryCard title="Gesamtertrag" value={`${stats.profit.toFixed(2)}€`}
-                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />} sub={`Marge ${stats.margin.toFixed(0)}%`} />
-            </div>
-
-            {/* Kie AI Preistabelle */}
-            <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-                    <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Kie AI Festpreise (Stand März 2026)</h3>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {TIERS.filter(t => t.apiCostUsd > 0).map(tier => (
-                        <div key={tier.id} className="px-5 py-4 flex flex-col gap-1">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${tier.color}`}>{tier.name}</span>
-                            <span className="text-base font-mono font-bold">${tier.apiCostUsd.toFixed(2)}</span>
-                            <span className="text-[10px] text-zinc-400">≈ {(tier.apiCostUsd * USD_TO_EUR).toFixed(2)}€ · {Math.round(tier.apiCostUsd / 0.005)} Credits</span>
+                {/* Stripe Revenue */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Stripe Einnahmen</span>
+                        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
+                            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Chart */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className={Typo.H2}>Finanzverlauf (14 Tage)</h3>
-                    <div className="flex gap-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">Umsatz</span>
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold font-mono tracking-tighter text-emerald-600 dark:text-emerald-400">
+                            {stripeRevenue != null ? `${stripeRevenue.toFixed(2)}€` : '—'}
                         </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500" />
-                            <span className="text-[10px] font-bold uppercase text-zinc-400">Kosten</span>
+                        <div className="text-[11px] text-zinc-400 mt-1">
+                            {stripePaymentCount} erfolgreiche Zahlungen
                         </div>
                     </div>
                 </div>
-                <div className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={dailyStats}>
-                            <defs>
-                                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
-                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="0" vertical={false} stroke="#F4F4F5" className="dark:stroke-zinc-800" />
-                            <XAxis dataKey="date" axisLine={false} tickLine={false}
-                                tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
-                                tickFormatter={str => new Date(str).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} />
-                            <YAxis axisLine={false} tickLine={false}
-                                tick={{ fontSize: 9, fontWeight: 700, fill: '#A1A1AA' }}
-                                tickFormatter={val => `${val}€`} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #F1F1F1', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
-                                formatter={(value: any) => [`${value.toFixed(2)}€`]}
-                                labelFormatter={label => new Date(label).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })} />
-                            <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                            <Area type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorCost)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
+
+                {/* Kie AI Cost */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Kie AI Ausgaben</span>
+                        <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20">
+                            <ArrowDownRight className="w-4 h-4 text-red-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold font-mono tracking-tighter text-red-500">
+                            {kieAiCost.toFixed(2)}€
+                        </div>
+                        <div className="text-[11px] text-zinc-400 mt-1">
+                            {completedJobs.length} Generierungen (est.)
+                        </div>
+                    </div>
+                </div>
+
+                {/* Profit */}
+                <div className={`rounded-2xl p-6 space-y-4 border ${profit != null && profit >= 0
+                    ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
+                    : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'}`}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Gewinn</span>
+                        <div className="p-2 rounded-xl bg-white/60 dark:bg-black/20">
+                            <TrendingUp className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className={`text-3xl font-bold font-mono tracking-tighter ${profit != null && profit >= 0
+                            ? 'text-emerald-700 dark:text-emerald-300'
+                            : 'text-red-600 dark:text-red-400'}`}>
+                            {profit != null ? `${profit.toFixed(2)}€` : '—'}
+                        </div>
+                        <div className="text-[11px] text-zinc-400 mt-1">
+                            {margin != null ? `Marge ${margin.toFixed(0)}%` : 'Marge —'}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Performance Table */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <h3 className={Typo.H2}>Performance nach Modell</h3>
-                    <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold text-zinc-400">
-                        <Activity className="w-3 h-3" />
-                        Live DB Sync
+            {/* Per-model breakdown */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold">Kie AI Kosten nach Modell</h3>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Festpreise: NB2 $0.02 · NB Pro 1K/2K $0.09 · NB Pro 4K $0.12</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-zinc-400">
+                        <Zap className="w-3 h-3" />
+                        Kie AI
                     </div>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                                <th className="px-6 py-4">Modell</th>
-                                <th className="px-6 py-4 text-right">Jobs</th>
-                                <th className="px-6 py-4 text-right">Umsatz (€)</th>
-                                <th className="px-6 py-4 text-right">API Kosten</th>
-                                <th className="px-6 py-4 text-right">Gewinn (€)</th>
-                                <th className="px-6 py-4 text-right">Marge</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                            {tierStats.filter(t => t.count > 0).map(tier => (
-                                <tr key={tier.id} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-colors">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                            <th className="px-6 py-3">Modell</th>
+                            <th className="px-6 py-3 text-right">Jobs</th>
+                            <th className="px-6 py-3 text-right">Kosten/Job</th>
+                            <th className="px-6 py-3 text-right">Gesamt</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {Object.entries(KIE_COST).map(([modelId, costEur]) => {
+                            const count = completedJobs.filter(j => j.model === modelId).length;
+                            if (count === 0) return null;
+                            const total = count * costEur;
+                            const colors: Record<string, string> = {
+                                'nb2-1k': 'text-emerald-500', 'nb2-2k': 'text-purple-500', 'nb2-4k': 'text-rose-500',
+                                'pro-1k': 'text-indigo-500', 'pro-2k': 'text-violet-500', 'pro-4k': 'text-pink-500',
+                            };
+                            const names: Record<string, string> = {
+                                'nb2-1k': 'NB2 · 1K', 'nb2-2k': 'NB2 · 2K', 'nb2-4k': 'NB2 · 4K',
+                                'pro-1k': 'NB Pro · 1K', 'pro-2k': 'NB Pro · 2K', 'pro-4k': 'NB Pro · 4K',
+                            };
+                            return (
+                                <tr key={modelId} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
                                     <td className="px-6 py-4">
-                                        <span className={`font-bold uppercase text-[11px] tracking-tight ${tier.color}`}>{tier.name}</span>
+                                        <span className={`font-bold text-[11px] uppercase ${colors[modelId]}`}>{names[modelId]}</span>
                                     </td>
-                                    <td className="px-6 py-4 text-right font-medium">{tier.count}</td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs text-emerald-600 dark:text-emerald-400">{tier.revenue.toFixed(2)}€</td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs text-red-500">
-                                        {tier.apiCostEur > 0 ? `${tier.apiCostEur.toFixed(2)}€` : '—'}
-                                    </td>
-                                    <td className="px-6 py-4 text-right font-bold text-base text-zinc-900 dark:text-zinc-100">{tier.profit.toFixed(2)}€</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
-                                            tier.margin > 50 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                            tier.margin > 20 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                                            'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400'}`}>
-                                            {tier.margin > 0 ? `${tier.margin.toFixed(0)}%` : '—'}
-                                        </span>
-                                    </td>
+                                    <td className="px-6 py-4 text-right font-medium">{count}</td>
+                                    <td className="px-6 py-4 text-right font-mono text-xs text-zinc-500">{costEur.toFixed(3)}€</td>
+                                    <td className="px-6 py-4 text-right font-mono text-xs font-bold text-red-500">{total.toFixed(2)}€</td>
                                 </tr>
-                            ))}
-                            {tierStats.every(t => t.count === 0) && (
-                                <tr><td colSpan={6} className="px-6 py-12 text-center text-sm text-zinc-400">Keine abgeschlossenen Jobs</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            );
+                        })}
+                        <tr className="bg-zinc-50/30 dark:bg-zinc-800/20 font-bold">
+                            <td className="px-6 py-4 text-[11px] uppercase tracking-wide text-zinc-500">Gesamt</td>
+                            <td className="px-6 py-4 text-right">{completedJobs.length}</td>
+                            <td className="px-6 py-4" />
+                            <td className="px-6 py-4 text-right font-mono text-sm text-red-500">{kieAiCost.toFixed(2)}€</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     );
 };
-
-const SummaryCard = ({ title, value, icon, sub }: { title: string; value: string; icon: React.ReactNode; sub: string }) => (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400">{title}</span>
-            <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">{icon}</div>
-        </div>
-        <div>
-            <div className="text-2xl font-bold font-mono tracking-tighter">{value}</div>
-            <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide">{sub}</div>
-        </div>
-    </div>
-);
