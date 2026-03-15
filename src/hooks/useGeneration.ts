@@ -97,12 +97,46 @@ let smartEstimatesCache: Record<string, {
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// ── Local timing learning ─────────────────────────────────────────────────────
+// Persists rolling averages of actual generation durations in localStorage.
+// After ≥2 samples the stored average is used instead of the hardcoded fallback.
+const LS_TIMING_KEY = 'expose_gen_timing_v1';
+interface TimingBucket { sum: number; count: number; }
+
+const loadTimingStore = (): Record<string, TimingBucket> => {
+    try { return JSON.parse(localStorage.getItem(LS_TIMING_KEY) || '{}'); } catch { return {}; }
+};
+const recordActualDuration = (quality: string, ms: number) => {
+    // Ignore outliers (< 3s or > 5 min)
+    if (ms < 3000 || ms > 300000) return;
+    try {
+        const store = loadTimingStore();
+        const prev = store[quality] || { sum: 0, count: 0 };
+        // Exponential moving average: keep at most 20 samples worth of weight
+        const count = Math.min(prev.count + 1, 20);
+        const sum = prev.count >= 20
+            ? (prev.sum / prev.count) * 19 + ms  // slide out oldest
+            : prev.sum + ms;
+        store[quality] = { sum, count };
+        localStorage.setItem(LS_TIMING_KEY, JSON.stringify(store));
+    } catch { /* storage full or unavailable */ }
+};
+const getLearnedDuration = (quality: string): number | null => {
+    try {
+        const bucket = loadTimingStore()[quality];
+        if (bucket && bucket.count >= 2) return Math.round(bucket.sum / bucket.count);
+    } catch { /* */ }
+    return null;
+};
+
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
     qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
+    // Track { startTime, quality } per jobId so we can record actual duration on completion
+    const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string }>>({});
 
     const pollForJob = useCallback(async (jobId: string) => {
         if (attachedJobIds.current.has(jobId)) return;
@@ -132,6 +166,13 @@ export const useGeneration = ({
                 .maybeSingle();
 
             if (imgData) {
+                // Record actual duration for future estimates
+                const timing = jobTimingRef.current[jobId];
+                if (timing) {
+                    recordActualDuration(timing.quality, Date.now() - timing.startTime);
+                    delete jobTimingRef.current[jobId];
+                }
+
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
 
@@ -281,9 +322,13 @@ export const useGeneration = ({
         // 2. CONCURRENCY & DURATION (Sync)
         const activeCount = allImages.filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
+        // Prefer: (1) learned from localStorage, (2) smart DB estimate, (3) hardcoded fallback
+        const learnedBase = getLearnedDuration(qualityMode);
         let estimatedDuration: number;
         const nowMs = Date.now();
-        if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
+        if (learnedBase) {
+            estimatedDuration = Math.round(learnedBase * (1 + 0.25 * currentConcurrency));
+        } else if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
             const estimate = smartEstimatesCache[qualityMode];
             let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
             duration *= (1 + (estimate.concurrencyFactor || 0.3) * currentConcurrency);
@@ -322,6 +367,9 @@ export const useGeneration = ({
             newRows[idx] = { ...newRows[idx], items: [...newRows[idx].items, placeholder] };
             return newRows;
         });
+
+        // Track start time so pollForJob can record actual duration
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode };
 
         // Stay on source image — auto-navigation to the finished result
         // is handled by the generatingChild detection in DetailPage.
@@ -481,6 +529,11 @@ export const useGeneration = ({
         };
 
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
+        // Track start time so we can record actual duration on completion
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId };
+        // Navigate to the placeholder so the user sees the loading state in-place.
+        // When the job finishes, setRows updates the placeholder → result appears without further navigation.
+        setTimeout(() => selectAndSnap(newId), 50);
 
         const processNewSync = async () => {
             try {
@@ -508,7 +561,9 @@ export const useGeneration = ({
                 });
 
                 if (finalImage) {
-                    // Synchronous completion (legacy path)
+                    // Synchronous completion (legacy path) — record actual duration
+                    const t0 = jobTimingRef.current[newId];
+                    if (t0) { recordActualDuration(t0.quality, Date.now() - t0.startTime); delete jobTimingRef.current[newId]; }
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
                     if (!isPro && cost > 0) {
