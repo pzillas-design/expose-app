@@ -481,7 +481,6 @@ export const useGeneration = ({
         };
 
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
-        setTimeout(() => selectAndSnap(newId), 50);
 
         const processNewSync = async () => {
             try {
