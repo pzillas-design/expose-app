@@ -162,9 +162,9 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* LEFT SIDEBAR: List */}
             <div className="w-[300px] flex flex-col border-r border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10">
-                <div className="p-5 pb-3 flex flex-col gap-3">
+                <div className="px-6 pt-6 pb-4 flex flex-col gap-3 border-b border-zinc-100 dark:border-zinc-800/60">
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Vorlagen</span>
+                        <span className="text-xs font-bold tracking-tight text-zinc-700 dark:text-zinc-300">Vorlagen</span>
                         <IconButton icon={<Plus className="w-4 h-4" />} onClick={handleNew} className="hover:bg-zinc-200 dark:hover:bg-zinc-800" />
                     </div>
                     <div className="relative">

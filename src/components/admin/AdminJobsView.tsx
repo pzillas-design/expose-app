@@ -57,15 +57,12 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="p-8 pb-6 flex items-center justify-between shrink-0">
-                <div>
-                    <h2 className={Typo.H1}>{t('admin_jobs')}</h2>
-                    <p className={Typo.Micro}>{t('admin_jobs_desc')}</p>
-                </div>
-                <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
+                <h2 className="text-base font-bold tracking-tight">{t('admin_jobs')}</h2>
+                <div className="relative w-56">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                     <Input
-                        className="pl-9 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-none"
+                        className="pl-9 h-9 text-sm bg-zinc-50 dark:bg-zinc-800/60 border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
                         placeholder={t('search')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -82,14 +79,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                     ) : (
                         <>
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-20">
+                                <thead className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60">
                                     <tr>
-                                        <th className="px-5 py-4 font-medium">{t('id_label')}</th>
-                                        <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
-                                        <th className="px-5 py-4 font-medium">{t('model')}</th>
-                                        <th className="px-5 py-4 font-medium">Auflösung</th>
-                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
-                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_status')}</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('id_label')}</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('model')}</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">Auflösung</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_job_date')}</th>
+                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_job_status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -99,9 +96,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             onClick={() => setSelectedJob(j)}
                                             className={`cursor-pointer transition-colors ${selectedJob?.id === j.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                         >
-                                            <td className="px-5 py-5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
-                                            <td className="px-5 py-5 font-medium text-black dark:text-white">{j.userName}</td>
-                                            <td className="px-5 py-5">
+                                            <td className="px-5 py-3.5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
+                                            <td className="px-5 py-3.5 font-medium text-black dark:text-white">{j.userName}</td>
+                                            <td className="px-5 py-3.5">
                                                 {(() => {
                                                     const m = j.model || 'unknown';
                                                     const isNb2 = m.startsWith('nb2') || m.includes('nano-banana-2');
@@ -119,7 +116,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     );
                                                 })()}
                                             </td>
-                                            <td className="px-5 py-5">
+                                            <td className="px-5 py-3.5">
                                                 {(() => {
                                                     const m = j.model || '';
                                                     const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : 'Fast';
@@ -127,10 +124,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     return <span className={`text-[11px] font-bold uppercase ${color}`}>{res}</span>;
                                                 })()}
                                             </td>
-                                            <td className="px-5 py-5 text-right text-zinc-500 text-xs">
+                                            <td className="px-5 py-3.5 text-right text-zinc-500 text-xs">
                                                 {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                             </td>
-                                            <td className="px-5 py-5 text-right">
+                                            <td className="px-5 py-3.5 text-right">
                                                 {j.status?.toLowerCase() === 'completed'
                                                     ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
                                                     : j.status?.toLowerCase() === 'failed'

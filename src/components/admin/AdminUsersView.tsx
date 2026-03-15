@@ -94,18 +94,16 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="p-8 pb-6 flex items-center justify-between shrink-0">
-                <h2 className={Typo.H1}>{t('admin_users')}</h2>
-                <div className="flex items-center gap-4">
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                        <Input
-                            className="pl-9 py-2 bg-zinc-50 dark:bg-zinc-800/50 border-none"
-                            placeholder={t('search')}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
+                <h2 className="text-base font-bold tracking-tight">{t('admin_users')}</h2>
+                <div className="relative w-56">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                    <Input
+                        className="pl-9 h-9 text-sm bg-zinc-50 dark:bg-zinc-800/60 border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
+                        placeholder={t('search')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
             </div>
 
@@ -117,14 +115,14 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-zinc-50 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-zinc-500 sticky top-0 z-10">
+                            <thead className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60">
                                 <tr>
-                                    <th className="px-5 py-4 font-medium">{t('admin_user_email')}</th>
-                                    <th className="px-5 py-4 font-medium">{t('admin_role_label')}</th>
-                                    <th className="px-5 py-4 font-medium">{t('admin_last_online')}</th>
-                                    <th className="px-5 py-4 font-medium text-right">{t('admin_balance')}</th>
-                                    <th className="px-5 py-4 font-medium text-right">{t('admin_total_spent_header')}</th>
-                                    <th className="px-5 py-4 font-medium text-right">{t('admin_user_joined')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_user_email')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_role_label')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_last_online')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_balance')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_total_spent_header')}</th>
+                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_user_joined')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -134,18 +132,18 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         onClick={() => setSelectedUser(u)}
                                         className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-5 py-5 font-medium text-black dark:text-white">
+                                        <td className="px-5 py-3.5 font-medium text-black dark:text-white">
                                             {getUserIdentifier(u)}
                                         </td>
-                                        <td className="px-5 py-5">
+                                        <td className="px-5 py-3.5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                                                 {u.role === 'admin' ? t('role_admin') : (u.role === 'pro' ? t('role_pro') : t('role_user'))}
                                             </span>
                                         </td>
-                                        <td className="px-5 py-5 text-zinc-500">{getRelativeTime(u.lastActiveAt)}</td>
-                                        <td className="px-5 py-5 text-right font-mono text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
-                                        <td className="px-5 py-5 text-right font-mono text-zinc-900 dark:text-white">{u.totalSpent.toFixed(2)} €</td>
-                                        <td className="px-5 py-5 text-right text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
+                                        <td className="px-5 py-3.5 text-zinc-500 text-sm">{getRelativeTime(u.lastActiveAt)}</td>
+                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
+                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-zinc-900 dark:text-white">{u.totalSpent.toFixed(2)} €</td>
+                                        <td className="px-5 py-3.5 text-right text-sm text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
                             </tbody>

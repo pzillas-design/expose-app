@@ -156,18 +156,17 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="p-8 pb-6 flex items-center justify-between shrink-0">
+            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
                 <div>
-                    <h2 className={Typo.H1}>{t('admin_objects')}</h2>
-                    <p className={Typo.Micro}>{t('admin_objects_desc')}</p>
+                    <h2 className="text-base font-bold tracking-tight">{t('admin_objects')}</h2>
+                    <p className="text-xs text-zinc-400 mt-0.5">{t('admin_objects_desc')}</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {selectedIds.size > 0 && (
                         <Button
                             variant="danger"
                             onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
                             icon={<Trash className="w-4 h-4" />}
-                            className="px-4"
                         >
                             {t('delete_selected', { count: selectedIds.size })}
                         </Button>
@@ -177,11 +176,10 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                         disabled={!hasChanges || saving}
                         variant={hasChanges ? 'primary' : 'secondary'}
                         icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                        className="px-6"
                     >
                         {saving ? t('saving') : t('save')}
                     </Button>
-                    <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />} className="shrink-0 whitespace-nowrap px-4">
+                    <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />}>
                         {t('add_stamp')}
                     </Button>
                 </div>
@@ -189,7 +187,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
             <div className="flex-1 overflow-auto">
                 <div style={{ minWidth }} className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-zinc-50/80 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-wider`}>
+                    <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60 text-[11px] font-bold text-zinc-400 uppercase tracking-wider`}>
                         <div className="p-4 text-center"></div>
                         <div className="p-4 flex items-center justify-center">{t('icon_label')}</div>
                         <div className="p-4 border-r border-zinc-100 dark:border-zinc-800 flex items-center gap-2">{t('name_de')}</div>
