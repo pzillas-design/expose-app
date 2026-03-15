@@ -98,29 +98,32 @@ export const adminService = {
         const { data, error } = await query;
         if (error) throw error;
 
-        // Fetch related images for all jobs (if job_id is set)
+        // Batch-fetch profiles + images in parallel
         const jobIds = (data || []).map(j => j.id);
+        const userIds = [...new Set((data || []).map(j => j.user_id).filter(Boolean))];
         let imagesMap: Record<string, any> = {};
+        let profilesMap: Record<string, string> = {};
 
-        if (jobIds.length > 0) {
-            const { data: images } = await supabase
+        await Promise.all([
+            jobIds.length > 0 ? supabase
                 .from('images')
                 .select('job_id, storage_path, width, height')
-                .in('job_id', jobIds);
-
-            // Create a map: job_id -> image
-            if (images) {
-                images.forEach(img => {
-                    if (img.job_id) {
-                        imagesMap[img.job_id] = img;
-                    }
-                });
-            }
-        }
+                .in('job_id', jobIds)
+                .then(({ data: images }) => {
+                    if (images) images.forEach(img => { if (img.job_id) imagesMap[img.job_id] = img; });
+                }) : Promise.resolve(),
+            userIds.length > 0 ? supabase
+                .from('profiles')
+                .select('id, full_name, email')
+                .in('id', userIds)
+                .then(({ data: profiles }) => {
+                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+                }) : Promise.resolve(),
+        ]);
 
         return (data || []).map(job => ({
             id: job.id,
-            userName: job.user_name || 'Unknown',
+            userName: profilesMap[job.user_id] || job.user_name || 'Unknown',
             type: job.type || 'Generation',
             model: job.model || 'unknown', // This already contains 'pro-1k', 'pro-2k' etc from DB
             status: job.status || 'completed',
