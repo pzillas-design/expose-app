@@ -16,6 +16,7 @@ interface GenerationProgressRingProps {
     lang?: string;
     onNavigateToImage?: (id: string) => void;
     onGenerateMore?: (id: string) => void;
+    t?: (key: string) => string;
 }
 
 function calcProgress(startTime: number | undefined, duration: number): number {
@@ -28,7 +29,7 @@ function calcProgress(startTime: number | undefined, duration: number): number {
 
 
 export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
-    generatingImages, lang, onNavigateToImage, onGenerateMore
+    generatingImages, lang, onNavigateToImage, onGenerateMore, t
 }) => {
     const [tick, setTick] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -176,10 +177,10 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                                     <div key={item.id} className="px-4 py-3 flex items-center gap-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0">
                                         <div className="flex-1 min-w-0">
                                             <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                                                {item.title || (isGerman ? 'Ohne Titel' : 'Untitled')}
+                                                {item.title || (t ? t('untitled') : (isGerman ? 'Ohne Titel' : 'Untitled'))}
                                             </div>
                                         </div>
-                                        <Tooltip text={isGerman ? 'Zum Bild' : 'Go to image'}>
+                                        <Tooltip text={t ? t('go_to_image') : (isGerman ? 'Zum Bild' : 'Go to image')}>
                                             <button
                                                 onClick={() => onNavigateToImage?.(item.id)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
@@ -197,9 +198,9 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                                 <div key={item.id} className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0">
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                                            {item.title || (isGerman ? 'Ohne Titel' : 'Untitled')}
+                                            {item.title || (t ? t('untitled') : (isGerman ? 'Ohne Titel' : 'Untitled'))}
                                         </div>
-                                        <Tooltip text={isGerman ? 'Mehr generieren' : 'Generate more'}>
+                                        <Tooltip text={t ? t('generate_more') : (isGerman ? 'Mehr generieren' : 'Generate more')}>
                                             <button
                                                 onClick={() => onGenerateMore?.(item.id)}
                                                 className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"

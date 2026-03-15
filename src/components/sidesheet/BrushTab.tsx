@@ -64,7 +64,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Type className="w-4 h-4" />
-                                <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Text' : 'Text'}</span>
+                                <span className="text-[10px] font-medium">{t('tool_text')}</span>
                             </button>
 
                             <button
@@ -75,7 +75,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Square className="w-4 h-4" />
-                                <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Form' : 'Shape'}</span>
+                                <span className="text-[10px] font-medium">{t('tool_shape')}</span>
                             </button>
 
                             <button
@@ -86,7 +86,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Circle className="w-4 h-4" />
-                                <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Kreis' : 'Circle'}</span>
+                                <span className="text-[10px] font-medium">{t('tool_circle')}</span>
                             </button>
 
                             <button
@@ -97,7 +97,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] hover:bg-white dark:hover:bg-zinc-800 hover:${Theme.Effects.ShadowSm} text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all`}
                             >
                                 <Minus className="w-4 h-4" />
-                                <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Linie' : 'Line'}</span>
+                                <span className="text-[10px] font-medium">{t('tool_line')}</span>
                             </button>
 
                             <div className="w-[1px] h-8 bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
@@ -107,7 +107,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                 className={`flex-1 min-w-[56px] flex flex-col items-center gap-1.5 p-2.5 rounded-[10px] transition-all ${maskTool === 'brush' ? 'bg-white dark:bg-zinc-800 text-orange-500 ' + Theme.Effects.ShadowSm + ' ring-1 ring-black/5 dark:ring-white/5' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-transparent dark:hover:bg-zinc-800'}`}
                             >
                                 <Pen className="w-4 h-4" />
-                                <span className="text-[10px] font-medium">{currentLang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                                <span className="text-[10px] font-medium">{t('tool_brush')}</span>
                             </button>
                         </div>
 
@@ -128,7 +128,7 @@ export const BrushTab: React.FC<BrushTabProps> = ({
                                     <IconButton
                                         icon={<Trash className="w-4 h-4" />}
                                         onClick={onClearBrushStrokes}
-                                        tooltip={currentLang === 'de' ? 'Alle löschen' : 'Clear all'}
+                                        tooltip={t('clear_all_brush')}
                                         className="!rounded-full !w-9 !h-9 !bg-transparent text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0 -mr-1"
                                     />
                                 </div>

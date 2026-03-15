@@ -604,7 +604,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         <>
                                             <div className="space-y-2.5 relative group">
                                                 <div className="flex items-center gap-2">
-                                                    <Eyebrow>{lang === 'de' ? 'Anmerkungen' : 'Annotations'}</Eyebrow>
+                                                    <Eyebrow>{t('annotations_label')}</Eyebrow>
                                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
                                                             onClick={() => {
@@ -629,7 +629,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 onClick={() => onModeChange('brush')}
                                                                 className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
                                                             >
-                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{lang === 'de' ? 'Pinsel' : 'Brush'}</span>
+                                                                <span>{masks.length > 1 ? `${masks.length}× ` : ''}{t('brush_label')}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
@@ -644,8 +644,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     {visibleAnns.filter(a => a.type !== 'mask_path').map(ann => {
                                                         const a = ann as any;
                                                         const label = ann.type === 'shape'
-                                                            ? (a.shapeType === 'rect' ? (lang === 'de' ? 'Rechteck' : 'Rect') : a.shapeType === 'circle' ? (lang === 'de' ? 'Kreis' : 'Circle') : (lang === 'de' ? 'Linie' : 'Line'))
-                                                            : (a.emoji || a.text || (lang === 'de' ? 'Stempel' : 'Stamp'));
+                                                            ? (a.shapeType === 'rect' ? t('shape_rect') : a.shapeType === 'circle' ? t('shape_circle') : t('shape_line'))
+                                                            : (a.emoji || a.text || t('stamp_label'));
                                                         return (
                                                             <button
                                                                 key={ann.id}
@@ -672,7 +672,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {/* Bottom Controls + Generate */}
                                     <div className="mt-6 flex items-center gap-3">
                                         <div className="flex items-center gap-2">
-                                            <Tooltip text={lang === 'de' ? 'Referenzbild' : 'Add Reference'}>
+                                            <Tooltip text={t('add_reference')}>
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
                                                     disabled={selectedImage?.isGenerating}
@@ -726,7 +726,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${isActive ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
                                                                     >
                                                                         {res.toUpperCase()}
-                                                                        <span className="text-[11px] text-zinc-400">{lang === 'de' ? `${cost.toFixed(2)} €` : `$${cost.toFixed(2)}`}</span>
+                                                                        <span className="text-[11px] text-zinc-400">{`${cost.toFixed(2)} €`}</span>
                                                                     </button>
                                                                 );
                                                             })}
@@ -735,8 +735,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 {(['nb2', 'pro'] as const).map(model => {
                                                                     const isModelActive = qualityMode.startsWith(model);
                                                                     const tooltipText = model === 'pro'
-                                                                        ? lang === 'de' ? 'Höchste Qualität' : 'Highest quality'
-                                                                        : lang === 'de' ? 'Schneller & günstiger' : 'Faster & cheaper';
+                                                                        ? t('quality_highest')
+                                                                        : t('quality_faster');
                                                                     return (
                                                                         <Tooltip key={model} text={tooltipText} side="top">
                                                                             <button
@@ -773,7 +773,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         icon={<Play className="w-[18px] h-[18px]" />}
                                                         onClick={handleGenerate}
                                                         variant="primary"
-                                                        tooltip={lang === 'de' ? 'Generieren' : 'Generate'}
+                                                        tooltip={t('generate')}
                                                     />
                                                 ) : (
                                                     <Button
@@ -798,11 +798,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 {/* ── PRESETS Section ── */}
                                 <div className="mt-auto pt-2 text-zinc-800 dark:text-zinc-200">
                                     <div className="py-3">
-                                        <Eyebrow muted>{lang === 'de' ? 'Vorlagen' : 'Presets'}</Eyebrow>
+                                        <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
                                         {displayTemplates.length === 0 && (
-                                            <div className="py-2 px-4 text-[12px] text-zinc-400">{lang === 'de' ? 'Keine Einträge' : 'No entries'}</div>
+                                            <div className="py-2 px-4 text-[12px] text-zinc-400">{t('no_entries')}</div>
                                         )}
                                         {displayTemplates.map((tpl) => (
                                             <button
@@ -822,7 +822,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 setEditingTemplate(null);
                                                 setIsPresetModalOpen(true);
                                             }}
-                                            tooltip={lang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets'}
+                                            tooltip={t('edit_presets')}
                                             variant="ghost"
                                         />
                                     </div>

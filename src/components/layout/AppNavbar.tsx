@@ -164,10 +164,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen]);
 
     const isDetail = mode === 'detail';
-    const isGerman = lang === 'de';
 
     const balanceDisplay = user && displayCredits !== null && (
-        <Tooltip text={isGerman ? 'Guthaben' : 'Balance'}>
+        <Tooltip text={t('balance')}>
             <button
                 onClick={onOpenCredits}
                 className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
@@ -183,6 +182,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             lang={lang}
             onNavigateToImage={onNavigateToImage}
             onGenerateMore={onGenerateMoreById}
+            t={t}
         />
     );
 
@@ -206,14 +206,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         onClick={() => setIsCreateOpen(!isCreateOpen)}
                         variant="ghost"
                         active={isCreateOpen}
-                        tooltip={isGerman ? 'Erstellen' : 'Create'}
+                        tooltip={t('nav_create')}
                     />
                     {isCreateOpen && (
                         <div className="absolute top-full mt-2 left-0 z-50">
                             <DropdownMenu
                                 items={[
-                                    { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                    { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
+                                    { label: t('nav_generate_new'), icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                    { label: t('nav_upload'), icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
                                 ]}
                             />
                         </div>
@@ -227,7 +227,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const centerContent = isSelectMode ? (
         <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-400 tabular-nums">
-            {selectedCount} {isGerman ? (selectedCount === 1 ? 'Bild ausgewählt' : 'Bilder ausgewählt') : (selectedCount === 1 ? 'image selected' : 'images selected')}
+            {selectedCount} {selectedCount === 1 ? t('image_selected_singular') : t('images_selected_plural')}
         </span>
     ) : isDetail && detailInfo ? (
         <div className="flex items-center gap-1.5 relative" ref={detailMenuRef}>
@@ -240,16 +240,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     onClick={() => setIsDetailMenuOpen(p => !p)}
                     variant="ghost"
                     active={isDetailMenuOpen}
-                    tooltip={isGerman ? 'Menü' : 'Menu'}
+                    tooltip={t('nav_menu')}
                 />
                 {isDetailMenuOpen && (
                     <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
                         <DropdownMenu
                             items={[
-                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
+                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
                     </div>
@@ -280,10 +280,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full mt-2 right-0 z-50">
                         <DropdownMenu
                             items={[
-                                { label: isGerman ? 'Herunterladen' : 'Download', icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                ...(detailHasPrompt ? [{ label: isGerman ? 'Mehr generieren' : 'Generate more', icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: isGerman ? 'Info' : 'Info', onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: isGerman ? 'Löschen' : 'Delete', icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
+                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
                     </div>
@@ -295,7 +295,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     icon={<Download className="w-[18px] h-[18px]" />}
                     onClick={onDetailDownload}
                     variant="ghost"
-                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                    tooltip={t('nav_download')}
                 />
             </span>
             {detailHasPrompt && (
@@ -304,7 +304,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         icon={<Repeat className="w-[18px] h-[18px]" />}
                         onClick={onDetailRegenerate}
                         variant="ghost"
-                        tooltip={isGerman ? 'Mehr generieren' : 'Generate more'}
+                        tooltip={t('generate_more')}
                     />
                 </span>
             )}
@@ -313,7 +313,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     icon={<PanelRight className="w-[18px] h-[18px]" />}
                     onClick={onToggleSideSheet}
                     variant="ghost"
-                    tooltip={isGerman ? 'Seitenleiste' : 'Sidebar'}
+                    tooltip={t('nav_sidebar')}
                 />
             </span>
         </div>
@@ -324,10 +324,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     icon={<Download className="w-[18px] h-[18px]" />}
                     onClick={onDownloadSelected}
                     variant="ghost"
-                    tooltip={isGerman ? 'Herunterladen' : 'Download'}
+                    tooltip={t('nav_download')}
                 />
             )}
-            <Tooltip text={isGerman ? 'Löschen' : 'Delete'}>
+            <Tooltip text={t('nav_delete')}>
                 <button
                     onClick={onDeleteSelected}
                     className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
@@ -337,7 +337,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </Tooltip>
             {!isSideSheetVisible && (
                 <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
-                    {isGerman ? 'Bearbeiten' : 'Edit'}
+                    {t('nav_edit')}
                 </Button>
             )}
         </div>
@@ -358,14 +358,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             onClick={() => setIsCreateOpen(!isCreateOpen)}
                             variant="ghost"
                             active={isCreateOpen}
-                            tooltip={isGerman ? 'Erstellen' : 'Create'}
+                            tooltip={t('nav_create')}
                         />
                         {isCreateOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
                                     items={[
-                                        { label: isGerman ? 'Neues Bild generieren' : 'Generate new image', icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                        { label: isGerman ? 'Hochladen' : 'Upload', icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
+                                        { label: t('nav_generate_new'), icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
+                                        { label: t('nav_upload'), icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
                                     ]}
                                 />
                             </div>
@@ -378,16 +378,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             onClick={() => setIsGridMenuOpen(p => !p)}
                             variant="ghost"
                             active={isGridMenuOpen}
-                            tooltip={isGerman ? 'Menü' : 'Menu'}
+                            tooltip={t('nav_menu')}
                         />
                         {isGridMenuOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
                                     items={[
-                                        { label: isGerman ? 'Einstellungen' : 'Settings', icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                        { label: isGerman ? 'Auswählen' : 'Select', icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: isGerman ? 'Kontakt' : 'Contact', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
-                                        { label: isGerman ? 'Abmelden' : 'Sign out', onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                        { label: t('nav_settings'), icon: <Settings className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                        { label: t('nav_select'), icon: <CheckSquare className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: t('nav_contact'), separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                        { label: t('nav_sign_out'), onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
                             </div>

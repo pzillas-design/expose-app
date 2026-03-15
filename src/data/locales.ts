@@ -381,6 +381,104 @@ export const translations = {
     shared_template_label: "Shared Template",
     shared_template_desc: "Use this exclusive template to take your images to the next level directly in exposé.",
     shared_template_cta: "Add Template",
+
+    // AppNavbar selection count
+    image_selected_singular: "image selected",
+    images_selected_plural: "images selected",
+
+    // GenerationProgressRing
+    untitled: "Untitled",
+    go_to_image: "Go to image",
+    generate_more: "Generate more",
+
+    // SideSheet annotation chips
+    annotations_label: "Annotations",
+    brush_label: "Brush",
+    shape_rect: "Rect",
+    shape_circle: "Circle",
+    shape_line: "Line",
+    stamp_label: "Stamp",
+    add_reference: "Add Reference",
+    quality_highest: "Highest quality",
+    quality_faster: "Faster & cheaper",
+    presets_label: "Presets",
+    no_entries: "No entries",
+    edit_presets: "Edit Presets",
+
+    // CropModal
+    crop_title: "Crop",
+    crop_subtitle: "Adjust the image section.",
+
+    // FeedPage
+    select_images_to_edit: "Select images to edit",
+    n_download: "Download {{n}}",
+
+    // SettingsModal
+    storage_section: "Storage",
+    images_label: "images",
+    notifications_label: "Notifications",
+    notifications_active: "Triggered after each generation",
+    notifications_blocked: "Blocked in browser",
+    notifications_disabled: "Currently disabled",
+    notifications_ask: "Permission will be requested when enabled",
+    notifications_allow_in_browser: "Allow in browser settings",
+    auto_delete_oldest: "Auto-delete oldest",
+    auto_delete_desc: "Deletes oldest image when limit is reached",
+
+    // DetailPage
+    open_editing_panel: "Open editing panel",
+
+    // BrushTab tool labels
+    tool_text: "Text",
+    tool_shape: "Shape",
+    tool_circle: "Circle",
+    tool_line: "Line",
+    tool_brush: "Brush",
+    clear_all_brush: "Clear all",
+
+    // ObjectsTab
+    manage_stickers: "Manage Stickers",
+    add_new_sticker: "Add New Sticker",
+    no_stickers_yet: "No stickers yet.",
+    create_first_sticker: "Create your first sticker",
+    edit_stickers_btn: "Edit Stickers",
+    sticker_create_tooltip: "Create Sticker",
+
+    // ImageInfoModal
+    copy_prompt_tooltip: "Copy prompt",
+
+    // PromptTab
+    select_model: "Select model",
+    please_enter_prompt: "Please enter a prompt.",
+    reference_image_btn: "Reference Image",
+    annotation_instruction: "Interpret the visual annotations. They show what and where to change in the original image ..",
+    reference_image_instruction: "Use this image as inspiration ..",
+    clear_all_annotations: "Clear all annotations",
+    clear_all_annotations_desc: "Do you really want to remove all annotations from the canvas? This action cannot be undone.",
+
+    // AppNavbar
+    nav_create: "Create",
+    nav_generate_new: "Generate new image",
+    nav_upload: "Upload",
+    nav_menu: "Menu",
+    nav_settings: "Settings",
+    nav_select: "Select",
+    nav_contact: "Contact",
+    nav_sign_out: "Sign out",
+    nav_download: "Download",
+    nav_more: "More",
+    nav_sidebar: "Sidebar",
+    nav_edit: "Edit",
+    nav_delete: "Delete",
+    nav_info: "Info",
+
+    // PresetLibrary
+    presets_recent: "Recent",
+    presets_recently_used: "Recently used",
+    presets_options: "Options",
+    presets_edit_tooltip: "Edit template",
+    preset_edit_presets: "Edit Presets",
+    no_entries_available: "No entries available yet.",
   },
   de: {
     // General
@@ -767,6 +865,104 @@ export const translations = {
     shared_template_invalid: "Dieser Link scheint ungültig zu sein oder die Vorlage wurde entfernt.",
     back_to_home: "Zur Startseite",
     learn_more_expose: "Erfahre mehr über exposé",
+
+    // AppNavbar selection count
+    image_selected_singular: "Bild ausgewählt",
+    images_selected_plural: "Bilder ausgewählt",
+
+    // GenerationProgressRing
+    untitled: "Ohne Titel",
+    go_to_image: "Zum Bild",
+    generate_more: "Mehr generieren",
+
+    // SideSheet annotation chips
+    annotations_label: "Anmerkungen",
+    brush_label: "Pinsel",
+    shape_rect: "Rechteck",
+    shape_circle: "Kreis",
+    shape_line: "Linie",
+    stamp_label: "Stempel",
+    add_reference: "Referenzbild",
+    quality_highest: "Höchste Qualität",
+    quality_faster: "Schneller & günstiger",
+    presets_label: "Vorlagen",
+    no_entries: "Keine Einträge",
+    edit_presets: "Vorlagen bearbeiten",
+
+    // CropModal
+    crop_title: "Zuschneiden",
+    crop_subtitle: "Passe den Bildausschnitt an.",
+
+    // FeedPage
+    select_images_to_edit: "Bilder zum Bearbeiten auswählen",
+    n_download: "{{n}} herunterladen",
+
+    // SettingsModal
+    storage_section: "Speicher",
+    images_label: "Bilder",
+    notifications_label: "Benachrichtigungen",
+    notifications_active: "Wird nach jeder Generierung ausgelöst",
+    notifications_blocked: "Im Browser gesperrt",
+    notifications_disabled: "Aktuell deaktiviert",
+    notifications_ask: "Erlaubnis wird beim Aktivieren angefragt",
+    notifications_allow_in_browser: "In den Browser-Einstellungen erlauben",
+    auto_delete_oldest: "Ältestes automatisch löschen",
+    auto_delete_desc: "Löscht das älteste Bild wenn das Limit erreicht wird",
+
+    // DetailPage
+    open_editing_panel: "Bearbeitungspanel öffnen",
+
+    // BrushTab tool labels
+    tool_text: "Text",
+    tool_shape: "Form",
+    tool_circle: "Kreis",
+    tool_line: "Linie",
+    tool_brush: "Pinsel",
+    clear_all_brush: "Alle löschen",
+
+    // ObjectsTab
+    manage_stickers: "Sticker verwalten",
+    add_new_sticker: "Neuen Sticker hinzufügen",
+    no_stickers_yet: "Noch keine Sticker vorhanden.",
+    create_first_sticker: "Erstelle deinen ersten Sticker",
+    edit_stickers_btn: "Sticker bearbeiten",
+    sticker_create_tooltip: "Sticker erstellen",
+
+    // ImageInfoModal
+    copy_prompt_tooltip: "Prompt kopieren",
+
+    // PromptTab
+    select_model: "Modell auswählen",
+    please_enter_prompt: "Bitte gib einen Prompt ein.",
+    reference_image_btn: "Referenzbild",
+    annotation_instruction: "Setze die Anmerkungen im Bild fotorealistisch um.",
+    reference_image_instruction: "Nutze dieses Bild als Inspiration ..",
+    clear_all_annotations: "Alle Anmerkungen löschen",
+    clear_all_annotations_desc: "Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
+
+    // AppNavbar
+    nav_create: "Erstellen",
+    nav_generate_new: "Neues Bild generieren",
+    nav_upload: "Hochladen",
+    nav_menu: "Menü",
+    nav_settings: "Einstellungen",
+    nav_select: "Auswählen",
+    nav_contact: "Kontakt",
+    nav_sign_out: "Abmelden",
+    nav_download: "Herunterladen",
+    nav_more: "Mehr",
+    nav_sidebar: "Seitenleiste",
+    nav_edit: "Bearbeiten",
+    nav_delete: "Löschen",
+    nav_info: "Info",
+
+    // PresetLibrary
+    presets_recent: "Zuletzt",
+    presets_recently_used: "Zuletzt verwendet",
+    presets_options: "Optionen",
+    presets_edit_tooltip: "Vorlage bearbeiten",
+    preset_edit_presets: "Vorlagen bearbeiten",
+    no_entries_available: "Noch keine Einträge vorhanden.",
 
     // Home Page
     home_hero_cta: "Projekt starten",

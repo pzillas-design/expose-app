@@ -55,7 +55,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
                             {t('prompt') || 'Prompt'}
                         </span>
-                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
+                        <Tooltip text={t('copy_prompt_tooltip')}>
                             <div
                                 onClick={handleCopyPrompt}
                                 className={`
@@ -137,7 +137,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
 
                     {/* Model */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model') || 'Modell'}</span>
+                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model')}</span>
                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                         {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
                             image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
@@ -172,7 +172,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         >
                             <RotateCcw className="w-4 h-4 text-zinc-400" />
                             <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                {t('ctx_create_variations') || 'Mehr generieren'}
+                                {t('ctx_create_variations')}
                             </span>
                         </Button>
                     </div>

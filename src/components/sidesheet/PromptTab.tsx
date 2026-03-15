@@ -85,9 +85,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 px', price: '0.10 €' },
         { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 px', price: '0.25 €' },
         { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 px', price: '0.50 €' },
-        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: '1024 px · schnell', price: '0.07 €' },
-        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: '2048 px · schnell', price: '0.17 €' },
-        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: '4096 px · schnell', price: '0.35 €' },
+        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.07 €' },
+        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.17 €' },
+        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.35 €' },
     ];
 
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
@@ -160,9 +160,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const startEditingAnnotationLabel = (annotationId: string) => {
         setIsEditingAnnotationLabel(annotationId);
-        const defaultLabel = currentLang === 'de'
-            ? "Setze die Anmerkungen im Bild fotorealistisch um."
-            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+        const defaultLabel = t('annotation_instruction');
         setAnnotationLabelValue(annotationLabelValue || defaultLabel);
     };
 
@@ -258,9 +256,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         let finalOutput = trimmedPrompt;
 
         if (hasAnnotations) {
-            const defaultLabel = currentLang === 'de'
-                ? "Setze die Anmerkungen im Bild fotorealistisch um."
-                : "Interpret the visual annotations. They show what and where to change in the original image ..";
+            const defaultLabel = t('annotation_instruction');
             const displayLabel = annotationLabelValue || defaultLabel;
             if (finalOutput) finalOutput += "\n\n";
             finalOutput += displayLabel;
@@ -295,7 +291,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const handleDoGenerate = () => {
         if (!prompt?.trim() && annotations.length === 0) {
-            showToast(currentLang === 'de' ? 'Bitte gib einen Prompt ein.' : 'Please enter a prompt.', 'error');
+            showToast(t('please_enter_prompt'), 'error');
             return;
         }
         onGenerate(getFinalPrompt(), prompt, activeTemplate?.id, controlValues);
@@ -428,21 +424,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
                         const count = activeAnns.length;
 
-                        const defaultLabel = currentLang === 'de'
-                            ? "Setze die Anmerkungen im Bild fotorealistisch um."
-                            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+                        const defaultLabel = t('annotation_instruction');
 
                         return (
                             <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
                                 <div className="absolute top-2 right-2 z-10">
-                                    <Tooltip text={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}>
+                                    <Tooltip text={t('clear_all_annotations')}>
                                         <button
                                             onClick={async () => {
                                                 const result = await confirm({
-                                                    title: currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?',
-                                                    description: currentLang === 'de'
-                                                        ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
-                                                        : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
+                                                    title: t('clear_all_annotations'),
+                                                    description: t('clear_all_annotations_desc'),
                                                     confirmLabel: t('delete'),
                                                     cancelLabel: t('cancel'),
                                                     variant: 'danger'
@@ -502,7 +494,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                             `}
                                         >
                                             <span className="font-medium">
-                                                {count} {currentLang === 'de' ? 'Anmerkungen' : 'Annotations'}
+                                                {count} {t('annotations_label')}
                                             </span>
                                             <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                                         </button>
@@ -513,7 +505,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     })()}
 
                     {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                        const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration .." : "Use this image as inspiration ..";
+                        const defaultText = t('reference_image_instruction');
                         const hasText = ann.text && ann.text.trim().length > 0;
                         const textValue = hasText ? ann.text : defaultText;
                         const isEditing = editingId === ann.id;
@@ -594,7 +586,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
                             tooltip={t('tt_upload_ref')}
                         >
-                            <span>{currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}</span>
+                            <span>{t('reference_image_btn')}</span>
                         </Button>
                         <input
                             type="file"
@@ -626,7 +618,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {/* ABSOLUTE SETTINGS BUTTON INSIDE GENERATE */}
                                 {!selectedImage.isGenerating && (
                                     <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
-                                        <Tooltip text={currentLang === 'de' ? 'Modell auswählen' : 'Select model'} side="bottom">
+                                        <Tooltip text={t('select_model')} side="bottom">
                                             <div
                                                 onClick={(e) => {
                                                     e.stopPropagation();

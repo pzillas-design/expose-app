@@ -80,14 +80,14 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         <div className={`flex flex-col relative w-full`}>
             {variant === 'vertical' ? (
                 <SidebarAccordion
-                    title={t('stamps_label') || (currentLang === 'de' ? 'Sticker' : 'Stickers')}
+                    title={t('stamps_label')}
                     isExpanded={isExpanded}
                     onToggle={() => setIsExpanded(!isExpanded)}
                     onAdd={() => setIsModalOpen(true)}
                     isEmpty={allItems.length === 0}
-                    emptyText={t('no_stamps') || (currentLang === 'de' ? 'Keine Sticker gefunden' : 'No stickers found')}
+                    emptyText={t('no_stamps')}
                     hasTopBorder={false}
-                    addTooltip={currentLang === 'de' ? 'Sticker erstellen' : 'Create Sticker'}
+                    addTooltip={t('sticker_create_tooltip')}
                 >
 
                     {allItems.map((item, idx) => (
@@ -107,7 +107,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }}
                         className="shrink-0 h-10 w-10 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center transition-all group"
-                        title={currentLang === 'de' ? 'Sticker bearbeiten' : 'Edit Stickers'}
+                        title={t('edit_stickers_btn')}
                     >
                         <Pen className="w-4 h-4 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
                     </button>
@@ -136,7 +136,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
 
                     {allItems.length === 0 && (
                         <span className="text-sm text-zinc-500 px-4 whitespace-nowrap">
-                            {currentLang === 'de' ? 'Erstelle deinen ersten Sticker' : 'Create your first sticker'}
+                            {t('create_first_sticker')}
                         </span>
                     )}
                 </div>
@@ -184,7 +184,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-900">
                             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                                {currentLang === 'de' ? 'Sticker verwalten' : 'Manage Stickers'}
+                                {t('manage_stickers')}
                             </h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-full p-1.5">
                                 <X className="w-4 h-4" />
@@ -216,7 +216,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                 ))}
                                 {allItems.length === 0 && (
                                     <div className="px-4 py-8 text-center text-sm text-zinc-500">
-                                        {currentLang === 'de' ? 'Noch keine Sticker vorhanden.' : 'No stickers yet.'}
+                                        {t('no_stickers_yet')}
                                     </div>
                                 )}
                             </div>
@@ -224,7 +224,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                             {/* Add New Form */}
                             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900 flex flex-col gap-3">
                                 <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider pl-1">
-                                    {currentLang === 'de' ? 'Neuen Sticker hinzufügen' : 'Add New Sticker'}
+                                    {t('add_new_sticker')}
                                 </label>
                                 <div className="flex gap-2">
                                     <input

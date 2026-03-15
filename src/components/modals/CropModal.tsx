@@ -160,8 +160,8 @@ export const CropModal: React.FC<CropModalProps> = ({
                             <CropIcon className="w-5 h-5" />
                         </div>
                         <div>
-                            <span className={`${Typo.H2} block`}>Zuschneiden</span>
-                            <span className={Typo.Micro}>Passe den Bildausschnitt an.</span>
+                            <span className={`${Typo.H2} block`}>{t('crop_title')}</span>
+                            <span className={Typo.Micro}>{t('crop_subtitle')}</span>
                         </div>
                     </div>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('cancel')} />

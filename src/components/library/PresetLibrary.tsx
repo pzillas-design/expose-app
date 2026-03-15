@@ -56,12 +56,12 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
             {/* PRESETS SECTION */}
             <div className="relative" ref={menuRef}>
                 <SidebarAccordion
-                    title={showRecent ? (currentLang === 'de' ? 'Zuletzt' : 'Recent') : (currentLang === 'de' ? 'Vorlagen' : t('presets_header'))}
+                    title={showRecent ? t('presets_recent') : t('presets_header')}
                     hasTopBorder={false}
                     onAdd={() => setIsMenuOpen(!isMenuOpen)}
-                    addTooltip={currentLang === 'de' ? 'Optionen' : 'Options'}
+                    addTooltip={t('presets_options')}
                     isEmpty={displayTemplates.length === 0}
-                    emptyText={currentLang === 'de' ? 'Noch keine Einträge vorhanden.' : 'No entries available yet.'}
+                    emptyText={t('no_entries_available')}
                 >
                     {displayTemplates.map(t => (
                         <SidebarAccordionItem
@@ -72,7 +72,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                                 e.stopPropagation();
                                 onRequestEdit(t);
                             }}
-                            menuTooltip={currentLang === 'de' ? 'Vorlage bearbeiten' : 'Edit template'}
+                            menuTooltip={t('presets_edit_tooltip')}
                         />
                     ))}
                 </SidebarAccordion>
@@ -82,17 +82,17 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
                         <DropdownMenu
                             items={[
                                 {
-                                    label: currentLang === 'de' ? 'Vorlagen' : 'Presets',
+                                    label: t('presets_header'),
                                     icon: !showRecent ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
                                     onClick: () => { setShowRecent(false); setIsMenuOpen(false); }
                                 },
                                 {
-                                    label: currentLang === 'de' ? 'Zuletzt verwendet' : 'Recently used',
+                                    label: t('presets_recently_used'),
                                     icon: showRecent ? <Check className="w-4 h-4" /> : <div className="w-4 h-4" />,
                                     onClick: () => { setShowRecent(true); setIsMenuOpen(false); }
                                 },
                                 {
-                                    label: currentLang === 'de' ? 'Vorlagen bearbeiten' : 'Edit Presets',
+                                    label: t('preset_edit_presets'),
                                     onClick: () => { setIsMenuOpen(false); onRequestCreate(); },
                                     separator: true
                                 }

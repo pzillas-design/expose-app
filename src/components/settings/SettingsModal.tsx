@@ -75,9 +75,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         { id: 'pro-1k', label: '🍌pro · 1K', desc: '1024 px', price: '0.10 €' },
         { id: 'pro-2k', label: '🍌pro · 2K', desc: '2048 px', price: '0.25 €' },
         { id: 'pro-4k', label: '🍌pro · 4K', desc: '4096 px', price: '0.50 €' },
-        { id: 'nb2-1k', label: '🍌v2 · 1K', desc: '1024 px · schnell', price: '0.07 €' },
-        { id: 'nb2-2k', label: '🍌v2 · 2K', desc: '2048 px · schnell', price: '0.17 €' },
-        { id: 'nb2-4k', label: '🍌v2 · 4K', desc: '4096 px · schnell', price: '0.35 €' },
+        { id: 'nb2-1k', label: '🍌v2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.07 €' },
+        { id: 'nb2-2k', label: '🍌v2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.17 €' },
+        { id: 'nb2-4k', label: '🍌v2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.35 €' },
     ];
 
     const THEMES = [
@@ -260,20 +260,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         {/* Notifications */}
                         {isNotificationSupported() && (() => {
                             const subtitle = notificationsEnabled
-                                ? 'Wird nach jeder Generierung ausgelöst'
+                                ? t('notifications_active')
                                 : notificationPermission === 'denied'
-                                    ? 'Im Browser gesperrt'
+                                    ? t('notifications_blocked')
                                     : notificationPermission === 'granted'
-                                        ? 'Aktuell deaktiviert'
-                                        : 'Erlaubnis wird beim Aktivieren angefragt';
+                                        ? t('notifications_disabled')
+                                        : t('notifications_ask');
 
                             return (
                                 <div className={`${card} p-4`}>
                                     <div className="flex items-center justify-between gap-4">
                                         <div className="min-w-0">
-                                            <p className="text-sm text-zinc-900 dark:text-white">Benachrichtigungen</p>
+                                            <p className="text-sm text-zinc-900 dark:text-white">{t('notifications_label')}</p>
                                             <p className={`text-xs mt-0.5 transition-colors ${showPermissionHint ? 'text-red-500' : 'text-zinc-400'}`}>
-                                                {showPermissionHint ? 'In den Browser-Einstellungen erlauben' : subtitle}
+                                                {showPermissionHint ? t('notifications_allow_in_browser') : subtitle}
                                             </p>
                                         </div>
                                         <button
@@ -291,13 +291,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* ── Storage ── */}
                 <section>
-                    <SectionLabel>{lang === 'de' ? 'Speicher' : 'Storage'}</SectionLabel>
+                    <SectionLabel>{t('storage_section')}</SectionLabel>
                     <div className={`${card} p-4 space-y-3`}>
                         {/* Progress bar */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-sm text-zinc-900 dark:text-white">
-                                    {imageCount} / {imageLimit} {lang === 'de' ? 'Bilder' : 'images'}
+                                    {imageCount} / {imageLimit} {t('images_label')}
                                 </p>
                                 <p className="text-xs text-zinc-400">
                                     {Math.round((imageCount / imageLimit) * 100)}%
@@ -321,12 +321,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="flex items-center justify-between gap-4">
                             <div className="min-w-0">
                                 <p className="text-sm text-zinc-900 dark:text-white">
-                                    {lang === 'de' ? 'Ältestes automatisch löschen' : 'Auto-delete oldest'}
+                                    {t('auto_delete_oldest')}
                                 </p>
                                 <p className="text-xs text-zinc-400 mt-0.5">
-                                    {lang === 'de'
-                                        ? 'Löscht das älteste Bild wenn das Limit erreicht wird'
-                                        : 'Deletes oldest image when limit is reached'}
+                                    {t('auto_delete_desc')}
                                 </p>
                             </div>
                             <button

@@ -236,12 +236,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             const toDelete = isSelectMode && selectedIdSet.has(img.id) ? selectedIds : [img.id];
 
             const confirmed = await confirm({
-                title: toDelete.length > 1 ? (state?.lang === 'de' ? 'Bilder löschen' : 'Delete images') : (state?.lang === 'de' ? 'Bild löschen' : 'Delete image'),
-                description: state?.lang === 'de'
-                    ? `Möchtest du wirklich ${toDelete.length} Bild(er) löschen?`
-                    : `Do you really want to delete ${toDelete.length} image(s)?`,
-                confirmLabel: state?.lang === 'de' ? 'LÖSCHEN' : 'DELETE',
-                cancelLabel: state?.lang === 'de' ? 'ABBRECHEN' : 'CANCEL',
+                title: toDelete.length > 1 ? (t?.('delete_confirm_multi') || 'Delete images') : (t?.('delete_confirm_single') || 'Delete image'),
+                description: toDelete.length > 1 ? (t?.('delete_confirm_multi') || `Do you really want to delete ${toDelete.length} image(s)?`) : (t?.('delete_confirm_single') || `Do you really want to delete ${toDelete.length} image(s)?`),
+                confirmLabel: (t?.('delete') || 'DELETE').toUpperCase(),
+                cancelLabel: (t?.('cancel') || 'CANCEL').toUpperCase(),
                 variant: 'danger'
             });
             if (confirmed && actions?.handleDeleteImage) {
@@ -303,7 +301,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                         <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
                             <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                             <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
-                                {t?.('drop_files_here') || 'Dateien hier ablegen'}
+                                {t?.('drop_files_here') || 'Drop files here'}
                             </p>
                         </div>
                     </div>
@@ -339,10 +337,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                             <div className="flex flex-col items-center gap-8">
                                 <div className="space-y-4">
                                     <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
-                                        {t?.('welcome_title') || (state?.lang === 'de' ? 'Willkommen bei exposé' : 'Welcome to exposé')}
+                                        {t?.('welcome_title') || 'Welcome to exposé'}
                                     </h1>
                                     <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
-                                        {t?.('welcome_empty_desc') || (state?.lang === 'de' ? 'Laden Sie Fotos zum Bearbeiten hoch oder generieren Sie etwas Neues.' : 'Upload photos to edit or generate something new.')}
+                                        {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
                                     </p>
                                 </div>
                             </div>
@@ -354,7 +352,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                     onClick={triggerUpload}
                                     icon={<Upload className="w-5 h-5" />}
                                 >
-                                    {t?.('action_upload') || 'HOCHLADEN'}
+                                    {t?.('action_upload') || 'Upload'}
                                 </Button>
                                 <Button
                                     variant="secondary"
@@ -362,7 +360,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                     onClick={onCreateNew}
                                     icon={<Plus className="w-5 h-5" />}
                                 >
-                                    {t?.('action_generate') || 'BILD GENERIEREN'}
+                                    {t?.('action_generate') || 'Generate image'}
                                 </Button>
                             </div>
                         </div>
@@ -382,7 +380,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-black dark:text-white"
                     >
                         <Download className="w-4 h-4" />
-                        {selectedIds.length > 1 ? `${selectedIds.length} herunterladen` : 'Herunterladen'}
+                        {selectedIds.length > 1 ? (t?.('n_download') || 'Download {{n}}').replace('{{n}}', String(selectedIds.length)) : (t?.('nav_download') || 'Download')}
                     </button>
                     <div className={`w-px h-5 ${Theme.Colors.Border} bg-current opacity-20`} />
                     <button
@@ -447,7 +445,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-500 gap-3">
                             <Layers className="w-8 h-8 text-zinc-300 dark:text-zinc-700" />
                             <p className="text-sm font-medium">
-                                {state?.lang === 'de' ? 'Wählen Sie Bilder zum Bearbeiten aus' : 'Select images to edit'}
+                                {t?.('select_images_to_edit') || 'Select images to edit'}
                             </p>
                         </div>
                     )}

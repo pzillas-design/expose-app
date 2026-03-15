@@ -348,20 +348,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <div className="flex items-center gap-2 pointer-events-auto">
                                     {!isSideSheetVisible && !img.isGenerating && (
-                                        <Tooltip text={state.currentLang === 'de' ? 'Bearbeitungspanel öffnen' : 'Open editing panel'}>
+                                        <Tooltip text={t('open_editing_panel')}>
                                             <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
-                                                {state.currentLang === 'de' ? 'Bearbeiten' : 'Edit'}
+                                                {t('nav_edit')}
                                             </button>
                                         </Tooltip>
                                     )}
                                     {img.generationPrompt && (
-                                        <Tooltip text={state.currentLang === 'de' ? 'Mehr generieren' : 'Generate more'}>
+                                        <Tooltip text={t('generate_more')}>
                                             <button
                                                 onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
                                                 className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
-                                                {state.currentLang === 'de' ? 'Mehr' : 'More'}
+                                                {t('nav_more')}
                                             </button>
                                         </Tooltip>
                                     )}
