@@ -68,9 +68,10 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     }, [ratioW, ratioH]);
 
     const handleGenerate = useCallback((prompt: string) => {
+        // onCreateNew calls selectAndSnap(newId) which navigates directly to /image/newId
+        // — no need to call onBack() first (would cause a double-jump via /)
         onCreateNew(prompt, state.qualityMode || 'pro-2k', selectedRatio, []);
-        onBack();
-    }, [onCreateNew, onBack, state.qualityMode, selectedRatio]);
+    }, [onCreateNew, state.qualityMode, selectedRatio]);
 
     const triggerUpload = () => uploadRef.current?.click();
 
