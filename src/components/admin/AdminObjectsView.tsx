@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash, GripVertical, Loader2, Image as ImageIcon, Check } from 'lucide-react';
 import { TranslationFunction } from '@/types';
-import { Typo, Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
+import { Button, TableInput, IconButton } from '@/components/ui/DesignSystem';
+import { AdminViewHeader } from './AdminViewHeader';
 import { adminService } from '@/services/adminService';
 import { generateId } from '@/utils/ids';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
@@ -156,34 +157,25 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
-                <div>
-                    <h2 className="text-base font-bold tracking-tight">{t('admin_objects')}</h2>
-                    <p className="text-xs text-zinc-400 mt-0.5">{t('admin_objects_desc')}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    {selectedIds.size > 0 && (
-                        <Button
-                            variant="danger"
-                            onClick={() => setDeleteModal({ isOpen: true, isBulk: true })}
-                            icon={<Trash className="w-4 h-4" />}
-                        >
-                            {t('delete_selected', { count: selectedIds.size })}
+            <AdminViewHeader
+                title={t('admin_objects')}
+                description={t('admin_objects_desc')}
+                actions={
+                    <>
+                        {selectedIds.size > 0 && (
+                            <Button variant="danger" onClick={() => setDeleteModal({ isOpen: true, isBulk: true })} icon={<Trash className="w-4 h-4" />}>
+                                {t('delete_selected', { count: selectedIds.size })}
+                            </Button>
+                        )}
+                        <Button onClick={handleSave} disabled={!hasChanges || saving} variant={hasChanges ? 'primary' : 'secondary'} icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}>
+                            {saving ? t('saving') : t('save')}
                         </Button>
-                    )}
-                    <Button
-                        onClick={handleSave}
-                        disabled={!hasChanges || saving}
-                        variant={hasChanges ? 'primary' : 'secondary'}
-                        icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                    >
-                        {saving ? t('saving') : t('save')}
-                    </Button>
-                    <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />}>
-                        {t('add_stamp')}
-                    </Button>
-                </div>
-            </div>
+                        <Button onClick={handleAddItem} icon={<Plus className="w-4 h-4" />}>
+                            {t('add_stamp')}
+                        </Button>
+                    </>
+                }
+            />
 
             <div className="flex-1 overflow-auto">
                 <div style={{ minWidth }} className="divide-y divide-zinc-100 dark:divide-zinc-800">

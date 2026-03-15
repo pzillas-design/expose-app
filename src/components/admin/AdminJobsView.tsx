@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, ChevronDown, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { TranslationFunction } from '@/types';
-import { Typo, Input, Button } from '@/components/ui/DesignSystem';
+import { Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminJobDetail } from './AdminJobDetail';
+import { AdminViewHeader } from './AdminViewHeader';
 
 interface AdminJobsViewProps {
     t: TranslationFunction;
@@ -57,18 +58,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
-                <h2 className="text-base font-bold tracking-tight">{t('admin_jobs')}</h2>
-                <div className="relative w-56">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-                    <Input
-                        className="pl-9 h-9 text-sm bg-zinc-50 dark:bg-zinc-800/60 border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
-                        placeholder={t('search')}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-            </div>
+            <AdminViewHeader
+                title={t('admin_jobs')}
+                search={{ value: search, onChange: setSearch, placeholder: t('search') }}
+            />
 
             <div className="flex-1 min-h-0 overflow-auto">
                 <div className="min-w-[900px] flex flex-col">

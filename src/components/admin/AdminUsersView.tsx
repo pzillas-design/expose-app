@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { AdminUser, TranslationFunction } from '@/types';
-import { Typo, Input } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminUserDetail } from './AdminUserDetail';
+import { AdminViewHeader } from './AdminViewHeader';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 
@@ -94,18 +94,10 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="px-8 lg:px-10 pt-8 pb-5 flex items-center justify-between shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
-                <h2 className="text-base font-bold tracking-tight">{t('admin_users')}</h2>
-                <div className="relative w-56">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
-                    <Input
-                        className="pl-9 h-9 text-sm bg-zinc-50 dark:bg-zinc-800/60 border-transparent focus:border-zinc-200 dark:focus:border-zinc-700"
-                        placeholder={t('search')}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-            </div>
+            <AdminViewHeader
+                title={t('admin_users')}
+                search={{ value: search, onChange: setSearch, placeholder: t('search') }}
+            />
 
             <div className="flex-1 min-h-0 overflow-auto">
                 <div className="min-w-[900px]">

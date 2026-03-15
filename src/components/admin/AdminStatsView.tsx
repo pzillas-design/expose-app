@@ -7,6 +7,7 @@ import {
 import { TranslationFunction } from '@/types';
 import { adminService } from '@/services/adminService';
 import { supabase } from '@/services/supabaseClient';
+import { AdminViewHeader } from './AdminViewHeader';
 
 interface AdminStatsViewProps {
     t: TranslationFunction;
@@ -182,11 +183,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="px-8 lg:px-10 py-8 flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-6">
-            <div className="border-b border-zinc-100 dark:border-zinc-800/60 -mx-8 lg:-mx-10 px-8 lg:px-10 pb-5 -mt-2">
-                <h2 className="text-base font-bold tracking-tight">Kosten & Einnahmen</h2>
-                <p className="text-xs text-zinc-400 mt-0.5">Stripe-Zahlungen vs. Kie AI Ausgaben</p>
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col">
+            <AdminViewHeader title="Kosten & Einnahmen" description="Stripe-Zahlungen vs. Kie AI Ausgaben" />
+            <div className="px-6 md:px-8 py-6 space-y-6">
 
             {/* 3-card comparison */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -334,6 +333,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     </tbody>
                 </table>
             </div>
+            </div>{/* end inner padding div */}
         </div>
     );
 };
