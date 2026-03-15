@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Coins, TrendingUp, Zap, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Loader2, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
+import {
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    BarChart, Bar, Legend, Line, ComposedChart
+} from 'recharts';
 import { TranslationFunction } from '@/types';
 import { adminService } from '@/services/adminService';
 import { supabase } from '@/services/supabaseClient';
@@ -8,21 +12,26 @@ interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
-// Kie AI fixed costs per generation (source: kie.ai, March 2026)
+// Actual model names as stored in DB
 const USD_TO_EUR = 0.92;
-const KIE_COST: Record<string, number> = {
-    'nb2-1k':  0.02 * USD_TO_EUR,
-    'nb2-2k':  0.02 * USD_TO_EUR,
-    'nb2-4k':  0.02 * USD_TO_EUR,
-    'pro-1k':  0.09 * USD_TO_EUR,
-    'pro-2k':  0.09 * USD_TO_EUR,
-    'pro-4k':  0.12 * USD_TO_EUR,
+const KIE_COST: Record<string, { eur: number; label: string; color: string }> = {
+    'nano-banana-2':   { eur: 0.02 * USD_TO_EUR, label: 'NB2',    color: '#8b5cf6' },
+    'nano-banana-pro': { eur: 0.09 * USD_TO_EUR, label: 'NB Pro', color: '#f97316' },
+    'nb2-1k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 1K', color: '#8b5cf6' },
+    'nb2-2k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 2K', color: '#a78bfa' },
+    'nb2-4k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 4K', color: '#c4b5fd' },
+    'pro-1k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 1K', color: '#f97316' },
+    'pro-2k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 2K', color: '#fb923c' },
+    'pro-4k':          { eur: 0.12 * USD_TO_EUR, label: 'NB Pro 4K', color: '#fdba74' },
 };
+
+const MODEL_COLORS = ['#8b5cf6', '#f97316', '#a78bfa', '#fb923c', '#c4b5fd', '#fdba74'];
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
     const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
     const [stripePaymentCount, setStripePaymentCount] = useState<number>(0);
+    const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -34,7 +43,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     supabase.auth.getSession()
                 ]);
                 setJobs(jobsData);
-
                 if (session?.access_token) {
                     const res = await supabase.functions.invoke('admin-stats', {
                         headers: { Authorization: `Bearer ${session.access_token}` }
@@ -42,6 +50,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     if (!res.error && res.data) {
                         setStripeRevenue(res.data.totalRevenue ?? null);
                         setStripePaymentCount(res.data.paymentCount ?? 0);
+                        setStripeMonthly(res.data.monthlyRevenue ?? {});
                     }
                 }
             } catch (e) {
@@ -54,10 +63,58 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     }, []);
 
     const completedJobs = jobs.filter(j => j.status === 'completed');
-    const kieAiCost = completedJobs.reduce((acc, j) => acc + (KIE_COST[j.model] ?? 0), 0);
+    const kieAiCost = completedJobs.reduce((acc, j) => acc + (KIE_COST[j.model]?.eur ?? 0), 0);
     const profit = stripeRevenue != null ? stripeRevenue - kieAiCost : null;
     const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
         ? (profit / stripeRevenue) * 100 : null;
+
+    // Chart data: last 8 weeks grouped by week
+    const chartData = React.useMemo(() => {
+        const weeks: Record<string, any> = {};
+        // Last 8 weeks
+        for (let i = 7; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i * 7);
+            const key = `KW${getWeekNumber(d)}`;
+            weeks[key] = { week: key };
+        }
+
+        completedJobs.forEach(job => {
+            const d = new Date(job.createdAt);
+            const key = `KW${getWeekNumber(d)}`;
+            if (weeks[key]) {
+                const modelKey = job.model || 'unknown';
+                weeks[key][modelKey] = (weeks[key][modelKey] || 0) + (KIE_COST[modelKey]?.eur ?? 0);
+            }
+        });
+
+        // Add Stripe revenue by month → distribute to weeks roughly
+        Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
+            const [year, month] = monthKey.split('-').map(Number);
+            // Find weeks in this month and distribute evenly
+            const weeksInMonth = Object.keys(weeks).filter(k => {
+                // Simple: just add to last week of month key
+                return true; // will handle separately
+            });
+        });
+
+        // For simplicity: add monthly Stripe revenue to the chart as a separate field
+        // Map month → week by approximate date
+        completedJobs.forEach(job => {
+            const d = new Date(job.createdAt);
+            const key = `KW${getWeekNumber(d)}`;
+            if (!weeks[key]) return;
+            // revenue per job = job.cost
+            weeks[key]['_revenue'] = (weeks[key]['_revenue'] || 0) + (job.cost || 0);
+        });
+
+        return Object.values(weeks);
+    }, [completedJobs, stripeMonthly]);
+
+    // Unique model keys found in jobs
+    const modelKeys = React.useMemo(() =>
+        [...new Set(completedJobs.map(j => j.model).filter(m => KIE_COST[m]))],
+    [completedJobs]);
 
     if (loading) return (
         <div className="h-full flex items-center justify-center">
@@ -66,123 +123,119 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="p-8 flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-8">
+        <div className="p-8 flex-1 min-h-0 overflow-y-auto no-scrollbar space-y-6">
             <div>
                 <h2 className="text-xl font-bold tracking-tight">Kosten & Einnahmen</h2>
-                <p className="text-xs text-zinc-500 mt-1">Stripe-Einnahmen vs. Kie AI Ausgaben</p>
+                <p className="text-xs text-zinc-500 mt-1">Stripe-Zahlungen vs. Kie AI Ausgaben</p>
             </div>
 
-            {/* Main 3-card comparison */}
+            {/* 3-card comparison */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Stripe Revenue */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Stripe Einnahmen</span>
-                        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
-                            <ArrowUpRight className="w-4 h-4 text-emerald-500" />
-                        </div>
-                    </div>
+                <StatCard
+                    label="Stripe Einnahmen"
+                    value={stripeRevenue != null ? `${stripeRevenue.toFixed(2)}€` : '—'}
+                    sub={`${stripePaymentCount} Zahlungen`}
+                    icon={<ArrowUpRight className="w-4 h-4 text-emerald-500" />}
+                    iconBg="bg-emerald-50 dark:bg-emerald-900/20"
+                    valueColor="text-emerald-600 dark:text-emerald-400"
+                />
+                <StatCard
+                    label="Kie AI Ausgaben"
+                    value={`${kieAiCost.toFixed(2)}€`}
+                    sub={`${completedJobs.length} Generierungen (est.)`}
+                    icon={<ArrowDownRight className="w-4 h-4 text-red-500" />}
+                    iconBg="bg-red-50 dark:bg-red-900/20"
+                    valueColor="text-red-500"
+                />
+                <StatCard
+                    label="Gewinn"
+                    value={profit != null ? `${profit.toFixed(2)}€` : '—'}
+                    sub={margin != null ? `Marge ${margin.toFixed(0)}%` : '—'}
+                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />}
+                    iconBg="bg-orange-50 dark:bg-orange-900/20"
+                    valueColor={profit != null && profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}
+                />
+            </div>
+
+            {/* Chart: stacked bars (Kie AI costs by model) + line (credit consumption) */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
                     <div>
-                        <div className="text-3xl font-bold font-mono tracking-tighter text-emerald-600 dark:text-emerald-400">
-                            {stripeRevenue != null ? `${stripeRevenue.toFixed(2)}€` : '—'}
-                        </div>
-                        <div className="text-[11px] text-zinc-400 mt-1">
-                            {stripePaymentCount} erfolgreiche Zahlungen
-                        </div>
+                        <h3 className="text-sm font-bold">Verlauf (letzte 8 Wochen)</h3>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Gestapelte Balken = Kie AI Kosten nach Modell · Linie = Credit-Verbrauch der User</p>
                     </div>
                 </div>
-
-                {/* Kie AI Cost */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Kie AI Ausgaben</span>
-                        <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20">
-                            <ArrowDownRight className="w-4 h-4 text-red-500" />
-                        </div>
-                    </div>
-                    <div>
-                        <div className="text-3xl font-bold font-mono tracking-tighter text-red-500">
-                            {kieAiCost.toFixed(2)}€
-                        </div>
-                        <div className="text-[11px] text-zinc-400 mt-1">
-                            {completedJobs.length} Generierungen (est.)
-                        </div>
-                    </div>
-                </div>
-
-                {/* Profit */}
-                <div className={`rounded-2xl p-6 space-y-4 border ${profit != null && profit >= 0
-                    ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
-                    : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'}`}>
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Gewinn</span>
-                        <div className="p-2 rounded-xl bg-white/60 dark:bg-black/20">
-                            <TrendingUp className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
-                        </div>
-                    </div>
-                    <div>
-                        <div className={`text-3xl font-bold font-mono tracking-tighter ${profit != null && profit >= 0
-                            ? 'text-emerald-700 dark:text-emerald-300'
-                            : 'text-red-600 dark:text-red-400'}`}>
-                            {profit != null ? `${profit.toFixed(2)}€` : '—'}
-                        </div>
-                        <div className="text-[11px] text-zinc-400 mt-1">
-                            {margin != null ? `Marge ${margin.toFixed(0)}%` : 'Marge —'}
-                        </div>
-                    </div>
+                <div className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData} barSize={28}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" className="dark:stroke-zinc-800" />
+                            <XAxis dataKey="week" axisLine={false} tickLine={false}
+                                tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
+                            <YAxis yAxisId="left" axisLine={false} tickLine={false}
+                                tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                tickFormatter={v => `${v.toFixed(2)}€`} />
+                            <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
+                                tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                tickFormatter={v => `${v.toFixed(2)}€`} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
+                                formatter={(value: any, name: string) => {
+                                    if (name === '_revenue') return [`${Number(value).toFixed(2)}€`, 'Credit-Verbrauch'];
+                                    const m = KIE_COST[name];
+                                    return [`${Number(value).toFixed(3)}€`, m?.label ?? name];
+                                }}
+                            />
+                            <Legend formatter={(value) => {
+                                if (value === '_revenue') return 'Credit-Verbrauch';
+                                return KIE_COST[value]?.label ?? value;
+                            }} />
+                            {modelKeys.map((modelId, i) => (
+                                <Bar key={modelId} yAxisId="left" dataKey={modelId} stackId="cost"
+                                    fill={MODEL_COLORS[i % MODEL_COLORS.length]} radius={i === modelKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                            ))}
+                            <Line yAxisId="right" type="monotone" dataKey="_revenue"
+                                stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
+                        </ComposedChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* Per-model breakdown */}
+            {/* Per-model breakdown table */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
-                <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-sm font-bold">Kie AI Kosten nach Modell</h3>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">Festpreise: NB2 $0.02 · NB Pro 1K/2K $0.09 · NB Pro 4K $0.12</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase text-zinc-400">
-                        <Zap className="w-3 h-3" />
-                        Kie AI
-                    </div>
+                <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                    <h3 className="text-sm font-bold">Aufschlüsselung nach Modell</h3>
+                    <p className="text-[10px] text-zinc-400 mt-0.5">NB2 $0.02 · NB Pro $0.09 · NB Pro 4K $0.12 (Kie AI, März 2026)</p>
                 </div>
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
                             <th className="px-6 py-3">Modell</th>
-                            <th className="px-6 py-3 text-right">Jobs</th>
+                            <th className="px-6 py-3 text-right">Abgeschlossen</th>
                             <th className="px-6 py-3 text-right">Kosten/Job</th>
                             <th className="px-6 py-3 text-right">Gesamt</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                        {Object.entries(KIE_COST).map(([modelId, costEur]) => {
+                        {Object.entries(KIE_COST).map(([modelId, info]) => {
                             const count = completedJobs.filter(j => j.model === modelId).length;
                             if (count === 0) return null;
-                            const total = count * costEur;
-                            const colors: Record<string, string> = {
-                                'nb2-1k': 'text-emerald-500', 'nb2-2k': 'text-purple-500', 'nb2-4k': 'text-rose-500',
-                                'pro-1k': 'text-indigo-500', 'pro-2k': 'text-violet-500', 'pro-4k': 'text-pink-500',
-                            };
-                            const names: Record<string, string> = {
-                                'nb2-1k': 'NB2 · 1K', 'nb2-2k': 'NB2 · 2K', 'nb2-4k': 'NB2 · 4K',
-                                'pro-1k': 'NB Pro · 1K', 'pro-2k': 'NB Pro · 2K', 'pro-4k': 'NB Pro · 4K',
-                            };
                             return (
                                 <tr key={modelId} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
-                                    <td className="px-6 py-4">
-                                        <span className={`font-bold text-[11px] uppercase ${colors[modelId]}`}>{names[modelId]}</span>
+                                    <td className="px-6 py-3">
+                                        <span className="font-bold text-[11px] uppercase" style={{ color: info.color }}>{info.label}</span>
+                                        <span className="ml-2 text-[10px] text-zinc-400 font-mono">{modelId}</span>
                                     </td>
-                                    <td className="px-6 py-4 text-right font-medium">{count}</td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs text-zinc-500">{costEur.toFixed(3)}€</td>
-                                    <td className="px-6 py-4 text-right font-mono text-xs font-bold text-red-500">{total.toFixed(2)}€</td>
+                                    <td className="px-6 py-3 text-right font-medium">{count}</td>
+                                    <td className="px-6 py-3 text-right font-mono text-xs text-zinc-400">{info.eur.toFixed(3)}€</td>
+                                    <td className="px-6 py-3 text-right font-mono text-xs font-bold text-red-500">{(count * info.eur).toFixed(2)}€</td>
                                 </tr>
                             );
                         })}
-                        <tr className="bg-zinc-50/30 dark:bg-zinc-800/20 font-bold">
-                            <td className="px-6 py-4 text-[11px] uppercase tracking-wide text-zinc-500">Gesamt</td>
-                            <td className="px-6 py-4 text-right">{completedJobs.length}</td>
-                            <td className="px-6 py-4" />
-                            <td className="px-6 py-4 text-right font-mono text-sm text-red-500">{kieAiCost.toFixed(2)}€</td>
+                        <tr className="bg-zinc-50/30 dark:bg-zinc-800/20 font-bold text-sm">
+                            <td className="px-6 py-3 text-[11px] uppercase tracking-wide text-zinc-500">Gesamt</td>
+                            <td className="px-6 py-3 text-right">{completedJobs.length}</td>
+                            <td className="px-6 py-3" />
+                            <td className="px-6 py-3 text-right font-mono text-red-500">{kieAiCost.toFixed(2)}€</td>
                         </tr>
                     </tbody>
                 </table>
@@ -190,3 +243,28 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         </div>
     );
 };
+
+function getWeekNumber(d: Date): string {
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return `${date.getUTCFullYear().toString().slice(2)}W${weekNo}`;
+}
+
+const StatCard = ({ label, value, sub, icon, iconBg, valueColor }: {
+    label: string; value: string; sub: string;
+    icon: React.ReactNode; iconBg: string; valueColor: string;
+}) => (
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{label}</span>
+            <div className={`p-2 rounded-xl ${iconBg}`}>{icon}</div>
+        </div>
+        <div>
+            <div className={`text-3xl font-bold font-mono tracking-tighter ${valueColor}`}>{value}</div>
+            <div className="text-[11px] text-zinc-400 mt-1">{sub}</div>
+        </div>
+    </div>
+);
