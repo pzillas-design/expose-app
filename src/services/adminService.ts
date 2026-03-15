@@ -181,9 +181,6 @@ export const adminService = {
         //    - Not forked by user (user has their own version)
         // 3. EXCLUDE 'recent' category unless specifically requested (handled by separate history logic)
         const filteredPresets = allPresets?.filter(p => {
-            // Never show 'recent' items in the main preset library
-            if (p.category === 'recent') return false;
-
             const isSystem = p.user_id === null;
             if (!isSystem) return p.user_id === userId; // Own presets always shown
 
@@ -207,52 +204,34 @@ export const adminService = {
     _mapDbPreset(p: any) {
         return {
             ...p,
-            isPinned: p.is_pinned,
             isCustom: p.is_custom,
-            isDefault: p.is_default || false,
             usageCount: p.usage_count,
             createdAt: p.created_at ? new Date(p.created_at).getTime() : undefined,
-            slug: p.slug
         };
     },
 
     async updateGlobalPreset(preset: any, userId?: string): Promise<any> {
         const isSystemPreset = !preset.user_id;
-        const isUserAction = userId && userId !== preset.user_id;
-
-        // Determine category: system presets stay 'system', user presets are 'user'
-        let category = 'system';
-        if (userId) {
-            // If user is creating/editing, it's a user preset
-            category = 'user';
-        } else if (preset.user_id) {
-            // If preset has a user_id, it's a user preset
-            category = 'user';
-        } else if (preset.category === 'recent') {
-            // Preserve 'recent' category for history
-            category = 'recent';
-        }
+        const isUserAction = !!userId && userId !== preset.user_id;
 
         // Generate slug if not present
         const slug = preset.slug || (preset.title ? `${slugify(preset.title)}-${Math.floor(Math.random() * 10000)}` : null);
 
-        // FORKING LOGIC: If a user edits a system preset, create a fork
+        // FORKING LOGIC: If a user edits a system preset, create a personal copy
         const dbPreset: any = {
             id: (isSystemPreset && isUserAction) ? crypto.randomUUID() : (preset.id || crypto.randomUUID()),
             original_id: (isSystemPreset && isUserAction) ? preset.id : (preset.original_id || null),
             title: preset.title,
-            label: preset.title, // Sync label with title for DB compatibility
             prompt: preset.prompt,
+            emoji: preset.emoji || null,
             tags: preset.tags || [],
-            is_pinned: preset.isPinned ?? (category === 'user' ? true : false),
-            is_custom: userId ? true : (preset.isCustom ?? false),
+            is_custom: isUserAction ? true : (preset.isCustom ?? false),
             usage_count: preset.usageCount || 0,
-            lang: preset.lang || 'en',
+            lang: preset.lang || 'de',
             slug: slug,
             updated_at: new Date().toISOString(),
             controls: preset.controls || [],
-            user_id: userId || preset.user_id || null, // Maintain existing owner or set new one
-            category: category
+            user_id: userId || preset.user_id || null,
         };
 
         const { data, error } = await supabase

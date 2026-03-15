@@ -123,8 +123,9 @@ export function App() {
     };
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/'));
+    const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
-    const outerContainerClasses = isAppLayout
+    const outerContainerClasses = (isAppLayout || isAdminRoute)
         ? "h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
@@ -132,12 +133,12 @@ export function App() {
         ? "flex-1 flex flex-col overflow-hidden pt-14"
         : "flex-1 flex flex-col";
 
-    const showGlobalNavbar = true;
+    const showGlobalNavbar = !isAdminRoute;
 
     return (
         <div className={outerContainerClasses}>
 
-            {isAppLayout ? (
+            {showGlobalNavbar && (isAppLayout ? (
                 <AppNavbar
                     user={user}
                     userProfile={userProfile}
@@ -266,7 +267,7 @@ export function App() {
                     onSignOut={handleSignOut}
                     t={t}
                 />
-            )}
+            ))}
 
             <main className={mainContainerClasses}>
                 <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-white dark:bg-black"><Loader2 className="w-6 h-6 animate-spin text-zinc-400 dark:text-zinc-800" /></div>}>

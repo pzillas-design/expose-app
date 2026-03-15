@@ -72,14 +72,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                     ) : (
                         <>
                             <table className="w-full text-left text-sm">
-                                <thead className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60">
+                                <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
                                     <tr>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('id_label')}</th>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('model')}</th>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">Auflösung</th>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_job_date')}</th>
-                                        <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_job_status')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('id_label')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('model')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_date')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">

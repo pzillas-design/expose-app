@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TranslationFunction } from '@/types';
-import { Users, Activity, Layers, Box, BarChart3, Home } from 'lucide-react';
+import { Users, Activity, Layers, Box, BarChart3, ChevronLeft } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 // Modular Views
@@ -51,49 +51,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   <div className="h-screen flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-hidden">
 
    {/* ── Header ───────────────────────────────────────────── */}
-   <header className="sticky top-0 z-50 shrink-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+   <header className="md:sticky md:top-0 z-50 shrink-0 bg-white dark:bg-zinc-950 border-b border-zinc-200/60 dark:border-zinc-800/60">
+    <div className="flex items-center px-2 md:px-4 h-14 gap-1">
 
-    {/* Row 1: Branding + Home */}
-    <div className="flex items-center justify-between px-4 md:px-6 h-11">
-     <div className="flex items-center gap-2">
-      <Logo className="w-6 h-6" />
-      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-400">Admin</span>
-     </div>
+     {/* Back to App */}
      <button
       onClick={() => navigate('/')}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+      className="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
      >
-      <Home className="w-3.5 h-3.5" />
-      <span>App</span>
+      <ChevronLeft className="w-5 h-5" />
      </button>
-    </div>
 
-    {/* Row 2: Scrollable nav strip */}
-    <div className="overflow-x-auto no-scrollbar border-t border-zinc-100 dark:border-zinc-800/50">
-     <div className="flex items-center px-3 md:px-5 gap-0.5 w-max md:w-auto">
-      {navItems.map(item => {
-       const active = isTabActive(item.id);
-       return (
-        <button
-         key={item.id}
-         onClick={() => navigate(`/admin/${item.id}`)}
-         className={`
-          relative flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap
-          transition-colors duration-150
-          ${active
-           ? 'text-zinc-900 dark:text-white'
-           : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}
-         `}
-        >
-         {item.icon}
-         {item.label}
-         {active && (
-          <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-zinc-900 dark:bg-white rounded-full" />
-         )}
-        </button>
-       );
-      })}
+     {/* Nav strip (includes branding) */}
+     <div className="flex-1 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-0.5 w-max">
+
+       {/* Branding */}
+       <div className="flex items-center gap-2 px-3 h-14 mr-1">
+        <Logo className="w-5 h-5" />
+        <span className="text-[11px] font-semibold text-zinc-400">Admin</span>
+       </div>
+
+       {navItems.map(item => {
+        const active = isTabActive(item.id);
+        return (
+         <button
+          key={item.id}
+          onClick={() => navigate(`/admin/${item.id}`)}
+          className={`
+           relative flex items-center gap-1.5 px-3 h-14 text-[12px] font-medium whitespace-nowrap
+           transition-colors duration-150
+           ${active
+            ? 'text-zinc-900 dark:text-white'
+            : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}
+          `}
+         >
+          {item.icon}
+          {item.label}
+          {active && (
+           <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-zinc-900 dark:bg-white rounded-full" />
+          )}
+         </button>
+        );
+       })}
+      </div>
      </div>
+
     </div>
    </header>
 

@@ -23,7 +23,7 @@ export const AdminViewHeader: React.FC<AdminViewHeaderProps> = ({
     actions,
     search,
 }) => (
-    <div className="px-6 md:px-8 pt-6 pb-4 flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
+    <div className="px-6 md:px-8 pt-4 md:pt-5 pb-3 flex flex-wrap items-center justify-between gap-3 shrink-0 border-b border-zinc-100 dark:border-zinc-800/60">
         <div className="min-w-0">
             <h2 className="text-sm font-bold tracking-tight text-zinc-900 dark:text-white">{title}</h2>
             {description && (

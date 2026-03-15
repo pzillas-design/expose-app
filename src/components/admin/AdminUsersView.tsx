@@ -107,14 +107,14 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm">
-                            <thead className="sticky top-0 z-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-zinc-100 dark:border-zinc-800/60">
+                            <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
                                 <tr>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_user_email')}</th>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_role_label')}</th>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-left">{t('admin_last_online')}</th>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_balance')}</th>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_total_spent_header')}</th>
-                                    <th className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400 text-right">{t('admin_user_joined')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_user_email')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_role_label')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_last_online')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_balance')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_total_spent_header')}</th>
+                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_user_joined')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -128,7 +128,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                             {getUserIdentifier(u)}
                                         </td>
                                         <td className="px-5 py-3.5">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
                                                 {u.role === 'admin' ? t('role_admin') : (u.role === 'pro' ? t('role_pro') : t('role_user'))}
                                             </span>
                                         </td>
