@@ -1,8 +1,9 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
-import { CanvasImage, AnnotationObject, TranslationFunction, GenerationQuality } from '@/types';
+import { CanvasImage, AnnotationObject, TranslationFunction } from '@/types';
 import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
+import { BlobBackground } from '@/components/ui/BlobBackground';
 import { downloadImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { storageService, THUMB_OPTIONS } from '@/services/storageService';
@@ -44,51 +45,6 @@ interface ImageItemProps {
     t: TranslationFunction;
 }
 
-const ProcessingOverlay: React.FC<{ startTime?: number, duration: number, t: TranslationFunction }> = ({ startTime, duration, t }) => {
-    const [progress, setProgress] = useState(0);
-
-    useEffect(() => {
-        const start = startTime || Date.now();
-        let rafId: number;
-        const update = () => {
-            const now = Date.now();
-            const elapsed = now - start;
-            let p = (elapsed / duration) * 100;
-            if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
-            setProgress(Math.min(p, 99.9));
-            rafId = requestAnimationFrame(update);
-        };
-        rafId = requestAnimationFrame(update);
-        return () => cancelAnimationFrame(rafId);
-    }, [startTime, duration]);
-
-    return (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-50">
-            <div className="absolute inset-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm" />
-
-            <div className="relative w-full max-w-[160px] flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-200 z-10">
-                <div className={`flex items-end justify-between ${Typo.Label}`}>
-                    <span className={`${Theme.Colors.TextPrimary} `}>{t('processing')}</span>
-                </div>
-                <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600 rounded-full overflow-hidden ">
-                    <div
-                        className="h-full bg-zinc-900 dark:bg-white transition-all duration-300 ease-out"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const getDurationForQuality = (quality?: GenerationQuality): number => {
-    switch (quality) {
-        case 'pro-1k': return 12000;
-        case 'pro-2k': return 36000;
-        case 'pro-4k': return 60000;
-        default: return 23000;
-    }
-};
 
 const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, title, onDimensionsDetected, onLoaded }: { path: string, src: string, thumbSrc?: string, maskSrc?: string, zoom: number, isSelected: boolean, title: string, onDimensionsDetected?: (w: number, h: number) => void, onLoaded?: () => void }) => {
     const [currentSrc, setCurrentSrc] = useState<string | null>(maskSrc || thumbSrc || src || null);
@@ -348,14 +304,11 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             <div
                 className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${(isActive || isMarked) ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
             >
-                {/* Loading Skeleton - overlay on top of parent image if available */}
+                {/* Loading Skeleton — hidden when generating (BlobBackground takes over) */}
                 <div
-                    className={`absolute inset-0 transition-opacity duration-200 ${isImageReady ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    className={`absolute inset-0 transition-opacity duration-200 ${(isImageReady || image.isGenerating) ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
-                    {/* Background: Opaque if no src (fresh gen), semi-transparent if src exists (variation) */}
                     <div className={`absolute inset-0 ${image.src ? 'bg-white/30 dark:bg-black/30 backdrop-blur-[2px]' : 'bg-zinc-100 dark:bg-zinc-800'}`} />
-
-                    {/* Shimmer effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent skew-x-12 animate-[shimmer_2s_infinite] -translate-x-full" />
                 </div>
 
@@ -404,13 +357,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {image.isGenerating && (image.generationStartTime || image.quality) && (
-                    <ProcessingOverlay
-                        startTime={image.generationStartTime}
-                        duration={image.estimatedDuration || getDurationForQuality(image.quality)}
-                        t={t}
-                    />
-                )}
+                {/* Halo animation while generating — no overlay, no progress bar */}
+                {image.isGenerating && <BlobBackground className="z-30" />}
             </div>
 
 

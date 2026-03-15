@@ -1,5 +1,4 @@
 import React, { memo, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { CanvasImage } from '@/types';
 import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
@@ -8,7 +7,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
-import { Logo } from '@/components/ui/Logo';
+import { BlobBackground } from '@/components/ui/BlobBackground';
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -26,8 +25,6 @@ interface FeedGridItemProps {
 const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
-    const elapsed = isGen ? Math.max(0, Date.now() - (img.generationStartTime || Date.now())) : 0;
-    const estimated = Math.max(1000, img.estimatedDuration || 30000);
 
     return (
         <div
@@ -41,46 +38,24 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             }}
             className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
         >
-            {previewSrc ? (
+            {isGen ? (
+                <BlobBackground orbScale={0.77} speedScale={2.0} />
+            ) : previewSrc ? (
                 <img
                     src={previewSrc}
                     alt={img.title}
                     className={`w-full h-full object-cover transition-all duration-150 ease-out ${
-                        isGen
-                            ? 'blur-sm scale-105 brightness-75'
-                            : isSelectMode && isSelected
-                                ? 'opacity-75'
-                                : isKeyboardActive
-                                    ? 'brightness-110 scale-105'
-                                    : 'group-hover:scale-105'
+                        isSelectMode && isSelected
+                            ? 'opacity-75'
+                            : isKeyboardActive
+                                ? 'brightness-110 scale-105'
+                                : 'group-hover:scale-105'
                     }`}
                     loading="lazy"
                 />
             ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                    {isGen ? (
-                        <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"
-                                style={{ animation: 'shimmer 1.8s ease-in-out infinite' }} />
-                        </div>
-                    ) : (
-                        <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
-                    )}
-                </div>
-            )}
-
-            {isGen && (
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-black/20 pointer-events-none">
-                    <div
-                        className="h-full bg-orange-500"
-                        style={{
-                            animationName: 'gen-progress',
-                            animationDuration: `${estimated}ms`,
-                            animationDelay: `-${Math.min(elapsed, estimated * 0.92)}ms`,
-                            animationTimingFunction: 'linear',
-                            animationFillMode: 'both',
-                        }}
-                    />
+                    <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
                 </div>
             )}
 

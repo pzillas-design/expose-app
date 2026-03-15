@@ -190,6 +190,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const leftContent = isCreate ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
+            {progressRing}
         </div>
     ) : isDetail ? (
         <div className="flex items-center gap-1">

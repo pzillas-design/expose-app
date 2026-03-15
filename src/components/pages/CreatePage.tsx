@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
+import { BlobBackground } from '@/components/ui/BlobBackground';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Button } from '@/components/ui/DesignSystem';
@@ -42,6 +43,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     const isMobile = useMobile();
     const [mode, setMode] = useState<'choose' | 'create'>('choose');
     const [selectedRatio, setSelectedRatio] = useState('4:3');
+    const [isGenerating, setIsGenerating] = useState(false);
     const uploadRef = useRef<HTMLInputElement>(null);
 
     const [ratioW, ratioH] = selectedRatio.split(':').map(Number);
@@ -68,8 +70,8 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     }, [ratioW, ratioH]);
 
     const handleGenerate = useCallback((prompt: string) => {
+        setIsGenerating(true);
         // onCreateNew calls selectAndSnap(newId) which navigates directly to /image/newId
-        // — no need to call onBack() first (would cause a double-jump via /)
         onCreateNew(prompt, state.qualityMode || 'pro-2k', selectedRatio, []);
     }, [onCreateNew, state.qualityMode, selectedRatio]);
 
@@ -128,13 +130,20 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     ) : (
                         /* ── Canvas / format picker ── */
                         <div
-                            className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300"
+                            className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-hidden"
                             style={previewSize
                                 ? { width: previewSize.w, height: previewSize.h }
                                 : { aspectRatio: `${ratioW} / ${ratioH}`, maxWidth: '100%', maxHeight: '100%' }
                             }
                         >
-                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            {/* blobs — only mounted and visible while generating, never before */}
+                            {isGenerating && <BlobBackground />}
+
+                            {/* ratio picker — hidden while generating */}
+                            <div
+                                className={`relative z-10 flex items-center gap-1 transition-opacity duration-300 ${isGenerating ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 {ASPECT_RATIOS.map(r => (
                                     <button
                                         key={r.value}

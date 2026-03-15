@@ -7,6 +7,7 @@ import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/D
 import { useItemDialog } from '@/components/ui/Dialog';
 import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
+import { BlobBackground } from '@/components/ui/BlobBackground';
 
 /* ── Memoised thumbnail button ── */
 const ThumbButton = memo<{ id: string; src: string; isActive: boolean; onSelect: (id: string) => void }>(
@@ -377,10 +378,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     className="relative shrink-0"
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
+                                    {/* blobs while generating */}
+                                    {img.isGenerating && (
+                                        <BlobBackground className="rounded-lg" />
+                                    )}
+
                                     {img.thumbSrc && !isMainLoaded && (
                                         <img
                                             src={img.thumbSrc}
-                                            className="absolute inset-0 w-full h-full object-contain opacity-20 pointer-events-none"
+                                            className="absolute inset-0 w-full h-full object-contain opacity-100 pointer-events-none"
                                             alt=""
                                         />
                                     )}
@@ -430,7 +436,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {images.filter(i => i.thumbSrc || i.src).map(i => (
+                            {images.filter(i => !i.isGenerating && (i.thumbSrc || i.src)).map(i => (
                                 <ThumbButton
                                     key={i.id}
                                     id={i.id}

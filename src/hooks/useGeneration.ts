@@ -137,6 +137,13 @@ export const useGeneration = ({
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
     const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string }>>({});
+    // Always-current ref to selectAndSnap — prevents stale closure in completion callbacks
+    const selectAndSnapRef = React.useRef(selectAndSnap);
+    React.useEffect(() => { selectAndSnapRef.current = selectAndSnap; }, [selectAndSnap]);
+    // Job IDs that should auto-navigate to the finished image when polling completes
+    const navigateOnCompleteIds = React.useRef<Set<string>>(new Set());
+    // Optional completion callbacks: when a job finishes, call the registered callback (e.g. navigate to it)
+    const jobCompleteCallbacks = React.useRef<Record<string, () => void>>({});
 
     const pollForJob = useCallback(async (jobId: string) => {
         if (attachedJobIds.current.has(jobId)) return;
@@ -181,6 +188,18 @@ export const useGeneration = ({
 
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
+
+                // Auto-navigate to finished image (uses always-current ref — no stale closure)
+                if (navigateOnCompleteIds.current.has(jobId)) {
+                    navigateOnCompleteIds.current.delete(jobId);
+                    setTimeout(() => selectAndSnapRef.current(jobId), 200);
+                }
+                // Legacy callback support
+                const onComplete = jobCompleteCallbacks.current[jobId];
+                if (onComplete) {
+                    delete jobCompleteCallbacks.current[jobId];
+                    setTimeout(onComplete, 200);
+                }
 
                 setRows(prev => prev.map(row => ({
                     ...row,
@@ -377,8 +396,8 @@ export const useGeneration = ({
         // Track start time so pollForJob can record actual duration
         jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode };
 
-        // Stay on source image — auto-navigation to the finished result
-        // is handled by the generatingChild detection in DetailPage.
+        // Auto-navigate to finished result when the async job completes
+        navigateOnCompleteIds.current.add(newId);
 
         // --- ASYNC PROCESSING STARTS HERE ---
         // Credits are deducted server-side; local UI update happens only on success.
@@ -464,6 +483,10 @@ export const useGeneration = ({
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
 
+                    // Clean up and navigate using always-current ref
+                    navigateOnCompleteIds.current.delete(newId);
+                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
                     }
@@ -537,9 +560,10 @@ export const useGeneration = ({
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         // Track start time so we can record actual duration on completion
         jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId };
-        // Navigate to the placeholder so the user sees the loading state in-place.
-        // When the job finishes, setRows updates the placeholder → result appears without further navigation.
-        setTimeout(() => selectAndSnap(newId), 50);
+        // Navigate to the placeholder immediately (user sees blob animation on detail page).
+        // Also register for post-completion navigation in case polling finishes before user arrives.
+        navigateOnCompleteIds.current.add(newId);
+        setTimeout(() => selectAndSnapRef.current(newId), 50);
 
         const processNewSync = async () => {
             try {
@@ -572,13 +596,14 @@ export const useGeneration = ({
                     if (t0) { recordActualDuration(t0.quality, Date.now() - t0.startTime); delete jobTimingRef.current[newId]; }
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
+                    navigateOnCompleteIds.current.delete(newId);
+                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
                     }
 
-                    showToast('Bild generiert – zum Ansehen tippen', 'success', 10000, () => {
-                        selectAndSnap(newId);
-                    });
+                    showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: background processing started, pollForJob handles completion
                     if (!isPro && cost > 0) {
