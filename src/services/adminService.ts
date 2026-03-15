@@ -129,10 +129,6 @@ export const adminService = {
             status: job.status || 'completed',
             promptPreview: job.prompt_preview || '',
             cost: job.cost || 0,
-            apiCost: job.api_cost || 0,
-            tokensPrompt: job.tokens_prompt || 0,
-            tokensCompletion: job.tokens_completion || 0,
-            tokensTotal: job.tokens_total || 0,
             createdAt: new Date(job.created_at).getTime(),
             resultImage: imagesMap[job.id] || null,  // Attach result image if available
             requestPayload: job.request_payload || null  // Attach API request for debugging

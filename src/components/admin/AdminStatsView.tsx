@@ -23,15 +23,21 @@ interface AdminStatsViewProps {
     t: TranslationFunction;
 }
 
+// User price (€) and Kie AI API cost ($) per generation
+// Kie AI pricing source: kie.ai/nano-banana + kie.ai/nano-banana-pro (March 2026)
+// NB (Gemini 2.5 Flash): $0.02/image (4 credits @ $0.005)
+// NB Pro 1K/2K (Gemini 3 Pro): $0.09/image (18 credits), 4K: $0.12/image (24 credits)
+// NB2 uses same Nano Banana base engine → $0.02/image
+const USD_TO_EUR = 0.92;
 const TIERS = [
-    { id: 'fast',     name: 'NB Fast',    cost: 0.00, color: 'text-zinc-500' },
-    { id: 'nb2-fast', name: 'NB2 Fast',   cost: 0.00, color: 'text-zinc-400' },
-    { id: 'nb2-1k',   name: 'NB2 • 1K',  cost: 0.07, color: 'text-emerald-500' },
-    { id: 'nb2-2k',   name: 'NB2 • 2K',  cost: 0.17, color: 'text-purple-500' },
-    { id: 'nb2-4k',   name: 'NB2 • 4K',  cost: 0.35, color: 'text-rose-500' },
-    { id: 'pro-1k',   name: 'NB Pro • 1K', cost: 0.10, color: 'text-indigo-500' },
-    { id: 'pro-2k',   name: 'NB Pro • 2K', cost: 0.25, color: 'text-violet-500' },
-    { id: 'pro-4k',   name: 'NB Pro • 4K', cost: 0.50, color: 'text-pink-500' },
+    { id: 'fast',     name: 'NB Fast',      userCost: 0.00, apiCostUsd: 0.02, color: 'text-zinc-500' },
+    { id: 'nb2-fast', name: 'NB2 Fast',     userCost: 0.00, apiCostUsd: 0.02, color: 'text-zinc-400' },
+    { id: 'nb2-1k',   name: 'NB2 • 1K',    userCost: 0.07, apiCostUsd: 0.02, color: 'text-emerald-500' },
+    { id: 'nb2-2k',   name: 'NB2 • 2K',    userCost: 0.17, apiCostUsd: 0.02, color: 'text-purple-500' },
+    { id: 'nb2-4k',   name: 'NB2 • 4K',    userCost: 0.35, apiCostUsd: 0.02, color: 'text-rose-500' },
+    { id: 'pro-1k',   name: 'NB Pro • 1K', userCost: 0.10, apiCostUsd: 0.09, color: 'text-indigo-500' },
+    { id: 'pro-2k',   name: 'NB Pro • 2K', userCost: 0.25, apiCostUsd: 0.09, color: 'text-violet-500' },
+    { id: 'pro-4k',   name: 'NB Pro • 4K', userCost: 0.50, apiCostUsd: 0.12, color: 'text-pink-500' },
 ];
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
@@ -42,14 +48,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         adminService.getJobs().then(setJobs).catch(console.error).finally(() => setLoading(false));
     }, []);
 
+    const tierCostMap = React.useMemo(() => {
+        const m: Record<string, number> = {};
+        TIERS.forEach(t => { m[t.id] = t.apiCostUsd * USD_TO_EUR; });
+        return m;
+    }, []);
+
     const stats = React.useMemo(() => {
         const completed = jobs.filter(j => j.status === 'completed');
         const revenue = completed.reduce((acc, j) => acc + (j.cost || 0), 0);
-        const apiCost = completed.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-        const profit = revenue - apiCost;
+        const apiCostEur = completed.reduce((acc, j) => acc + (tierCostMap[j.model] ?? 0), 0);
+        const profit = revenue - apiCostEur;
         const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-        return { revenue, apiCost, profit, margin, totalJobs: completed.length };
-    }, [jobs]);
+        return { revenue, apiCostEur, profit, margin, totalJobs: completed.length };
+    }, [jobs, tierCostMap]);
 
     const dailyStats = React.useMemo(() => {
         const completed = jobs.filter(j => j.status === 'completed');
@@ -64,20 +76,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             const date = new Date(job.createdAt).toISOString().split('T')[0];
             if (groups[date]) {
                 groups[date].revenue += job.cost || 0;
-                groups[date].cost += job.apiCost || 0;
+                groups[date].cost += tierCostMap[job.model] ?? 0;
             }
         });
         return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
-    }, [jobs]);
+    }, [jobs, tierCostMap]);
 
     const tierStats = React.useMemo(() =>
         TIERS.map(tier => {
             const tierJobs = jobs.filter(j => j.status === 'completed' && j.model === tier.id);
             const revenue = tierJobs.reduce((acc, j) => acc + (j.cost || 0), 0);
-            const apiCost = tierJobs.reduce((acc, j) => acc + (j.apiCost || 0), 0);
-            const profit = revenue - apiCost;
+            const apiCostEur = tierJobs.length * (tier.apiCostUsd * USD_TO_EUR);
+            const profit = revenue - apiCostEur;
             const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-            return { ...tier, count: tierJobs.length, revenue, apiCost, profit, margin };
+            return { ...tier, count: tierJobs.length, revenue, apiCostEur, profit, margin };
         }),
     [jobs]);
 
@@ -98,10 +110,26 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <SummaryCard title="Gesamtumsatz" value={`${stats.revenue.toFixed(2)}€`}
                     icon={<Coins className="w-4 h-4 text-emerald-500" />} sub="Verrechneter Credit-Gegenwert" />
-                <SummaryCard title="API Kosten" value={stats.apiCost > 0 ? `${stats.apiCost.toFixed(4)}€` : '—'}
-                    icon={<DollarSign className="w-4 h-4 text-red-500" />} sub="Tatsächliche Kie AI Kosten" />
+                <SummaryCard title="Kie AI Kosten (est.)" value={`${stats.apiCostEur.toFixed(2)}€`}
+                    icon={<DollarSign className="w-4 h-4 text-red-500" />} sub="Basierend auf Kie AI Festpreisen" />
                 <SummaryCard title="Gesamtertrag" value={`${stats.profit.toFixed(2)}€`}
-                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />} sub="Profit nach API-Abzug" />
+                    icon={<TrendingUp className="w-4 h-4 text-orange-500" />} sub={`Marge ${stats.margin.toFixed(0)}%`} />
+            </div>
+
+            {/* Kie AI Preistabelle */}
+            <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Kie AI Festpreise (Stand März 2026)</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-zinc-200 dark:divide-zinc-800">
+                    {TIERS.filter(t => t.apiCostUsd > 0).map(tier => (
+                        <div key={tier.id} className="px-5 py-4 flex flex-col gap-1">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${tier.color}`}>{tier.name}</span>
+                            <span className="text-base font-mono font-bold">${tier.apiCostUsd.toFixed(2)}</span>
+                            <span className="text-[10px] text-zinc-400">≈ {(tier.apiCostUsd * USD_TO_EUR).toFixed(2)}€ · {Math.round(tier.apiCostUsd / 0.005)} Credits</span>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* Chart */}
@@ -180,7 +208,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     <td className="px-6 py-4 text-right font-medium">{tier.count}</td>
                                     <td className="px-6 py-4 text-right font-mono text-xs text-emerald-600 dark:text-emerald-400">{tier.revenue.toFixed(2)}€</td>
                                     <td className="px-6 py-4 text-right font-mono text-xs text-red-500">
-                                        {tier.apiCost > 0 ? `${tier.apiCost.toFixed(4)}€` : '—'}
+                                        {tier.apiCostEur > 0 ? `${tier.apiCostEur.toFixed(2)}€` : '—'}
                                     </td>
                                     <td className="px-6 py-4 text-right font-bold text-base text-zinc-900 dark:text-zinc-100">{tier.profit.toFixed(2)}€</td>
                                     <td className="px-6 py-4 text-right">

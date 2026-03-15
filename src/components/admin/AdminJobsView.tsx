@@ -88,7 +88,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                         <th className="px-5 py-4 font-medium">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-4 font-medium">{t('model')}</th>
                                         <th className="px-5 py-4 font-medium">Auflösung</th>
-                                        <th className="px-5 py-4 font-medium text-right">{t('admin_job_api_cost')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_date')}</th>
                                         <th className="px-5 py-4 font-medium text-right">{t('admin_job_status')}</th>
                                     </tr>
@@ -127,9 +126,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const color = res === 'Fast' ? 'text-zinc-400' : res === '1K' ? 'text-emerald-500' : res === '2K' ? 'text-purple-500' : 'text-rose-500';
                                                     return <span className={`text-[11px] font-bold uppercase ${color}`}>{res}</span>;
                                                 })()}
-                                            </td>
-                                            <td className="px-5 py-5 text-right font-mono text-zinc-700 dark:text-zinc-300 text-xs">
-                                                {j.apiCost ? `$${Number(j.apiCost).toFixed(6)}` : <span className="text-zinc-400">—</span>}
                                             </td>
                                             <td className="px-5 py-5 text-right text-zinc-500 text-xs">
                                                 {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
