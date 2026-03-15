@@ -10,6 +10,7 @@ import { CreationModal } from '@/components/modals/CreationModal';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { FeedPage } from '@/components/pages/FeedPage';
 import { DetailPage } from '@/components/pages/DetailPage';
+import { CreatePage } from '@/components/pages/CreatePage';
 
 // (rest of imports omitted for brevity in targetContent but I will replace the whole block)
 
@@ -58,6 +59,9 @@ export function App() {
         handleSignOut, handleCreateNew, handleDeleteImage, handleDownload, ensureValidSession,
         setQualityMode, setThemeMode, setLang, handleDeleteAccount, updateProfile
     } = actions;
+
+    // Track whether last image selection was from a user action (arrows/thumbs) vs programmatic (generation)
+    const isUserNavigationRef = React.useRef(false);
 
     const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
@@ -112,7 +116,19 @@ export function App() {
     }, [location.pathname, state.activeId, actions.handleSelection]);
 
 
+    // Close SideSheet when navigating to a generating image via generation (not user arrow/thumb clicks)
+    useEffect(() => {
+        if (!state.activeId) return;
+        const targetImg = allImages.find(i => i.id === state.activeId);
+        if (targetImg?.isGenerating && !isUserNavigationRef.current) {
+            setDetailSideSheetVisible(false);
+        }
+        isUserNavigationRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state.activeId]);
+
     const handleSelectImage = (id: string) => {
+        isUserNavigationRef.current = true; // Mark as user-initiated (preserve SideSheet state)
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
         navigate(`/image/${id}`);
@@ -122,7 +138,7 @@ export function App() {
         navigate('/');
     };
 
-    const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/'));
+    const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
     const outerContainerClasses = (isAppLayout || isAdminRoute)
@@ -143,7 +159,7 @@ export function App() {
                     user={user}
                     userProfile={userProfile}
                     credits={credits || 0}
-                    onCreate={() => setIsCreationModalOpen(true)}
+                    onCreate={() => navigate('/create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
@@ -189,7 +205,7 @@ export function App() {
                     selectedCount={state.selectedIds?.length || 0}
                     t={t}
                     lang={state.currentLang}
-                    mode={location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
+                    mode={location.pathname === '/create' ? 'create' : location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
                     rightInset={location.pathname.startsWith('/image/') ? detailSidebarWidth : 0}
                     hasImages={allImages.length > 0}
                     detailInfo={(() => {
@@ -279,7 +295,7 @@ export function App() {
                                     isLoading={isCanvasLoading}
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
-                                    onCreateNew={() => setIsCreationModalOpen(true)}
+                                    onCreateNew={() => navigate('/create')}
                                     onUpload={(files) => Array.from(files ?? []).forEach(f => actions.processFile(f))}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
@@ -351,6 +367,22 @@ export function App() {
                                     onSidebarWidthChange={setDetailSidebarWidth}
                                     isSideSheetVisible={detailSideSheetVisible}
                                     onSideSheetVisibleChange={setDetailSideSheetVisible}
+                                    state={state}
+                                    actions={actions}
+                                    t={t}
+                                />
+                            </ProtectedRoute>
+                        } />
+
+                        <Route path="/create" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => {
+                                setAuthModalMode('signin');
+                                setIsAuthModalOpen(true);
+                            }}>
+                                <CreatePage
+                                    onCreateNew={handleCreateNew}
+                                    onUpload={(files) => { Array.from(files).forEach(f => actions.processFile(f)); navigate('/'); }}
+                                    onBack={() => navigate('/')}
                                     state={state}
                                     actions={actions}
                                     t={t}

@@ -276,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     <span className="w-full border-t border-t-zinc-300 dark:border-t-zinc-700" />
                                 </div>
                                 <div className="relative flex justify-center text-xs">
-                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>oder</span>
+                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>{t('auth_or')}</span>
                                 </div>
                             </div>
 
@@ -291,7 +291,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     </svg>
                                 }
                             >
-                                <span>Google Login</span>
+                                <span>{t('auth_google')}</span>
                             </Button>
                         </>
                     )}

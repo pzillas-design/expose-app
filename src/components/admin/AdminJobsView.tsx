@@ -64,7 +64,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
             />
 
             <div className="flex-1 min-h-0 overflow-auto">
-                <div className="min-w-[900px] flex flex-col">
+                <div className="min-w-[960px] flex flex-col">
                     {loading && jobs.length === 0 ? (
                         <div className="py-20 flex items-center justify-center">
                             <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
@@ -74,22 +74,30 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                             <table className="w-full text-left text-sm">
                                 <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
                                     <tr>
-                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('id_label')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_date')}</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('model')}</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
-                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_date')}</th>
+                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Tools</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
-                                    {filteredJobs.map(j => (
+                                    {filteredJobs.map(j => {
+                                        const payload = j.requestPayload || {};
+                                        const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
+                                        // hasMask from new jobs; fall back to type='Edit' for old jobs without requestPayload
+                                        const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
+                                        const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
+                                        return (
                                         <tr
                                             key={j.id}
                                             onClick={() => setSelectedJob(j)}
                                             className={`cursor-pointer transition-colors ${selectedJob?.id === j.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                         >
-                                            <td className="px-5 py-3.5 font-mono text-xs text-zinc-500">{j.id.slice(0, 8)}...</td>
+                                            <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
+                                                {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
                                             <td className="px-5 py-3.5 font-medium text-black dark:text-white">{j.userName}</td>
                                             <td className="px-5 py-3.5">
                                                 {(() => {
@@ -111,24 +119,27 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             </td>
                                             <td className="px-5 py-3.5">
                                                 {(() => {
-                                                    const m = j.model || '';
-                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : 'Fast';
-                                                    const color = res === 'Fast' ? 'text-zinc-400' : res === '1K' ? 'text-emerald-500' : res === '2K' ? 'text-purple-500' : 'text-rose-500';
-                                                    return <span className={`text-[11px] font-bold uppercase ${color}`}>{res}</span>;
+                                                    const m = j.qualityMode || j.model || '';
+                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : '–';
+                                                    return <span className="text-xs text-zinc-500">{res}</span>;
                                                 })()}
                                             </td>
-                                            <td className="px-5 py-3.5 text-right text-zinc-500 text-xs">
-                                                {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            <td className="px-5 py-3.5">
+                                                <div className="flex items-center gap-1">
+                                                    {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
+                                                    {hasVars      && <span className={badgeClass}>Variablen</span>}
+                                                </div>
                                             </td>
                                             <td className="px-5 py-3.5 text-right">
                                                 {j.status?.toLowerCase() === 'completed'
                                                     ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
                                                     : j.status?.toLowerCase() === 'failed'
-                                                    ? <XCircle className="w-4 h-4 text-red-500 ml-auto" />
+                                                    ? <span title={j.error || 'Failed'} className="ml-auto flex justify-end"><XCircle className="w-4 h-4 text-red-500" /></span>
                                                     : <Clock className="w-4 h-4 text-amber-500 ml-auto" />}
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
 

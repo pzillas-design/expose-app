@@ -79,10 +79,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         } else if (prevGeneratingChildId.current) {
             const finishedId = prevGeneratingChildId.current;
             prevGeneratingChildId.current = null;
-            // Child finished — navigate to it
+            // Child finished — navigate to it and collapse SideSheet
             const finishedImage = imageMap.get(finishedId);
             const isFinished = finishedImage && !finishedImage.isGenerating;
             if (isFinished) {
+                setIsSideSheetVisible(false);
                 onSelectImage(finishedId);
             }
         }

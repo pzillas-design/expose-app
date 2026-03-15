@@ -25,7 +25,7 @@ interface AppNavbarProps {
     selectedCount?: number;
     t: (key: any) => string;
     lang?: string;
-    mode?: 'grid' | 'detail';
+    mode?: 'grid' | 'detail' | 'create';
     detailInfo?: string;
     detailActions?: React.ReactNode;
     onBack?: () => void;
@@ -164,6 +164,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen]);
 
     const isDetail = mode === 'detail';
+    const isCreate = mode === 'create';
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -186,7 +187,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         />
     );
 
-    const leftContent = isDetail ? (
+    const leftContent = isCreate ? (
+        <div className="flex items-center gap-1">
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
+        </div>
+    ) : isDetail ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
             {progressRing}
@@ -198,29 +203,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <div className="flex items-center gap-1">
-            <div className="md:hidden">
             {user && (
-                <div className="relative" ref={mobileCreateDropdownRef}>
-                    <RoundIconButton
-                        icon={<Plus className="w-5 h-5" />}
-                        onClick={() => setIsCreateOpen(!isCreateOpen)}
-                        variant="ghost"
-                        active={isCreateOpen}
-                        tooltip={t('nav_create')}
-                    />
-                    {isCreateOpen && (
-                        <div className="absolute top-full mt-2 left-0 z-50">
-                            <DropdownMenu
-                                items={[
-                                    { label: t('nav_generate_new'), icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                    { label: t('nav_upload'), icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
-                                ]}
-                            />
-                        </div>
-                    )}
-                </div>
+                <RoundIconButton
+                    icon={<Plus className="w-5 h-5" />}
+                    onClick={onCreate}
+                    variant="ghost"
+                    tooltip={t('nav_create')}
+                />
             )}
-            </div>
             {progressRing}
         </div>
     );
@@ -266,7 +256,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </button>
     );
 
-    const rightContent = isDetail ? (
+    const rightContent = isCreate ? null : isDetail ? (
         <div className="flex items-center gap-1">
             {/* Mobile: 3-dot menu in the right corner */}
             <div className="relative md:hidden" ref={mobileDetailMenuRef}>
@@ -352,25 +342,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </button>
             ) : (
                 <div className="flex items-center gap-3">
-                    <div className="relative hidden md:block" ref={createDropdownRef}>
-                        <RoundIconButton
-                            icon={<Plus className="w-5 h-5" />}
-                            onClick={() => setIsCreateOpen(!isCreateOpen)}
-                            variant="ghost"
-                            active={isCreateOpen}
-                            tooltip={t('nav_create')}
-                        />
-                        {isCreateOpen && (
-                            <div className="absolute top-full mt-2 right-0 z-50">
-                                <DropdownMenu
-                                    items={[
-                                        { label: t('nav_generate_new'), icon: <SquarePen className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); onCreate(); } },
-                                        { label: t('nav_upload'), icon: <Upload className="w-4 h-4" />, onClick: () => { setIsCreateOpen(false); document.getElementById('feed-upload-input')?.click(); } },
-                                    ]}
-                                />
-                            </div>
-                        )}
-                    </div>
                     {balanceDisplay}
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton

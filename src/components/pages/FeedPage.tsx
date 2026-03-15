@@ -309,12 +309,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
                         <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 ${isMobile ? 'pb-32' : ''}`}>
-                            {/* Upload Tile */}
+                            {/* Create Tile */}
                             <div
                                 className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
-                                onClick={triggerUpload}
+                                onClick={onCreateNew}
                             >
-                                <Upload className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+                                <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
                             </div>
 
                             {images.map((img, idx) => (

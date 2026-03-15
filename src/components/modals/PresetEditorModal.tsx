@@ -92,7 +92,7 @@ const LanguageForm = ({
         <div className="flex flex-col gap-6 h-full">
             {showHeader && (
                 <div className={`px-6 py-2 border-b ${Theme.Colors.Border} ${Theme.Colors.SurfaceSubtle} flex justify-between items-center sticky top-0 z-10`}>
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-500">{lang === 'de' ? t('version_de') : t('version_en')}</span>
+                    <span className={`${Typo.H5} text-zinc-500`}>{lang === 'de' ? t('version_de') : t('version_en')}</span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${lang === 'de' ? 'bg-amber-100 text-amber-800' : 'bg-orange-100 text-orange-800'}`}>{lang}</span>
                 </div>
             )}
@@ -111,7 +111,7 @@ const LanguageForm = ({
                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
                         {t('prompt_label_editor')}
                     </label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className="h-32 font-mono scrollbar-hide rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800" />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className={`${Typo.Prompt} h-32 scrollbar-hide rounded-3xl bg-zinc-50 dark:bg-zinc-900/50 border-transparent hover:border-zinc-200 dark:hover:border-zinc-800`} />
                 </div>
 
                 {/* Controls */}
@@ -129,13 +129,13 @@ const LanguageForm = ({
                                     >
                                         <div className="flex flex-col gap-1.5">
                                             <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
-                                                Titel
+                                                {t('title_label')}
                                             </label>
                                             <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
-                                                Optionen
+                                                {t('options')}
                                             </label>
                                             <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
                                         </div>
@@ -423,6 +423,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
                     onClose={() => setIsShareModalOpen(false)}
                     templateName={savedTemplateForShare?.title || initialTemplate?.title || titleDe || titleEn || 'Unbenannt'}
                     slug={savedTemplateForShare?.slug || initialTemplate?.slug}
+                    t={t}
                 />
             </div>
         </div>

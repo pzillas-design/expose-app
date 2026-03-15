@@ -223,7 +223,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
 
                             {/* Add New Form */}
                             <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900 flex flex-col gap-3">
-                                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider pl-1">
+                                <label className={`${Typo.H5} text-zinc-500 pl-1`}>
                                     {t('add_new_sticker')}
                                 </label>
                                 <div className="flex gap-2">

@@ -491,7 +491,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 >
                     <div className="flex flex-col items-center gap-2 pointer-events-none">
                         <Layers className={`w-7 h-7 ${isSideZoneActive ? 'text-white' : 'text-zinc-400'}`} strokeWidth={1.5} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Drop Image</span>
+                        <span className={`${Typo.Label} text-zinc-400`}>Drop Image</span>
                     </div>
                 </div>
             )}
@@ -526,7 +526,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             onChange={e => handlePromptChange(e.target.value)}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
-                                            className="w-full bg-transparent outline-none text-[13px] leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+                                            className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none min-h-[140px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
 

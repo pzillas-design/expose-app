@@ -64,13 +64,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
      {/* Nav strip (includes branding) */}
      <div className="flex-1 overflow-x-auto no-scrollbar">
-      <div className="flex items-center gap-0.5 w-max">
+      <div className="flex items-center gap-0.5 w-full min-w-max">
 
        {/* Branding */}
        <div className="flex items-center gap-2 px-3 h-14 mr-1">
         <Logo className="w-5 h-5" />
         <span className="text-[11px] font-semibold text-zinc-400">Admin</span>
        </div>
+
+       {/* Flexible spacer — pushes nav to the right on wide screens */}
+       <div className="flex-1" />
 
        {navItems.map(item => {
         const active = isTabActive(item.id);

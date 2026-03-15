@@ -203,13 +203,13 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                                         <Tooltip text={t ? t('generate_more') : (isGerman ? 'Mehr generieren' : 'Generate more')}>
                                             <button
                                                 onClick={() => onGenerateMore?.(item.id)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
+                                                className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
                                             >
                                                 <Repeat className="w-4 h-4" />
                                             </button>
                                         </Tooltip>
                                     </div>
-                                    <div className="mt-1.5 h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div className="mt-3 mb-0.5 h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-orange-500 rounded-full transition-none"
                                             style={{ width: `${progress}%` }}

@@ -376,7 +376,7 @@ export const translations = {
     admin_total_spent_header: 'Total Spent',
     admin_user_default: 'User',
     admin_user_email_missing: 'No Email',
-    delete_account_section: 'More',
+    delete_account_section: 'Other',
     delete_account_permanently: 'Delete Account',
     shared_template_label: "Shared Template",
     shared_template_desc: "Use this exclusive template to take your images to the next level directly in exposé.",
@@ -421,9 +421,18 @@ export const translations = {
     notifications_blocked: "Blocked in browser",
     notifications_disabled: "Currently disabled",
     notifications_ask: "Permission will be requested when enabled",
-    notifications_allow_in_browser: "Allow in browser settings",
+    notifications_allow_in_browser: "Allow notifications in your browser settings",
     auto_delete_oldest: "Auto-delete oldest",
     auto_delete_desc: "Deletes oldest image when limit is reached",
+    // SettingsModal — extended
+    settings_model_label: "Default Model",
+    settings_quality_label: "Default Quality",
+    settings_change_password: "Change Password",
+    notifications_browser_label: "Browser Notifications",
+    notifications_browser_desc: "After completed generations",
+    auto_delete_desc_short: "After reaching the limit",
+    model_nb2_desc: "Faster",
+    model_pro_desc: "Highest quality",
 
     // DetailPage
     open_editing_panel: "Open editing panel",
@@ -479,6 +488,22 @@ export const translations = {
     presets_edit_tooltip: "Edit template",
     preset_edit_presets: "Edit Presets",
     no_entries_available: "No entries available yet.",
+
+    // AuthModal
+    auth_or: "or",
+
+    // ManagePresetsModal / ShareTemplateModal
+    share_btn: "Share",
+    share_title: "Share Template",
+    share_ready_desc: "Your template is ready to share — copy the link and send it to friends or colleagues.",
+    share_unsaved_desc: "Please save your changes first to generate a shareable link.",
+    share_placeholder_unsaved: "Link will be generated after saving...",
+    share_copy_btn: "Copy Link",
+    share_copied_btn: "Link Copied",
+    share_error_copy: "Error copying link",
+    share_error_save_first: "Please save the template first",
+    share_toast_copied: "Link copied",
+    preset_select_placeholder: "Select a preset or create a new one",
   },
   de: {
     // General
@@ -905,9 +930,18 @@ export const translations = {
     notifications_blocked: "Im Browser gesperrt",
     notifications_disabled: "Aktuell deaktiviert",
     notifications_ask: "Erlaubnis wird beim Aktivieren angefragt",
-    notifications_allow_in_browser: "In den Browser-Einstellungen erlauben",
+    notifications_allow_in_browser: "Benachrichtigungen in den Browser-Einstellungen erlauben",
     auto_delete_oldest: "Ältestes automatisch löschen",
     auto_delete_desc: "Löscht das älteste Bild wenn das Limit erreicht wird",
+    // SettingsModal — extended
+    settings_model_label: "Standardmodell",
+    settings_quality_label: "Standardqualität",
+    settings_change_password: "Passwort ändern",
+    notifications_browser_label: "Browser-Benachrichtigungen",
+    notifications_browser_desc: "Nach abgeschlossenen Generierungen",
+    auto_delete_desc_short: "Nach Erreichen des Limits",
+    model_nb2_desc: "Schneller",
+    model_pro_desc: "Höchste Qualität",
 
     // DetailPage
     open_editing_panel: "Bearbeitungspanel öffnen",
@@ -991,6 +1025,12 @@ export const translations = {
     home_kitchen: "Küche",
     home_table: "Esstisch",
     home_sofa: "Sofa",
+
+    // AuthModal
+    auth_or: "oder",
+
+    // ManagePresetsModal / ShareTemplateModal
+    preset_select_placeholder: "Vorlage auswählen oder neue erstellen",
 
     // Share Modal
     share_title: "Vorlage teilen",

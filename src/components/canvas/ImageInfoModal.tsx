@@ -52,7 +52,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 {/* 1. Prompt Section - First */}
                 {image.generationPrompt && (
                     <div className="flex flex-col gap-2 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
+                        <span className={`${Typo.Label} text-zinc-400`}>
                             {t('prompt') || 'Prompt'}
                         </span>
                         <Tooltip text={t('copy_prompt_tooltip')}>
@@ -171,7 +171,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                             className="justify-start px-4 gap-3"
                         >
                             <RotateCcw className="w-4 h-4 text-zinc-400" />
-                            <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
+                            <span className={`${Typo.Label} text-zinc-600 dark:text-zinc-300`}>
                                 {t('ctx_create_variations')}
                             </span>
                         </Button>

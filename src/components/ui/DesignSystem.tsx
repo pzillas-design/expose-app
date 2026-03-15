@@ -71,29 +71,38 @@ export const Typo = {
     // Big Numbers / Hero Text
     Display: `text-5xl font-light tracking-tighter ${Theme.Colors.TextHighlight} ${Theme.Fonts.Mono}`,
 
-    // Main Headers (Modals, Large Titles)
-    H1: `text-lg font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
+    // H1 — Page titles, hero headings
+    H1: `text-xl font-semibold tracking-tight ${Theme.Colors.TextHighlight}`,
 
-    // Section Headers / Card Titles
-    H2: `text-base font-medium tracking-tight ${Theme.Colors.TextHighlight}`,
+    // H2 — Modal titles, major section headings
+    H2: `text-lg font-semibold tracking-tight ${Theme.Colors.TextHighlight}`,
 
-    // Subtitles / Form Labels
-    H3: `text-sm font-medium ${Theme.Colors.TextPrimary}`,
+    // H3 — Panel / card titles
+    H3: `text-base font-medium ${Theme.Colors.TextPrimary}`,
 
-    // Section Labels (The "Eyebrow" style)
-    Label: `text-[10px] font-bold uppercase tracking-widest ${Theme.Colors.TextSecondary}`,
+    // H4 — Subsection headers, list group titles
+    H4: `text-sm font-medium ${Theme.Colors.TextPrimary}`,
 
-    // Button Labels (Standardized for all buttons)
+    // H5 — Field labels, small section headers
+    H5: `text-xs font-medium ${Theme.Colors.TextSecondary}`,
+
+    // Section Labels — very small meta labels (10px)
+    Label: `text-[10px] font-medium ${Theme.Colors.TextSecondary}`,
+
+    // Button Labels (Standardized for all buttons — keep uppercase)
     ButtonLabel: `text-[10px] font-bold uppercase tracking-widest`,
 
     // Tiny Badges
-    LabelSmall: `text-[9px] font-bold uppercase tracking-widest`,
+    LabelSmall: `text-[9px] font-medium`,
 
     // Standard UI Text
     Body: `text-xs font-normal ${Theme.Colors.TextPrimary} leading-relaxed`,
 
     // Micro Labels
     Micro: `text-[11px] font-normal ${Theme.Colors.TextSecondary}`,
+
+    // Prompt / Instruction Input Text
+    Prompt: `${Theme.Fonts.Mono} text-sm font-normal leading-relaxed`,
 
     // Technical/Numbers
     Mono: `${Theme.Fonts.Mono} text-xs ${Theme.Colors.TextSecondary}`
@@ -201,7 +210,7 @@ export const ModalHeader: React.FC<{
 
 // -- Modal Footer --
 export const ModalFooter: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-    <div className={`p-6 flex items-center shrink-0 border-t border-zinc-100 dark:border-zinc-800 ${className}`}>
+    <div className={`p-6 flex items-center shrink-0 ${className}`}>
         {children}
     </div>
 );

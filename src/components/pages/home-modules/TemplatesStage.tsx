@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, X, Plus, ChevronDown, Pen } from 'lucide-react';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
+import { Typo } from '@/components/ui/DesignSystem';
 
 // --- Shared Internal Components ---
 
@@ -58,7 +59,7 @@ const SidepanelMockup = ({
 
                 <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'season' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className="text-[10px] lg:text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Jahreszeit</span>
                         <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
                             <ChipGroup
                                 items={['Frühling', 'Sommer', 'Winter']}
@@ -73,7 +74,7 @@ const SidepanelMockup = ({
 
                 <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'time' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className="text-[10px] lg:text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Uhrzeit</span>
                         <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
                             <ChipGroup
                                 items={['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour']}
@@ -113,7 +114,7 @@ const SidepanelMockup = ({
                 <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
                     <div className="flex items-center gap-2">
                         <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
+                        <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>Vorlagen</span>
                     </div>
                     <Plus className="w-3.5 h-3.5 text-zinc-400" />
                 </div>

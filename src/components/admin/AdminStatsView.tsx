@@ -301,7 +301,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 </div>
                 <table className="w-full text-left border-collapse">
                     <thead>
-                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                        <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-medium text-zinc-500">
                             <th className="px-6 py-3">Modell</th>
                             <th className="px-6 py-3 text-right">Abgeschlossen</th>
                             <th className="px-6 py-3 text-right">Kosten/Job</th>
@@ -325,7 +325,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             );
                         })}
                         <tr className="bg-zinc-50/30 dark:bg-zinc-800/20 font-bold text-sm">
-                            <td className="px-6 py-3 text-[11px] uppercase tracking-wide text-zinc-500">Gesamt</td>
+                            <td className="px-6 py-3 text-[11px] font-medium text-zinc-500">Gesamt</td>
                             <td className="px-6 py-3 text-right">{completedJobs.length}</td>
                             <td className="px-6 py-3" />
                             <td className="px-6 py-3 text-right font-mono text-red-500">{kieAiCost.toFixed(2)}€</td>
@@ -361,7 +361,7 @@ const StatCard = ({ label, value, sub, icon, iconBg, valueColor }: {
 }) => (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{label}</span>
+            <span className="text-[10px] font-medium text-zinc-400">{label}</span>
             <div className={`p-2 rounded-xl ${iconBg}`}>{icon}</div>
         </div>
         <div>

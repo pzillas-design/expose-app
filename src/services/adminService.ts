@@ -107,7 +107,7 @@ export const adminService = {
         await Promise.all([
             jobIds.length > 0 ? supabase
                 .from('images')
-                .select('job_id, storage_path, width, height')
+                .select('job_id, storage_path, width, height, real_width, real_height, title, base_name')
                 .in('job_id', jobIds)
                 .then(({ data: images }) => {
                     if (images) images.forEach(img => { if (img.job_id) imagesMap[img.job_id] = img; });
@@ -125,8 +125,10 @@ export const adminService = {
             id: job.id,
             userName: profilesMap[job.user_id] || job.user_name || 'Unknown',
             type: job.type || 'Generation',
-            model: job.model || 'unknown', // This already contains 'pro-1k', 'pro-2k' etc from DB
+            model: job.model || 'unknown',
+            qualityMode: job.quality_mode || job.model || 'unknown',
             status: job.status || 'completed',
+            error: job.error || null,
             promptPreview: job.prompt_preview || '',
             cost: job.cost || 0,
             createdAt: new Date(job.created_at).getTime(),

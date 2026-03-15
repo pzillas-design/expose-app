@@ -306,9 +306,9 @@ export const useGeneration = ({
             annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
             parentId: sourceImage.id,
             generationPrompt: prompt,
-            userDraftPrompt: '',
-            activeTemplateId: undefined,
-            variableValues: undefined,
+            userDraftPrompt: draftPrompt || prompt,
+            activeTemplateId: activeTemplateId,
+            variableValues: variableValues,
             quality: qualityMode,
             estimatedDuration,
             createdAt: Date.now(),
@@ -323,8 +323,8 @@ export const useGeneration = ({
             return newRows;
         });
 
-        // Stay on source image — detail view shows generating modal overlay.
-        // Navigation to the finished image happens automatically via DetailPage.
+        // Stay on source image — auto-navigation to the finished result
+        // is handled by the generatingChild detection in DetailPage.
 
         // --- ASYNC PROCESSING STARTS HERE ---
         // Credits are deducted server-side; local UI update happens only on success.
@@ -377,7 +377,13 @@ export const useGeneration = ({
                         status: 'processing',
                         cost: cost,
                         prompt_preview: prompt,
-                        parent_id: sourceImage.id
+                        parent_id: sourceImage.id,
+                        request_payload: {
+                            hasSourceImage: !!sourceImage.src,
+                            hasMask: !!maskDataUrl,
+                            referenceImagesCount: refs.length,
+                            variables: variableValues || {},
+                        }
                     }).then(() => attachedJobIds.current.add(newId));
                 }
 

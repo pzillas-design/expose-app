@@ -430,7 +430,7 @@ export const useNanoController = () => {
             if (img.parentId) {
                 const parent = allImages.find(p => p.id === img!.parentId);
                 if (parent) {
-                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, true);
+                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues);
                     return;
                 } else {
                     // Parent not found - show error instead of falling back

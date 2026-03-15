@@ -178,7 +178,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                             </div>
                         )}
                         <div className="flex flex-col gap-3">
-                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 uppercase tracking-wider`}>
+                            <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400`}>
                                 {t('creation_prompt_label')}
                             </label>
 
@@ -246,7 +246,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                         {/* Model Dropdown */}
                         <div className={`flex flex-col gap-3 relative overflow-visible ${openDropdown === 'model' ? 'z-[100]' : 'z-20'}`}>
-                            <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
+                            <label className={`${Typo.Label} text-zinc-400 flex items-center gap-2`}>
                                 {t('creation_quality_label')}
                             </label>
                             <div className="relative">
@@ -294,7 +294,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
                         {/* Aspect Ratio Dropdown */}
                         <div className={`flex flex-col gap-3 relative overflow-visible ${openDropdown === 'ratio' ? 'z-[100]' : 'z-20'}`}>
-                            <label className={`${Typo.Label} text-zinc-400 uppercase tracking-wider flex items-center gap-2`}>
+                            <label className={`${Typo.Label} text-zinc-400 flex items-center gap-2`}>
                                 {t('creation_ratio_label')}
                             </label>
 
