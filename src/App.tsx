@@ -357,7 +357,7 @@ export function App() {
                             </ProtectedRoute>
                         } />
 
-                        <Route path="/admin" element={
+                        <Route path="/admin/:tab?" element={
                             <AdminRoute user={user} userProfile={userProfile} isAuthLoading={isAuthLoading}>
                                 <AdminDashboard
                                     user={user}

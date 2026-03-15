@@ -29,7 +29,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
  // Route Protection: Redirect non-admins
  useEffect(() => {
  if (userProfile && userProfile.role !== 'admin') {
- navigate('/projects');
+ navigate('/');
  }
  }, [userProfile, navigate]);
 
@@ -39,8 +39,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
  }
 
  const activeTab = useMemo(() => {
- const t = tab || 'users';
- return (t === 'stamps' ? 'objects' : t) as AdminTab;
+ const tabName = tab || 'users';
+ return (tabName === 'stamps' ? 'objects' : tabName) as AdminTab;
  }, [tab]);
 
  const navItems = [
@@ -90,7 +90,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
  {/* Right: Home Button */}
  <button
- onClick={() => navigate('/projects')}
+ onClick={() => navigate('/')}
  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors bg-white/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-white/5"
  >
  <Home className="w-3.5 h-3.5" />

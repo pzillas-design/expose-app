@@ -20,7 +20,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, t }) => {
  <button
  onClick={() => navigate(`/admin/${id}`)}
  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
- ? 'bg-black text-white dark:bg-white dark:text-black dark:'
+ ? 'bg-black text-white dark:bg-white dark:text-black'
  : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
  >
  <div className={`p-1.5 rounded-lg ${isActive ? 'bg-white/10 dark:bg-black/10' : 'bg-transparent'}`}>

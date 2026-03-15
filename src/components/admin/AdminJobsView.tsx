@@ -35,10 +35,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
         } finally {
-            setLoading(isInitial ? false : loading);
-            if (!isInitial) setLoadingMore(false);
+            setLoading(false);
+            setLoadingMore(false);
         }
-    }, [loading]);
+    }, []);
 
     useEffect(() => {
         fetchJobs(1, true);
