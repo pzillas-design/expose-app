@@ -420,7 +420,16 @@ export function App() {
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
                         <Route path="/legal" element={<Navigate to="/impressum" replace />} />
-                        <Route path="/s/:slug" element={<SharedTemplatePage />} />
+                        <Route path="/s/:slug" element={
+                            <SharedTemplatePage
+                                user={user}
+                                userProfile={userProfile}
+                                credits={credits || 0}
+                                onCreateBoard={() => navigate('/create')}
+                                onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
+                                t={t}
+                            />
+                        } />
 
                         {/* Legacy Redirects */}
                         <Route path="/projects/*" element={<Navigate to="/" replace />} />
