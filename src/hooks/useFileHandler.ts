@@ -23,7 +23,7 @@ export const useFileHandler = ({
     t
 }: UseFileHandlerProps) => {
 
-    const processFiles = useCallback(async (files: File[]) => {
+    const processFiles = useCallback((files: File[]): string[] => {
         const newImageIds: string[] = [];
         let processedCount = 0;
 
@@ -162,11 +162,11 @@ export const useFileHandler = ({
                     items: row.items.filter(item => item.id !== skeletonId)
                 })).filter(r => r.items.length > 0));
             });
-        }
+        return newImageIds;
     }, [user, isAuthDisabled, setRows, selectMultiple, showToast, t]);
 
-    const processFile = useCallback((file: File) => {
-        processFiles([file]);
+    const processFile = useCallback((file: File): string => {
+        return processFiles([file])[0];
     }, [processFiles]);
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {

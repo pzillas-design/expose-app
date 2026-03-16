@@ -456,10 +456,10 @@ export const useNanoController = () => {
         performNewGeneration(prompt, model, ratio, attachments);
     }, [performNewGeneration, checkStorageLimit]);
 
-    const handleProcessFile = useCallback(async (file: File) => {
+    const handleProcessFile = useCallback(async (file: File): Promise<string | undefined> => {
         const canProceed = await checkStorageLimit();
-        if (!canProceed) return;
-        processFile(file);
+        if (!canProceed) return undefined;
+        return processFile(file);
     }, [processFile, checkStorageLimit]);
 
     const handleNavigateParent = useCallback((parentId: string) => {

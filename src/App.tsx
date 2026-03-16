@@ -296,7 +296,13 @@ export function App() {
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={() => navigate('/create')}
-                                    onUpload={(files) => Array.from(files ?? []).forEach(f => actions.processFile(f))}
+                                    onUpload={async (files) => {
+                                        const arr = Array.from(files ?? []);
+                                        if (arr.length === 0) return;
+                                        const id = await actions.processFile(arr[0]);
+                                        if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                        arr.slice(1).forEach(f => actions.processFile(f));
+                                    }}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
@@ -381,7 +387,13 @@ export function App() {
                             }}>
                                 <CreatePage
                                     onCreateNew={handleCreateNew}
-                                    onUpload={(files) => { Array.from(files).forEach(f => actions.processFile(f)); navigate('/'); }}
+                                    onUpload={async (files) => {
+                                        const arr = Array.from(files);
+                                        if (arr.length === 0) return;
+                                        const id = await actions.processFile(arr[0]);
+                                        if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                        arr.slice(1).forEach(f => actions.processFile(f));
+                                    }}
                                     onBack={() => navigate('/')}
                                     state={state}
                                     actions={actions}
