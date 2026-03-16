@@ -94,6 +94,20 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ user, currentLang, o
         <header className="fixed top-0 left-0 right-0 h-14 z-50 pointer-events-none">
             <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900">
                 <div className="flex items-center w-1/3">
+                    <div className="relative" ref={menuRef}>
+                        <RoundIconButton
+                            icon={<MoreHorizontal />}
+                            onClick={() => setIsMenuOpen((open) => !open)}
+                            variant="ghost"
+                            active={isMenuOpen}
+                            aria-label={isGerman ? 'Menü öffnen' : 'Open menu'}
+                        />
+                        {isMenuOpen && (
+                            <div className="absolute top-full mt-2 left-0 z-50">
+                                <DropdownMenu items={menuItems} />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-center w-1/3">
@@ -107,38 +121,22 @@ export const PublicNavbar: React.FC<PublicNavbarProps> = ({ user, currentLang, o
                 </div>
 
                 <div className="flex items-center justify-end w-1/3">
-                    <div className="flex items-center gap-2">
-                        <Button
-                            onClick={() => {
-                                if (user) {
-                                    navigate('/');
-                                    return;
-                                }
-                                onStartApp?.();
-                            }}
-                            variant="primary-mono"
-                            size="s"
-                            icon={<ChevronRight />}
-                            iconPosition="right"
-                            className="min-w-[88px]"
-                        >
-                            {appButtonLabel}
-                        </Button>
-                        <div className="relative" ref={menuRef}>
-                            <RoundIconButton
-                                icon={<MoreHorizontal />}
-                                onClick={() => setIsMenuOpen((open) => !open)}
-                                variant="ghost"
-                                active={isMenuOpen}
-                                aria-label={isGerman ? 'Menü öffnen' : 'Open menu'}
-                            />
-                            {isMenuOpen && (
-                                <div className="absolute top-full mt-2 right-0 z-50">
-                                    <DropdownMenu items={menuItems} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <Button
+                        onClick={() => {
+                            if (user) {
+                                navigate('/');
+                                return;
+                            }
+                            onStartApp?.();
+                        }}
+                        variant="primary-mono"
+                        size="s"
+                        icon={<ChevronRight />}
+                        iconPosition="right"
+                        className="min-w-[88px]"
+                    >
+                        {appButtonLabel}
+                    </Button>
                 </div>
             </div>
         </header>
