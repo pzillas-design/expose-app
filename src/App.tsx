@@ -159,7 +159,7 @@ export function App() {
                     user={user}
                     userProfile={userProfile}
                     credits={credits || 0}
-                    onCreate={() => navigate('/create')}
+                    onCreate={() => navigate('/create?m=create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
@@ -295,7 +295,7 @@ export function App() {
                                     isLoading={isCanvasLoading}
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
-                                    onCreateNew={() => navigate('/create')}
+                                    onCreateNew={() => navigate('/create?m=create')}
                                     onUpload={async (files) => {
                                         const arr = Array.from(files ?? []);
                                         if (arr.length === 0) return;

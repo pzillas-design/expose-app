@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -41,7 +42,10 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     onCreateNew, onUpload, onBack, state, actions, t
 }) => {
     const isMobile = useMobile();
-    const [mode, setMode] = useState<'choose' | 'create'>('choose');
+    const [searchParams] = useSearchParams();
+    const [mode, setMode] = useState<'choose' | 'create'>(
+        searchParams.get('m') === 'create' ? 'create' : 'choose'
+    );
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [isGenerating, setIsGenerating] = useState(false);
     const uploadRef = useRef<HTMLInputElement>(null);
