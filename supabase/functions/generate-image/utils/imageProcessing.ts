@@ -26,6 +26,9 @@ export const extractBase64FromDataUrl = (dataUrl: string): string => {
 export const prepareSourceImage = async (src: string): Promise<string> => {
     if (!src) return '';
 
+    // Blob URLs are browser-only and cannot be fetched server-side
+    if (src.startsWith('blob:')) return '';
+
     if (src.startsWith('http')) {
         return await urlToBase64(src);
     } else if (src.includes(',')) {

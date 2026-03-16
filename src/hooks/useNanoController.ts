@@ -411,6 +411,8 @@ export const useNanoController = () => {
                 // Snap only to the first generated image in the batch
                 performGeneration(img, finalPrompt, 1, index === 0, draftPrompt, activeTemplateId, variableValues);
             });
+            // Exit multiselect after confirming batch generation
+            setSelectedIds([]);
         } else if (selectedImage) {
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);

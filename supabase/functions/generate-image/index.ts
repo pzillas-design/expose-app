@@ -155,17 +155,19 @@ Deno.serve(async (req) => {
         }
 
         const isPro = profile.role === 'pro';
-        if (!isPro && (profile.credits || 0) < cost) {
+        const creditBalance = Math.round((profile.credits || 0) * 100) / 100;
+        if (!isPro && creditBalance < cost) {
             throw new Error('Insufficient credits');
         }
 
         // Deduct credits and store original balance for refund on failure
         if (!isPro && cost > 0) {
+            const newBalance = Math.round((creditBalance - cost) * 100) / 100;
             await supabaseAdmin
                 .from('profiles')
-                .update({ credits: profile.credits - cost })
+                .update({ credits: newBalance })
                 .eq('id', user.id);
-            refundData = { userId: user.id, originalCredits: profile.credits };
+            refundData = { userId: user.id, originalCredits: creditBalance };
         }
 
         // Prepare source image (base64)
