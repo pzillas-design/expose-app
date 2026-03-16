@@ -162,6 +162,7 @@ export const useFileHandler = ({
                     items: row.items.filter(item => item.id !== skeletonId)
                 })).filter(r => r.items.length > 0));
             });
+        }
         return newImageIds;
     }, [user, isAuthDisabled, setRows, selectMultiple, showToast, t]);
 
