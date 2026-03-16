@@ -511,7 +511,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-8">
+                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-5">
 
                     <>
                             {/* ── REFINE Section ── */}
@@ -801,9 +801,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
-                                        {displayTemplates.length === 0 && (
-                                            <div className="py-2 px-4 text-[12px] text-zinc-400">{t('no_entries')}</div>
-                                        )}
                                         {displayTemplates.map((tpl) => (
                                             <button
                                                 key={tpl.id}
@@ -816,15 +813,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 </span>
                                             </button>
                                         ))}
-                                        <RoundIconButton
-                                            icon={<MoreHorizontal className="w-4 h-4" />}
-                                            onClick={() => {
-                                                setEditingTemplate(null);
-                                                setIsPresetModalOpen(true);
-                                            }}
-                                            tooltip={t('edit_presets')}
-                                            variant="ghost"
-                                        />
+                                        {displayTemplates.length === 0 ? (
+                                            <button
+                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all text-[12px] font-medium text-zinc-500 dark:text-zinc-400"
+                                            >
+                                                <Plus className="w-3 h-3" />
+                                                {t('new_preset') || 'Neue Vorlage'}
+                                            </button>
+                                        ) : (
+                                            <RoundIconButton
+                                                icon={<MoreHorizontal className="w-4 h-4" />}
+                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                tooltip={t('edit_presets')}
+                                                variant="ghost"
+                                            />
+                                        )}
                                     </div>
                                 </div>
                     </>
