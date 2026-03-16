@@ -134,16 +134,20 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     ) : (
                         /* ── Canvas / format picker ── */
                         <div
-                            className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-hidden"
+                            className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-visible"
                             style={previewSize
                                 ? { width: previewSize.w, height: previewSize.h }
                                 : { aspectRatio: `${ratioW} / ${ratioH}`, maxWidth: '100%', maxHeight: '100%' }
                             }
                         >
-                            {/* blobs — only mounted and visible while generating, never before */}
-                            {isGenerating && <BlobBackground />}
+                            {/* blobs clipped inside rounded box */}
+                            {isGenerating && (
+                                <div className="absolute inset-0 rounded-2xl overflow-hidden">
+                                    <BlobBackground />
+                                </div>
+                            )}
 
-                            {/* ratio picker — hidden while generating */}
+                            {/* ratio picker */}
                             <div
                                 className={`relative z-10 flex items-center gap-1 transition-opacity duration-300 ${isGenerating ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                                 onClick={(e) => e.stopPropagation()}
