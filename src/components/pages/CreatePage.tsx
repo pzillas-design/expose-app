@@ -107,7 +107,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
             <div className="md:flex-1 relative overflow-hidden"
                 style={isMobile ? { height: `calc(100vw * ${ratioH} / ${ratioW})`, minHeight: 200, maxHeight: '55vw' } : undefined}
             >
-                <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-zinc-100 dark:bg-zinc-950">
+                <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-white dark:bg-zinc-950">
 
                     {mode === 'choose' ? (
                         /* ── Welcome / choice screen ── */
@@ -134,7 +134,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     ) : (
                         /* ── Canvas / format picker ── */
                         <div
-                            className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-hidden"
+                            className="relative rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-hidden"
                             style={previewSize
                                 ? { width: previewSize.w, height: previewSize.h }
                                 : { aspectRatio: `${ratioW} / ${ratioH}`, maxWidth: '100%', maxHeight: '100%' }
@@ -154,8 +154,8 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                                         onClick={() => setSelectedRatio(r.value)}
                                         className={`flex flex-col items-center gap-2 px-3 py-3 rounded-xl transition-colors ${
                                             selectedRatio === r.value
-                                                ? 'bg-zinc-100 dark:bg-zinc-800'
-                                                : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                                                ? 'bg-zinc-200 dark:bg-zinc-800'
+                                                : 'hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'
                                         }`}
                                     >
                                         <AspectBox ratio={r.value} active={selectedRatio === r.value} />

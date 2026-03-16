@@ -103,6 +103,7 @@ interface FeedPageProps {
     hasMore: boolean;
     onSelectImage: (id: string) => void;
     onCreateNew: () => void;
+    onGenerate?: () => void;
     onUpload?: (files?: FileList) => void;
     onLoadMore: () => void;
     isSelectMode?: boolean;
@@ -114,7 +115,7 @@ interface FeedPageProps {
     t?: any;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -332,7 +333,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 <Button
                                     variant="secondary"
                                     size="l"
-                                    onClick={onCreateNew}
+                                    onClick={onGenerate ?? onCreateNew}
                                     icon={<Plus className="w-5 h-5" />}
                                 >
                                     {t?.('action_generate') || 'Generate image'}

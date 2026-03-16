@@ -159,7 +159,7 @@ export function App() {
                     user={user}
                     userProfile={userProfile}
                     credits={credits || 0}
-                    onCreate={() => navigate('/create?m=create')}
+                    onCreate={() => navigate('/create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
@@ -257,6 +257,7 @@ export function App() {
                         }
                     }}
                     isSideSheetVisible={detailSideSheetVisible}
+                    isFeedSideSheetVisible={feedSideSheetVisible}
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
                     onToggleFeedSideSheet={() => setFeedSideSheetVisible(v => !v)}
                     generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
@@ -295,7 +296,8 @@ export function App() {
                                     isLoading={isCanvasLoading}
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
-                                    onCreateNew={() => navigate('/create?m=create')}
+                                    onCreateNew={() => navigate('/create')}
+                                    onGenerate={() => navigate('/create?m=create')}
                                     onUpload={async (files) => {
                                         const arr = Array.from(files ?? []);
                                         if (arr.length === 0) return;

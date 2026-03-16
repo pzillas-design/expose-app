@@ -37,6 +37,7 @@ interface AppNavbarProps {
     onDetailRegenerate?: () => void;
     detailHasPrompt?: boolean;
     isSideSheetVisible?: boolean;
+    isFeedSideSheetVisible?: boolean;
     onToggleSideSheet?: () => void;
     onToggleFeedSideSheet?: () => void;
     rightInset?: number;
@@ -76,6 +77,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onDetailRegenerate,
     detailHasPrompt,
     isSideSheetVisible,
+    isFeedSideSheetVisible,
     onToggleSideSheet,
     onToggleFeedSideSheet,
     rightInset = 0,
@@ -326,7 +328,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <Trash2 className="w-[18px] h-[18px]" />
                 </button>
             </Tooltip>
-            {!isSideSheetVisible && (
+            {!isFeedSideSheetVisible && (
                 <Button variant="primary" size="s" onClick={onToggleFeedSideSheet}>
                     {t('nav_edit')}
                 </Button>

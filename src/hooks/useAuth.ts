@@ -276,14 +276,10 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     const deleteAccount = useCallback(async () => {
         if (!user || isAuthDisabled) return;
         try {
-            // First sign out locally
-            await supabase.auth.signOut();
-
-            // In a real app, you'd call an edge function to delete the user from auth.users
-            // For now, we delete the profile specifically if it doesn't auto-cascade
-            const { error } = await supabase.from('profiles').delete().eq('id', user.id);
+            const { error } = await supabase.functions.invoke('delete-own-account');
             if (error) throw error;
 
+            await supabase.auth.signOut();
             showToast(t('account_deleted'), "success");
             window.location.href = '/';
         } catch (err: any) {
