@@ -91,6 +91,27 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, [generatingChild, images, onSelectImage]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
+    // Keep blob visible after generation completes until the real image has loaded
+    const prevIsGeneratingRef = useRef<boolean>(false);
+    const prevSelectedIdRef = useRef<string>('');
+    const [waitingForGeneratedLoad, setWaitingForGeneratedLoad] = useState<string | null>(null);
+    useEffect(() => {
+        // If selectedId changed, reset tracking state before checking transition
+        if (prevSelectedIdRef.current !== selectedId) {
+            prevSelectedIdRef.current = selectedId;
+            prevIsGeneratingRef.current = img?.isGenerating ?? false;
+            setWaitingForGeneratedLoad(null);
+            return;
+        }
+        const wasGenerating = prevIsGeneratingRef.current;
+        prevIsGeneratingRef.current = img?.isGenerating ?? false;
+        if (wasGenerating && !img?.isGenerating && img?.src) {
+            setWaitingForGeneratedLoad(selectedId);
+            setLoadedImageId(null); // reset so image fades in via onLoad
+        }
+    }, [img?.isGenerating, selectedId]);
+    const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
+
     // Track actual image dimensions from the loaded <img> element
     const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
     useEffect(() => {
@@ -349,7 +370,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {!isMobile && state.sideSheetMode !== 'brush' && (
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <div className="flex items-center gap-2 pointer-events-auto">
-                                    {!isSideSheetVisible && !img.isGenerating && (
+                                    {!isSideSheetVisible && !showBlob && (
                                         <Tooltip text={t('open_editing_panel')}>
                                             <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
                                                 {t('nav_edit')}
@@ -378,8 +399,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     className="relative shrink-0"
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
-                                    {/* blobs while generating */}
-                                    {img.isGenerating && (
+                                    {/* blobs while generating or loading the generated result */}
+                                    {showBlob && (
                                         <BlobBackground className="rounded-lg" speedScale={2} />
                                     )}
 
@@ -400,12 +421,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
                                             setLoadedImageId(img.id);
+                                            setWaitingForGeneratedLoad(null);
                                         }}
                                         className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                                         style={{ objectFit: 'contain' }}
                                     />
 
-                                    {!img.isGenerating && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
+                                    {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
                                         <div className="absolute inset-0 z-20 pointer-events-auto">
                                             <EditorCanvas
                                                 width={logicalDims.width}
