@@ -314,7 +314,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-black">
+        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black">
             {/* Removed internal header - handled by AppNavbar */}
 
             <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
@@ -380,7 +380,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 >
                                     {/* blobs while generating */}
                                     {img.isGenerating && (
-                                        <BlobBackground className="rounded-lg" />
+                                        <BlobBackground className="rounded-lg" speedScale={2} />
                                     )}
 
                                     {img.thumbSrc && !isMainLoaded && (
@@ -435,7 +435,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Bottom Area: Fixed space so canvas never jumps */}
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
-                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-zinc-100 dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                             {images.filter(i => !i.isGenerating && (i.thumbSrc || i.src)).map(i => (
                                 <ThumbButton
                                     key={i.id}
