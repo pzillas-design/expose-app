@@ -12,7 +12,8 @@ export const createKieTask = async (
     payload: any,
     imageUrls: string[],
     aspectRatio: string,
-    resolution: string
+    resolution: string,
+    callBackUrl?: string
 ): Promise<string> => {
     const { prompt, variables, annotationImage } = payload;
 
@@ -41,6 +42,10 @@ export const createKieTask = async (
 
     if (imageUrls.length > 0) {
         taskBody.input.image_input = imageUrls;
+    }
+
+    if (callBackUrl) {
+        taskBody.callBackUrl = callBackUrl;
     }
 
     console.log('[DEBUG] Kie createTask | model:', modelName, '| AR:', aspectRatio, '| Res:', resolution, '| Images:', imageUrls.length);
