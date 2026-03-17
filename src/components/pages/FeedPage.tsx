@@ -137,8 +137,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 {/* Modern Flat solid deep overlap stacks — bottom center like square style */}
                 {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
                     <>
-                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[15px] h-full -z-20 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-400 dark:bg-zinc-700 scale-[0.93]" style={stackColor ? { backgroundColor: stackColor, opacity: 0.55 } : undefined} />}
-                        <div className="absolute inset-x-[5px] -bottom-[8px] h-full -z-10 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-300 dark:bg-zinc-600 scale-[0.96]" style={stackColor ? { backgroundColor: stackColor } : undefined} />
+                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-400 dark:bg-zinc-700 scale-[0.93]" style={stackColor ? { backgroundColor: stackColor, opacity: 0.55 } : undefined} />}
+                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-300 dark:bg-zinc-600 scale-[0.96]" style={stackColor ? { backgroundColor: stackColor } : undefined} />
                     </>
                 )}
 
