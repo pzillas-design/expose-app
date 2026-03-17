@@ -160,6 +160,41 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     );
 });
 
+/** Small animated progress bar shown inside generating blob tiles */
+const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        if (!startTime) return;
+        const duration = estimatedDuration || 60000;
+
+        const tick = () => {
+            const elapsed = Date.now() - startTime;
+            // Ease into 95% asymptotically — never reaches 100% until actually done
+            const raw = elapsed / duration;
+            const capped = 1 - Math.exp(-raw * 1.5); // approaches 1 slowly
+            setProgress(Math.min(capped * 0.95, 0.95));
+        };
+
+        tick();
+        const id = setInterval(tick, 800);
+        return () => clearInterval(id);
+    }, [startTime, estimatedDuration]);
+
+    return (
+        <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 pointer-events-none">
+            {/* Track */}
+            <div className="w-full h-[3px] rounded-full bg-white/20 overflow-hidden">
+                {/* Fill */}
+                <div
+                    className="h-full rounded-full bg-white/70 transition-all duration-700 ease-out"
+                    style={{ width: `${progress * 100}%` }}
+                />
+            </div>
+        </div>
+    );
+};
+
 export const ImageItem: React.FC<ImageItemProps> = memo(({
     image,
     isSelected,
@@ -357,8 +392,16 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {/* Halo animation while generating — no overlay, no progress bar */}
-                {image.isGenerating && <BlobBackground className="z-30" />}
+                {/* Halo animation while generating */}
+                {image.isGenerating && (
+                    <>
+                        <BlobBackground className="z-30" speedScale={1.8} />
+                        <GenerationProgressBar
+                            startTime={image.generationStartTime}
+                            estimatedDuration={image.estimatedDuration}
+                        />
+                    </>
+                )}
             </div>
 
 

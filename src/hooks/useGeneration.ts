@@ -281,6 +281,26 @@ export const useGeneration = ({
 
             // 2b. Detect stuck "processing" jobs (Edge Function killed by Supabase before catch ran)
             if (jobData?.status === 'processing' && attempts >= 55) { // ~4.5 minutes (background task has up to 5 min)
+                // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
+                try {
+                    // Fetch job cost and current profile credits fresh (don't use stale closure)
+                    const [{ data: job }, { data: profile }] = await Promise.all([
+                        supabase.from('generation_jobs').select('cost').eq('id', jobId).maybeSingle(),
+                        user ? supabase.from('profiles').select('credits').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null })
+                    ]);
+                    if (job?.cost && user && profile) {
+                        const refundedCredits = (profile.credits ?? 0) + parseFloat(job.cost);
+                        await supabase
+                            .from('profiles')
+                            .update({ credits: refundedCredits })
+                            .eq('id', user.id);
+                    }
+                    await supabase
+                        .from('generation_jobs')
+                        .update({ status: 'failed', error: 'Background task timeout - credits refunded' })
+                        .eq('id', jobId);
+                } catch { /* non-critical — job cleanup, best-effort */ }
+
                 showToast(translateError('timeout'), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
