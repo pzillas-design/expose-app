@@ -161,7 +161,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 });
 
 /** Small animated progress bar shown inside generating blob tiles */
-const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, estimatedDuration, finishing }) => {
+export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, estimatedDuration, finishing }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
