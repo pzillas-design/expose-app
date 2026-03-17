@@ -23,16 +23,7 @@ interface GenerationProgressRingProps {
     autoCloseWhenDone?: boolean;
 }
 
-/** Progress for the header ring — original behaviour, approaches ~99.9% asymptotically. */
-function calcRingProgress(startTime: number | undefined, duration: number): number {
-    const start = startTime || Date.now();
-    const elapsed = Date.now() - start;
-    let p = (elapsed / duration) * 100;
-    if (p > 95) p = 95 + (1 - Math.exp(-(elapsed - duration) / 8000)) * 4.9;
-    return Math.min(p, 99.9);
-}
-
-/** Progress for the individual bar — caps at 85% so 100% only fires when the image truly arrived. */
+/** Progress for the ring and individual bars — caps at 85% so 100% only fires when the image truly arrived. */
 function calcBarProgress(startTime: number | undefined, duration: number): number {
     const start = startTime || Date.now();
     const elapsed = Date.now() - start;
@@ -183,7 +174,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     if (!allDone) {
         const totalDuration = activeItems.reduce((sum, t) => sum + t.estimatedDuration, 0);
         weightedProgress = activeItems.reduce((sum, t) => {
-            const p = t.finishing ? 100 : calcRingProgress(t.generationStartTime, t.estimatedDuration);
+            const p = t.finishing ? 100 : calcBarProgress(t.generationStartTime, t.estimatedDuration);
             return sum + p * t.estimatedDuration;
         }, 0) / (totalDuration || 1);
     }
