@@ -105,8 +105,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 {/* Modern Flat solid deep overlap stacks — bottom center like square style */}
                 {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
                     <>
-                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm scale-[0.93] bg-zinc-200 dark:bg-zinc-700" />}
-                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm scale-[0.96] bg-zinc-300 dark:bg-zinc-600" />
+                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[20px] h-full -z-20 shadow-sm scale-[0.93] bg-zinc-200 dark:bg-zinc-700" />}
+                        <div className="absolute inset-x-[5px] -bottom-[11px] h-full -z-10 shadow-sm scale-[0.96] bg-zinc-300 dark:bg-zinc-600" />
                     </>
                 )}
 
