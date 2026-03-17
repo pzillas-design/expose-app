@@ -161,25 +161,30 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 });
 
 /** Small animated progress bar shown inside generating blob tiles */
-const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
+const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, estimatedDuration, finishing }) => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
+        // When the image has arrived, snap to 100%
+        if (finishing) {
+            setProgress(1);
+            return;
+        }
         if (!startTime) return;
         const duration = estimatedDuration || 60000;
 
         const tick = () => {
             const elapsed = Date.now() - startTime;
-            // Ease into 95% asymptotically — never reaches 100% until actually done
             const raw = elapsed / duration;
-            const capped = 1 - Math.exp(-raw * 1.5); // approaches 1 slowly
-            setProgress(Math.min(capped * 0.95, 0.95));
+            const capped = 1 - Math.exp(-raw * 1.5);
+            // Cap at 85% — only reaches 100% when the image truly arrives
+            setProgress(Math.min(capped * 0.85, 0.85));
         };
 
         tick();
         const id = setInterval(tick, 800);
         return () => clearInterval(id);
-    }, [startTime, estimatedDuration]);
+    }, [startTime, estimatedDuration, finishing]);
 
     return (
         <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 pointer-events-none">
@@ -187,7 +192,7 @@ const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: 
             <div className="w-full h-[3px] rounded-full bg-white/20 overflow-hidden">
                 {/* Fill */}
                 <div
-                    className="h-full rounded-full bg-white/70 transition-all duration-700 ease-out"
+                    className={`h-full rounded-full bg-white/70 ${finishing ? 'transition-all duration-500 ease-out' : 'transition-all duration-700 ease-out'}`}
                     style={{ width: `${progress * 100}%` }}
                 />
             </div>
@@ -225,11 +230,22 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
     const isMobile = useMobile();
     const [naturalAspectRatio, setNaturalAspectRatio] = useState<number | null>(null);
     const [isImageReady, setIsImageReady] = useState(!image.isGenerating);
+    // Brief "finishing" phase: progress bar flashes to 100% when image arrives
+    const [isFinishing, setIsFinishing] = useState(false);
+    const wasGeneratingRef = useRef(image.isGenerating);
 
     // Reset ready state when a NEW generation starts for this item
     useEffect(() => {
         if (image.isGenerating) {
             setIsImageReady(false);
+            setIsFinishing(false);
+            wasGeneratingRef.current = true;
+        } else if (wasGeneratingRef.current) {
+            // Image just arrived — flash progress bar to 100%
+            wasGeneratingRef.current = false;
+            setIsFinishing(true);
+            const t = setTimeout(() => setIsFinishing(false), 700);
+            return () => clearTimeout(t);
         }
     }, [image.isGenerating, image.id]);
 
@@ -392,13 +408,14 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     </div>
                 )}
 
-                {/* Halo animation while generating */}
-                {image.isGenerating && (
+                {/* Halo animation while generating — also brief "finishing" flash at 100% */}
+                {(image.isGenerating || isFinishing) && (
                     <>
-                        <BlobBackground className="z-30" speedScale={1.8} />
+                        {image.isGenerating && <BlobBackground className="z-30" speedScale={1.8} />}
                         <GenerationProgressBar
                             startTime={image.generationStartTime}
                             estimatedDuration={image.estimatedDuration}
+                            finishing={isFinishing}
                         />
                     </>
                 )}

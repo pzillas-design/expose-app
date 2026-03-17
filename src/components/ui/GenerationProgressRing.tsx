@@ -9,6 +9,8 @@ interface TrackedImage {
     estimatedDuration: number;
     generationStartTime?: number;
     finished: boolean;
+    /** Transitioning to 100% — image arrived in UI, animating bar before showing checkmark */
+    finishing?: boolean;
 }
 
 interface GenerationProgressRingProps {
@@ -17,9 +19,12 @@ interface GenerationProgressRingProps {
     onNavigateToImage?: (id: string) => void;
     onGenerateMore?: (id: string) => void;
     t?: (key: string) => string;
+    /** When true (detail view), auto-close the popover with fade-out once all jobs finish */
+    autoCloseWhenDone?: boolean;
 }
 
-function calcProgress(startTime: number | undefined, duration: number): number {
+/** Progress for the header ring — original behaviour, approaches ~99.9% asymptotically. */
+function calcRingProgress(startTime: number | undefined, duration: number): number {
     const start = startTime || Date.now();
     const elapsed = Date.now() - start;
     let p = (elapsed / duration) * 100;
@@ -27,18 +32,30 @@ function calcProgress(startTime: number | undefined, duration: number): number {
     return Math.min(p, 99.9);
 }
 
+/** Progress for the individual bar — caps at 85% so 100% only fires when the image truly arrived. */
+function calcBarProgress(startTime: number | undefined, duration: number): number {
+    const start = startTime || Date.now();
+    const elapsed = Date.now() - start;
+    const p = (elapsed / duration) * 100;
+    return Math.min(p, 85);
+}
+
 
 export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
-    generatingImages, lang, onNavigateToImage, onGenerateMore, t
+    generatingImages, lang, onNavigateToImage, onGenerateMore, t, autoCloseWhenDone = false
 }) => {
     const [tick, setTick] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [tracked, setTracked] = useState<TrackedImage[]>([]);
+    const [isFadingOut, setIsFadingOut] = useState(false);
+    const [isPopoverClosing, setIsPopoverClosing] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const prevGeneratingIdsRef = useRef<Set<string>>(new Set());
     const isGerman = lang === 'de';
+    const isOpenRef = useRef(isOpen);
+    useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
 
-    // Track generating images: add new ones, mark finished ones
+    // Track generating images: add new ones, mark finishing/finished ones
     useEffect(() => {
         const currentIds = new Set(generatingImages.map(i => i.id));
         const prevIds = prevGeneratingIdsRef.current;
@@ -55,14 +72,15 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                         estimatedDuration: img.estimatedDuration || 23000,
                         generationStartTime: img.generationStartTime,
                         finished: false,
+                        finishing: false,
                     });
                 }
             }
 
-            // Mark images that were generating but no longer are as finished
-            for (const t of next) {
-                if (!t.finished && prevIds.has(t.id) && !currentIds.has(t.id)) {
-                    t.finished = true;
+            // Mark images that left generatingImages as "finishing" (show 100%)
+            for (const item of next) {
+                if (!item.finished && !item.finishing && prevIds.has(item.id) && !currentIds.has(item.id)) {
+                    item.finishing = true;
                 }
             }
 
@@ -73,6 +91,8 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
         for (const img of generatingImages) {
             if (!prevIds.has(img.id)) {
                 setIsOpen(true);
+                setIsFadingOut(false);
+                setIsPopoverClosing(false);
                 break;
             }
         }
@@ -80,7 +100,19 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
         prevGeneratingIdsRef.current = currentIds;
     }, [generatingImages]);
 
-    // Tick animation via rAF while there are active generations
+    // After a finishing item has been at 100% for ~800ms, mark it fully finished
+    useEffect(() => {
+        const finishingItems = tracked.filter(t => t.finishing && !t.finished);
+        if (finishingItems.length === 0) return;
+        const timer = setTimeout(() => {
+            setTracked(prev => prev.map(item =>
+                item.finishing ? { ...item, finished: true, finishing: false } : item
+            ));
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [tracked]);
+
+    // Tick animation via rAF while there are active (non-finished) generations
     const hasActive = tracked.some(t => !t.finished);
     useEffect(() => {
         if (!hasActive) return;
@@ -108,28 +140,52 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     const handleDismiss = useCallback(() => {
         setTracked([]);
         setIsOpen(false);
+        setIsFadingOut(false);
     }, []);
 
     const activeItems = tracked.filter(t => !t.finished);
     const allDone = activeItems.length === 0;
 
-    // Auto-dismiss tracked list 5s after all generations finish
+    // Detail-view auto-close: fade the popover out shortly after all jobs finish
+    useEffect(() => {
+        if (!autoCloseWhenDone || !allDone || !isOpen || tracked.length === 0) return;
+        // Give user a moment to see the checkmark, then fade the popover away
+        const timer = setTimeout(() => {
+            setIsPopoverClosing(true);
+            setTimeout(() => {
+                setIsOpen(false);
+                setIsPopoverClosing(false);
+            }, 400);
+        }, 1200);
+        return () => clearTimeout(timer);
+    }, [autoCloseWhenDone, allDone, isOpen, tracked.length]);
+
+    // Auto-dismiss: 60s after all done, but only if popover is already closed
     useEffect(() => {
         if (!allDone || tracked.length === 0) return;
-        const timer = setTimeout(handleDismiss, 5000);
+
+        // Start fade-out after 60s — but only if the popover is closed at that point
+        const timer = setTimeout(() => {
+            if (!isOpenRef.current) {
+                setIsFadingOut(true);
+                // Remove entirely after the fade animation (~500ms)
+                setTimeout(handleDismiss, 500);
+            }
+            // If popover is still open, don't auto-dismiss — user will close manually
+        }, 60_000);
         return () => clearTimeout(timer);
     }, [allDone, tracked.length, handleDismiss]);
 
     if (tracked.length === 0) return null;
 
-    // Calculate combined progress of active items
+    // Calculate combined progress of active/finishing items for the ring
     let weightedProgress = 100;
     if (!allDone) {
         const totalDuration = activeItems.reduce((sum, t) => sum + t.estimatedDuration, 0);
         weightedProgress = activeItems.reduce((sum, t) => {
-            const p = calcProgress(t.generationStartTime, t.estimatedDuration);
+            const p = t.finishing ? 100 : calcRingProgress(t.generationStartTime, t.estimatedDuration);
             return sum + p * t.estimatedDuration;
-        }, 0) / totalDuration;
+        }, 0) / (totalDuration || 1);
     }
 
     // SVG ring params
@@ -140,7 +196,10 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     const offset = circumference - (weightedProgress / 100) * circumference;
 
     return (
-        <div className="relative" ref={popoverRef}>
+        <div
+            className={`relative transition-opacity duration-500 ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}
+            ref={popoverRef}
+        >
             {/* Ring / Check button */}
             <button
                 onClick={() => setIsOpen(o => !o)}
@@ -167,7 +226,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
 
             {/* Popover */}
             {isOpen && (
-                <div className="absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                <div className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-opacity duration-400 ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}>
                     {/* Items */}
                     <div className="max-h-60 overflow-y-auto">
                         {tracked.map(item => {
@@ -192,26 +251,28 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                                 );
                             }
 
-                            // Active item: progress bar + generate more button
-                            const progress = calcProgress(item.generationStartTime, item.estimatedDuration);
+                            // Active / finishing item: progress bar
+                            const progress = item.finishing ? 100 : calcBarProgress(item.generationStartTime, item.estimatedDuration);
                             return (
                                 <div key={item.id} className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0">
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                                             {item.title || (t ? t('untitled') : (isGerman ? 'Ohne Titel' : 'Untitled'))}
                                         </div>
-                                        <Tooltip text={t ? t('generate_more') : (isGerman ? 'Mehr generieren' : 'Generate more')}>
-                                            <button
-                                                onClick={() => onGenerateMore?.(item.id)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
-                                            >
-                                                <Repeat className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
+                                        {!item.finishing && (
+                                            <Tooltip text={t ? t('generate_more') : (isGerman ? 'Mehr generieren' : 'Generate more')}>
+                                                <button
+                                                    onClick={() => onGenerateMore?.(item.id)}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
+                                                >
+                                                    <Repeat className="w-4 h-4" />
+                                                </button>
+                                            </Tooltip>
+                                        )}
                                     </div>
                                     <div className="mt-3 mb-0.5 h-1 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-orange-500 rounded-full transition-none"
+                                            className={`h-full bg-orange-500 rounded-full ${item.finishing ? 'transition-all duration-500 ease-out' : 'transition-none'}`}
                                             style={{ width: `${progress}%` }}
                                         />
                                     </div>
