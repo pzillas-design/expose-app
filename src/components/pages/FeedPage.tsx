@@ -56,11 +56,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         image.onload = () => {
             if (cancelled) return;
             const canvas = document.createElement('canvas');
-            canvas.width = 1; canvas.height = 1;
+            canvas.width = 4; canvas.height = 4;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            ctx.drawImage(image, 0, 0, 1, 1);
-            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            ctx.drawImage(image, 0, 0, 4, 4);
+            const data = ctx.getImageData(0, 0, 4, 4).data; // 16 pixels
+            let rSum = 0, gSum = 0, bSum = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2];
+            }
+            const n = data.length / 4;
+            let r = rSum / n, g = gSum / n, b = bSum / n;
+            // Desaturate ~40% toward gray so it works as a subtle background
+            const gray = (r + g + b) / 3;
+            r = Math.round(r * 0.6 + gray * 0.4);
+            g = Math.round(g * 0.6 + gray * 0.4);
+            b = Math.round(b * 0.6 + gray * 0.4);
             setStackColor(`rgb(${r},${g},${b})`);
         };
         image.onerror = () => {};
