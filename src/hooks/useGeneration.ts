@@ -129,6 +129,26 @@ const getLearnedDuration = (quality: string): number | null => {
     return null;
 };
 
+// Debug helper: call window.__etaDebug() in browser console to inspect learned timings
+if (typeof window !== 'undefined') {
+    (window as any).__etaDebug = () => {
+        const store = loadTimingStore();
+        const hardcoded = ESTIMATED_DURATIONS;
+        console.group('📊 ETA Timing Store');
+        Object.entries(hardcoded).forEach(([quality, hardMs]) => {
+            const bucket = store[quality];
+            const learnedMs = bucket && bucket.count >= 2 ? Math.round(bucket.sum / bucket.count) : null;
+            const diff = learnedMs ? Math.round((learnedMs - hardMs) / 1000) : null;
+            console.log(
+                `${quality.padEnd(8)} | hardcoded: ${(hardMs/1000).toFixed(0)}s` +
+                (learnedMs ? ` | learned: ${(learnedMs/1000).toFixed(0)}s (${diff! > 0 ? '+' : ''}${diff}s) [n=${bucket!.count}]` : ' | learned: — (not enough data)')
+            );
+        });
+        console.groupEnd();
+        return store;
+    };
+}
+
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
