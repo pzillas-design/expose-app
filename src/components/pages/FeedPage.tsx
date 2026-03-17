@@ -46,38 +46,6 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
     const isCropStyle = galleryStyle === 'square' || galleryStyle === 'edge';
 
-    // Compute average color once from thumbnail for masonry-flat stack card
-    const [stackColor, setStackColor] = React.useState<string>('');
-    React.useEffect(() => {
-        if (!isGroup || isGen || galleryStyle !== 'masonry-flat' || !previewSrc) return;
-        let cancelled = false;
-        const image = new Image();
-        image.crossOrigin = 'anonymous';
-        image.onload = () => {
-            if (cancelled) return;
-            const canvas = document.createElement('canvas');
-            canvas.width = 4; canvas.height = 4;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.drawImage(image, 0, 0, 4, 4);
-            const data = ctx.getImageData(0, 0, 4, 4).data; // 16 pixels
-            let rSum = 0, gSum = 0, bSum = 0;
-            for (let i = 0; i < data.length; i += 4) {
-                rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2];
-            }
-            const n = data.length / 4;
-            let r = rSum / n, g = gSum / n, b = bSum / n;
-            // Desaturate ~40% toward gray so it works as a subtle background
-            const gray = (r + g + b) / 3;
-            r = Math.round(r * 0.6 + gray * 0.4);
-            g = Math.round(g * 0.6 + gray * 0.4);
-            b = Math.round(b * 0.6 + gray * 0.4);
-            setStackColor(`rgb(${r},${g},${b})`);
-        };
-        image.onerror = () => {};
-        image.src = previewSrc;
-        return () => { cancelled = true; };
-    }, [isGroup, isGen, galleryStyle, previewSrc]);
 
     // Calculate precise bounds for aspect ratio images inside the square container
     const isWide = img.width > img.height;
@@ -137,8 +105,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 {/* Modern Flat solid deep overlap stacks — bottom center like square style */}
                 {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
                     <>
-                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-400 dark:bg-zinc-700 scale-[0.93]" style={stackColor ? { backgroundColor: stackColor, opacity: 0.55 } : undefined} />}
-                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm ring-1 ring-black/8 dark:ring-white/15 bg-zinc-300 dark:bg-zinc-600 scale-[0.96]" style={stackColor ? { backgroundColor: stackColor } : undefined} />
+                        {groupCount > 2 && (
+                            <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm ring-1 ring-black/8 dark:ring-white/15 overflow-hidden scale-[0.93]">
+                                {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" alt="" />}
+                            </div>
+                        )}
+                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm ring-1 ring-black/8 dark:ring-white/15 overflow-hidden scale-[0.96]">
+                            {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" alt="" />}
+                        </div>
                     </>
                 )}
 
