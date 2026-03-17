@@ -186,6 +186,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             onNavigateToImage={onNavigateToImage}
             onGenerateMore={onGenerateMoreById}
             t={t}
+            autoCloseWhenDone={mode === 'detail'}
         />
     );
 
