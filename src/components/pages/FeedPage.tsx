@@ -106,12 +106,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
                     <>
                         {groupCount > 2 && (
-                            <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm ring-1 ring-black/8 dark:ring-white/15 overflow-hidden scale-[0.93]">
+                            <div className="absolute inset-x-[10px] -bottom-[18px] h-full -z-20 shadow-sm overflow-hidden scale-[0.93]">
                                 {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" alt="" />}
                                 <div className="absolute inset-0 bg-black/35 dark:bg-black/50" />
                             </div>
                         )}
-                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm ring-1 ring-black/8 dark:ring-white/15 overflow-hidden scale-[0.96]">
+                        <div className="absolute inset-x-[5px] -bottom-[10px] h-full -z-10 shadow-sm overflow-hidden scale-[0.96]">
                             {previewSrc && <img src={previewSrc} className="w-full h-full object-cover" alt="" />}
                             <div className="absolute inset-0 bg-black/18 dark:bg-black/30" />
                         </div>
