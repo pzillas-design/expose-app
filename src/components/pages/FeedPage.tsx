@@ -30,8 +30,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     return (
         <div
             key={img.id}
-            onMouseEnter={() => setActiveIndex(idx)}
-            onMouseLeave={() => setActiveIndex(null)}
+            onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
+            onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             onClick={() => {
                 if (isGen) return;
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
@@ -291,7 +291,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 )}
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
                             {/* Create Tile */}
                             <div
                                 className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
