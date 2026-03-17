@@ -55,16 +55,34 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center`}
+            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[0.97]`}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>
 
-                {/* Stack cards — bottom center */}
+                {/* Stack cards — bottom center, spread on hover */}
                 {isGroup && !isGen && (
                     <>
-                        {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[20px] h-full -z-20 shadow-sm scale-[0.93] bg-zinc-200 dark:bg-zinc-700" />}
-                        <div className="absolute inset-x-[5px] -bottom-[11px] h-full -z-10 shadow-sm scale-[0.96] bg-zinc-300 dark:bg-zinc-600" />
+                        {groupCount > 2 && (
+                            <div
+                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700 scale-x-[0.93]"
+                                style={{
+                                    left: '10px', right: '10px',
+                                    bottom: isKeyboardActive ? '-28px' : '-20px',
+                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                }}
+                            />
+                        )}
+                        <div
+                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600 scale-x-[0.96]"
+                            style={{
+                                left: '5px', right: '5px',
+                                bottom: isKeyboardActive ? '-16px' : '-11px',
+                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                            }}
+                        />
                     </>
                 )}
 
@@ -98,7 +116,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                     {/* Hover scrim */}
                     {!isGen && (
-                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-100 ${isKeyboardActive ? 'bg-black/8' : 'bg-black/0 group-hover:bg-black/4'}`} />
+                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.08]' : 'bg-black/0 group-hover:bg-black/[0.06]'}`} />
                     )}
 
                     {/* Selection circle */}
@@ -167,25 +185,31 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const { confirm } = useItemDialog();
 
     // Map: cover image id → row (for quick group lookup)
+    // Cover = newest item (last in row, items sorted oldest→newest)
     const groupCountMap = useMemo(() => {
         const map = new Map<string, number>();
-        rows.forEach(r => { if (r.items[0]) map.set(r.items[0].id, r.items.length); });
+        rows.forEach(r => {
+            const cover = r.items[r.items.length - 1];
+            if (cover) map.set(cover.id, r.items.length);
+        });
         return map;
     }, [rows]);
 
     const groupRowMap = useMemo(() => {
         const map = new Map<string, ImageRow>();
-        rows.forEach(r => { if (r.items[0]) map.set(r.items[0].id, r); });
+        rows.forEach(r => {
+            const cover = r.items[r.items.length - 1];
+            if (cover) map.set(cover.id, r);
+        });
         return map;
     }, [rows]);
 
-    // What to render: level 1 = one cover per group, level 2 = all items of expanded group
+    // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group
     const displayImages = useMemo(() => {
         if (expandedGroupId) {
             return rows.find(r => r.id === expandedGroupId)?.items || [];
         }
-        // Level 1: first item of each row as the cover
-        return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
+        return rows.map(r => r.items[r.items.length - 1]).filter(Boolean) as CanvasImage[];
     }, [expandedGroupId, rows]);
 
     // O(1) lookups instead of O(n) per item
@@ -352,8 +376,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     <div className="flex-1 flex flex-col relative pb-16">
                         {images.length > 0 ? (
                             <div
+                                key={expandedGroupId ?? 'root'}
                                 ref={gridRef}
-                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                             >
                                 {/* Plus tile */}
                                 {!expandedGroupId && (
