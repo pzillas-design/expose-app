@@ -36,8 +36,6 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
 
-    const aspectRatio = (img.width && img.height) ? `${img.width} / ${img.height}` : '1 / 1';
-
     return (
         <div
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
@@ -48,21 +46,19 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
-            style={{ aspectRatio }}
+            className={`aspect-square relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
         >
-            {/* Stack cards — physical paper-card look, slight rounding, peek into gap */}
+            {/* Perspective stack: cards offset bottom-right, no rotation — visible in gap */}
             {isGroup && !isGen && (
                 <>
-                    <div className="absolute inset-0 rounded-[3px] bg-white dark:bg-zinc-700 shadow-md transform rotate-[-5deg] scale-[0.94]" />
-                    <div className="absolute inset-0 rounded-[3px] bg-white dark:bg-zinc-600 shadow-sm transform rotate-[3deg] scale-[0.97]" />
+                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform translate-x-2 translate-y-2" />
+                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform translate-x-1 translate-y-1" />
                 </>
             )}
 
-            {/* Main tile — no border radius on image */}
-            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-zinc-100 dark:bg-zinc-900'}`}>
+            {/* Main card: white bg, image centered with natural ratio inside */}
+            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-zinc-900'}`}>
 
-                {/* Image / generation placeholder */}
                 {isGen ? (
                     <>
                         {parentSrc ? (
@@ -78,30 +74,31 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         />
                     </>
                 ) : previewSrc ? (
-                    <img
-                        src={previewSrc}
-                        alt={img.title}
-                        className={`w-full h-full object-cover transition-all duration-200 ease-out ${
-                            isSelectMode && isSelected ? 'scale-[0.88]' : isKeyboardActive ? 'brightness-105' : ''
-                        }`}
-                        loading="lazy"
-                    />
+                    /* inset-3 = 12px white breathing room, object-contain = natural ratio */
+                    <div className="absolute inset-3 flex items-center justify-center">
+                        <img
+                            src={previewSrc}
+                            alt={img.title}
+                            className={`w-full h-full object-contain transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
+                            loading="lazy"
+                        />
+                    </div>
                 ) : null}
 
-                {/* Hover / keyboard-active scrim */}
+                {/* Hover scrim */}
                 {!isGen && (
-                    <div className={`absolute inset-0 bg-black/0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/12' : 'group-hover:bg-black/8'}`} />
+                    <div className={`absolute inset-0 pointer-events-none transition-colors duration-100 ${isKeyboardActive ? 'bg-black/8' : 'bg-black/0 group-hover:bg-black/4'}`} />
                 )}
 
-                {/* Selection circle — top-right, subtle on hover, bold when selected */}
+                {/* Selection circle */}
                 {!isGen && (
                     <div
                         className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${
                             isSelected
                                 ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
-                                    ? 'opacity-100 scale-100 border-[1.5px] border-white/80 bg-black/15 backdrop-blur-sm'
-                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 border-[1.5px] border-white/70 bg-black/10 backdrop-blur-sm'
+                                    ? 'opacity-100 scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90 dark:bg-zinc-800/90'
+                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90'
                         }`}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -118,9 +115,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     </div>
                 )}
 
-                {/* Group count badge — bottom-right */}
+                {/* Group count badge */}
                 {isGroup && !isGen && (
-                    <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 bg-black/28 backdrop-blur-md text-white/90 text-[11px] font-normal rounded-full px-2 py-[3px] pointer-events-none leading-none">
+                    <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 bg-zinc-900/12 dark:bg-white/15 text-zinc-700 dark:text-zinc-200 text-[11px] font-normal rounded-full px-2 py-[3px] pointer-events-none leading-none">
                         {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                         {groupCount}
                     </div>
@@ -348,14 +345,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     {images.length > 0 ? (
                         <>
 
-                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-[3px] bg-white dark:bg-zinc-950 ${isMobile ? 'pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
-                            {/* Plus tile — only on level 1 */}
+                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 p-2 bg-zinc-100 dark:bg-zinc-950 ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                            {/* Plus tile — matches main card style */}
                             {!expandedGroupId && (
                                 <div
-                                    className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center transition-colors duration-150 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                                    className="aspect-square bg-white dark:bg-zinc-900 cursor-pointer group flex items-center justify-center transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                                     onClick={onCreateNew}
                                 >
-                                    <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
+                                    <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
                                 </div>
                             )}
 
