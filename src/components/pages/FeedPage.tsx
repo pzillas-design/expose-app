@@ -1,6 +1,6 @@
-import React, { memo, useMemo, useCallback, useState } from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
-import { Loader2, Plus, Layers, Upload, Download, X, ChevronLeft } from 'lucide-react';
+import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -153,16 +153,15 @@ interface FeedPageProps {
     state?: any;
     actions?: any;
     t?: any;
+    expandedGroupId: string | null;
+    onExpandedGroupChange: (id: string | null) => void;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
-
-    // ── Group drill-down state ──────────────────────────────────────
-    const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
 
     // Map: cover image id → row (for quick group lookup)
     const groupCountMap = useMemo(() => {
@@ -259,7 +258,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         columns,
         isActive: true,
         onEscape: () => {
-            if (expandedGroupId) { setExpandedGroupId(null); return; }
+            if (expandedGroupId) { onExpandedGroupChange(null); return; }
             if (isSelectMode) actions?.setIsSelectMode?.(false);
         },
         onEnter: (idx) => {
@@ -267,7 +266,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             if (!img) return;
             const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
             const row = expandedGroupId ? null : groupRowMap.get(img.id);
-            if (gc > 1 && row) { setExpandedGroupId(row.id); return; }
+            if (gc > 1 && row) { onExpandedGroupChange(row.id); return; }
             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
             else onSelectImage(img.id);
         },
@@ -353,20 +352,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
                         <>
-                            {/* ── Level 2: Group Header ─────────────────── */}
-                            {expandedGroupId && (
-                                <div className="sticky top-0 z-20 bg-white dark:bg-black flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
-                                    <button
-                                        onClick={() => setExpandedGroupId(null)}
-                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                    >
-                                        <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
-                                    </button>
-                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">
-                                        {rows.find(r => r.id === expandedGroupId)?.title}
-                                    </span>
-                                </div>
-                            )}
 
                         <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
                             {/* Create Tile — only on level 1 */}
@@ -400,7 +385,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     parentSrc={parentSrc}
                                     groupCount={gc}
                                     hasGenerating={hasGen}
-                                    onOpenGroup={gc > 1 && row ? () => setExpandedGroupId(row.id) : undefined}
+                                    onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
                                 />
                                 );
                             })}

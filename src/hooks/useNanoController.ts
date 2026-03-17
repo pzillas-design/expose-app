@@ -241,6 +241,13 @@ export const useNanoController = () => {
         }
     }, [user, allImages, setRows]);
 
+    const refreshImageCount = useCallback(async () => {
+        if (user) {
+            const count = await imageService.countUserImages(user.id);
+            setTotalImageCount(count);
+        }
+    }, [user]);
+
     // --- File & Generation Hooks ---
     const { processFiles, processFile } = useFileHandler({
         user, isAuthDisabled, setRows, selectMultiple, showToast, setIsSettingsOpen, t
@@ -586,7 +593,8 @@ export const useNanoController = () => {
         deletePreset: deleteTemplate,
         ensureValidSession,
         handleLoadMore,
-        ensureImageLoaded
+        ensureImageLoaded,
+        refreshImageCount,
     }), [
         setRows, setQualityMode, setThemeMode, setLang, handleModeChange, setSideSheetMode,
         setBrushSize, setMaskTool, setActiveShape,
@@ -597,7 +605,7 @@ export const useNanoController = () => {
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
-        ensureValidSession, handleLoadMore, ensureImageLoaded
+        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount
     ]);
 
     return React.useMemo(() => ({

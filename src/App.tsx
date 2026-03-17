@@ -25,6 +25,16 @@ const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoMod
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 
+class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error: Error) { console.error('[SettingsModal] render error:', error); }
+    render() { return this.state.hasError ? null : this.props.children; }
+}
+
 const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { user: any, isAuthLoading: boolean, children: React.ReactNode, onAuthRequired: () => void }) => {
     const location = useLocation();
     useEffect(() => {
@@ -70,6 +80,7 @@ export function App() {
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
+    const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -177,7 +188,7 @@ export function App() {
                         setIsAuthModalOpen(true);
                     }}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
-                    onToggleSettings={() => setIsSettingsModalOpen(true)}
+                    onToggleSettings={() => { setIsSettingsModalOpen(true); actions.refreshImageCount?.(); }}
                     onSignOut={handleSignOut}
                     onSelectMode={() => actions.setIsSelectMode(true)}
                     isSelectMode={state.isSelectMode}
@@ -237,6 +248,8 @@ export function App() {
                         }
                         return false;
                     })()}
+                    isGroupDrillDown={!!expandedGroupId}
+                    onCloseGroup={() => setExpandedGroupId(null)}
                     onBack={handleBackToFeed}
                     onDetailRename={() => {
                         if (location.pathname.startsWith('/image/')) {
@@ -339,6 +352,8 @@ export function App() {
                                             actions.setIsSelectMode(false);
                                         }
                                     }}
+                                    expandedGroupId={expandedGroupId}
+                                    onExpandedGroupChange={setExpandedGroupId}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -506,6 +521,7 @@ export function App() {
                 t={t}
             />
 
+            <ModalErrorBoundary>
             <Suspense fallback={null}>
                 {isSettingsModalOpen && user && (
                     <SettingsModal
@@ -535,6 +551,7 @@ export function App() {
                     />
                 )}
             </Suspense>
+            </ModalErrorBoundary>
 
             <Suspense fallback={null}>
                 {infoImageId && (() => {

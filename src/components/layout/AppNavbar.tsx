@@ -44,6 +44,8 @@ interface AppNavbarProps {
     generatingImages?: CanvasImage[];
     onNavigateToImage?: (id: string) => void;
     onGenerateMoreById?: (id: string) => void;
+    isGroupDrillDown?: boolean;
+    onCloseGroup?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -84,6 +86,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     generatingImages = [],
     onNavigateToImage,
     onGenerateMoreById,
+    isGroupDrillDown = false,
+    onCloseGroup,
 }) => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
@@ -203,6 +207,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="ghost" />
+            {progressRing}
+        </div>
+    ) : isGroupDrillDown ? (
+        <div className="flex items-center gap-1">
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCloseGroup} variant="ghost" />
             {progressRing}
         </div>
     ) : (

@@ -312,7 +312,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <p className={rowTitle}>{imageCount} / {imageLimit} {t('images_label')}</p>
-                                <p className="text-xs text-zinc-400">{Math.round((imageCount / imageLimit) * 100)}%</p>
+                                <p className="text-xs text-zinc-400">{imageLimit > 0 ? Math.round((imageCount / imageLimit) * 100) : 0}%</p>
                             </div>
                             <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div

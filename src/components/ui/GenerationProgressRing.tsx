@@ -174,7 +174,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     if (!allDone) {
         const totalDuration = activeItems.reduce((sum, t) => sum + t.estimatedDuration, 0);
         weightedProgress = activeItems.reduce((sum, t) => {
-            const p = t.finishing ? 100 : calcBarProgress(t.generationStartTime, t.estimatedDuration);
+            const p = calcBarProgress(t.generationStartTime, t.estimatedDuration);
             return sum + p * t.estimatedDuration;
         }, 0) / (totalDuration || 1);
     }
