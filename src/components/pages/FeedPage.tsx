@@ -47,8 +47,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`break-inside-avoid mb-1 ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative`}
-            style={{ aspectRatio: (img.width && img.height) ? `${img.width} / ${img.height}` : '1' }}
+            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative`}
         >
             {/* Stack cards — outside the overflow-hidden content div so they peek into the gap */}
             {isGroup && !isGen && (
@@ -78,7 +77,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 <img
                     src={previewSrc}
                     alt={img.title}
-                    className={`w-full h-full object-cover transition-all duration-150 ease-out ${
+                    className={`w-full h-full object-contain transition-all duration-150 ease-out ${
                         isSelectMode && isSelected
                             ? 'opacity-75'
                             : isKeyboardActive
@@ -129,7 +128,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
             {/* Group count badge — bottom-right */}
             {isGroup && !isGen && (
-                <div className="absolute bottom-2 right-2 z-30 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-md px-1.5 py-0.5 pointer-events-none">
+                <div className="absolute bottom-2 right-2 z-30 flex items-center gap-1 bg-black/35 backdrop-blur-sm text-white text-[11px] font-normal rounded-full px-2 py-0.5 pointer-events-none">
                     {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                     {groupCount}
                 </div>
@@ -357,11 +356,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     {images.length > 0 ? (
                         <>
 
-                        <div ref={gridRef} className={`columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-7 gap-1 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1 bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
                             {/* Create Tile — only on level 1 */}
                             {!expandedGroupId && (
                                 <div
-                                    className="break-inside-avoid mb-1 aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
+                                    className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
                                     onClick={onCreateNew}
                                 >
                                     <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
