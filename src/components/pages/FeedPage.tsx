@@ -29,32 +29,20 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Called when user clicks a group cover tile — opens the group drill-down */
     onOpenGroup?: () => void;
-    /** Current design style variant */
-    galleryStyle?: 'square' | 'masonry' | 'edge' | 'masonry-sharp' | 'masonry-flat';
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, galleryStyle = 'square' }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
 
-    // Determine container classes based on style
-    const containerClasses = useMemo(() => {
-        const base = `relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center`;
-        return base;
-    }, [isGen]);
-
-    const isCropStyle = galleryStyle === 'square' || galleryStyle === 'edge';
-
-
-    // Calculate precise bounds for aspect ratio images inside the square container
     const isWide = img.width > img.height;
-    const boundedStyle = isCropStyle ? { width: '100%', height: '100%' } : {
+    const boundedStyle = {
         aspectRatio: `${img.width} / ${img.height}`,
         width: isWide ? '100%' : 'auto',
         height: isWide ? 'auto' : '100%',
         maxHeight: '100%',
-        maxWidth: '100%'
+        maxWidth: '100%',
     };
 
     return (
@@ -67,53 +55,21 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={containerClasses}
+            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center`}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>
 
-                {/* 1. STACKS (attached to the bounded image dimensions) */}
-                {isGroup && !isGen && galleryStyle !== 'edge' && galleryStyle !== 'masonry' && galleryStyle !== 'masonry-sharp' && galleryStyle !== 'masonry-flat' && (
-                    <>
-                        {groupCount > 2 && <div className={`absolute inset-x-2 -bottom-2 h-full bg-zinc-300 dark:bg-zinc-600 -z-20 ${galleryStyle === 'square' ? 'rounded-xl' : ''}`} />}
-                        <div className={`absolute inset-x-1 -bottom-1 h-full bg-zinc-200 dark:bg-zinc-700 -z-10 ${galleryStyle === 'square' ? 'rounded-xl' : ''}`} />
-                    </>
-                )}
-
-                {/* Soft Masonry stack */}
-                {isGroup && !isGen && galleryStyle === 'masonry' && (
-                    <>
-                        {groupCount > 2 && <div className="absolute inset-0 transform translate-x-2 translate-y-2 rounded-xl bg-zinc-300 dark:bg-zinc-600 -z-20 shadow-sm" />}
-                        <div className="absolute inset-0 transform translate-x-1 translate-y-1 rounded-xl bg-zinc-200 dark:bg-zinc-700 -z-10 shadow-sm" />
-                    </>
-                )}
-
-                {/* Sharp Stack clues for new aspect ratio designs */}
-                {isGroup && !isGen && galleryStyle === 'masonry-sharp' && (
-                    <>
-                        {groupCount > 2 && (
-                            <div className="absolute inset-0 transform translate-x-3 translate-y-3 ring-1 ring-black/10 dark:ring-white/10 -z-20 bg-zinc-900 overflow-hidden shadow-sm">
-                                {previewSrc && <img src={previewSrc} className="w-full h-full object-cover blur-[5px] opacity-40 mix-blend-screen dark:mix-blend-normal" alt="" />}
-                            </div>
-                        )}
-                        <div className="absolute inset-0 transform translate-x-1.5 translate-y-1.5 ring-1 ring-black/10 dark:ring-white/10 -z-10 bg-zinc-800 overflow-hidden shadow-sm">
-                            {previewSrc && <img src={previewSrc} className="w-full h-full object-cover blur-[2px] opacity-60 mix-blend-screen dark:mix-blend-normal" alt="" />}
-                        </div>
-                    </>
-                )}
-
-                {/* Modern Flat solid deep overlap stacks — bottom center like square style */}
-                {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
+                {/* Stack cards — bottom center */}
+                {isGroup && !isGen && (
                     <>
                         {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[20px] h-full -z-20 shadow-sm scale-[0.93] bg-zinc-200 dark:bg-zinc-700" />}
                         <div className="absolute inset-x-[5px] -bottom-[11px] h-full -z-10 shadow-sm scale-[0.96] bg-zinc-300 dark:bg-zinc-600" />
                     </>
                 )}
 
-                {/* 2. MAIN CARD */}
-                <div
-                    className={`absolute inset-0 overflow-hidden ${(galleryStyle === 'square' || galleryStyle === 'masonry') ? 'rounded-xl' : ''} ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 transition-colors'} ${(galleryStyle === 'masonry-sharp' || galleryStyle === 'masonry-flat') ? 'ring-1 ring-black/5 dark:ring-white/10' : ''}`}
-                >
+                {/* Main card */}
+                <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 transition-colors'}`}>
 
                     {isGen ? (
                         <>
@@ -210,9 +166,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
 
-    // UI toggle for 5 design variants
-    const [galleryStyle, setGalleryStyle] = React.useState<'square' | 'masonry' | 'edge' | 'masonry-sharp' | 'masonry-flat'>('masonry-flat');
-
     // Map: cover image id → row (for quick group lookup)
     const groupCountMap = useMemo(() => {
         const map = new Map<string, number>();
@@ -297,11 +250,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             }
             setColumns(colCount > 0 ? colCount : 2);
         };
-        // Initial compute and resize listener
         requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
         return () => window.removeEventListener('resize', updateColumns);
-    }, [displayImages]); // Re-calculate when displayed images change
+    }, [displayImages]);
 
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
         itemCount: displayImages.length,
@@ -324,8 +276,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const img = displayImages[idx];
             if (!img) return;
 
-            // If in select mode and multiple are selected, we might want to delete all selected.
-            // For now, let's delete the actively focused one, or all selected if that one is selected
             const toDelete = isSelectMode && selectedIdSet.has(img.id) ? selectedIds : [img.id];
 
             const confirmed = await confirm({
@@ -341,7 +291,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             }
         }
     });
-
 
     React.useEffect(() => {
         if (!hasMore || isLoading) return;
@@ -402,55 +351,46 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16">
                         {images.length > 0 ? (
-                            <>
+                            <div
+                                ref={gridRef}
+                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                            >
+                                {/* Plus tile */}
+                                {!expandedGroupId && (
+                                    <div
+                                        className="aspect-square relative cursor-pointer group flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
+                                        onClick={onCreateNew}
+                                    >
+                                        <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                    </div>
+                                )}
 
-                                <div ref={gridRef} className={`
-                            ${galleryStyle === 'edge'
-                                        ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-[1px] px-0'
-                                        : galleryStyle === 'masonry-flat'
-                                            ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6'
-                                            : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-6 px-2 sm:px-6 mt-4 sm:mt-6'
-                                    }
-                            bg-transparent transition-all ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}
-                        `}>
-                                    {/* Plus tile — matches main card style */}
-                                    {!expandedGroupId && (
-                                        <div
-                                            className={`aspect-square relative cursor-pointer group flex items-center justify-center transition-colors duration-150 ${(galleryStyle === 'square' || galleryStyle === 'masonry') ? 'rounded-xl' : ''} ${(galleryStyle !== 'square' && galleryStyle !== 'edge') ? 'ring-1 ring-black/5 dark:ring-white/10 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800' : 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
-                                            onClick={onCreateNew}
-                                        >
-                                            <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
-                                        </div>
-                                    )}
-
-                                    {displayImages.map((img, idx) => {
-                                        const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                        const row = expandedGroupId ? null : groupRowMap.get(img.id);
-                                        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
-                                        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                        return (
-                                            <FeedGridItem
-                                                key={img.id}
-                                                img={img}
-                                                idx={idx}
-                                                isSelected={selectedIdSet.has(img.id)}
-                                                isKeyboardActive={activeIndex === idx}
-                                                isSelectMode={!!isSelectMode}
-                                                onSelectImage={onSelectImage}
-                                                onToggleSelect={onToggleSelect}
-                                                setActiveIndex={setActiveIndex}
-                                                actions={actions}
-                                                parentSrc={parentSrc}
-                                                groupCount={gc}
-                                                hasGenerating={hasGen}
-                                                onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
-                                                galleryStyle={galleryStyle}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            </>
+                                {displayImages.map((img, idx) => {
+                                    const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                    const row = expandedGroupId ? null : groupRowMap.get(img.id);
+                                    const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+                                    const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+                                    const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                    return (
+                                        <FeedGridItem
+                                            key={img.id}
+                                            img={img}
+                                            idx={idx}
+                                            isSelected={selectedIdSet.has(img.id)}
+                                            isKeyboardActive={activeIndex === idx}
+                                            isSelectMode={!!isSelectMode}
+                                            onSelectImage={onSelectImage}
+                                            onToggleSelect={onToggleSelect}
+                                            setActiveIndex={setActiveIndex}
+                                            actions={actions}
+                                            parentSrc={parentSrc}
+                                            groupCount={gc}
+                                            hasGenerating={hasGen}
+                                            onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
+                                        />
+                                    );
+                                })}
+                            </div>
                         ) : !isLoading && (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                                 <div className="flex flex-col items-center gap-8">
@@ -484,30 +424,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 </div>
                             </div>
                         )}
-
-                        {/* Small dropdown toggle under the grid */}
-                        {images.length > 0 && (
-                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto shadow-md rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-                                <select
-                                    value={galleryStyle}
-                                    onChange={(e) => setGalleryStyle(e.target.value as any)}
-                                    className="appearance-none bg-transparent outline-none cursor-pointer py-1.5 pl-4 pr-8 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 text-center uppercase tracking-wider"
-                                    style={{ WebkitAppearance: 'none' }}
-                                >
-                                    <option value="square">Modern Grid</option>
-                                    <option value="edge">Edge-to-Edge</option>
-                                    <option value="masonry">Layout Soft</option>
-                                    <option value="masonry-sharp">Layout Sharp</option>
-                                    <option value="masonry-flat">Modern Flat</option>
-                                </select>
-                                <div className="absolute right-3 top-[50%] -translate-y-[50%] pointer-events-none">
-                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </div>
-                            </div>
-                        )}
-
                     </div>
                 </div>
 
