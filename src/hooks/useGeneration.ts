@@ -18,57 +18,110 @@ interface UseGenerationProps {
     isAuthDisabled: boolean;
     selectAndSnap: (id: string, instant?: boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
-    showToast: (msg: string, type: "success" | "error", duration?: number) => void;
-    currentBoardId: string | null;
+    showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
 }
 
 const COSTS: Record<string, number> = {
-    'fast': 0.00,
     'pro-1k': 0.10,
     'pro-2k': 0.25,
-    'pro-4k': 0.50
+    'pro-4k': 0.50,
+    'nb2-1k': 0.07,
+    'nb2-2k': 0.17,
+    'nb2-4k': 0.35,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'fast': 12000,
-    'pro-1k': 23000,
-    'pro-2k': 36000,
-    'pro-4k': 60000
+    'pro-1k': 60000,  // interpolated (pro ≈ 2× nb2-1k)
+    'pro-2k': 89000,  // measured avg
+    'pro-4k': 140000, // interpolated (pro-2k × 1.6)
+    'nb2-1k': 38000,  // measured avg
+    'nb2-2k': 43000,  // measured avg
+    'nb2-4k': 60000,  // interpolated (nb2-2k + ~17s)
 };
 
 // Map quality modes to model names for historical lookup
 const QUALITY_TO_MODEL: Record<string, string> = {
-    'fast': 'gemini-2.5-flash-image',
-    'pro-1k': 'gemini-3-pro-image-preview',
-    'pro-2k': 'gemini-3-pro-image-preview',
-    'pro-4k': 'gemini-3-pro-image-preview'
+    'pro-1k': 'google/nano-banana-pro',
+    'pro-2k': 'google/nano-banana-pro',
+    'pro-4k': 'google/nano-banana-pro'
 };
 
-const resolveTargetModel = (quality: string): string | undefined => {
-    return QUALITY_TO_MODEL[quality];
+const resolveTargetModel = (_quality: string): string | undefined => {
+    // Return undefined — let the Edge Function use its own default model ('gemini-3-pro-image-preview')
+    return undefined;
 };
 
-// HELPER: Map technical errors to user-friendly German
+// HELPER: Map technical errors to user-friendly messages (EN / DE)
 const translateError = (errorMsg: string): string => {
-    if (!errorMsg) return "Unbekannter Fehler.";
+    if (!errorMsg) return "Unknown error / Unbekannter Fehler.";
 
     const msg = errorMsg.toLowerCase();
 
-    if (msg.includes("cold start") || msg.includes("timeout")) {
-        return "Timeout. Bitte erneut versuchen.";
-    } else if (msg.includes("nsfw") || msg.includes("safety")) {
-        return "Inhalt abgelehnt (Sicherheitsfilter).";
-    } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        return "Guthaben nicht ausreichend.";
-    } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        return "Netzwerkfehler.";
-    } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
-        return "Fehler in der Anfrage.";
+    // Auth / session
+    if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("session expired") || msg.includes("no access token")) {
+        return "Session expired — please reload the page. / Sitzung abgelaufen – bitte Seite neu laden.";
+    }
+    if (msg.includes("not authenticated") || msg.includes("user not found")) {
+        return "Not logged in. / Nicht eingeloggt.";
+    }
+    if (msg.includes("session refresh failed")) {
+        return "Could not refresh session — please reload. / Sitzung konnte nicht erneuert werden – bitte neu laden.";
     }
 
-    return errorMsg.length > 60 ? errorMsg.substring(0, 60) + "..." : errorMsg;
+    // Credits / billing
+    if (msg.includes("insufficient credits") || msg.includes("not enough credits")) {
+        return "Not enough credits. / Guthaben nicht ausreichend.";
+    }
+    if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        return "Credits required. / Guthaben benötigt.";
+    }
+
+    // Safety / content filter
+    if (msg.includes("nsfw") || msg.includes("safety") || msg.includes("content policy") || msg.includes("blocked")) {
+        return "Content rejected by safety filter. / Inhalt vom Sicherheitsfilter abgelehnt.";
+    }
+
+    // Kie.ai API errors — show detail for debugging
+    if (
+        msg.includes("kie task failed:") ||
+        msg.includes("kie createtask") ||
+        msg.includes("kie recordinfo") ||
+        msg.includes("kie task complete") ||
+        msg.includes("kie result download") ||
+        msg.includes("image generation failed on kie")
+    ) {
+        const cleaned = errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
+        return `Kie.ai error: ${cleaned}`;
+    }
+
+    // Task / background timeout
+    if (msg.includes("timed out") || msg.includes("timeout") || msg.includes("background task timeout")) {
+        return "Generation timed out — credits refunded. / Timeout – Guthaben erstattet.";
+    }
+    if (msg.includes("cold start")) {
+        return "Server cold start — please retry. / Server-Kaltstart – bitte erneut versuchen.";
+    }
+
+    // Server / network
+    if (msg.includes("503") || msg.includes("502") || msg.includes("failed to send") || msg.includes("edge function")) {
+        return "Server unavailable — please retry. / Server nicht erreichbar – bitte erneut versuchen.";
+    }
+    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("failed to fetch")) {
+        return "Network error — please retry. / Netzwerkfehler – bitte erneut versuchen.";
+    }
+
+    // Bad request
+    if (msg.includes("bad request") || msg.includes("400")) {
+        return "Invalid request. / Ungültige Anfrage.";
+    }
+    if (msg.includes("invalid")) {
+        return `Invalid request: ${errorMsg.substring(0, 100)}`;
+    }
+
+    // Fallback — include original for debuggability
+    return `Generation failed: ${errorMsg.substring(0, 120)}`;
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -80,12 +133,78 @@ let smartEstimatesCache: Record<string, {
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// ── Local timing learning ─────────────────────────────────────────────────────
+// Persists rolling averages of actual generation durations in localStorage.
+// After ≥2 samples the stored average is used instead of the hardcoded fallback.
+const LS_TIMING_KEY = 'expose_gen_timing_v1';
+interface TimingBucket { sum: number; count: number; }
+
+const loadTimingStore = (): Record<string, TimingBucket> => {
+    try { return JSON.parse(localStorage.getItem(LS_TIMING_KEY) || '{}'); } catch { return {}; }
+};
+const recordActualDuration = (quality: string, ms: number) => {
+    // Ignore hard limits (< 3s or > 5 min)
+    if (ms < 3000 || ms > 300000) return;
+    try {
+        const store = loadTimingStore();
+        const prev = store[quality] || { sum: 0, count: 0 };
+        // Outlier filter: if we have enough data and new value is >2.5x or <0.4x the current avg, skip it
+        if (prev.count >= 3) {
+            const currentAvg = prev.sum / prev.count;
+            if (ms > currentAvg * 2.5 || ms < currentAvg * 0.4) return;
+        }
+        // Exponential moving average: keep at most 20 samples worth of weight
+        const count = Math.min(prev.count + 1, 20);
+        const sum = prev.count >= 20
+            ? (prev.sum / prev.count) * 19 + ms  // slide out oldest
+            : prev.sum + ms;
+        store[quality] = { sum, count };
+        localStorage.setItem(LS_TIMING_KEY, JSON.stringify(store));
+    } catch { /* storage full or unavailable */ }
+};
+const getLearnedDuration = (quality: string): number | null => {
+    try {
+        const bucket = loadTimingStore()[quality];
+        if (bucket && bucket.count >= 2) return Math.round(bucket.sum / bucket.count);
+    } catch { /* */ }
+    return null;
+};
+
+// Debug helper: call window.__etaDebug() in browser console to inspect learned timings
+if (typeof window !== 'undefined') {
+    (window as any).__etaDebug = () => {
+        const store = loadTimingStore();
+        const hardcoded = ESTIMATED_DURATIONS;
+        console.group('📊 ETA Timing Store');
+        Object.entries(hardcoded).forEach(([quality, hardMs]) => {
+            const bucket = store[quality];
+            const learnedMs = bucket && bucket.count >= 2 ? Math.round(bucket.sum / bucket.count) : null;
+            const diff = learnedMs ? Math.round((learnedMs - hardMs) / 1000) : null;
+            console.log(
+                `${quality.padEnd(8)} | hardcoded: ${(hardMs/1000).toFixed(0)}s` +
+                (learnedMs ? ` | learned: ${(learnedMs/1000).toFixed(0)}s (${diff! > 0 ? '+' : ''}${diff}s) [n=${bucket!.count}]` : ' | learned: — (not enough data)')
+            );
+        });
+        console.groupEnd();
+        return store;
+    };
+}
+
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
+    // Track { startTime, quality } per jobId so we can record actual duration on completion
+    const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string }>>({});
+    // Always-current ref to selectAndSnap — prevents stale closure in completion callbacks
+    const selectAndSnapRef = React.useRef(selectAndSnap);
+    React.useEffect(() => { selectAndSnapRef.current = selectAndSnap; }, [selectAndSnap]);
+    // Job IDs that should auto-navigate to the finished image when polling completes
+    const navigateOnCompleteIds = React.useRef<Set<string>>(new Set());
+    // Optional completion callbacks: when a job finishes, call the registered callback (e.g. navigate to it)
+    const jobCompleteCallbacks = React.useRef<Record<string, () => void>>({});
 
     const pollForJob = useCallback(async (jobId: string) => {
         if (attachedJobIds.current.has(jobId)) return;
@@ -97,20 +216,51 @@ export const useGeneration = ({
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
+                // Timeout: Edge Function likely died (status 546) — clean up stuck job
+                showToast(translateError('timeout'), 'error');
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== jobId)
+                })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 return;
             }
 
             // 1. Check if image exists in DB
             const { data: imgData } = await supabase
-                .from('canvas_images')
+                .from('images')
                 .select('*')
                 .eq('id', jobId)
                 .maybeSingle();
 
             if (imgData) {
+                // Record actual duration — locally and write back to DB for global stats
+                const timing = jobTimingRef.current[jobId];
+                if (timing) {
+                    const actualMs = Date.now() - timing.startTime;
+                    recordActualDuration(timing.quality, actualMs);
+                    // Write duration_ms to generation_jobs so get_smart_generation_estimates has real data
+                    supabase.from('generation_jobs')
+                        .update({ duration_ms: Math.round(actualMs) })
+                        .eq('id', jobId)
+                        .then(() => {});
+                    delete jobTimingRef.current[jobId];
+                }
+
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
+
+                // Auto-navigate to finished image (uses always-current ref — no stale closure)
+                if (navigateOnCompleteIds.current.has(jobId)) {
+                    navigateOnCompleteIds.current.delete(jobId);
+                    setTimeout(() => selectAndSnapRef.current(jobId), 200);
+                }
+                // Legacy callback support
+                const onComplete = jobCompleteCallbacks.current[jobId];
+                if (onComplete) {
+                    delete jobCompleteCallbacks.current[jobId];
+                    setTimeout(onComplete, 200);
+                }
 
                 setRows(prev => prev.map(row => ({
                     ...row,
@@ -157,6 +307,37 @@ export const useGeneration = ({
                 const jobError = (jobData as any).error || "";
                 const translated = translateError(jobError);
                 showToast(translated, "error");
+                setRows(prev => prev.map(row => ({
+                    ...row,
+                    items: row.items.filter(i => i.id !== jobId)
+                })).filter(r => r.items.length > 0));
+                attachedJobIds.current.delete(jobId);
+                return;
+            }
+
+            // 2b. Detect stuck "processing" jobs (Edge Function killed by Supabase before catch ran)
+            if (jobData?.status === 'processing' && attempts >= 55) { // ~4.5 minutes (background task has up to 5 min)
+                // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
+                try {
+                    // Fetch job cost and current profile credits fresh (don't use stale closure)
+                    const [{ data: job }, { data: profile }] = await Promise.all([
+                        supabase.from('generation_jobs').select('cost').eq('id', jobId).maybeSingle(),
+                        user ? supabase.from('profiles').select('credits').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null })
+                    ]);
+                    if (job?.cost && user && profile) {
+                        const refundedCredits = (profile.credits ?? 0) + parseFloat(job.cost);
+                        await supabase
+                            .from('profiles')
+                            .update({ credits: refundedCredits })
+                            .eq('id', user.id);
+                    }
+                    await supabase
+                        .from('generation_jobs')
+                        .update({ status: 'failed', error: 'Background task timeout - credits refunded' })
+                        .eq('id', jobId);
+                } catch { /* non-critical — job cleanup, best-effort */ }
+
+                showToast(translateError('timeout'), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)
@@ -247,9 +428,13 @@ export const useGeneration = ({
         // 2. CONCURRENCY & DURATION (Sync)
         const activeCount = allImages.filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
+        // Prefer: (1) learned from localStorage, (2) smart DB estimate, (3) hardcoded fallback
+        const learnedBase = getLearnedDuration(qualityMode);
         let estimatedDuration: number;
         const nowMs = Date.now();
-        if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
+        if (learnedBase) {
+            estimatedDuration = Math.round(learnedBase * (1 + 0.25 * currentConcurrency));
+        } else if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
             const estimate = smartEstimatesCache[qualityMode];
             let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
             duration *= (1 + (estimate.concurrencyFactor || 0.3) * currentConcurrency);
@@ -272,9 +457,9 @@ export const useGeneration = ({
             annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
             parentId: sourceImage.id,
             generationPrompt: prompt,
-            userDraftPrompt: '',
-            activeTemplateId: undefined,
-            variableValues: undefined,
+            userDraftPrompt: draftPrompt || prompt,
+            activeTemplateId: activeTemplateId,
+            variableValues: variableValues,
             quality: qualityMode,
             estimatedDuration,
             createdAt: Date.now(),
@@ -289,16 +474,14 @@ export const useGeneration = ({
             return newRows;
         });
 
-        if (shouldSnap) {
-            setTimeout(() => selectAndSnap(newId), 50);
-        }
+        // Track start time so pollForJob can record actual duration
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode };
+
+        // Auto-navigate to finished result when the async job completes
+        navigateOnCompleteIds.current.add(newId);
 
         // --- ASYNC PROCESSING STARTS HERE ---
-
-        // Debit Credits Locally (for immediate UX)
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
+        // Credits are deducted server-side; local UI update happens only on success.
 
         // Heavy Canvas/DB operations in the background
         const processGenerationAsync = async () => {
@@ -341,38 +524,35 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').insert({
                         id: newId,
                         user_id: currentUser.id,
-                        user_name: currentUser.email,
+                        user_email: currentUser.email,
                         type: maskDataUrl ? 'Edit' : 'Create',
                         model: qualityMode,
+                        quality_mode: qualityMode,
                         status: 'processing',
                         cost: cost,
-                        prompt: prompt,
-                        concurrent_jobs: currentConcurrency,
-                        board_id: currentBoardId || null,
-                        parent_id: sourceImage.id
+                        prompt_preview: prompt,
+                        parent_id: sourceImage.id,
+                        request_payload: {
+                            hasSourceImage: !!sourceImage.src,
+                            hasMask: !!maskDataUrl,
+                            referenceImagesCount: refs.length,
+                            variables: variableValues || {},
+                        }
                     }).then(() => attachedJobIds.current.add(newId));
                 }
 
-                const timeoutMs = batchSize > 1 ? 600000 : 180000;
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error(`Timeout (${timeoutMs / 60000}m)`)), timeoutMs);
+                const finalImage = await imageService.processGeneration({
+                    payload: structuredRequest,
+                    sourceImage,
+                    qualityMode,
+                    modelName: resolveTargetModel(qualityMode),
+                    newId,
+                    targetVersion: newVersion,
+                    targetTitle: placeholder.title
                 });
 
-                const finalImage = await Promise.race([
-                    imageService.processGeneration({
-                        payload: structuredRequest,
-                        sourceImage,
-                        qualityMode,
-                        modelName: resolveTargetModel(qualityMode),
-                        newId,
-                        boardId: currentBoardId || undefined,
-                        targetVersion: newVersion,
-                        targetTitle: placeholder.title
-                    }),
-                    timeoutPromise
-                ]) as CanvasImage;
-
                 if (finalImage) {
+                    // Synchronous completion (legacy path — Edge Function returned finished image)
                     const cacheBuster = `?t=${Date.now()}`;
                     const refreshedImage = {
                         ...finalImage,
@@ -383,12 +563,30 @@ export const useGeneration = ({
                         ...row,
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
+
+                    // Clean up and navigate using always-current ref
+                    navigateOnCompleteIds.current.delete(newId);
+                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    showToast('Bild generiert', 'success', 6000);
+                } else {
+                    // Async pattern: Edge Function accepted job, background processing started.
+                    // pollForJob (via useEffect) handles completion, credit deduction, and toast.
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
                 }
             } catch (error: any) {
                 console.error("Generation failed:", error);
-                const translated = translateError(error.message || error);
-                showToast(translated, "error");
 
+                // Stop poller from showing a duplicate error toast
+                attachedJobIds.current.delete(newId);
+
+                // Remove placeholder tile
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== newId)
@@ -398,29 +596,14 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
                 }
 
-                if (!isPro && cost > 0) {
-                    setCredits(prev => {
-                        const newCredits = prev + cost;
-                        if (currentUser) { // Only try to update if currentUser is defined
-                            supabase.from('profiles').update({ credits: newCredits }).eq('id', currentUser.id);
-                        }
-                        return newCredits;
-                    });
-
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => {
-                        if (shouldRetry) performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions);
-                    });
-                }
+                const translated = translateError(error.message || error);
+                showToast(translated, "error");
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 
         processGenerationAsync();
-    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, currentBoardId, t, confirm]);
+    }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
@@ -428,10 +611,6 @@ export const useGeneration = ({
         const isPro = userProfile?.role === 'pro';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
-
-        if (!isPro) {
-            setCredits(prev => prev - cost);
-        }
 
         const newId = generateId();
         const baseName = t('new_generation') || 'Generation';
@@ -456,19 +635,30 @@ export const useGeneration = ({
             id: newId, src: '', storage_path: '', width: displayWidth, height: displayHeight, realWidth, realHeight,
             title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
-            annotations: creationAnns, boardId: currentBoardId || undefined, userId: user?.id
+            annotations: creationAnns, userId: user?.id
         };
 
-        setRows(prev => [...prev, { id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }]);
-        setTimeout(() => selectAndSnap(newId), 50);
+        setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
+        // Track start time so we can record actual duration on completion
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId };
+        // Navigate to the placeholder immediately (user sees blob animation on detail page).
+        // Also register for post-completion navigation in case polling finishes before user arrives.
+        navigateOnCompleteIds.current.add(newId);
+        setTimeout(() => selectAndSnapRef.current(newId), 50);
 
         const processNewSync = async () => {
             try {
                 if (user && !isAuthDisabled) {
                     supabase.from('generation_jobs').insert({
-                        id: newId, user_id: user.id, user_name: user.email, type: 'Text2Img', model: modelId,
-                        status: 'processing', cost, prompt, board_id: currentBoardId || null
-                    });
+                        id: newId,
+                        user_id: user.id,
+                        user_email: user.email,
+                        status: 'processing',
+                        cost,
+                        prompt_preview: prompt,
+                        quality_mode: modelId,
+                        model: modelId
+                    }).then(() => attachedJobIds.current.add(newId));
                 }
 
                 const structuredRequest: StructuredGenerationRequest = {
@@ -478,30 +668,43 @@ export const useGeneration = ({
 
                 const finalImage = await imageService.processGeneration({
                     payload: structuredRequest, sourceImage: placeholder, qualityMode: modelId,
-                    modelName: resolveTargetModel(modelId), newId, boardId: currentBoardId || undefined, attachments, aspectRatio: ratio
+                    modelName: resolveTargetModel(modelId), newId, attachments, aspectRatio: ratio
                 });
 
                 if (finalImage) {
+                    // Synchronous completion (legacy path) — record actual duration
+                    const t0 = jobTimingRef.current[newId];
+                    if (t0) { recordActualDuration(t0.quality, Date.now() - t0.startTime); delete jobTimingRef.current[newId]; }
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
+
+                    navigateOnCompleteIds.current.delete(newId);
+                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
+
+                    showToast('Bild generiert', 'success', 6000);
+                } else {
+                    // Async pattern: background processing started, pollForJob handles completion
+                    if (!isPro && cost > 0) {
+                        setCredits(prev => prev - cost);
+                    }
                 }
             } catch (error: any) {
+                // Stop poller from showing a duplicate error toast
+                attachedJobIds.current.delete(newId);
+
+                setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
+
                 const translated = translateError(error.message || "");
                 showToast(translated, "error");
-                setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
-                if (!isPro) {
-                    setCredits(prev => prev + cost);
-                    confirm({
-                        title: t('generation_failed_title'),
-                        description: `${translated}\n${t('generation_failed_desc').replace('{{amount}}', `${cost.toFixed(2)} €`)}`,
-                        confirmLabel: t('retry'),
-                        variant: 'primary'
-                    }).then(shouldRetry => { if (shouldRetry) performNewGeneration(prompt, modelId, ratio, attachments); });
-                }
+                // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
 
         processNewSync();
-    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, currentBoardId, t, confirm]);
+    }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);
 
 
     return { performGeneration, performNewGeneration };

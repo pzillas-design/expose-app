@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction, PresetControl, GenerationQuality } from '@/types';
 import { PresetLibrary } from '@/components/library/PresetLibrary';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
+import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -29,8 +30,8 @@ interface PromptTabProps {
     onAddReference: (file: File, annotationId?: string) => void;
     onTogglePin?: (id: string) => void;
     onDeleteTemplate?: (id: string) => void;
-    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom' | 'lastUsed'>) => void;
-    onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => void;
+    onCreateTemplate?: (t: Omit<PromptTemplate, 'id' | 'isPinned' | 'usageCount' | 'isCustom'>) => Promise<PromptTemplate | null>;
+    onUpdateTemplate?: (id: string, updates: Partial<PromptTemplate>) => Promise<PromptTemplate | null>;
     onGenerateMore: (id: string) => void;
     onNavigateParent: (id: string) => void;
     qualityMode: GenerationQuality;
@@ -81,10 +82,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        { id: 'fast', label: 'Nano Banana', desc: '1024 px', price: t('price_free') },
         { id: 'pro-1k', label: 'Nano Banana Pro 1K', desc: '1024 px', price: '0.10 €' },
         { id: 'pro-2k', label: 'Nano Banana Pro 2K', desc: '2048 px', price: '0.25 €' },
         { id: 'pro-4k', label: 'Nano Banana Pro 4K', desc: '4096 px', price: '0.50 €' },
+        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.07 €' },
+        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.17 €' },
+        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.35 €' },
     ];
 
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES[0];
@@ -157,9 +160,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const startEditingAnnotationLabel = (annotationId: string) => {
         setIsEditingAnnotationLabel(annotationId);
-        const defaultLabel = currentLang === 'de'
-            ? "Setze die Anmerkungen im Bild fotorealistisch um."
-            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+        const defaultLabel = t('annotation_instruction');
         setAnnotationLabelValue(annotationLabelValue || defaultLabel);
     };
 
@@ -255,9 +256,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         let finalOutput = trimmedPrompt;
 
         if (hasAnnotations) {
-            const defaultLabel = currentLang === 'de'
-                ? "Setze die Anmerkungen im Bild fotorealistisch um."
-                : "Interpret the visual annotations. They show what and where to change in the original image ..";
+            const defaultLabel = t('annotation_instruction');
             const displayLabel = annotationLabelValue || defaultLabel;
             if (finalOutput) finalOutput += "\n\n";
             finalOutput += displayLabel;
@@ -292,7 +291,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const handleDoGenerate = () => {
         if (!prompt?.trim() && annotations.length === 0) {
-            showToast(currentLang === 'de' ? 'Bitte gib einen Prompt ein.' : 'Please enter a prompt.', 'error');
+            showToast(t('please_enter_prompt'), 'error');
             return;
         }
         onGenerate(getFinalPrompt(), prompt, activeTemplate?.id, controlValues);
@@ -310,19 +309,30 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         setIsPresetModalOpen(true);
     };
 
-    const handleSavePreset = async (items: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[]) => {
+    const handleSavePreset = async (
+        items: { title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[],
+        options?: { closeOnSuccess?: boolean }
+    ): Promise<PromptTemplate | null> => {
+        const closeOnSuccess = options?.closeOnSuccess ?? true;
+        let lastSaved: PromptTemplate | null = null;
         try {
             for (const item of items) {
                 if (presetModalMode === 'edit' && editingTemplate && editingTemplate.lang === item.lang && onUpdateTemplate) {
-                    await onUpdateTemplate(editingTemplate.id, item);
+                    const updated = await onUpdateTemplate(editingTemplate.id, item);
+                    if (updated) lastSaved = updated;
                 } else if (onCreateTemplate) {
-                    await onCreateTemplate(item);
+                    const created = await onCreateTemplate(item);
+                    if (created) lastSaved = created;
                 }
             }
             showToast(t('save_success'), 'success');
-            setIsPresetModalOpen(false);
+            if (closeOnSuccess) {
+                setIsPresetModalOpen(false);
+            }
+            return lastSaved;
         } catch (err) {
             showToast(t('save_error'), 'error');
+            return null;
         }
     };
 
@@ -331,13 +341,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             <div className="flex-1 flex flex-col px-6 pt-6 pb-6 gap-3">
                 <div className="flex flex-col gap-3">
                     {/* 1. MAIN PROMPT BLOCK (Always Visible) */}
-                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
+                    <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Colors.PanelBg} transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10 focus-within:!bg-transparent focus-within:border-zinc-300 dark:focus-within:border-zinc-700`}>
                         <textarea
                             ref={textAreaRef}
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder={t('describe_changes')}
-                            className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Body} font-mono leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 placeholder:opacity-80`}
+                            className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Prompt} leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 placeholder:opacity-80`}
                             disabled={selectedImage?.isGenerating}
                         />
                     </div>
@@ -350,15 +360,16 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             const isEditing = editingControlId === ctrl.id;
 
                             return (
-                                <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                                <div key={ctrl.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} p-4 pt-4 gap-3 relative group`}>
                                     <div className="absolute top-2 right-2 z-10">
-                                        <button
-                                            onClick={() => handleClearControl(ctrl.id)}
-                                            className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                            title={t('tt_delete')}
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
+                                        <Tooltip text={t('tt_delete')}>
+                                            <button
+                                                onClick={() => handleClearControl(ctrl.id)}
+                                                className="p-1.5 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </Tooltip>
                                     </div>
 
                                     <div className="flex flex-col gap-2">
@@ -370,13 +381,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     onChange={(e) => setEditControlValue(e.target.value)}
                                                     onBlur={saveControlLabel}
                                                     onKeyDown={handleKeyDown}
-                                                    className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono opacity-70 leading-relaxed resize-none overflow-hidden block`}
+                                                    className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Prompt} opacity-70 leading-relaxed resize-none overflow-hidden block`}
                                                     style={{ minHeight: '1.2em' }}
                                                 />
                                             ) : (
                                                 <div
                                                     onClick={() => startEditingControl(ctrl.id, ctrl.label)}
-                                                    className={`w-full ${Typo.Body} font-mono text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity cursor-text break-words whitespace-pre-wrap`}
+                                                    className={`w-full ${Typo.Prompt} text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity cursor-text break-words whitespace-pre-wrap`}
                                                 >
                                                     {displayLabel}
                                                 </div>
@@ -391,11 +402,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                         key={opt.id}
                                                         onClick={() => handleToggleControlOption(ctrl.id, opt.value)}
                                                         className={`
-                                                        px-3 py-1.5 rounded-md text-[12px] transition-all
-                                                        ${isSelected
+ px-3 py-1.5 rounded-full text-[12px] transition-all
+ ${isSelected
                                                                 ? 'bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium'
                                                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'}
-                                                    `}
+ `}
                                                     >
                                                         {opt.label}
                                                     </button>
@@ -413,33 +424,30 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         const activeAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
                         const count = activeAnns.length;
 
-                        const defaultLabel = currentLang === 'de'
-                            ? "Setze die Anmerkungen im Bild fotorealistisch um."
-                            : "Interpret the visual annotations. They show what and where to change in the original image ..";
+                        const defaultLabel = t('annotation_instruction');
 
                         return (
-                            <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
+                            <div className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} p-4 pt-4 gap-3 relative group transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/10`}>
                                 <div className="absolute top-2 right-2 z-10">
-                                    <button
-                                        onClick={async () => {
-                                            const result = await confirm({
-                                                title: currentLang === 'de' ? 'Alle Anmerkungen löschen?' : 'Delete all annotations?',
-                                                description: currentLang === 'de'
-                                                    ? 'Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.'
-                                                    : 'Do you really want to remove all annotations from the canvas? This action cannot be undone.',
-                                                confirmLabel: t('delete'),
-                                                cancelLabel: t('cancel'),
-                                                variant: 'danger'
-                                            });
-                                            if (result) {
-                                                onClearAnnotations(activeAnns.map(a => a.id));
-                                            }
-                                        }}
-                                        className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
-                                        title={currentLang === 'de' ? 'Alle Anmerkungen löschen' : 'Clear all annotations'}
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
+                                    <Tooltip text={t('clear_all_annotations')}>
+                                        <button
+                                            onClick={async () => {
+                                                const result = await confirm({
+                                                    title: t('clear_all_annotations'),
+                                                    description: t('clear_all_annotations_desc'),
+                                                    confirmLabel: t('delete'),
+                                                    cancelLabel: t('cancel'),
+                                                    variant: 'danger'
+                                                });
+                                                if (result) {
+                                                    onClearAnnotations(activeAnns.map(a => a.id));
+                                                }
+                                            }}
+                                            className="p-1.5 rounded-full text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-400 dark:hover:text-zinc-500 transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </Tooltip>
                                 </div>
 
                                 <div className="flex flex-col gap-3">
@@ -451,7 +459,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                 onChange={(e) => setAnnotationLabelValue(e.target.value)}
                                                 onBlur={() => setIsEditingAnnotationLabel(null)}
                                                 onKeyDown={handleKeyDown}
-                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Prompt} leading-relaxed resize-none overflow-hidden block`}
                                                 ref={(el) => {
                                                     if (el) {
                                                         el.style.height = 'auto';
@@ -470,7 +478,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     setAnnotationLabelValue(annotationLabelValue || defaultLabel);
                                                     setIsEditingAnnotationLabel('main');
                                                 }}
-                                                className={`w-full ${Typo.Body} font-mono cursor-text break-words whitespace-pre-wrap text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity`}
+                                                className={`w-full ${Typo.Prompt} cursor-text break-words whitespace-pre-wrap text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity`}
                                             >
                                                 {annotationLabelValue || defaultLabel}
                                             </div>
@@ -481,12 +489,12 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         <button
                                             onClick={onAddBrush}
                                             className={`
-                                                flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-all
+                                                flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] transition-all
                                                 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700
                                             `}
                                         >
                                             <span className="font-medium">
-                                                {count} {currentLang === 'de' ? 'Anmerkungen' : 'Annotations'}
+                                                {count} {t('annotations_label')}
                                             </span>
                                             <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                                         </button>
@@ -497,21 +505,22 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     })()}
 
                     {annotations.filter(a => a.type === 'reference_image').map((ann, index) => {
-                        const defaultText = currentLang === 'de' ? "Nutze dieses Bild als Inspiration .." : "Use this image as inspiration ..";
+                        const defaultText = t('reference_image_instruction');
                         const hasText = ann.text && ann.text.trim().length > 0;
                         const textValue = hasText ? ann.text : defaultText;
                         const isEditing = editingId === ann.id;
 
                         return (
-                            <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} shadow-sm p-4 pt-4 gap-3 relative group`}>
+                            <div key={ann.id} className={`flex flex-col border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} ${Theme.Colors.PanelBg} p-4 pt-4 gap-3 relative group`}>
                                 <div className="absolute top-2 right-2 z-10">
-                                    <button
-                                        onClick={() => onDeleteAnnotation(ann.id)}
-                                        className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                                        title={t('tt_delete')}
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
+                                    <Tooltip text={t('tt_delete')}>
+                                        <button
+                                            onClick={() => onDeleteAnnotation(ann.id)}
+                                            className="p-1.5 rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-black dark:hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </Tooltip>
                                 </div>
 
                                 <div className="flex flex-col gap-3">
@@ -529,7 +538,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                                     }
                                                     handleKeyDown(e);
                                                 }}
-                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Body} font-mono leading-relaxed resize-none overflow-hidden block`}
+                                                className={`w-full bg-transparent border-none outline-none p-0 ${Typo.Prompt} leading-relaxed resize-none overflow-hidden block`}
                                                 style={{ minHeight: '1.5em' }}
                                                 onInput={(e) => {
                                                     const target = e.target as HTMLTextAreaElement;
@@ -540,14 +549,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                         ) : (
                                             <div
                                                 onClick={() => startEditing(ann, defaultText)}
-                                                className={`w-full ${Typo.Body} font-mono leading-relaxed cursor-text break-words whitespace-pre-wrap ${!hasText ? 'text-zinc-400 opacity-80' : 'text-zinc-900 dark:text-zinc-100'}`}
+                                                className={`w-full ${Typo.Prompt} leading-relaxed cursor-text break-words whitespace-pre-wrap ${!hasText ? 'text-zinc-400 opacity-80' : 'text-zinc-900 dark:text-zinc-100'}`}
                                             >
                                                 {textValue}
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 shadow-sm shrink-0">
+                                    <div className="w-16 h-16 rounded-md overflow-hidden border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 shrink-0">
                                         <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                     </div>
                                 </div>
@@ -563,8 +572,8 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             variant="secondary"
                             onClick={onAddBrush}
                             disabled={selectedImage?.isGenerating || isMulti}
-                            icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-blue-500'}`} />}
-                            className="w-full !normal-case !font-normal !tracking-normal !text-xs"
+                            icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-orange-500'}`} />}
+                            className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
                             tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
                         >
                             <span>{t('annotate') || 'Annotate'}</span>
@@ -574,10 +583,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             onClick={() => fileInputRef.current?.click()}
                             disabled={selectedImage?.isGenerating}
                             icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
-                            className="w-full !normal-case !font-normal !tracking-normal !text-xs"
+                            className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
                             tooltip={t('tt_upload_ref')}
                         >
-                            <span>{currentLang === 'de' ? 'Referenzbild' : 'Reference Image'}</span>
+                            <span>{t('reference_image_btn')}</span>
                         </Button>
                         <input
                             type="file"
@@ -591,17 +600,14 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                     {/* Generate Button with Integrated Settings */}
                     <div className="relative z-20">
                         <div className="flex w-full">
-                            <button
+                            <Button
                                 onClick={handleDoGenerate}
                                 disabled={selectedImage.isGenerating}
-                                className={`
-                                relative flex-1 flex items-center justify-center py-3.5 rounded-lg transition-all shadow-sm
-                                ${selectedImage?.isGenerating
-                                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed opacity-50'
-                                        : `${Theme.Colors.AccentBg} ${Theme.Colors.AccentFg} hover:opacity-90`}
-                            `}
+                                variant="primary"
+                                size="m"
+                                className="relative flex-1 w-full"
                             >
-                                <span className={`flex items-center gap-2 ${Typo.ButtonLabel}`}>
+                                <span className="flex items-center gap-2">
                                     {selectedImage?.isGenerating
                                         ? t('processing')
                                         : isMulti && selectedImages
@@ -612,24 +618,24 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                                 {/* ABSOLUTE SETTINGS BUTTON INSIDE GENERATE */}
                                 {!selectedImage.isGenerating && (
                                     <div className="absolute right-1 top-1 bottom-1 w-8 flex items-center justify-center z-20">
-                                        <Tooltip text={currentLang === 'de' ? 'Modell auswählen' : 'Select model'} side="bottom">
+                                        <Tooltip text={t('select_model')} side="bottom">
                                             <div
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setIsModelDropdownOpen(!isModelDropdownOpen);
                                                 }}
                                                 className={`
-                                                w-full h-full flex items-center justify-center rounded
-                                                hover:bg-black/10 transition-colors cursor-pointer
-                                                ${isModelDropdownOpen ? 'bg-black/10' : ''}
-                                            `}
+                                                        w-full h-full flex items-center justify-center rounded-full
+                                                        hover:bg-black/10 transition-colors cursor-pointer
+                                                        ${isModelDropdownOpen ? 'bg-black/10' : ''}
+                                                    `}
                                             >
                                                 <TwoDotsVertical className="w-4 h-4" />
                                             </div>
                                         </Tooltip>
                                     </div>
                                 )}
-                            </button>
+                            </Button>
                         </div>
 
                         {/* DROPDOWN MENU - Positioned relative to the container */}
@@ -637,18 +643,18 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <>
                                 <div className="fixed inset-0 z-30" onClick={() => setIsModelDropdownOpen(false)} />
                                 <div className={`
-                                absolute top-full right-0 mt-2 w-64 p-1.5
-                                ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
-                                shadow-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50
-                            `}>
+ absolute top-full right-0 mt-2 w-64 p-1.5
+ ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg}
+ flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-200 z-50
+ `}>
                                     {MODES.map((m) => (
                                         <button
                                             key={m.id}
                                             onClick={() => { onQualityModeChange(m.id); setIsModelDropdownOpen(false); }}
                                             className={`
-                                            flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
-                                            ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
-                                        `}
+ flex items-center justify-between px-3 py-2 ${Theme.Geometry.Radius} text-left transition-colors
+ ${qualityMode === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+ `}
                                         >
                                             <div className="flex flex-col">
                                                 <span className={`${Typo.Body} font-medium ${qualityMode === m.id ? Theme.Colors.TextHighlight : Theme.Colors.TextPrimary}`}>
@@ -683,17 +689,15 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 />
             </div>
 
-            <PresetEditorModal
+            <ManagePresetsModal
                 isOpen={isPresetModalOpen}
                 onClose={() => setIsPresetModalOpen(false)}
-                mode={presetModalMode}
-                scope="user"
                 currentLang={currentLang}
-                initialTemplate={editingTemplate}
-                existingTemplates={templates}
+                initialTemplateId={presetModalMode === 'create' ? 'new' : (editingTemplate ? editingTemplate.id : null)}
+                templates={templates}
                 onSave={handleSavePreset}
                 onDelete={onDeleteTemplate}
-                t={t}
+                t={t as any}
             />
 
         </div>

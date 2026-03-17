@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body,
+#root {
+  min-height: 100%;
+  height: 100%;
+  background-color: #ffffff;
+}
+
+/* iOS safe area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pb-safe-or-4 {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+.bottom-safe {
+  bottom: env(safe-area-inset-bottom);
+}
+
 html {
   @apply bg-white dark:bg-black;
 }
@@ -9,8 +31,17 @@ html {
 body {
   margin: 0;
   overflow: auto;
+  overscroll-behavior-y: none;
   font-family: 'Inter', sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   @apply bg-white text-zinc-900 dark:bg-black dark:text-zinc-100;
+}
+
+.dark body,
+.dark #root,
+html.dark {
+  background-color: #000000;
 }
 
 :root {
@@ -32,6 +63,42 @@ html:not(.dark) {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(161, 161, 170, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(161, 161, 170, 0.5);
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(161, 161, 170, 0.8);
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(113, 113, 122, 0.5) transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(113, 113, 122, 0.5);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(113, 113, 122, 0.8);
 }
 
 /* Fix Autofill colors in dark mode */
@@ -80,4 +147,10 @@ html:not(.dark) {
   100% {
     transform: translateX(-100%);
   }
+}
+
+/* Progress bar for image generation tiles: grows from 2% → 95% over estimatedDuration */
+@keyframes gen-progress {
+  from { width: 2%; }
+  to   { width: 95%; }
 }

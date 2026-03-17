@@ -1,50 +1,56 @@
 import React from 'react';
-import { TranslationFunction } from '@/types';
-import { Logo } from '@/components/ui/Logo';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/ui/Logo';
+import { Wordmark } from '@/components/ui/Wordmark';
 
-interface GlobalFooterProps {
-    t: TranslationFunction;
+type TranslationFunction = (key: string) => string;
+
+const footerLinks = (t: TranslationFunction) => [
+    { label: t('footer_photos') || 'Gallery', to: '/' },
+    { label: t('footer_about') || 'About', to: '/about' },
+    { label: t('footer_contact') || 'Contact', to: '/contact' },
+    { label: t('footer_legal') || 'Legal', to: '/impressum' }
+];
+
+function FooterLockup() {
+    return (
+        <Link
+            to="/about"
+            aria-label="Exposé"
+            className="flex items-center gap-4 transition-opacity duration-300 hover:opacity-80"
+        >
+            <Logo className="h-11 w-11 sm:h-10 sm:w-10" />
+            <Wordmark className="h-5 w-auto text-zinc-900 dark:text-white sm:h-6" />
+        </Link>
+    );
 }
 
-export const GlobalFooter: React.FC<GlobalFooterProps> = ({ t }) => {
+function FooterNav({ t }: { t: TranslationFunction }) {
     return (
-        <footer className="w-full bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900/50 py-16 mt-auto">
-            <div className="max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 flex flex-col items-center gap-8">
+        <nav className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 md:justify-end md:gap-x-10">
+            {footerLinks(t).map((link) => (
+                <Link
+                    key={link.to}
+                    to={link.to}
+                    className="text-[14px] font-normal text-zinc-400 transition-colors duration-200 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100"
+                >
+                    {link.label}
+                </Link>
+            ))}
+        </nav>
+    );
+}
 
-                {/* Brand Section - Larger Colored Logo */}
-                <div className="flex flex-col items-center justify-center">
-                    <Logo className="w-9 h-9" />
+export const GlobalFooter: React.FC<{ t: TranslationFunction }> = ({ t }) => {
+    return (
+        <footer className="mt-auto w-full bg-gradient-to-b from-zinc-50/45 via-white/96 to-white px-6 pb-8 pt-7 dark:from-zinc-950/30 dark:via-black/92 dark:to-black sm:px-8 sm:pb-9 sm:pt-8 lg:px-12 xl:px-16">
+            <div className="flex w-full flex-col gap-6 sm:gap-7 md:flex-row md:items-center md:justify-between md:gap-8">
+                <div className="flex justify-center md:justify-start">
+                    <FooterLockup />
                 </div>
-
-                {/* Navigation - Single line, minimal text, normal case */}
-                <nav className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-                    <Link
-                        to="/"
-                        state={{ skipRedirect: true }}
-                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-                    >
-                        {t('footer_about') || 'Home'}
-                    </Link>
-                    <Link
-                        to="/projects"
-                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-                    >
-                        {t('tab_projects') || 'Projekte'}
-                    </Link>
-                    <a
-                        href="/contact"
-                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-                    >
-                        {t('footer_contact') || 'Contact'}
-                    </a>
-                    <a
-                        href="/impressum"
-                        className="text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-                    >
-                        {t('footer_legal') || 'Impressum'}
-                    </a>
-                </nav>
+                <div className="flex justify-center md:justify-end">
+                    <FooterNav t={t} />
+                </div>
             </div>
         </footer>
     );

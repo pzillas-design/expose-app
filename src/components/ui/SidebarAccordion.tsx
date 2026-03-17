@@ -34,7 +34,7 @@ export const SidebarAccordion: React.FC<SidebarAccordionProps> = ({
                     className="flex items-center gap-2 flex-1 h-full text-left"
                 >
                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
-                    <span className={`${Typo.LabelSmall} uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}>
+                    <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>
                         {title}
                     </span>
                 </button>

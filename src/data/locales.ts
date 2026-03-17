@@ -75,8 +75,8 @@ export const translations = {
     add_sticker: "Insert",
 
     // Prompt Tab
-    prompt_label: "PROMPT",
-    context_label: "CONTEXT",
+    prompt_label: "Prompt",
+    context_label: "Context",
     annotations: "Annotations",
     reset_tooltip: "Reset Preset",
     describe_changes: "Describe changes...",
@@ -109,11 +109,11 @@ export const translations = {
     preset_deleted: "Preset deleted",
     new_preset_title: "Create New Preset",
     edit_preset_title: "Edit Preset",
-    title_label: "TITLE",
+    title_label: "Title",
     title_placeholder: "e.g. Cinematic Light",
-    prompt_label_editor: "PROMPT",
+    prompt_label_editor: "Prompt",
     prompt_placeholder: "e.g. add cinematic lighting",
-    variables_label: "VARIABLES",
+    variables_label: "Variables",
     add_variable: "Add Variable",
     version_de: "German Version",
     version_en: "English Version",
@@ -122,7 +122,7 @@ export const translations = {
     add_btn: "Add",
 
     // Variables
-    vars_label: "VARIABLES",
+    vars_label: "Variables",
     add_var: "Add Var",
     var_placeholder: "Value...",
 
@@ -147,7 +147,11 @@ export const translations = {
     empty_board_title: "Your board is empty",
     empty_board_desc: "Upload images or use the generator to get started.",
     upload_image_edit: "Upload Image & Edit",
-    generate_new: "Generate New",
+    generate_new: "Generate new image",
+    empty_feed_message: "Click \"+\" to generate your first image.",
+    action_upload: "Upload",
+    drop_files_here: "Drop files here",
+    action_generate: "Generate image",
 
     // Settings / User
     login_btn: "Login",
@@ -243,7 +247,7 @@ export const translations = {
     auth_update_password_btn: "Set New Password",
     auth_send_reset_link: "Send Reset Link",
     auth_or_continue: "Or continue with",
-    auth_google: "Continue with Google",
+    auth_google: "Google Login",
     auth_no_account: "Create account",
     auth_forgot_password: "Forgot password?",
     auth_already_have: "Already have an account?",
@@ -259,6 +263,7 @@ export const translations = {
     auth_error_invalid_credentials: "Invalid email or password",
     auth_error_user_exists: "An account with this email already exists",
     auth_error_invalid_link: "Invalid or expired link",
+    auth_error_schema: "Authentication is temporarily unavailable due to a server configuration issue.",
     tab_account: "Account",
     tab_general: "General",
     tab_about: "Home",
@@ -312,11 +317,14 @@ export const translations = {
     overview_desc: "Overview of all your projects.",
     rename_board: "Rename",
     default_project_name: "New Project",
-    footer_about: "Home",
+    footer_about: "About",
     footer_website: "Website",
     footer_contact: "Contact",
     footer_legal: "Legal",
     footer_privacy: "Privacy",
+    footer_photos: "Gallery",
+    menu_photos: "Gallery",
+    menu_select: "Select",
     // New
     account_deleted: "Account deleted successfully",
     admin_danger_zone: "Danger Zone",
@@ -368,11 +376,134 @@ export const translations = {
     admin_total_spent_header: 'Total Spent',
     admin_user_default: 'User',
     admin_user_email_missing: 'No Email',
-    delete_account_section: 'More',
+    delete_account_section: 'Other',
     delete_account_permanently: 'Delete Account',
     shared_template_label: "Shared Template",
-    shared_template_desc: "Use this template to edit your images with exposé.",
-    shared_template_cta: "Try Now",
+    shared_template_desc: "Use this exclusive template to take your images to the next level directly in exposé.",
+    shared_template_cta: "Add Template",
+
+    // AppNavbar selection count
+    image_selected_singular: "image selected",
+    images_selected_plural: "images selected",
+
+    // GenerationProgressRing
+    untitled: "Untitled",
+    go_to_image: "Go to image",
+    generate_more: "Generate more",
+
+    // SideSheet annotation chips
+    annotations_label: "Annotations",
+    brush_label: "Brush",
+    shape_rect: "Rect",
+    shape_circle: "Circle",
+    shape_line: "Line",
+    stamp_label: "Stamp",
+    add_reference: "Add Reference",
+    quality_highest: "Highest quality",
+    quality_faster: "Faster & cheaper",
+    presets_label: "Presets",
+    no_entries: "No entries",
+    edit_presets: "Edit Presets",
+
+    // CropModal
+    crop_title: "Crop",
+    crop_subtitle: "Adjust the image section.",
+
+    // FeedPage
+    select_images_to_edit: "Select images to edit",
+    n_download: "Download {{n}}",
+
+    // SettingsModal
+    storage_section: "Storage",
+    images_label: "images",
+    notifications_label: "Notifications",
+    notifications_active: "Triggered after each generation",
+    notifications_blocked: "Blocked in browser",
+    notifications_disabled: "Currently disabled",
+    notifications_ask: "Permission will be requested when enabled",
+    notifications_allow_in_browser: "Allow notifications in your browser settings",
+    auto_delete_oldest: "Auto-delete oldest",
+    auto_delete_desc: "Deletes oldest image when limit is reached",
+    // SettingsModal — extended
+    settings_model_label: "Default Model",
+    settings_quality_label: "Default Quality",
+    settings_change_password: "Change Password",
+    notifications_browser_label: "Browser Notifications",
+    notifications_browser_desc: "After completed generations",
+    auto_delete_desc_short: "After reaching the limit",
+    model_nb2_desc: "Faster",
+    model_pro_desc: "Highest quality",
+
+    // DetailPage
+    open_editing_panel: "Open editing panel",
+
+    // BrushTab tool labels
+    tool_text: "Text",
+    tool_shape: "Shape",
+    tool_circle: "Circle",
+    tool_line: "Line",
+    tool_brush: "Brush",
+    clear_all_brush: "Clear all",
+
+    // ObjectsTab
+    manage_stickers: "Manage Stickers",
+    add_new_sticker: "Add New Sticker",
+    no_stickers_yet: "No stickers yet.",
+    create_first_sticker: "Create your first sticker",
+    edit_stickers_btn: "Edit Stickers",
+    sticker_create_tooltip: "Create Sticker",
+
+    // ImageInfoModal
+    copy_prompt_tooltip: "Copy prompt",
+
+    // PromptTab
+    select_model: "Select model",
+    please_enter_prompt: "Please enter a prompt.",
+    reference_image_btn: "Reference Image",
+    annotation_instruction: "Interpret the visual annotations. They show what and where to change in the original image ..",
+    reference_image_instruction: "Use this image as inspiration ..",
+    clear_all_annotations: "Clear all annotations",
+    clear_all_annotations_desc: "Do you really want to remove all annotations from the canvas? This action cannot be undone.",
+
+    // AppNavbar
+    nav_create: "Create",
+    nav_generate_new: "Generate new image",
+    nav_upload: "Upload",
+    nav_menu: "Menu",
+    nav_settings: "Settings",
+    nav_select: "Select images",
+    nav_contact: "Feedback",
+    nav_sign_out: "Sign out",
+    nav_download: "Download",
+    nav_more: "More",
+    nav_sidebar: "Sidebar",
+    nav_edit: "Edit",
+    nav_delete: "Delete",
+    nav_info: "Info",
+
+    // PresetLibrary
+    presets_recent: "Recent",
+    presets_recently_used: "Recently used",
+    presets_options: "Options",
+    presets_edit_tooltip: "Edit template",
+    preset_edit_presets: "Edit Presets",
+    no_entries_available: "No entries available yet.",
+
+    // AuthModal
+    auth_or: "or",
+
+    // ManagePresetsModal / ShareTemplateModal
+    share_btn: "Share",
+    share_title: "Share Template",
+    share_ready_desc: "Your template is ready to share — copy the link and send it to friends or colleagues.",
+    share_unsaved_desc: "Please save your changes first to generate a shareable link.",
+    share_placeholder_unsaved: "Link will be generated after saving...",
+    share_copy_btn: "Copy Link",
+    share_copied_btn: "Link Copied",
+    share_error_copy: "Error copying link",
+    share_error_save_first: "Please save the template first",
+    share_toast_copied: "Link copied",
+    preset_select_placeholder: "Select a preset or create a new one",
   },
   de: {
     // General
@@ -483,11 +614,11 @@ export const translations = {
     preset_deleted: "Preset gelöscht",
     new_preset_title: "Neue Vorlage erstellen",
     edit_preset_title: "Vorlage bearbeiten",
-    title_label: "TITEL",
+    title_label: "Titel",
     title_placeholder: "z.B. Cinematic Light",
-    prompt_label_editor: "PROMPT",
+    prompt_label_editor: "Prompt",
     prompt_placeholder: "z.B. füge cinematisches Licht hinzu",
-    variables_label: "VARIABLEN",
+    variables_label: "Variablen",
     add_variable: "Variable hinzufügen",
     version_de: "Deutsche Version",
     version_en: "Englische Version",
@@ -496,7 +627,7 @@ export const translations = {
     add_btn: "Hinzufügen",
 
     // Variables
-    vars_label: "VARIABLEN",
+    vars_label: "Variablen",
     add_var: "Variable",
     var_placeholder: "Wert...",
 
@@ -522,6 +653,10 @@ export const translations = {
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
     upload_image_edit: "Hochladen",
     generate_new: "Bild generieren",
+    empty_feed_message: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
+    action_upload: "Hochladen",
+    drop_files_here: "Dateien hier ablegen",
+    action_generate: "Bild generieren",
 
     // Settings / User
     login_btn: "Anmelden",
@@ -617,7 +752,7 @@ export const translations = {
     auth_update_password_btn: "Neues Passwort festlegen",
     auth_send_reset_link: "Link senden",
     auth_or_continue: "Oder fortfahren mit",
-    auth_google: "Mit Google fortfahren",
+    auth_google: "Google Login",
     auth_no_account: "Konto erstellen",
     auth_forgot_password: "Passwort vergessen?",
     auth_already_have: "Bereits ein Konto?",
@@ -633,6 +768,7 @@ export const translations = {
     auth_error_invalid_credentials: "Ungültige E-Mail oder Passwort",
     auth_error_user_exists: "Ein Konto mit dieser E-Mail existiert bereits",
     auth_error_invalid_link: "Ungültiger oder abgelaufener Link",
+    auth_error_schema: "Anmeldung ist wegen eines Server-Konfigurationsproblems momentan nicht verfügbar.",
     tab_account: "Konto",
     tab_general: "Allgemein",
     tab_about: "Home",
@@ -686,11 +822,14 @@ export const translations = {
     overview_desc: "Überblick über all deine Projekte.",
     rename_board: "Umbenennen",
     default_project_name: "Neues Projekt",
-    footer_about: "Home",
+    footer_about: "About",
     footer_website: "Website",
     footer_contact: "Kontakt",
     footer_legal: "Impressum",
     footer_privacy: "Datenschutz",
+    footer_photos: "Galerie",
+    menu_photos: "Galerie",
+    menu_select: "Auswählen",
     // Neu
     account_deleted: "Konto erfolgreich gelöscht",
     admin_danger_zone: "Gefahrenzone",
@@ -745,7 +884,164 @@ export const translations = {
     delete_account_section: 'Sonstiges',
     delete_account_permanently: 'Konto löschen',
     shared_template_label: "geteilte Vorlage",
-    shared_template_desc: "Nutze diese Vorlage, um deine Bilder mit exposé zu bearbeiten.",
-    shared_template_cta: "Jetzt ausprobieren",
+    shared_template_desc: "Verwende diese Vorlage, um deine Bilder einfach anzupassen.",
+    shared_template_cta: "Vorlage hinzufügen",
+    shared_template_not_found: "Vorlage nicht gefunden",
+    shared_template_invalid: "Dieser Link scheint ungültig zu sein oder die Vorlage wurde entfernt.",
+    back_to_home: "Zur Startseite",
+    learn_more_expose: "Erfahre mehr über exposé",
+
+    // AppNavbar selection count
+    image_selected_singular: "Bild ausgewählt",
+    images_selected_plural: "Bilder ausgewählt",
+
+    // GenerationProgressRing
+    untitled: "Ohne Titel",
+    go_to_image: "Zum Bild",
+    generate_more: "Mehr generieren",
+
+    // SideSheet annotation chips
+    annotations_label: "Anmerkungen",
+    brush_label: "Pinsel",
+    shape_rect: "Rechteck",
+    shape_circle: "Kreis",
+    shape_line: "Linie",
+    stamp_label: "Stempel",
+    add_reference: "Referenzbild",
+    quality_highest: "Höchste Qualität",
+    quality_faster: "Schneller & günstiger",
+    presets_label: "Vorlagen",
+    no_entries: "Keine Einträge",
+    edit_presets: "Vorlagen bearbeiten",
+
+    // CropModal
+    crop_title: "Zuschneiden",
+    crop_subtitle: "Passe den Bildausschnitt an.",
+
+    // FeedPage
+    select_images_to_edit: "Bilder zum Bearbeiten auswählen",
+    n_download: "{{n}} herunterladen",
+
+    // SettingsModal
+    storage_section: "Speicher",
+    images_label: "Bilder",
+    notifications_label: "Benachrichtigungen",
+    notifications_active: "Wird nach jeder Generierung ausgelöst",
+    notifications_blocked: "Im Browser gesperrt",
+    notifications_disabled: "Aktuell deaktiviert",
+    notifications_ask: "Erlaubnis wird beim Aktivieren angefragt",
+    notifications_allow_in_browser: "Benachrichtigungen in den Browser-Einstellungen erlauben",
+    auto_delete_oldest: "Ältestes automatisch löschen",
+    auto_delete_desc: "Löscht das älteste Bild wenn das Limit erreicht wird",
+    // SettingsModal — extended
+    settings_model_label: "Standardmodell",
+    settings_quality_label: "Standardqualität",
+    settings_change_password: "Passwort ändern",
+    notifications_browser_label: "Browser-Benachrichtigungen",
+    notifications_browser_desc: "Nach abgeschlossenen Generierungen",
+    auto_delete_desc_short: "Nach Erreichen des Limits",
+    model_nb2_desc: "Schneller",
+    model_pro_desc: "Höchste Qualität",
+
+    // DetailPage
+    open_editing_panel: "Bearbeitungspanel öffnen",
+
+    // BrushTab tool labels
+    tool_text: "Text",
+    tool_shape: "Form",
+    tool_circle: "Kreis",
+    tool_line: "Linie",
+    tool_brush: "Pinsel",
+    clear_all_brush: "Alle löschen",
+
+    // ObjectsTab
+    manage_stickers: "Sticker verwalten",
+    add_new_sticker: "Neuen Sticker hinzufügen",
+    no_stickers_yet: "Noch keine Sticker vorhanden.",
+    create_first_sticker: "Erstelle deinen ersten Sticker",
+    edit_stickers_btn: "Sticker bearbeiten",
+    sticker_create_tooltip: "Sticker erstellen",
+
+    // ImageInfoModal
+    copy_prompt_tooltip: "Prompt kopieren",
+
+    // PromptTab
+    select_model: "Modell auswählen",
+    please_enter_prompt: "Bitte gib einen Prompt ein.",
+    reference_image_btn: "Referenzbild",
+    annotation_instruction: "Setze die Anmerkungen im Bild fotorealistisch um.",
+    reference_image_instruction: "Nutze dieses Bild als Inspiration ..",
+    clear_all_annotations: "Alle Anmerkungen löschen",
+    clear_all_annotations_desc: "Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
+
+    // AppNavbar
+    nav_create: "Erstellen",
+    nav_generate_new: "Neues Bild generieren",
+    nav_upload: "Hochladen",
+    nav_menu: "Menü",
+    nav_settings: "Einstellungen",
+    nav_select: "Bilder auswählen",
+    nav_contact: "Feedback",
+    nav_sign_out: "Abmelden",
+    nav_download: "Herunterladen",
+    nav_more: "Mehr",
+    nav_sidebar: "Seitenleiste",
+    nav_edit: "Bearbeiten",
+    nav_delete: "Löschen",
+    nav_info: "Info",
+
+    // PresetLibrary
+    presets_recent: "Zuletzt",
+    presets_recently_used: "Zuletzt verwendet",
+    presets_options: "Optionen",
+    presets_edit_tooltip: "Vorlage bearbeiten",
+    preset_edit_presets: "Vorlagen bearbeiten",
+    no_entries_available: "Noch keine Einträge vorhanden.",
+
+    // Home Page
+    home_hero_cta: "Projekt starten",
+    home_hero_headline: "Bereit für Next-Gen Creation?",
+    home_section_iterative_title: "Iterativ & parallel arbeiten",
+    home_section_iterative_desc: "Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.",
+    home_section_templates_title: "Vorlagen nutzen & anlegen",
+    home_section_templates_desc: "Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.",
+    home_section_visual_title: "Visual Prompting",
+    home_section_visual_desc: "Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.",
+    home_mockup_prompt_hint: "Inszeniere das Bild neu indem du die Jahreszeit anpasst",
+    home_mockup_season: "Jahreszeit",
+    home_mockup_time: "Uhrzeit",
+    home_mockup_generate: "Generieren",
+    home_mockup_templates: "Vorlagen",
+    home_mockup_note: "Anmerkung",
+    home_mockup_ref: "Referenzbild",
+    home_spring: "Frühling",
+    home_summer: "Sommer",
+    home_winter: "Winter",
+    home_morning: "Morgen",
+    home_noon: "Mittag",
+    home_afternoon: "Nachmittag",
+    home_golden_hour: "Golden Hour",
+    home_blue_hour: "Blue Hour",
+    home_kitchen: "Küche",
+    home_table: "Esstisch",
+    home_sofa: "Sofa",
+
+    // AuthModal
+    auth_or: "oder",
+
+    // ManagePresetsModal / ShareTemplateModal
+    preset_select_placeholder: "Vorlage auswählen oder neue erstellen",
+
+    // Share Modal
+    share_title: "Vorlage teilen",
+    share_desc_ready: "Deine Vorlage ist bereit zum Teilen – einfach Link kopieren und weiterschicken",
+    share_desc_unsaved: "Bitte speichere deine Änderungen zuerst, um einen Link zu generieren.",
+    share_placeholder_unsaved: "Link wird nach dem Speichern generiert...",
+    share_copy_btn: "Link kopieren",
+    share_copied_btn: "Link kopiert",
+    share_error_copy: "Fehler beim Kopieren",
+    share_error_save_first: "Bitte speichere die Vorlage zuerst",
+    share_toast_copied: "Link kopiert",
+    share_btn: "Teilen",
   }
 };

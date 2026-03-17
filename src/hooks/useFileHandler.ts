@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react';
 import { generateId } from '@/utils/ids';
-import { generateThumbnail } from '@/utils/imageUtils';
 import { imageService } from '@/services/imageService';
 import { CanvasImage, ImageRow } from '@/types';
 
@@ -9,9 +8,7 @@ interface UseFileHandlerProps {
     isAuthDisabled: boolean;
     setRows: React.Dispatch<React.SetStateAction<ImageRow[]>>;
     selectMultiple: (ids: string[]) => void;
-    snapToItem: (id: string, instant?: boolean) => void;
     showToast: (msg: string, type: "success" | "error") => void;
-    currentBoardId: string | null;
     setIsSettingsOpen: (open: boolean) => void;
     t: (key: any) => string;
 }
@@ -21,14 +18,12 @@ export const useFileHandler = ({
     isAuthDisabled,
     setRows,
     selectMultiple,
-    snapToItem,
     showToast,
-    currentBoardId,
     setIsSettingsOpen,
     t
 }: UseFileHandlerProps) => {
 
-    const processFiles = useCallback(async (files: File[]) => {
+    const processFiles = useCallback((files: File[]): string[] => {
         const newImageIds: string[] = [];
         let processedCount = 0;
 
@@ -50,16 +45,15 @@ export const useFileHandler = ({
                 version: 1,
                 isGenerating: true, // This triggers the skeleton/shimmer UI
                 createdAt: Date.now(),
-                updatedAt: Date.now(),
-                boardId: currentBoardId || undefined
+                updatedAt: Date.now()
             };
 
-            setRows(prev => [...prev, {
+            setRows(prev => [{
                 id: generateId(),
                 title: baseName,
                 items: [skeleton],
                 createdAt: Date.now()
-            }]);
+            }, ...prev]);
 
             newImageIds.push(skeletonId);
 
@@ -91,16 +85,13 @@ export const useFileHandler = ({
                     const h = targetHeight;
 
                     try {
-                        const thumbBlob = await generateThumbnail(src, 200);
-                        const thumbSrc = URL.createObjectURL(thumbBlob);
-
                         // 3. UPDATE SKELETON WITH REAL DATA
                         setRows(prev => prev.map(row => ({
                             ...row,
                             items: row.items.map(item => item.id === skeletonId ? {
                                 ...item,
                                 src: src,
-                                thumbSrc: thumbSrc,
+                                thumbSrc: src, // Use full src as thumb during local session (no storage yet)
                                 width: w,
                                 height: h,
                                 realWidth: img.width,
@@ -120,7 +111,7 @@ export const useFileHandler = ({
                             const finalImage: CanvasImage = {
                                 id: skeletonId,
                                 src: src,
-                                thumbSrc: thumbSrc,
+                                thumbSrc: src,
                                 width: w,
                                 height: h,
                                 realWidth: img.width,
@@ -131,7 +122,6 @@ export const useFileHandler = ({
                                 isGenerating: false,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now(),
-                                boardId: currentBoardId || undefined,
                                 storage_path: '',
                             };
 
@@ -142,7 +132,6 @@ export const useFileHandler = ({
                                         items: row.items.map(item => item.id === skeletonId ? {
                                             ...item,
                                             storage_path: res.storage_path,
-                                            thumb_storage_path: res.thumb_storage_path
                                         } : item)
                                     })));
                                 }
@@ -174,10 +163,11 @@ export const useFileHandler = ({
                 })).filter(r => r.items.length > 0));
             });
         }
-    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, currentBoardId, t]);
+        return newImageIds;
+    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, t]);
 
-    const processFile = useCallback((file: File) => {
-        processFiles([file]);
+    const processFile = useCallback((file: File): string => {
+        return processFiles([file])[0];
     }, [processFiles]);
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {

@@ -10,6 +10,7 @@ interface CreditsModalProps {
     onClose: () => void;
     currentBalance: number;
     onAddFunds: (amount: number) => Promise<void>;
+    isReduced?: boolean;
     t: TranslationFunction;
 }
 
@@ -18,6 +19,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     onClose,
     currentBalance,
     onAddFunds,
+    isReduced = false,
     t
 }) => {
     const [customAmount, setCustomAmount] = useState('');
@@ -44,20 +46,18 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
         }
     };
 
-    console.log('[CreditsModal] currentBalance:', currentBalance, 'type:', typeof currentBalance);
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
             <div className="p-8 flex flex-col gap-8">
                 <div className="text-center space-y-2">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{t('current_balance') || 'Aktuelles Guthaben'}</span>
+                    <span className={`${Typo.Micro} text-zinc-400`}>{t('current_balance') || 'Aktuelles Guthaben'}</span>
                     <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
                         {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
                 </div>
 
                 <div className="w-full">
-                    {!isTopUpExpanded ? (
+                    {!isReduced && (!isTopUpExpanded ? (
                         <Button
                             onClick={() => setIsTopUpExpanded(true)}
                             variant="primary"
@@ -87,7 +87,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 </div>
                                 <button
                                     onClick={() => setIsTopUpExpanded(false)}
-                                    className="absolute -top-2.5 -right-2.5 p-1.5 bg-white dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-300 hover:text-black dark:hover:text-white transition-colors shadow-sm"
+                                    className="absolute -top-2.5 -right-2.5 p-1.5 bg-white dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-300 hover:text-black dark:hover:text-white transition-colors "
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
@@ -104,6 +104,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
 
                             {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
                         </div>
+                    )
                     )}
                 </div>
             </div>

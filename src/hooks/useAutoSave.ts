@@ -16,6 +16,12 @@ export const useAutoSave = (
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isSavingRef = useRef(false);
 
+    // Keep a ref to the latest rows so the unmount hook can access current state
+    const rowsRef = useRef(rows);
+    useEffect(() => {
+        rowsRef.current = rows;
+    }, [rows]);
+
     // Helper to extract saveable images
     const getImagesToSave = (currentRows: ImageRow[]): CanvasImage[] => {
         return currentRows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
@@ -43,6 +49,18 @@ export const useAutoSave = (
 
             return () => {
                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+                // Force save on unmount if there's pending state
+                const currentUnmountState = JSON.stringify(rowsRef.current);
+                if (currentUnmountState !== lastSavedRef.current) {
+                    try {
+                        console.log('[AutoSave] Force saving to localStorage on unmount...');
+                        localStorage.setItem('beta_canvas_state', currentUnmountState);
+                        lastSavedRef.current = currentUnmountState;
+                    } catch (err) {
+                        console.error('[AutoSave] Unmount localStorage save failed:', err);
+                    }
+                }
             };
         }
 
@@ -84,29 +102,31 @@ export const useAutoSave = (
                     return {
                         id: img.id,
                         user_id: user.id,
-                        thumb_src: (img.thumbSrc && !img.thumbSrc.startsWith('blob:')) ? img.thumbSrc : (isBlob ? null : img.src),
                         storage_path: img.storage_path || '',
-                        width: img.width,
-                        height: img.height,
+                        width: Math.round(img.width),
+                        height: Math.round(img.height),
                         real_width: img.realWidth || img.width,
                         real_height: img.realHeight || img.height,
                         title: img.title,
                         base_name: img.baseName || img.title,
                         version: img.version || 1,
-                        annotations: img.annotations || [],
-                        generation_prompt: img.generationPrompt || '',
+                        annotations: JSON.stringify(img.annotations || []),
+                        prompt: img.generationPrompt || '',
                         user_draft_prompt: img.userDraftPrompt || '',
-                        quality: img.quality || 'pro-1k',
+                        generation_params: {
+                            quality: img.quality || 'pro-1k',
+                            activeTemplateId: img.activeTemplateId,
+                            variableValues: img.variableValues
+                        },
                         parent_id: img.parentId || null,
-                        board_id: img.boardId || null,
-                        created_at: new Date(img.createdAt).toISOString(),
+                        created_at: new Date(img.createdAt || Date.now()).toISOString(),
                         updated_at: new Date().toISOString()
                     };
                 }).filter((item): item is NonNullable<typeof item> => item !== null);
 
                 if (payload.length > 0) {
                     const { error } = await supabase
-                        .from('canvas_images')
+                        .from('images')
                         .upsert(payload, { onConflict: 'id' });
 
                     if (error) {
@@ -137,11 +157,9 @@ export const useAutoSave = (
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
             // Trigger immediate save on unmount if we have unsaved work
-            // Note: We can't easily check 'currentState vs lastSaved' here because of closure staleness,
-            // but we can check if we have valuable data.
-            // Ideally we blindly save on unmount to be safe.
+            // Using rowsRef instead of rows to prevent stale closure data on unmount
             if (user && !isAuthDisabled && !isSavingRef.current) {
-                const imagesToSave = rows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+                const imagesToSave = rowsRef.current.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
 
                 if (imagesToSave.length > 0) {
                     const payload = imagesToSave.map(img => {
@@ -151,32 +169,38 @@ export const useAutoSave = (
                         return {
                             id: img.id,
                             user_id: user.id,
-                            src: img.src,
-                            thumb_src: img.thumbSrc || img.src,
-                            storage_path: img.storage_path || '',
-                            width: img.width,
-                            height: img.height,
+                                storage_path: img.storage_path || '',
+                            width: Math.round(img.width),
+                            height: Math.round(img.height),
                             real_width: img.realWidth || img.width,
                             real_height: img.realHeight || img.height,
                             title: img.title,
                             base_name: img.baseName || img.title,
                             version: img.version || 1,
-                            annotations: img.annotations || [],
-                            generation_prompt: img.generationPrompt || '',
+                            annotations: JSON.stringify(img.annotations || []),
+                            prompt: img.generationPrompt || '',
                             user_draft_prompt: img.userDraftPrompt || '',
-                            quality: img.quality || 'pro-1k',
+                            generation_params: {
+                                quality: img.quality || 'pro-1k',
+                                activeTemplateId: img.activeTemplateId,
+                                variableValues: img.variableValues
+                            },
                             parent_id: img.parentId || null,
-                            board_id: img.boardId || null,
-                            created_at: new Date(img.createdAt).toISOString(),
+                            created_at: new Date(img.createdAt || Date.now()).toISOString(),
                             updated_at: new Date().toISOString()
                         };
                     }).filter(Boolean);
 
                     if (payload.length > 0) {
                         console.log('[AutoSave] Force save on unmount');
-                        supabase.from('canvas_images').upsert(payload, { onConflict: 'id' })
-                            .then(() => console.log('[AutoSave] Unmount save complete'))
-                            .catch(err => console.error('[AutoSave] Unmount save failed:', err));
+                        (async () => {
+                            try {
+                                await supabase.from('images').upsert(payload, { onConflict: 'id' });
+                                console.log('[AutoSave] Unmount save complete');
+                            } catch (err) {
+                                console.error('[AutoSave] Unmount save failed:', err);
+                            }
+                        })();
                     }
                 }
             }

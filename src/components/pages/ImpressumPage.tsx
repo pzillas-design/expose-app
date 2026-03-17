@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppNavbar } from '../layout/AppNavbar';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
@@ -16,14 +15,6 @@ interface ImpressumPageProps {
 export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
     return (
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
-            <AppNavbar
-                user={user}
-                userProfile={userProfile}
-                credits={credits}
-                onCreateBoard={onCreateBoard}
-                onSignIn={onSignIn}
-                t={t}
-            />
 
             <main className="flex-1 w-full max-w-3xl mx-auto px-6 pt-12 sm:pt-44 pb-12 sm:pb-24">
                 <article className="prose prose-zinc dark:prose-invert max-w-none">

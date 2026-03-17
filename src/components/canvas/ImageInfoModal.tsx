@@ -52,10 +52,10 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                 {/* 1. Prompt Section - First */}
                 {image.generationPrompt && (
                     <div className="flex flex-col gap-2 group">
-                        <span className={`${Typo.Body} text-zinc-400 text-[10px] uppercase tracking-wider`}>
+                        <span className={`${Typo.Label} text-zinc-400`}>
                             {t('prompt') || 'Prompt'}
                         </span>
-                        <Tooltip text={currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}>
+                        <Tooltip text={t('copy_prompt_tooltip')}>
                             <div
                                 onClick={handleCopyPrompt}
                                 className={`
@@ -137,7 +137,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
 
                     {/* Model */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model') || 'Modell'}</span>
+                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model')}</span>
                     <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
                         {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
                             image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
@@ -171,8 +171,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                             className="justify-start px-4 gap-3"
                         >
                             <RotateCcw className="w-4 h-4 text-zinc-400" />
-                            <span className={`${Typo.Label} uppercase tracking-wider text-zinc-600 dark:text-zinc-300`}>
-                                {t('ctx_create_variations') || 'Mehr generieren'}
+                            <span className={`${Typo.Label} text-zinc-600 dark:text-zinc-300`}>
+                                {t('ctx_create_variations')}
                             </span>
                         </Button>
                     </div>

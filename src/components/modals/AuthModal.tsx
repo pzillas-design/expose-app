@@ -103,6 +103,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
         if (!err) return null;
         const e = err.toLowerCase();
 
+        // 0. Backend/Schema Errors
+        if (e.includes('database error querying schema')) return t('auth_error_schema');
+
         // 1. Password Errors
         if (e.includes('different from the old')) return t('auth_error_password_same');
         if (e.includes('mismatch')) return t('auth_error_password_mismatch');
@@ -133,10 +136,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
 
             <div
                 className={`
-                    w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} 
-                    shadow-md overflow-hidden relative z-10 animate-in zoom-in-95 duration-200
-                `}
+ w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} 
+ overflow-y-auto max-h-[90vh] custom-scrollbar relative z-10 animate-in zoom-in-95 duration-200
+ `}
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="p-8 pt-[72px] pb-2 flex flex-col items-center text-center relative z-10">
@@ -271,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     <span className="w-full border-t border-t-zinc-300 dark:border-t-zinc-700" />
                                 </div>
                                 <div className="relative flex justify-center text-xs">
-                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>oder</span>
+                                    <span className={`bg-white dark:bg-zinc-900 px-2 text-zinc-500`}>{t('auth_or')}</span>
                                 </div>
                             </div>
 
@@ -286,7 +291,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
                                     </svg>
                                 }
                             >
-                                <span>Google Login</span>
+                                <span>{t('auth_google')}</span>
                             </Button>
                         </>
                     )}

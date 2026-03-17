@@ -3,13 +3,16 @@ import { Modal } from '@/components/ui/Modal';
 import { Button, Input, Theme, Typo, IconButton } from '@/components/ui/DesignSystem';
 import { Copy, Check, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { slugify } from '@/utils/stringUtils';
+import { TranslationFunction } from '@/types';
 
 interface ShareTemplateModalProps {
     isOpen: boolean;
     onClose: () => void;
     templateName: string;
     slug?: string;
-    existingTemplates?: any[]; // To check for name existence if needed
+    existingTemplates?: any[];
+    t: TranslationFunction;
 }
 
 export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
@@ -17,40 +20,27 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
     onClose,
     templateName,
     slug: providedSlug,
-    existingTemplates = []
+    existingTemplates = [],
+    t
 }) => {
     const { showToast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
 
-    // Slug generation fallback: lowercase, replace spaces/special chars with hyphens
-    const generatedSlug = templateName
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '') // remove non-word [a-z0-9_], non-space, non-hyphen
-        .replace(/[\s_-]+/g, '-') // swap any number of spaces, underscores, or hyphens with a single hyphen
-        .replace(/^-+|-+$/g, ''); // remove leading/trailing hyphens
-
-    const slug = providedSlug || generatedSlug;
-    const shareUrl = `${window.location.origin}/s/${slug}`;
+    const slug = providedSlug;
+    const shareUrl = slug ? `${window.location.origin}/s/${slug}` : '';
 
     const handleCopy = async () => {
+        if (!slug) {
+            showToast(t('share_error_save_first'), 'error');
+            return;
+        }
         try {
-            // Check if name exists (simple client-side check for now)
-            const nameExists = existingTemplates.some(t =>
-                t.title.toLowerCase().trim() === templateName.toLowerCase().trim()
-            );
-
-            // The user wanted: "wenn name existiert soll ein fehler toast kommen"
-            // Wait, does the name exist already? If we are editing, it definitely exists.
-            // Maybe the user meant if we try to share a NEW template with an existing name?
-            // Actually, for sharing, the name should be unique to avoid slug collisions.
-
             await navigator.clipboard.writeText(shareUrl);
             setIsCopied(true);
-            showToast('Link kopiert', 'success');
+            showToast(t('share_toast_copied'), 'success');
             setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
-            showToast('Fehler beim Kopieren', 'error');
+            showToast(t('share_error_copy'), 'error');
         }
     };
 
@@ -62,22 +52,23 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
             onClick={onClose}
         >
             <div
-                className={`w-full max-w-md ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusLg} shadow-2xl flex flex-col p-8 gap-6 animate-in zoom-in-95 duration-200`}
+                className={`w-full max-w-md ${Theme.Colors.ModalBg} border border-zinc-900/10 dark:border-zinc-100/10 ${Theme.Geometry.RadiusXl} flex flex-col p-8 gap-6 animate-in zoom-in-95 duration-200`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between">
-                    <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>Vorlage teilen</h2>
+                    <h2 className={Typo.H2}>{t('share_title')}</h2>
                     <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
                 </div>
 
                 <div className="space-y-4">
                     <p className={`${Typo.Body} text-zinc-500`}>
-                        Deine Vorlage ist bereit zum Teilen – einfach Link kopieren und weiterschicken
+                        {slug ? t('share_ready_desc') : t('share_unsaved_desc')}
                     </p>
 
                     <div className="relative group">
                         <Input
                             value={shareUrl}
+                            placeholder={slug ? '' : t('share_placeholder_unsaved')}
                             readOnly
                             className="font-mono text-[11px] bg-zinc-50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800"
                         />
@@ -88,8 +79,9 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
                     variant="primary"
                     onClick={handleCopy}
                     className="w-full !h-12 font-bold"
+                    disabled={!slug}
                 >
-                    {isCopied ? 'Link kopiert' : 'Link kopieren'}
+                    {isCopied ? t('share_copied_btn') : t('share_copy_btn')}
                 </Button>
             </div>
         </div>

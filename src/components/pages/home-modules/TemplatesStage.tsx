@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, X, Plus, ChevronDown, Pen } from 'lucide-react';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
+import { Typo } from '@/components/ui/DesignSystem';
 
 // --- Shared Internal Components ---
 
@@ -18,7 +19,7 @@ const ChipGroup = ({ items, activeItem, pressedItem, targetItem, scale, hideOnMo
                 key={item}
                 className={`px-4 py-2.5 text-xs rounded-md transition-all duration-150 flex items-center justify-center leading-none font-medium ${hideOnMobile.includes(item) ? 'hidden lg:flex' : 'flex'
                     } ${activeItem === item
-                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-md'
+                        ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 '
                         : pressedItem && item === targetItem
                             ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
@@ -58,7 +59,7 @@ const SidepanelMockup = ({
 
                 <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'season' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className="text-[10px] lg:text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Jahreszeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Jahreszeit</span>
                         <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
                             <ChipGroup
                                 items={['Frühling', 'Sommer', 'Winter']}
@@ -73,7 +74,7 @@ const SidepanelMockup = ({
 
                 <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'time' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className="text-[10px] lg:text-[11px] font-mono text-zinc-400 dark:text-zinc-500 uppercase tracking-widest opacity-80 group-hover:opacity-100 transition-opacity">Uhrzeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Uhrzeit</span>
                         <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
                             <ChipGroup
                                 items={['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour']}
@@ -90,7 +91,7 @@ const SidepanelMockup = ({
                 <div className="flex flex-col gap-3 lg:gap-4">
                     <div className="hidden lg:grid grid-cols-2 gap-2">
                         <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Pen className="w-4 h-4 text-blue-500 group-hover:scale-110 transition-transform" /> Anmerkung
+                            <Pen className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Anmerkung
                         </div>
                         <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
                             <Camera className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
@@ -102,7 +103,7 @@ const SidepanelMockup = ({
                         style={{ transform: `scale(${buttonScale})` }}
                     >
                         <span>Generieren</span>
-                        <div className="absolute right-3 p-1 rounded hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
+                        <div className="absolute right-3 p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
                             <TwoDotsVertical className="w-4 h-4" />
                         </div>
                     </div>
@@ -113,7 +114,7 @@ const SidepanelMockup = ({
                 <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
                     <div className="flex items-center gap-2">
                         <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Vorlagen</span>
+                        <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>Vorlagen</span>
                     </div>
                     <Plus className="w-3.5 h-3.5 text-zinc-400" />
                 </div>
@@ -279,13 +280,13 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
 };
 
 const styleContent = `
-    .mockup-cursor {
-        animation: cursor-blink 1s steps(1, start) infinite;
-    }
-    @keyframes cursor-blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-    }
+ .mockup-cursor {
+ animation: cursor-blink 1s steps(1, start) infinite;
+ }
+ @keyframes cursor-blink {
+ 0%, 100% { opacity: 1; }
+ 50% { opacity: 0; }
+ }
 `;
 
 if (typeof document !== 'undefined') {
