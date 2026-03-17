@@ -1,6 +1,6 @@
-import React, { memo, useMemo, useCallback } from 'react';
-import { CanvasImage } from '@/types';
-import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
+import React, { memo, useMemo, useCallback, useState } from 'react';
+import { CanvasImage, ImageRow } from '@/types';
+import { Loader2, Plus, Layers, Upload, Download, X, ChevronLeft } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -23,11 +23,18 @@ interface FeedGridItemProps {
     actions?: any;
     /** Thumbnail/src of the parent image, used as blurred background when generating a variation */
     parentSrc?: string;
+    /** Number of images in this group (≥2 triggers stack visual + badge) */
+    groupCount?: number;
+    /** Whether any image in this group is currently generating */
+    hasGenerating?: boolean;
+    /** Called when user clicks a group cover tile — opens the group drill-down */
+    onOpenGroup?: () => void;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
+    const isGroup = groupCount > 1;
 
     return (
         <div
@@ -36,11 +43,19 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             onClick={() => {
                 if (isGen) return;
+                if (onOpenGroup) { onOpenGroup(); return; }
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
             className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}
         >
+            {/* Stack cards behind tile — only for group covers */}
+            {isGroup && !isGen && (
+                <>
+                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform rotate-[3deg] scale-[0.96] -z-10" />
+                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform rotate-[1.5deg] scale-[0.98] -z-[5]" />
+                </>
+            )}
             {isGen ? (
                 <>
                     {parentSrc ? (
@@ -108,6 +123,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     )}
                 </div>
             )}
+
+            {/* Group count badge — bottom-right */}
+            {isGroup && !isGen && (
+                <div className="absolute bottom-2 right-2 z-30 flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs font-medium rounded-md px-1.5 py-0.5 pointer-events-none">
+                    {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                    {groupCount}
+                </div>
+            )}
         </div>
     );
 });
@@ -115,6 +138,7 @@ FeedGridItem.displayName = 'FeedGridItem';
 
 interface FeedPageProps {
     images: CanvasImage[];
+    rows: ImageRow[];
     isLoading: boolean;
     hasMore: boolean;
     onSelectImage: (id: string) => void;
@@ -131,11 +155,36 @@ interface FeedPageProps {
     t?: any;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
+
+    // ── Group drill-down state ──────────────────────────────────────
+    const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+
+    // Map: cover image id → row (for quick group lookup)
+    const groupCountMap = useMemo(() => {
+        const map = new Map<string, number>();
+        rows.forEach(r => { if (r.items[0]) map.set(r.items[0].id, r.items.length); });
+        return map;
+    }, [rows]);
+
+    const groupRowMap = useMemo(() => {
+        const map = new Map<string, ImageRow>();
+        rows.forEach(r => { if (r.items[0]) map.set(r.items[0].id, r); });
+        return map;
+    }, [rows]);
+
+    // What to render: level 1 = one cover per group, level 2 = all items of expanded group
+    const displayImages = useMemo(() => {
+        if (expandedGroupId) {
+            return rows.find(r => r.id === expandedGroupId)?.items || [];
+        }
+        // Level 1: first item of each row as the cover
+        return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
+    }, [expandedGroupId, rows]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -203,25 +252,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
         requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
         return () => window.removeEventListener('resize', updateColumns);
-    }, [images]); // Re-calculate when images load
+    }, [displayImages]); // Re-calculate when displayed images change
 
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
-        itemCount: images.length,
+        itemCount: displayImages.length,
         columns,
-        isActive: true, // Grid is always active on FeedPage unless a modal is open, we can refine this
+        isActive: true,
         onEscape: () => {
-            if (isSelectMode) {
-                actions?.setIsSelectMode?.(false);
-            }
+            if (expandedGroupId) { setExpandedGroupId(null); return; }
+            if (isSelectMode) actions?.setIsSelectMode?.(false);
         },
         onEnter: (idx) => {
-            const img = images[idx];
+            const img = displayImages[idx];
             if (!img) return;
+            const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+            const row = expandedGroupId ? null : groupRowMap.get(img.id);
+            if (gc > 1 && row) { setExpandedGroupId(row.id); return; }
             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
             else onSelectImage(img.id);
         },
         onDelete: async (idx) => {
-            const img = images[idx];
+            const img = displayImages[idx];
             if (!img) return;
 
             // If in select mode and multiple are selected, we might want to delete all selected.
@@ -301,16 +352,37 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                 )}
                 <div className="flex-1 flex flex-col">
                     {images.length > 0 ? (
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
-                            {/* Create Tile */}
-                            <div
-                                className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
-                                onClick={onCreateNew}
-                            >
-                                <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
-                            </div>
+                        <>
+                            {/* ── Level 2: Group Header ─────────────────── */}
+                            {expandedGroupId && (
+                                <div className="sticky top-0 z-20 bg-white dark:bg-black flex items-center gap-3 px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+                                    <button
+                                        onClick={() => setExpandedGroupId(null)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                                    >
+                                        <ChevronLeft className="w-5 h-5 text-zinc-600 dark:text-zinc-400" />
+                                    </button>
+                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                                        {rows.find(r => r.id === expandedGroupId)?.title}
+                                    </span>
+                                </div>
+                            )}
 
-                            {images.map((img, idx) => {
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                            {/* Create Tile — only on level 1 */}
+                            {!expandedGroupId && (
+                                <div
+                                    className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
+                                    onClick={onCreateNew}
+                                >
+                                    <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+                                </div>
+                            )}
+
+                            {displayImages.map((img, idx) => {
+                                const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                const row = expandedGroupId ? null : groupRowMap.get(img.id);
+                                const hasGen = row?.items.some(i => i.isGenerating) ?? false;
                                 const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
                                 const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
                                 return (
@@ -326,10 +398,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                     setActiveIndex={setActiveIndex}
                                     actions={actions}
                                     parentSrc={parentSrc}
+                                    groupCount={gc}
+                                    hasGenerating={hasGen}
+                                    onOpenGroup={gc > 1 && row ? () => setExpandedGroupId(row.id) : undefined}
                                 />
                                 );
                             })}
                         </div>
+                        </>
                     ) : !isLoading && (
                         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                             <div className="flex flex-col items-center gap-8">

@@ -305,6 +305,7 @@ export function App() {
                             user ? (
                                 <FeedPage
                                     images={allImages}
+                                    rows={state.rows}
                                     isLoading={isCanvasLoading}
                                     hasMore={state.hasMore}
                                     onSelectImage={handleSelectImage}
