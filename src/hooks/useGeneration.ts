@@ -53,25 +53,38 @@ const resolveTargetModel = (_quality: string): string | undefined => {
     return undefined;
 };
 
-// HELPER: Map technical errors to user-friendly German
+// HELPER: Map technical errors to user-friendly messages (EN / DE)
 const translateError = (errorMsg: string): string => {
-    if (!errorMsg) return "Unbekannter Fehler.";
+    if (!errorMsg) return "Unknown error / Unbekannter Fehler.";
 
     const msg = errorMsg.toLowerCase();
 
-    if (msg.includes("cold start") || msg.includes("timeout")) {
-        return "Timeout. Bitte erneut versuchen.";
-    } else if (msg.includes("nsfw") || msg.includes("safety")) {
-        return "Inhalt abgelehnt (Sicherheitsfilter).";
-    } else if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        return "Guthaben nicht ausreichend.";
-    } else if (msg.includes("failed to send") || msg.includes("edge function") || msg.includes("503") || msg.includes("502")) {
-        return "Server nicht erreichbar. Bitte erneut versuchen.";
-    } else if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection")) {
-        return "Netzwerkfehler. Bitte erneut versuchen.";
-    } else if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("not authenticated") || msg.includes("user not found")) {
-        return "Sitzung abgelaufen. Bitte neu einloggen.";
-    } else if (
+    // Auth / session
+    if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("session expired") || msg.includes("no access token")) {
+        return "Session expired — please reload the page. / Sitzung abgelaufen – bitte Seite neu laden.";
+    }
+    if (msg.includes("not authenticated") || msg.includes("user not found")) {
+        return "Not logged in. / Nicht eingeloggt.";
+    }
+    if (msg.includes("session refresh failed")) {
+        return "Could not refresh session — please reload. / Sitzung konnte nicht erneuert werden – bitte neu laden.";
+    }
+
+    // Credits / billing
+    if (msg.includes("insufficient credits") || msg.includes("not enough credits")) {
+        return "Not enough credits. / Guthaben nicht ausreichend.";
+    }
+    if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        return "Credits required. / Guthaben benötigt.";
+    }
+
+    // Safety / content filter
+    if (msg.includes("nsfw") || msg.includes("safety") || msg.includes("content policy") || msg.includes("blocked")) {
+        return "Content rejected by safety filter. / Inhalt vom Sicherheitsfilter abgelehnt.";
+    }
+
+    // Kie.ai API errors — show detail for debugging
+    if (
         msg.includes("kie task failed:") ||
         msg.includes("kie createtask") ||
         msg.includes("kie recordinfo") ||
@@ -79,13 +92,36 @@ const translateError = (errorMsg: string): string => {
         msg.includes("kie result download") ||
         msg.includes("image generation failed on kie")
     ) {
-        // Show raw Kie.ai error for debugging — strip the "(Status: 400)" suffix
-        return errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 150);
-    } else if (msg.includes("invalid") || msg.includes("bad request") || msg.includes("400")) {
-        return "Fehler in der Anfrage.";
+        const cleaned = errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
+        return `Kie.ai error: ${cleaned}`;
     }
 
-    return "Generierung fehlgeschlagen. Bitte erneut versuchen.";
+    // Task / background timeout
+    if (msg.includes("timed out") || msg.includes("timeout") || msg.includes("background task timeout")) {
+        return "Generation timed out — credits refunded. / Timeout – Guthaben erstattet.";
+    }
+    if (msg.includes("cold start")) {
+        return "Server cold start — please retry. / Server-Kaltstart – bitte erneut versuchen.";
+    }
+
+    // Server / network
+    if (msg.includes("503") || msg.includes("502") || msg.includes("failed to send") || msg.includes("edge function")) {
+        return "Server unavailable — please retry. / Server nicht erreichbar – bitte erneut versuchen.";
+    }
+    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("failed to fetch")) {
+        return "Network error — please retry. / Netzwerkfehler – bitte erneut versuchen.";
+    }
+
+    // Bad request
+    if (msg.includes("bad request") || msg.includes("400")) {
+        return "Invalid request. / Ungültige Anfrage.";
+    }
+    if (msg.includes("invalid")) {
+        return `Invalid request: ${errorMsg.substring(0, 100)}`;
+    }
+
+    // Fallback — include original for debuggability
+    return `Generation failed: ${errorMsg.substring(0, 120)}`;
 };
 
 // Cache for smart estimates (simple in-memory cache)
