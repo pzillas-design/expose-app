@@ -131,11 +131,18 @@ export function App() {
         isUserNavigationRef.current = true; // Mark as user-initiated (preserve SideSheet state)
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
-        // Mobile always shows sidesheet (no toggle available); desktop: generated = no sheet, original = sheet
         const img = allImages.find(i => i.id === id);
         const isGenerated = !!(img?.generationPrompt || img?.parentId);
         const isMobile = window.innerWidth < 768;
-        setDetailSideSheetVisible(isMobile || !isGenerated);
+        const alreadyInDetail = location.pathname.startsWith('/image/');
+        if (isMobile) {
+            // Mobile always shows sidesheet
+            setDetailSideSheetVisible(true);
+        } else if (!alreadyInDetail) {
+            // Entering detail view fresh from grid: apply default rule (original=show, generated=hide)
+            setDetailSideSheetVisible(!isGenerated);
+        }
+        // else: navigating within detail view — keep current sidesheet toggle state
         navigate(`/image/${id}`);
     };
 
@@ -266,7 +273,7 @@ export function App() {
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
                     onToggleFeedSideSheet={() => setFeedSideSheetVisible(v => !v)}
                     generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
-                    onNavigateToImage={(id) => { setDetailSideSheetVisible(false); handleSelectImage(id); }}
+                    onNavigateToImage={(id) => { handleSelectImage(id); }}
                     onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
                 />
             ) : (
@@ -319,6 +326,11 @@ export function App() {
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
                                     selectedIds={state.selectedIds}
                                     onToggleSelect={(id) => {
+                                        if (!state.isSelectMode) {
+                                            // Entering select mode for first time — reset to exactly this image
+                                            actions.selectAndSnap(id);
+                                            return;
+                                        }
                                         const isCurrentlySelected = state.selectedIds.includes(id);
                                         const willBeZero = isCurrentlySelected && state.selectedIds.length === 1;
                                         actions.handleSelection(id, true, false);
