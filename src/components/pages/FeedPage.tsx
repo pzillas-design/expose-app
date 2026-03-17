@@ -29,12 +29,32 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Called when user clicks a group cover tile — opens the group drill-down */
     onOpenGroup?: () => void;
+    /** Current design style variant */
+    galleryStyle?: 'square' | 'masonry' | 'edge' | 'masonry-sharp' | 'masonry-flat';
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, galleryStyle = 'square' }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
+
+    // Determine container classes based on style
+    const containerClasses = useMemo(() => {
+        const base = `relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center`;
+        return base;
+    }, [isGen]);
+
+    const isCropStyle = galleryStyle === 'square' || galleryStyle === 'edge';
+
+    // Calculate precise bounds for aspect ratio images inside the square container
+    const isWide = img.width > img.height;
+    const boundedStyle = isCropStyle ? { width: '100%', height: '100%' } : {
+        aspectRatio: `${img.width} / ${img.height}`,
+        width: isWide ? '100%' : 'auto',
+        height: isWide ? 'auto' : '100%',
+        maxHeight: '100%',
+        maxWidth: '100%'
+    };
 
     return (
         <div
@@ -46,82 +66,116 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
+            className={containerClasses}
         >
-            {/* Perspective stack: cards offset bottom-right, no rotation — visible in gap */}
-            {isGroup && !isGen && (
-                <>
-                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform translate-x-2 translate-y-2" />
-                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform translate-x-1 translate-y-1" />
-                </>
-            )}
+            {/* Wrapper for the image bounding box */}
+            <div className="relative isolate" style={boundedStyle}>
 
-            {/* Main card: white bg, image centered with natural ratio inside */}
-            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-zinc-900'}`}>
-
-                {isGen ? (
+                {/* 1. STACKS (attached to the bounded image dimensions) */}
+                {isGroup && !isGen && galleryStyle !== 'edge' && galleryStyle !== 'masonry' && galleryStyle !== 'masonry-sharp' && galleryStyle !== 'masonry-flat' && (
                     <>
-                        {parentSrc ? (
-                            <div className="absolute inset-0">
-                                <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
-                            </div>
-                        ) : (
-                            <BlobBackground orbScale={0.77} speedScale={3.5} />
-                        )}
-                        <GenerationProgressBar
-                            startTime={img.generationStartTime}
-                            estimatedDuration={img.estimatedDuration}
-                        />
+                        {groupCount > 2 && <div className={`absolute inset-x-2 -bottom-2 h-full bg-zinc-300 dark:bg-zinc-600 -z-20 ${galleryStyle === 'square' ? 'rounded-xl' : ''}`} />}
+                        <div className={`absolute inset-x-1 -bottom-1 h-full bg-zinc-200 dark:bg-zinc-700 -z-10 ${galleryStyle === 'square' ? 'rounded-xl' : ''}`} />
                     </>
-                ) : previewSrc ? (
-                    /* inset-3 = 12px white breathing room, object-contain = natural ratio */
-                    <div className="absolute inset-3 flex items-center justify-center">
-                        <img
-                            src={previewSrc}
-                            alt={img.title}
-                            className={`w-full h-full object-contain transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
-                            loading="lazy"
-                        />
-                    </div>
-                ) : null}
-
-                {/* Hover scrim */}
-                {!isGen && (
-                    <div className={`absolute inset-0 pointer-events-none transition-colors duration-100 ${isKeyboardActive ? 'bg-black/8' : 'bg-black/0 group-hover:bg-black/4'}`} />
                 )}
 
-                {/* Selection circle */}
-                {!isGen && (
-                    <div
-                        className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${
-                            isSelected
+                {/* Soft Masonry stack */}
+                {isGroup && !isGen && galleryStyle === 'masonry' && (
+                    <>
+                        {groupCount > 2 && <div className="absolute inset-0 transform translate-x-2 translate-y-2 rounded-xl bg-zinc-300 dark:bg-zinc-600 -z-20 shadow-sm" />}
+                        <div className="absolute inset-0 transform translate-x-1 translate-y-1 rounded-xl bg-zinc-200 dark:bg-zinc-700 -z-10 shadow-sm" />
+                    </>
+                )}
+
+                {/* Sharp Stack clues for new aspect ratio designs */}
+                {isGroup && !isGen && galleryStyle === 'masonry-sharp' && (
+                    <>
+                        {groupCount > 2 && (
+                            <div className="absolute inset-0 transform translate-x-3 translate-y-3 ring-1 ring-black/10 dark:ring-white/10 -z-20 bg-zinc-900 overflow-hidden shadow-sm">
+                                {previewSrc && <img src={previewSrc} className="w-full h-full object-cover blur-[5px] opacity-40 mix-blend-screen dark:mix-blend-normal" alt="" />}
+                            </div>
+                        )}
+                        <div className="absolute inset-0 transform translate-x-1.5 translate-y-1.5 ring-1 ring-black/10 dark:ring-white/10 -z-10 bg-zinc-800 overflow-hidden shadow-sm">
+                            {previewSrc && <img src={previewSrc} className="w-full h-full object-cover blur-[2px] opacity-60 mix-blend-screen dark:mix-blend-normal" alt="" />}
+                        </div>
+                    </>
+                )}
+
+                {/* Modern Flat solid deep overlap stacks */}
+                {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
+                    <>
+                        {groupCount > 2 && <div className="absolute inset-0 transform translate-x-3 translate-y-3 bg-zinc-300 dark:bg-zinc-700/80 -z-20 shadow-sm ring-1 ring-black/5 dark:ring-white/10" />}
+                        <div className="absolute inset-0 transform translate-x-1.5 translate-y-1.5 bg-zinc-200 dark:bg-zinc-800 -z-10 shadow-sm ring-1 ring-black/5 dark:ring-white/10" />
+                    </>
+                )}
+
+                {/* 2. MAIN CARD */}
+                <div
+                    className={`absolute inset-0 overflow-hidden ${(galleryStyle === 'square' || galleryStyle === 'masonry') ? 'rounded-xl' : ''} ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 transition-colors'} ${(galleryStyle === 'masonry-sharp' || galleryStyle === 'masonry-flat') ? 'ring-1 ring-black/5 dark:ring-white/10' : ''}`}
+                >
+
+                    {isGen ? (
+                        <>
+                            {parentSrc ? (
+                                <div className="absolute inset-0">
+                                    <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
+                                </div>
+                            ) : (
+                                <BlobBackground orbScale={0.77} speedScale={3.5} />
+                            )}
+                            <GenerationProgressBar
+                                startTime={img.generationStartTime}
+                                estimatedDuration={img.estimatedDuration}
+                            />
+                        </>
+                    ) : previewSrc ? (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <img
+                                src={previewSrc}
+                                alt={img.title}
+                                className={`w-full h-full object-cover transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
+                                loading="lazy"
+                            />
+                        </div>
+                    ) : null}
+
+                    {/* Hover scrim */}
+                    {!isGen && (
+                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-100 ${isKeyboardActive ? 'bg-black/8' : 'bg-black/0 group-hover:bg-black/4'}`} />
+                    )}
+
+                    {/* Selection circle */}
+                    {!isGen && (
+                        <div
+                            className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelected
                                 ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
                                     ? 'opacity-100 scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90 dark:bg-zinc-800/90'
                                     : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90'
-                        }`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            if (!isSelectMode) actions?.setIsSelectMode?.(true);
-                            if (onToggleSelect) onToggleSelect(img.id);
-                        }}
-                    >
-                        {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                        )}
-                    </div>
-                )}
+                                }`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                if (!isSelectMode) actions?.setIsSelectMode?.(true);
+                                if (onToggleSelect) onToggleSelect(img.id);
+                            }}
+                        >
+                            {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                        </div>
+                    )}
 
-                {/* Group count badge */}
-                {isGroup && !isGen && (
-                    <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 bg-zinc-900/12 dark:bg-white/15 text-zinc-700 dark:text-zinc-200 text-[11px] font-normal rounded-full px-2 py-[3px] pointer-events-none leading-none">
-                        {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
-                        {groupCount}
-                    </div>
-                )}
+                    {/* Group count badge — circle if single digit, pill if 2+ */}
+                    {isGroup && !isGen && (
+                        <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
+                            {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                            {groupCount}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -155,6 +209,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
 
+    // UI toggle for 5 design variants
+    const [galleryStyle, setGalleryStyle] = React.useState<'square' | 'masonry' | 'edge' | 'masonry-sharp' | 'masonry-flat'>('masonry-flat');
+
     // Map: cover image id → row (for quick group lookup)
     const groupCountMap = useMemo(() => {
         const map = new Map<string, number>();
@@ -179,7 +236,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-    const imageIdMap    = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
+    const imageIdMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
 
     // Drag & drop file upload
     const [isDropActive, setIsDropActive] = React.useState(false);
@@ -342,80 +399,115 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 )}
                 <div className="flex-1 flex flex-col">
-                    {images.length > 0 ? (
-                        <>
+                    <div className="flex-1 flex flex-col relative pb-16">
+                        {images.length > 0 ? (
+                            <>
 
-                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 p-2 bg-zinc-100 dark:bg-zinc-950 ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}>
-                            {/* Plus tile — matches main card style */}
-                            {!expandedGroupId && (
-                                <div
-                                    className="aspect-square bg-white dark:bg-zinc-900 cursor-pointer group flex items-center justify-center transition-colors duration-150 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                                    onClick={onCreateNew}
-                                >
-                                    <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                <div ref={gridRef} className={`
+                            ${galleryStyle === 'edge'
+                                        ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-[1px] px-0'
+                                        : galleryStyle === 'masonry-flat'
+                                            ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6'
+                                            : 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 sm:gap-6 px-2 sm:px-6 mt-4 sm:mt-6'
+                                    }
+                            bg-transparent transition-all ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}
+                        `}>
+                                    {/* Plus tile — matches main card style */}
+                                    {!expandedGroupId && (
+                                        <div
+                                            className={`aspect-square relative cursor-pointer group flex items-center justify-center transition-colors duration-150 ${(galleryStyle === 'square' || galleryStyle === 'masonry') ? 'rounded-xl' : ''} ${(galleryStyle !== 'square' && galleryStyle !== 'edge') ? 'ring-1 ring-black/5 dark:ring-white/10 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800' : 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}
+                                            onClick={onCreateNew}
+                                        >
+                                            <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                        </div>
+                                    )}
+
+                                    {displayImages.map((img, idx) => {
+                                        const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                        const row = expandedGroupId ? null : groupRowMap.get(img.id);
+                                        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+                                        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+                                        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                        return (
+                                            <FeedGridItem
+                                                key={img.id}
+                                                img={img}
+                                                idx={idx}
+                                                isSelected={selectedIdSet.has(img.id)}
+                                                isKeyboardActive={activeIndex === idx}
+                                                isSelectMode={!!isSelectMode}
+                                                onSelectImage={onSelectImage}
+                                                onToggleSelect={onToggleSelect}
+                                                setActiveIndex={setActiveIndex}
+                                                actions={actions}
+                                                parentSrc={parentSrc}
+                                                groupCount={gc}
+                                                hasGenerating={hasGen}
+                                                onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
+                                                galleryStyle={galleryStyle}
+                                            />
+                                        );
+                                    })}
                                 </div>
-                            )}
+                            </>
+                        ) : !isLoading && (
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
+                                <div className="flex flex-col items-center gap-8">
+                                    <div className="space-y-4">
+                                        <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
+                                            {t?.('welcome_title') || 'Welcome to exposé'}
+                                        </h1>
+                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
+                                            {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
+                                        </p>
+                                    </div>
+                                </div>
 
-                            {displayImages.map((img, idx) => {
-                                const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                const row = expandedGroupId ? null : groupRowMap.get(img.id);
-                                const hasGen = row?.items.some(i => i.isGenerating) ?? false;
-                                const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                return (
-                                <FeedGridItem
-                                    key={img.id}
-                                    img={img}
-                                    idx={idx}
-                                    isSelected={selectedIdSet.has(img.id)}
-                                    isKeyboardActive={activeIndex === idx}
-                                    isSelectMode={!!isSelectMode}
-                                    onSelectImage={onSelectImage}
-                                    onToggleSelect={onToggleSelect}
-                                    setActiveIndex={setActiveIndex}
-                                    actions={actions}
-                                    parentSrc={parentSrc}
-                                    groupCount={gc}
-                                    hasGenerating={hasGen}
-                                    onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
-                                />
-                                );
-                            })}
-                        </div>
-                        </>
-                    ) : !isLoading && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
-                            <div className="flex flex-col items-center gap-8">
-                                <div className="space-y-4">
-                                    <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
-                                        {t?.('welcome_title') || 'Welcome to exposé'}
-                                    </h1>
-                                    <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
-                                        {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
-                                    </p>
+                                <div className="flex flex-col w-full gap-4 max-w-[320px]">
+                                    <Button
+                                        variant="primary-mono"
+                                        size="l"
+                                        onClick={triggerUpload}
+                                        icon={<Upload className="w-5 h-5" />}
+                                    >
+                                        {t?.('action_upload') || 'Upload'}
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="l"
+                                        onClick={onGenerate ?? onCreateNew}
+                                        icon={<Plus className="w-5 h-5" />}
+                                    >
+                                        {t?.('action_generate') || 'Generate image'}
+                                    </Button>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="flex flex-col w-full gap-4 max-w-[320px]">
-                                <Button
-                                    variant="primary-mono"
-                                    size="l"
-                                    onClick={triggerUpload}
-                                    icon={<Upload className="w-5 h-5" />}
+                        {/* Small dropdown toggle under the grid */}
+                        {images.length > 0 && (
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 pointer-events-auto shadow-md rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                                <select
+                                    value={galleryStyle}
+                                    onChange={(e) => setGalleryStyle(e.target.value as any)}
+                                    className="appearance-none bg-transparent outline-none cursor-pointer py-1.5 pl-4 pr-8 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 text-center uppercase tracking-wider"
+                                    style={{ WebkitAppearance: 'none' }}
                                 >
-                                    {t?.('action_upload') || 'Upload'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="l"
-                                    onClick={onGenerate ?? onCreateNew}
-                                    icon={<Plus className="w-5 h-5" />}
-                                >
-                                    {t?.('action_generate') || 'Generate image'}
-                                </Button>
+                                    <option value="square">Modern Grid</option>
+                                    <option value="edge">Edge-to-Edge</option>
+                                    <option value="masonry">Layout Soft</option>
+                                    <option value="masonry-sharp">Layout Sharp</option>
+                                    <option value="masonry-flat">Modern Flat</option>
+                                </select>
+                                <div className="absolute right-3 top-[50%] -translate-y-[50%] pointer-events-none">
+                                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                    </div>
                 </div>
 
                 <div className="mt-auto">
