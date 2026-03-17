@@ -303,12 +303,16 @@ export function App() {
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={() => navigate('/create')}
                                     onGenerate={() => navigate('/create?m=create')}
-                                    onUpload={async (files) => {
+                                    onUpload={(files) => {
                                         const arr = Array.from(files ?? []);
                                         if (arr.length === 0) return;
-                                        const id = await actions.processFile(arr[0]);
-                                        if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
-                                        arr.slice(1).forEach(f => actions.processFile(f));
+                                        if (arr.length === 1) {
+                                            const id = actions.processFile(arr[0]);
+                                            if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                        } else {
+                                            arr.forEach(f => actions.processFile(f));
+                                            // multiple uploads → stay on grid so user sees all incoming images
+                                        }
                                     }}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
@@ -394,12 +398,17 @@ export function App() {
                             }}>
                                 <CreatePage
                                     onCreateNew={handleCreateNew}
-                                    onUpload={async (files) => {
+                                    onUpload={(files) => {
                                         const arr = Array.from(files);
                                         if (arr.length === 0) return;
-                                        const id = await actions.processFile(arr[0]);
-                                        if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
-                                        arr.slice(1).forEach(f => actions.processFile(f));
+                                        if (arr.length === 1) {
+                                            const id = actions.processFile(arr[0]);
+                                            if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                        } else {
+                                            arr.forEach(f => actions.processFile(f));
+                                            isNavigatingProgrammatically.current = true;
+                                            navigate('/');
+                                        }
                                     }}
                                     onBack={() => navigate('/')}
                                     state={state}
