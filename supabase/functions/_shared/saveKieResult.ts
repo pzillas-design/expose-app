@@ -130,13 +130,13 @@ export const saveKieResult = async (
         const imgDownload = await fetch(kieImageUrl);
         if (!imgDownload.ok) throw new Error(`Kie CDN download failed: ${imgDownload.status}`);
 
-        const detectedType = imgDownload.headers.get('content-type') || 'image/jpeg';
-        const isPng = detectedType.includes('png') || kieImageUrl.toLowerCase().includes('.png');
-        const contentType = isPng ? 'image/png' : 'image/jpeg';
-        const ext = isPng ? 'png' : 'jpg';
-        const filePathFinal = filePath.replace(/\.(jpg|jpeg|png)$/i, `.${ext}`);
+        // Always store as JPEG — we request output_format:'jpg' from Kie.ai so the result
+        // should already be JPEG. Ignoring CDN content-type/URL suffix avoids storing
+        // giant lossless PNGs when the CDN header is wrong.
+        const contentType = 'image/jpeg';
+        const filePathFinal = filePath; // already ends in .jpg
 
-        console.log(`[INFO] saveKieResult: streaming ${contentType} → ${filePathFinal}`);
+        console.log(`[INFO] saveKieResult: streaming as JPEG → ${filePathFinal}`);
 
         // Stream directly to Supabase storage — no intermediate buffer, handles large 4K PNGs efficiently
         const { error: uploadError } = await supabaseAdmin.storage
