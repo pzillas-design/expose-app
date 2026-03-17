@@ -107,11 +107,16 @@ const loadTimingStore = (): Record<string, TimingBucket> => {
     try { return JSON.parse(localStorage.getItem(LS_TIMING_KEY) || '{}'); } catch { return {}; }
 };
 const recordActualDuration = (quality: string, ms: number) => {
-    // Ignore outliers (< 3s or > 5 min)
+    // Ignore hard limits (< 3s or > 5 min)
     if (ms < 3000 || ms > 300000) return;
     try {
         const store = loadTimingStore();
         const prev = store[quality] || { sum: 0, count: 0 };
+        // Outlier filter: if we have enough data and new value is >2.5x or <0.4x the current avg, skip it
+        if (prev.count >= 3) {
+            const currentAvg = prev.sum / prev.count;
+            if (ms > currentAvg * 2.5 || ms < currentAvg * 0.4) return;
+        }
         // Exponential moving average: keep at most 20 samples worth of weight
         const count = Math.min(prev.count + 1, 20);
         const sum = prev.count >= 20
