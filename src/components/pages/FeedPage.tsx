@@ -36,6 +36,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
 
+    const aspectRatio = (img.width && img.height) ? `${img.width} / ${img.height}` : '1 / 1';
+
     return (
         <div
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
@@ -46,18 +48,19 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
+            className={`relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
+            style={{ aspectRatio }}
         >
-            {/* Stack cards — rounded, outside overflow-hidden so they peek into the gap */}
+            {/* Stack cards — physical paper-card look, slight rounding, peek into gap */}
             {isGroup && !isGen && (
                 <>
-                    <div className="absolute inset-0 rounded-2xl bg-zinc-200 dark:bg-zinc-700 shadow-sm transform rotate-[-4deg] scale-[0.95]" />
-                    <div className="absolute inset-0 rounded-2xl bg-zinc-300 dark:bg-zinc-600 shadow-sm transform rotate-[2.5deg] scale-[0.97]" />
+                    <div className="absolute inset-0 rounded-[3px] bg-white dark:bg-zinc-700 shadow-md transform rotate-[-5deg] scale-[0.94]" />
+                    <div className="absolute inset-0 rounded-[3px] bg-white dark:bg-zinc-600 shadow-sm transform rotate-[3deg] scale-[0.97]" />
                 </>
             )}
 
-            {/* Main tile — rounded card with image */}
-            <div className={`absolute inset-0 rounded-2xl overflow-hidden shadow-sm ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-zinc-100 dark:bg-zinc-900'}`}>
+            {/* Main tile — no border radius on image */}
+            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-zinc-100 dark:bg-zinc-900'}`}>
 
                 {/* Image / generation placeholder */}
                 {isGen ? (
@@ -345,14 +348,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     {images.length > 0 ? (
                         <>
 
-                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1.5 p-1.5 bg-white dark:bg-zinc-950 ${isMobile ? 'pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-[3px] bg-white dark:bg-zinc-950 ${isMobile ? 'pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
                             {/* Plus tile — only on level 1 */}
                             {!expandedGroupId && (
                                 <div
-                                    className="aspect-square rounded-2xl cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center transition-all duration-150 active:scale-95"
+                                    className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center transition-colors duration-150 hover:bg-zinc-200 dark:hover:bg-zinc-800"
                                     onClick={onCreateNew}
                                 >
-                                    <Plus className="w-6 h-6 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
+                                    <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
                                 </div>
                             )}
 
