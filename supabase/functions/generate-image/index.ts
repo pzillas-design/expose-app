@@ -371,11 +371,19 @@ Deno.serve(async (req) => {
                 const imgDownload = await fetch(kieImageUrl);
                 if (!imgDownload.ok) throw new Error(`Kie result download failed: ${imgDownload.status}`);
                 const binaryData = new Uint8Array(await imgDownload.arrayBuffer());
-                logInfo('Storage Upload', `Downloaded ${(binaryData.byteLength / 1024 / 1024).toFixed(1)}MB, uploading to ${filePath}`);
+
+                // Detect actual content type — Kie.ai sometimes returns PNG despite output_format:'jpg'
+                const detectedType = imgDownload.headers.get('content-type') || 'image/jpeg';
+                const isPng = detectedType.includes('png') || kieImageUrl.toLowerCase().includes('.png');
+                const contentType = isPng ? 'image/png' : 'image/jpeg';
+                const ext = isPng ? 'png' : 'jpg';
+                const filePathFinal = filePath.replace(/\.(jpg|jpeg|png)$/i, `.${ext}`);
+
+                logInfo('Storage Upload', `Downloaded ${(binaryData.byteLength / 1024 / 1024).toFixed(1)}MB (${contentType}), uploading to ${filePathFinal}`);
 
                 const { error: uploadError } = await supabaseAdmin.storage
                     .from('user-content')
-                    .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true });
+                    .upload(filePathFinal, binaryData, { contentType, upsert: true });
 
                 if (uploadError) {
                     logError('Storage Upload', uploadError);
@@ -385,7 +393,7 @@ Deno.serve(async (req) => {
                 // Get signed URL
                 const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
                     .from('user-content')
-                    .createSignedUrl(filePath, 3600);
+                    .createSignedUrl(filePathFinal, 3600);
 
                 if (signedUrlError) {
                     logError('Signed URL', signedUrlError);
@@ -396,7 +404,7 @@ Deno.serve(async (req) => {
                     id: newId,
                     user_id: user.id,
                     job_id: newId,
-                    storage_path: filePath,
+                    storage_path: filePathFinal,
                     width: Math.round(sourceImage?.width || 512),
                     height: Math.round(sourceImage?.height || 512),
                     real_width: Math.round(sourceImage?.realWidth || sourceImage?.width || 1024),
