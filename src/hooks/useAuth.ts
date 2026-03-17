@@ -4,6 +4,7 @@ import { imageService } from '../services/imageService';
 import { ImageRow } from '../types';
 import { LocaleKey } from '../data/locales';
 import { useToast } from '../components/ui/Toast';
+import { isCreditToastSuppressed } from '../services/creditToastGuard';
 
 interface UseAuthProps {
     isAuthDisabled: boolean;
@@ -147,8 +148,8 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                         setCredits(newCredits);
                         setUserProfile(profile);
 
-                        // Show toast if credits increased
-                        if (newCredits > oldCredits) {
+                        // Show toast if credits increased (but not for internal refunds)
+                        if (newCredits > oldCredits && !isCreditToastSuppressed()) {
                             const amount = (newCredits - oldCredits).toFixed(2);
                             showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
                         }
