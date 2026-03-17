@@ -423,8 +423,11 @@ Deno.serve(async (req) => {
 
                 // Update job status
                 const wallClockMs = Date.now() - generationStartTime;
-                const durationMs = kieResponse.costTime || wallClockMs;
-                logInfo('Duration', `Wall: ${wallClockMs}ms, Kie costTime: ${kieResponse.costTime ?? 'n/a'}ms → stored: ${durationMs}ms`);
+                // Kie.ai costTime can be in seconds or sub-ms — only trust it if > 5s
+                const durationMs = (kieResponse.costTime && kieResponse.costTime > 5000)
+                    ? kieResponse.costTime
+                    : wallClockMs;
+                logInfo('Duration', `Wall: ${wallClockMs}ms, Kie costTime: ${kieResponse.costTime ?? 'n/a'} → stored: ${durationMs}ms`);
 
                 const tokensPrompt = 0;
                 const tokensCompletion = 0;
