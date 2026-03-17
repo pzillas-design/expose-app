@@ -46,6 +46,28 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
     const isCropStyle = galleryStyle === 'square' || galleryStyle === 'edge';
 
+    // Compute average color once from thumbnail for masonry-flat stack card
+    const [stackColor, setStackColor] = React.useState<string>('');
+    React.useEffect(() => {
+        if (!isGroup || isGen || galleryStyle !== 'masonry-flat' || !previewSrc) return;
+        let cancelled = false;
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.onload = () => {
+            if (cancelled) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = 1; canvas.height = 1;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.drawImage(image, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            setStackColor(`rgb(${r},${g},${b})`);
+        };
+        image.onerror = () => {};
+        image.src = previewSrc;
+        return () => { cancelled = true; };
+    }, [isGroup, isGen, galleryStyle, previewSrc]);
+
     // Calculate precise bounds for aspect ratio images inside the square container
     const isWide = img.width > img.height;
     const boundedStyle = isCropStyle ? { width: '100%', height: '100%' } : {
@@ -105,9 +127,10 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 {isGroup && !isGen && galleryStyle === 'masonry-flat' && (
                     <>
                         {groupCount > 2 && <div className="absolute inset-x-[10px] -bottom-[10px] h-full bg-zinc-300 dark:bg-zinc-700/80 -z-20 shadow-sm ring-1 ring-black/5 dark:ring-white/10" />}
-                        <div className="absolute inset-x-[5px] -bottom-[5px] h-full -z-10 shadow-sm ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
-                            {previewSrc && <img src={previewSrc} className="w-full h-full object-cover scale-150 blur-[20px]" alt="" />}
-                        </div>
+                        <div
+                            className="absolute inset-x-[5px] -bottom-[5px] h-full -z-10 shadow-sm ring-1 ring-black/5 dark:ring-white/10 bg-zinc-200 dark:bg-zinc-800"
+                            style={stackColor ? { backgroundColor: stackColor } : undefined}
+                        />
                     </>
                 )}
 
