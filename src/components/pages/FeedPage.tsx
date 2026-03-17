@@ -47,15 +47,17 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}
+            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative`}
         >
-            {/* Stack cards behind tile — only for group covers */}
+            {/* Stack cards — outside the overflow-hidden content div so they peek into the gap */}
             {isGroup && !isGen && (
                 <>
-                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform rotate-[3deg] scale-[0.96] -z-10" />
-                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform rotate-[1.5deg] scale-[0.98] -z-[5]" />
+                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform rotate-[3deg] scale-[0.96]" />
+                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform rotate-[1.5deg] scale-[0.98]" />
                 </>
             )}
+            {/* Content wrapper — clips image but lets stack cards peek out */}
+            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}>
             {isGen ? (
                 <>
                     {parentSrc ? (
@@ -131,6 +133,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     {groupCount}
                 </div>
             )}
+            </div>{/* end content wrapper */}
         </div>
     );
 });
@@ -353,7 +356,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     {images.length > 0 ? (
                         <>
 
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
                             {/* Create Tile — only on level 1 */}
                             {!expandedGroupId && (
                                 <div
