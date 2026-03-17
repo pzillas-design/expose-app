@@ -527,7 +527,7 @@ export function App() {
                         onDeleteAccount={handleDeleteAccount}
                         updateProfile={updateProfile}
                         t={t}
-                        imageCount={allImages.length}
+                        imageCount={state.imageCount}
                         imageLimit={state.imageLimit}
                         storageAutoDelete={state.storageAutoDelete}
                         onStorageAutoDeleteChange={actions.handleStorageAutoDeleteChange}

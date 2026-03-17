@@ -784,4 +784,19 @@ export const imageService = {
         }));
     },
 
+    /**
+     * Returns the total number of saved images for a user (fast count-only query).
+     */
+    async countUserImages(userId: string): Promise<number> {
+        const { count, error } = await supabase
+            .from('images')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId);
+        if (error) {
+            console.error('[imageService] countUserImages error:', error);
+            return 0;
+        }
+        return count ?? 0;
+    },
+
 };

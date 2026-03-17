@@ -22,6 +22,8 @@ interface UseGenerationProps {
     showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
+    /** Called when a generation completes and the image is saved to DB — used to increment total image count */
+    onImageSaved?: () => void;
 }
 
 const COSTS: Record<string, number> = {
@@ -186,7 +188,7 @@ if (typeof window !== 'undefined') {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm, onImageSaved
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
@@ -277,6 +279,9 @@ export const useGeneration = ({
                         return item;
                     })
                 })));
+
+                // Increment total image count in settings
+                onImageSaved?.();
 
                 // Send browser notification if enabled and tab is inactive
                 sendGenerationCompleteNotification(

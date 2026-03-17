@@ -28,6 +28,7 @@ export const useNanoController = () => {
     // --- Data State ---
     const [rows, setRows] = useState<ImageRow[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [totalImageCount, setTotalImageCount] = useState(0);
     // Keep a ref so loadFeed can read current selection without it being a dependency
     const selectedIdsRef = useRef<string[]>([]);
     React.useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
@@ -204,10 +205,13 @@ export const useNanoController = () => {
     React.useEffect(() => {
         if (user) {
             loadFeed(true);
+            // Fetch total image count from DB (accurate even with pagination)
+            imageService.countUserImages(user.id).then(setTotalImageCount);
         } else {
             setRows([]);
             setIsCanvasLoading(false);
             setHasMore(false);
+            setTotalImageCount(0);
             offsetRef.current = 0;
         }
     }, [user, loadFeed]);
@@ -244,7 +248,8 @@ export const useNanoController = () => {
 
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm,
+        onImageSaved: () => setTotalImageCount(prev => prev + 1),
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
@@ -288,6 +293,10 @@ export const useNanoController = () => {
 
         const imageToDelete = rows.flatMap(r => r.items).find(i => i.id === id);
         if (imageToDelete) {
+            // Only decrement for saved images (generating ones aren't in DB yet)
+            if (!imageToDelete.isGenerating) {
+                setTotalImageCount(prev => Math.max(0, prev - 1));
+            }
             imageService.deleteImage(imageToDelete, user.id).catch(err => {
                 console.error("Delete failed:", err);
                 showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
@@ -511,12 +520,17 @@ export const useNanoController = () => {
         storageAutoDelete,
         imageLimit: IMAGE_LIMIT,
         imageWarningThreshold: IMAGE_WARNING_THRESHOLD,
+        // Accurate count: when all pages are loaded use local length, otherwise use DB count
+        imageCount: !hasMore
+            ? allImages.filter(i => !i.isGenerating).length
+            : totalImageCount,
     }), [
         rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
         qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
-        isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode, storageAutoDelete
+        isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode, storageAutoDelete,
+        totalImageCount
     ]);
 
     const actions = React.useMemo(() => ({
