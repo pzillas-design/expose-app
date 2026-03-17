@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { generateId } from '@/utils/ids';
 import { imageService } from '@/services/imageService';
+import { storageService } from '@/services/storageService';
 import { CanvasImage, ImageRow } from '@/types';
 
 interface UseFileHandlerProps {
@@ -125,13 +126,21 @@ export const useFileHandler = ({
                                 storage_path: '',
                             };
 
-                            imageService.persistImage(finalImage, user.id, user.email).then(res => {
+                            imageService.persistImage(finalImage, user.id, user.email).then(async res => {
                                 if (res.success && res.storage_path) {
+                                    // Get a signed URL so the image can be used as a source for edits
+                                    // without needing a page reload (blob URLs can't be fetched server-side)
+                                    const signedUrl = await storageService.getSignedUrl(res.storage_path);
                                     setRows(prev => prev.map(row => ({
                                         ...row,
                                         items: row.items.map(item => item.id === skeletonId ? {
                                             ...item,
                                             storage_path: res.storage_path,
+                                            ...(signedUrl ? {
+                                                src: signedUrl,
+                                                originalSrc: signedUrl,
+                                                thumbSrc: signedUrl
+                                            } : {})
                                         } : item)
                                     })));
                                 }
