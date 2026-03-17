@@ -220,17 +220,7 @@ export const imageService = {
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
-        // Get current session — auto-refreshes token if near expiry, but avoids forcing
-        // a redundant network round-trip (refreshSession() races with concurrent auth ops and causes 401s)
-        const { data: sessionData, error: refreshError } = await supabase.auth.getSession();
-        if (refreshError || !sessionData?.session?.access_token) {
-            throw new Error(`Session expired: ${refreshError?.message || 'no access token — please reload the page'}`);
-        }
-
         const { data, error } = await supabase.functions.invoke('generate-image', {
-            headers: {
-                Authorization: `Bearer ${sessionData.session.access_token}`,
-            },
             body: {
                 ...payload,
                 qualityMode,
@@ -268,6 +258,11 @@ export const imageService = {
                 }
             } else {
                 errorMsg = data?.error || errorMsg;
+            }
+
+            // Surface 401 as a clear session-expired message
+            if (error?.status === 401 || errorMsg.toLowerCase().includes('invalid jwt') || errorMsg.toLowerCase().includes('jwt expired')) {
+                throw new Error('Invalid JWT');
             }
 
             const statusInfo = error?.status ? ` (Status: ${error.status})` : '';

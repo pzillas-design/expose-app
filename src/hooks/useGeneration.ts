@@ -53,75 +53,67 @@ const resolveTargetModel = (_quality: string): string | undefined => {
     return undefined;
 };
 
-// HELPER: Map technical errors to user-friendly messages (EN / DE)
-const translateError = (errorMsg: string): string => {
-    if (!errorMsg) return "Unknown error / Unbekannter Fehler.";
+// HELPER: Map technical errors to user-friendly messages via the app's locale system
+const translateError = (errorMsg: string, t: (key: any) => string): string => {
+    if (!errorMsg) return t('error_unknown');
 
     const msg = errorMsg.toLowerCase();
 
     // Auth / session
-    if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("session expired") || msg.includes("no access token")) {
-        return "Session expired — please reload the page. / Sitzung abgelaufen – bitte Seite neu laden.";
+    if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("session expired") || msg.includes("no access token") || msg.includes("session refresh failed")) {
+        return t('error_session_expired');
     }
     if (msg.includes("not authenticated") || msg.includes("user not found")) {
-        return "Not logged in. / Nicht eingeloggt.";
-    }
-    if (msg.includes("session refresh failed")) {
-        return "Could not refresh session — please reload. / Sitzung konnte nicht erneuert werden – bitte neu laden.";
+        return t('error_not_logged_in');
     }
 
     // Credits / billing
-    if (msg.includes("insufficient credits") || msg.includes("not enough credits")) {
-        return "Not enough credits. / Guthaben nicht ausreichend.";
-    }
-    if (msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        return "Credits required. / Guthaben benötigt.";
+    if (msg.includes("insufficient credits") || msg.includes("not enough credits") || msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
+        return t('error_insufficient_credits');
     }
 
     // Safety / content filter
     if (msg.includes("nsfw") || msg.includes("safety") || msg.includes("content policy") || msg.includes("blocked")) {
-        return "Content rejected by safety filter. / Inhalt vom Sicherheitsfilter abgelehnt.";
+        return t('error_safety_blocked');
     }
 
-    // Kie.ai API errors — show detail for debugging
+    // Kie.ai API errors — keep detail for debugging
     if (
         msg.includes("kie task failed:") ||
         msg.includes("kie createtask") ||
         msg.includes("kie recordinfo") ||
         msg.includes("kie task complete") ||
         msg.includes("kie result download") ||
-        msg.includes("image generation failed on kie")
+        msg.includes("image generation failed on kie") ||
+        msg.startsWith("kie.ai error:")
     ) {
-        const cleaned = errorMsg.replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
-        return `Kie.ai error: ${cleaned}`;
+        const cleaned = errorMsg.replace(/^kie\.ai error:\s*/i, '').replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
+        return `${t('error_generation_failed')}: ${cleaned}`;
     }
 
     // Task / background timeout
     if (msg.includes("timed out") || msg.includes("timeout") || msg.includes("background task timeout")) {
-        return "Generation timed out — credits refunded. / Timeout – Guthaben erstattet.";
+        return t('error_generation_timeout');
     }
     if (msg.includes("cold start")) {
-        return "Server cold start — please retry. / Server-Kaltstart – bitte erneut versuchen.";
+        return t('error_cold_start');
     }
 
     // Server / network
     if (msg.includes("503") || msg.includes("502") || msg.includes("failed to send") || msg.includes("edge function")) {
-        return "Server unavailable — please retry. / Server nicht erreichbar – bitte erneut versuchen.";
+        return t('error_server_error');
     }
     if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("failed to fetch")) {
-        return "Network error — please retry. / Netzwerkfehler – bitte erneut versuchen.";
+        return t('error_network_error');
     }
 
-    // Bad request
-    if (msg.includes("bad request") || msg.includes("400")) {
-        return "Invalid request. / Ungültige Anfrage.";
-    }
-    if (msg.includes("invalid")) {
-        return `Invalid request: ${errorMsg.substring(0, 100)}`;
+    // Bad / invalid request
+    if (msg.includes("bad request") || msg.includes("400") || msg.includes("invalid")) {
+        return t('error_invalid_prompt');
     }
 
-    // Fallback — include original for debuggability
-    return `Generation failed: ${errorMsg.substring(0, 120)}`;
+    // Fallback — include raw message for debuggability
+    return `${t('error_generation_failed')}: ${errorMsg.substring(0, 120)}`;
 };
 
 // Cache for smart estimates (simple in-memory cache)
@@ -217,7 +209,7 @@ export const useGeneration = ({
             attempts++;
             if (attempts > maxAttempts) {
                 // Timeout: Edge Function likely died (status 546) — clean up stuck job
-                showToast(translateError('timeout'), 'error');
+                showToast(translateError('timeout', t), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)
@@ -305,7 +297,7 @@ export const useGeneration = ({
 
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";
-                const translated = translateError(jobError);
+                const translated = translateError(jobError, t);
                 showToast(translated, "error");
                 setRows(prev => prev.map(row => ({
                     ...row,
@@ -337,7 +329,7 @@ export const useGeneration = ({
                         .eq('id', jobId);
                 } catch { /* non-critical — job cleanup, best-effort */ }
 
-                showToast(translateError('timeout'), 'error');
+                showToast(translateError('timeout', t), 'error');
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== jobId)
@@ -596,7 +588,7 @@ export const useGeneration = ({
                     supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
                 }
 
-                const translated = translateError(error.message || error);
+                const translated = translateError(error.message || String(error), t);
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
@@ -697,7 +689,7 @@ export const useGeneration = ({
 
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
-                const translated = translateError(error.message || "");
+                const translated = translateError(error.message || "", t);
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
