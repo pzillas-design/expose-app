@@ -38,7 +38,6 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
     return (
         <div
-            key={img.id}
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             onClick={() => {
@@ -47,93 +46,83 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative`}
+            className={`aspect-square relative ${isGen ? 'cursor-default' : 'cursor-pointer'} group`}
         >
-            {/* Stack cards — outside the overflow-hidden content div so they peek into the gap */}
+            {/* Stack cards — rounded, outside overflow-hidden so they peek into the gap */}
             {isGroup && !isGen && (
                 <>
-                    <div className="absolute inset-0 bg-zinc-300 dark:bg-zinc-600 transform rotate-[3deg] scale-[0.96]" />
-                    <div className="absolute inset-0 bg-zinc-200 dark:bg-zinc-700 transform rotate-[1.5deg] scale-[0.98]" />
+                    <div className="absolute inset-0 rounded-2xl bg-zinc-200 dark:bg-zinc-700 shadow-sm transform rotate-[-4deg] scale-[0.95]" />
+                    <div className="absolute inset-0 rounded-2xl bg-zinc-300 dark:bg-zinc-600 shadow-sm transform rotate-[2.5deg] scale-[0.97]" />
                 </>
             )}
-            {/* Content wrapper — clips image but lets stack cards peek out */}
-            <div className={`absolute inset-0 overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}>
-            {isGen ? (
-                <>
-                    {parentSrc ? (
-                        /* Variation of a source image — show source blurred as background */
-                        <div className="absolute inset-0 overflow-hidden">
-                            <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
-                        </div>
-                    ) : (
-                        <BlobBackground orbScale={0.77} speedScale={3.5} />
-                    )}
-                    <GenerationProgressBar
-                        startTime={img.generationStartTime}
-                        estimatedDuration={img.estimatedDuration}
-                    />
-                </>
-            ) : previewSrc ? (
-                <img
-                    src={previewSrc}
-                    alt={img.title}
-                    className={`w-full h-full object-contain transition-all duration-150 ease-out ${
-                        isSelectMode && isSelected
-                            ? 'opacity-75'
-                            : isKeyboardActive
-                                ? 'brightness-110 scale-105'
-                                : 'group-hover:scale-105'
-                    }`}
-                    loading="lazy"
-                />
-            ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
-                </div>
-            )}
 
-            {!isGen && (
-                <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                    <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
-                </div>
-            )}
+            {/* Main tile — rounded card with image */}
+            <div className={`absolute inset-0 rounded-2xl overflow-hidden shadow-sm ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-zinc-100 dark:bg-zinc-900'}`}>
 
-            {!isGen && (
-                <div
-                    className={`absolute top-2 left-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${isSelected ? '' : 'opacity-0 group-hover:opacity-100'}`}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        if (!isSelectMode) {
-                            actions?.setIsSelectMode?.(true);
-                        }
-                        if (onToggleSelect) {
-                            onToggleSelect(img.id);
-                        }
-                    }}
-                >
-                    {isSelectMode ? (
-                        isSelected ? (
-                            <div className="w-full h-full rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                {/* Image / generation placeholder */}
+                {isGen ? (
+                    <>
+                        {parentSrc ? (
+                            <div className="absolute inset-0">
+                                <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
                             </div>
                         ) : (
-                            <div className="w-full h-full rounded-full bg-white/50" />
-                        )
-                    ) : (
-                        <div className="w-full h-full rounded-full bg-white/50 cursor-pointer hover:bg-white/70 transition-colors" />
-                    )}
-                </div>
-            )}
+                            <BlobBackground orbScale={0.77} speedScale={3.5} />
+                        )}
+                        <GenerationProgressBar
+                            startTime={img.generationStartTime}
+                            estimatedDuration={img.estimatedDuration}
+                        />
+                    </>
+                ) : previewSrc ? (
+                    <img
+                        src={previewSrc}
+                        alt={img.title}
+                        className={`w-full h-full object-cover transition-all duration-200 ease-out ${
+                            isSelectMode && isSelected ? 'scale-[0.88]' : isKeyboardActive ? 'brightness-105' : ''
+                        }`}
+                        loading="lazy"
+                    />
+                ) : null}
 
-            {/* Group count badge — bottom-right */}
-            {isGroup && !isGen && (
-                <div className="absolute bottom-2 right-2 z-30 flex items-center gap-1 bg-black/35 backdrop-blur-sm text-white text-[11px] font-normal rounded-full px-2 py-0.5 pointer-events-none">
-                    {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
-                    {groupCount}
-                </div>
-            )}
-            </div>{/* end content wrapper */}
+                {/* Hover / keyboard-active scrim */}
+                {!isGen && (
+                    <div className={`absolute inset-0 bg-black/0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/12' : 'group-hover:bg-black/8'}`} />
+                )}
+
+                {/* Selection circle — top-right, subtle on hover, bold when selected */}
+                {!isGen && (
+                    <div
+                        className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${
+                            isSelected
+                                ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                                : isSelectMode
+                                    ? 'opacity-100 scale-100 border-[1.5px] border-white/80 bg-black/15 backdrop-blur-sm'
+                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 border-[1.5px] border-white/70 bg-black/10 backdrop-blur-sm'
+                        }`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (!isSelectMode) actions?.setIsSelectMode?.(true);
+                            if (onToggleSelect) onToggleSelect(img.id);
+                        }}
+                    >
+                        {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        )}
+                    </div>
+                )}
+
+                {/* Group count badge — bottom-right */}
+                {isGroup && !isGen && (
+                    <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 bg-black/28 backdrop-blur-md text-white/90 text-[11px] font-normal rounded-full px-2 py-[3px] pointer-events-none leading-none">
+                        {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                        {groupCount}
+                    </div>
+                )}
+            </div>
         </div>
     );
 });
@@ -356,14 +345,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     {images.length > 0 ? (
                         <>
 
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1 bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
-                            {/* Create Tile — only on level 1 */}
+                        <div ref={gridRef} className={`grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1.5 p-1.5 bg-white dark:bg-zinc-950 ${isMobile ? 'pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
+                            {/* Plus tile — only on level 1 */}
                             {!expandedGroupId && (
                                 <div
-                                    className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
+                                    className="aspect-square rounded-2xl cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center transition-all duration-150 active:scale-95"
                                     onClick={onCreateNew}
                                 >
-                                    <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
+                                    <Plus className="w-6 h-6 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors" />
                                 </div>
                             )}
 
