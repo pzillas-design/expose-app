@@ -8,6 +8,7 @@ import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
+import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -36,10 +37,16 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${Theme.Colors.CanvasBg} dark:bg-zinc-950`}
+            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}
         >
             {isGen ? (
-                <BlobBackground orbScale={0.77} speedScale={2.0} />
+                <>
+                    <BlobBackground orbScale={0.77} speedScale={3.5} />
+                    <GenerationProgressBar
+                        startTime={img.generationStartTime}
+                        estimatedDuration={img.estimatedDuration}
+                    />
+                </>
             ) : previewSrc ? (
                 <img
                     src={previewSrc}
