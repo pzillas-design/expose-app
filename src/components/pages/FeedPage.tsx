@@ -21,9 +21,11 @@ interface FeedGridItemProps {
     onToggleSelect?: (id: string) => void;
     setActiveIndex: (idx: number | null) => void;
     actions?: any;
+    /** Thumbnail/src of the parent image, used as blurred background when generating a variation */
+    parentSrc?: string;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
 
@@ -41,7 +43,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         >
             {isGen ? (
                 <>
-                    <BlobBackground orbScale={0.77} speedScale={3.5} />
+                    {parentSrc ? (
+                        /* Variation of a source image — show source blurred as background */
+                        <div className="absolute inset-0 overflow-hidden">
+                            <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
+                        </div>
+                    ) : (
+                        <BlobBackground orbScale={0.77} speedScale={3.5} />
+                    )}
                     <GenerationProgressBar
                         startTime={img.generationStartTime}
                         estimatedDuration={img.estimatedDuration}
@@ -130,6 +139,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+    const imageIdMap    = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
 
     // Drag & drop file upload
     const [isDropActive, setIsDropActive] = React.useState(false);
@@ -300,7 +310,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                 <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
                             </div>
 
-                            {images.map((img, idx) => (
+                            {images.map((img, idx) => {
+                                const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+                                const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                return (
                                 <FeedGridItem
                                     key={img.id}
                                     img={img}
@@ -312,8 +325,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                                     onToggleSelect={onToggleSelect}
                                     setActiveIndex={setActiveIndex}
                                     actions={actions}
+                                    parentSrc={parentSrc}
                                 />
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : !isLoading && (
                         <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">

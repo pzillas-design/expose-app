@@ -59,8 +59,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setIsLangDropdownOpen(false);
     };
 
-    const currentModel = qualityMode.startsWith('nb2') ? 'nb2' : 'pro';
-    const currentRes   = (qualityMode.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
+    const safeQuality  = (qualityMode as string) || 'nb2-2k';
+    const currentModel = safeQuality.startsWith('nb2') ? 'nb2' : 'pro';
+    const currentRes   = (safeQuality.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
 
     const setModel = (model: string) => { onQualityModeChange(`${model}-${currentRes}` as GenerationQuality); closeAll(); };
     const setRes   = (res: string)   => { onQualityModeChange(`${currentModel}-${res}` as GenerationQuality); closeAll(); };

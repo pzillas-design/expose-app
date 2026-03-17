@@ -8,6 +8,7 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
+import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 
 /* ── Memoised thumbnail button ── */
 const ThumbButton = memo<{ id: string; src: string; isActive: boolean; onSelect: (id: string) => void }>(
@@ -402,9 +403,24 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     className="relative shrink-0"
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
-                                    {/* blobs while generating or loading the generated result */}
-                                    {showBlob && (
-                                        <BlobBackground className="rounded-lg" speedScale={2} />
+                                    {/* Loading state while generating or waiting for image */}
+                                    {showBlob && (() => {
+                                        const parentImg = img.parentId ? imageMap.get(img.parentId) : null;
+                                        const parentLoadSrc = parentImg?.thumbSrc || parentImg?.src;
+                                        if (parentLoadSrc) {
+                                            return (
+                                                <div className="absolute inset-0 rounded-lg overflow-hidden">
+                                                    <img src={parentLoadSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-50" alt="" />
+                                                </div>
+                                            );
+                                        }
+                                        return <BlobBackground className="rounded-lg" speedScale={2} />;
+                                    })()}
+                                    {img.isGenerating && (
+                                        <GenerationProgressBar
+                                            startTime={img.generationStartTime}
+                                            estimatedDuration={img.estimatedDuration}
+                                        />
                                     )}
 
                                     {img.thumbSrc && !isMainLoaded && (
@@ -465,15 +481,34 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {images.filter(i => !i.isGenerating && (i.thumbSrc || i.src)).map(i => (
-                                <ThumbButton
-                                    key={i.id}
-                                    id={i.id}
-                                    src={i.thumbSrc || i.src}
-                                    isActive={selectedId === i.id}
-                                    onSelect={onSelectImage}
-                                />
-                            ))}
+                            {images.filter(i => i.isGenerating || i.thumbSrc || i.src).map(i => {
+                                if (i.isGenerating) {
+                                    const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
+                                    const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
+                                    return (
+                                        <button
+                                            key={i.id}
+                                            onClick={() => onSelectImage(i.id)}
+                                            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden border border-zinc-100 dark:border-zinc-900 transition-all duration-150 ${selectedId === i.id ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+                                        >
+                                            {pSrc ? (
+                                                <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75" alt="" />
+                                            ) : (
+                                                <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                                            )}
+                                        </button>
+                                    );
+                                }
+                                return (
+                                    <ThumbButton
+                                        key={i.id}
+                                        id={i.id}
+                                        src={i.thumbSrc || i.src}
+                                        isActive={selectedId === i.id}
+                                        onSelect={onSelectImage}
+                                    />
+                                );
+                            })}
                         </div>
 
                         {/* Annotations Toolbar */}
