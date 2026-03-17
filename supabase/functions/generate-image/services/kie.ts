@@ -1,4 +1,3 @@
-import { encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 
 const POLL_INTERVAL_MS = 5000; // 5 seconds between polls
 const MAX_POLLS = 60;          // 60 × 5s = 300s (5 minutes) — runs in background via EdgeRuntime.waitUntil
@@ -143,15 +142,10 @@ export const pollKieTask = async (
             }
             console.log('[DEBUG] Kie result URL:', imageUrl.substring(0, 80));
 
-            // Download and return as base64
-            const imgRes = await fetch(imageUrl);
-            if (!imgRes.ok) throw new Error(`Kie result download failed: ${imgRes.status}`);
-            const b64 = encodeBase64(new Uint8Array(await imgRes.arrayBuffer()));
-
             const costTime: number | undefined = typeof taskData?.costTime === 'number' ? taskData.costTime : undefined;
-            console.log('[DEBUG] Kie costTime:', costTime, 'ms');
+            console.log('[DEBUG] Kie costTime:', costTime);
 
-            return { data: [{ b64_json: b64 }], costTime };
+            return { data: [{ url: imageUrl }], costTime };
         }
 
         if (state === 'fail' || state === 'failed' || state === 'error') {

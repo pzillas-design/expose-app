@@ -300,8 +300,9 @@ Deno.serve(async (req) => {
             try {
                 const kieResponse = await pollKieTask(kieApiKey, kieTaskId);
 
-                if (!kieResponse?.data?.[0]?.b64_json) {
-                    logError('Kie API Response', `No image returned.`, kieResponse);
+                const kieImageUrl = kieResponse?.data?.[0]?.url;
+                if (!kieImageUrl) {
+                    logError('Kie API Response', `No image URL returned.`, kieResponse);
                     if (!isPro && cost > 0) {
                         await supabaseAdmin
                             .from('profiles')
@@ -314,8 +315,6 @@ Deno.serve(async (req) => {
                         .eq('id', newId);
                     return;
                 }
-
-                const generatedBase64 = kieResponse.data[0].b64_json;
 
                 let dbBaseName = "";
                 let dbTitle = "";
@@ -367,8 +366,13 @@ Deno.serve(async (req) => {
                 const filename = `${variantLabel}_${newId.substring(0, 8)}.jpg`;
                 const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
 
-                // Upload to storage
-                const binaryData = decodeBase64(generatedBase64);
+                // Download from Kie.ai and stream directly to Supabase storage (no base64 roundtrip)
+                logInfo('Storage Upload', `Downloading from Kie CDN: ${kieImageUrl.substring(0, 60)}...`);
+                const imgDownload = await fetch(kieImageUrl);
+                if (!imgDownload.ok) throw new Error(`Kie result download failed: ${imgDownload.status}`);
+                const binaryData = new Uint8Array(await imgDownload.arrayBuffer());
+                logInfo('Storage Upload', `Downloaded ${(binaryData.byteLength / 1024 / 1024).toFixed(1)}MB, uploading to ${filePath}`);
+
                 const { error: uploadError } = await supabaseAdmin.storage
                     .from('user-content')
                     .upload(filePath, binaryData, { contentType: 'image/jpeg', upsert: true });
