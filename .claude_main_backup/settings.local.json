@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh run list --branch staging --limit 5)",
+      "Bash(gh run list --status in_progress --limit 10)",
+      "Bash(gh run list --limit 10)",
+      "Bash(gh run list --branch staging --limit 3)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -n \"annotationWidth\\\\|annotationHeight\" src/components/pages/*.tsx src/components/canvas/*.tsx)",
+      "mcp__94e75a66-4866-430c-9ddf-5a4792beb592__list_deployments",
+      "mcp__94e75a66-4866-430c-9ddf-5a4792beb592__get_project",
+      "mcp__ce95aade-f1ce-4469-ab33-8694f2176b07__get_logs",
+      "mcp__Control_Chrome__get_current_tab",
+      "mcp__Control_Chrome__open_url",
+      "mcp__Control_Chrome__switch_to_tab",
+      "mcp__Control_Chrome__list_tabs",
+      "mcp__Desktop_Commander__read_file",
+      "mcp__Desktop_Commander__list_directory"
+    ]
+  }
+}

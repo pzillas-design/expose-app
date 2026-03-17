@@ -229,10 +229,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             setLoadedImageId(null);
         }
 
-        // Fallback in case onLoad never fires (cached images, etc.)
+        // Fallback in case onLoad never fires (cached images, errors, etc.)
         const fallbackTimer = setTimeout(() => {
             const el = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
-            if (el) setLoadedImageId(selectedId);
+            if (el) {
+                setLoadedImageId(selectedId);
+                setWaitingForGeneratedLoad(null);
+            }
         }, 800);
 
         return () => clearTimeout(fallbackTimer);
@@ -420,6 +423,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
+                                            setLoadedImageId(img.id);
+                                            setWaitingForGeneratedLoad(null);
+                                        }}
+                                        onError={() => {
                                             setLoadedImageId(img.id);
                                             setWaitingForGeneratedLoad(null);
                                         }}
