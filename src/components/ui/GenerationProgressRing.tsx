@@ -220,7 +220,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                 <div className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-opacity duration-400 ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}>
                     {/* Items */}
                     <div className="max-h-60 overflow-y-auto">
-                        {tracked.map(item => {
+                        {[...tracked].reverse().map(item => {
                             if (item.finished) {
                                 // Finished item: checkmark + navigate arrow
                                 return (
