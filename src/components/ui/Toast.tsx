@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { X, Check, AlertTriangle, Info } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
 
 // --- Types ---
@@ -76,9 +76,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                                     toast.type === 'success' ? 'text-emerald-500' :
                                         'text-blue-500'
                                 }`}>
-                                {toast.type === 'error' ? <AlertCircle size={18} /> :
-                                    toast.type === 'success' ? <CheckCircle size={18} /> :
-                                        <Info size={18} />}
+                                {toast.type === 'error' ? <AlertTriangle size={16} /> :
+                                    toast.type === 'success' ? <Check size={16} strokeWidth={2.5} /> :
+                                        <Info size={16} />}
                             </div>
                             <div className="flex-1">
                                 <p className={`text-sm font-medium ${Theme.Colors.TextHighlight}`}>{toast.message}</p>

@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
+import { suppressCreditToast } from '@/services/creditToastGuard';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
@@ -318,6 +319,7 @@ export const useGeneration = ({
                     ]);
                     if (job?.cost && user && profile) {
                         const refundedCredits = (profile.credits ?? 0) + parseFloat(job.cost);
+                        suppressCreditToast(4000); // prevent "credits added" toast for refunds
                         await supabase
                             .from('profiles')
                             .update({ credits: refundedCredits })

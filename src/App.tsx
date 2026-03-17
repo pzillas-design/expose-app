@@ -131,6 +131,10 @@ export function App() {
         isUserNavigationRef.current = true; // Mark as user-initiated (preserve SideSheet state)
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
+        // Generated images (have a prompt or parent) open without sidesheet; originals open with it
+        const img = allImages.find(i => i.id === id);
+        const isGenerated = !!(img?.generationPrompt || img?.parentId);
+        setDetailSideSheetVisible(!isGenerated);
         navigate(`/image/${id}`);
     };
 
