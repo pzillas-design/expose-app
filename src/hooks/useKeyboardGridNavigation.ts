@@ -7,6 +7,7 @@ interface UseKeyboardGridNavigationProps {
     onEnter?: (index: number) => void;
     onDelete?: (index: number) => void;
     onEscape?: () => void;
+    getElementAtIndex?: (index: number) => Element | null;
 }
 
 export function useKeyboardGridNavigation({
@@ -16,8 +17,16 @@ export function useKeyboardGridNavigation({
     onEnter,
     onDelete,
     onEscape,
+    getElementAtIndex,
 }: UseKeyboardGridNavigationProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+    // Auto-scroll active item into view when navigating with keyboard
+    useEffect(() => {
+        if (activeIndex === null || !getElementAtIndex) return;
+        const el = getElementAtIndex(activeIndex);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }, [activeIndex, getElementAtIndex]);
 
     // Reset focus when not active or items change drastically
     useEffect(() => {

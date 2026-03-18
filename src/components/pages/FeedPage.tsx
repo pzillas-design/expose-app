@@ -63,7 +63,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             data-image-id={img.id}
             className={`relative isolate cursor-pointer group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
             style={isLastViewed
-                ? { animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both' }
+                ? {
+                    // Set the 'from' keyframe values as inline style so the very first paint
+                    // already shows the zoomed-in state — avoids the brief normal-size flash
+                    // that occurs before the CSS animation engine kicks in.
+                    transform: 'scale(1.1)',
+                    opacity: 0.6,
+                    animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both',
+                }
                 : staggerDelay !== undefined
                 ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
                 : undefined}
@@ -344,6 +351,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         itemCount: displayImages.length,
         columns,
         isActive: true,
+        getElementAtIndex: useCallback((idx: number) => {
+            const img = displayImages[idx];
+            return img ? document.querySelector(`[data-image-id="${img.id}"]`) : null;
+        }, [displayImages]),
         onEscape: () => {
             if (expandedGroupId) { onExpandedGroupChange(null); return; }
             if (isSelectMode) actions?.setIsSelectMode?.(false);
