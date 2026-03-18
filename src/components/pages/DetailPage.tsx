@@ -163,9 +163,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }));
     }, [images, selectedId]);
 
-    // Suppress zoom animation when navigating within the detail view (only show on first entry from grid)
+    // Suppress zoom animation when navigating within the detail view (only show on first entry from grid).
+    // Reset only when the image actually finishes loading — not on selectedId change — so that all
+    // intermediate re-renders during loading (imgNaturalDims, displayBox, etc.) also stay suppressed.
     const suppressEntryAnimRef = useRef(false);
-    useEffect(() => { suppressEntryAnimRef.current = false; }, [selectedId]);
+    useEffect(() => { if (isMainLoaded) suppressEntryAnimRef.current = false; }, [isMainLoaded]);
     const handleSelectWithin = useCallback((id: string) => {
         suppressEntryAnimRef.current = true;
         onSelectImage(id);
