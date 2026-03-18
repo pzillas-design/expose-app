@@ -434,20 +434,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 case 'Backspace':
                 case 'Delete':
                     e.preventDefault();
-                    if (selectedId) {
-                        await onDelete(selectedId);
-                        // Auto-navigate to next or previous if available
-                        if (idx < images.length - 1) { suppressEntryAnimRef.current = true; onSelectImage(images[idx + 1].id); }
-                        else if (idx > 0) { suppressEntryAnimRef.current = true; onSelectImage(images[idx - 1].id); }
-                        else onBack();
-                    }
+                    // Navigation after delete is handled by handleDeleteImage in the controller
+                    if (selectedId) await onDelete(selectedId);
                     break;
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [navigate, confirm, onDelete, selectedId, idx, images.length, onSelectImage, onBack]);
+    }, [navigate, confirm, onDelete, selectedId, onBack]);
 
     // Resizable Sidebar States
     const [sidebarWidth, setSidebarWidth] = useState(380);
