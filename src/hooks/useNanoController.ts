@@ -40,8 +40,8 @@ export const useNanoController = () => {
     const PAGE_SIZE = 50;
 
     // --- Storage Limits ---
-    const IMAGE_LIMIT = 100;
-    const IMAGE_WARNING_THRESHOLD = 80;
+    const IMAGE_LIMIT = 150;
+    const IMAGE_WARNING_THRESHOLD = 130;
     const [storageAutoDelete, setStorageAutoDelete] = useState(() =>
         localStorage.getItem('expose_storage_auto_delete') === 'true'
     );
@@ -316,32 +316,33 @@ export const useNanoController = () => {
         localStorage.setItem('expose_storage_auto_delete', val ? 'true' : 'false');
     }, []);
 
+    const deleteOldestToMakeRoom = useCallback(() => {
+        const candidates = [...allImages]
+            .filter(img => !img.isGenerating)
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        if (candidates[0]) handleDeleteImage(candidates[0].id, true);
+    }, [allImages, handleDeleteImage]);
+
     const checkStorageLimit = useCallback(async (): Promise<boolean> => {
         const count = allImages.length;
 
         if (count >= IMAGE_LIMIT) {
             if (storageAutoDelete) {
-                const oldest = [...allImages]
-                    .filter(img => !img.isGenerating)
-                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
-                if (oldest) handleDeleteImage(oldest.id, true);
+                deleteOldestToMakeRoom();
                 return true;
             }
             const confirmed = await confirm({
-                title: currentLang === 'de' ? 'Speicher voll' : 'Storage full',
+                title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
-                    ? `Du hast ${IMAGE_LIMIT} Bilder erreicht. Aktiviere automatisches Löschen oder lösche Bilder manuell.`
-                    : `You've reached ${IMAGE_LIMIT} images. Enable auto-delete or remove images manually.`,
-                confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN AKTIVIEREN' : 'ENABLE AUTO-DELETE',
+                    ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird beim Generieren automatisch das älteste Bild entfernt, damit immer Platz ist.`
+                    : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest image is removed automatically whenever you generate.`,
+                confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
-                variant: 'danger'
+                variant: 'primary',
             });
             if (confirmed) {
                 handleStorageAutoDeleteChange(true);
-                const oldest = [...allImages]
-                    .filter(img => !img.isGenerating)
-                    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
-                if (oldest) handleDeleteImage(oldest.id, true);
+                deleteOldestToMakeRoom();
                 return true;
             }
             return false;
@@ -351,15 +352,15 @@ export const useNanoController = () => {
             storageWarnedRef.current = true;
             showToast(
                 currentLang === 'de'
-                    ? `${count} von ${IMAGE_LIMIT} Bildern – Speicher fast voll.`
-                    : `${count} of ${IMAGE_LIMIT} images – storage nearly full.`,
-                'error',
+                    ? `${count} von ${IMAGE_LIMIT} Bildern – Limit fast erreicht.`
+                    : `${count} of ${IMAGE_LIMIT} images – limit almost reached.`,
+                'warning',
                 5000
             );
         }
 
         return true;
-    }, [allImages, storageAutoDelete, handleDeleteImage, handleStorageAutoDeleteChange, confirm, showToast, currentLang]);
+    }, [allImages, storageAutoDelete, deleteOldestToMakeRoom, handleStorageAutoDeleteChange, confirm, showToast, currentLang]);
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
