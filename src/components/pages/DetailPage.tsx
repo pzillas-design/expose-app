@@ -57,16 +57,20 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
         const [hovered, setHovered] = useState(false);
         const invisible = thumbOpacity === 0;
         const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        // Hover snaps in fast (150ms), distance-based shift animates slower (300ms)
+        const transition = hovered || displayOpacity === thumbOpacity
+            ? 'opacity 150ms ease, transform 150ms ease'
+            : 'opacity 300ms ease, transform 150ms ease';
         return (
             <button
                 data-thumb-id={id}
                 onClick={() => onSelect(id)}
                 onMouseEnter={() => { if (!invisible) setHovered(true); }}
                 onMouseLeave={() => setHovered(false)}
-                style={{ opacity: displayOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+                style={{ opacity: displayOpacity, transition }}
                 className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
             >
-                <img src={src} className="w-full h-full object-cover" />
+                <img src={src} decoding="async" className="w-full h-full object-cover" />
                 {isNew && (
                     <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
                 )}
@@ -82,13 +86,16 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
         const [hovered, setHovered] = useState(false);
         const invisible = thumbOpacity === 0;
         const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        const transition = hovered || displayOpacity === thumbOpacity
+            ? 'opacity 150ms ease, transform 150ms ease'
+            : 'opacity 300ms ease, transform 150ms ease';
         return (
             <button
                 data-thumb-id={id}
                 onClick={() => onSelect(id)}
                 onMouseEnter={() => { if (!invisible) setHovered(true); }}
                 onMouseLeave={() => setHovered(false)}
-                style={{ opacity: displayOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+                style={{ opacity: displayOpacity, transition }}
                 className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
             >
                 {pSrc ? (
@@ -145,17 +152,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
     const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
 
-    // Thumbstrip: ±12 window in DOM (±8 visible, ±9-12 opacity-0 buffer for smooth transitions)
+    // Thumbstrip: render ALL displayable images — stable DOM width prevents layout shifts from mx-auto
+    // opacity-0 items beyond ±8 are pointer-events-none so they cost nothing at runtime
     const stripImages = useMemo(() => {
         const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
         const currentIdx = displayable.findIndex(i => i.id === selectedId);
-        if (currentIdx === -1) return displayable.map(img => ({ img, distance: 0 }));
-        const RENDER_WINDOW = 12;
-        const start = Math.max(0, currentIdx - RENDER_WINDOW);
-        const end = Math.min(displayable.length, currentIdx + RENDER_WINDOW + 1);
-        return displayable.slice(start, end).map((img, sliceIdx) => ({
+        return displayable.map((img, index) => ({
             img,
-            distance: Math.abs((start + sliceIdx) - currentIdx),
+            distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
         }));
     }, [images, selectedId]);
 
