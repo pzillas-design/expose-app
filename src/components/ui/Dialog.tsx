@@ -1,8 +1,8 @@
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Theme, Button, Typo, Input, IconButton } from './DesignSystem';
-import { X, AlertTriangle, Trash, Edit3 } from 'lucide-react';
+import { X, AlertTriangle, Trash, Edit3, CornerDownLeft } from 'lucide-react';
 
 // --- Context ---
 
@@ -75,6 +75,17 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
  }
  };
 
+ // Enter confirms, Escape cancels — for confirm mode only (prompt has its own onKeyDown)
+ useEffect(() => {
+ if (!isOpen || mode !== 'confirm') return;
+ const onKey = (e: KeyboardEvent) => {
+ if (e.key === 'Enter') { e.preventDefault(); handleClose(true); }
+ if (e.key === 'Escape') { e.preventDefault(); handleClose(false); }
+ };
+ window.addEventListener('keydown', onKey);
+ return () => window.removeEventListener('keydown', onKey);
+ }, [isOpen, mode]);
+
  return (
  <DialogContext.Provider value={{ confirm, prompt }}>
  {children}
@@ -143,7 +154,10 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
  onClick={() => handleClose(true)}
  className={`w-full h-11 ${options.variant === 'danger' ? '!bg-red-500 hover:!bg-red-600 !text-white !border-red-500' : ''}`}
  >
+ <span className="flex items-center justify-center gap-2">
  {options.confirmLabel || 'Bestätigen'}
+ <CornerDownLeft className="w-3.5 h-3.5 opacity-40" />
+ </span>
  </Button>
  </div>
  </div>

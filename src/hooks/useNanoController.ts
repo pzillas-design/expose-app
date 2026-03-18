@@ -369,10 +369,9 @@ export const useNanoController = () => {
         });
 
         if (activeId === id) {
-            // In detail view: jump to adjacent image instead of going back to grid
-            const rowItems = rows.find(r => r.items.some(i => i.id === id))?.items || [];
-            const currentIdx = rowItems.findIndex(i => i.id === id);
-            const nextImg = rowItems[currentIdx + 1] || rowItems[currentIdx - 1];
+            // In detail view: jump to adjacent image globally (not just within the same stack)
+            const currentIdx = allImages.findIndex(i => i.id === id);
+            const nextImg = allImages[currentIdx + 1] || allImages[currentIdx - 1];
             if (nextImg) {
                 selectAndSnap(nextImg.id, true);
             } else {
