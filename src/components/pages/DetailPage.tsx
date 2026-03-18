@@ -34,6 +34,7 @@ interface DetailPageProps {
     onSidebarWidthChange?: (w: number) => void;
     isSideSheetVisible?: boolean;
     onSideSheetVisibleChange?: (v: boolean) => void;
+    isExiting?: boolean;
 
     // SideSheet Props (pass-through)
     state: any;
@@ -43,7 +44,7 @@ interface DetailPageProps {
 
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
-    isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange,
+    isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
     state, actions, t
 }) => {
     const isMobile = useMobile();
@@ -342,7 +343,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+            <main className={`flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-[0.97]' : 'opacity-100 scale-100'}`}>
                 {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
                 <div
                     className="md:flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group shrink-0 md:shrink"

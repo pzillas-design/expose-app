@@ -74,6 +74,7 @@ export function App() {
     const isUserNavigationRef = React.useRef(false);
 
     const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
+    const [isDetailExiting, setIsDetailExiting] = React.useState(false);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
@@ -157,9 +158,13 @@ export function App() {
         navigate(`/image/${id}`);
     };
 
-    const handleBackToFeed = () => {
-        navigate('/');
-    };
+    const handleBackToFeed = useCallback(() => {
+        setIsDetailExiting(true);
+        setTimeout(() => {
+            setIsDetailExiting(false);
+            navigate('/');
+        }, 180);
+    }, [navigate]);
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
@@ -354,6 +359,7 @@ export function App() {
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={setExpandedGroupId}
+                                    lastViewedId={state.activeId}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -412,6 +418,7 @@ export function App() {
                                     onSidebarWidthChange={setDetailSidebarWidth}
                                     isSideSheetVisible={detailSideSheetVisible}
                                     onSideSheetVisibleChange={setDetailSideSheetVisible}
+                                    isExiting={isDetailExiting}
                                     state={state}
                                     actions={actions}
                                     t={t}

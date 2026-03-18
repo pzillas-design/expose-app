@@ -31,9 +31,11 @@ interface FeedGridItemProps {
     onOpenGroup?: () => void;
     /** Staggered fade-in delay in ms (for group open animation) */
     staggerDelay?: number;
+    /** Whether this item was the last one viewed in detail — plays zoom-out return animation */
+    isLastViewed?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
@@ -57,8 +59,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[0.97]${staggerDelay !== undefined ? ' animate-in fade-in' : ''}`}
-            style={staggerDelay !== undefined ? { animationDuration: '280ms', animationDelay: `${staggerDelay}ms`, animationFillMode: 'both' } : undefined}
+            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]${isLastViewed ? ' animate-in zoom-in-[110%]' : staggerDelay !== undefined ? ' animate-in fade-in' : ''}`}
+            style={isLastViewed ? { animationDuration: '320ms', animationTimingFunction: 'cubic-bezier(0.25,1,0.5,1)', animationFillMode: 'both' } : staggerDelay !== undefined ? { animationDuration: '280ms', animationDelay: `${staggerDelay}ms`, animationFillMode: 'both' } : undefined}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>
@@ -72,9 +74,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 style={{
                                     left: '10px', right: '10px',
                                     bottom: isKeyboardActive ? '-28px' : '-20px',
-                                    transform: isKeyboardActive ? 'scaleX(0.93) rotate(-3deg)' : 'scaleX(0.93)',
-                                    transformOrigin: 'bottom center',
-                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1), transform 240ms cubic-bezier(0.25,1,0.5,1)',
+                                    transform: 'scaleX(0.93)',
+                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                                 }}
                             />
@@ -84,9 +85,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                             style={{
                                 left: '5px', right: '5px',
                                 bottom: isKeyboardActive ? '-16px' : '-11px',
-                                transform: isKeyboardActive ? 'scaleX(0.96) rotate(-1.5deg)' : 'scaleX(0.96)',
-                                transformOrigin: 'bottom center',
-                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1), transform 240ms cubic-bezier(0.25,1,0.5,1)',
+                                transform: 'scaleX(0.96)',
+                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                             }}
                         />
@@ -183,9 +183,10 @@ interface FeedPageProps {
     t?: any;
     expandedGroupId: string | null;
     onExpandedGroupChange: (id: string | null) => void;
+    lastViewedId?: string | null;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -420,6 +421,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             hasGenerating={hasGen}
                                             onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
                                             staggerDelay={expandedGroupId ? Math.min(idx * 45, 300) : undefined}
+                                            isLastViewed={!expandedGroupId && !!lastViewedId && img.id === lastViewedId}
                                         />
                                     );
                                 })}
