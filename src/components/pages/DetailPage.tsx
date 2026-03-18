@@ -234,15 +234,31 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, [img?.isGenerating, selectedId]);
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
 
-    // Scroll active thumb to center of strip
+    const thumbStripInnerRef = useRef<HTMLDivElement>(null);
+
+    // Center active thumb — updates padding so first/last items can reach center too.
+    // Runs on selectedId change (smooth) and on viewport resize (instant) via ResizeObserver.
     useEffect(() => {
         const strip = thumbStripRef.current;
-        if (!strip) return;
-        const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-        if (!activeThumb) return;
-        const stripCenter = strip.clientWidth / 2;
-        const thumbCenter = activeThumb.offsetLeft + activeThumb.offsetWidth / 2;
-        strip.scrollTo({ left: thumbCenter - stripCenter, behavior: 'smooth' });
+        const inner = thumbStripInnerRef.current;
+        if (!strip || !inner) return;
+
+        const centerActive = (behavior: ScrollBehavior = 'smooth') => {
+            // padding = half strip width - half thumb width → any item can scroll to exact center
+            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
+            inner.style.paddingLeft = `${halfPad}px`;
+            inner.style.paddingRight = `${halfPad}px`;
+            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+            if (!activeThumb) return;
+            const thumbCenter = activeThumb.offsetLeft + activeThumb.offsetWidth / 2;
+            strip.scrollTo({ left: thumbCenter - strip.clientWidth / 2, behavior });
+        };
+
+        centerActive('smooth');
+
+        const obs = new ResizeObserver(() => centerActive('auto'));
+        obs.observe(strip);
+        return () => obs.disconnect();
     }, [selectedId]);
 
     // Track actual image dimensions from the loaded <img> element
@@ -620,13 +636,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {/* Thumbnail Strip — desktop only */}
                         <div
                             ref={thumbStripRef}
-                            className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+                            className={`absolute inset-0 hidden md:flex items-center overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
                             style={{
                                 maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
                             }}
                         >
-                            <div className="flex items-center mx-auto">
+                            <div ref={thumbStripInnerRef} className="flex items-center">
                             {stripImages.map(({ img: i, distance }) => {
                                 // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
                                 const VISIBLE = 8;
