@@ -342,10 +342,10 @@ export const useNanoController = () => {
 
     // --- Actions --- (Integrated via Hooks above)
 
-    const handleDeleteImage = useCallback(async (id: string, skipConfirm = false) => {
+    const handleDeleteImage = useCallback(async (id: string, skipConfirm = false, onBeforeDelete?: () => void): Promise<boolean> => {
         if (!user) {
             showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
-            return;
+            return false;
         }
 
         if (!skipConfirm) {
@@ -356,8 +356,13 @@ export const useNanoController = () => {
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'danger'
             });
-            if (!confirmed) return;
+            if (!confirmed) return false;
         }
+
+        // Navigate away BEFORE removing the image from rows.
+        // This prevents DetailPage's `!img → onBack()` from firing and sending
+        // the user to grid instead of the next image.
+        onBeforeDelete?.();
 
         setRows(prev => {
             return prev.map(row => {
@@ -391,7 +396,8 @@ export const useNanoController = () => {
                 showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
             });
         }
-    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
+        return true;
+    }, [user, rows, activeId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
     const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
         setStorageAutoDelete(val);

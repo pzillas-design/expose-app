@@ -420,6 +420,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        // Tell App.tsx's document-level drop listener to skip this — we're handling it as reference
+        (e.nativeEvent as any).__sideSheetHandled = true;
         onGlobalDragLeave();
         setIsSideZoneActive(false);
         if (!selectedImage) return;
@@ -482,22 +484,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 onCropComplete={handleCropComplete}
                 t={t}
             />
-            {/* Drag overlay for file drop */}
-            {isGlobalDragOver && (
-                <div
-                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                    onDragEnter={() => setIsSideZoneActive(true)}
-                    onDragLeave={() => setIsSideZoneActive(false)}
-                    onDrop={handleDrop}
-                    onClick={onGlobalDragLeave}
-                    className={`absolute inset-3 z-50 rounded-2xl flex items-center justify-center border pointer-events-auto transition-all duration-200 ${isSideZoneActive ? 'bg-zinc-800/90 border-zinc-600' : 'bg-white/80 dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800'}`}
-                >
-                    <div className="flex flex-col items-center gap-2 pointer-events-none">
-                        <Layers className={`w-7 h-7 ${isSideZoneActive ? 'text-white' : 'text-zinc-400'}`} strokeWidth={1.5} />
-                        <span className={`${Typo.Label} text-zinc-400`}>Drop Image</span>
-                    </div>
-                </div>
-            )}
+            {/* Drop overlay now lives inside the prompt card — see below */}
 
             <div className="flex flex-col h-full overflow-hidden text-zinc-900 dark:text-zinc-100">
                 {/* ── Mobile drag handle ── */}

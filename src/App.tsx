@@ -1,7 +1,7 @@
 import React, { useEffect, Suspense, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
-import { RotateCw, Download, Info, Trash2, Loader2 } from 'lucide-react';
-import { RoundIconButton } from '@/components/ui/DesignSystem';
+import { RotateCw, Download, Info, Trash2, Loader2, Upload } from 'lucide-react';
+import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
@@ -175,6 +175,70 @@ export function App() {
         }, 180);
     }, [navigate]);
 
+    // Detail-view delete: navigate to the adjacent image URL BEFORE removing the deleted image from state.
+    // Without this, DetailPage's `!img → onBack()` fires and the 180ms timer navigates to grid,
+    // overriding the correct navigation that App.tsx's activeId-sync effect would have done.
+    const handleDetailDelete = React.useCallback(async (id: string) => {
+        const flat = state.allImages;
+        const currentIdx = flat.findIndex(i => i.id === id);
+        const nextImg = flat[currentIdx + 1] || flat[currentIdx - 1];
+        await actions.handleDeleteImage(id, false, () => {
+            // Called after confirm but BEFORE setRows — navigate while img still exists
+            isNavigatingProgrammatically.current = true;
+            if (nextImg) {
+                actions.selectAndSnap(nextImg.id);
+                navigate(`/image/${nextImg.id}`, { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+        });
+    }, [state.allImages, actions, navigate]);
+
+    // ── Global drag-and-drop ──────────────────────────────────────────────────
+    // Works everywhere in the app. FeedPage handles its own drop for upload.
+    // SideSheet intercepts drops on its panel for reference-image attachment.
+    // We use document-level listeners so it fires regardless of which page is active.
+    const actionsRef = React.useRef(actions);
+    React.useEffect(() => { actionsRef.current = actions; }, [actions]);
+    const locationRef2 = React.useRef(location.pathname);
+    React.useEffect(() => { locationRef2.current = location.pathname; }, [location.pathname]);
+
+    React.useEffect(() => {
+        let counter = 0;
+        const onEnter = (e: DragEvent) => {
+            if (!e.dataTransfer?.types.includes('Files')) return;
+            counter++;
+            actionsRef.current.setIsDragOver(true);
+        };
+        const onLeave = (e: DragEvent) => {
+            counter = Math.max(0, counter - 1);
+            if (counter === 0) actionsRef.current.setIsDragOver(false);
+        };
+        const onOver = (e: DragEvent) => { e.preventDefault(); };
+        const onDrop = async (e: DragEvent) => {
+            counter = 0;
+            actionsRef.current.setIsDragOver(false);
+            // FeedPage handles drops on its own container via React onDrop
+            if (locationRef2.current === '/') return;
+            // SideSheet marks handled drops to prevent double-upload
+            if ((e as any).__sideSheetHandled) return;
+            e.preventDefault();
+            const files = (Array.from(e.dataTransfer?.files || []) as File[]).filter(f => f.type.startsWith('image/'));
+            if (files.length === 0) return;
+            files.forEach(f => actionsRef.current.processFile(f));
+        };
+        document.addEventListener('dragenter', onEnter);
+        document.addEventListener('dragleave', onLeave);
+        document.addEventListener('dragover', onOver);
+        document.addEventListener('drop', onDrop);
+        return () => {
+            document.removeEventListener('dragenter', onEnter);
+            document.removeEventListener('dragleave', onLeave);
+            document.removeEventListener('dragover', onOver);
+            document.removeEventListener('drop', onDrop);
+        };
+    }, []); // intentionally empty: actionsRef + locationRef2 handle staleness
+
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
@@ -282,7 +346,7 @@ export function App() {
                     onDetailDelete={() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
-                            if (id) actions.handleDeleteImage(id);
+                            if (id) handleDetailDelete(id);
                         }
                     }}
                     onDetailInfo={() => {
@@ -326,6 +390,24 @@ export function App() {
                     t={t}
                 />
             ))}
+
+            {/* Global "drop files here" overlay — shows everywhere except FeedPage (which has its own) */}
+            {state.isDragOver && location.pathname !== '/' && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-zinc-950/60" />
+                    <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
+                        <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                        <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
+                            {state.currentLang === 'de' ? 'Dateien hier ablegen' : 'Drop files here'}
+                        </p>
+                        {location.pathname.startsWith('/image/') && detailSideSheetVisible && (
+                            <p className={`text-xs text-zinc-500 dark:text-zinc-600 -mt-1`}>
+                                {state.currentLang === 'de' ? 'Oder auf das Editierpanel für Referenz ablegen' : 'Or drop on the editing panel as reference'}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <main className={mainContainerClasses}>
                 <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-white dark:bg-black"><Loader2 className="w-6 h-6 animate-spin text-zinc-400 dark:text-zinc-800" /></div>}>
@@ -429,7 +511,7 @@ export function App() {
                                     selectedId={location.pathname.split('/').pop() || ''}
                                     onBack={handleBackToFeed}
                                     onSelectImage={handleSelectImage}
-                                    onDelete={handleDeleteImage}
+                                    onDelete={handleDetailDelete}
                                     onDownload={handleDownload}
                                     onInfo={(id) => setInfoImageId(id)}
                                     onSidebarWidthChange={setDetailSidebarWidth}

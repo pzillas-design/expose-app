@@ -175,6 +175,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
+
+    // Keep a live ref so the debounced onBack guard can re-check after a tick.
+    const imgRef = useRef(img);
+    useEffect(() => { imgRef.current = img; }, [img]);
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
@@ -235,6 +239,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
+    // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
+    const isFirstStripScrollRef = useRef(true);
 
     // Update padding on mount + resize only — never on selectedId change to avoid layout
     // reflows that interrupt the opacity CSS transition on the thumb buttons.
@@ -253,13 +259,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, []);
 
-    // Scroll active thumb to center on navigation (smooth) and after resize (auto)
+    // Scroll active thumb to center: instant on first entry (no reveal animation), smooth on navigation
     useEffect(() => {
         const strip = thumbStripRef.current;
         if (!strip) return;
         const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
         if (!activeThumb) return;
-        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior: 'smooth' });
+        const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
+        isFirstStripScrollRef.current = false;
+        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
     }, [selectedId]);
 
     // Track actual image dimensions from the loaded <img> element
@@ -479,9 +487,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, [isResizing, resize, stopResizing]);
 
 
-    // No image found — go back, this page shouldn't exist without a valid image
+    // No image found — go back, this page shouldn't exist without a valid image.
+    // Debounced: wait 150 ms before calling onBack() so that a navigate() call that
+    // is scheduled as a React transition (e.g. after delete) has time to update
+    // selectedId before we decide img is truly missing.
     useEffect(() => {
-        if (!img) onBack();
+        if (img) return; // valid image — nothing to do
+        const tid = window.setTimeout(() => {
+            if (!imgRef.current) onBack();
+        }, 150);
+        return () => window.clearTimeout(tid);
     }, [img, onBack]);
     if (!img) return null;
 
