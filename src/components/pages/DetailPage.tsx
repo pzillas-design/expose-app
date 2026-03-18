@@ -236,29 +236,30 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
 
-    // Center active thumb — updates padding so first/last items can reach center too.
-    // Runs on selectedId change (smooth) and on viewport resize (instant) via ResizeObserver.
+    // Update padding on mount + resize only — never on selectedId change to avoid layout
+    // reflows that interrupt the opacity CSS transition on the thumb buttons.
     useEffect(() => {
         const strip = thumbStripRef.current;
         const inner = thumbStripInnerRef.current;
         if (!strip || !inner) return;
-
-        const centerActive = (behavior: ScrollBehavior = 'smooth') => {
-            // padding = half strip width - half thumb width → any item can scroll to exact center
+        const updatePadding = () => {
             const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
             inner.style.paddingLeft = `${halfPad}px`;
             inner.style.paddingRight = `${halfPad}px`;
-            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-            if (!activeThumb) return;
-            const thumbCenter = activeThumb.offsetLeft + activeThumb.offsetWidth / 2;
-            strip.scrollTo({ left: thumbCenter - strip.clientWidth / 2, behavior });
         };
-
-        centerActive('smooth');
-
-        const obs = new ResizeObserver(() => centerActive('auto'));
+        updatePadding();
+        const obs = new ResizeObserver(updatePadding);
         obs.observe(strip);
         return () => obs.disconnect();
+    }, []);
+
+    // Scroll active thumb to center on navigation (smooth) and after resize (auto)
+    useEffect(() => {
+        const strip = thumbStripRef.current;
+        if (!strip) return;
+        const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+        if (!activeThumb) return;
+        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior: 'smooth' });
     }, [selectedId]);
 
     // Track actual image dimensions from the loaded <img> element
