@@ -374,7 +374,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const navigate = useCallback((d: 1 | -1) => {
         const n = idx + d;
-        if (n >= 0 && n < images.length) onSelectImage(images[n].id);
+        if (n >= 0 && n < images.length) {
+            suppressEntryAnimRef.current = true;
+            onSelectImage(images[n].id);
+        }
     }, [idx, images, onSelectImage]);
 
     // Keyboard Navigation
@@ -415,8 +418,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     if (selectedId) {
                         await onDelete(selectedId);
                         // Auto-navigate to next or previous if available
-                        if (idx < images.length - 1) onSelectImage(images[idx + 1].id);
-                        else if (idx > 0) onSelectImage(images[idx - 1].id);
+                        if (idx < images.length - 1) { suppressEntryAnimRef.current = true; onSelectImage(images[idx + 1].id); }
+                        else if (idx > 0) { suppressEntryAnimRef.current = true; onSelectImage(images[idx - 1].id); }
                         else onBack();
                     }
                     break;
