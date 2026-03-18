@@ -53,21 +53,55 @@ const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: 
 
 /* ── Memoised thumbnail button ── */
 const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; thumbOpacity: number; onSelect: (id: string) => void }>(
-    ({ id, src, isActive, isNew, thumbOpacity, onSelect }) => (
-        <button
-            data-thumb-id={id}
-            onClick={() => onSelect(id)}
-            style={{ opacity: thumbOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
-            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none ${isActive ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : 'scale-90'}`}
-        >
-            <img src={src} className="w-full h-full object-cover" />
-            {isNew && (
-                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
-            )}
-        </button>
-    )
+    ({ id, src, isActive, isNew, thumbOpacity, onSelect }) => {
+        const [hovered, setHovered] = useState(false);
+        const invisible = thumbOpacity === 0;
+        const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        return (
+            <button
+                data-thumb-id={id}
+                onClick={() => onSelect(id)}
+                onMouseEnter={() => { if (!invisible) setHovered(true); }}
+                onMouseLeave={() => setHovered(false)}
+                style={{ opacity: displayOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            >
+                <img src={src} className="w-full h-full object-cover" />
+                {isNew && (
+                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
+                )}
+            </button>
+        );
+    }
 );
 ThumbButton.displayName = 'ThumbButton';
+
+/* ── Memoised generating thumbnail ── */
+const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thumbOpacity: number; startTime?: number; estimatedDuration?: number; onSelect: (id: string) => void }>(
+    ({ id, pSrc, isActive, thumbOpacity, startTime, estimatedDuration, onSelect }) => {
+        const [hovered, setHovered] = useState(false);
+        const invisible = thumbOpacity === 0;
+        const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        return (
+            <button
+                data-thumb-id={id}
+                onClick={() => onSelect(id)}
+                onMouseEnter={() => { if (!invisible) setHovered(true); }}
+                onMouseLeave={() => setHovered(false)}
+                style={{ opacity: displayOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            >
+                {pSrc ? (
+                    <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
+                ) : (
+                    <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                )}
+                <ThumbCircularProgress startTime={startTime} estimatedDuration={estimatedDuration} />
+            </button>
+        );
+    }
+);
+GeneratingThumb.displayName = 'GeneratingThumb';
 
 interface DetailPageProps {
     images: CanvasImage[];
@@ -111,13 +145,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
     const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
 
-    // Thumbstrip: all displayable images with distance from selected (enables smooth opacity animation)
+    // Thumbstrip: ±12 window in DOM (±8 visible, ±9-12 opacity-0 buffer for smooth transitions)
     const stripImages = useMemo(() => {
         const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
         const currentIdx = displayable.findIndex(i => i.id === selectedId);
-        return displayable.map((img, index) => ({
+        if (currentIdx === -1) return displayable.map(img => ({ img, distance: 0 }));
+        const RENDER_WINDOW = 12;
+        const start = Math.max(0, currentIdx - RENDER_WINDOW);
+        const end = Math.min(displayable.length, currentIdx + RENDER_WINDOW + 1);
+        return displayable.slice(start, end).map((img, sliceIdx) => ({
             img,
-            distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
+            distance: Math.abs((start + sliceIdx) - currentIdx),
         }));
     }, [images, selectedId]);
 
@@ -581,28 +619,25 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         >
                             <div className="flex items-center mx-auto">
                             {stripImages.map(({ img: i, distance }) => {
-                                const thumbOpacity = distance === 0 ? 1 : Math.max(0.12, 0.6 * Math.pow(0.82, distance - 1));
+                                // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
+                                const VISIBLE = 8;
+                                const thumbOpacity = distance === 0 ? 1
+                                    : distance > VISIBLE ? 0
+                                    : Math.max(0.15, 0.6 * Math.pow(0.82, distance - 1));
                                 if (i.isGenerating) {
                                     const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
                                     const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
                                     return (
-                                        <button
+                                        <GeneratingThumb
                                             key={i.id}
-                                            data-thumb-id={i.id}
-                                            onClick={() => handleSelectWithin(i.id)}
-                                            style={{ opacity: thumbOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
-                                            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none ${selectedId === i.id ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : 'scale-90'}`}
-                                        >
-                                            {pSrc ? (
-                                                <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-                                            )}
-                                            <ThumbCircularProgress
-                                                startTime={i.generationStartTime}
-                                                estimatedDuration={i.estimatedDuration}
-                                            />
-                                        </button>
+                                            id={i.id}
+                                            pSrc={pSrc}
+                                            isActive={selectedId === i.id}
+                                            thumbOpacity={thumbOpacity}
+                                            startTime={i.generationStartTime}
+                                            estimatedDuration={i.estimatedDuration}
+                                            onSelect={handleSelectWithin}
+                                        />
                                     );
                                 }
                                 return (
