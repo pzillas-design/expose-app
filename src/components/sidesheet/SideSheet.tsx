@@ -189,9 +189,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     useEffect(() => {
         if (!selectedImage) return;
         if (selectedImage.id !== lastSelectedIdRef.current) {
+            // Children (parentId set) store the full request for "Mehr" replay but should
+            // start with a clean SideSheet — template/variables are not shown for them.
+            const isChild = !!selectedImage.parentId;
             setPrompt(selectedImage.userDraftPrompt || '');
-            setActiveTemplateId(selectedImage.activeTemplateId || null);
-            setControlValues(isMulti ? {} : (selectedImage.variableValues || {}));
+            setActiveTemplateId(isChild ? null : (selectedImage.activeTemplateId || null));
+            setControlValues(isMulti || isChild ? {} : (selectedImage.variableValues || {}));
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id, isMulti]);

@@ -3,7 +3,7 @@ import { supabase } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject } from '../types';
 import { generateId } from '../utils/ids';
-import { downloadImage } from '../utils/imageUtils';
+import { downloadImage, downloadImagesAsZip } from '../utils/imageUtils';
 import { storageService } from '../services/storageService';
 // useCanvasNavigation.ts import removed - free canvas is no longer used
 import { useToast } from '../components/ui/Toast';
@@ -33,6 +33,21 @@ export const useNanoController = () => {
     const selectedIdsRef = useRef<string[]>([]);
     React.useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
     const [activeId, setActiveId] = useState<string | null>(null); // viewed/focused image
+    const [unseenIds, setUnseenIds] = useState<Set<string>>(() => {
+        try { return new Set(JSON.parse(localStorage.getItem('expose_unseen_ids') || '[]')); }
+        catch { return new Set(); }
+    });
+    // Mark as seen when user opens image in detail
+    React.useEffect(() => {
+        if (!activeId) return;
+        setUnseenIds(prev => {
+            if (!prev.has(activeId)) return prev;
+            const next = new Set(prev);
+            next.delete(activeId);
+            localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
+            return next;
+        });
+    }, [activeId]);
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -52,8 +67,34 @@ export const useNanoController = () => {
         (typeof window !== 'undefined' && window.location.hostname === 'beta.expose.ae');
 
 
-    // Derived
-    const allImages = rows.flatMap(r => r.items);
+    // Derived — deduplicate by ID in case the same image ends up in two rows due to timing
+    const allImages = React.useMemo(() => {
+        const seen = new Set<string>();
+        return rows.flatMap(r => r.items).filter(i => {
+            if (seen.has(i.id)) return false;
+            seen.add(i.id);
+            return true;
+        });
+    }, [rows]);
+
+    const prevGeneratingRef = useRef<Set<string>>(new Set());
+    // Detect generation completion → mark as unseen
+    React.useEffect(() => {
+        const nowGenerating = new Set(allImages.filter(i => i.isGenerating).map(i => i.id));
+        const justFinished = [...prevGeneratingRef.current].filter(id => !nowGenerating.has(id));
+        if (justFinished.length > 0) {
+            setUnseenIds(prev => {
+                const next = new Set(prev);
+                justFinished.forEach(id => {
+                    const img = allImages.find(i => i.id === id);
+                    if (img?.parentId || img?.generationPrompt) next.add(id);
+                });
+                localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
+                return next;
+            });
+        }
+        prevGeneratingRef.current = nowGenerating;
+    }, [allImages]);
 
     // --- Modular Hooks ---
     const {
@@ -184,7 +225,31 @@ export const useNanoController = () => {
                 setHasMore(false);
             }
 
-            setRows(prev => isInitial ? loadedRows : [...prev, ...loadedRows]);
+            setRows(prev => {
+                if (isInitial) return loadedRows;
+                // Merge load-more rows into existing rows, deduplicating by image ID.
+                // Pagination offset can shift (new images inserted between pages) causing
+                // the same group to appear in both pages — this prevents double tiles.
+                const rowMap = new Map<string, import('@/types').ImageRow>(prev.map(r => [r.id, r]));
+                loadedRows.forEach(newRow => {
+                    const existing = rowMap.get(newRow.id);
+                    if (existing) {
+                        // Merge: add only images not already in the existing row
+                        const existingIds = new Set(existing.items.map(i => i.id));
+                        const addItems = newRow.items.filter(i => !existingIds.has(i.id));
+                        if (addItems.length > 0) {
+                            const merged = {
+                                ...existing,
+                                items: [...existing.items, ...addItems].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                            };
+                            rowMap.set(newRow.id, merged);
+                        }
+                    } else {
+                        rowMap.set(newRow.id, newRow);
+                    }
+                });
+                return Array.from(rowMap.values());
+            });
             offsetRef.current += PAGE_SIZE;
 
             if (isInitial && selectedIdsRef.current.length === 0) {
@@ -223,15 +288,24 @@ export const useNanoController = () => {
     }, [isCanvasLoading, hasMore, loadFeed]);
 
     const ensureImageLoaded = useCallback(async (id: string) => {
-        if (!user || allImages.some(img => img.id === id)) return;
+        if (!user) return;
+        // Use latest rows state (not stale closure) to decide if we need to fetch
+        let alreadyLoaded = false;
+        setRows(prev => {
+            alreadyLoaded = prev.some(r => r.items.some(i => i.id === id));
+            return prev;
+        });
+        if (alreadyLoaded) return;
 
         console.log(`[useNanoController] ensuring image ${id} is loaded...`);
         try {
             const extraRows = await imageService.loadImageById(id);
             if (extraRows.length > 0) {
                 setRows(prev => {
-                    // Avoid duplicates
+                    // Deduplicate by both row ID and image ID to prevent double rows
                     const existingRowIds = new Set(prev.map(r => r.id));
+                    const existingImageIds = new Set(prev.flatMap(r => r.items).map(i => i.id));
+                    if (existingImageIds.has(id)) return prev; // Image arrived in the meantime
                     const newRows = extraRows.filter(r => !existingRowIds.has(r.id));
                     return [...prev, ...newRows];
                 });
@@ -239,7 +313,7 @@ export const useNanoController = () => {
         } catch (err) {
             console.error("Failed to ensure image loaded:", err);
         }
-    }, [user, allImages, setRows]);
+    }, [user, setRows]);
 
     const refreshImageCount = useCallback(async () => {
         if (user) {
@@ -295,7 +369,15 @@ export const useNanoController = () => {
         });
 
         if (activeId === id) {
-            setActiveId(null);
+            // In detail view: jump to adjacent image instead of going back to grid
+            const rowItems = rows.find(r => r.items.some(i => i.id === id))?.items || [];
+            const currentIdx = rowItems.findIndex(i => i.id === id);
+            const nextImg = rowItems[currentIdx + 1] || rowItems[currentIdx - 1];
+            if (nextImg) {
+                selectAndSnap(nextImg.id, true);
+            } else {
+                setActiveId(null);
+            }
         }
 
         const imageToDelete = rows.flatMap(r => r.items).find(i => i.id === id);
@@ -309,7 +391,7 @@ export const useNanoController = () => {
                 showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
             });
         }
-    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, showToast, currentLang, confirm]);
+    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
     const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
         setStorageAutoDelete(val);
@@ -317,11 +399,46 @@ export const useNanoController = () => {
     }, []);
 
     const deleteOldestToMakeRoom = useCallback(() => {
+        const imageMap = new Map(allImages.map(img => [img.id, img]));
+
+        const getRootId = (id: string): string => {
+            let current = imageMap.get(id);
+            let depth = 0;
+            while (current?.parentId && imageMap.has(current.parentId) && depth < 50) {
+                current = imageMap.get(current.parentId)!;
+                depth++;
+            }
+            return current?.parentId || current?.id || id;
+        };
+
+        // Find oldest non-generating image
         const candidates = [...allImages]
             .filter(img => !img.isGenerating)
             .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-        if (candidates[0]) handleDeleteImage(candidates[0].id, true);
-    }, [allImages, handleDeleteImage]);
+        if (!candidates[0]) return;
+
+        // Collect entire stack belonging to the oldest image
+        const oldestRootId = getRootId(candidates[0].id);
+        const stackToDelete = allImages.filter(img => !img.isGenerating && getRootId(img.id) === oldestRootId);
+        const idsToDelete = new Set(stackToDelete.map(img => img.id));
+
+        // Remove from UI
+        setRows(prev =>
+            prev.map(row => ({ ...row, items: row.items.filter(i => !idsToDelete.has(i.id)) }))
+                .filter(row => row.items.length > 0)
+        );
+
+        // Navigate away if the active image is being deleted
+        if (activeId && idsToDelete.has(activeId)) setActiveId(null);
+
+        // Update total count and delete from DB
+        setTotalImageCount(prev => Math.max(0, prev - stackToDelete.length));
+        if (user) {
+            imageService.deleteImages(stackToDelete.map(i => i.id), user.id).catch(err => {
+                console.error('Auto-delete stack failed:', err);
+            });
+        }
+    }, [allImages, activeId, setRows, setActiveId, setTotalImageCount, user]);
 
     const checkStorageLimit = useCallback(async (): Promise<boolean> => {
         const count = allImages.length;
@@ -334,8 +451,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
-                    ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird beim Generieren automatisch das älteste Bild entfernt, damit immer Platz ist.`
-                    : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest image is removed automatically whenever you generate.`,
+                    ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird automatisch der älteste Stapel (alle Versionen) gelöscht – bei Generierung und Upload.`
+                    : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest stack (all versions) is removed automatically on every generation or upload.`,
                 confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'primary',
@@ -374,21 +491,34 @@ export const useNanoController = () => {
 
     const handleDownload = useCallback(async (idOrIds: string | string[]) => {
         const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-        const imagesToDownload = allImages.filter(img => ids.includes(img.id));
+        const imagesToDownload = allImages.filter(img => ids.includes(img.id) && !img.isGenerating);
 
-        for (const img of imagesToDownload) {
-            if (img.isGenerating) continue;
-
-            // Prefer the full-res signed URL already in memory; fall back to signing storage_path
-            let urlToDownload = img.src || img.originalSrc;
-            if ((!urlToDownload || urlToDownload.startsWith('blob:')) && img.storage_path) {
-                urlToDownload = await storageService.getSignedUrl(img.storage_path) || urlToDownload || '';
+        // Resolve URLs (sign storage paths where needed)
+        const resolved = await Promise.all(imagesToDownload.map(async img => {
+            let url = img.src || img.originalSrc || '';
+            if ((!url || url.startsWith('blob:')) && img.storage_path) {
+                url = await storageService.getSignedUrl(img.storage_path) || url;
             }
+            return { src: url, filename: img.title || 'image' };
+        }));
 
-            if (urlToDownload) {
-                const title = img.title || 'image';
-                await downloadImage(urlToDownload, title);
-            }
+        const valid = resolved.filter(r => !!r.src);
+        if (valid.length === 0) return;
+
+        if (valid.length === 1) {
+            // Single file — direct download, no ZIP needed
+            await downloadImage(valid[0].src, valid[0].filename);
+        } else {
+            // Multiple files — bundle into one ZIP to avoid browser confirmation dialogs
+            const ensureExt = (filename: string, src: string) => {
+                if (/\.(jpg|jpeg|png|webp)$/i.test(filename)) return filename;
+                const ext = src.match(/\.(jpg|jpeg|png|webp)/i)?.[1] || 'jpg';
+                return `${filename}.${ext}`;
+            };
+            await downloadImagesAsZip(
+                valid.map(r => ({ src: r.src, filename: ensureExt(r.filename, r.src) })),
+                'expose-images.zip'
+            );
         }
     }, [allImages]);
 
@@ -414,7 +544,7 @@ export const useNanoController = () => {
             recordPresetUsage(activeTemplateId);
         }
 
-        if (selectedImages.length > 1) {
+        if (isSelectMode && selectedImages.length > 1) {
             const result = await confirm({
                 title: t('generate_multiple_title').replace('{{count}}', selectedImages.length.toString()),
                 confirmLabel: t('generate'),
@@ -423,19 +553,40 @@ export const useNanoController = () => {
 
             if (!result) return;
 
-            selectedImages.forEach((img, index) => {
+            let snapIndex = 0;
+            selectedImages.forEach((img) => {
+                // Block images whose signed URL isn't ready yet (still blob: or empty)
+                if (!img.src || img.src.startsWith('blob:')) {
+                    showToast(
+                        currentLang === 'de'
+                            ? 'Ein Bild wird noch hochgeladen – bitte kurz warten'
+                            : 'An image is still uploading – please wait a moment',
+                        'error'
+                    );
+                    return;
+                }
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
-                // Snap only to the first generated image in the batch
-                performGeneration(img, finalPrompt, 1, index === 0, draftPrompt, activeTemplateId, variableValues);
+                // Snap only to the first successfully queued generation in the batch
+                performGeneration(img, finalPrompt, 1, snapIndex === 0, draftPrompt, activeTemplateId, variableValues);
+                snapIndex++;
             });
             // Exit multiselect after confirming batch generation
             setSelectedIds([]);
             setIsSelectMode(false);
         } else if (selectedImage) {
+            if (!selectedImage.src || selectedImage.src.startsWith('blob:')) {
+                showToast(
+                    currentLang === 'de'
+                        ? 'Bild wird noch hochgeladen – bitte kurz warten'
+                        : 'Image is still uploading – please wait a moment',
+                    'error'
+                );
+                return;
+            }
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
-    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, checkStorageLimit]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, checkStorageLimit, showToast, currentLang]);
 
     const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -444,31 +595,34 @@ export const useNanoController = () => {
         } else {
             img = idOrImg;
         }
+        if (!img) return;
 
-        if (img) {
-            // If it's a versioned image, we want to regenerate from its parent using the same prompt
-            if (img.parentId) {
-                const parent = allImages.find(p => p.id === img!.parentId);
-                if (parent) {
-                    performGeneration(parent, img.generationPrompt || img.userDraftPrompt || '', 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues);
-                    return;
-                } else {
-                    // Parent not found - show error instead of falling back
-                    const errorMsg = currentLang === 'de'
-                        ? 'Das Originalbild wurde nicht gefunden. "Mehr generieren" ist nur für Bilder mit verfügbarem Original möglich.'
-                        : 'Original image not found. "Generate more" is only available for images with an accessible original.';
-                    showToast(errorMsg, 'error', 5000);
-                    return;
-                }
-            } else {
-                // Image has no parentId - strictly "More" is not allowed for originals
-                const errorMsg = currentLang === 'de'
-                    ? '"Mehr generieren" ist nur für Versionen verfügbar, um den ursprünglichen Prompt zu wiederholen.'
-                    : '"Generate more" is only available for versions to repeat the original prompt.';
-                showToast(errorMsg, 'error', 5000);
-            }
+        // Walk the full ancestry chain to find the root original for grouping.
+        // We use img as the actual source for the API (preserves annotations/edits),
+        // but store groupParentId = root.id so the result lands in the original source's stack.
+        let root: CanvasImage = img;
+        let depth = 0;
+        while (root.parentId && depth < 50) {
+            const parent = allImages.find(p => p.id === root.parentId);
+            if (!parent) break;
+            root = parent;
+            depth++;
         }
-    }, [allImages, performGeneration, currentLang, showToast]);
+
+        // Full request body is stored on the image (generationPrompt + variableValues + activeTemplateId).
+        // "Mehr" simply replays it. userDraftPrompt is '' for children (clean SideSheet), so fall back to generationPrompt.
+        const prompt = img.generationPrompt || img.userDraftPrompt || '';
+        if (!prompt) return;
+
+        // Always use the ROOT image as the API source so the original uploaded image
+        // is sent to the AI — not a generated result. Annotations (reference images)
+        // come from the stored request on img.
+        const groupParentId = root.id !== img.id ? root.id : undefined;
+        const sourceForApi = root.id !== img.id
+            ? { ...root, annotations: img.annotations || [] }
+            : img;
+        performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
+    }, [allImages, performGeneration]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         const canProceed = await checkStorageLimit();
@@ -526,6 +680,7 @@ export const useNanoController = () => {
         hasMore,
         isSelectMode,
         storageAutoDelete,
+        unseenIds,
         imageLimit: IMAGE_LIMIT,
         imageWarningThreshold: IMAGE_WARNING_THRESHOLD,
         // Accurate count: when all pages are loaded use local length, otherwise use DB count
@@ -538,7 +693,7 @@ export const useNanoController = () => {
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
         isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode, storageAutoDelete,
-        totalImageCount
+        totalImageCount, unseenIds
     ]);
 
     const actions = React.useMemo(() => ({
@@ -584,6 +739,12 @@ export const useNanoController = () => {
         performGeneration,
         handleGenerate,
         handleGenerateMore,
+        markGroupSeen: (ids: string[]) => setUnseenIds(prev => {
+            const next = new Set(prev);
+            ids.forEach(id => next.delete(id));
+            localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
+            return next;
+        }),
         handleNavigateParent,
         setIsBrushResizing,
         handleCreateNew,

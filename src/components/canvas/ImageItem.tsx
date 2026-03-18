@@ -189,7 +189,7 @@ export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDura
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
             {/* Track — half tile width, clearly white */}
-            <div className="w-1/2 h-[3px] rounded-full bg-white/25 overflow-hidden">
+            <div className="w-1/5 h-[3px] rounded-full bg-white/25 overflow-hidden">
                 {/* Fill */}
                 <div
                     className={`h-full rounded-full bg-white ${finishing ? 'transition-all duration-500 ease-out' : 'transition-all duration-700 ease-out'}`}

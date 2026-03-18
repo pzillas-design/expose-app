@@ -18,7 +18,7 @@ interface FeedGridItemProps {
     isKeyboardActive: boolean;
     isSelectMode: boolean;
     onSelectImage: (id: string) => void;
-    onToggleSelect?: (id: string) => void;
+    onToggleSelect?: (id: string, isRange?: boolean) => void;
     setActiveIndex: (idx: number | null) => void;
     actions?: any;
     /** Thumbnail/src of the parent image, used as blurred background when generating a variation */
@@ -33,9 +33,11 @@ interface FeedGridItemProps {
     staggerDelay?: number;
     /** Whether this item was the last one viewed in detail — plays zoom-out return animation */
     isLastViewed?: boolean;
+    /** Generated image not yet opened by user */
+    isNew?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
@@ -53,13 +55,13 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         <div
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
-            onClick={() => {
-                if (isGen) return;
+            onClick={(e) => {
                 if (onOpenGroup) { onOpenGroup(); return; }
-                if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
+                if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                 else onSelectImage(img.id);
             }}
-            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
+            data-image-id={img.id}
+            className={`relative isolate cursor-pointer group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
             style={isLastViewed
                 ? { animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both' }
                 : staggerDelay !== undefined
@@ -70,7 +72,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             <div className="relative isolate" style={boundedStyle}>
 
                 {/* Stack cards — bottom center, spread on hover */}
-                {isGroup && !isGen && (
+                {isGroup && (
                     <>
                         {groupCount > 2 && (
                             <div
@@ -133,35 +135,41 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     {/* Selection circle */}
                     {!isGen && (
                         <div
-                            className={`absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelected
+                            className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
                                 ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
-                                    ? 'opacity-100 scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90 dark:bg-zinc-800/90'
-                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 border-[1.5px] border-zinc-300 dark:border-zinc-600 bg-white/90'
+                                    ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 if (!isSelectMode) actions?.setIsSelectMode?.(true);
-                                if (onToggleSelect) onToggleSelect(img.id);
+                                if (onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                             }}
                         >
-                            {isSelected && (
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            {isSelectMode && isSelected && (
+                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                             )}
                         </div>
                     )}
 
-                    {/* Group count badge — circle if single digit, pill if 2+ */}
-                    {isGroup && !isGen && (
+                    {/* Group count badge — hidden for now (A/B test without counter) */}
+                    {/* {isGroup && !isGen && (
                         <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
                             {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                             {groupCount}
                         </div>
-                    )}
+                    )} */}
+
                 </div>
+
+                {/* "New" dot — sits on the top-right corner of the image bounds (outside overflow-hidden) */}
+                {isNew && !isGen && (
+                    <span className="absolute -top-1 -right-1 z-30 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-sm pointer-events-none" />
+                )}
             </div>
         </div>
     );
@@ -181,7 +189,7 @@ interface FeedPageProps {
     isSelectMode?: boolean;
     isSelectionSideSheetOpen?: boolean;
     selectedIds?: string[];
-    onToggleSelect?: (id: string) => void;
+    onToggleSelect?: (id: string, isRange?: boolean) => void;
     state?: any;
     actions?: any;
     t?: any;
@@ -242,6 +250,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }
         prevExpandedGroupId.current = expandedGroupId;
     }, [expandedGroupId, rows]);
+
+    // Resolve lastViewedId → the cover tile of whichever row contains it
+    const lastViewedRowCoverId = React.useMemo(() => {
+        if (!lastViewedId) return null;
+        if (displayImages.some(i => i.id === lastViewedId)) return lastViewedId;
+        const row = rows.find(r => r.items.some(i => i.id === lastViewedId));
+        if (!row) return null;
+        return row.items[row.items.length - 1].id;
+    }, [lastViewedId, displayImages, rows]);
+
+    // Scroll the last-viewed cover tile into view when returning from detail
+    const didScrollRef = React.useRef(false);
+    React.useEffect(() => {
+        if (!lastViewedRowCoverId || didScrollRef.current) return;
+        const el = document.querySelector(`[data-image-id="${lastViewedRowCoverId}"]`);
+        if (el) {
+            didScrollRef.current = true;
+            el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+        }
+    }, [lastViewedRowCoverId, displayImages]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -414,10 +442,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 {/* Plus tile */}
                                 {!expandedGroupId && !isSelectMode && (
                                     <div
-                                        className="aspect-square relative cursor-pointer group flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
+                                        className="aspect-square relative cursor-pointer group flex items-center justify-center"
                                         onClick={onCreateNew}
                                     >
-                                        <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                        <div className="w-1/2 h-1/2 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-800 transition-colors duration-150">
+                                            <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                        </div>
                                     </div>
                                 )}
 
@@ -427,6 +457,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     const hasGen = row?.items.some(i => i.isGenerating) ?? false;
                                     const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
                                     const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                    const unseenIds: Set<string> = state?.unseenIds ?? new Set();
+                                    // For group covers: dot if any item in group is unseen
+                                    const rowItems = row?.items ?? [img];
+                                    const isNew = !expandedGroupId
+                                        ? rowItems.some(i => unseenIds.has(i.id))
+                                        : unseenIds.has(img.id);
                                     return (
                                         <FeedGridItem
                                             key={img.id}
@@ -442,9 +478,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             parentSrc={parentSrc}
                                             groupCount={gc}
                                             hasGenerating={hasGen}
-                                            onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
+                                            onOpenGroup={gc > 1 && row ? () => {
+                                                actions?.markGroupSeen?.(row.items.map(i => i.id));
+                                                onExpandedGroupChange(row.id);
+                                            } : undefined}
                                             staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedId ?? ''))}
+                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? lastViewedRowCoverId ?? '')}
+                                            isNew={isNew}
                                         />
                                     );
                                 })}

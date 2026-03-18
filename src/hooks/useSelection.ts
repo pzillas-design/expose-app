@@ -21,8 +21,15 @@ export const useSelection = ({
     const isMobile = useMobile();
     const lastSelectedIdRef = useRef<string | null>(null);
 
-    // Derived
-    const allImages = rows.flatMap(r => r.items);
+    // Derived — deduplicate by ID as safety net against double rows
+    const allImages = React.useMemo(() => {
+        const seen = new Set<string>();
+        return rows.flatMap(r => r.items).filter(i => {
+            if (seen.has(i.id)) return false;
+            seen.add(i.id);
+            return true;
+        });
+    }, [rows]);
     const primarySelectedId = activeId;
     const selectedImage = allImages.find(img => img.id === primarySelectedId) || null;
     const selectedImages = allImages.filter(img => selectedIds.includes(img.id));
@@ -30,9 +37,9 @@ export const useSelection = ({
     // --- Selection Logic ---
 
     // selectAndSnap: previously scrolled the canvas to the item. Now just selects it.
-    const selectAndSnap = useCallback((id: string, _instant = false) => {
+    const selectAndSnap = useCallback((id: string, _instant = false, updateSelection = true) => {
         lastSelectedIdRef.current = id;
-        setSelectedIds(isMobile ? [] : [id]);
+        if (updateSelection) setSelectedIds(isMobile ? [] : [id]);
         setActiveId(id);
     }, [setActiveId, setSelectedIds, isMobile]);
 

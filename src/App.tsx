@@ -82,6 +82,7 @@ export function App() {
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
+    const [createMode, setCreateMode] = React.useState<'choose' | 'create'>('choose');
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -99,12 +100,20 @@ export function App() {
 
     useEffect(() => {
         pathnameRef.current = location.pathname;
+        if (location.pathname !== '/create') setCreateMode('choose');
     }, [location.pathname]);
 
     // Keep URL in sync with active selection only while user is already in detail view.
     // This prevents forced jumps back into detail when the user intentionally returns to grid.
     useEffect(() => {
-        if (!state.activeId) return;
+        // If activeId cleared while in detail view (e.g. last image in group deleted) → go to grid
+        if (!state.activeId) {
+            if (pathnameRef.current.startsWith('/image/')) {
+                isNavigatingProgrammatically.current = true;
+                navigate('/', { replace: true });
+            }
+            return;
+        }
         if (!pathnameRef.current.startsWith('/image/')) return;
         const urlId = pathnameRef.current.split('/').pop();
         if (urlId === state.activeId) return; // Already in sync, do nothing
@@ -255,7 +264,9 @@ export function App() {
                     })()}
                     isGroupDrillDown={!!expandedGroupId}
                     onCloseGroup={() => setExpandedGroupId(null)}
-                    onBack={handleBackToFeed}
+                    onBack={location.pathname === '/create'
+                        ? () => { if (createMode === 'create') setCreateMode('choose'); else handleBackToFeed(); }
+                        : handleBackToFeed}
                     onDetailRename={() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
@@ -329,32 +340,38 @@ export function App() {
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={() => navigate('/create')}
                                     onGenerate={() => navigate('/create?m=create')}
-                                    onUpload={(files) => {
+                                    onUpload={async (files) => {
                                         const arr = Array.from(files ?? []);
                                         if (arr.length === 0) return;
                                         if (arr.length === 1) {
-                                            const id = actions.processFile(arr[0]);
+                                            const id = await actions.processFile(arr[0]);
                                             if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
                                         } else {
                                             arr.forEach(f => actions.processFile(f));
-                                            // multiple uploads → stay on grid so user sees all incoming images
+                                            // multiple uploads → back to top-level grid so user sees all incoming images
+                                            setExpandedGroupId(null);
                                         }
                                     }}
                                     onLoadMore={actions.handleLoadMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
                                     selectedIds={state.selectedIds}
-                                    onToggleSelect={(id) => {
+                                    onToggleSelect={(id, isRange) => {
                                         if (!state.isSelectMode) {
                                             // Entering select mode for first time — reset to exactly this image
                                             actions.selectAndSnap(id);
                                             return;
                                         }
-                                        const isCurrentlySelected = state.selectedIds.includes(id);
-                                        const willBeZero = isCurrentlySelected && state.selectedIds.length === 1;
-                                        actions.handleSelection(id, true, false);
-                                        if (willBeZero) {
-                                            actions.setIsSelectMode(false);
+                                        if (isRange) {
+                                            // Shift+click — extend selection range, never deselects
+                                            actions.handleSelection(id, false, true);
+                                        } else {
+                                            const isCurrentlySelected = state.selectedIds.includes(id);
+                                            const willBeZero = isCurrentlySelected && state.selectedIds.length === 1;
+                                            actions.handleSelection(id, true, false);
+                                            if (willBeZero) {
+                                                actions.setIsSelectMode(false);
+                                            }
                                         }
                                     }}
                                     expandedGroupId={expandedGroupId}
@@ -433,11 +450,11 @@ export function App() {
                             }}>
                                 <CreatePage
                                     onCreateNew={handleCreateNew}
-                                    onUpload={(files) => {
+                                    onUpload={async (files) => {
                                         const arr = Array.from(files);
                                         if (arr.length === 0) return;
                                         if (arr.length === 1) {
-                                            const id = actions.processFile(arr[0]);
+                                            const id = await actions.processFile(arr[0]);
                                             if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
                                         } else {
                                             arr.forEach(f => actions.processFile(f));
@@ -446,6 +463,8 @@ export function App() {
                                         }
                                     }}
                                     onBack={() => navigate('/')}
+                                    createMode={createMode}
+                                    onCreateModeChange={setCreateMode}
                                     state={state}
                                     actions={actions}
                                     t={t}

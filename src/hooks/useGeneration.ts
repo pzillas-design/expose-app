@@ -248,7 +248,7 @@ export const useGeneration = ({
                 // Auto-navigate to finished image (uses always-current ref — no stale closure)
                 if (navigateOnCompleteIds.current.has(jobId)) {
                     navigateOnCompleteIds.current.delete(jobId);
-                    setTimeout(() => selectAndSnapRef.current(jobId), 200);
+                    setTimeout(() => selectAndSnapRef.current(jobId, false, false), 200);
                 }
                 // Legacy callback support
                 const onComplete = jobCompleteCallbacks.current[jobId];
@@ -399,7 +399,8 @@ export const useGeneration = ({
         draftPrompt?: string,
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>,
-        customReferenceInstructions?: Record<string, string>
+        customReferenceInstructions?: Record<string, string>,
+        groupParentId?: string
     ) => {
         if (!sourceImage) return;
         const cost = COSTS[qualityMode];
@@ -454,9 +455,12 @@ export const useGeneration = ({
             thumbSrc: sourceImage.thumbSrc,
             src: sourceImage.src,
             annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
-            parentId: sourceImage.id,
+            parentId: groupParentId ?? sourceImage.id,
             generationPrompt: prompt,
-            userDraftPrompt: draftPrompt || prompt,
+            // Store full request body on the child so "Mehr" can replay it exactly.
+            // userDraftPrompt is intentionally empty — SideSheet shows clean for children.
+            // variableValues/activeTemplateId are kept for replay but not displayed (SideSheet init guards).
+            userDraftPrompt: '',
             activeTemplateId: activeTemplateId,
             variableValues: variableValues,
             quality: qualityMode,
@@ -530,7 +534,7 @@ export const useGeneration = ({
                         status: 'processing',
                         cost: cost,
                         prompt_preview: prompt,
-                        parent_id: sourceImage.id,
+                        parent_id: groupParentId ?? sourceImage.id,
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
@@ -565,7 +569,7 @@ export const useGeneration = ({
 
                     // Clean up and navigate using always-current ref
                     navigateOnCompleteIds.current.delete(newId);
-                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+                    setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
@@ -643,7 +647,7 @@ export const useGeneration = ({
         // Navigate to the placeholder immediately (user sees blob animation on detail page).
         // Also register for post-completion navigation in case polling finishes before user arrives.
         navigateOnCompleteIds.current.add(newId);
-        setTimeout(() => selectAndSnapRef.current(newId), 50);
+        setTimeout(() => selectAndSnapRef.current(newId, false, false), 50);
 
         const processNewSync = async () => {
             try {
@@ -677,7 +681,7 @@ export const useGeneration = ({
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
                     navigateOnCompleteIds.current.delete(newId);
-                    setTimeout(() => selectAndSnapRef.current(newId), 200);
+                    setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);

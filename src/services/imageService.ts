@@ -55,7 +55,11 @@ export const imageService = {
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
             annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
-            generation_params: { quality: image.quality }
+            generation_params: {
+                quality: image.quality,
+                ...(image.activeTemplateId != null ? { activeTemplateId: image.activeTemplateId } : {}),
+                ...(image.variableValues != null ? { variableValues: image.variableValues } : {}),
+            }
         });
 
 
