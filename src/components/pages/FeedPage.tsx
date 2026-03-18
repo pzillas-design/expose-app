@@ -216,13 +216,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return map;
     }, [rows]);
 
-    // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group
+    // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group,
+    // select mode = all individual images (stacks dissolved)
     const displayImages = useMemo(() => {
         if (expandedGroupId) {
             return rows.find(r => r.id === expandedGroupId)?.items || [];
         }
+        if (isSelectMode) {
+            return rows.flatMap(r => r.items);
+        }
         return rows.map(r => r.items[r.items.length - 1]).filter(Boolean) as CanvasImage[];
-    }, [expandedGroupId, rows]);
+    }, [expandedGroupId, isSelectMode, rows]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -388,12 +392,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     <div className="flex-1 flex flex-col relative pb-16">
                         {images.length > 0 ? (
                             <div
-                                key={expandedGroupId ?? 'root'}
+                                key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                 ref={gridRef}
                                 className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                             >
                                 {/* Plus tile */}
-                                {!expandedGroupId && (
+                                {!expandedGroupId && !isSelectMode && (
                                     <div
                                         className="aspect-square relative cursor-pointer group flex items-center justify-center ring-1 ring-black/5 dark:ring-white/10 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
                                         onClick={onCreateNew}
@@ -403,8 +407,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 )}
 
                                 {displayImages.map((img, idx) => {
-                                    const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                    const row = expandedGroupId ? null : groupRowMap.get(img.id);
+                                    const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                    const row = (expandedGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
                                     const hasGen = row?.items.some(i => i.isGenerating) ?? false;
                                     const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
                                     const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
@@ -424,8 +428,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             groupCount={gc}
                                             hasGenerating={hasGen}
                                             onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
-                                            staggerDelay={expandedGroupId ? Math.min(idx * 45, 300) : undefined}
-                                            isLastViewed={!expandedGroupId && !!lastViewedId && img.id === lastViewedId}
+                                            staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
+                                            isLastViewed={!expandedGroupId && !isSelectMode && !!lastViewedId && img.id === lastViewedId}
                                         />
                                     );
                                 })}
