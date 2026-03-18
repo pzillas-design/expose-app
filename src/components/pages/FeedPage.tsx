@@ -393,7 +393,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
                 {/* Drag & drop overlay */}
                 {isDropActive && (
-                    <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                         <div className="absolute inset-0 bg-zinc-950/60" />
                         <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
                             <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
