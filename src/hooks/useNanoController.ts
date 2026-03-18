@@ -171,8 +171,8 @@ export const useNanoController = () => {
         }, 200) : null;
 
         try {
-            const loadedRows = await imageService.loadUserImages(user.id, PAGE_SIZE, currentOffset);
-            console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows found for offset ${currentOffset}`);
+            const { rows: loadedRows, rawCount } = await imageService.loadUserImages(user.id, PAGE_SIZE, currentOffset);
+            console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows (${rawCount} images) for offset ${currentOffset}`);
 
             if (progressInterval) clearInterval(progressInterval);
             if (isInitial) {
@@ -180,7 +180,7 @@ export const useNanoController = () => {
                 setTimeout(() => setLoadingProgress(0), 500);
             }
 
-            if (loadedRows.length < PAGE_SIZE) {
+            if (rawCount < PAGE_SIZE) {
                 setHasMore(false);
             }
 
