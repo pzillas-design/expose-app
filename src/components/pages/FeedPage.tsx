@@ -59,8 +59,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]${isLastViewed ? ' animate-in zoom-in-[110%]' : staggerDelay !== undefined ? ' animate-in fade-in' : ''}`}
-            style={isLastViewed ? { animationDuration: '320ms', animationTimingFunction: 'cubic-bezier(0.25,1,0.5,1)', animationFillMode: 'both' } : staggerDelay !== undefined ? { animationDuration: '280ms', animationDelay: `${staggerDelay}ms`, animationFillMode: 'both' } : undefined}
+            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
+            style={isLastViewed
+                ? { animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both' }
+                : staggerDelay !== undefined
+                ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
+                : undefined}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>

@@ -343,7 +343,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className={`flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-[0.97]' : 'opacity-100 scale-100'}`}>
+            <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                 {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
                 <div
                     className="md:flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group shrink-0 md:shrink"
@@ -401,7 +401,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         <div ref={imageViewportRef} className="absolute inset-0 flex items-center justify-center">
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
-                                    className="relative shrink-0"
+                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
                                     {/* Loading state while generating or waiting for image */}
