@@ -228,6 +228,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return rows.map(r => r.items[r.items.length - 1]).filter(Boolean) as CanvasImage[];
     }, [expandedGroupId, isSelectMode, rows]);
 
+    // Track which cover tile to animate when closing a group
+    const [returnCoverId, setReturnCoverId] = React.useState<string | null>(null);
+    const prevExpandedGroupId = React.useRef<string | null>(null);
+    React.useEffect(() => {
+        if (prevExpandedGroupId.current && !expandedGroupId) {
+            const row = rows.find(r => r.id === prevExpandedGroupId.current);
+            const cover = row?.items[row.items.length - 1];
+            if (cover) {
+                setReturnCoverId(cover.id);
+                setTimeout(() => setReturnCoverId(null), 500);
+            }
+        }
+        prevExpandedGroupId.current = expandedGroupId;
+    }, [expandedGroupId, rows]);
+
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
     const imageIdMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
@@ -429,7 +444,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             hasGenerating={hasGen}
                                             onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
                                             staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                            isLastViewed={!expandedGroupId && !isSelectMode && !!lastViewedId && img.id === lastViewedId}
+                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedId ?? ''))}
                                         />
                                     );
                                 })}
