@@ -29,9 +29,11 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Called when user clicks a group cover tile — opens the group drill-down */
     onOpenGroup?: () => void;
+    /** Staggered fade-in delay in ms (for group open animation) */
+    staggerDelay?: number;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
@@ -55,7 +57,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
                 else onSelectImage(img.id);
             }}
-            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[0.97]`}
+            className={`relative isolate ${isGen ? 'cursor-default' : 'cursor-pointer'} group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[0.97]${staggerDelay !== undefined ? ' animate-in fade-in' : ''}`}
+            style={staggerDelay !== undefined ? { animationDuration: '280ms', animationDelay: `${staggerDelay}ms`, animationFillMode: 'both' } : undefined}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>
@@ -65,21 +68,25 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     <>
                         {groupCount > 2 && (
                             <div
-                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700 scale-x-[0.93]"
+                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700"
                                 style={{
                                     left: '10px', right: '10px',
                                     bottom: isKeyboardActive ? '-28px' : '-20px',
-                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                    transform: isKeyboardActive ? 'scaleX(0.93) rotate(-3deg)' : 'scaleX(0.93)',
+                                    transformOrigin: 'bottom center',
+                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1), transform 240ms cubic-bezier(0.25,1,0.5,1)',
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                                 }}
                             />
                         )}
                         <div
-                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600 scale-x-[0.96]"
+                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600"
                             style={{
                                 left: '5px', right: '5px',
                                 bottom: isKeyboardActive ? '-16px' : '-11px',
-                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                transform: isKeyboardActive ? 'scaleX(0.96) rotate(-1.5deg)' : 'scaleX(0.96)',
+                                transformOrigin: 'bottom center',
+                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1), transform 240ms cubic-bezier(0.25,1,0.5,1)',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                             }}
                         />
@@ -116,7 +123,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                     {/* Hover scrim */}
                     {!isGen && (
-                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.08]' : 'bg-black/0 group-hover:bg-black/[0.06]'}`} />
+                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
                     {/* Selection circle */}
@@ -412,6 +419,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             groupCount={gc}
                                             hasGenerating={hasGen}
                                             onOpenGroup={gc > 1 && row ? () => onExpandedGroupChange(row.id) : undefined}
+                                            staggerDelay={expandedGroupId ? Math.min(idx * 45, 300) : undefined}
                                         />
                                     );
                                 })}
