@@ -52,12 +52,13 @@ const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: 
 };
 
 /* ── Memoised thumbnail button ── */
-const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; onSelect: (id: string) => void }>(
-    ({ id, src, isActive, isNew, onSelect }) => (
+const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; thumbOpacity: number; onSelect: (id: string) => void }>(
+    ({ id, src, isActive, isNew, thumbOpacity, onSelect }) => (
         <button
             data-thumb-id={id}
             onClick={() => onSelect(id)}
-            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden outline-none ${isActive ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+            style={{ opacity: thumbOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none ${isActive ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : 'scale-90'}`}
         >
             <img src={src} className="w-full h-full object-cover" />
             {isNew && (
@@ -110,20 +111,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
     const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
 
-    // Thumbstrip: only show images from the same family (same root ancestor) as selectedId
-    const familyImages = useMemo(() => {
-        const getRootId = (id: string): string => {
-            let current = imageMap.get(id);
-            let depth = 0;
-            while (current?.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            return current?.parentId || current?.id || id;
-        };
-        const selectedRoot = getRootId(selectedId);
-        return images.filter(i => getRootId(i.id) === selectedRoot);
-    }, [images, imageMap, selectedId]);
+    // Thumbstrip: all displayable images with distance from selected (enables smooth opacity animation)
+    const stripImages = useMemo(() => {
+        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
+        const currentIdx = displayable.findIndex(i => i.id === selectedId);
+        return displayable.map((img, index) => ({
+            img,
+            distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
+        }));
+    }, [images, selectedId]);
+
+    // Suppress zoom animation when navigating within the detail view (only show on first entry from grid)
+    const suppressEntryAnimRef = useRef(false);
+    useEffect(() => { suppressEntryAnimRef.current = false; }, [selectedId]);
+    const handleSelectWithin = useCallback((id: string) => {
+        suppressEntryAnimRef.current = true;
+        onSelectImage(id);
+    }, [onSelectImage]);
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
@@ -444,12 +448,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                     {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
                     {idx > 0 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => handleSelectWithin(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
                     {idx < images.length - 1 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => handleSelectWithin(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     )}
@@ -511,7 +515,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         <img
                                             src={img.thumbSrc}
                                             className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-50 scale-110' : ''}`}
-                                            style={{ animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
+                                            style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
                                             alt=""
                                         />
                                     )}
@@ -567,8 +571,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Bottom Area: Fixed space so canvas never jumps */}
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
-                        <div ref={thumbStripRef} className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {familyImages.filter(i => i.isGenerating || i.thumbSrc || i.src).map(i => {
+                        <div
+                            ref={thumbStripRef}
+                            className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+                            style={{
+                                maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+                            }}
+                        >
+                            <div className="flex items-center mx-auto">
+                            {stripImages.map(({ img: i, distance }) => {
+                                const thumbOpacity = distance === 0 ? 1 : Math.max(0.12, 0.6 * Math.pow(0.82, distance - 1));
                                 if (i.isGenerating) {
                                     const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
                                     const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
@@ -576,8 +589,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         <button
                                             key={i.id}
                                             data-thumb-id={i.id}
-                                            onClick={() => onSelectImage(i.id)}
-                                            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none transition-all duration-150 ${selectedId === i.id ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
+                                            onClick={() => handleSelectWithin(i.id)}
+                                            style={{ opacity: thumbOpacity, transition: 'opacity 300ms ease, transform 150ms ease' }}
+                                            className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none ${selectedId === i.id ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : 'scale-90'}`}
                                         >
                                             {pSrc ? (
                                                 <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
@@ -598,10 +612,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         src={i.thumbSrc || i.src}
                                         isActive={selectedId === i.id}
                                         isNew={state?.unseenIds?.has(i.id)}
-                                        onSelect={onSelectImage}
+                                        thumbOpacity={thumbOpacity}
+                                        onSelect={handleSelectWithin}
                                     />
                                 );
                             })}
+                            </div>
                         </div>
 
                         {/* Annotations Toolbar */}
