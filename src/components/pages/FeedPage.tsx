@@ -139,7 +139,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
                                     ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
-                                    : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                    : isKeyboardActive
+                                        ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                        : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();

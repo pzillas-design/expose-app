@@ -369,9 +369,10 @@ export const useNanoController = () => {
         });
 
         if (activeId === id) {
-            // In detail view: jump to adjacent image globally (not just within the same stack)
-            const currentIdx = allImages.findIndex(i => i.id === id);
-            const nextImg = allImages[currentIdx + 1] || allImages[currentIdx - 1];
+            // Use rows directly (it's in deps) to build a flat list and find the adjacent image
+            const flat = rows.flatMap(r => r.items);
+            const currentIdx = flat.findIndex(i => i.id === id);
+            const nextImg = flat[currentIdx + 1] || flat[currentIdx - 1];
             if (nextImg) {
                 selectAndSnap(nextImg.id, true);
             } else {
