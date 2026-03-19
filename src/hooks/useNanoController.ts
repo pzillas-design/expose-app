@@ -467,9 +467,13 @@ export const useNanoController = () => {
                         React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
                             `${Math.round(pct)}%`),
                     ),
-                    React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden' },
+                    React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden' },
                         React.createElement('div', {
-                            className: 'h-full rounded-full transition-all duration-500 bg-red-500',
+                            className: `h-full rounded-full transition-all duration-500 ${
+                                count >= IMAGE_LIMIT            ? 'bg-red-500'    :
+                                count >= IMAGE_LIMIT * 0.8      ? 'bg-orange-400' :
+                                'bg-zinc-400 dark:bg-zinc-500'
+                            }`,
                             style: { width: `${pct}%` },
                         }),
                     ),
@@ -609,7 +613,10 @@ export const useNanoController = () => {
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, checkStorageLimit, showToast, currentLang]);
 
-    const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
+    const handleGenerateMore = useCallback(async (idOrImg: string | CanvasImage) => {
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
+
         let img: CanvasImage | undefined;
         if (typeof idOrImg === 'string') {
             img = allImages.find(i => i.id === idOrImg);
@@ -643,7 +650,7 @@ export const useNanoController = () => {
             ? { ...root, annotations: img.annotations || [] }
             : img;
         performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
-    }, [allImages, performGeneration]);
+    }, [allImages, performGeneration, checkStorageLimit]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         const canProceed = await checkStorageLimit();

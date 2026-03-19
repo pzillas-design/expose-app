@@ -133,25 +133,28 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
                 </div>
 
-                {/* 2. Prompt Section */}
+                {/* 2. Prompt Section — inside the same grid so the label aligns with other keys */}
                 {image.generationPrompt && (
-                    <div className="flex flex-col gap-2">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                    <div className="grid grid-cols-[max-content_1fr] items-start gap-x-12 gap-y-4">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs pt-1`}>
                             {t('prompt') || 'Prompt'}
                         </span>
-                        <div className={`
-                            bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-100 dark:border-zinc-800
-                            ${Typo.Mono} text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed
-                        `}>
-                            {image.generationPrompt}
+                        <div className="flex flex-col gap-2 min-w-0">
+                            <div className={`
+                                bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-100 dark:border-zinc-800
+                                ${Typo.Mono} text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed
+                                overflow-y-auto max-h-36 break-words whitespace-pre-wrap
+                            `}>
+                                {image.generationPrompt}
+                            </div>
+                            <Button
+                                variant="secondary"
+                                onClick={handleCopyPrompt}
+                                className="self-start"
+                            >
+                                {currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}
+                            </Button>
                         </div>
-                        <Button
-                            variant="secondary"
-                            onClick={handleCopyPrompt}
-                            className="self-start"
-                        >
-                            {currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}
-                        </Button>
                     </div>
                 )}
 
