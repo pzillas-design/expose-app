@@ -340,6 +340,17 @@ export const useNanoController = () => {
     // Auto-Save: Background persistence every 30s
     useAutoSave(rows, user, isAuthDisabled);
 
+    // Reactive storage enforcement: if images somehow exceed the limit (e.g. parallel
+    // generations that all passed the preemptive check before any of them added rows),
+    // trim back down automatically whenever auto-delete is enabled.
+    React.useEffect(() => {
+        if (!storageAutoDelete) return;
+        const nonGenerating = allImages.filter(i => !i.isGenerating);
+        if (nonGenerating.length > IMAGE_LIMIT) {
+            deleteOldestToMakeRoom();
+        }
+    }, [allImages.length, storageAutoDelete]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // --- Actions --- (Integrated via Hooks above)
 
     const handleDeleteImage = useCallback(async (id: string, skipConfirm = false, onBeforeDelete?: () => void): Promise<boolean> => {

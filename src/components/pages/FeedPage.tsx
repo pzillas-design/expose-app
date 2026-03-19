@@ -551,8 +551,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 </div>
 
-                {/* Infinite scroll sentinel */}
-                {hasMore && <div ref={sentinelRef} className="h-16" />}
+                {/* Infinite scroll sentinel + loading indicator */}
+                {hasMore && (
+                    <div ref={sentinelRef} className="flex items-center justify-center h-16">
+                        {isLoading && <Loader2 className="w-5 h-5 animate-spin text-zinc-300 dark:text-zinc-600" />}
+                    </div>
+                )}
 
                 <div className="mt-auto">
                     <GlobalFooter t={t || ((key: string) => key)} />
