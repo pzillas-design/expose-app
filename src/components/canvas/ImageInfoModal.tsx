@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Copy, Edit2, RotateCcw, Check as CheckIcon } from 'lucide-react';
-import { Typo, Theme, Tooltip, IconButton, Button } from '@/components/ui/DesignSystem';
+import { Edit2, RotateCcw, Check as CheckIcon } from 'lucide-react';
+import { Typo, IconButton, Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -49,33 +49,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     return (
         <Modal isOpen={true} onClose={onClose} title="Info">
             <div className="p-8 flex flex-col gap-10">
-                {/* 1. Prompt Section - First */}
-                {image.generationPrompt && (
-                    <div className="flex flex-col gap-2 group">
-                        <span className={`${Typo.Label} text-zinc-400`}>
-                            {t('prompt') || 'Prompt'}
-                        </span>
-                        <Tooltip text={t('copy_prompt_tooltip')}>
-                            <div
-                                onClick={handleCopyPrompt}
-                                className={`
-                                    bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-100 dark:border-zinc-800
-                                    ${Typo.Mono} text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed 
-                                    max-h-48 overflow-y-auto cursor-pointer 
-                                    hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors
-                                    group/prompt relative
-                                `}
-                            >
-                                {image.generationPrompt}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover/prompt:opacity-100 transition-opacity">
-                                    <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                                </div>
-                            </div>
-                        </Tooltip>
-                    </div>
-                )}
-
-                {/* 2. Metadata Grid */}
+                {/* 1. Metadata Grid */}
                 <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-12 gap-y-4">
                     {/* Filename with Rename Support */}
                     <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename') || 'Dateiname'}</span>
@@ -158,6 +132,28 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                         : '1024 × 1024px'}
                     </span>
                 </div>
+
+                {/* 2. Prompt Section */}
+                {image.generationPrompt && (
+                    <div className="flex flex-col gap-2">
+                        <span className={`${Typo.Body} text-zinc-400 text-xs`}>
+                            {t('prompt') || 'Prompt'}
+                        </span>
+                        <div className={`
+                            bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-100 dark:border-zinc-800
+                            ${Typo.Mono} text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed
+                        `}>
+                            {image.generationPrompt}
+                        </div>
+                        <Button
+                            variant="secondary"
+                            onClick={handleCopyPrompt}
+                            className="self-start"
+                        >
+                            {currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}
+                        </Button>
+                    </div>
+                )}
 
                 {/* 3. Actions */}
                 {onGenerateMore && image.parentId && (
