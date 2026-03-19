@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
             profile = newProfile;
         }
 
-        const isPro = profile.role === 'pro';
+        const isPro = profile.role === 'pro' || profile.role === 'admin';
         const creditBalance = Math.round((profile.credits || 0) * 100) / 100;
         if (!isPro && creditBalance < cost) {
             throw new Error('Insufficient credits');
