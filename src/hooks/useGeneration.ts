@@ -403,7 +403,7 @@ export const useGeneration = ({
     ) => {
         if (!sourceImage) return;
         const cost = COSTS[qualityMode];
-        const isPro = userProfile?.role === 'pro';
+        const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
 
@@ -486,8 +486,7 @@ export const useGeneration = ({
         const processGenerationAsync = async () => {
             let currentUser: any; // Declare currentUser here to be accessible in catch block
             try {
-                const { data: { user: fetchedUser } } = await supabase.auth.getUser();
-                currentUser = fetchedUser; // Assign fetched user to currentUser
+                currentUser = user ?? null; // Use auth state from parent — getUser() triggers sign-out in supabase-js v2.99+ on any JWT error
                 const maskDataUrl = await generateMaskFromAnnotations(sourceImage);
                 const annotations = sourceImage.annotations || [];
                 const hasMarkings = annotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
@@ -607,7 +606,7 @@ export const useGeneration = ({
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
         const cost = COSTS[modelId] || 0;
-        const isPro = userProfile?.role === 'pro';
+        const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
 
