@@ -454,11 +454,26 @@ export const useNanoController = () => {
                 deleteOldestToMakeRoom();
                 return true;
             }
+            const pct = Math.min((count / IMAGE_LIMIT) * 100, 100);
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
                     ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird automatisch der älteste Stapel (alle Versionen) gelöscht – bei Generierung und Upload.`
                     : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest stack (all versions) is removed automatically on every generation or upload.`,
+                content: React.createElement('div', { className: 'flex flex-col gap-1.5' },
+                    React.createElement('div', { className: 'flex items-center justify-between' },
+                        React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
+                            `${count} / ${IMAGE_LIMIT}`),
+                        React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
+                            `${Math.round(pct)}%`),
+                    ),
+                    React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden' },
+                        React.createElement('div', {
+                            className: 'h-full rounded-full transition-all duration-500 bg-red-500',
+                            style: { width: `${pct}%` },
+                        }),
+                    ),
+                ),
                 confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'primary',
