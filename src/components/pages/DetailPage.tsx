@@ -331,26 +331,43 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, []);
 
     // Scroll active thumb to center: instant on first entry (no reveal animation), smooth on navigation.
-    // Also depends on combinedStrip so the scroll fires once thumbs are in the DOM on initial open
-    // (first run may find no element if images haven't rendered yet; retrying on strip change fixes this).
+    // Also depends on combinedStrip so the scroll fires once thumbs are in the DOM on initial open.
+    // Uses double-rAF so the browser has finished layout before we read offsetLeft.
     useEffect(() => {
-        const strip = thumbStripRef.current;
-        if (!strip) return;
-        const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-        if (!activeThumb) return;
-        const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
-        isFirstStripScrollRef.current = false;
-        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
+        let raf1: number, raf2: number;
+        raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                const strip = thumbStripRef.current;
+                if (!strip) return;
+                const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+                if (!activeThumb) return;
+                const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
+                isFirstStripScrollRef.current = false;
+                strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
+            });
+        });
+        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
     }, [selectedId, combinedStrip]);
 
-    // Track actual image dimensions from the loaded <img> element
+    // Track actual image dimensions — initialized from DB values, updated from real load.
+    // Also preloads via Image() so displayBox can be computed even when the visible <img>
+    // hasn't been inserted into the DOM yet (chicken-and-egg with the displayBox guard).
     const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
     useEffect(() => {
-        const el = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
-        if (el && el.naturalWidth > 0 && el.naturalHeight > 0) {
-            setImgNaturalDims({ width: el.naturalWidth, height: el.naturalHeight });
+        if (!img?.src) return;
+        // If we already have valid DB dimensions, use them immediately
+        if (img.width && img.height) {
+            setImgNaturalDims({ width: img.width, height: img.height });
+            return;
         }
-    }, [selectedId]);
+        // Fallback: preload to discover natural dimensions when DB values are missing
+        const preload = new window.Image();
+        preload.onload = () => {
+            if (preload.naturalWidth > 0 && preload.naturalHeight > 0)
+                setImgNaturalDims({ width: preload.naturalWidth, height: preload.naturalHeight });
+        };
+        preload.src = img.src;
+    }, [img?.src, img?.width, img?.height]);
 
     const logicalDims = useMemo(() => ({
         width: img?.width || 0,
