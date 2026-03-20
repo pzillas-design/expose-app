@@ -426,43 +426,21 @@ export const useNanoController = () => {
     }, [user, isAuthDisabled]);
 
     const deleteOldestToMakeRoom = useCallback(() => {
-        const imageMap = new Map(allImages.map(img => [img.id, img]));
-
-        const getRootId = (id: string): string => {
-            let current = imageMap.get(id);
-            let depth = 0;
-            while (current?.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            return current?.parentId || current?.id || id;
-        };
-
-        // Find oldest non-generating image
-        const candidates = [...allImages]
+        // Delete only the single oldest non-generating image — simple & predictable
+        const oldest = [...allImages]
             .filter(img => !img.isGenerating)
-            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-        if (!candidates[0]) return;
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
+        if (!oldest) return;
 
-        // Collect entire stack belonging to the oldest image
-        const oldestRootId = getRootId(candidates[0].id);
-        const stackToDelete = allImages.filter(img => !img.isGenerating && getRootId(img.id) === oldestRootId);
-        const idsToDelete = new Set(stackToDelete.map(img => img.id));
-
-        // Remove from UI
         setRows(prev =>
-            prev.map(row => ({ ...row, items: row.items.filter(i => !idsToDelete.has(i.id)) }))
+            prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== oldest.id) }))
                 .filter(row => row.items.length > 0)
         );
-
-        // Navigate away if the active image is being deleted
-        if (activeId && idsToDelete.has(activeId)) setActiveId(null);
-
-        // Update total count and delete from DB
-        setTotalImageCount(prev => Math.max(0, prev - stackToDelete.length));
+        if (activeId === oldest.id) setActiveId(null);
+        setTotalImageCount(prev => Math.max(0, prev - 1));
         if (user) {
-            imageService.deleteImages(stackToDelete.map(i => i.id), user.id).catch(err => {
-                console.error('Auto-delete stack failed:', err);
+            imageService.deleteImages([oldest.id], user.id).catch(err => {
+                console.error('Auto-delete failed:', err);
             });
         }
     }, [allImages, activeId, setRows, setActiveId, setTotalImageCount, user]);
@@ -479,8 +457,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
-                    ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird automatisch der älteste Stapel (alle Versionen) gelöscht – bei Generierung und Upload.`
-                    : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest stack (all versions) is removed automatically on every generation or upload.`,
+                    ? `${count} von ${IMAGE_LIMIT} Bildern. Beim Fortfahren wird das älteste Bild automatisch entfernt.`
+                    : `${count} of ${IMAGE_LIMIT} images. The oldest image will be removed automatically.`,
                 content: React.createElement('div', { className: 'flex flex-col gap-1.5' },
                     React.createElement('div', { className: 'flex items-center justify-between' },
                         React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
@@ -491,15 +469,15 @@ export const useNanoController = () => {
                     React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden' },
                         React.createElement('div', {
                             className: `h-full rounded-full transition-all duration-500 ${
-                                count >= IMAGE_LIMIT            ? 'bg-red-500'    :
-                                count >= IMAGE_LIMIT * 0.8      ? 'bg-orange-400' :
+                                count >= IMAGE_LIMIT       ? 'bg-red-500'    :
+                                count >= IMAGE_LIMIT * 0.8 ? 'bg-orange-400' :
                                 'bg-zinc-400 dark:bg-zinc-500'
                             }`,
                             style: { width: `${pct}%` },
                         }),
                     ),
                 ),
-                confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
+                confirmLabel: currentLang === 'de' ? 'LÖSCHEN & WEITER' : 'DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'primary',
             });
@@ -515,8 +493,8 @@ export const useNanoController = () => {
             storageWarnedRef.current = true;
             showToast(
                 currentLang === 'de'
-                    ? `${count} von ${IMAGE_LIMIT} Bildern – Limit fast erreicht.`
-                    : `${count} of ${IMAGE_LIMIT} images – limit almost reached.`,
+                    ? `${count} / ${IMAGE_LIMIT} Bilder – fast voll.`
+                    : `${count} / ${IMAGE_LIMIT} images – almost full.`,
                 'warning',
                 5000
             );
