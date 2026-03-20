@@ -717,8 +717,6 @@ export function App() {
                     />
                 )}
             </Suspense>
-            </ModalErrorBoundary>
-
             <Suspense fallback={null}>
                 {infoImageId && (() => {
                     const infoImg = allImages.find(i => i.id === infoImageId);
@@ -726,12 +724,15 @@ export function App() {
                         <ImageInfoModal
                             image={infoImg}
                             onClose={() => setInfoImageId(null)}
+                            onUpdateImageTitle={actions.handleUpdateImageTitle}
+                            onGenerateMore={(id) => { actions.handleGenerateMore(id); setInfoImageId(null); }}
                             t={t}
                             currentLang={langSetting as 'de' | 'en'}
                         />
                     ) : null;
                 })()}
             </Suspense>
+            </ModalErrorBoundary>
         </div>
     );
 }
