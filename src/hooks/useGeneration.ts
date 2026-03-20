@@ -18,6 +18,8 @@ interface UseGenerationProps {
     qualityMode: GenerationQuality;
     isAuthDisabled: boolean;
     selectAndSnap: (id: string, instant?: boolean) => void;
+    /** Always-current ref to the active (detail-view) image ID — null when in feed view */
+    activeIdRef: React.RefObject<string | null>;
     setIsSettingsOpen: (open: boolean) => void;
     showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
@@ -190,7 +192,7 @@ if (typeof window !== 'undefined') {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete
+    qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
@@ -202,6 +204,20 @@ export const useGeneration = ({
     const navigateOnCompleteIds = React.useRef<Set<string>>(new Set());
     // Optional completion callbacks: when a job finishes, call the registered callback (e.g. navigate to it)
     const jobCompleteCallbacks = React.useRef<Record<string, () => void>>({});
+    // Source image ID that was active when each generation was started — used to guard auto-navigate
+    const generationSourceIds = React.useRef<Record<string, string | null>>({});
+
+    /**
+     * Returns true if we should auto-navigate to the finished image:
+     * 1. User is still in detail view (activeIdRef.current !== null)
+     * 2. User is still on the source image OR already on the placeholder/result
+     */
+    const shouldAutoNavigate = (newId: string): boolean => {
+        const current = activeIdRef.current;
+        if (current === null) return false; // user went to feed view
+        const sourceId = generationSourceIds.current[newId] ?? null;
+        return current === sourceId || current === newId;
+    };
 
     const pollForJob = useCallback(async (jobId: string) => {
         if (attachedJobIds.current.has(jobId)) return;
@@ -247,10 +263,12 @@ export const useGeneration = ({
                 const finalImage = await imageService.resolveImageRecord(imgData);
                 const cacheBuster = `?t=${Date.now()}`;
 
-                // Auto-navigate to finished image (uses always-current ref — no stale closure)
+                // Auto-navigate to finished image — only if still in detail view on source/placeholder
                 if (navigateOnCompleteIds.current.has(jobId)) {
                     navigateOnCompleteIds.current.delete(jobId);
-                    setTimeout(() => selectAndSnapRef.current(jobId, false, false), 200);
+                    if (shouldAutoNavigate(jobId)) {
+                        setTimeout(() => selectAndSnapRef.current(jobId, false, false), 200);
+                    }
                 }
                 // Legacy callback support
                 const onComplete = jobCompleteCallbacks.current[jobId];
@@ -480,6 +498,8 @@ export const useGeneration = ({
         // Track start time so pollForJob can record actual duration
         jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode };
 
+        // Record which image was active when generate was pressed — used to guard auto-navigate
+        generationSourceIds.current[newId] = activeIdRef.current;
         // Auto-navigate to finished result when the async job completes
         navigateOnCompleteIds.current.add(newId);
 
@@ -567,9 +587,11 @@ export const useGeneration = ({
                         items: row.items.map(i => i.id === newId ? refreshedImage : i)
                     })));
 
-                    // Clean up and navigate using always-current ref
+                    // Clean up and navigate — only if still in detail view on source/placeholder
                     navigateOnCompleteIds.current.delete(newId);
-                    setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
+                    if (shouldAutoNavigate(newId)) {
+                        setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
+                    }
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
@@ -646,6 +668,8 @@ export const useGeneration = ({
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         // Track start time so we can record actual duration on completion
         jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId };
+        // Record source ID (null for create — no "source" image to stay on)
+        generationSourceIds.current[newId] = activeIdRef.current;
         // Navigate to the placeholder immediately (user sees blob animation on detail page).
         // Also register for post-completion navigation in case polling finishes before user arrives.
         navigateOnCompleteIds.current.add(newId);
@@ -683,7 +707,9 @@ export const useGeneration = ({
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
                     navigateOnCompleteIds.current.delete(newId);
-                    setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
+                    if (shouldAutoNavigate(newId)) {
+                        setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
+                    }
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => prev - cost);
