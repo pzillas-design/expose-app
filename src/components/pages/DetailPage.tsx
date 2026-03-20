@@ -672,6 +672,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         key={img.id}
                                         src={img.src}
                                         alt={img.title}
+                                        draggable={true}
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
@@ -689,7 +690,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className="absolute inset-0 z-20 pointer-events-auto">
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}
