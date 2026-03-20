@@ -78,24 +78,15 @@ export const useNanoController = () => {
         });
     }, [rows]);
 
-    const prevGeneratingRef = useRef<Set<string>>(new Set());
-    // Detect generation completion → mark as unseen
-    React.useEffect(() => {
-        const nowGenerating = new Set(allImages.filter(i => i.isGenerating).map(i => i.id));
-        const justFinished = [...prevGeneratingRef.current].filter(id => !nowGenerating.has(id));
-        if (justFinished.length > 0) {
-            setUnseenIds(prev => {
-                const next = new Set(prev);
-                justFinished.forEach(id => {
-                    const img = allImages.find(i => i.id === id);
-                    if (img?.parentId || img?.generationPrompt) next.add(id);
-                });
-                localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
-                return next;
-            });
-        }
-        prevGeneratingRef.current = nowGenerating;
-    }, [allImages]);
+    // Called directly by useGeneration on completion — more reliable than transition detection
+    const handleGenerationComplete = useCallback((id: string) => {
+        setUnseenIds(prev => {
+            const next = new Set(prev);
+            next.add(id);
+            localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
+            return next;
+        });
+    }, []);
 
     // --- Modular Hooks ---
     const {
@@ -341,6 +332,7 @@ export const useNanoController = () => {
         rows, setRows, user, userProfile, credits, setCredits,
         qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, setIsAuthModalOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
+        onGenerationComplete: handleGenerationComplete,
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({

@@ -177,7 +177,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                 {/* "New" dot — sits on the top-right corner of the image bounds (outside overflow-hidden) */}
                 {isNew && !isGen && (
-                    <span className="absolute -top-1 -right-1 z-30 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-sm pointer-events-none" />
+                    <span className="absolute -top-1 -right-1 z-30 w-3 h-3 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-sm pointer-events-none" />
                 )}
             </div>
         </div>
