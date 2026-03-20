@@ -224,7 +224,20 @@ export const imageService = {
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
+        // Read access token directly from localStorage — avoids getSession() which can
+        // trigger a token refresh (rotating refresh tokens are single-use; parallel refresh
+        // calls cause "Refresh Token Not Found" → SIGNED_OUT on first generation attempt).
+        let accessToken: string | null = null;
+        try {
+            const authKey = Object.keys(localStorage).find(k => k.includes('-auth-token'));
+            if (authKey) {
+                const parsed = JSON.parse(localStorage.getItem(authKey) || '{}');
+                accessToken = parsed?.access_token ?? null;
+            }
+        } catch { /* localStorage unavailable */ }
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
+            ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
             body: {
                 ...payload,
                 qualityMode,
