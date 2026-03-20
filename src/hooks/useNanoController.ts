@@ -20,6 +20,7 @@ import { usePersistence } from './usePersistence';
 import { usePresets } from './usePresets';
 import { useAutoSave } from './useAutoSave';
 import { useMobile } from './useMobile';
+import { setNotificationsEnabled } from '../utils/notifications';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -62,6 +63,7 @@ export const useNanoController = () => {
     );
     const storageWarnedRef = useRef(false);
     const storageAutoDeleteSyncedRef = useRef(false);
+    const notificationsSyncedRef = useRef(false);
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true' ||
@@ -112,13 +114,23 @@ export const useNanoController = () => {
         t
     });
 
-    // Sync storageAutoDelete from DB profile on first load (persists across devices)
+    // Sync storageAutoDelete + notificationsEnabled from DB on first load (persists across devices/browsers)
     React.useEffect(() => {
-        if (!userProfile || storageAutoDeleteSyncedRef.current) return;
-        storageAutoDeleteSyncedRef.current = true;
-        const dbValue = userProfile.storage_auto_delete === true;
-        setStorageAutoDelete(dbValue);
-        localStorage.setItem('expose_storage_auto_delete', dbValue ? 'true' : 'false');
+        if (!userProfile) return;
+        if (!storageAutoDeleteSyncedRef.current) {
+            storageAutoDeleteSyncedRef.current = true;
+            const dbValue = userProfile.storage_auto_delete === true;
+            setStorageAutoDelete(dbValue);
+            localStorage.setItem('expose_storage_auto_delete', dbValue ? 'true' : 'false');
+        }
+        if (!notificationsSyncedRef.current) {
+            notificationsSyncedRef.current = true;
+            const dbValue = userProfile.notifications_enabled === true;
+            if (dbValue) {
+                // Only sync ON state — toggling off is explicit user action
+                setNotificationsEnabled(dbValue);
+            }
+        }
     }, [userProfile]);
 
     const {
@@ -421,7 +433,8 @@ export const useNanoController = () => {
         setStorageAutoDelete(val);
         localStorage.setItem('expose_storage_auto_delete', val ? 'true' : 'false');
         if (user && !isAuthDisabled) {
-            supabase.from('profiles').update({ storage_auto_delete: val }).eq('id', user.id);
+            supabase.from('profiles').update({ storage_auto_delete: val }).eq('id', user.id)
+                .then(({ error }) => { if (error) console.error('[Settings] storage_auto_delete save failed:', error); });
         }
     }, [user, isAuthDisabled]);
 
