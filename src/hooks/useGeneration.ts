@@ -287,10 +287,7 @@ export const useGeneration = ({
                 onGenerationComplete?.(jobId);
 
                 // Send browser notification if enabled and tab is inactive
-                sendGenerationCompleteNotification(
-                    finalImage.title || finalImage.baseName,
-                    finalImage.generationPrompt
-                );
+                sendGenerationCompleteNotification(t('notification_generation_done'));
 
                 // Persist job history for admin dashboard
                 attachedJobIds.current.delete(jobId);
@@ -693,6 +690,7 @@ export const useGeneration = ({
 
                     onImageSaved?.();
                     onGenerationComplete?.(newId);
+                    sendGenerationCompleteNotification(t('notification_generation_done'));
                     showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: background processing started, pollForJob handles completion
