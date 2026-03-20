@@ -576,6 +576,8 @@ export function App() {
                                     isSideSheetVisible={detailSideSheetVisible}
                                     onSideSheetVisibleChange={setDetailSideSheetVisible}
                                     isExiting={isDetailExiting}
+                                    hasMore={state.hasMore}
+                                    onLoadMore={actions.handleLoadMore}
                                     state={state}
                                     actions={actions}
                                     t={t}
