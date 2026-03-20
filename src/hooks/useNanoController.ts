@@ -594,8 +594,10 @@ export const useNanoController = () => {
 
             if (!result) return;
 
+            // Stagger batch requests by 200ms each to avoid connection flooding
+            // (simultaneous requests can cause one to be silently dropped by the Supabase client)
             let snapIndex = 0;
-            selectedImages.forEach((img) => {
+            selectedImages.forEach((img, batchIdx) => {
                 // Block images whose signed URL isn't ready yet (still blob: or empty)
                 if (!img.src || img.src.startsWith('blob:')) {
                     showToast(
@@ -607,9 +609,11 @@ export const useNanoController = () => {
                     return;
                 }
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
-                // Snap only to the first successfully queued generation in the batch
-                performGeneration(img, finalPrompt, 1, snapIndex === 0, draftPrompt, activeTemplateId, variableValues);
+                const isFirst = snapIndex === 0;
                 snapIndex++;
+                setTimeout(() => {
+                    performGeneration(img, finalPrompt, 1, isFirst, draftPrompt, activeTemplateId, variableValues);
+                }, batchIdx * 200);
             });
             // Exit multiselect after confirming batch generation
             setSelectedIds([]);
