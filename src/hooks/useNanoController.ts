@@ -33,6 +33,11 @@ export const useNanoController = () => {
     // Keep a ref so loadFeed can read current selection without it being a dependency
     const selectedIdsRef = useRef<string[]>([]);
     React.useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
+    // If the page was opened/refreshed directly on a /image/:id URL, capture that ID so
+    // loadFeed's "auto-select newest" logic doesn't stomp on the URL-based restore.
+    const initialUrlIdRef = useRef<string | null>(
+        (() => { const m = window.location.pathname.match(/^\/image\/([^/]+)/); return m ? m[1] : null; })()
+    );
     const [activeId, setActiveId] = useState<string | null>(null); // viewed/focused image
     const [unseenIds, setUnseenIds] = useState<Set<string>>(() => {
         try { return new Set(JSON.parse(localStorage.getItem('expose_unseen_ids') || '[]')); }
@@ -188,7 +193,7 @@ export const useNanoController = () => {
                 setRows(parsedRows);
                 setHasMore(false);
 
-                if (isInitial && selectedIdsRef.current.length === 0) {
+                if (isInitial && selectedIdsRef.current.length === 0 && !initialUrlIdRef.current) {
                     const allLoaded = parsedRows.flatMap(r => r.items);
                     if (allLoaded.length > 0) {
                         const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
@@ -265,7 +270,7 @@ export const useNanoController = () => {
             });
             offsetRef.current += PAGE_SIZE;
 
-            if (isInitial && selectedIdsRef.current.length === 0) {
+            if (isInitial && selectedIdsRef.current.length === 0 && !initialUrlIdRef.current) {
                 const allLoaded = loadedRows.flatMap(r => r.items);
                 if (allLoaded.length > 0) {
                     const newest = [...allLoaded].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
