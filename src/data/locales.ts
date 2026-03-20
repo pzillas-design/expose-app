@@ -948,7 +948,7 @@ export const translations = {
     settings_change_password: "Passwort ändern",
     notifications_browser_label: "Browser-Benachrichtigungen",
     notifications_browser_desc: "Nach abgeschlossenen Generierungen",
-    notification_generation_done: "exposé · Bild fertig",
+    notification_generation_done: "exposé · Ihr Bild ist fertig",
     auto_delete_desc_short: "Generierung & Upload",
     model_nb2_desc: "Schneller",
     model_pro_desc: "Höchste Qualität",
