@@ -1,5 +1,5 @@
 import React, { memo, useMemo, useCallback } from 'react';
-import { CanvasImage } from '@/types';
+import { CanvasImage, ImageRow } from '@/types';
 import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
@@ -18,96 +18,168 @@ interface FeedGridItemProps {
     isKeyboardActive: boolean;
     isSelectMode: boolean;
     onSelectImage: (id: string) => void;
-    onToggleSelect?: (id: string) => void;
+    onToggleSelect?: (id: string, isRange?: boolean) => void;
     setActiveIndex: (idx: number | null) => void;
     actions?: any;
     /** Thumbnail/src of the parent image, used as blurred background when generating a variation */
     parentSrc?: string;
+    /** Number of images in this group (≥2 triggers stack visual + badge) */
+    groupCount?: number;
+    /** Whether any image in this group is currently generating */
+    hasGenerating?: boolean;
+    /** Called when user clicks a group cover tile — opens the group drill-down */
+    onOpenGroup?: () => void;
+    /** Staggered fade-in delay in ms (for group open animation) */
+    staggerDelay?: number;
+    /** Whether this item was the last one viewed in detail — plays zoom-out return animation */
+    isLastViewed?: boolean;
+    /** Generated image not yet opened by user */
+    isNew?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew }) => {
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
+    const isGroup = groupCount > 1;
+
+    const isWide = img.width > img.height;
+    const boundedStyle = {
+        aspectRatio: `${img.width} / ${img.height}`,
+        width: isWide ? '100%' : 'auto',
+        height: isWide ? 'auto' : '100%',
+        maxHeight: '100%',
+        maxWidth: '100%',
+    };
 
     return (
         <div
-            key={img.id}
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
-            onClick={() => {
-                if (isGen) return;
-                if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
+            onClick={(e) => {
+                if (onOpenGroup) { onOpenGroup(); return; }
+                if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                 else onSelectImage(img.id);
             }}
-            className={`aspect-square ${isGen ? 'cursor-default' : 'cursor-pointer'} group relative overflow-hidden ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : `${Theme.Colors.CanvasBg} dark:bg-zinc-950`}`}
+            data-image-id={img.id}
+            className={`relative isolate cursor-pointer group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
+            style={isLastViewed
+                ? {
+                    // Set the 'from' keyframe values as inline style so the very first paint
+                    // already shows the zoomed-in state — avoids the brief normal-size flash
+                    // that occurs before the CSS animation engine kicks in.
+                    transform: 'scale(1.1)',
+                    opacity: 0.6,
+                    animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both',
+                }
+                : staggerDelay !== undefined
+                ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
+                : undefined}
         >
-            {isGen ? (
-                <>
-                    {parentSrc ? (
-                        /* Variation of a source image — show source blurred as background */
-                        <div className="absolute inset-0 overflow-hidden">
-                            <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
+            {/* Wrapper for the image bounding box */}
+            <div className="relative isolate" style={boundedStyle}>
+
+                {/* Stack cards — bottom center, spread on hover */}
+                {isGroup && (
+                    <>
+                        {groupCount > 2 && (
+                            <div
+                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700"
+                                style={{
+                                    left: '10px', right: '10px',
+                                    bottom: isKeyboardActive ? '-28px' : '-20px',
+                                    transform: 'scaleX(0.93)',
+                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                }}
+                            />
+                        )}
+                        <div
+                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600"
+                            style={{
+                                left: '5px', right: '5px',
+                                bottom: isKeyboardActive ? '-16px' : '-11px',
+                                transform: 'scaleX(0.96)',
+                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                            }}
+                        />
+                    </>
+                )}
+
+                {/* Main card */}
+                <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 transition-colors'}`}>
+
+                    {isGen ? (
+                        <>
+                            {parentSrc ? (
+                                <div className="absolute inset-0">
+                                    <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
+                                </div>
+                            ) : (
+                                <BlobBackground orbScale={0.77} speedScale={3.5} />
+                            )}
+                            <GenerationProgressBar
+                                startTime={img.generationStartTime}
+                                estimatedDuration={img.estimatedDuration}
+                            />
+                        </>
+                    ) : previewSrc ? (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <img
+                                src={previewSrc}
+                                alt={img.title}
+                                className={`w-full h-full object-cover transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
+                                loading="lazy"
+                            />
                         </div>
-                    ) : (
-                        <BlobBackground orbScale={0.77} speedScale={3.5} />
-                    )}
-                    <GenerationProgressBar
-                        startTime={img.generationStartTime}
-                        estimatedDuration={img.estimatedDuration}
-                    />
-                </>
-            ) : previewSrc ? (
-                <img
-                    src={previewSrc}
-                    alt={img.title}
-                    className={`w-full h-full object-cover transition-all duration-150 ease-out ${
-                        isSelectMode && isSelected
-                            ? 'opacity-75'
-                            : isKeyboardActive
-                                ? 'brightness-110 scale-105'
-                                : 'group-hover:scale-105'
-                    }`}
-                    loading="lazy"
-                />
-            ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-100/50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800" />
-                </div>
-            )}
+                    ) : null}
 
-            {!isGen && (
-                <div className={`absolute inset-0 transition-opacity pointer-events-none ${isSelectMode || isKeyboardActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                    <div className={`absolute inset-0 transition-colors ${isKeyboardActive && !isSelectMode ? 'bg-black/15' : 'bg-black/0 group-hover:bg-black/15'}`} />
-                </div>
-            )}
-
-            {!isGen && (
-                <div
-                    className={`absolute top-2 left-2 flex items-center justify-center w-5 h-5 transition-all z-20 ${isSelected ? '' : 'opacity-0 group-hover:opacity-100'}`}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        if (!isSelectMode) {
-                            actions?.setIsSelectMode?.(true);
-                        }
-                        if (onToggleSelect) {
-                            onToggleSelect(img.id);
-                        }
-                    }}
-                >
-                    {isSelectMode ? (
-                        isSelected ? (
-                            <div className="w-full h-full rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
-                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                            </div>
-                        ) : (
-                            <div className="w-full h-full rounded-full bg-white/50" />
-                        )
-                    ) : (
-                        <div className="w-full h-full rounded-full bg-white/50 cursor-pointer hover:bg-white/70 transition-colors" />
+                    {/* Hover scrim */}
+                    {!isGen && (
+                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
+
+                    {/* Selection circle */}
+                    {!isGen && (
+                        <div
+                            className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
+                                ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                                : isSelectMode
+                                    ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                    : isKeyboardActive
+                                        ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                        : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                }`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                if (!isSelectMode) actions?.setIsSelectMode?.(true);
+                                if (onToggleSelect) onToggleSelect(img.id, e.shiftKey);
+                            }}
+                        >
+                            {isSelectMode && isSelected && (
+                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Group count badge — hidden for now (A/B test without counter) */}
+                    {/* {isGroup && !isGen && (
+                        <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
+                            {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                            {groupCount}
+                        </div>
+                    )} */}
+
                 </div>
-            )}
+
+                {/* "New" dot — sits on the top-right corner of the image bounds (outside overflow-hidden) */}
+                {isNew && !isGen && (
+                    <span className="absolute -top-1 -right-1 z-30 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-sm pointer-events-none" />
+                )}
+            </div>
         </div>
     );
 });
@@ -115,6 +187,7 @@ FeedGridItem.displayName = 'FeedGridItem';
 
 interface FeedPageProps {
     images: CanvasImage[];
+    rows: ImageRow[];
     isLoading: boolean;
     hasMore: boolean;
     onSelectImage: (id: string) => void;
@@ -125,21 +198,91 @@ interface FeedPageProps {
     isSelectMode?: boolean;
     isSelectionSideSheetOpen?: boolean;
     selectedIds?: string[];
-    onToggleSelect?: (id: string) => void;
+    onToggleSelect?: (id: string, isRange?: boolean) => void;
     state?: any;
     actions?: any;
     t?: any;
+    expandedGroupId: string | null;
+    onExpandedGroupChange: (id: string | null) => void;
+    lastViewedId?: string | null;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
 
+    // Map: cover image id → row (for quick group lookup)
+    // Cover = newest item (last in row, items sorted oldest→newest)
+    const groupCountMap = useMemo(() => {
+        const map = new Map<string, number>();
+        rows.forEach(r => {
+            const cover = r.items[r.items.length - 1];
+            if (cover) map.set(cover.id, r.items.length);
+        });
+        return map;
+    }, [rows]);
+
+    const groupRowMap = useMemo(() => {
+        const map = new Map<string, ImageRow>();
+        rows.forEach(r => {
+            const cover = r.items[r.items.length - 1];
+            if (cover) map.set(cover.id, r);
+        });
+        return map;
+    }, [rows]);
+
+    // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group,
+    // select mode = all individual images (stacks dissolved)
+    const displayImages = useMemo(() => {
+        if (expandedGroupId) {
+            return rows.find(r => r.id === expandedGroupId)?.items || [];
+        }
+        if (isSelectMode) {
+            return rows.flatMap(r => r.items);
+        }
+        return rows.map(r => r.items[r.items.length - 1]).filter(Boolean) as CanvasImage[];
+    }, [expandedGroupId, isSelectMode, rows]);
+
+    // Track which cover tile to animate when closing a group
+    const [returnCoverId, setReturnCoverId] = React.useState<string | null>(null);
+    const prevExpandedGroupId = React.useRef<string | null>(null);
+    React.useEffect(() => {
+        if (prevExpandedGroupId.current && !expandedGroupId) {
+            const row = rows.find(r => r.id === prevExpandedGroupId.current);
+            const cover = row?.items[row.items.length - 1];
+            if (cover) {
+                setReturnCoverId(cover.id);
+                setTimeout(() => setReturnCoverId(null), 500);
+            }
+        }
+        prevExpandedGroupId.current = expandedGroupId;
+    }, [expandedGroupId, rows]);
+
+    // Resolve lastViewedId → the cover tile of whichever row contains it
+    const lastViewedRowCoverId = React.useMemo(() => {
+        if (!lastViewedId) return null;
+        if (displayImages.some(i => i.id === lastViewedId)) return lastViewedId;
+        const row = rows.find(r => r.items.some(i => i.id === lastViewedId));
+        if (!row) return null;
+        return row.items[row.items.length - 1].id;
+    }, [lastViewedId, displayImages, rows]);
+
+    // Scroll the last-viewed cover tile into view when returning from detail
+    const didScrollRef = React.useRef(false);
+    React.useEffect(() => {
+        if (!lastViewedRowCoverId || didScrollRef.current) return;
+        const el = document.querySelector(`[data-image-id="${lastViewedRowCoverId}"]`);
+        if (el) {
+            didScrollRef.current = true;
+            el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+        }
+    }, [lastViewedRowCoverId, displayImages]);
+
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-    const imageIdMap    = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
+    const imageIdMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
 
     // Drag & drop file upload
     const [isDropActive, setIsDropActive] = React.useState(false);
@@ -199,33 +342,36 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             }
             setColumns(colCount > 0 ? colCount : 2);
         };
-        // Initial compute and resize listener
         requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
         return () => window.removeEventListener('resize', updateColumns);
-    }, [images]); // Re-calculate when images load
+    }, [displayImages]);
 
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
-        itemCount: images.length,
+        itemCount: displayImages.length,
         columns,
-        isActive: true, // Grid is always active on FeedPage unless a modal is open, we can refine this
+        isActive: true,
+        getElementAtIndex: useCallback((idx: number) => {
+            const img = displayImages[idx];
+            return img ? document.querySelector(`[data-image-id="${img.id}"]`) : null;
+        }, [displayImages]),
         onEscape: () => {
-            if (isSelectMode) {
-                actions?.setIsSelectMode?.(false);
-            }
+            if (expandedGroupId) { onExpandedGroupChange(null); return; }
+            if (isSelectMode) actions?.setIsSelectMode?.(false);
         },
         onEnter: (idx) => {
-            const img = images[idx];
+            const img = displayImages[idx];
             if (!img) return;
+            const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+            const row = expandedGroupId ? null : groupRowMap.get(img.id);
+            if (gc > 1 && row) { onExpandedGroupChange(row.id); return; }
             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
             else onSelectImage(img.id);
         },
         onDelete: async (idx) => {
-            const img = images[idx];
+            const img = displayImages[idx];
             if (!img) return;
 
-            // If in select mode and multiple are selected, we might want to delete all selected.
-            // For now, let's delete the actively focused one, or all selected if that one is selected
             const toDelete = isSelectMode && selectedIdSet.has(img.id) ? selectedIds : [img.id];
 
             const confirmed = await confirm({
@@ -241,7 +387,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             }
         }
     });
-
 
     React.useEffect(() => {
         if (!hasMore || isLoading) return;
@@ -289,7 +434,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
             <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
                 {/* Drag & drop overlay */}
                 {isDropActive && (
-                    <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                         <div className="absolute inset-0 bg-zinc-950/60" />
                         <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
                             <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
@@ -300,70 +445,101 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, isLoading, hasMore, 
                     </div>
                 )}
                 <div className="flex-1 flex flex-col">
-                    {images.length > 0 ? (
-                        <div ref={gridRef} className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-0 overflow-hidden bg-white dark:bg-zinc-950 ${isMobile ? 'pb-32 pb-[max(8rem,calc(8rem+env(safe-area-inset-bottom)))]' : ''}`}>
-                            {/* Create Tile */}
+                    <div className="flex-1 flex flex-col relative pb-16">
+                        {images.length > 0 ? (
                             <div
-                                className="aspect-square cursor-pointer group bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors relative"
-                                onClick={onCreateNew}
+                                key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
+                                ref={gridRef}
+                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                             >
-                                <Plus className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
-                            </div>
+                                {/* Plus tile */}
+                                {!expandedGroupId && !isSelectMode && (
+                                    <div
+                                        className="aspect-square relative cursor-pointer group flex items-center justify-center"
+                                        onClick={onCreateNew}
+                                    >
+                                        <div className="w-1/2 h-1/2 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-800 transition-colors duration-150">
+                                            <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
+                                        </div>
+                                    </div>
+                                )}
 
-                            {images.map((img, idx) => {
-                                const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                return (
-                                <FeedGridItem
-                                    key={img.id}
-                                    img={img}
-                                    idx={idx}
-                                    isSelected={selectedIdSet.has(img.id)}
-                                    isKeyboardActive={activeIndex === idx}
-                                    isSelectMode={!!isSelectMode}
-                                    onSelectImage={onSelectImage}
-                                    onToggleSelect={onToggleSelect}
-                                    setActiveIndex={setActiveIndex}
-                                    actions={actions}
-                                    parentSrc={parentSrc}
-                                />
-                                );
-                            })}
-                        </div>
-                    ) : !isLoading && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
-                            <div className="flex flex-col items-center gap-8">
-                                <div className="space-y-4">
-                                    <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
-                                        {t?.('welcome_title') || 'Welcome to exposé'}
-                                    </h1>
-                                    <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
-                                        {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
-                                    </p>
+                                {displayImages.map((img, idx) => {
+                                    const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                    const row = (expandedGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
+                                    const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+                                    const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+                                    const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                    const unseenIds: Set<string> = state?.unseenIds ?? new Set();
+                                    // For group covers: dot if any item in group is unseen
+                                    const rowItems = row?.items ?? [img];
+                                    const isNew = !expandedGroupId
+                                        ? rowItems.some(i => unseenIds.has(i.id))
+                                        : unseenIds.has(img.id);
+                                    return (
+                                        <FeedGridItem
+                                            key={img.id}
+                                            img={img}
+                                            idx={idx}
+                                            isSelected={selectedIdSet.has(img.id)}
+                                            isKeyboardActive={activeIndex === idx}
+                                            isSelectMode={!!isSelectMode}
+                                            onSelectImage={onSelectImage}
+                                            onToggleSelect={onToggleSelect}
+                                            setActiveIndex={setActiveIndex}
+                                            actions={actions}
+                                            parentSrc={parentSrc}
+                                            groupCount={gc}
+                                            hasGenerating={hasGen}
+                                            onOpenGroup={gc > 1 && row ? () => {
+                                                actions?.markGroupSeen?.(row.items.map(i => i.id));
+                                                onExpandedGroupChange(row.id);
+                                            } : undefined}
+                                            staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
+                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? lastViewedRowCoverId ?? '')}
+                                            isNew={isNew}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        ) : !isLoading && (
+                            <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
+                                <div className="flex flex-col items-center gap-8">
+                                    <div className="space-y-4">
+                                        <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
+                                            {t?.('welcome_title') || 'Welcome to exposé'}
+                                        </h1>
+                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
+                                            {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col w-full gap-4 max-w-[320px]">
+                                    <Button
+                                        variant="primary-mono"
+                                        size="l"
+                                        onClick={triggerUpload}
+                                        icon={<Upload className="w-5 h-5" />}
+                                    >
+                                        {t?.('action_upload') || 'Upload'}
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="l"
+                                        onClick={onGenerate ?? onCreateNew}
+                                        icon={<Plus className="w-5 h-5" />}
+                                    >
+                                        {t?.('action_generate') || 'Generate image'}
+                                    </Button>
                                 </div>
                             </div>
-
-                            <div className="flex flex-col w-full gap-4 max-w-[320px]">
-                                <Button
-                                    variant="primary-mono"
-                                    size="l"
-                                    onClick={triggerUpload}
-                                    icon={<Upload className="w-5 h-5" />}
-                                >
-                                    {t?.('action_upload') || 'Upload'}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="l"
-                                    onClick={onGenerate ?? onCreateNew}
-                                    icon={<Plus className="w-5 h-5" />}
-                                >
-                                    {t?.('action_generate') || 'Generate image'}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
+
+                {/* Infinite scroll sentinel */}
+                {hasMore && <div ref={sentinelRef} className="h-16" />}
 
                 <div className="mt-auto">
                     <GlobalFooter t={t || ((key: string) => key)} />

@@ -33,19 +33,23 @@ interface CreatePageProps {
     onCreateNew: (prompt: string, model: string, ratio: string, attachments: string[]) => void;
     onUpload?: (files: FileList) => void;
     onBack: () => void;
+    createMode?: 'choose' | 'create';
+    onCreateModeChange?: (mode: 'choose' | 'create') => void;
     state: any;
     actions: any;
     t: any;
 }
 
 export const CreatePage: React.FC<CreatePageProps> = ({
-    onCreateNew, onUpload, onBack, state, actions, t
+    onCreateNew, onUpload, onBack, createMode: modeProp, onCreateModeChange, state, actions, t
 }) => {
     const isMobile = useMobile();
     const [searchParams] = useSearchParams();
-    const [mode, setMode] = useState<'choose' | 'create'>(
+    const [modeLocal, setModeLocal] = useState<'choose' | 'create'>(
         searchParams.get('m') === 'create' ? 'create' : 'choose'
     );
+    const mode = modeProp ?? modeLocal;
+    const setMode = onCreateModeChange ?? setModeLocal;
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [isGenerating, setIsGenerating] = useState(false);
     const uploadRef = useRef<HTMLInputElement>(null);

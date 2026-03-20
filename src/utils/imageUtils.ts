@@ -117,6 +117,51 @@ export async function compressImage(src: string, maxDim: number = 4096, quality:
 
 
 /**
+ * Fetch a remote image as a Uint8Array (used for ZIP bundling).
+ */
+async function fetchAsBytes(src: string): Promise<Uint8Array> {
+    const response = await fetch(src, { cache: 'force-cache' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const buf = await response.arrayBuffer();
+    return new Uint8Array(buf);
+}
+
+/**
+ * Download multiple images as a single ZIP file — avoids browser's multi-download prompt.
+ */
+export async function downloadImagesAsZip(
+    items: { src: string; filename: string }[],
+    zipName = 'expose-images.zip'
+): Promise<void> {
+    const { zipSync } = await import('fflate');
+
+    const files: Record<string, Uint8Array> = {};
+    const usedNames = new Set<string>();
+
+    await Promise.all(items.map(async ({ src, filename }) => {
+        try {
+            const bytes = await fetchAsBytes(src);
+            // Deduplicate filenames
+            let name = filename;
+            let i = 1;
+            while (usedNames.has(name)) { name = filename.replace(/(\.[^.]+)?$/, `_${i++}$1`); }
+            usedNames.add(name);
+            files[name] = bytes;
+        } catch (err) {
+            console.error(`ZIP: failed to fetch ${filename}`, err);
+        }
+    }));
+
+    const zipped = zipSync(files, { level: 0 }); // level 0 = store-only (images are already compressed)
+    const blob = new Blob([zipped], { type: 'application/zip' });
+    const url = URL.createObjectURL(blob);
+    const link = Object.assign(document.createElement('a'), { href: url, download: zipName, style: 'display:none' });
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 200);
+}
+
+/**
  * Robustly downloads an image by fetching it as a blob.
  * This ensures the 'download' attribute works even for cross-origin URLs.
  */

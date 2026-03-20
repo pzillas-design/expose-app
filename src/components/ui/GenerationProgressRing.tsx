@@ -42,6 +42,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     const [isPopoverClosing, setIsPopoverClosing] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const prevGeneratingIdsRef = useRef<Set<string>>(new Set());
+    const autoHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isGerman = lang === 'de';
     const isOpenRef = useRef(isOpen);
     useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
@@ -128,6 +129,28 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
         return () => document.removeEventListener('mousedown', handler);
     }, [isOpen]);
 
+    // Auto-hide popover after 10 s; re-show (timer resets) whenever isOpen flips back to true
+    useEffect(() => {
+        if (autoHideTimerRef.current) {
+            clearTimeout(autoHideTimerRef.current);
+            autoHideTimerRef.current = null;
+        }
+        if (!isOpen) return;
+        autoHideTimerRef.current = setTimeout(() => {
+            setIsPopoverClosing(true);
+            setTimeout(() => {
+                setIsOpen(false);
+                setIsPopoverClosing(false);
+            }, 600);
+        }, 10_000);
+        return () => {
+            if (autoHideTimerRef.current) {
+                clearTimeout(autoHideTimerRef.current);
+                autoHideTimerRef.current = null;
+            }
+        };
+    }, [isOpen]);
+
     const handleDismiss = useCallback(() => {
         setTracked([]);
         setIsOpen(false);
@@ -174,7 +197,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
     if (!allDone) {
         const totalDuration = activeItems.reduce((sum, t) => sum + t.estimatedDuration, 0);
         weightedProgress = activeItems.reduce((sum, t) => {
-            const p = t.finishing ? 100 : calcBarProgress(t.generationStartTime, t.estimatedDuration);
+            const p = calcBarProgress(t.generationStartTime, t.estimatedDuration);
             return sum + p * t.estimatedDuration;
         }, 0) / (totalDuration || 1);
     }
@@ -217,7 +240,10 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
 
             {/* Popover */}
             {isOpen && (
-                <div className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden transition-opacity duration-400 ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}>
+                <div
+                    className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}
+                    style={{ transition: isPopoverClosing ? 'opacity 600ms ease-out' : undefined }}
+                >
                     {/* Items */}
                     <div className="max-h-60 overflow-y-auto">
                         {[...tracked].reverse().map(item => {

@@ -103,9 +103,6 @@ export const useFileHandler = ({
                         })));
 
                         processedCount++;
-                        if (processedCount === files.length) {
-                            selectMultiple(newImageIds);
-                        }
 
                         // IMMEDIATE PERSISTENCE (Background)
                         if (user && !isAuthDisabled) {
@@ -173,7 +170,7 @@ export const useFileHandler = ({
             });
         }
         return newImageIds;
-    }, [user, isAuthDisabled, setRows, selectMultiple, showToast, t]);
+    }, [user, isAuthDisabled, setRows, showToast, t]);
 
     const processFile = useCallback((file: File): string => {
         return processFiles([file])[0];

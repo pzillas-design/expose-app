@@ -55,7 +55,11 @@ export const imageService = {
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
             annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
-            generation_params: { quality: image.quality }
+            generation_params: {
+                quality: image.quality,
+                ...(image.activeTemplateId != null ? { activeTemplateId: image.activeTemplateId } : {}),
+                ...(image.variableValues != null ? { variableValues: image.variableValues } : {}),
+            }
         });
 
 
@@ -420,7 +424,7 @@ export const imageService = {
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */
-    async loadUserImages(userId: string, limit = 50, offset = 0): Promise<ImageRow[]> {
+    async loadUserImages(userId: string, limit = 50, offset = 0): Promise<{ rows: ImageRow[]; rawCount: number }> {
         console.log(`[DEBUG] loadUserImages for userId=${userId}`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
@@ -445,7 +449,7 @@ export const imageService = {
 
         if (imgsRes.error) {
             console.error('Deep Sync: Load Images Failed:', imgsRes.error);
-            return [];
+            return { rows: [], rawCount: 0 };
         }
 
         const dbImages = imgsRes.data || [];
@@ -634,7 +638,7 @@ export const imageService = {
         // Sort rows by newest first (Apple Photos style: newest groups at the top)
         rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-        return rows;
+        return { rows, rawCount: dbImages.length };
     },
 
     /**

@@ -10,18 +10,105 @@ import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 
+/* ── Circular progress for thumb strip generating placeholders ── */
+const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        if (!startTime) return;
+        const duration = estimatedDuration || 60000;
+        const tick = () => {
+            const elapsed = Date.now() - startTime;
+            const raw = elapsed / duration;
+            const capped = 1 - Math.exp(-raw * 1.5);
+            setProgress(Math.min(capped * 0.85, 0.85));
+        };
+        tick();
+        const id = setInterval(tick, 800);
+        return () => clearInterval(id);
+    }, [startTime, estimatedDuration]);
+
+    const r = 9;
+    const circumference = 2 * Math.PI * r;
+    const offset = circumference * (1 - progress);
+
+    return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <svg width="24" height="24" viewBox="0 0 24 24" style={{ transform: 'rotate(-90deg)' }}>
+                {/* Track */}
+                <circle cx="12" cy="12" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
+                {/* Fill */}
+                <circle
+                    cx="12" cy="12" r={r} fill="none"
+                    stroke="rgba(255,255,255,1)" strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    style={{ transition: 'stroke-dashoffset 700ms ease-out' }}
+                />
+            </svg>
+        </div>
+    );
+};
+
 /* ── Memoised thumbnail button ── */
-const ThumbButton = memo<{ id: string; src: string; isActive: boolean; onSelect: (id: string) => void }>(
-    ({ id, src, isActive, onSelect }) => (
-        <button
-            onClick={() => onSelect(id)}
-            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 transition-all duration-150 overflow-hidden border border-zinc-100 dark:border-zinc-900 ${isActive ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
-        >
-            <img src={src} className="w-full h-full object-cover" />
-        </button>
-    )
+const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; thumbOpacity: number; onSelect: (id: string) => void }>(
+    ({ id, src, isActive, isNew, thumbOpacity, onSelect }) => {
+        const [hovered, setHovered] = useState(false);
+        const invisible = thumbOpacity === 0;
+        const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        // Hover snaps in fast (150ms), distance-based shift animates slower (300ms)
+        const transition = hovered || displayOpacity === thumbOpacity
+            ? 'opacity 150ms ease, transform 150ms ease'
+            : 'opacity 300ms ease, transform 150ms ease';
+        return (
+            <button
+                data-thumb-id={id}
+                onClick={() => onSelect(id)}
+                onMouseEnter={() => { if (!invisible) setHovered(true); }}
+                onMouseLeave={() => setHovered(false)}
+                style={{ opacity: displayOpacity, transition }}
+                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            >
+                <img src={src} decoding="async" className="w-full h-full object-cover" />
+                {isNew && (
+                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
+                )}
+            </button>
+        );
+    }
 );
 ThumbButton.displayName = 'ThumbButton';
+
+/* ── Memoised generating thumbnail ── */
+const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thumbOpacity: number; startTime?: number; estimatedDuration?: number; onSelect: (id: string) => void }>(
+    ({ id, pSrc, isActive, thumbOpacity, startTime, estimatedDuration, onSelect }) => {
+        const [hovered, setHovered] = useState(false);
+        const invisible = thumbOpacity === 0;
+        const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
+        const transition = hovered || displayOpacity === thumbOpacity
+            ? 'opacity 150ms ease, transform 150ms ease'
+            : 'opacity 300ms ease, transform 150ms ease';
+        return (
+            <button
+                data-thumb-id={id}
+                onClick={() => onSelect(id)}
+                onMouseEnter={() => { if (!invisible) setHovered(true); }}
+                onMouseLeave={() => setHovered(false)}
+                style={{ opacity: displayOpacity, transition }}
+                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            >
+                {pSrc ? (
+                    <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
+                ) : (
+                    <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                )}
+                <ThumbCircularProgress startTime={startTime} estimatedDuration={estimatedDuration} />
+            </button>
+        );
+    }
+);
+GeneratingThumb.displayName = 'GeneratingThumb';
 
 interface DetailPageProps {
     images: CanvasImage[];
@@ -34,6 +121,7 @@ interface DetailPageProps {
     onSidebarWidthChange?: (w: number) => void;
     isSideSheetVisible?: boolean;
     onSideSheetVisibleChange?: (v: boolean) => void;
+    isExiting?: boolean;
 
     // SideSheet Props (pass-through)
     state: any;
@@ -43,7 +131,7 @@ interface DetailPageProps {
 
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
-    isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange,
+    isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
     state, actions, t
 }) => {
     const isMobile = useMobile();
@@ -64,6 +152,27 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
     const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
 
+    // Thumbstrip: render ALL displayable images — stable DOM width prevents layout shifts from mx-auto
+    // opacity-0 items beyond ±8 are pointer-events-none so they cost nothing at runtime
+    const stripImages = useMemo(() => {
+        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
+        const currentIdx = displayable.findIndex(i => i.id === selectedId);
+        return displayable.map((img, index) => ({
+            img,
+            distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
+        }));
+    }, [images, selectedId]);
+
+    // Suppress zoom animation when navigating within the detail view (only show on first entry from grid).
+    // Reset only when the image actually finishes loading — not on selectedId change — so that all
+    // intermediate re-renders during loading (imgNaturalDims, displayBox, etc.) also stay suppressed.
+    const suppressEntryAnimRef = useRef(false);
+    useEffect(() => { if (isMainLoaded) suppressEntryAnimRef.current = false; }, [isMainLoaded]);
+    const handleSelectWithin = useCallback((id: string) => {
+        suppressEntryAnimRef.current = true;
+        onSelectImage(id);
+    }, [onSelectImage]);
+
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
     const { confirm } = useItemDialog();
@@ -73,28 +182,40 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
         [images, img]
     );
-    // Auto-navigate to finished child: was generating → now done
-    const prevGeneratingChildId = useRef<string | null>(null);
+    // Auto-navigate to finished child: was generating → now done.
+    // Disabled if the user navigated at any point during generation (even if they came back).
+    const prevGeneratingChildRef = useRef<{ childId: string; parentId: string } | null>(null);
+    const navHappenedDuringGenRef = useRef(false);
     useEffect(() => {
         if (generatingChild) {
-            prevGeneratingChildId.current = generatingChild.id;
-        } else if (prevGeneratingChildId.current) {
-            const finishedId = prevGeneratingChildId.current;
-            prevGeneratingChildId.current = null;
-            // Child finished — navigate to it and collapse SideSheet
-            const finishedImage = imageMap.get(finishedId);
-            const isFinished = finishedImage && !finishedImage.isGenerating;
-            if (isFinished) {
+            if (!prevGeneratingChildRef.current) {
+                // New generation started — record starting position and reset nav flag
+                prevGeneratingChildRef.current = { childId: generatingChild.id, parentId: selectedId };
+                navHappenedDuringGenRef.current = false;
+            } else if (prevGeneratingChildRef.current.childId === generatingChild.id
+                       && selectedId !== prevGeneratingChildRef.current.parentId) {
+                // User navigated while this generation was in progress
+                navHappenedDuringGenRef.current = true;
+            }
+        } else if (prevGeneratingChildRef.current) {
+            const { childId, parentId } = prevGeneratingChildRef.current;
+            const userNavigated = navHappenedDuringGenRef.current || selectedId !== parentId;
+            prevGeneratingChildRef.current = null;
+            navHappenedDuringGenRef.current = false;
+            if (userNavigated) return;
+            const finishedImage = imageMap.get(childId);
+            if (finishedImage && !finishedImage.isGenerating) {
                 setIsSideSheetVisible(false);
-                onSelectImage(finishedId);
+                onSelectImage(childId);
             }
         }
-    }, [generatingChild, images, onSelectImage]);
+    }, [generatingChild, images, selectedId, onSelectImage]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
     const prevIsGeneratingRef = useRef<boolean>(false);
     const prevSelectedIdRef = useRef<string>('');
+    const thumbStripRef = useRef<HTMLDivElement>(null);
     const [waitingForGeneratedLoad, setWaitingForGeneratedLoad] = useState<string | null>(null);
     useEffect(() => {
         // If selectedId changed, reset tracking state before checking transition
@@ -112,6 +233,34 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }
     }, [img?.isGenerating, selectedId]);
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
+
+    const thumbStripInnerRef = useRef<HTMLDivElement>(null);
+
+    // Update padding on mount + resize only — never on selectedId change to avoid layout
+    // reflows that interrupt the opacity CSS transition on the thumb buttons.
+    useEffect(() => {
+        const strip = thumbStripRef.current;
+        const inner = thumbStripInnerRef.current;
+        if (!strip || !inner) return;
+        const updatePadding = () => {
+            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
+            inner.style.paddingLeft = `${halfPad}px`;
+            inner.style.paddingRight = `${halfPad}px`;
+        };
+        updatePadding();
+        const obs = new ResizeObserver(updatePadding);
+        obs.observe(strip);
+        return () => obs.disconnect();
+    }, []);
+
+    // Scroll active thumb to center on navigation (smooth) and after resize (auto)
+    useEffect(() => {
+        const strip = thumbStripRef.current;
+        if (!strip) return;
+        const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+        if (!activeThumb) return;
+        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior: 'smooth' });
+    }, [selectedId]);
 
     // Track actual image dimensions from the loaded <img> element
     const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
@@ -244,7 +393,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const navigate = useCallback((d: 1 | -1) => {
         const n = idx + d;
-        if (n >= 0 && n < images.length) onSelectImage(images[n].id);
+        if (n >= 0 && n < images.length) {
+            suppressEntryAnimRef.current = true;
+            onSelectImage(images[n].id);
+        }
     }, [idx, images, onSelectImage]);
 
     // Keyboard Navigation
@@ -282,20 +434,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 case 'Backspace':
                 case 'Delete':
                     e.preventDefault();
-                    if (selectedId) {
-                        await onDelete(selectedId);
-                        // Auto-navigate to next or previous if available
-                        if (idx < images.length - 1) onSelectImage(images[idx + 1].id);
-                        else if (idx > 0) onSelectImage(images[idx - 1].id);
-                        else onBack();
-                    }
+                    // Navigation after delete is handled by handleDeleteImage in the controller
+                    if (selectedId) await onDelete(selectedId);
                     break;
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [navigate, confirm, onDelete, selectedId, idx, images.length, onSelectImage, onBack]);
+    }, [navigate, confirm, onDelete, selectedId, onBack]);
 
     // Resizable Sidebar States
     const [sidebarWidth, setSidebarWidth] = useState(380);
@@ -355,20 +502,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         : undefined
                     }
                 >
+                    {/* Image Container */}
+                    <div className="flex-1 relative overflow-hidden min-h-0">
+
                     {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
                     {idx > 0 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => onSelectImage(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => handleSelectWithin(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
                     {idx < images.length - 1 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => onSelectImage(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
+                        <button onClick={() => handleSelectWithin(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     )}
-
-                    {/* Image Container */}
-                    <div className="flex-1 relative overflow-hidden min-h-0">
 
                         {/* Floating action buttons (desktop only) */}
                         {!isMobile && state.sideSheetMode !== 'brush' && (
@@ -381,10 +528,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             </button>
                                         </Tooltip>
                                     )}
-                                    {img.generationPrompt && (
+                                    {img.generationPrompt && img.parentId && (
                                         <Tooltip text={t('generate_more')}>
                                             <button
-                                                onClick={() => actions.handleGenerate(img.generationPrompt || '', undefined, img.activeTemplateId, img.variableValues)}
+                                                onClick={() => actions.handleGenerateMore(img)}
                                                 className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
@@ -400,7 +547,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         <div ref={imageViewportRef} className="absolute inset-0 flex items-center justify-center">
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
-                                    className="relative shrink-0"
+                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
                                     {/* Loading state while generating or waiting for image */}
@@ -409,12 +556,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         const parentLoadSrc = parentImg?.thumbSrc || parentImg?.src;
                                         if (parentLoadSrc) {
                                             return (
-                                                <div className="absolute inset-0 rounded-lg overflow-hidden">
+                                                <div className="absolute inset-0 overflow-hidden">
                                                     <img src={parentLoadSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-50" alt="" />
                                                 </div>
                                             );
                                         }
-                                        return <BlobBackground className="rounded-lg" speedScale={2} />;
+                                        return <BlobBackground speedScale={2} />;
                                     })()}
                                     {img.isGenerating && (
                                         <GenerationProgressBar
@@ -426,7 +573,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {img.thumbSrc && !isMainLoaded && (
                                         <img
                                             src={img.thumbSrc}
-                                            className="absolute inset-0 w-full h-full object-contain opacity-100 pointer-events-none"
+                                            className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-50 scale-110' : ''}`}
+                                            style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
                                             alt=""
                                         />
                                     )}
@@ -439,14 +587,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
-                                            setLoadedImageId(img.id);
-                                            setWaitingForGeneratedLoad(null);
+                                            (imgEl.decode?.() ?? Promise.resolve()).catch(() => {}).then(() => {
+                                                setLoadedImageId(img.id);
+                                                setWaitingForGeneratedLoad(null);
+                                            });
                                         }}
                                         onError={() => {
                                             setLoadedImageId(img.id);
                                             setWaitingForGeneratedLoad(null);
                                         }}
-                                        className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-200 ease-out ${isMainLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+                                        className={`absolute inset-0 w-full h-full transition-opacity duration-200 ease-out ${isMainLoaded && !showBlob ? 'opacity-100' : 'opacity-0'}`}
                                         style={{ objectFit: 'contain' }}
                                     />
 
@@ -480,23 +630,35 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     {/* Bottom Area: Fixed space so canvas never jumps */}
                     <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
-                        <div className={`absolute inset-0 hidden md:flex items-center px-6 overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                            {images.filter(i => i.isGenerating || i.thumbSrc || i.src).map(i => {
+                        <div
+                            ref={thumbStripRef}
+                            className={`absolute inset-0 hidden md:flex items-center overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+                            style={{
+                                maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+                            }}
+                        >
+                            <div ref={thumbStripInnerRef} className="flex items-center">
+                            {stripImages.map(({ img: i, distance }) => {
+                                // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
+                                const VISIBLE = 8;
+                                const thumbOpacity = distance === 0 ? 1
+                                    : distance > VISIBLE ? 0
+                                    : Math.max(0.15, 0.6 * Math.pow(0.82, distance - 1));
                                 if (i.isGenerating) {
                                     const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
                                     const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
                                     return (
-                                        <button
+                                        <GeneratingThumb
                                             key={i.id}
-                                            onClick={() => onSelectImage(i.id)}
-                                            className={`h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden border border-zinc-100 dark:border-zinc-900 transition-all duration-150 ${selectedId === i.id ? 'ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10 opacity-100' : 'opacity-40 hover:opacity-100 scale-90'}`}
-                                        >
-                                            {pSrc ? (
-                                                <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-                                            )}
-                                        </button>
+                                            id={i.id}
+                                            pSrc={pSrc}
+                                            isActive={selectedId === i.id}
+                                            thumbOpacity={thumbOpacity}
+                                            startTime={i.generationStartTime}
+                                            estimatedDuration={i.estimatedDuration}
+                                            onSelect={handleSelectWithin}
+                                        />
                                     );
                                 }
                                 return (
@@ -505,10 +667,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         id={i.id}
                                         src={i.thumbSrc || i.src}
                                         isActive={selectedId === i.id}
-                                        onSelect={onSelectImage}
+                                        isNew={state?.unseenIds?.has(i.id)}
+                                        thumbOpacity={thumbOpacity}
+                                        onSelect={handleSelectWithin}
                                     />
                                 );
                             })}
+                            </div>
                         </div>
 
                         {/* Annotations Toolbar */}
