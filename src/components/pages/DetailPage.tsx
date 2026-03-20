@@ -164,6 +164,8 @@ interface DetailPageProps {
     isSideSheetVisible?: boolean;
     onSideSheetVisibleChange?: (v: boolean) => void;
     isExiting?: boolean;
+    hasMore?: boolean;
+    onLoadMore?: () => void;
 
     // SideSheet Props (pass-through)
     state: any;
@@ -174,6 +176,7 @@ interface DetailPageProps {
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
+    hasMore, onLoadMore,
     state, actions, t
 }) => {
     const isMobile = useMobile();
@@ -333,8 +336,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, []);
 
-    // Scroll active thumb to center. Wrappers are always full-width immediately (no enter
-    // width animation), so double-rAF is enough for layout to settle before reading offsetLeft.
+    // Scroll active thumb to center. Uses getBoundingClientRect so the result is correct
+    // even at the start/end of the list (no dependency on padding math).
+    // Load more images when near the end of the loaded list.
     useEffect(() => {
         let raf1: number, raf2: number;
         raf1 = requestAnimationFrame(() => {
@@ -343,13 +347,28 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 if (!strip) return;
                 const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
                 if (!activeThumb) return;
+
+                // Center using BoundingClientRect — accurate regardless of scroll position / padding
+                const stripRect = strip.getBoundingClientRect();
+                const thumbRect = activeThumb.getBoundingClientRect();
+                const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
                 const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
                 isFirstStripScrollRef.current = false;
-                strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
+                strip.scrollTo({ left: thumbCenterInContent - strip.clientWidth / 2, behavior });
             });
         });
         return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
     }, [selectedId, combinedStrip]);
+
+    // Lazy-load more images when the active image is near the end of the loaded list
+    useEffect(() => {
+        if (!hasMore || !onLoadMore) return;
+        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
+        const idx = displayable.findIndex(i => i.id === selectedId);
+        if (idx === -1) return;
+        // Trigger load when within 20 images of the end
+        if (displayable.length - idx <= 20) onLoadMore();
+    }, [selectedId, images, hasMore, onLoadMore]);
 
     // Track actual image dimensions — initialized from DB values, updated from real load.
     // Also preloads via Image() so displayBox can be computed even when the visible <img>
