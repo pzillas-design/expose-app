@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Edit2, Check as CheckIcon, Copy } from 'lucide-react';
-import { Typo, IconButton } from '@/components/ui/DesignSystem';
+import { Edit2, Check as CheckIcon } from 'lucide-react';
+import { Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -25,15 +25,11 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState(image.title || '');
-    const [promptHovered, setPromptHovered] = useState(false);
 
-    // Read actual image dimensions from the loaded image
     useEffect(() => {
         if (image.src) {
             const img = new Image();
-            img.onload = () => {
-                setActualDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-            };
+            img.onload = () => setActualDimensions({ width: img.naturalWidth, height: img.naturalHeight });
             img.src = image.src;
         }
     }, [image.src]);
@@ -48,6 +44,11 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     const labelClass = `${Typo.Body} text-zinc-400 text-xs`;
     const valueClass = `${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`;
+
+    // Build variable display: { season: ['winter'] } → "Jahreszeit: Winter"
+    const variableEntries = image.variableValues
+        ? Object.entries(image.variableValues).filter(([, vals]) => vals && vals.length > 0)
+        : [];
 
     return (
         <Modal isOpen={true} onClose={onClose} title="Info">
@@ -135,26 +136,26 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                         : '1024 × 1024px'}
                     </span>
 
-                    {/* Prompt — read-only, inline with other fields, copy on hover */}
+                    {/* Variables */}
+                    {variableEntries.map(([key, vals]) => (
+                        <React.Fragment key={key}>
+                            <span className={`${labelClass} capitalize`}>{key}</span>
+                            <span className={valueClass}>{vals.join(', ')}</span>
+                        </React.Fragment>
+                    ))}
+
+                    {/* Prompt — read-only inline, copy on hover via Tooltip */}
                     {image.generationPrompt && (
                         <>
                             <span className={`${labelClass} self-start pt-0.5`}>{t('prompt') || 'Prompt'}</span>
-                            <div
-                                className="relative min-w-0 cursor-pointer group/prompt"
-                                onMouseEnter={() => setPromptHovered(true)}
-                                onMouseLeave={() => setPromptHovered(false)}
-                                onClick={handleCopyPrompt}
-                            >
-                                <span className={`${valueClass} leading-relaxed break-words whitespace-pre-wrap line-clamp-4`}>
+                            <Tooltip text={currentLang === 'de' ? 'Kopieren' : 'Copy'} side="top">
+                                <span
+                                    className={`${valueClass} leading-relaxed break-words whitespace-pre-wrap line-clamp-4 cursor-pointer`}
+                                    onClick={handleCopyPrompt}
+                                >
                                     {image.generationPrompt}
                                 </span>
-                                {promptHovered && (
-                                    <span className="absolute -top-6 left-0 flex items-center gap-1 bg-zinc-800 dark:bg-zinc-700 text-white text-[10px] px-2 py-0.5 rounded pointer-events-none whitespace-nowrap">
-                                        <Copy className="w-2.5 h-2.5" />
-                                        {currentLang === 'de' ? 'Kopieren' : 'Copy'}
-                                    </span>
-                                )}
-                            </div>
+                            </Tooltip>
                         </>
                     )}
                 </div>
