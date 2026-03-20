@@ -342,12 +342,23 @@ export const useNanoController = () => {
     // Auto-Save: Background persistence every 30s
     useAutoSave(rows, user, isAuthDisabled);
 
+    // Reactive storage enforcement: if images somehow exceed the limit (e.g. parallel
+    // generations that all passed the preemptive check before any of them added rows),
+    // trim back down automatically whenever auto-delete is enabled.
+    React.useEffect(() => {
+        if (!storageAutoDelete) return;
+        const nonGenerating = allImages.filter(i => !i.isGenerating);
+        if (nonGenerating.length > IMAGE_LIMIT) {
+            deleteOldestToMakeRoom();
+        }
+    }, [allImages.length, storageAutoDelete]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // --- Actions --- (Integrated via Hooks above)
 
-    const handleDeleteImage = useCallback(async (id: string, skipConfirm = false) => {
+    const handleDeleteImage = useCallback(async (id: string, skipConfirm = false, onBeforeDelete?: () => void): Promise<boolean> => {
         if (!user) {
             showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
-            return;
+            return false;
         }
 
         if (!skipConfirm) {
@@ -358,8 +369,13 @@ export const useNanoController = () => {
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'danger'
             });
-            if (!confirmed) return;
+            if (!confirmed) return false;
         }
+
+        // Navigate away BEFORE removing the image from rows.
+        // This prevents DetailPage's `!img → onBack()` from firing and sending
+        // the user to grid instead of the next image.
+        onBeforeDelete?.();
 
         setRows(prev => {
             return prev.map(row => {
@@ -393,7 +409,8 @@ export const useNanoController = () => {
                 showToast(currentLang === 'de' ? 'Löschen fehlgeschlagen' : 'Delete failed', 'error');
             });
         }
-    }, [user, rows, activeId, primarySelectedId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
+        return true;
+    }, [user, rows, activeId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
     const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
         setStorageAutoDelete(val);
@@ -453,11 +470,30 @@ export const useNanoController = () => {
                 deleteOldestToMakeRoom();
                 return true;
             }
+            const pct = Math.min((count / IMAGE_LIMIT) * 100, 100);
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
                     ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird automatisch der älteste Stapel (alle Versionen) gelöscht – bei Generierung und Upload.`
                     : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest stack (all versions) is removed automatically on every generation or upload.`,
+                content: React.createElement('div', { className: 'flex flex-col gap-1.5' },
+                    React.createElement('div', { className: 'flex items-center justify-between' },
+                        React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
+                            `${count} / ${IMAGE_LIMIT}`),
+                        React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
+                            `${Math.round(pct)}%`),
+                    ),
+                    React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden' },
+                        React.createElement('div', {
+                            className: `h-full rounded-full transition-all duration-500 ${
+                                count >= IMAGE_LIMIT            ? 'bg-red-500'    :
+                                count >= IMAGE_LIMIT * 0.8      ? 'bg-orange-400' :
+                                'bg-zinc-400 dark:bg-zinc-500'
+                            }`,
+                            style: { width: `${pct}%` },
+                        }),
+                    ),
+                ),
                 confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'primary',
@@ -593,7 +629,10 @@ export const useNanoController = () => {
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, checkStorageLimit, showToast, currentLang]);
 
-    const handleGenerateMore = useCallback((idOrImg: string | CanvasImage) => {
+    const handleGenerateMore = useCallback(async (idOrImg: string | CanvasImage) => {
+        const canProceed = await checkStorageLimit();
+        if (!canProceed) return;
+
         let img: CanvasImage | undefined;
         if (typeof idOrImg === 'string') {
             img = allImages.find(i => i.id === idOrImg);
@@ -627,7 +666,7 @@ export const useNanoController = () => {
             ? { ...root, annotations: img.annotations || [] }
             : img;
         performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
-    }, [allImages, performGeneration]);
+    }, [allImages, performGeneration, checkStorageLimit]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         const canProceed = await checkStorageLimit();

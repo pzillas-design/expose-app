@@ -9,6 +9,7 @@ import { X, AlertTriangle, Trash, Edit3, CornerDownLeft } from 'lucide-react';
 interface ConfirmOptions {
  title?: string;
  description?: string;
+ content?: React.ReactNode; // optional extra content rendered below description
  confirmLabel?: string;
  cancelLabel?: string;
  variant?: 'danger' | 'primary';
@@ -125,6 +126,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
  {options.description}
  </p>
  )}
+ {options.content}
 
  {mode === 'prompt' && (
  <div className="relative">
