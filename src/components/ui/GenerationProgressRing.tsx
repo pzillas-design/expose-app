@@ -248,30 +248,30 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                     <div className="max-h-60 overflow-y-auto">
                         {[...tracked].reverse().map(item => {
                             if (item.finished) {
-                                // Finished item: checkmark + navigate arrow
                                 return (
-                                    <div key={item.id} className="px-4 py-3 flex items-center gap-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0">
+                                    <div
+                                        key={item.id}
+                                        onClick={() => onNavigateToImage?.(item.id)}
+                                        className="group px-4 py-3 flex items-center gap-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+                                    >
                                         <div className="flex-1 min-w-0">
                                             <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                                                 {item.title || (t ? t('untitled') : (isGerman ? 'Ohne Titel' : 'Untitled'))}
                                             </div>
                                         </div>
-                                        <Tooltip text={t ? t('go_to_image') : (isGerman ? 'Zum Bild' : 'Go to image')}>
-                                            <button
-                                                onClick={() => onNavigateToImage?.(item.id)}
-                                                className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
-                                            >
-                                                <ArrowRight className="w-4 h-4" />
-                                            </button>
-                                        </Tooltip>
+                                        <ArrowRight className="w-4 h-4 text-zinc-400 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
                                 );
                             }
 
-                            // Active / finishing item: progress bar
+                            // Active / finishing item: progress bar + clickable row
                             const progress = item.finishing ? 100 : calcBarProgress(item.generationStartTime, item.estimatedDuration);
                             return (
-                                <div key={item.id} className="px-4 py-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0">
+                                <div
+                                    key={item.id}
+                                    onClick={() => onNavigateToImage?.(item.id)}
+                                    className="group px-4 py-3 border-b border-zinc-50 dark:border-zinc-900 last:border-b-0 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+                                >
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="text-[12px] font-medium text-zinc-900 dark:text-zinc-100 truncate">
                                             {item.title || (t ? t('untitled') : (isGerman ? 'Ohne Titel' : 'Untitled'))}
@@ -279,10 +279,10 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
                                         {!item.finishing && (
                                             <Tooltip text={t ? t('generate_more') : (isGerman ? 'Mehr generieren' : 'Generate more')}>
                                                 <button
-                                                    onClick={() => onGenerateMore?.(item.id)}
-                                                    className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0"
+                                                    onClick={(e) => { e.stopPropagation(); onGenerateMore?.(item.id); }}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-full text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0 opacity-0 group-hover:opacity-100"
                                                 >
-                                                    <Repeat className="w-4 h-4" />
+                                                    <Repeat className="w-3.5 h-3.5" />
                                                 </button>
                                             </Tooltip>
                                         )}

@@ -24,6 +24,8 @@ interface UseGenerationProps {
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
     /** Called when a generation completes and the image is saved to DB — used to increment total image count */
     onImageSaved?: () => void;
+    /** Called when a generation completes successfully — used to mark image as unseen in feed */
+    onGenerationComplete?: (id: string) => void;
 }
 
 const COSTS: Record<string, number> = {
@@ -188,7 +190,7 @@ if (typeof window !== 'undefined') {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm, onImageSaved
+    qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
@@ -282,6 +284,7 @@ export const useGeneration = ({
 
                 // Increment total image count in settings
                 onImageSaved?.();
+                onGenerationComplete?.(jobId);
 
                 // Send browser notification if enabled and tab is inactive
                 sendGenerationCompleteNotification(
@@ -574,6 +577,8 @@ export const useGeneration = ({
                         setCredits(prev => prev - cost);
                     }
 
+                    onImageSaved?.();
+                    onGenerationComplete?.(newId);
                     showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: Edge Function accepted job, background processing started.
@@ -686,6 +691,8 @@ export const useGeneration = ({
                         setCredits(prev => prev - cost);
                     }
 
+                    onImageSaved?.();
+                    onGenerationComplete?.(newId);
                     showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: background processing started, pollForJob handles completion
