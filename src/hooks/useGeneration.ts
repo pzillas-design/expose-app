@@ -550,7 +550,8 @@ export const useGeneration = ({
                     modelName: resolveTargetModel(qualityMode),
                     newId,
                     targetVersion: newVersion,
-                    targetTitle: placeholder.title
+                    targetTitle: placeholder.title,
+                    activeTemplateId: activeTemplateId,
                 });
 
                 if (finalImage) {
