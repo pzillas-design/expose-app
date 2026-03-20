@@ -38,12 +38,12 @@ const COSTS: Record<string, number> = {
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'pro-1k': 60000,  // interpolated (pro ≈ 2× nb2-1k)
-    'pro-2k': 89000,  // measured avg
-    'pro-4k': 140000, // interpolated (pro-2k × 1.6)
-    'nb2-1k': 38000,  // measured avg
-    'nb2-2k': 43000,  // measured avg
-    'nb2-4k': 60000,  // interpolated (nb2-2k + ~17s)
+    'pro-1k': 60000,  // no real data — kept as estimate
+    'pro-2k': 65000,  // DB median 58.5s (+10% buffer)
+    'pro-4k': 100000, // DB median 90.7s (+10% buffer)
+    'nb2-1k': 38000,  // no real data — kept as estimate
+    'nb2-2k': 45000,  // DB median 42.8s — nearly exact
+    'nb2-4k': 95000,  // DB avg 93.6s (only 3 samples, but clear signal)
 };
 
 // Map quality modes to model names for historical lookup
