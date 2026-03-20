@@ -22,6 +22,8 @@ export interface WebhookData {
     generationStartTime: number;
     isPro: boolean;
     cost: number;
+    activeTemplateId?: string | null;
+    variableValues?: Record<string, string[]> | null;
     refundCredits: number; // originalCredits to restore on failure
 }
 
@@ -68,7 +70,8 @@ export const saveKieResult = async (
         requestType, qualityMode, finalModelName, prompt, targetTitle,
         userId, userEmail, parentId, sourceWidth, sourceHeight,
         sourceRealWidth, sourceRealHeight, sourceBaseName, sourceVersion, sourceId,
-        annotations, apiRequestPayload, generationStartTime, isPro, cost, refundCredits
+        annotations, apiRequestPayload, generationStartTime, isPro, cost,
+        activeTemplateId, variableValues, refundCredits
     } = webhookData;
 
     const claimed = await claimSave(supabaseAdmin, jobId);
@@ -167,7 +170,11 @@ export const saveKieResult = async (
             prompt: prompt,
             parent_id: (requestType === 'edit' || parentId) ? (sourceId || null) : null,
             annotations: annotations || '[]',
-            generation_params: { quality: qualityMode }
+            generation_params: {
+                quality: qualityMode,
+                ...(activeTemplateId ? { activeTemplateId } : {}),
+                ...(variableValues ? { variableValues } : {}),
+            }
         };
 
         const { error: dbError } = await supabaseAdmin.from('images').insert(newImage);
