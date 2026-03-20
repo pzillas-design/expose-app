@@ -420,6 +420,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        // Tell App.tsx's document-level drop listener to skip this — we're handling it as reference
+        (e.nativeEvent as any).__sideSheetHandled = true;
         onGlobalDragLeave();
         setIsSideZoneActive(false);
         if (!selectedImage) return;
@@ -482,22 +484,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 onCropComplete={handleCropComplete}
                 t={t}
             />
-            {/* Drag overlay for file drop */}
-            {isGlobalDragOver && (
-                <div
-                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                    onDragEnter={() => setIsSideZoneActive(true)}
-                    onDragLeave={() => setIsSideZoneActive(false)}
-                    onDrop={handleDrop}
-                    onClick={onGlobalDragLeave}
-                    className={`absolute inset-3 z-50 rounded-2xl flex items-center justify-center border pointer-events-auto transition-all duration-200 ${isSideZoneActive ? 'bg-zinc-800/90 border-zinc-600' : 'bg-white/80 dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800'}`}
-                >
-                    <div className="flex flex-col items-center gap-2 pointer-events-none">
-                        <Layers className={`w-7 h-7 ${isSideZoneActive ? 'text-white' : 'text-zinc-400'}`} strokeWidth={1.5} />
-                        <span className={`${Typo.Label} text-zinc-400`}>Drop Image</span>
-                    </div>
-                </div>
-            )}
+            {/* Drop overlay now lives inside the prompt card — see below */}
 
             <div className="flex flex-col h-full overflow-hidden text-zinc-900 dark:text-zinc-100">
                 {/* ── Mobile drag handle ── */}
@@ -537,13 +524,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {referenceAnns.length > 0 && (
                                         <div className="flex flex-wrap gap-2 pt-1">
                                             {referenceAnns.map(ann => (
-                                                <div key={ann.id} className="group relative w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
+                                                <div key={ann.id} className="group relative w-[88px] h-[88px] rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
                                                     <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
                                                         onClick={() => deleteAnnotation(ann.id)}
-                                                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-zinc-950/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="absolute top-1 right-1 w-6 h-6 bg-zinc-950/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
-                                                        <X className="w-2.5 h-2.5" />
+                                                        <X className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             ))}
@@ -673,7 +660,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     )}
 
                                     {/* Bottom Controls + Generate */}
-                                    <div className="mt-6 flex items-center gap-3">
+                                    <div className="!mt-10 flex items-center gap-3">
                                         <div className="flex items-center gap-2">
                                             <Tooltip text={t('add_reference')}>
                                                 <button
@@ -683,7 +670,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 >
                                                     <Camera className="w-4 h-4" />
                                                     {referenceAnns.length > 0 && (
-                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-zinc-950">
+                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
                                                             {referenceAnns.length}
                                                         </span>
                                                     )}

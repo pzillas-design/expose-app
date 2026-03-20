@@ -1,7 +1,7 @@
 import React, { useEffect, Suspense, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
-import { RotateCw, Download, Info, Trash2, Loader2 } from 'lucide-react';
-import { RoundIconButton } from '@/components/ui/DesignSystem';
+import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lucide-react';
+import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { PublicNavbar } from '@/components/layout/PublicNavbar';
@@ -175,6 +175,89 @@ export function App() {
         }, 180);
     }, [navigate]);
 
+    // Detail-view delete: navigate to the adjacent image URL BEFORE removing the deleted image from state.
+    // Without this, DetailPage's `!img → onBack()` fires and the 180ms timer navigates to grid,
+    // overriding the correct navigation that App.tsx's activeId-sync effect would have done.
+    const handleDetailDelete = React.useCallback(async (id: string) => {
+        const flat = state.allImages;
+        const currentIdx = flat.findIndex(i => i.id === id);
+        const nextImg = flat[currentIdx + 1] || flat[currentIdx - 1];
+        await actions.handleDeleteImage(id, false, () => {
+            // Called after confirm but BEFORE setRows — navigate while img still exists
+            isNavigatingProgrammatically.current = true;
+            if (nextImg) {
+                actions.selectAndSnap(nextImg.id);
+                navigate(`/image/${nextImg.id}`, { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+        });
+    }, [state.allImages, actions, navigate]);
+
+    // ── Global drag-and-drop ──────────────────────────────────────────────────
+    const actionsRef = React.useRef(actions);
+    React.useEffect(() => { actionsRef.current = actions; }, [actions]);
+    const locationRef2 = React.useRef(location.pathname);
+    React.useEffect(() => { locationRef2.current = location.pathname; }, [location.pathname]);
+
+    // Which drop zone is the cursor over (detail view only)
+    const [dragZone, setDragZone] = React.useState<'image' | 'sidesheet' | null>(null);
+    const dragResetTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    React.useEffect(() => {
+        let counter = 0;
+
+        const resetDrag = () => {
+            counter = 0;
+            actionsRef.current.setIsDragOver(false);
+            setDragZone(null);
+        };
+
+        const onEnter = (e: DragEvent) => {
+            if (!e.dataTransfer?.types.includes('Files')) return;
+            counter++;
+            actionsRef.current.setIsDragOver(true);
+        };
+        const onLeave = (e: DragEvent) => {
+            counter = Math.max(0, counter - 1);
+            if (counter === 0) resetDrag();
+        };
+        const onOver = (e: DragEvent) => {
+            e.preventDefault();
+            // Auto-reset if dragover stops firing (e.g. user drops outside app window)
+            if (dragResetTimer.current) clearTimeout(dragResetTimer.current);
+            dragResetTimer.current = setTimeout(resetDrag, 400);
+            // Track which zone cursor is over (only in detail view)
+            if (locationRef2.current.startsWith('/image/')) {
+                const sidesheetW = 380;
+                setDragZone(e.clientX > window.innerWidth - sidesheetW ? 'sidesheet' : 'image');
+            }
+        };
+        const onDrop = async (e: DragEvent) => {
+            if (dragResetTimer.current) clearTimeout(dragResetTimer.current);
+            resetDrag();
+            // FeedPage handles drops on its own container via React onDrop
+            if (locationRef2.current === '/') return;
+            // SideSheet marks handled drops to prevent double-upload
+            if ((e as any).__sideSheetHandled) return;
+            e.preventDefault();
+            const files = (Array.from(e.dataTransfer?.files || []) as File[]).filter(f => f.type.startsWith('image/'));
+            if (files.length === 0) return;
+            files.forEach(f => actionsRef.current.processFile(f));
+        };
+        document.addEventListener('dragenter', onEnter);
+        document.addEventListener('dragleave', onLeave);
+        document.addEventListener('dragover', onOver);
+        document.addEventListener('drop', onDrop);
+        return () => {
+            document.removeEventListener('dragenter', onEnter);
+            document.removeEventListener('dragleave', onLeave);
+            document.removeEventListener('dragover', onOver);
+            document.removeEventListener('drop', onDrop);
+            if (dragResetTimer.current) clearTimeout(dragResetTimer.current);
+        };
+    }, []); // intentionally empty: actionsRef + locationRef2 handle staleness
+
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
@@ -282,7 +365,7 @@ export function App() {
                     onDetailDelete={() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
-                            if (id) actions.handleDeleteImage(id);
+                            if (id) handleDetailDelete(id);
                         }
                     }}
                     onDetailInfo={() => {
@@ -326,6 +409,55 @@ export function App() {
                     t={t}
                 />
             ))}
+
+            {/* Drag-drop overlay — two zones in detail view, single card elsewhere */}
+            {state.isDragOver && location.pathname !== '/' && (() => {
+                const isDetail = location.pathname.startsWith('/image/');
+                const lang = state.currentLang;
+                if (isDetail) {
+                    const sidesheetW = detailSidebarWidth;
+                    return (
+                        <div className="fixed inset-0 z-[100] pointer-events-none">
+                            <div className="absolute inset-0 bg-zinc-950/30" />
+                            {/* Left zone: Upload */}
+                            <div
+                                className="absolute inset-y-0 left-0 flex items-center justify-center"
+                                style={{ right: sidesheetW }}
+                            >
+                                <div className={`flex flex-col items-center gap-3 px-8 py-6 ${Theme.Colors.ModalBg} border ${Theme.Geometry.RadiusXl} transition-all duration-150 ${dragZone === 'image' ? 'scale-[1.06] border-orange-400 dark:border-orange-500' : Theme.Colors.Border}`}>
+                                    <Upload className={`transition-all duration-150 ${dragZone === 'image' ? 'w-8 h-8 text-orange-500' : 'w-6 h-6 text-zinc-400 dark:text-zinc-500'}`} />
+                                    <p className={`${Typo.Body} text-sm ${dragZone === 'image' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
+                                        {lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
+                                    </p>
+                                </div>
+                            </div>
+                            {/* Right zone: Reference image */}
+                            <div
+                                className="absolute inset-y-0 right-0 flex items-center justify-center"
+                                style={{ width: sidesheetW }}
+                            >
+                                <div className={`flex flex-col items-center gap-3 px-8 py-6 ${Theme.Colors.ModalBg} border ${Theme.Geometry.RadiusXl} transition-all duration-150 ${dragZone === 'sidesheet' ? 'scale-[1.06] border-orange-400 dark:border-orange-500' : Theme.Colors.Border}`}>
+                                    <ImageIcon className={`transition-all duration-150 ${dragZone === 'sidesheet' ? 'w-8 h-8 text-orange-500' : 'w-6 h-6 text-zinc-400 dark:text-zinc-500'}`} />
+                                    <p className={`${Typo.Body} text-sm text-center ${dragZone === 'sidesheet' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
+                                        {lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                        <div className="absolute inset-0 bg-zinc-950/50" />
+                        <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}`}>
+                            <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                            <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
+                                {lang === 'de' ? 'Dateien hier ablegen' : 'Drop files here'}
+                            </p>
+                        </div>
+                    </div>
+                );
+            })()}
 
             <main className={mainContainerClasses}>
                 <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-white dark:bg-black"><Loader2 className="w-6 h-6 animate-spin text-zinc-400 dark:text-zinc-800" /></div>}>
@@ -429,7 +561,7 @@ export function App() {
                                     selectedId={location.pathname.split('/').pop() || ''}
                                     onBack={handleBackToFeed}
                                     onSelectImage={handleSelectImage}
-                                    onDelete={handleDeleteImage}
+                                    onDelete={handleDetailDelete}
                                     onDownload={handleDownload}
                                     onInfo={(id) => setInfoImageId(id)}
                                     onSidebarWidthChange={setDetailSidebarWidth}

@@ -52,29 +52,51 @@ const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: 
 };
 
 /* ── Memoised thumbnail button ── */
-const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; thumbOpacity: number; onSelect: (id: string) => void }>(
-    ({ id, src, isActive, isNew, thumbOpacity, onSelect }) => {
+const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: boolean; leaving?: boolean; thumbOpacity: number; onSelect: (id: string) => void }>(
+    ({ id, src, isActive, isNew, leaving, thumbOpacity, onSelect }) => {
         const [hovered, setHovered] = useState(false);
+        const [mounted, setMounted] = useState(false);
+        useEffect(() => {
+            const raf = requestAnimationFrame(() => setMounted(true));
+            return () => cancelAnimationFrame(raf);
+        }, []);
+        const springEase = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+        const collapseEase = 'cubic-bezier(0.4, 0, 0.2, 1)';
+        const ease = leaving ? collapseEase : springEase;
+        const active = mounted && !leaving;
         const invisible = thumbOpacity === 0;
-        const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
-        // Hover snaps in fast (150ms), distance-based shift animates slower (300ms)
-        const transition = hovered || displayOpacity === thumbOpacity
-            ? 'opacity 150ms ease, transform 150ms ease'
+        const displayOpacity = leaving ? 0 : (isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity);
+        const btnTransition = hovered || leaving || displayOpacity === thumbOpacity
+            ? `opacity 200ms ease, transform 200ms ease`
             : 'opacity 300ms ease, transform 150ms ease';
         return (
-            <button
-                data-thumb-id={id}
-                onClick={() => onSelect(id)}
-                onMouseEnter={() => { if (!invisible) setHovered(true); }}
-                onMouseLeave={() => setHovered(false)}
-                style={{ opacity: displayOpacity, transition }}
-                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            <div
+                className="shrink-0 overflow-visible h-9 flex items-center"
+                style={{
+                    width: active ? '36px' : '0px',
+                    marginRight: active ? '8px' : '0px',
+                    transition: `width 300ms ${ease}, margin 300ms ${ease}`,
+                }}
             >
-                <img src={src} decoding="async" className="w-full h-full object-cover" />
-                {isNew && (
-                    <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
-                )}
-            </button>
+                <button
+                    data-thumb-id={id}
+                    onClick={() => { if (!leaving) onSelect(id); }}
+                    onMouseEnter={() => { if (!invisible && !leaving) setHovered(true); }}
+                    onMouseLeave={() => setHovered(false)}
+                    style={{
+                        opacity: displayOpacity,
+                        transform: `scale(${leaving ? 0.6 : (active ? (isActive ? 1.1 : 0.9) : 0.6)})`,
+                        transition: btnTransition,
+                        pointerEvents: leaving ? 'none' : undefined,
+                    }}
+                    className={`relative h-9 w-9 rounded-[3px] overflow-hidden outline-none${isActive && !leaving ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
+                >
+                    <img src={src} decoding="async" className="w-full h-full object-cover" />
+                    {isNew && (
+                        <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 pointer-events-none" />
+                    )}
+                </button>
+            </div>
         );
     }
 );
@@ -84,27 +106,44 @@ ThumbButton.displayName = 'ThumbButton';
 const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thumbOpacity: number; startTime?: number; estimatedDuration?: number; onSelect: (id: string) => void }>(
     ({ id, pSrc, isActive, thumbOpacity, startTime, estimatedDuration, onSelect }) => {
         const [hovered, setHovered] = useState(false);
+        const [mounted, setMounted] = useState(false);
+        useEffect(() => {
+            const raf = requestAnimationFrame(() => setMounted(true));
+            return () => cancelAnimationFrame(raf);
+        }, []);
         const invisible = thumbOpacity === 0;
         const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
-        const transition = hovered || displayOpacity === thumbOpacity
-            ? 'opacity 150ms ease, transform 150ms ease'
-            : 'opacity 300ms ease, transform 150ms ease';
+        const springEase = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
         return (
-            <button
-                data-thumb-id={id}
-                onClick={() => onSelect(id)}
-                onMouseEnter={() => { if (!invisible) setHovered(true); }}
-                onMouseLeave={() => setHovered(false)}
-                style={{ opacity: displayOpacity, transition }}
-                className={`relative h-9 w-9 shrink-0 rounded-[3px] mr-2 overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black scale-110 z-10' : ' scale-90'}${invisible ? ' pointer-events-none' : ''}`}
+            // Wrapper animates width from 0 → full, sliding neighbours aside
+            <div
+                className="shrink-0 overflow-visible h-9 flex items-center"
+                style={{
+                    width: mounted ? '36px' : '0px',
+                    marginRight: mounted ? '8px' : '0px',
+                    transition: `width 320ms ${springEase}, margin 320ms ${springEase}`,
+                }}
             >
-                {pSrc ? (
-                    <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
-                ) : (
-                    <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
-                )}
-                <ThumbCircularProgress startTime={startTime} estimatedDuration={estimatedDuration} />
-            </button>
+                <button
+                    data-thumb-id={id}
+                    onClick={() => onSelect(id)}
+                    onMouseEnter={() => { if (!invisible) setHovered(true); }}
+                    onMouseLeave={() => setHovered(false)}
+                    style={{
+                        opacity: mounted ? displayOpacity : 0,
+                        transform: `scale(${mounted ? (isActive ? 1.1 : 0.9) : 0.6})`,
+                        transition: `opacity 300ms ease, transform 320ms ${springEase}`,
+                    }}
+                    className={`relative h-9 w-9 rounded-[3px] overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
+                >
+                    {pSrc ? (
+                        <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
+                    ) : (
+                        <div className="w-full h-full bg-zinc-200 dark:bg-zinc-800 animate-pulse" />
+                    )}
+                    <ThumbCircularProgress startTime={startTime} estimatedDuration={estimatedDuration} />
+                </button>
+            </div>
         );
     }
 );
@@ -163,6 +202,38 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }));
     }, [images, selectedId]);
 
+    // Track thumbnails that just left stripImages so we can animate them out
+    const leavingThumbsRef = useRef<Map<string, { img: CanvasImage; index: number }>>(new Map());
+    const [leavingThumbs, setLeavingThumbs] = useState<Map<string, { img: CanvasImage; index: number }>>(new Map());
+    const prevStripRef = useRef<Array<{ img: CanvasImage; distance: number }>>([]);
+    useEffect(() => {
+        const currentIds = new Set(stripImages.map(s => s.img.id));
+        let changed = false;
+        prevStripRef.current.forEach(({ img }, index) => {
+            if (!currentIds.has(img.id) && !leavingThumbsRef.current.has(img.id)) {
+                leavingThumbsRef.current.set(img.id, { img, index });
+                changed = true;
+                setTimeout(() => {
+                    leavingThumbsRef.current.delete(img.id);
+                    setLeavingThumbs(new Map(leavingThumbsRef.current));
+                }, 380);
+            }
+        });
+        if (changed) setLeavingThumbs(new Map(leavingThumbsRef.current));
+        prevStripRef.current = stripImages;
+    }, [stripImages]);
+
+    // Merged strip: interleave leaving thumbs at their original positions
+    const combinedStrip = useMemo(() => {
+        const result: Array<{ img: CanvasImage; distance: number; leaving: boolean }> =
+            stripImages.map(s => ({ ...s, leaving: false }));
+        leavingThumbs.forEach(({ img, index }) => {
+            const insertAt = Math.min(index, result.length);
+            result.splice(insertAt, 0, { img, distance: 99, leaving: true });
+        });
+        return result;
+    }, [stripImages, leavingThumbs]);
+
     // Suppress zoom animation when navigating within the detail view (only show on first entry from grid).
     // Reset only when the image actually finishes loading — not on selectedId change — so that all
     // intermediate re-renders during loading (imgNaturalDims, displayBox, etc.) also stay suppressed.
@@ -175,6 +246,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
+
+    // Keep a live ref so the debounced onBack guard can re-check after a tick.
+    const imgRef = useRef(img);
+    useEffect(() => { imgRef.current = img; }, [img]);
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
@@ -235,6 +310,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
+    // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
+    const isFirstStripScrollRef = useRef(true);
 
     // Update padding on mount + resize only — never on selectedId change to avoid layout
     // reflows that interrupt the opacity CSS transition on the thumb buttons.
@@ -253,13 +330,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, []);
 
-    // Scroll active thumb to center on navigation (smooth) and after resize (auto)
+    // Scroll active thumb to center: instant on first entry (no reveal animation), smooth on navigation
     useEffect(() => {
         const strip = thumbStripRef.current;
         if (!strip) return;
         const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
         if (!activeThumb) return;
-        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior: 'smooth' });
+        const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
+        isFirstStripScrollRef.current = false;
+        strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
     }, [selectedId]);
 
     // Track actual image dimensions from the loaded <img> element
@@ -479,9 +558,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, [isResizing, resize, stopResizing]);
 
 
-    // No image found — go back, this page shouldn't exist without a valid image
+    // No image found — go back, this page shouldn't exist without a valid image.
+    // Debounced: wait 150 ms before calling onBack() so that a navigate() call that
+    // is scheduled as a React transition (e.g. after delete) has time to update
+    // selectedId before we decide img is truly missing.
     useEffect(() => {
-        if (!img) onBack();
+        if (img) return; // valid image — nothing to do
+        const tid = window.setTimeout(() => {
+            if (!imgRef.current) onBack();
+        }, 150);
+        return () => window.clearTimeout(tid);
     }, [img, onBack]);
     if (!img) return null;
 
@@ -557,7 +643,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         if (parentLoadSrc) {
                                             return (
                                                 <div className="absolute inset-0 overflow-hidden">
-                                                    <img src={parentLoadSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-50" alt="" />
+                                                    <img src={parentLoadSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-100 dark:brightness-50" alt="" />
                                                 </div>
                                             );
                                         }
@@ -573,7 +659,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {img.thumbSrc && !isMainLoaded && (
                                         <img
                                             src={img.thumbSrc}
-                                            className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-50 scale-110' : ''}`}
+                                            className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
                                             style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
                                             alt=""
                                         />
@@ -639,13 +725,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             }}
                         >
                             <div ref={thumbStripInnerRef} className="flex items-center">
-                            {stripImages.map(({ img: i, distance }) => {
+                            {combinedStrip.map(({ img: i, distance, leaving }) => {
                                 // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
                                 const VISIBLE = 8;
-                                const thumbOpacity = distance === 0 ? 1
+                                const thumbOpacity = leaving ? 1
+                                    : distance === 0 ? 1
                                     : distance > VISIBLE ? 0
                                     : Math.max(0.15, 0.6 * Math.pow(0.82, distance - 1));
-                                if (i.isGenerating) {
+                                if (i.isGenerating && !leaving) {
                                     const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
                                     const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
                                     return (
@@ -665,9 +752,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     <ThumbButton
                                         key={i.id}
                                         id={i.id}
-                                        src={i.thumbSrc || i.src}
+                                        src={i.thumbSrc || i.src || ''}
                                         isActive={selectedId === i.id}
                                         isNew={state?.unseenIds?.has(i.id)}
+                                        leaving={leaving}
                                         thumbOpacity={thumbOpacity}
                                         onSelect={handleSelectWithin}
                                     />

@@ -283,6 +283,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return row.items[row.items.length - 1].id;
     }, [lastViewedId, displayImages, rows]);
 
+    // Gate the return-from-detail animation so it plays only once per mount.
+    // Without this, after returnCoverId (group-close animation) clears, lastViewedRowCoverId
+    // kicks in and causes a second spurious zoom animation on a different tile.
+    // FeedPage remounts fresh on each grid entry, so useState(true) → false after 600ms is correct.
+    const [lastViewedAnimActive, setLastViewedAnimActive] = React.useState(true);
+    React.useEffect(() => {
+        const t = setTimeout(() => setLastViewedAnimActive(false), 600);
+        return () => clearTimeout(t);
+    }, []); // intentionally empty: run once per mount
+
     // Scroll the last-viewed cover tile into view when returning from detail
     const didScrollRef = React.useRef(false);
     React.useEffect(() => {
@@ -308,8 +318,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         dragCounter.current++;
         if (e.dataTransfer.types.includes('Files')) {
             setIsDropActive(true);
+            actions?.setIsDragOver?.(true);
         }
-    }, []);
+    }, [actions]);
 
     const handleDragLeave = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -318,8 +329,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (dragCounter.current <= 0) {
             dragCounter.current = 0;
             setIsDropActive(false);
+            actions?.setIsDragOver?.(false);
         }
-    }, []);
+    }, [actions]);
 
     const handleDragOver = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -331,12 +343,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         e.stopPropagation();
         dragCounter.current = 0;
         setIsDropActive(false);
+        actions?.setIsDragOver?.(false);
 
         const files = e.dataTransfer.files;
         if (files?.length && onUpload) {
             onUpload(files);
         }
-    }, [onUpload]);
+    }, [onUpload, actions]);
 
     // Dynamically calculate columns based on actual DOM layout
     const [columns, setColumns] = React.useState(2);
@@ -510,7 +523,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 onExpandedGroupChange(row.id);
                                             } : undefined}
                                             staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? lastViewedRowCoverId ?? '')}
+                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
                                             isNew={isNew}
                                         />
                                     );
@@ -552,8 +565,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 </div>
 
-                {/* Infinite scroll sentinel */}
-                {hasMore && <div ref={sentinelRef} className="h-16" />}
+                {/* Infinite scroll sentinel + loading indicator */}
+                {hasMore && (
+                    <div ref={sentinelRef} className="flex items-center justify-center h-16">
+                        {isLoading && <Loader2 className="w-5 h-5 animate-spin text-zinc-300 dark:text-zinc-600" />}
+                    </div>
+                )}
 
 <div className="mt-auto">
                     <GlobalFooter t={t || ((key: string) => key)} />
