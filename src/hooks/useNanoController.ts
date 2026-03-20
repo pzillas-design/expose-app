@@ -335,7 +335,7 @@ export const useNanoController = () => {
         onGenerationComplete: handleGenerationComplete,
     });
 
-    const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables } = usePersistence({
+    const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle } = usePersistence({
         user, isAuthDisabled, setRows
     });
 
@@ -784,6 +784,7 @@ export const useNanoController = () => {
         handleUpdateAnnotations,
         handleUpdatePrompt,
         handleUpdateVariables,
+        handleUpdateImageTitle,
         performGeneration,
         handleGenerate,
         handleGenerateMore,
@@ -812,7 +813,7 @@ export const useNanoController = () => {
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
         setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
         setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, handleProcessFile, handleDeleteImage, handleStorageAutoDeleteChange, handleDownload,
-        handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, performGeneration, handleGenerate,
+        handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
         ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount
