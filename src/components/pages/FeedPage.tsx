@@ -212,6 +212,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const { confirm } = useItemDialog();
+    const prevSelectModeRef = React.useRef(false);
+
+    // When entering select mode, scroll to the first selected image (which may have
+    // shifted position because the grid re-mounts with all individual images ungrouped)
+    React.useEffect(() => {
+        const justEntered = !!isSelectMode && !prevSelectModeRef.current;
+        prevSelectModeRef.current = !!isSelectMode;
+        if (!justEntered || !selectedIds?.length) return;
+        const targetId = selectedIds[0];
+        requestAnimationFrame(() => {
+            const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`);
+            el?.scrollIntoView({ block: 'center', behavior: 'instant' });
+        });
+    }, [isSelectMode, selectedIds]);
 
     // Map: cover image id → row (for quick group lookup)
     // Cover = newest item (last in row, items sorted oldest→newest)
@@ -558,7 +572,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 )}
 
-                <div className="mt-auto">
+<div className="mt-auto">
                     <GlobalFooter t={t || ((key: string) => key)} />
                 </div>
             </div>
