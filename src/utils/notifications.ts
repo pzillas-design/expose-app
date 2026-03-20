@@ -69,8 +69,7 @@ export function isTabActive(): boolean {
  * Send a notification when image generation completes
  */
 export function sendGenerationCompleteNotification(
-    imageName?: string,
-    prompt?: string
+    title: string
 ): void {
     // Check if notifications are enabled and supported
     if (!areNotificationsEnabled() || !isNotificationSupported()) {
@@ -87,17 +86,10 @@ export function sendGenerationCompleteNotification(
         return;
     }
 
-    // Create notification
-    const title = '✨ Image Generated!';
-    const body = prompt
-        ? `Your image is ready: "${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}"`
-        : 'Your image generation is complete!';
-
     const notification = new Notification(title, {
-        body,
-        icon: '/logo.svg', // Use your app logo
+        icon: '/logo.svg',
         badge: '/logo.svg',
-        tag: 'generation-complete', // Replace previous notifications
+        tag: 'generation-complete', // Replace previous notifications so they don't stack
         requireInteraction: false,
         silent: false
     });
