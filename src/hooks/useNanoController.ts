@@ -459,8 +459,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
-                    ? `Du hast ${count} von ${IMAGE_LIMIT} Bildern. Mit Auto-Löschen wird automatisch der älteste Stapel (alle Versionen) gelöscht – bei Generierung und Upload.`
-                    : `You have ${count} of ${IMAGE_LIMIT} images. With auto-delete, the oldest stack (all versions) is removed automatically on every generation or upload.`,
+                    ? `${count} von ${IMAGE_LIMIT} Bildern. Beim Fortfahren wird das älteste Bild automatisch entfernt.`
+                    : `${count} of ${IMAGE_LIMIT} images. The oldest image will be removed automatically.`,
                 content: React.createElement('div', { className: 'flex flex-col gap-1.5' },
                     React.createElement('div', { className: 'flex items-center justify-between' },
                         React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
@@ -471,15 +471,15 @@ export const useNanoController = () => {
                     React.createElement('div', { className: 'h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden' },
                         React.createElement('div', {
                             className: `h-full rounded-full transition-all duration-500 ${
-                                count >= IMAGE_LIMIT            ? 'bg-red-500'    :
-                                count >= IMAGE_LIMIT * 0.8      ? 'bg-orange-400' :
+                                count >= IMAGE_LIMIT       ? 'bg-red-500'    :
+                                count >= IMAGE_LIMIT * 0.8 ? 'bg-orange-400' :
                                 'bg-zinc-400 dark:bg-zinc-500'
                             }`,
                             style: { width: `${pct}%` },
                         }),
                     ),
                 ),
-                confirmLabel: currentLang === 'de' ? 'AUTO-LÖSCHEN & WEITER' : 'AUTO-DELETE & CONTINUE',
+                confirmLabel: currentLang === 'de' ? 'LÖSCHEN & WEITER' : 'DELETE & CONTINUE',
                 cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
                 variant: 'primary',
             });
@@ -495,8 +495,8 @@ export const useNanoController = () => {
             storageWarnedRef.current = true;
             showToast(
                 currentLang === 'de'
-                    ? `${count} von ${IMAGE_LIMIT} Bildern – Limit fast erreicht.`
-                    : `${count} of ${IMAGE_LIMIT} images – limit almost reached.`,
+                    ? `${count} / ${IMAGE_LIMIT} Bilder – fast voll.`
+                    : `${count} / ${IMAGE_LIMIT} images – almost full.`,
                 'warning',
                 5000
             );

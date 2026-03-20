@@ -614,13 +614,11 @@ export const imageService = {
         };
 
         loadedImages.forEach(img => {
-            let groupId = getRootId(img);
-
-            // FALLBACK: If the root is missing and not tracked by a missing parent ID,
-            // use baseName to keep related images together.
-            if (!imageMap.has(groupId) && img.baseName) {
-                groupId = `baseName_${img.baseName}`;
-            }
+            // Group strictly by root ancestry (parent_id chain).
+            // If the root is not in the loaded set (deleted parent), each orphan
+            // stands alone — never merge by baseName which causes false groupings
+            // when unrelated images share a filename or prompt snippet.
+            const groupId = getRootId(img);
 
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
@@ -630,20 +628,16 @@ export const imageService = {
             // Within a row, sort oldest to newest
             items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-            // Determine row title
+            // Determine row title from root or first visible item
             let rowTitle = 'untitled';
             let rowCreatedAt = items[0].createdAt;
 
-            if (groupId.startsWith('baseName_')) {
-                rowTitle = items[0].baseName || items[0].title || 'untitled';
+            const root = imageMap.get(groupId);
+            if (root) {
+                rowTitle = root.baseName || root.title || 'untitled';
+                rowCreatedAt = root.createdAt;
             } else {
-                const root = imageMap.get(groupId);
-                if (root) {
-                    rowTitle = root.baseName || root.title || 'untitled';
-                    rowCreatedAt = root.createdAt;
-                } else {
-                    rowTitle = items[0].baseName || items[0].title || 'untitled';
-                }
+                rowTitle = items[0].baseName || items[0].title || 'untitled';
             }
 
             rows.push({
@@ -736,8 +730,7 @@ export const imageService = {
         };
 
         loadedImages.forEach(img => {
-            let groupId = getRootId(img);
-            if (!imageMap.has(groupId) && img.baseName) groupId = `baseName_${img.baseName}`;
+            const groupId = getRootId(img);
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
         });
