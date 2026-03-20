@@ -61,6 +61,7 @@ export const useNanoController = () => {
         localStorage.getItem('expose_storage_auto_delete') === 'true'
     );
     const storageWarnedRef = useRef(false);
+    const storageAutoDeleteSyncedRef = useRef(false);
 
     // @ts-ignore
     const isAuthDisabled = import.meta.env.VITE_DISABLE_AUTH === 'true' ||
@@ -119,6 +120,15 @@ export const useNanoController = () => {
         getResolvedLang,
         t
     });
+
+    // Sync storageAutoDelete from DB profile on first load (persists across devices)
+    React.useEffect(() => {
+        if (!userProfile || storageAutoDeleteSyncedRef.current) return;
+        storageAutoDeleteSyncedRef.current = true;
+        const dbValue = userProfile.storage_auto_delete === true;
+        setStorageAutoDelete(dbValue);
+        localStorage.setItem('expose_storage_auto_delete', dbValue ? 'true' : 'false');
+    }, [userProfile]);
 
     const {
         userLibrary, globalLibrary, fullLibrary,
@@ -329,7 +339,7 @@ export const useNanoController = () => {
 
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm,
+        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, setIsAuthModalOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
     });
 
@@ -413,7 +423,10 @@ export const useNanoController = () => {
     const handleStorageAutoDeleteChange = useCallback((val: boolean) => {
         setStorageAutoDelete(val);
         localStorage.setItem('expose_storage_auto_delete', val ? 'true' : 'false');
-    }, []);
+        if (user && !isAuthDisabled) {
+            supabase.from('profiles').update({ storage_auto_delete: val }).eq('id', user.id);
+        }
+    }, [user, isAuthDisabled]);
 
     const deleteOldestToMakeRoom = useCallback(() => {
         const imageMap = new Map(allImages.map(img => [img.id, img]));
