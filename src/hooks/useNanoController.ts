@@ -328,9 +328,14 @@ export const useNanoController = () => {
         user, isAuthDisabled, setRows, selectMultiple, showToast, setIsSettingsOpen, t
     });
 
+    // Always-current ref to activeId — passed to useGeneration so completion callbacks
+    // can check whether the user is still in detail view on the source image.
+    const activeIdRef = React.useRef<string | null>(activeId);
+    React.useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
+
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, setIsAuthModalOpen, showToast, t, confirm,
+        qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, setIsAuthModalOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
         onGenerationComplete: handleGenerationComplete,
     });
