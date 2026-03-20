@@ -330,23 +330,32 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, []);
 
-    // Scroll active thumb to center: instant on first entry (no reveal animation), smooth on navigation.
-    // Also depends on combinedStrip so the scroll fires once thumbs are in the DOM on initial open.
-    // Uses double-rAF so the browser has finished layout before we read offsetLeft.
+    // Scroll active thumb to center.
+    // On first entry: ThumbButton wrappers animate from width:0 → 36px over 300ms, so
+    // offsetLeft is wrong until the transition finishes. We wait 320ms before scrolling.
+    // On navigation: wrappers are already at full width, double-rAF is enough.
     useEffect(() => {
-        let raf1: number, raf2: number;
-        raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
-                const strip = thumbStripRef.current;
-                if (!strip) return;
-                const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-                if (!activeThumb) return;
-                const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
+        const scrollToActive = (behavior: ScrollBehavior) => {
+            const strip = thumbStripRef.current;
+            if (!strip) return;
+            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+            if (!activeThumb) return;
+            strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
+        };
+
+        let raf1: number, raf2: number, timer: ReturnType<typeof setTimeout>;
+        if (isFirstStripScrollRef.current) {
+            // Wait for the 300ms width-transition to finish before reading offsetLeft
+            timer = setTimeout(() => {
                 isFirstStripScrollRef.current = false;
-                strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
+                scrollToActive('auto');
+            }, 320);
+        } else {
+            raf1 = requestAnimationFrame(() => {
+                raf2 = requestAnimationFrame(() => scrollToActive('smooth'));
             });
-        });
-        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+        }
+        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(timer); };
     }, [selectedId, combinedStrip]);
 
     // Track actual image dimensions — initialized from DB values, updated from real load.
@@ -578,16 +587,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
 
     // No image found — go back, this page shouldn't exist without a valid image.
-    // Debounced: wait 150 ms before calling onBack() so that a navigate() call that
-    // is scheduled as a React transition (e.g. after delete) has time to update
-    // selectedId before we decide img is truly missing.
+    // Only navigates away if images have already loaded (images.length > 0) but this
+    // specific one isn't in the list (deleted/invalid). On a hard refresh the images
+    // array starts empty while loading from DB — we must NOT navigate away in that window.
     useEffect(() => {
         if (img) return; // valid image — nothing to do
+        if (images.length === 0) return; // images not loaded yet — wait
         const tid = window.setTimeout(() => {
             if (!imgRef.current) onBack();
         }, 150);
         return () => window.clearTimeout(tid);
-    }, [img, onBack]);
+    }, [img, images.length, onBack]);
     if (!img) return null;
 
     return (
