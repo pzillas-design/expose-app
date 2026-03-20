@@ -97,6 +97,12 @@ export function App() {
     // We use a ref to avoid the feedback loop: navigate → URL change → handleSelection → activeId change → navigate...
     const isNavigatingProgrammatically = React.useRef(false);
     const pathnameRef = React.useRef(location.pathname);
+    // True once activeId has been set at least once — guards against premature redirect on page refresh
+    // (on mount activeId=null before images load; we must not redirect to '/' in that window)
+    const activeIdEverSetRef = React.useRef(false);
+    React.useEffect(() => {
+        if (state.activeId) activeIdEverSetRef.current = true;
+    }, [state.activeId]);
 
     useEffect(() => {
         pathnameRef.current = location.pathname;
@@ -108,7 +114,9 @@ export function App() {
     useEffect(() => {
         // If activeId cleared while in detail view (e.g. last image in group deleted) → go to grid
         if (!state.activeId) {
-            if (pathnameRef.current.startsWith('/image/')) {
+            // Only redirect if activeId was previously set — avoids premature redirect on page refresh
+            // before images have loaded and the URL-sync effect has had a chance to restore activeId.
+            if (pathnameRef.current.startsWith('/image/') && activeIdEverSetRef.current) {
                 isNavigatingProgrammatically.current = true;
                 navigate('/', { replace: true });
             }
