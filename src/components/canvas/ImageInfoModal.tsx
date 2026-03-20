@@ -136,15 +136,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                         : '1024 × 1024px'}
                     </span>
 
-                    {/* Variables */}
-                    {variableEntries.map(([key, vals]) => (
-                        <React.Fragment key={key}>
-                            <span className={`${labelClass} capitalize`}>{key}</span>
-                            <span className={valueClass}>{vals.join(', ')}</span>
-                        </React.Fragment>
-                    ))}
-
-                    {/* Prompt — read-only inline, copy on hover via Tooltip */}
+                    {/* Prompt — variables appended inline, copy on hover via Tooltip */}
                     {image.generationPrompt && (
                         <>
                             <span className={`${labelClass} self-start pt-0.5`}>{t('prompt') || 'Prompt'}</span>
@@ -154,6 +146,11 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     onClick={handleCopyPrompt}
                                 >
                                     {image.generationPrompt}
+                                    {variableEntries.length > 0 && (
+                                        <span className="text-zinc-400 dark:text-zinc-500">
+                                            {' · '}{variableEntries.map(([k, v]) => `${k}: ${v.join(', ')}`).join(' · ')}
+                                        </span>
+                                    )}
                                 </span>
                             </Tooltip>
                         </>
