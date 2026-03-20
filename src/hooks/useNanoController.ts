@@ -426,43 +426,23 @@ export const useNanoController = () => {
     }, [user, isAuthDisabled]);
 
     const deleteOldestToMakeRoom = useCallback(() => {
-        const imageMap = new Map(allImages.map(img => [img.id, img]));
+        // Delete only the single oldest LEAF image (no children) so we never orphan child images.
+        // A parent image must not be deleted while children exist — that would corrupt stack grouping.
+        const childParentIds = new Set(allImages.map(img => img.parentId).filter(Boolean));
+        const oldest = [...allImages]
+            .filter(img => !img.isGenerating && !childParentIds.has(img.id))
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
+        if (!oldest) return;
 
-        const getRootId = (id: string): string => {
-            let current = imageMap.get(id);
-            let depth = 0;
-            while (current?.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            return current?.parentId || current?.id || id;
-        };
-
-        // Find oldest non-generating image
-        const candidates = [...allImages]
-            .filter(img => !img.isGenerating)
-            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-        if (!candidates[0]) return;
-
-        // Collect entire stack belonging to the oldest image
-        const oldestRootId = getRootId(candidates[0].id);
-        const stackToDelete = allImages.filter(img => !img.isGenerating && getRootId(img.id) === oldestRootId);
-        const idsToDelete = new Set(stackToDelete.map(img => img.id));
-
-        // Remove from UI
         setRows(prev =>
-            prev.map(row => ({ ...row, items: row.items.filter(i => !idsToDelete.has(i.id)) }))
+            prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== oldest.id) }))
                 .filter(row => row.items.length > 0)
         );
-
-        // Navigate away if the active image is being deleted
-        if (activeId && idsToDelete.has(activeId)) setActiveId(null);
-
-        // Update total count and delete from DB
-        setTotalImageCount(prev => Math.max(0, prev - stackToDelete.length));
+        if (activeId === oldest.id) setActiveId(null);
+        setTotalImageCount(prev => Math.max(0, prev - 1));
         if (user) {
-            imageService.deleteImages(stackToDelete.map(i => i.id), user.id).catch(err => {
-                console.error('Auto-delete stack failed:', err);
+            imageService.deleteImages([oldest.id], user.id).catch(err => {
+                console.error('Auto-delete failed:', err);
             });
         }
     }, [allImages, activeId, setRows, setActiveId, setTotalImageCount, user]);
