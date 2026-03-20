@@ -60,9 +60,11 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
             const raf = requestAnimationFrame(() => setMounted(true));
             return () => cancelAnimationFrame(raf);
         }, []);
-        const springEase = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
         const collapseEase = 'cubic-bezier(0.4, 0, 0.2, 1)';
-        const ease = leaving ? collapseEase : springEase;
+        // Width/margin: entering thumbs jump instantly to full size so offsetLeft is immediately
+        // correct for scroll centering. Only leaving thumbs animate width to 0.
+        const wrapperWidth = leaving ? '0px' : '36px';
+        const wrapperMargin = leaving ? '0px' : '8px';
         const active = mounted && !leaving;
         const invisible = thumbOpacity === 0;
         const displayOpacity = leaving ? 0 : (isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity);
@@ -73,9 +75,9 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
             <div
                 className="shrink-0 overflow-visible h-9 flex items-center"
                 style={{
-                    width: active ? '36px' : '0px',
-                    marginRight: active ? '8px' : '0px',
-                    transition: `width 300ms ${ease}, margin 300ms ${ease}`,
+                    width: wrapperWidth,
+                    marginRight: wrapperMargin,
+                    transition: leaving ? `width 300ms ${collapseEase}, margin 300ms ${collapseEase}` : 'none',
                 }}
             >
                 <button
@@ -115,13 +117,14 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
         const displayOpacity = isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity;
         const springEase = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
         return (
-            // Wrapper animates width from 0 → full, sliding neighbours aside
+            // Wrapper is full-width immediately so offsetLeft is stable for scroll centering.
+            // Visual animation runs on the button via opacity/scale only.
             <div
                 className="shrink-0 overflow-visible h-9 flex items-center"
                 style={{
-                    width: mounted ? '36px' : '0px',
-                    marginRight: mounted ? '8px' : '0px',
-                    transition: `width 320ms ${springEase}, margin 320ms ${springEase}`,
+                    width: '36px',
+                    marginRight: '8px',
+                    transition: 'none',
                 }}
             >
                 <button
@@ -330,32 +333,22 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, []);
 
-    // Scroll active thumb to center.
-    // On first entry: ThumbButton wrappers animate from width:0 → 36px over 300ms, so
-    // offsetLeft is wrong until the transition finishes. We wait 320ms before scrolling.
-    // On navigation: wrappers are already at full width, double-rAF is enough.
+    // Scroll active thumb to center. Wrappers are always full-width immediately (no enter
+    // width animation), so double-rAF is enough for layout to settle before reading offsetLeft.
     useEffect(() => {
-        const scrollToActive = (behavior: ScrollBehavior) => {
-            const strip = thumbStripRef.current;
-            if (!strip) return;
-            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-            if (!activeThumb) return;
-            strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
-        };
-
-        let raf1: number, raf2: number, timer: ReturnType<typeof setTimeout>;
-        if (isFirstStripScrollRef.current) {
-            // Wait for the 300ms width-transition to finish before reading offsetLeft
-            timer = setTimeout(() => {
+        let raf1: number, raf2: number;
+        raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => {
+                const strip = thumbStripRef.current;
+                if (!strip) return;
+                const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+                if (!activeThumb) return;
+                const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
                 isFirstStripScrollRef.current = false;
-                scrollToActive('auto');
-            }, 320);
-        } else {
-            raf1 = requestAnimationFrame(() => {
-                raf2 = requestAnimationFrame(() => scrollToActive('smooth'));
+                strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
             });
-        }
-        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); clearTimeout(timer); };
+        });
+        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
     }, [selectedId, combinedStrip]);
 
     // Track actual image dimensions — initialized from DB values, updated from real load.
