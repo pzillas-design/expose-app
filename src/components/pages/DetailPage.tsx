@@ -331,7 +331,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }, []);
 
     // Scroll active thumb to center: instant on first entry (no reveal animation), smooth on navigation.
-    // Also depends on mergedStrip so the scroll fires once thumbs are in the DOM on initial open
+    // Also depends on combinedStrip so the scroll fires once thumbs are in the DOM on initial open
     // (first run may find no element if images haven't rendered yet; retrying on strip change fixes this).
     useEffect(() => {
         const strip = thumbStripRef.current;
@@ -341,7 +341,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
         isFirstStripScrollRef.current = false;
         strip.scrollTo({ left: activeThumb.offsetLeft + activeThumb.offsetWidth / 2 - strip.clientWidth / 2, behavior });
-    }, [selectedId, mergedStrip]);
+    }, [selectedId, combinedStrip]);
 
     // Track actual image dimensions from the loaded <img> element
     const [imgNaturalDims, setImgNaturalDims] = useState({ width: img?.width || 0, height: img?.height || 0 });
