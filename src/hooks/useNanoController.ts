@@ -660,12 +660,16 @@ export const useNanoController = () => {
         const prompt = img.generationPrompt || img.userDraftPrompt || '';
         if (!prompt) return;
 
-        // Always use the ROOT image as the API source so the original uploaded image
-        // is sent to the AI — not a generated result. Annotations (reference images)
-        // come from the stored request on img.
+        // Use the DIRECT parent as the API source (the image that was the input when img was
+        // originally generated). For a direct child of root this is the same as root; for
+        // grandchildren it's the intermediate child — matching what the AI originally saw.
+        // groupParentId keeps the result grouped under the root stack.
         const groupParentId = root.id !== img.id ? root.id : undefined;
-        const sourceForApi = root.id !== img.id
-            ? { ...root, annotations: img.annotations || [] }
+        const directParent = img.parentId
+            ? (allImages.find(p => p.id === img.parentId) ?? img)
+            : img;
+        const sourceForApi = directParent.id !== img.id
+            ? { ...directParent, annotations: img.annotations || [] }
             : img;
         performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
     }, [allImages, performGeneration, checkStorageLimit]);
