@@ -13,6 +13,7 @@ import {
     setNotificationsEnabled
 } from '@/utils/notifications';
 import { Button } from '../ui/DesignSystem';
+import { supabase } from '@/services/supabaseClient';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -111,6 +112,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         }
         setNotificationsEnabled(enabled);
         setNotificationsEnabledState(enabled);
+        // Persist to DB so the setting survives across browsers/devices
+        if (user?.id) {
+            supabase.from('profiles').update({ notifications_enabled: enabled }).eq('id', user.id)
+                .then(({ error }) => { if (error) console.error('[Settings] notifications_enabled save failed:', error); });
+        }
     };
 
     const userInitial = user?.email?.[0]?.toUpperCase() || 'U';
