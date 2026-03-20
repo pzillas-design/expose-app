@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CanvasImage, TranslationFunction } from '@/types';
-import { Edit2, RotateCcw, Check as CheckIcon } from 'lucide-react';
-import { Typo, IconButton, Button } from '@/components/ui/DesignSystem';
+import { Edit2, Check as CheckIcon, Copy } from 'lucide-react';
+import { Typo, IconButton } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 
@@ -18,7 +18,6 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     image,
     onClose,
     onUpdateImageTitle,
-    onGenerateMore,
     t,
     currentLang = 'de'
 }) => {
@@ -26,6 +25,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState(image.title || '');
+    const [promptHovered, setPromptHovered] = useState(false);
 
     // Read actual image dimensions from the loaded image
     useEffect(() => {
@@ -42,17 +42,20 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
         e.stopPropagation();
         if (image.generationPrompt) {
             navigator.clipboard.writeText(image.generationPrompt);
-            showToast(t('copied_to_clipboard') || 'Copied to clipboard', 'success');
+            showToast(t('copied_to_clipboard') || 'Kopiert', 'success');
         }
     };
 
+    const labelClass = `${Typo.Body} text-zinc-400 text-xs`;
+    const valueClass = `${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`;
+
     return (
         <Modal isOpen={true} onClose={onClose} title="Info">
-            <div className="p-8 flex flex-col gap-10">
-                {/* 1. Metadata Grid */}
+            <div className="p-8 flex flex-col gap-4">
                 <div className="grid grid-cols-[max-content_1fr] items-baseline gap-x-12 gap-y-4">
+
                     {/* Filename with Rename Support */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('filename') || 'Dateiname'}</span>
+                    <span className={labelClass}>{t('filename') || 'Dateiname'}</span>
                     <div className="group/title min-w-0 w-full">
                         {!isEditingTitle ? (
                             <div className="flex items-center gap-2 cursor-pointer group/text" onClick={() => {
@@ -69,8 +72,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                 <input
                                     autoFocus
                                     className={`
-                                        flex-1 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 
-                                        rounded px-2 py-1 outline-none ${Typo.Mono} text-xs text-black dark:text-white 
+                                        flex-1 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700
+                                        rounded px-2 py-1 outline-none ${Typo.Mono} text-xs text-black dark:text-white
                                         focus:border-zinc-400 dark:focus:border-zinc-500 transition-colors w-full
                                     `}
                                     value={editTitleValue}
@@ -102,8 +105,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </div>
 
                     {/* Created At */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('created') || 'Erstellt'}</span>
-                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                    <span className={labelClass}>{t('created') || 'Erstellt'}</span>
+                    <span className={valueClass}>
                         {image.createdAt ? (() => {
                             const d = new Date(image.createdAt);
                             return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -111,8 +114,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
 
                     {/* Model */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('model')}</span>
-                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                    <span className={labelClass}>{t('model')}</span>
+                    <span className={valueClass}>
                         {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
                             image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
                                 image.quality === 'pro-1k' ? 'Nano Banana Pro 1K' :
@@ -121,8 +124,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                     </span>
 
                     {/* Resolution */}
-                    <span className={`${Typo.Body} text-zinc-400 text-xs`}>{t('dimensions') || 'Auflösung'}</span>
-                    <span className={`${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`}>
+                    <span className={labelClass}>{t('dimensions') || 'Auflösung'}</span>
+                    <span className={valueClass}>
                         {actualDimensions
                             ? `${actualDimensions.width} × ${actualDimensions.height}px`
                             : image.realWidth && image.realHeight
@@ -131,51 +134,30 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     : image.quality === 'pro-2k' ? '2048 × 2048px'
                                         : '1024 × 1024px'}
                     </span>
-                </div>
 
-                {/* 2. Prompt Section — inside the same grid so the label aligns with other keys */}
-                {image.generationPrompt && (
-                    <div className="grid grid-cols-[max-content_1fr] items-start gap-x-12 gap-y-4">
-                        <span className={`${Typo.Body} text-zinc-400 text-xs pt-1`}>
-                            {t('prompt') || 'Prompt'}
-                        </span>
-                        <div className="flex flex-col gap-2 min-w-0">
-                            <div className={`
-                                bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 border border-zinc-100 dark:border-zinc-800
-                                ${Typo.Mono} text-zinc-600 dark:text-zinc-300 text-xs leading-relaxed
-                                overflow-y-auto max-h-36 break-words whitespace-pre-wrap
-                            `}>
-                                {image.generationPrompt}
-                            </div>
-                            <Button
-                                variant="secondary"
+                    {/* Prompt — read-only, inline with other fields, copy on hover */}
+                    {image.generationPrompt && (
+                        <>
+                            <span className={`${labelClass} self-start pt-0.5`}>{t('prompt') || 'Prompt'}</span>
+                            <div
+                                className="relative min-w-0 cursor-pointer group/prompt"
+                                onMouseEnter={() => setPromptHovered(true)}
+                                onMouseLeave={() => setPromptHovered(false)}
                                 onClick={handleCopyPrompt}
-                                className="self-start"
                             >
-                                {currentLang === 'de' ? 'Prompt kopieren' : 'Copy prompt'}
-                            </Button>
-                        </div>
-                    </div>
-                )}
-
-                {/* 3. Actions */}
-                {onGenerateMore && image.parentId && (
-                    <div className="flex flex-col pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                        <Button
-                            variant="secondary"
-                            onClick={() => {
-                                onGenerateMore(image.id);
-                                onClose();
-                            }}
-                            className="justify-start px-4 gap-3"
-                        >
-                            <RotateCcw className="w-4 h-4 text-zinc-400" />
-                            <span className={`${Typo.Label} text-zinc-600 dark:text-zinc-300`}>
-                                {t('ctx_create_variations')}
-                            </span>
-                        </Button>
-                    </div>
-                )}
+                                <span className={`${valueClass} leading-relaxed break-words whitespace-pre-wrap line-clamp-4`}>
+                                    {image.generationPrompt}
+                                </span>
+                                {promptHovered && (
+                                    <span className="absolute -top-6 left-0 flex items-center gap-1 bg-zinc-800 dark:bg-zinc-700 text-white text-[10px] px-2 py-0.5 rounded pointer-events-none whitespace-nowrap">
+                                        <Copy className="w-2.5 h-2.5" />
+                                        {currentLang === 'de' ? 'Kopieren' : 'Copy'}
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </Modal>
     );
