@@ -210,6 +210,7 @@ export const imageService = {
         targetVersion,
         targetTitle,
         aspectRatio,
+        activeTemplateId,
         sourceImage // Passed for local dimension calculation fallback
     }: {
         payload: any; // StructuredGenerationRequest
@@ -221,6 +222,7 @@ export const imageService = {
         targetVersion?: number;
         targetTitle?: string;
         aspectRatio?: string;
+        activeTemplateId?: string;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -246,7 +248,11 @@ export const imageService = {
                 attachments,
                 aspectRatio,
                 targetTitle,
-                sourceImage
+                activeTemplateId: activeTemplateId || undefined,
+                sourceImage,
+                // Pass the storage path so the edge function can download the image
+                // directly from Supabase Storage (faster & more reliable than fetching signed URL)
+                sourceStoragePath: sourceImage?.storage_path || undefined
             }
         });
 

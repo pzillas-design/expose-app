@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
             board_id,
             aspectRatio: explicitRatio,
             targetTitle,
+            activeTemplateId,
 
             // Legacy/Fallback fields
             sourceImage,
@@ -267,6 +268,8 @@ Deno.serve(async (req) => {
             generationStartTime,
             isPro,
             cost,
+            activeTemplateId: activeTemplateId || null,
+            variableValues: variables || null,
             refundCredits: profile.credits  // already-decremented credits to restore on failure
         };
 
