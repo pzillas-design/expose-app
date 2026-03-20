@@ -426,9 +426,11 @@ export const useNanoController = () => {
     }, [user, isAuthDisabled]);
 
     const deleteOldestToMakeRoom = useCallback(() => {
-        // Delete only the single oldest non-generating image — simple & predictable
+        // Delete only the single oldest LEAF image (no children) so we never orphan child images.
+        // A parent image must not be deleted while children exist — that would corrupt stack grouping.
+        const childParentIds = new Set(allImages.map(img => img.parentId).filter(Boolean));
         const oldest = [...allImages]
-            .filter(img => !img.isGenerating)
+            .filter(img => !img.isGenerating && !childParentIds.has(img.id))
             .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
         if (!oldest) return;
 
