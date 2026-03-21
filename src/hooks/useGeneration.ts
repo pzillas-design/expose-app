@@ -66,25 +66,51 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
 
     const msg = errorMsg.toLowerCase();
 
-    // Auth / session
-    if (msg.includes("invalid jwt") || msg.includes("jwt expired") || msg.includes("session expired") || msg.includes("no access token") || msg.includes("session refresh failed")) {
-        return t('error_session_expired');
+    // Specific Mappings (Highest Priority)
+    if (msg.includes("file type not supported") || msg.includes("format not supported")) return t('error_file_type');
+    if (msg.includes("insufficient credits") || msg.includes("not enough credits") || msg.includes("402")) return t('error_insufficient_credits');
+    if (msg.includes("jwt expired")) return t('error_session_expired');
+    if (msg.includes("invalid jwt") || msg.includes("session expired") || msg.includes("no access token") || msg.includes("session refresh failed") || msg.includes("401") || msg.includes("unauthorized")) {
+        return t('error_session_invalid');
     }
+
+    // Auth / Not Logged In
     if (msg.includes("not authenticated") || msg.includes("user not found")) {
         return t('error_not_logged_in');
     }
 
-    // Credits / billing
-    if (msg.includes("insufficient credits") || msg.includes("not enough credits") || msg.includes("credits") || msg.includes("payment required") || msg.includes("402")) {
-        return t('error_insufficient_credits');
-    }
-
-    // Safety / content filter
+    // Safety / Content Filter
     if (msg.includes("nsfw") || msg.includes("safety") || msg.includes("content policy") || msg.includes("blocked")) {
         return t('error_safety_blocked');
     }
 
-    // Kie.ai API errors — keep detail for debugging
+    // Server / AI Availability
+    if (msg.includes("503") || msg.includes("504") || msg.includes("busy") || msg.includes("overloaded") || msg.includes("capacity")) {
+        return t('error_server_busy');
+    }
+    if (msg.includes("500") || msg.includes("502") || msg.includes("failed to send") || msg.includes("edge function")) {
+        return t('error_server_error');
+    }
+
+    // Network / Timeouts
+    if (msg.includes("timed out") || msg.includes("timeout")) {
+        return t('error_generation_timeout');
+    }
+    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("failed to fetch")) {
+        return t('error_network_error');
+    }
+
+    // Specific AI Errors
+    if (msg.includes("cold start")) {
+        return t('error_cold_start');
+    }
+
+    // Bad Request
+    if (msg.includes("bad request") || msg.includes("400") || msg.includes("invalid")) {
+        return t('error_invalid_prompt');
+    }
+
+    // Kie.ai API errors — Fallback with raw detail for other Kie errors
     if (
         msg.includes("kie task failed:") ||
         msg.includes("kie createtask") ||
@@ -96,27 +122,6 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
     ) {
         const cleaned = errorMsg.replace(/^kie\.ai error:\s*/i, '').replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
         return `${t('error_generation_failed')}: ${cleaned}`;
-    }
-
-    // Task / background timeout
-    if (msg.includes("timed out") || msg.includes("timeout") || msg.includes("background task timeout")) {
-        return t('error_generation_timeout');
-    }
-    if (msg.includes("cold start")) {
-        return t('error_cold_start');
-    }
-
-    // Server / network
-    if (msg.includes("503") || msg.includes("502") || msg.includes("failed to send") || msg.includes("edge function")) {
-        return t('error_server_error');
-    }
-    if (msg.includes("network") || msg.includes("fetch") || msg.includes("connection") || msg.includes("failed to fetch")) {
-        return t('error_network_error');
-    }
-
-    // Bad / invalid request
-    if (msg.includes("bad request") || msg.includes("400") || msg.includes("invalid")) {
-        return t('error_invalid_prompt');
     }
 
     // Fallback — include raw message for debuggability

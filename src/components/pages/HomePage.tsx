@@ -54,7 +54,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 </section>
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
-                <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
+                <section className="relative min-h-[120vh] flex flex-col items-center justify-center px-6 pt-24 pb-48 overflow-hidden">
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1]">
@@ -62,17 +62,34 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
                         </h2>
 
-                        <div className="flex flex-col items-center justify-center gap-6 mt-16">
+                        <div className="flex flex-col items-center justify-center gap-12 mt-16">
                             <Button
                                 onClick={onGetStarted}
                                 variant="primary-mono"
                                 size="l"
                                 icon={<ChevronLeft className="rotate-180" />}
                                 iconPosition="right"
-                                className="scale-125"
+                                className="scale-125 transition-transform hover:scale-[1.3]"
                             >
                                 {t('nav_start') || 'Start'}
                             </Button>
+
+                            <div className="mt-16 max-w-2xl mx-auto">
+                                <p className="text-xl sm:text-2xl font-kumbh font-light leading-[1.8] text-zinc-500 dark:text-zinc-400">
+                                    Wir freuen uns, von dir zu hören.<br />
+                                    Schreib uns an <a href="mailto:hello@expose.ae" className="text-zinc-900 dark:text-zinc-100 font-medium underline decoration-zinc-300 dark:decoration-zinc-700 underline-offset-8 hover:decoration-orange-500 transition-colors">hello@expose.ae</a>
+                                </p>
+                                <div className="mt-10">
+                                    <a 
+                                        href="https://www.expose.ae/contact" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center text-xs font-semibold tracking-[0.2em] uppercase opacity-40 hover:opacity-100 transition-opacity"
+                                    >
+                                        www.expose.ae/contact
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

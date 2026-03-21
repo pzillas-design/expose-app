@@ -188,6 +188,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const isDetail = mode === 'detail';
     const isCreate = mode === 'create';
+    const isGallery = !isDetail && !isCreate && (window.location.pathname === '/' || window.location.pathname === '');
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -309,7 +310,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full mt-2 right-0 z-50">
                         <DropdownMenu
                             items={[
-                                { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                { 
+                                    label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
+                                    icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
+                                    onClick: () => { 
+                                        setIsGridMenuOpen(false); 
+                                        if (isGallery) onSelectMode?.(); 
+                                        else window.location.href = '/';
+                                    } 
+                                },
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
@@ -431,7 +440,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
                                     items={[
-                                        { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { 
+                                            label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
+                                            icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
+                                            onClick: () => { 
+                                                setIsGridMenuOpen(false); 
+                                                if (isGallery) onSelectMode?.(); 
+                                                else window.location.href = '/';
+                                            } 
+                                        },
                                         { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                         { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                         { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
@@ -607,7 +624,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         <div className="absolute top-full mt-2 right-0 z-50">
                                             <DropdownMenu
                                                 items={[
-                                                    { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                                    { 
+                                                        label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
+                                                        icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
+                                                        onClick: () => { 
+                                                            setIsGridMenuOpen(false); 
+                                                            if (isGallery) onSelectMode?.(); 
+                                                            else window.location.href = '/';
+                                                        } 
+                                                    },
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                     { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                     { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },

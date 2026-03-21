@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
-import { prepareSourceImage } from './utils/imageProcessing.ts';
+import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { createKieTask } from './services/kie.ts';
 import { saveKieResult } from '../_shared/saveKieResult.ts';
 import { prepareParts } from './services/gemini.ts';
@@ -311,11 +311,14 @@ Deno.serve(async (req) => {
             ? payloadOriginalImage
             : (sourceImage?.src && sourceImage.src.startsWith('http')) ? sourceImage.src : null;
 
-        if (sourceHttpUrl) {
-            kieImageUrls.push(sourceHttpUrl);
-        } else if (finalSourceBase64) {
+        // Source image: Always prefer a "clean" re-uploaded JPEG in temp storage.
+        // Direct signed URLs often contain query parameters or have extensions (like .webp)
+        // that Kie.ai may reject with "File type not supported".
+        if (finalSourceBase64) {
             const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
             if (tempUrl) kieImageUrls.push(tempUrl);
+        } else if (sourceHttpUrl) {
+            kieImageUrls.push(sourceHttpUrl);
         }
 
         // Annotation image (canvas base64) — upload to temp storage
@@ -327,9 +330,24 @@ Deno.serve(async (req) => {
             if (annUrl) kieImageUrls.push(annUrl);
         }
 
-        // References (Already resolved above)
+        // References: Also re-upload to temp storage if they are not already "clean" URLs
         for (const ref of resolvedReferences) {
-            if (kieImageUrls.length < 8) {
+            if (kieImageUrls.length >= 8) break;
+
+            if (ref.src.startsWith('data:')) {
+                const b64 = extractBase64FromDataUrl(ref.src);
+                const tempUrl = await uploadTempForKie(supabaseAdmin, b64, newId, kieImageUrls.length);
+                if (tempUrl) kieImageUrls.push(tempUrl);
+            } else if (ref.src.startsWith('http') && (ref.src.includes('?') || !ref.src.match(/\.(jpg|jpeg|png)$/i))) {
+                // If it's a signed URL or has no clean extension, re-upload it as JPEG
+                try {
+                    const b64 = await urlToBase64(ref.src);
+                    const tempUrl = await uploadTempForKie(supabaseAdmin, b64, newId, kieImageUrls.length);
+                    if (tempUrl) kieImageUrls.push(tempUrl);
+                } catch {
+                    kieImageUrls.push(ref.src); // Fallback to original
+                }
+            } else {
                 kieImageUrls.push(ref.src);
             }
         }

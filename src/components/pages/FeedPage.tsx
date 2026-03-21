@@ -253,6 +253,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     // When entering select mode, scroll to the first selected image (which may have
     // shifted position because the grid re-mounts with all individual images ungrouped)
+    // AND ensure we are not in a group drill-down (Select mode always ungroups).
+    React.useEffect(() => {
+        if (isSelectMode && expandedGroupId) {
+            onExpandedGroupChange(null);
+        }
+    }, [isSelectMode, expandedGroupId, onExpandedGroupChange]);
+
     React.useEffect(() => {
         const justEntered = !!isSelectMode && !prevSelectModeRef.current;
         prevSelectModeRef.current = !!isSelectMode;

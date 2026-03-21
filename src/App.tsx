@@ -320,7 +320,10 @@ export function App() {
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
                     onToggleSettings={() => { setIsSettingsModalOpen(true); actions.refreshImageCount?.(); }}
                     onSignOut={handleSignOut}
-                    onSelectMode={() => actions.setIsSelectMode(true)}
+                    onSelectMode={() => {
+                        actions.setIsSelectMode(true);
+                        setExpandedGroupId(null);
+                    }}
                     isSelectMode={state.isSelectMode}
                     onCancelSelectMode={() => {
                         actions.setIsSelectMode(false);
