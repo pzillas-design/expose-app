@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
-import { X, Loader2, Check, Plus } from 'lucide-react';
+import { X, Loader2, ChevronRight, Plus } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 
 interface CreditsModalProps {
@@ -98,7 +98,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 onClick={handleAddFundsConfirm}
                                 className="w-full h-12"
                                 disabled={isProcessing}
-                                icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
                             >
                                 {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay')?.replace('{{amount}}', '') || 'Bezahlen'} ${parseFloat(customAmount).toFixed(2)} €` : t('checkout_btn') || 'Jetzt aufladen')}
                             </Button>
