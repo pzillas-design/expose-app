@@ -41,7 +41,7 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 
                         // Animation logic same as before but driven by prop
                         const delay = Math.abs(index - 6) * 0.04;
-                        const zoomDuration = 0.6; // Finish all zooms by 60% of section
+                        const zoomDuration = 0.45; // Finish all zooms early to allow pause
                         const normalizedProgress = progress > delay
                             ? Math.min((progress - delay) / Math.max(0.01, zoomDuration - delay), 1)
                             : 0;
@@ -50,11 +50,11 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         const currentZ = 400 - (normalizedProgress * 400);
 
                         // Checkmark animation: Appears sequentially after zoom phase
-                        const checkmarkedIndices = [1, 4, 8, 10];
+                        const checkmarkedIndices = [1, 6, 8, 12];
                         const checkmarkOrder = checkmarkedIndices.indexOf(index);
                         const isCheckmarked = checkmarkOrder !== -1;
                         
-                        const checkmarkPhaseStart = 0.65 + checkmarkOrder * 0.06;
+                        const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
                         const checkmarkProgress = isCheckmarked && progress > checkmarkPhaseStart
                             ? Math.min((progress - checkmarkPhaseStart) / 0.05, 1)
                             : 0;

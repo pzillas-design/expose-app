@@ -102,7 +102,7 @@ const SidepanelMockup = ({
                             </div>
                         </div>
                         <div
-                            className="h-10 px-5 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 overflow-hidden cursor-pointer"
+                            className="h-10 px-5 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white overflow-hidden cursor-pointer"
                             style={{ transform: `scale(${buttonScale})` }}
                         >
                             <span className="relative z-10 flex items-center gap-2">Generieren <TwoDotsVertical className="w-3.5 h-3.5 opacity-50" /></span>
