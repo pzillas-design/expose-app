@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Typo, Theme } from '@/components/ui/DesignSystem';
+import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
 import { X, Loader2, Check } from 'lucide-react';
@@ -47,10 +47,9 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={t('current_balance') || 'Aktuelles Guthaben'}>
             <div className="p-8 flex flex-col gap-8">
                 <div className="text-center space-y-2">
-                    <span className={`${Typo.Micro} text-zinc-400`}>{t('current_balance') || 'Aktuelles Guthaben'}</span>
                     <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
                         {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
