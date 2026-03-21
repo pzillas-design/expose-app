@@ -52,7 +52,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                 <div className="text-center space-y-2">
                     <span className={`${Typo.Micro} text-zinc-400`}>{t('current_balance') || 'Aktuelles Guthaben'}</span>
                     <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
-                        <span className="text-2xl text-zinc-300 dark:text-zinc-700 mr-2">$</span>{animatedBalance.toFixed(2)}
+                        {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
                 </div>
 
@@ -69,7 +69,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="relative group">
                                 <div className="flex items-center justify-center border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-zinc-50 dark:bg-black group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-600 transition-colors">
-                                    <span className="text-zinc-400 mr-2 text-3xl font-light">$</span>
                                     <input
                                         type="number"
                                         value={customAmount}
@@ -81,9 +80,10 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                             }
                                         }}
                                         placeholder="0.00"
-                                        className="w-full bg-transparent text-left text-3xl font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono"
+                                        className="w-full bg-transparent text-center text-3xl font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono"
                                         autoFocus
                                     />
+                                    <span className="text-zinc-400 ml-1 text-2xl font-light">€</span>
                                 </div>
                                 <button
                                     onClick={() => setIsTopUpExpanded(false)}
@@ -99,10 +99,10 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 disabled={isProcessing}
                                 icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                             >
-                                {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay')?.replace('{{amount}}', '') || 'Bezahlen'} $${parseFloat(customAmount).toFixed(2)}` : t('checkout_btn') || 'Jetzt aufladen')}
+                                {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay')?.replace('{{amount}}', '') || 'Bezahlen'} ${parseFloat(customAmount).toFixed(2)} €` : t('checkout_btn') || 'Jetzt aufladen')}
                             </Button>
 
-                            {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist $5.00'}</p>}
+                            {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
                         </div>
                     )
                     )}
