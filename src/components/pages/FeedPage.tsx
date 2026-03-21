@@ -570,7 +570,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                                 <div className="flex flex-col items-center gap-8">
                                     <div className="space-y-4">
-                                        <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
+                                        <h1 className="text-sm font-bold tracking-tight text-black dark:text-white">
                                             {t?.('welcome_title') || 'Welcome to exposé'}
                                         </h1>
                                         <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mx-auto text-sm`}>
