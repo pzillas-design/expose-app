@@ -30,6 +30,18 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     // Animate the balance counter
     const animatedBalance = useAnimatedCounter(currentBalance ?? 0, 800);
 
+    // Reset state when modal is closed
+    React.useEffect(() => {
+        if (!isOpen) {
+            const timer = setTimeout(() => {
+                setIsTopUpExpanded(false);
+                setCustomAmount('');
+                setShowMinError(false);
+            }, 300); // Wait for close animation
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
     const handleAddFundsConfirm = async () => {
         const finalAmount = parseFloat(customAmount.replace(',', '.'));
         if (!finalAmount || finalAmount < 5) {
@@ -47,7 +59,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={t('current_balance') || 'Aktuelles Guthaben'}>
+        <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
             <div className="p-8 flex flex-col gap-8">
                 <div className="text-center py-12 space-y-2">
                     <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
