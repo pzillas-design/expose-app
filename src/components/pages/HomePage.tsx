@@ -74,22 +74,6 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                                 {t('nav_start') || 'Start'}
                             </Button>
 
-                            <div className="mt-16 max-w-2xl mx-auto">
-                                <p className="text-xl sm:text-2xl font-kumbh font-light leading-[1.8] text-zinc-500 dark:text-zinc-400">
-                                    Wir freuen uns, von dir zu hören.<br />
-                                    Schreib uns an <a href="mailto:hello@expose.ae" className="text-zinc-900 dark:text-zinc-100 font-medium underline decoration-zinc-300 dark:decoration-zinc-700 underline-offset-8 hover:decoration-orange-500 transition-colors">hello@expose.ae</a>
-                                </p>
-                                <div className="mt-10">
-                                    <a 
-                                        href="https://www.expose.ae/contact" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center text-xs font-semibold tracking-[0.2em] uppercase opacity-40 hover:opacity-100 transition-opacity"
-                                    >
-                                        www.expose.ae/contact
-                                    </a>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
