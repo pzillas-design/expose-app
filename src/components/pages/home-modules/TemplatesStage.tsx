@@ -17,7 +17,7 @@ const ChipGroup = ({ items, activeItem, pressedItem, targetItem, scale, hideOnMo
         {items.map(item => (
             <div
                 key={item}
-                className={`px-4 py-2.5 text-xs rounded-md transition-all duration-150 flex items-center justify-center leading-none font-medium ${hideOnMobile.includes(item) ? 'hidden lg:flex' : 'flex'
+                className={`px-4 py-2.5 text-xs rounded-full transition-all duration-150 flex items-center justify-center leading-none font-medium ${hideOnMobile.includes(item) ? 'hidden lg:flex' : 'flex'
                     } ${activeItem === item
                         ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 '
                         : pressedItem && item === targetItem
@@ -90,16 +90,16 @@ const SidepanelMockup = ({
 
                 <div className="flex flex-col gap-3 lg:gap-4">
                     <div className="hidden lg:grid grid-cols-2 gap-2">
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Pen className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Anmerkung
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Pen className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:scale-110 transition-transform" /> Anmerkung
                         </div>
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Camera className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" /> Referenzbild
+                        <div className="flex items-center justify-center gap-2 py-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
+                            <Camera className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:scale-110 transition-transform" /> Referenzbild
                         </div>
                     </div>
 
                     <div
-                        className="w-full h-10 lg:h-12 rounded-lg font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-black dark:bg-white text-white dark:text-black overflow-hidden"
+                        className="w-full h-10 lg:h-12 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 overflow-hidden"
                         style={{ transform: `scale(${buttonScale})` }}
                     >
                         <span>Generieren</span>
@@ -229,7 +229,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
             <div className="relative w-full h-full max-w-[1700px] mx-auto px-8 lg:px-12 2xl:px-16 flex flex-col lg:flex-row items-center pointer-events-none">
 
                 {/* Typography Part: Left on Desktop */}
-                <div className="w-full h-[35vh] lg:h-full lg:flex-1 flex items-start lg:items-center justify-start lg:pr-40 z-20 order-2 lg:order-1 text-left pointer-events-auto py-8 lg:py-0">
+                <div className="w-full h-[50vh] lg:h-full lg:flex-1 flex items-center lg:items-center justify-start lg:pr-40 z-20 order-2 lg:order-1 text-left pointer-events-auto py-8 lg:py-0">
                     <div className="flex flex-col max-w-xl">
                         <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br className="hidden lg:block" />
@@ -242,13 +242,13 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 </div>
 
                 {/* Visual Part: Right on Desktop */}
-                <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[65vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
+                <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[50vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
                     <div
                         className="absolute bottom-0 left-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
                     >
                         {/* Progress Bar */}
                         <div className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`} style={{ width: '100%' }}>
-                            <div className="h-full bg-gradient-to-r from-orange-500 to-red-600 transition-all duration-300 ease-out" style={{ width: `${autoProgress * 100}%` }} />
+                            <div className="h-full bg-orange-500 transition-all duration-300 ease-out" style={{ width: `${autoProgress * 100}%` }} />
                         </div>
 
                         {/* Sidepanel Mockup */}

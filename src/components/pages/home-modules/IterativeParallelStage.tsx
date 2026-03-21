@@ -1,4 +1,5 @@
 import React, { useRef, useMemo } from 'react';
+import { Check } from 'lucide-react';
 
 export interface IterativeParallelStageProps {
     progress: number; // Global progress [0, 1]
@@ -47,10 +48,14 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         const opacity = Math.min(normalizedProgress * 1.5, 1);
                         const currentZ = 400 - (normalizedProgress * 400);
 
+                        // Checkmark animation: Appears at the very end of the image zoom
+                        const isCheckmarked = [1, 4, 8, 10].includes(index);
+                        const checkmarkProgress = Math.max(0, Math.min((normalizedProgress - 0.8) / 0.2, 1));
+
                         return (
                             <div
                                 key={index}
-                                className="flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800 will-change-transform"
+                                className="relative flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800 will-change-transform"
                                 style={{
                                     opacity: opacity,
                                     transform: `translateZ(${currentZ}px)`
@@ -61,6 +66,17 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                                     className="w-full h-full object-cover"
                                     alt=""
                                 />
+                                {isCheckmarked && (
+                                    <div 
+                                        className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white dark:border-zinc-900 shadow-sm"
+                                        style={{ 
+                                            opacity: checkmarkProgress,
+                                            transform: `scale(${0.5 + checkmarkProgress * 0.5})`
+                                        }}
+                                    >
+                                        <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" strokeWidth={3} />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
@@ -99,7 +115,7 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
             `}</style>
 
             {/* Left: Image Cluster */}
-            <div className="w-full lg:w-3/5 h-[65vh] lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible pt-[20vh] lg:pt-0">
+            <div className="w-full lg:w-3/5 h-[50vh] lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible pt-[20vh] lg:pt-0">
                 <div
                     id="desktop-cluster-container"
                     style={{
@@ -114,7 +130,7 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
             </div>
 
             {/* Right: Text */}
-            <div className="w-full lg:w-2/5 h-[35vh] lg:h-full flex items-start lg:items-center justify-start px-6 lg:px-12 xl:px-24 py-8 lg:py-0 text-left relative z-10">
+            <div className="w-full lg:w-2/5 h-[50vh] lg:h-full flex items-center lg:items-center justify-start px-6 lg:px-12 xl:px-24 py-8 lg:py-0 text-left relative z-10">
                 <div className="flex flex-col max-w-2xl will-change-transform">
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Iterativ</span> <br className="hidden lg:block" />
