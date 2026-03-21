@@ -40,17 +40,24 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         }
 
                         // Animation logic same as before but driven by prop
-                        const delay = Math.abs(index - 6) * 0.05;
+                        const delay = Math.abs(index - 6) * 0.04;
+                        const zoomDuration = 0.6; // Finish all zooms by 60% of section
                         const normalizedProgress = progress > delay
-                            ? Math.min((progress - delay) / (1 - delay - 0.1), 1)
+                            ? Math.min((progress - delay) / Math.max(0.01, zoomDuration - delay), 1)
                             : 0;
 
                         const opacity = Math.min(normalizedProgress * 1.5, 1);
                         const currentZ = 400 - (normalizedProgress * 400);
 
-                        // Checkmark animation: Appears at the very end of the image zoom
-                        const isCheckmarked = [1, 4, 8, 10].includes(index);
-                        const checkmarkProgress = Math.max(0, Math.min((normalizedProgress - 0.8) / 0.2, 1));
+                        // Checkmark animation: Appears sequentially after zoom phase
+                        const checkmarkedIndices = [1, 4, 8, 10];
+                        const checkmarkOrder = checkmarkedIndices.indexOf(index);
+                        const isCheckmarked = checkmarkOrder !== -1;
+                        
+                        const checkmarkPhaseStart = 0.65 + checkmarkOrder * 0.06;
+                        const checkmarkProgress = isCheckmarked && progress > checkmarkPhaseStart
+                            ? Math.min((progress - checkmarkPhaseStart) / 0.05, 1)
+                            : 0;
 
                         return (
                             <div
@@ -68,13 +75,13 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                                 />
                                 {isCheckmarked && (
                                     <div 
-                                        className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white dark:border-zinc-900 shadow-sm"
+                                        className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-orange-500 flex items-center justify-center shadow-lg"
                                         style={{ 
                                             opacity: checkmarkProgress,
                                             transform: `scale(${0.5 + checkmarkProgress * 0.5})`
                                         }}
                                     >
-                                        <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" strokeWidth={3} />
+                                        <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" strokeWidth={3} />
                                     </div>
                                 )}
                             </div>

@@ -169,9 +169,8 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
         >
             <div
                 className="relative h-[50vh] lg:h-full w-full lg:absolute lg:inset-0 z-0 overflow-hidden will-change-transform"
-                style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center center', transition: 'transform 0.1s linear' }}
             >
-                <div className="absolute inset-0">
+                <div className="absolute inset-0" style={{ transform: `scale(${zoomScale})`, transformOrigin: 'center center', transition: 'transform 0.1s linear' }}>
                     <img src="/home/4 visual promting/1.jpg" className="absolute inset-0 w-full h-full object-cover opacity-50" alt="" />
                     <img ref={image2Ref} src="/home/4 visual promting/2.jpg" className="absolute inset-0 w-full h-full object-cover opacity-0 z-10" alt="" />
                 </div>

@@ -88,23 +88,24 @@ const SidepanelMockup = ({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 lg:gap-4">
-                    <div className="hidden lg:grid grid-cols-2 gap-2">
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Pen className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:scale-110 transition-transform" /> Anmerkung
-                        </div>
-                        <div className="flex items-center justify-center gap-2 py-3 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium border border-transparent hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer group">
-                            <Camera className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:scale-110 transition-transform" /> Referenzbild
-                        </div>
+                <div className={`group flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-black/20 focus-within:border-zinc-300 dark:focus-within:border-zinc-700 transition-all duration-300`}>
+                    <div className="p-4 text-xs lg:text-[13px] text-zinc-400 dark:text-zinc-600 h-24 mb-1">
+                        Sagen Sie der KI, was sich ändern soll...
                     </div>
-
-                    <div
-                        className="w-full h-10 lg:h-12 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 overflow-hidden"
-                        style={{ transform: `scale(${buttonScale})` }}
-                    >
-                        <span>Generieren</span>
-                        <div className="absolute right-3 p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/10 transition-colors">
-                            <TwoDotsVertical className="w-4 h-4" />
+                    <div className="flex items-center justify-between p-2 lg:p-2.5">
+                        <div className="flex items-center gap-1">
+                            <div className="p-2 lg:p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer group-hover:text-zinc-500">
+                                <Pen className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
+                            </div>
+                            <div className="p-2 lg:p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer group-hover:text-zinc-500">
+                                <Camera className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
+                            </div>
+                        </div>
+                        <div
+                            className="h-10 px-5 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 overflow-hidden cursor-pointer"
+                            style={{ transform: `scale(${buttonScale})` }}
+                        >
+                            <span className="relative z-10 flex items-center gap-2">Generieren <TwoDotsVertical className="w-3.5 h-3.5 opacity-50" /></span>
                         </div>
                     </div>
                 </div>

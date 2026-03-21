@@ -54,9 +54,9 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 </section>
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
-                <section className="relative py-32 lg:py-60 px-6 overflow-hidden">
+                <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
 
-                    <div className="relative z-10 max-w-5xl mx-auto text-center">
+                    <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1]">
                             Bereit für <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
