@@ -250,6 +250,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => { el.removeEventListener('scroll', fn); cancelAnimationFrame(scrollRafRef.current); };
     }, [onScrollProgress, hasImages]);
     const prevSelectModeRef = React.useRef(false);
+    const prevSelectedCountRef = React.useRef(0);
 
     // When entering select mode, scroll to the first selected image (which may have
     // shifted position because the grid re-mounts with all individual images ungrouped)
@@ -261,15 +262,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     }, [isSelectMode, expandedGroupId, onExpandedGroupChange]);
 
     React.useEffect(() => {
-        const justEntered = !!isSelectMode && !prevSelectModeRef.current;
+        const isEntering = !!isSelectMode && !prevSelectModeRef.current;
+        const isFirstSelection = !!isSelectMode && prevSelectModeRef.current && prevSelectedCountRef.current === 0 && selectedIds.length > 0;
+        
         prevSelectModeRef.current = !!isSelectMode;
-        if (!justEntered || !selectedIds?.length) return;
-        const targetId = selectedIds[0];
-        requestAnimationFrame(() => {
-            const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`);
-            el?.scrollIntoView({ block: 'center', behavior: 'instant' });
-        });
-    }, [isSelectMode, selectedIds]);
+        prevSelectedCountRef.current = selectedIds.length;
+
+        if ((isEntering || isFirstSelection) && selectedIds.length > 0) {
+            const targetId = selectedIds[0];
+            let retryCount = 0;
+            const scrollFn = () => {
+                const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`);
+                if (el) {
+                    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+                } else if (retryCount < 10) {
+                    retryCount++;
+                    requestAnimationFrame(scrollFn);
+                }
+            };
+            requestAnimationFrame(scrollFn);
+        }
+    }, [isSelectMode, selectedIds, expandedGroupId]);
 
     // Map: cover image id → row (for quick group lookup)
     // Cover = newest item (last in row, items sorted oldest→newest)
