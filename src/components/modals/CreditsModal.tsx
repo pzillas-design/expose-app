@@ -51,7 +51,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             <div className="p-8 flex flex-col gap-8">
                 <div className="text-center py-12 space-y-2">
                     <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
-                        {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
+                        {animatedBalance.toFixed(2)}<span className="text-4xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
                 </div>
 
@@ -86,10 +86,10 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                                 }
                                             }}
                                             placeholder="0.00"
-                                            className="w-[180px] bg-transparent text-left text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                            className="w-[200px] bg-transparent text-center text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
                                             autoFocus
                                         />
-                                        <span className="text-zinc-300 dark:text-zinc-700 text-2xl font-mono ml-2">€</span>
+                                        <span className="text-zinc-300 dark:text-zinc-700 text-4xl font-mono ml-4">€</span>
                                     </div>
                                 </div>
                             </div>
