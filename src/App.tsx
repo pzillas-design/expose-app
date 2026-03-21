@@ -307,7 +307,7 @@ export function App() {
                     userProfile={userProfile}
                     isPublic={!user}
                     credits={credits || 0}
-                    onCreate={() => navigate('/create')}
+                    onCreate={() => navigate('/create?m=create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
