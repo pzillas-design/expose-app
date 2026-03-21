@@ -100,7 +100,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 disabled={isProcessing}
                                 icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
                             >
-                                {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay')?.replace('{{amount}}', '') || 'Bezahlen'} ${parseFloat(customAmount).toFixed(2)} €` : t('checkout_btn') || 'Jetzt aufladen')}
+                                {isProcessing ? t('processing') : (customAmount ? t('checkout_pay') || 'Pay Now' : t('checkout_btn') || 'Top Up')}
                             </Button>
 
                             {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
