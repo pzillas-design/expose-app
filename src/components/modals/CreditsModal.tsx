@@ -61,7 +61,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
             <div className="p-8 flex flex-col gap-8">
-                <div className="text-center py-12 space-y-2">
+                <div className="text-center py-6 space-y-2">
                     <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
                         {animatedBalance.toFixed(2)}<span className="text-5xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
@@ -78,8 +78,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         </Button>
                     ) : (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="py-8">
-                                <div className="flex items-center justify-center gap-1 py-8 bg-transparent transition-colors">
+                            <div className="py-4">
+                                <div className="flex items-center justify-center gap-1 py-4 bg-transparent transition-colors">
                                     <Plus className="w-10 h-10 text-zinc-300 dark:text-zinc-700 font-light shrink-0" />
                                     <div className="relative flex items-baseline">
                                         <input
@@ -98,6 +98,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                                     }
                                                 }
                                             }}
+                                            placeholder="0"
                                             style={{ width: `${customAmount.length || 1}ch` }}
                                             className="bg-transparent text-center text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
                                             autoFocus
