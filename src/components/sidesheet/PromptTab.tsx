@@ -603,7 +603,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             <Button
                                 onClick={handleDoGenerate}
                                 disabled={selectedImage.isGenerating}
-                                variant="primary"
+                                variant="generate"
                                 size="m"
                                 className="relative flex-1 w-full"
                             >
