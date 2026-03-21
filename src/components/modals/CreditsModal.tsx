@@ -49,8 +49,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('current_balance') || 'Aktuelles Guthaben'}>
             <div className="p-8 flex flex-col gap-8">
-                <div className="text-center space-y-2">
-                    <div className="text-5xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
+                <div className="text-center py-12 space-y-2">
+                    <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
                         {animatedBalance.toFixed(2)}<span className="text-2xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
                 </div>
@@ -75,7 +75,12 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                             const val = e.target.value;
                                             if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
                                                 setCustomAmount(val);
-                                                if (showMinError) setShowMinError(false);
+                                                const numericVal = parseFloat(val);
+                                                if (val !== '' && !isNaN(numericVal) && numericVal < 5) {
+                                                    setShowMinError(true);
+                                                } else {
+                                                    setShowMinError(false);
+                                                }
                                             }
                                         }}
                                         placeholder="0.00"
@@ -84,12 +89,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                     />
                                     <span className="text-zinc-400 ml-1 text-2xl font-light">€</span>
                                 </div>
-                                <button
-                                    onClick={() => setIsTopUpExpanded(false)}
-                                    className="absolute -top-2.5 -right-2.5 p-1.5 bg-white dark:bg-zinc-900 rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-300 hover:text-black dark:hover:text-white transition-colors "
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
                             </div>
 
                             <Button
