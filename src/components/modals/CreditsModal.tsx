@@ -63,7 +63,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             <div className="p-8 flex flex-col gap-8">
                 <div className="text-center py-12 space-y-2">
                     <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
-                        {animatedBalance.toFixed(2)}<span className="text-4xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
+                        {animatedBalance.toFixed(2)}<span className="text-5xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
                     </div>
                 </div>
 
@@ -78,9 +78,9 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         </Button>
                     ) : (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative">
-                                <div className="flex items-center justify-center gap-2 py-4 bg-transparent transition-colors">
-                                    <Plus className="w-8 h-8 text-zinc-300 dark:text-zinc-700 font-light" />
+                            <div className="py-8">
+                                <div className="flex items-center justify-center gap-4 bg-transparent transition-colors">
+                                    <Plus className="w-10 h-10 text-zinc-300 dark:text-zinc-700 font-light shrink-0" />
                                     <div className="relative flex items-baseline">
                                         <input
                                             type="text"
@@ -88,9 +88,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                             value={customAmount}
                                             onChange={(e) => {
                                                 let val = e.target.value.replace(',', '.');
-                                                // Allow only numbers and one dot with up to 2 decimal places
                                                 if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-                                                    setCustomAmount(e.target.value); // keep original display (could be comma)
+                                                    setCustomAmount(e.target.value);
                                                     const numericVal = parseFloat(val);
                                                     if (val !== '' && !isNaN(numericVal) && numericVal < 5) {
                                                         setShowMinError(true);
@@ -100,24 +99,27 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                                 }
                                             }}
                                             placeholder="0.00"
-                                            className="w-[200px] bg-transparent text-center text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                            style={{ width: `${Math.max(4, customAmount.length || 4)}ch` }}
+                                            className="bg-transparent text-center text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
                                             autoFocus
                                         />
-                                        <span className="text-zinc-300 dark:text-zinc-700 text-4xl font-mono ml-4">€</span>
+                                        <span className="text-zinc-300 dark:text-zinc-700 text-5xl font-mono ml-2 shrink-0">€</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <Button
-                                onClick={handleAddFundsConfirm}
-                                className="w-full h-12"
-                                disabled={isProcessing}
-                                icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
-                            >
-                                {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay') || 'Pay Now'}: ${customAmount.replace('.', ',')} €` : t('checkout_btn') || 'Top Up')}
-                            </Button>
-
-                            {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
+                            <div className="flex flex-col gap-3">
+                                {showMinError && <p className="text-[10px] text-red-500 text-center font-medium animate-in fade-in slide-in-from-bottom-1">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
+                                <Button
+                                    onClick={handleAddFundsConfirm}
+                                    className="w-full h-12"
+                                    disabled={isProcessing}
+                                    iconPosition="right"
+                                    icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
+                                >
+                                    {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay') || 'Pay Now'}: ${customAmount.replace('.', ',')} €` : t('checkout_btn') || 'Top Up')}
+                                </Button>
+                            </div>
                         </div>
                     )
                     )}
