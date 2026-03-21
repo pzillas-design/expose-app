@@ -96,7 +96,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
  onClick={() => handleClose(false)}
  >
  {/* Backdrop */}
- <div className="absolute inset-0 bg-zinc-950/60" />
+ <div className="absolute inset-0 bg-black/60" />
 
  {/* Modal Container - Using new standard design */}
  <div

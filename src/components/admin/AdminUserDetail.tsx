@@ -95,7 +95,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
  const userIdentifier = getUserIdentifier();
 
  return (
- <div className="absolute top-0 bottom-0 right-0 w-96 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 z-20 flex flex-col animate-in slide-in-from-right duration-300">
+ <div className="absolute top-0 bottom-0 right-0 w-96 bg-white dark:bg-black border-l border-zinc-200 dark:border-zinc-800 z-20 flex flex-col animate-in slide-in-from-right duration-300">
  <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
  <span className={Typo.H2}>{t('admin_user_details')}</span>
  <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />

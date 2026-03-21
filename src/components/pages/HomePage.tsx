@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { ChevronLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
@@ -14,6 +16,7 @@ interface HomePageProps {
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t }) => {
+    const navigate = useNavigate();
     const [progress, setProgress] = useState(0);
     const mainTrackRef = useRef<HTMLElement>(null);
 
@@ -42,7 +45,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
     }, []);
 
     return (
-        <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
@@ -64,16 +67,24 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                                 onClick={onGetStarted}
                                 variant="primary-mono"
                                 size="l"
+                                icon={<ChevronLeft className="rotate-180" />}
+                                iconPosition="right"
                                 className="scale-125"
                             >
-                                App starten
+                                {t('nav_start') || 'Start'}
                             </Button>
                         </div>
                     </div>
 
                 </section>
 
-                <GlobalFooter t={t} />
+                <GlobalFooter
+                    t={t}
+                    onGalleryClick={() => {
+                        if (!user) onSignIn?.();
+                        else navigate('/');
+                    }}
+                />
             </main>
 
             <style>{`

@@ -90,7 +90,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
  <div
  className={`
  fixed z-[101] min-w-[220px]
- bg-white dark:bg-zinc-950
+ bg-white dark:bg-black
  border border-zinc-200 dark:border-zinc-800
  rounded-xl ring-1 ring-black/5
  overflow-hidden animate-in fade-in zoom-in-95 duration-100

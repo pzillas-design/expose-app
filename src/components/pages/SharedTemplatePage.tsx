@@ -71,7 +71,7 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
     };
 
     return (
-        <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
             <AppNavbar
                 user={user}
                 userProfile={userProfile}
@@ -118,7 +118,7 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                                         </Button>
 
                                         <div className="flex items-center gap-2 group cursor-pointer pt-12" onClick={() => navigate('/')}>
-                                            <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Erfahre mehr über exposé</span>
+                                            <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{t('learn_more_expose' as any)}</span>
                                             <ArrowUpRight className="w-3 h-3 text-zinc-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                         </div>
                                     </>
@@ -126,18 +126,18 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                                     <div className="space-y-6">
                                         <div className="space-y-3">
                                             <h1 className="text-2xl font-medium tracking-tight text-zinc-900 dark:text-white">
-                                                Vorlage nicht gefunden
+                                                {t('shared_template_not_found' as any)}
                                             </h1>
                                             <p className={`${Typo.Body} text-zinc-500 max-w-[300px] mx-auto`}>
-                                                Dieser Link scheint ungültig zu sein oder die Vorlage wurde entfernt.
+                                                {t('shared_template_invalid' as any)}
                                             </p>
                                         </div>
                                         <div className="space-y-6 w-full flex flex-col items-center">
                                             <Button variant="secondary" onClick={() => navigate('/')} className="w-full">
-                                                Zur Startseite
+                                                {t('back_to_home' as any)}
                                             </Button>
                                             <div className="flex items-center justify-center gap-2 group cursor-pointer pt-6" onClick={() => navigate('/')}>
-                                                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">Erfahre mehr über exposé</span>
+                                                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{t('learn_more_expose' as any)}</span>
                                                 <ArrowUpRight className="w-3 h-3 text-zinc-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                                             </div>
                                         </div>
@@ -148,7 +148,13 @@ export const SharedTemplatePage: React.FC<SharedTemplatePageProps> = ({
                     </div>
             </main>
 
-            <GlobalFooter t={t} />
+            <GlobalFooter
+                t={t}
+                onGalleryClick={() => {
+                    if (!user) onSignIn?.();
+                    else navigate('/');
+                }}
+            />
         </div>
     );
 };

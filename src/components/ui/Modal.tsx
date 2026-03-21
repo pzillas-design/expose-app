@@ -25,7 +25,7 @@ const maxWidthClasses = {
  * Universal Modal Component
  * 
  * Provides consistent styling for all modals in the application:
- * - Standardized backdrop (bg-zinc-950/60)
+ * - Standardized backdrop (bg-black/60)
  * - Consistent container (Theme.Colors.ModalBg, Theme.Colors.Border, Theme.Geometry.RadiusLg)
  * - Optional header with title + close button (px-6 pt-6 pb-2, text-xl)
  * - Content area with customizable padding
@@ -55,7 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
         >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-zinc-950/60" />
+            <div className="absolute inset-0 bg-black/60" />
 
             {/* Modal Container */}
             <div

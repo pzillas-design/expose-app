@@ -613,13 +613,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black">
+        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
             <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                 {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
                 <div
-                    className="md:flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group shrink-0 md:shrink"
+                    className="md:flex-1 flex flex-col bg-white dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
                     style={isMobile
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
@@ -648,13 +648,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {!isMobile && state.sideSheetMode !== 'brush' && (
                             <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
                                 <div className="flex items-center gap-2 pointer-events-auto">
-                                    {!isSideSheetVisible && !showBlob && (
-                                        <Tooltip text={t('open_editing_panel')}>
-                                            <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
-                                                {t('nav_edit')}
-                                            </button>
-                                        </Tooltip>
-                                    )}
                                     {img.generationPrompt && img.parentId && (
                                         <Tooltip text={t('generate_more')}>
                                             <button
@@ -663,6 +656,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
                                                 {t('nav_more')}
+                                            </button>
+                                        </Tooltip>
+                                    )}
+                                    {!isSideSheetVisible && !showBlob && (
+                                        <Tooltip text={t('open_editing_panel')}>
+                                            <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
+                                                {t('nav_edit')}
                                             </button>
                                         </Tooltip>
                                     )}
@@ -940,7 +940,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative md:overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-zinc-50 dark:bg-black border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
                     style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
                     {/* Resizer Handle — desktop only */}

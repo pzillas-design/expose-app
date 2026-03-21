@@ -17,18 +17,21 @@ body,
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
 .pb-safe-or-4 {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
+
 .mb-safe {
   margin-bottom: env(safe-area-inset-bottom);
 }
+
 .bottom-safe {
   bottom: env(safe-area-inset-bottom);
 }
 
 html {
-  @apply bg-white dark:bg-black;
+  @apply bg-white dark:bg-zinc-950;
 }
 
 body {
@@ -38,13 +41,13 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  @apply bg-white text-zinc-900 dark:bg-black dark:text-zinc-100;
+  @apply bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100;
 }
 
 .dark body,
 .dark #root,
 html.dark {
-  background-color: #000000;
+  background-color: #09090b;
 }
 
 :root {
@@ -154,22 +157,62 @@ html:not(.dark) {
 
 /* Progress bar for image generation tiles: grows from 2% → 95% over estimatedDuration */
 @keyframes gen-progress {
-  from { width: 2%; }
-  to   { width: 95%; }
+  from {
+    width: 2%;
+  }
+
+  to {
+    width: 95%;
+  }
 }
 
 /* Feed grid animations */
 @keyframes feed-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes feed-zoom-return {
-  from { opacity: 0.6; transform: scale(1.10); }
-  to   { opacity: 1;   transform: scale(1); }
+  from {
+    opacity: 0.6;
+    transform: scale(1.10);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes detail-img-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logo-spin {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(3deg);
+  }
+
+  75% {
+    transform: rotate(-3deg);
+  }
 }

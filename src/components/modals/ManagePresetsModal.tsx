@@ -360,7 +360,6 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                             <ChevronLeft className="w-5 h-5" />
                         </button>
                     )}
-                    {isMobile && <span className={Typo.H1}>{selectedId === 'new' ? t('new_preset_title') : t('edit_preset_title')}</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     {selectedId !== 'new' && selectedId && (
@@ -446,7 +445,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[100] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div

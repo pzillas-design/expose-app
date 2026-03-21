@@ -46,7 +46,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-    const [isResDropdownOpen,   setIsResDropdownOpen]   = useState(false);
+    const [isResDropdownOpen, setIsResDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
     const [notificationsEnabled, setNotificationsEnabledState] = useState(areNotificationsEnabled());
@@ -60,15 +60,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setIsLangDropdownOpen(false);
     };
 
-    const safeQuality  = (qualityMode as string) || 'nb2-2k';
+    const safeQuality = (qualityMode as string) || 'nb2-2k';
     const currentModel = safeQuality.startsWith('nb2') ? 'nb2' : 'pro';
-    const currentRes   = (safeQuality.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
+    const currentRes = (safeQuality.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
 
     const setModel = (model: string) => { onQualityModeChange(`${model}-${currentRes}` as GenerationQuality); closeAll(); };
-    const setRes   = (res: string)   => { onQualityModeChange(`${currentModel}-${res}` as GenerationQuality); closeAll(); };
+    const setRes = (res: string) => { onQualityModeChange(`${currentModel}-${res}` as GenerationQuality); closeAll(); };
 
     const MODELS = [
-        { id: 'nb2', label: '🍌 Nano Banana 2',  desc: t('model_nb2_desc') },
+        { id: 'nb2', label: '🍌 Nano Banana 2', desc: t('model_nb2_desc') },
         { id: 'pro', label: '🍌 Nano Banana Pro', desc: t('model_pro_desc') },
     ];
     const RESOLUTIONS = [
@@ -78,13 +78,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     ];
     const THEMES = [
         { id: 'light', label: t('mode_light') },
-        { id: 'dark',  label: t('mode_dark')  },
-        { id: 'auto',  label: t('mode_system') },
+        { id: 'dark', label: t('mode_dark') },
+        { id: 'auto', label: t('mode_system') },
     ];
     const LANGUAGES = [
-        { id: 'de',   label: 'Deutsch' },
-        { id: 'en',   label: 'English' },
-        { id: 'auto', label: 'Auto'    },
+        { id: 'de', label: 'Deutsch' },
+        { id: 'en', label: 'English' },
+        { id: 'auto', label: 'Auto' },
     ];
 
     const handleNotificationToggle = async (enabled: boolean) => {
@@ -124,13 +124,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     // ── Shared styles ──────────────────────────────────────────────
     // Dropdown trigger: subtle fill, no border
     const trigger = "w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/70 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition-all";
-    const menu    = "absolute top-full left-0 right-0 mt-1.5 p-1 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150 z-50 shadow-sm";
+    const menu = "absolute top-full left-0 right-0 mt-1.5 p-1 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150 z-50 shadow-sm";
 
     // Typography tokens
     const sectionLabel = "text-sm text-zinc-500 dark:text-zinc-400 mb-4";
-    const fieldLabel   = "text-xs text-zinc-400 mb-2";
-    const rowTitle     = "text-sm text-zinc-700 dark:text-zinc-300";
-    const rowSub       = "text-xs text-zinc-400 mt-0.5";
+    const fieldLabel = "text-xs text-zinc-400 mb-2";
+    const rowTitle = "text-sm text-zinc-700 dark:text-zinc-300";
+    const rowSub = "text-xs text-zinc-400 mt-0.5";
 
     // Toggle
     const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
@@ -322,11 +322,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                             <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
                                 <div
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                        imageCount >= imageLimit       ? 'bg-red-500'    :
-                                        imageCount >= imageLimit * 0.8 ? 'bg-orange-400' :
-                                        'bg-zinc-400 dark:bg-zinc-500'
-                                    }`}
+                                    className="h-full bg-zinc-400 dark:bg-zinc-500 rounded-full transition-all duration-500"
                                     style={{ width: `${Math.min((imageCount / imageLimit) * 100, 100)}%` }}
                                 />
                             </div>
@@ -335,7 +331,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="flex items-center justify-between gap-4 pt-2">
                             <div>
                                 <p className={rowTitle}>{t('auto_delete_oldest')}</p>
-                                <p className={rowSub}>{t('auto_delete_desc_short')}</p>
                             </div>
                             <Toggle checked={storageAutoDelete} onChange={() => onStorageAutoDeleteChange?.(!storageAutoDelete)} />
                         </div>

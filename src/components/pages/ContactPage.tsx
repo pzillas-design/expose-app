@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo, SectionHeader } from '@/components/ui/DesignSystem';
@@ -15,6 +16,7 @@ interface ContactPageProps {
 }
 
 export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, credits, onCreateNew, onSignIn, currentLang, t }) => {
+    const navigate = useNavigate();
     const email = "hello@expose.ae";
 
     // Localized content for Variant 1
@@ -32,7 +34,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
     }[currentLang];
 
     return (
-        <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen md:h-full flex flex-col md:overflow-hidden selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen md:h-full flex flex-col md:overflow-hidden selection:bg-orange-500 selection:text-white">
             <main className="flex-1 flex flex-col justify-start md:justify-center relative overflow-hidden pt-28 md:min-h-0 md:pt-0">
                     {/* Visual Background Elements */}
                     <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -55,7 +57,13 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
                     </div>
             </main>
 
-            <GlobalFooter t={t} />
+            <GlobalFooter
+                t={t}
+                onGalleryClick={() => {
+                    if (!user) onSignIn?.();
+                    else navigate('/');
+                }}
+            />
         </div>
     );
 };

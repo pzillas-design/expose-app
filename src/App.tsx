@@ -4,7 +4,6 @@ import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lu
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
 import { AppNavbar } from '@/components/layout/AppNavbar';
-import { PublicNavbar } from '@/components/layout/PublicNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { CreditsModal } from '@/components/modals/CreditsModal';
@@ -20,6 +19,7 @@ const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').th
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
 const SettingsModal = React.lazy(() => import('@/components/settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTemplatePage').then(m => ({ default: m.SharedTemplatePage })));
+const HeroPlayground = React.lazy(() => import('@/components/pages/HeroPlayground').then(m => ({ default: m.HeroPlayground })));
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
@@ -82,6 +82,7 @@ export function App() {
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
+    const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
     const [createMode, setCreateMode] = React.useState<'choose' | 'create'>('choose');
 
     // Initial auth check / redirect logic
@@ -153,7 +154,7 @@ export function App() {
             setDetailSideSheetVisible(false);
         }
         isUserNavigationRef.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.activeId]);
 
     const handleSelectImage = (id: string) => {
@@ -266,9 +267,27 @@ export function App() {
         };
     }, []); // intentionally empty: actionsRef + locationRef2 handle staleness
 
+    // ── Global scroll progress for landing pages ──────────────────────────────
+    const [globalScrollProgress, setGlobalScrollProgress] = React.useState(0);
+    React.useEffect(() => {
+        const handleScroll = () => {
+            const HERO_SCROLL_DISTANCE = 120;
+            const p = Math.min(window.scrollY / HERO_SCROLL_DISTANCE, 1);
+            setGlobalScrollProgress(p);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
-    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about');
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/impressum');
+    
+    // Pages that should have an expandable Hero header
+    const expandableRoutes = ['/', '/about', '/contact', '/impressum'];
+    const isExpandableRoute = expandableRoutes.includes(location.pathname);
+
     const outerContainerClasses = (isAppLayout || isAdminRoute)
         ? "h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
@@ -282,14 +301,20 @@ export function App() {
     return (
         <div className={outerContainerClasses}>
 
-            {showGlobalNavbar && (isAppLayout ? (
+            {showGlobalNavbar && (
                 <AppNavbar
                     user={user}
                     userProfile={userProfile}
+                    isPublic={!user}
                     credits={credits || 0}
                     onCreate={() => navigate('/create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
+                        setIsAuthModalOpen(true);
+                    }}
+                    onStartApp={() => {
+                        if (user) { navigate('/'); return; }
+                        setAuthModalMode('signup');
                         setIsAuthModalOpen(true);
                     }}
                     onOpenCredits={() => setIsCreditsModalOpen(true)}
@@ -395,28 +420,13 @@ export function App() {
                     generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
                     onNavigateToImage={(id) => { handleSelectImage(id); }}
                     onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
+                    heroProgress={isExpandableRoute
+                        ? (location.pathname === '/' && user ? feedHeroProgress : globalScrollProgress)
+                        : undefined}
+                    onHeroUploadClick={() => { (document.getElementById('feed-upload-input') as HTMLInputElement | null)?.click(); }}
                 />
-            ) : (
-                <PublicNavbar
-                    user={user}
-                    currentLang={state.currentLang}
-                    onSignIn={() => {
-                        setAuthModalMode('signin');
-                        setIsAuthModalOpen(true);
-                    }}
-                    onStartApp={() => {
-                        if (user) {
-                            navigate('/');
-                            return;
-                        }
-                        setAuthModalMode('signup');
-                        setIsAuthModalOpen(true);
-                    }}
-                    onOpenSettings={() => setIsSettingsModalOpen(true)}
-                    onSignOut={handleSignOut}
-                    t={t}
-                />
-            ))}
+            )}
+
 
             {/* Drag-drop overlay — two zones in detail view, single card elsewhere */}
             {state.isDragOver && location.pathname !== '/' && (() => {
@@ -426,7 +436,7 @@ export function App() {
                     const sidesheetW = detailSidebarWidth;
                     return (
                         <div className="fixed inset-0 z-[100] pointer-events-none">
-                            <div className="absolute inset-0 bg-zinc-950/30" />
+                            <div className="absolute inset-0 bg-black/30" />
                             {/* Left zone: Upload */}
                             <div
                                 className="absolute inset-y-0 left-0 flex items-center justify-center"
@@ -456,7 +466,7 @@ export function App() {
                 }
                 return (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <div className="absolute inset-0 bg-zinc-950/50" />
+                        <div className="absolute inset-0 bg-black/50" />
                         <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}`}>
                             <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                             <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
@@ -485,7 +495,11 @@ export function App() {
                                         if (arr.length === 0) return;
                                         if (arr.length === 1) {
                                             const id = await actions.processFile(arr[0]);
-                                            if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                            if (id) {
+                                                setDetailSideSheetVisible(true);
+                                                isNavigatingProgrammatically.current = true;
+                                                navigate(`/image/${id}`);
+                                            }
                                         } else {
                                             arr.forEach(f => actions.processFile(f));
                                             // multiple uploads → back to top-level grid so user sees all incoming images
@@ -493,6 +507,7 @@ export function App() {
                                         }
                                     }}
                                     onLoadMore={actions.handleLoadMore}
+                                    isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
                                     selectedIds={state.selectedIds}
@@ -520,6 +535,7 @@ export function App() {
                                     state={state}
                                     actions={actions}
                                     t={t}
+                                    onScrollProgress={setFeedHeroProgress}
                                 />
                             ) : (
                                 <HomePage
@@ -597,7 +613,11 @@ export function App() {
                                         if (arr.length === 0) return;
                                         if (arr.length === 1) {
                                             const id = await actions.processFile(arr[0]);
-                                            if (id) { isNavigatingProgrammatically.current = true; navigate(`/image/${id}`); }
+                                            if (id) {
+                                                setDetailSideSheetVisible(true);
+                                                isNavigatingProgrammatically.current = true;
+                                                navigate(`/image/${id}`);
+                                            }
                                         } else {
                                             arr.forEach(f => actions.processFile(f));
                                             isNavigatingProgrammatically.current = true;
@@ -655,6 +675,9 @@ export function App() {
                             />
                         } />
 
+                        {/* Dev playground — delete when done */}
+                        <Route path="/playground" element={<React.Suspense fallback={null}><HeroPlayground /></React.Suspense>} />
+
                         {/* Legacy Redirects */}
                         <Route path="/projects/*" element={<Navigate to="/" replace />} />
                     </Routes>
@@ -690,50 +713,50 @@ export function App() {
             />
 
             <ModalErrorBoundary>
-            <Suspense fallback={null}>
-                {isSettingsModalOpen && user && (
-                    <SettingsModal
-                        isOpen={isSettingsModalOpen}
-                        onClose={() => setIsSettingsModalOpen(false)}
-                        qualityMode={state.qualityMode}
-                        onQualityModeChange={setQualityMode}
-                        currentBalance={credits || 0}
-                        onAddFunds={actions.handleAddFunds}
-                        themeMode={state.themeMode}
-                        onThemeChange={setThemeMode}
-                        lang={langSetting}
-                        onLangChange={setLang}
-                        user={user}
-                        userProfile={userProfile}
-                        onSignOut={() => {
-                            setIsSettingsModalOpen(false);
-                            handleSignOut();
-                        }}
-                        onDeleteAccount={handleDeleteAccount}
-                        updateProfile={updateProfile}
-                        t={t}
-                        imageCount={state.imageCount}
-                        imageLimit={state.imageLimit}
-                        storageAutoDelete={state.storageAutoDelete}
-                        onStorageAutoDeleteChange={actions.handleStorageAutoDeleteChange}
-                    />
-                )}
-            </Suspense>
-            <Suspense fallback={null}>
-                {infoImageId && (() => {
-                    const infoImg = allImages.find(i => i.id === infoImageId);
-                    return infoImg ? (
-                        <ImageInfoModal
-                            image={infoImg}
-                            onClose={() => setInfoImageId(null)}
-                            onUpdateImageTitle={actions.handleUpdateImageTitle}
-                            onGenerateMore={(id) => { actions.handleGenerateMore(id); setInfoImageId(null); }}
+                <Suspense fallback={null}>
+                    {isSettingsModalOpen && user && (
+                        <SettingsModal
+                            isOpen={isSettingsModalOpen}
+                            onClose={() => setIsSettingsModalOpen(false)}
+                            qualityMode={state.qualityMode}
+                            onQualityModeChange={setQualityMode}
+                            currentBalance={credits || 0}
+                            onAddFunds={actions.handleAddFunds}
+                            themeMode={state.themeMode}
+                            onThemeChange={setThemeMode}
+                            lang={langSetting}
+                            onLangChange={setLang}
+                            user={user}
+                            userProfile={userProfile}
+                            onSignOut={() => {
+                                setIsSettingsModalOpen(false);
+                                handleSignOut();
+                            }}
+                            onDeleteAccount={handleDeleteAccount}
+                            updateProfile={updateProfile}
                             t={t}
-                            currentLang={langSetting as 'de' | 'en'}
+                            imageCount={state.imageCount}
+                            imageLimit={state.imageLimit}
+                            storageAutoDelete={state.storageAutoDelete}
+                            onStorageAutoDeleteChange={actions.handleStorageAutoDeleteChange}
                         />
-                    ) : null;
-                })()}
-            </Suspense>
+                    )}
+                </Suspense>
+                <Suspense fallback={null}>
+                    {infoImageId && (() => {
+                        const infoImg = allImages.find(i => i.id === infoImageId);
+                        return infoImg ? (
+                            <ImageInfoModal
+                                image={infoImg}
+                                onClose={() => setInfoImageId(null)}
+                                onUpdateImageTitle={actions.handleUpdateImageTitle}
+                                onGenerateMore={(id) => { actions.handleGenerateMore(id); setInfoImageId(null); }}
+                                t={t}
+                                currentLang={langSetting as 'de' | 'en'}
+                            />
+                        ) : null;
+                    })()}
+                </Suspense>
             </ModalErrorBoundary>
         </div>
     );

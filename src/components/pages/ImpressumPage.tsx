@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
@@ -13,6 +14,7 @@ interface ImpressumPageProps {
 }
 
 export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile, credits, onCreateBoard, onSignIn, t }) => {
+    const navigate = useNavigate();
     return (
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
 
@@ -148,7 +150,13 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
                 </article>
             </main>
 
-            <GlobalFooter t={t} />
+            <GlobalFooter
+                t={t}
+                onGalleryClick={() => {
+                    if (!user) onSignIn?.();
+                    else navigate('/');
+                }}
+            />
         </div>
     );
 };

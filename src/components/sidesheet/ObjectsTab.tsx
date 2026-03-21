@@ -149,7 +149,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     <div
                         className={`
  fixed z-[101] min-w-[160px] p-1
- bg-white dark:bg-zinc-950
+ bg-white dark:bg-black
  border border-zinc-200 dark:border-zinc-800
  rounded-lg ring-1 ring-black/5
  animate-in fade-in zoom-in-95 duration-100 flex flex-col
@@ -179,7 +179,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
             {/* Modal for adding/editing stickers */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setIsModalOpen(false)}>
-                    <div className="relative w-full max-w-sm bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                    <div className="relative w-full max-w-sm bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
 
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-900">
