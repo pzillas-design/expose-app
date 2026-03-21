@@ -519,7 +519,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     <FeedHeroSection />
                 )}
                 <div className="flex-1 flex flex-col">
-                    <div className="flex-1 flex flex-col relative pb-16">
+                    <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
                         {images.length > 0 ? (
                             <>
                                 <div
