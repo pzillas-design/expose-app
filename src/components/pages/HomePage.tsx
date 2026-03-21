@@ -55,6 +55,9 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
                 <section className="relative min-h-[120vh] flex flex-col items-center justify-center px-6 pt-24 pb-48 overflow-hidden">
+                    {/* Background Gradients - Brand Consistency */}
+                    <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1]">
