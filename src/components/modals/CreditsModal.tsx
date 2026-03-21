@@ -60,10 +60,12 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
-            <div className="p-8 flex flex-col gap-8">
-                <div className="text-center py-6 space-y-2">
-                    <div className="text-6xl font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300">
-                        {animatedBalance.toFixed(2)}<span className="text-5xl text-zinc-300 dark:text-zinc-700 ml-2">€</span>
+            <div className={`p-8 flex flex-col transition-all duration-500 ease-in-out ${isTopUpExpanded ? 'gap-2' : 'gap-8'}`}>
+                <div className={`text-center space-y-2 transition-all duration-500 ease-in-out ${isTopUpExpanded ? 'py-1' : 'py-6'}`}>
+                    <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-500 ease-in-out`}
+                        style={{ fontSize: isTopUpExpanded ? '1.5rem' : '3.75rem', lineHeight: isTopUpExpanded ? '2rem' : '1' }}>
+                        {animatedBalance.toFixed(2)}<span className="text-zinc-300 dark:text-zinc-700 ml-2 transition-all duration-500 ease-in-out"
+                            style={{ fontSize: isTopUpExpanded ? '1.25rem' : '3rem' }}>€</span>
                     </div>
                 </div>
 
@@ -78,8 +80,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         </Button>
                     ) : (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="py-4">
-                                <div className="flex items-center justify-center gap-1 py-4 bg-transparent transition-colors">
+                            <div className="py-2">
+                                <div className="flex items-center justify-center gap-1 py-2 bg-transparent transition-colors">
                                     <Plus className="w-10 h-10 text-zinc-300 dark:text-zinc-700 font-light shrink-0" />
                                     <div className="relative flex items-baseline">
                                         <input
