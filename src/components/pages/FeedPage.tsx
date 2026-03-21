@@ -573,7 +573,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         <h1 className="text-3xl font-medium tracking-tight text-black dark:text-white">
                                             {t?.('welcome_title') || 'Welcome to exposé'}
                                         </h1>
-                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto text-sm`}>
+                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mx-auto text-sm`}>
                                             {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
                                         </p>
                                     </div>
