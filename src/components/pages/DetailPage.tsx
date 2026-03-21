@@ -613,13 +613,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-black">
             {/* Removed internal header - handled by AppNavbar */}
 
             <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                 {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
                 <div
-                    className="md:flex-1 flex flex-col bg-white dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
+                    className="md:flex-1 flex flex-col bg-white dark:bg-black relative overflow-hidden group shrink-0 md:shrink"
                     style={isMobile
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
