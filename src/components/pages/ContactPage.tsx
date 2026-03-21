@@ -34,8 +34,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
     }[currentLang];
 
     return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen md:h-full flex flex-col md:overflow-hidden selection:bg-orange-500 selection:text-white">
-            <main className="flex-1 flex flex-col justify-start md:justify-center relative overflow-hidden pt-28 md:min-h-0 md:pt-0">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+            <main className="flex-1 flex flex-col items-center justify-center relative overflow-hidden min-h-[120vh]">
                     {/* Visual Background Elements */}
                     <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/10 rounded-full blur-[120px] pointer-events-none" />
                     <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
