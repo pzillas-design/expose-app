@@ -31,7 +31,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     const animatedBalance = useAnimatedCounter(currentBalance ?? 0, 800);
 
     const handleAddFundsConfirm = async () => {
-        const finalAmount = parseFloat(customAmount);
+        const finalAmount = parseFloat(customAmount.replace(',', '.'));
         if (!finalAmount || finalAmount < 5) {
             setShowMinError(true);
             return;
@@ -71,12 +71,14 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                     <Plus className="w-8 h-8 text-zinc-300 dark:text-zinc-700 font-light" />
                                     <div className="relative flex items-baseline">
                                         <input
-                                            type="number"
+                                            type="text"
+                                            inputMode="decimal"
                                             value={customAmount}
                                             onChange={(e) => {
-                                                const val = e.target.value;
+                                                let val = e.target.value.replace(',', '.');
+                                                // Allow only numbers and one dot with up to 2 decimal places
                                                 if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-                                                    setCustomAmount(val);
+                                                    setCustomAmount(e.target.value); // keep original display (could be comma)
                                                     const numericVal = parseFloat(val);
                                                     if (val !== '' && !isNaN(numericVal) && numericVal < 5) {
                                                         setShowMinError(true);
@@ -100,7 +102,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 disabled={isProcessing}
                                 icon={isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
                             >
-                                {isProcessing ? t('processing') : (customAmount ? t('checkout_pay') || 'Pay Now' : t('checkout_btn') || 'Top Up')}
+                                {isProcessing ? t('processing') : (customAmount ? `${t('checkout_pay') || 'Pay Now'}: ${customAmount.replace('.', ',')} €` : t('checkout_btn') || 'Top Up')}
                             </Button>
 
                             {showMinError && <p className="text-[10px] text-red-500 text-center font-medium">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
