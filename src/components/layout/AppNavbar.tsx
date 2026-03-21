@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, DollarSign } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
@@ -575,7 +575,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                     : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
                                                 }`}
                                         >
-                                            <DollarSign className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[14px] h-[14px]' : 'w-4 h-4'}`} />
+                                            <Euro className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[14px] h-[14px]' : 'w-4 h-4'}`} />
                                             <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'} ${isMobile ? 'hidden' : ''}`}>
                                                 {(displayCredits ?? credits).toFixed(2)}
                                             </span>
