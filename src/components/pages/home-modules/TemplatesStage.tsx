@@ -48,15 +48,15 @@ const SidepanelMockup = ({
     return (
         <div className="flex flex-col h-full overflow-hidden px-4 lg:px-6 pt-4 lg:pt-6 pb-4">
             {/* Unified Prompt Input Box */}
-            <div className={`flex-none flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-black/20 focus-within:border-zinc-300 dark:focus-within:border-zinc-700 transition-all duration-300 overflow-hidden`}>
+            <div className={`flex-none flex flex-col rounded-2xl bg-white dark:bg-black/20 focus-within:ring-1 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-800 transition-all duration-300 overflow-hidden`}>
                 
                 {/* 1. Prompt Text Area */}
                 <div className="p-4 text-xs lg:text-[13px] text-zinc-500 h-[72px]">
-                    Inszeniere das Bild neu durch Auswahl von Parametern... <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
+                    Inszeniere das Bild neu, indem du Folgendes anpasst: <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
                 </div>
 
                 {/* 2. Controls (Season & Time) */}
-                <div className="px-4 flex flex-col gap-4 pb-1">
+                <div className="px-4 flex flex-col gap-5 pb-4">
                     <div className="flex flex-col gap-2">
                         <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>Jahreszeit</span>
                         <div className="flex flex-wrap gap-1.5">
@@ -72,17 +72,17 @@ const SidepanelMockup = ({
                 </div>
 
                 {/* 3. Bottom Toolbar */}
-                <div className="flex items-center justify-between p-2 lg:p-2.5 mt-2 border-t border-zinc-100 dark:border-zinc-800/50">
-                    <div className="flex items-center gap-1">
-                        <div className="hidden lg:flex p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer">
-                            <Pen className="w-[18px] h-[18px]" />
+                <div className="flex items-center justify-between p-2 lg:p-2.5 mt-2">
+                    <div className="flex items-center gap-2">
+                        <div className="hidden lg:flex p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors cursor-pointer">
+                            <Pen className="w-[16px] h-[16px]" />
                         </div>
-                        <div className="hidden lg:flex p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer">
-                            <Camera className="w-[18px] h-[18px]" />
+                        <div className="hidden lg:flex p-2.5 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 transition-colors cursor-pointer">
+                            <Camera className="w-[16px] h-[16px]" />
                         </div>
                     </div>
                     <div
-                        className="h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer"
+                        className="h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer shadow-sm shadow-orange-500/20"
                         style={{ transform: `scale(${buttonScale})` }}
                     >
                         <span className="relative z-10">Generieren</span>
@@ -93,16 +93,16 @@ const SidepanelMockup = ({
             <div className="flex-1 min-h-[20px]" />
             
             {/* Presets Chips Footer */}
-            <div className="hidden lg:flex flex-none flex-col mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+            <div className="hidden lg:flex flex-none flex-col mt-auto pt-4">
                 <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>Vorlagen</span>
                 <div className="flex flex-wrap gap-2">
-                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
                         🏡 <span>Home Staging</span>
                     </div>
-                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
                         🧹 <span>Cleanup</span>
                     </div>
-                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
                         ❄️ <span>Jahreszeit</span>
                     </div>
                 </div>
