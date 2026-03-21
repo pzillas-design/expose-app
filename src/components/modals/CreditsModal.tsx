@@ -60,11 +60,11 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
-            <div className={`p-8 flex flex-col transition-all duration-500 ease-in-out ${isTopUpExpanded ? 'gap-2' : 'gap-8'}`}>
-                <div className={`text-center space-y-2 transition-all duration-500 ease-in-out ${isTopUpExpanded ? 'py-1' : 'py-6'}`}>
-                    <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-500 ease-in-out`}
+            <div className={`p-8 flex flex-col ${isTopUpExpanded ? 'gap-2' : 'gap-8'}`}>
+                <div className={`text-center space-y-2 ${isTopUpExpanded ? 'py-1' : 'py-6'}`}>
+                    <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100`}
                         style={{ fontSize: isTopUpExpanded ? '1.5rem' : '3.75rem', lineHeight: isTopUpExpanded ? '2rem' : '1' }}>
-                        {animatedBalance.toFixed(2)}<span className="text-zinc-300 dark:text-zinc-700 ml-2 transition-all duration-500 ease-in-out"
+                        {animatedBalance.toFixed(2)}<span className="ml-2"
                             style={{ fontSize: isTopUpExpanded ? '1.25rem' : '3rem' }}>€</span>
                     </div>
                 </div>
