@@ -47,88 +47,64 @@ const SidepanelMockup = ({
     const highlightClass = "border-zinc-400 dark:border-zinc-600";
     return (
         <div className="flex flex-col h-full overflow-hidden px-4 lg:px-6 pt-4 lg:pt-6 pb-4">
-            <div className="flex-none flex flex-col gap-3 lg:gap-5">
-                <div className="flex flex-col gap-2 lg:gap-3">
-                    <div className={`p-3 lg:p-4 rounded-lg bg-transparent border transition-all duration-300 ${activeSection === 'prompt' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
-                        <p className="text-[10px] lg:text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                            Inszeniere das Bild neu indem du die Jahreszeit anpasst
-                            <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
-                        </p>
-                    </div>
+            {/* Unified Prompt Input Box */}
+            <div className={`flex-none flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-black/20 focus-within:border-zinc-300 dark:focus-within:border-zinc-700 transition-all duration-300 overflow-hidden`}>
+                
+                {/* 1. Prompt Text Area */}
+                <div className="p-4 text-xs lg:text-[13px] text-zinc-500 h-[72px]">
+                    Inszeniere das Bild neu durch Auswahl von Parametern... <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
                 </div>
 
-                <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'season' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
-                    <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Jahreszeit</span>
-                        <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
-                            <ChipGroup
-                                items={['Frühling', 'Sommer', 'Winter']}
-                                activeItem={activeSeason}
-                                pressedItem={isSeasonPressed}
-                                targetItem="Winter"
-                                scale={seasonScale}
-                            />
+                {/* 2. Controls (Season & Time) */}
+                <div className="px-4 flex flex-col gap-4 pb-1">
+                    <div className="flex flex-col gap-2">
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>Jahreszeit</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            <ChipGroup items={['Frühling', 'Sommer', 'Winter']} activeItem={activeSeason} pressedItem={isSeasonPressed} targetItem="Winter" scale={seasonScale} />
                         </div>
                     </div>
-                </div>
-
-                <div className={`flex flex-col border rounded-lg bg-transparent p-3 lg:p-5 gap-3 lg:gap-4 group transition-all duration-300 ${activeSection === 'time' ? highlightClass : 'border-zinc-200 dark:border-zinc-800'}`}>
-                    <div className="flex flex-col gap-2 lg:gap-2.5">
-                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500 opacity-80 group-hover:opacity-100 transition-opacity`}>Uhrzeit</span>
-                        <div className="flex flex-wrap gap-1 lg:gap-1.5 pt-0.5">
-                            <ChipGroup
-                                items={['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour']}
-                                activeItem={activeTime}
-                                pressedItem={isTimePressed}
-                                targetItem="Golden Hour"
-                                scale={timeScale}
-                                hideOnMobile={['Nachmittag', 'Blue Hour']}
-                            />
+                    <div className="flex flex-col gap-2">
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>Uhrzeit</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            <ChipGroup items={['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour']} activeItem={activeTime} pressedItem={isTimePressed} targetItem="Golden Hour" scale={timeScale} hideOnMobile={['Nachmittag', 'Blue Hour']} />
                         </div>
                     </div>
                 </div>
 
-                <div className={`group flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-black/20 focus-within:border-zinc-300 dark:focus-within:border-zinc-700 transition-all duration-300`}>
-                    <div className="p-4 text-xs lg:text-[13px] text-zinc-400 dark:text-zinc-600 h-24 mb-1">
-                        Sagen Sie der KI, was sich ändern soll...
+                {/* 3. Bottom Toolbar */}
+                <div className="flex items-center justify-between p-2 lg:p-2.5 mt-2 border-t border-zinc-100 dark:border-zinc-800/50">
+                    <div className="flex items-center gap-1">
+                        <div className="hidden lg:flex p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer">
+                            <Pen className="w-[18px] h-[18px]" />
+                        </div>
+                        <div className="hidden lg:flex p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer">
+                            <Camera className="w-[18px] h-[18px]" />
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between p-2 lg:p-2.5">
-                        <div className="flex items-center gap-1">
-                            <div className="p-2 lg:p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer group-hover:text-zinc-500">
-                                <Pen className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
-                            </div>
-                            <div className="p-2 lg:p-2.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 transition-colors cursor-pointer group-hover:text-zinc-500">
-                                <Camera className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
-                            </div>
-                        </div>
-                        <div
-                            className="h-10 px-5 rounded-full font-bold text-[10px] lg:text-[11px] flex items-center justify-center relative uppercase tracking-widest transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white overflow-hidden cursor-pointer"
-                            style={{ transform: `scale(${buttonScale})` }}
-                        >
-                            <span className="relative z-10 flex items-center gap-2">Generieren <TwoDotsVertical className="w-3.5 h-3.5 opacity-50" /></span>
-                        </div>
+                    <div
+                        className="h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer"
+                        style={{ transform: `scale(${buttonScale})` }}
+                    >
+                        <span className="relative z-10">Generieren</span>
                     </div>
                 </div>
             </div>
+
             <div className="flex-1 min-h-[20px]" />
-            <div className="hidden lg:flex flex-none flex-col border-t border-zinc-200 dark:border-zinc-800 -mx-6">
-                <div className="h-14 flex items-center justify-between px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-2">
-                        <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                        <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500`}>Vorlagen</span>
+            
+            {/* Presets Chips Footer */}
+            <div className="hidden lg:flex flex-none flex-col mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800/60">
+                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>Vorlagen</span>
+                <div className="flex flex-wrap gap-2">
+                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                        🏡 <span>Home Staging</span>
                     </div>
-                    <Plus className="w-3.5 h-3.5 text-zinc-400" />
-                </div>
-                <div className="pt-0.5 pb-0 space-y-1.5">
-                    {['Home Staging', 'Cleanup', 'Jahreszeit'].map((lib, i) => (
-                        <div key={lib} className="flex items-center justify-between py-2 px-6 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 group transition-colors cursor-pointer">
-                            <span className="text-[13px] text-zinc-500 dark:text-zinc-400 group-hover:text-black dark:group-hover:text-white transition-colors">{lib}</span>
-                            <div className="flex gap-1.5 opacity-0 group-hover:opacity-30 transition-opacity pr-2">
-                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
-                                <div className="w-1 h-1 bg-zinc-500 rounded-full" />
-                            </div>
-                        </div>
-                    ))}
+                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                        🧹 <span>Cleanup</span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                        ❄️ <span>Jahreszeit</span>
+                    </div>
                 </div>
             </div>
         </div>
