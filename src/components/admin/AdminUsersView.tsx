@@ -133,8 +133,8 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                             </span>
                                         </td>
                                         <td className="px-5 py-3.5 text-zinc-500 text-sm">{getRelativeTime(u.lastActiveAt)}</td>
-                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-emerald-600 dark:text-emerald-400">{u.credits.toFixed(2)} €</td>
-                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-zinc-900 dark:text-white">{u.totalSpent.toFixed(2)} €</td>
+                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-emerald-600 dark:text-emerald-400">${u.credits.toFixed(2)}</td>
+                                        <td className="px-5 py-3.5 text-right font-mono text-sm text-zinc-900 dark:text-white">${u.totalSpent.toFixed(2)}</td>
                                         <td className="px-5 py-3.5 text-right text-sm text-zinc-500">{new Date(u.joinedAt).toLocaleDateString()}</td>
                                     </tr>
                                 ))}

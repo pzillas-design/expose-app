@@ -14,18 +14,17 @@ interface AdminStatsViewProps {
 }
 
 // Actual model names as stored in DB
-const USD_TO_EUR = 0.92;
-const KIE_COST: Record<string, { eur: number; label: string; color: string }> = {
+const KIE_COST: Record<string, { usd: number; label: string; color: string }> = {
     // NB2 family — violet, darker → lighter for higher resolution
-    'nano-banana-2':   { eur: 0.02 * USD_TO_EUR, label: 'NB2',      color: '#7c3aed' },
-    'nb2-1k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 1K',   color: '#7c3aed' },
-    'nb2-2k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 2K',   color: '#8b5cf6' },
-    'nb2-4k':          { eur: 0.02 * USD_TO_EUR, label: 'NB2 4K',   color: '#a78bfa' },
+    'nano-banana-2':   { usd: 0.02, label: 'NB2',      color: '#7c3aed' },
+    'nb2-1k':          { usd: 0.02, label: 'NB2 1K',   color: '#7c3aed' },
+    'nb2-2k':          { usd: 0.02, label: 'NB2 2K',   color: '#8b5cf6' },
+    'nb2-4k':          { usd: 0.02, label: 'NB2 4K',   color: '#a78bfa' },
     // NB Pro family — orange, darker → lighter for higher resolution
-    'nano-banana-pro': { eur: 0.09 * USD_TO_EUR, label: 'NB Pro',   color: '#ea580c' },
-    'pro-1k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 1K', color: '#ea580c' },
-    'pro-2k':          { eur: 0.09 * USD_TO_EUR, label: 'NB Pro 2K', color: '#f97316' },
-    'pro-4k':          { eur: 0.12 * USD_TO_EUR, label: 'NB Pro 4K', color: '#fb923c' },
+    'nano-banana-pro': { usd: 0.09, label: 'NB Pro',   color: '#ea580c' },
+    'pro-1k':          { usd: 0.09, label: 'NB Pro 1K', color: '#ea580c' },
+    'pro-2k':          { usd: 0.09, label: 'NB Pro 2K', color: '#f97316' },
+    'pro-4k':          { usd: 0.12, label: 'NB Pro 4K', color: '#fb923c' },
 };
 
 // Fixed display order: NB2 (1K→4K) then NB Pro (1K→4K)
@@ -80,7 +79,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     }, []);
 
     const completedJobs = jobs.filter(j => j.status === 'completed');
-    const kieAiCost = completedJobs.reduce((acc, j) => acc + (KIE_COST[j.model]?.eur ?? 0), 0);
+    const kieAiCost = completedJobs.reduce((acc, j) => acc + (KIE_COST[j.model]?.usd ?? 0), 0);
     const profit = stripeRevenue != null ? stripeRevenue - kieAiCost : null;
     const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
         ? (profit / stripeRevenue) * 100 : null;
@@ -104,7 +103,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 if (!buckets[key]) return;
                 const m = job.model || 'unknown';
-                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.eur ?? 0);
+                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.usd ?? 0);
             });
 
         } else if (timeRange === 'woche') {
@@ -121,7 +120,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 const key = isoWeekKey(d);
                 if (!buckets[key]) return;
                 const m = job.model || 'unknown';
-                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.eur ?? 0);
+                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.usd ?? 0);
             });
 
         } else if (timeRange === 'monat') {
@@ -137,7 +136,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                 if (!buckets[key]) return;
                 const m = job.model || 'unknown';
-                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.eur ?? 0);
+                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.usd ?? 0);
             });
             // Add Stripe revenue per month
             Object.entries(stripeMonthly).forEach(([key, rev]) => {
@@ -156,7 +155,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 const key = String(d.getFullYear());
                 if (!buckets[key]) return;
                 const m = job.model || 'unknown';
-                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.eur ?? 0);
+                buckets[key][m] = (buckets[key][m] || 0) + (KIE_COST[m]?.usd ?? 0);
             });
             // Aggregate monthly Stripe into years
             Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
@@ -191,7 +190,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
                     label="Stripe Einnahmen"
-                    value={stripeRevenue != null ? `${stripeRevenue.toFixed(2)}€` : '—'}
+                    value={stripeRevenue != null ? `$${stripeRevenue.toFixed(2)}` : '—'}
                     sub={`${stripePaymentCount} Zahlungen`}
                     icon={<ArrowUpRight className="w-4 h-4 text-emerald-500" />}
                     iconBg="bg-emerald-50 dark:bg-emerald-900/20"
@@ -199,7 +198,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 />
                 <StatCard
                     label="Kie AI Ausgaben"
-                    value={`${kieAiCost.toFixed(2)}€`}
+                    value={`$${kieAiCost.toFixed(2)}`}
                     sub={`${completedJobs.length} Generierungen (est.)`}
                     icon={<ArrowDownRight className="w-4 h-4 text-red-500" />}
                     iconBg="bg-red-50 dark:bg-red-900/20"
@@ -207,7 +206,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 />
                 <StatCard
                     label="Gewinn"
-                    value={profit != null ? `${profit.toFixed(2)}€` : '—'}
+                    value={profit != null ? `$${profit.toFixed(2)}` : '—'}
                     sub={margin != null ? `Marge ${margin.toFixed(0)}%` : '—'}
                     icon={<TrendingUp className="w-4 h-4 text-orange-500" />}
                     iconBg="bg-orange-50 dark:bg-orange-900/20"
@@ -250,18 +249,18 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
                             <YAxis yAxisId="left" axisLine={false} tickLine={false}
                                 tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                tickFormatter={v => `${v.toFixed(2)}€`} />
+                                tickFormatter={v => `$${v.toFixed(2)}`} />
                             {showStripeLine && (
                                 <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
                                     tick={{ fontSize: 9, fontWeight: 700, fill: '#10b981' }}
-                                    tickFormatter={v => `${v.toFixed(0)}€`} />
+                                    tickFormatter={v => `$${v.toFixed(0)}`} />
                             )}
                             <Tooltip
                                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
                                 formatter={(value: any, name: string) => {
-                                    if (name === '_stripe') return [`${Number(value).toFixed(2)}€`, 'Stripe Einnahmen'];
+                                    if (name === '_stripe') return [`$${Number(value).toFixed(2)}`, 'Stripe Einnahmen'];
                                     const m = KIE_COST[name];
-                                    return [`${Number(value).toFixed(3)}€`, m?.label ?? name];
+                                    return [`$${Number(value).toFixed(3)}`, m?.label ?? name];
                                 }}
                             />
                             <Legend
@@ -319,8 +318,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                         <span className="ml-2 text-[10px] text-zinc-400 font-mono">{modelId}</span>
                                     </td>
                                     <td className="px-6 py-3 text-right font-medium">{count}</td>
-                                    <td className="px-6 py-3 text-right font-mono text-xs text-zinc-400">{info.eur.toFixed(3)}€</td>
-                                    <td className="px-6 py-3 text-right font-mono text-xs font-bold text-red-500">{(count * info.eur).toFixed(2)}€</td>
+                                    <td className="px-6 py-3 text-right font-mono text-xs text-zinc-400">${info.usd.toFixed(3)}</td>
+                                    <td className="px-6 py-3 text-right font-mono text-xs font-bold text-red-500">${(count * info.usd).toFixed(2)}</td>
                                 </tr>
                             );
                         })}
@@ -328,7 +327,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             <td className="px-6 py-3 text-[11px] font-medium text-zinc-500">Gesamt</td>
                             <td className="px-6 py-3 text-right">{completedJobs.length}</td>
                             <td className="px-6 py-3" />
-                            <td className="px-6 py-3 text-right font-mono text-red-500">{kieAiCost.toFixed(2)}€</td>
+                            <td className="px-6 py-3 text-right font-mono text-red-500">${kieAiCost.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
