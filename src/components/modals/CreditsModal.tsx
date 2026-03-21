@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
-import { X, Loader2, Check } from 'lucide-react';
+import { X, Loader2, Check, Plus } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 
 interface CreditsModalProps {
@@ -66,28 +66,31 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         </Button>
                     ) : (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative group">
-                                <div className="flex items-center justify-center border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-zinc-50 dark:bg-black group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-600 transition-colors">
-                                    <input
-                                        type="number"
-                                        value={customAmount}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
-                                                setCustomAmount(val);
-                                                const numericVal = parseFloat(val);
-                                                if (val !== '' && !isNaN(numericVal) && numericVal < 5) {
-                                                    setShowMinError(true);
-                                                } else {
-                                                    setShowMinError(false);
+                            <div className="relative">
+                                <div className="flex items-center justify-center gap-2 py-4 bg-transparent transition-colors">
+                                    <Plus className="w-8 h-8 text-zinc-300 dark:text-zinc-700 font-light" />
+                                    <div className="relative flex items-baseline">
+                                        <input
+                                            type="number"
+                                            value={customAmount}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '' || /^\d*\.?\d{0,2}$/.test(val)) {
+                                                    setCustomAmount(val);
+                                                    const numericVal = parseFloat(val);
+                                                    if (val !== '' && !isNaN(numericVal) && numericVal < 5) {
+                                                        setShowMinError(true);
+                                                    } else {
+                                                        setShowMinError(false);
+                                                    }
                                                 }
-                                            }
-                                        }}
-                                        placeholder="0.00"
-                                        className="w-full bg-transparent text-center text-3xl font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-700 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-mono"
-                                        autoFocus
-                                    />
-                                    <span className="text-zinc-400 ml-1 text-2xl font-light">€</span>
+                                            }}
+                                            placeholder="0.00"
+                                            className="w-[180px] bg-transparent text-left text-5xl font-mono font-medium outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-200 dark:placeholder-zinc-800 p-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                            autoFocus
+                                        />
+                                        <span className="text-zinc-300 dark:text-zinc-700 text-2xl font-mono ml-2">€</span>
+                                    </div>
                                 </div>
                             </div>
 
