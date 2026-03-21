@@ -90,6 +90,11 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                     }
                 }
             `}</style>
+            
+            {/* Background Gradients - Shared with ContactPage for brand consistency */}
+            <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
+
             <div className="w-full h-full" style={{ perspective: '1000px' }}>
                 <div
                     className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out will-change-transform"
