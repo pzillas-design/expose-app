@@ -667,11 +667,11 @@ export const translations = {
     empty_board_title: "Dein Board ist leer",
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
     upload_image_edit: "Hochladen",
-    generate_new: "Bild generieren",
+    generate_new: "Erstellen",
     empty_feed_message: "Klicke auf \"+\", um dein erstes Bild zu generieren.",
     action_upload: "Hochladen",
     drop_files_here: "Dateien hier ablegen",
-    action_generate: "Bild generieren",
+    action_generate: "Erstellen",
 
     // Settings / User
     login_btn: "Anmelden",
