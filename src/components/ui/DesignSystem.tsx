@@ -89,8 +89,8 @@ export const Typo = {
     // Section Labels — very small meta labels (10px)
     Label: `text-[10px] font-medium ${Theme.Colors.TextSecondary}`,
 
-    // Button Labels (Standardized for all buttons — keep uppercase)
-    ButtonLabel: `text-[10px] font-bold uppercase tracking-widest`,
+    // Button Labels (Standardized for all buttons)
+    ButtonLabel: `text-sm font-medium`,
 
     // Tiny Badges
     LabelSmall: `text-[9px] font-medium`,
@@ -165,7 +165,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                 <div
                     className={`
  fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
- bg-white dark:bg-zinc-950
+ bg-white dark:bg-black
  text-zinc-900 dark:text-zinc-100
  border border-zinc-200 dark:border-zinc-800
  `}
@@ -229,7 +229,7 @@ export const Button: React.FC<ButtonProps> = ({
     children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, ...props
 }) => {
     // Structural classes — typography from Typo.ButtonLabel
-    const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 text-[10px] font-bold uppercase tracking-widest`;
+    const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
 
     // Size variants — height & padding only, font is always from ButtonLabel
     const sizes = {

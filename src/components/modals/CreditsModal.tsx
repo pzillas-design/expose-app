@@ -68,7 +68,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                     ) : (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                             <div className="relative group">
-                                <div className="flex items-center justify-center border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-zinc-50 dark:bg-zinc-950 group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-600 transition-colors">
+                                <div className="flex items-center justify-center border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 bg-zinc-50 dark:bg-black group-focus-within:border-zinc-400 dark:group-focus-within:border-zinc-600 transition-colors">
                                     <input
                                         type="number"
                                         value={customAmount}

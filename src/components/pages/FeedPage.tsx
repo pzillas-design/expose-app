@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
-import { Loader2, Plus, Layers, Upload, Download, X } from 'lucide-react';
+import { Loader2, Plus, Layers, Upload, Download, X, ImagePlus } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -9,6 +9,7 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
+import { FeedHeroSection } from '../layout/FeedHeroSection';
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -38,6 +39,7 @@ interface FeedGridItemProps {
 }
 
 const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew }) => {
+    const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
@@ -72,8 +74,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both',
                 }
                 : staggerDelay !== undefined
-                ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
-                : undefined}
+                    ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
+                    : undefined}
         >
             {/* Wrapper for the image bounding box */}
             <div className="relative isolate" style={boundedStyle}>
@@ -107,7 +109,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 )}
 
                 {/* Main card */}
-                <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-zinc-950 transition-colors'}`}>
+                <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-black transition-colors'}`}>
 
                     {isGen ? (
                         <>
@@ -134,12 +136,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </div>
                     ) : null}
 
-                    {/* Hover scrim */}
-                    {!isGen && (
+                    {/* Hover scrim — desktop only; on touch, hover CSS causes iOS to require two taps */}
+                    {!isGen && !isMobile && (
                         <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
-                    {/* Selection circle */}
+                    {/* Selection circle — group-hover only on desktop to avoid iOS two-tap issue */}
                     {!isGen && (
                         <div
                             className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
@@ -148,7 +150,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                     ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
                                     : isKeyboardActive
                                         ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
-                                        : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                        : isMobile
+                                            ? 'opacity-0 scale-75'
+                                            : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -195,6 +199,7 @@ interface FeedPageProps {
     onGenerate?: () => void;
     onUpload?: (files?: FileList) => void;
     onLoadMore: () => void;
+    isFetchingMore?: boolean;
     isSelectMode?: boolean;
     isSelectionSideSheetOpen?: boolean;
     selectedIds?: string[];
@@ -205,13 +210,45 @@ interface FeedPageProps {
     expandedGroupId: string | null;
     onExpandedGroupChange: (id: string | null) => void;
     lastViewedId?: string | null;
+    onScrollProgress?: (p: number) => void;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+    const scrollRafRef = React.useRef<number>(0);
     const { confirm } = useItemDialog();
+
+    // Report scroll progress to parent (drives hero navbar collapse animation).
+    // Depends on images.length so the listener is re-registered after the loading
+    // state clears and scrollRef finally gets attached to the DOM.
+    const [gradientOp, setGradientOp] = React.useState(1);
+    const [scrollP, setScrollP] = React.useState(0);
+    const hasImages = images.length > 0;
+    React.useEffect(() => {
+        if (!onScrollProgress) return;
+        const el = scrollRef.current;
+        if (!el) return;
+        const HERO_SCROLL_DISTANCE = 120; // must match TOP_PAD(20) + BOT_EXTRA(100) in AppNavbar hero mode
+        // Reset to 0 whenever we (re-)attach so the header snaps to expanded state
+        const p0 = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+        onScrollProgress(p0);
+        setScrollP(p0);
+        setGradientOp(Math.max(1 - p0 * 1.3, 0));
+        const fn = () => {
+            cancelAnimationFrame(scrollRafRef.current);
+            scrollRafRef.current = requestAnimationFrame(() => {
+                const p = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+                onScrollProgress(p);
+                setScrollP(p);
+                setGradientOp(Math.max(1 - p * 1.3, 0));
+            });
+        };
+        el.addEventListener('scroll', fn, { passive: true });
+        return () => { el.removeEventListener('scroll', fn); cancelAnimationFrame(scrollRafRef.current); };
+    }, [onScrollProgress, hasImages]);
     const prevSelectModeRef = React.useRef(false);
 
     // When entering select mode, scroll to the first selected image (which may have
@@ -416,24 +453,29 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     });
 
     React.useEffect(() => {
-        if (!hasMore || isLoading) return;
+        if (!hasMore || isLoading || isFetchingMore) return;
 
         const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
+            if (entries[0].isIntersecting && !isLoading && !isFetchingMore && hasMore) {
+                console.log('[FeedPage] Sentinel hit, triggering onLoadMore');
                 onLoadMore();
             }
-        }, { threshold: 0.1 });
+        }, {
+            threshold: 0.1,
+            rootMargin: '200px', // Start loading 200px before reaching the end
+            root: scrollRef.current
+        });
 
         if (sentinelRef.current) {
             observer.observe(sentinelRef.current);
         }
 
         return () => observer.disconnect();
-    }, [hasMore, isLoading, onLoadMore]);
+    }, [hasMore, isLoading, isFetchingMore, onLoadMore]);
 
     if (isLoading && images.length === 0) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-white dark:bg-black">
+            <div className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-950">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400 dark:text-zinc-800" />
             </div>
         );
@@ -443,7 +485,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     return (
         <div
-            className="flex-1 flex overflow-hidden"
+            className="flex-1 flex overflow-hidden relative"
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
@@ -458,11 +500,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 multiple
                 onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
             />
-            <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
+
                 {/* Drag & drop overlay */}
                 {isDropActive && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <div className="absolute inset-0 bg-zinc-950/60" />
+                        <div className="absolute inset-0 bg-black/60" />
                         <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
                             <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                             <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
@@ -471,64 +514,58 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         </div>
                     </div>
                 )}
+                {/* Fixed spacer so content starts below the expanded hero header */}
+                {!expandedGroupId && !isSelectMode && images.length > 0 && onScrollProgress && (
+                    <FeedHeroSection />
+                )}
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16">
                         {images.length > 0 ? (
-                            <div
-                                key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
-                                ref={gridRef}
-                                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-4 sm:mt-6 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
-                            >
-                                {/* Plus tile */}
-                                {!expandedGroupId && !isSelectMode && (
-                                    <div
-                                        className="aspect-square relative cursor-pointer group flex items-center justify-center"
-                                        onClick={onCreateNew}
-                                    >
-                                        <div className="w-1/2 h-1/2 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-800 transition-colors duration-150">
-                                            <Plus className="w-5 h-5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-500 transition-colors" />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {displayImages.map((img, idx) => {
-                                    const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                    const row = (expandedGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
-                                    const hasGen = row?.items.some(i => i.isGenerating) ?? false;
-                                    const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                    const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                    const unseenIds: Set<string> = state?.unseenIds ?? new Set();
-                                    // For group covers: dot if any item in group is unseen
-                                    const rowItems = row?.items ?? [img];
-                                    const isNew = !expandedGroupId
-                                        ? rowItems.some(i => unseenIds.has(i.id))
-                                        : unseenIds.has(img.id);
-                                    return (
-                                        <FeedGridItem
-                                            key={img.id}
-                                            img={img}
-                                            idx={idx}
-                                            isSelected={selectedIdSet.has(img.id)}
-                                            isKeyboardActive={activeIndex === idx}
-                                            isSelectMode={!!isSelectMode}
-                                            onSelectImage={onSelectImage}
-                                            onToggleSelect={onToggleSelect}
-                                            setActiveIndex={setActiveIndex}
-                                            actions={actions}
-                                            parentSrc={parentSrc}
-                                            groupCount={gc}
-                                            hasGenerating={hasGen}
-                                            onOpenGroup={gc > 1 && row ? () => {
-                                                actions?.markGroupSeen?.(row.items.map(i => i.id));
-                                                onExpandedGroupChange(row.id);
-                                            } : undefined}
-                                            staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                            isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
-                                            isNew={isNew}
-                                        />
-                                    );
-                                })}
-                            </div>
+                            <>
+                                <div
+                                    key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
+                                    ref={gridRef}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                >
+                                    {displayImages.map((img, idx) => {
+                                        const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                        const row = (expandedGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
+                                        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+                                        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+                                        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+                                        const unseenIds: Set<string> = state?.unseenIds ?? new Set();
+                                        // For group covers: dot if any item in group is unseen
+                                        const rowItems = row?.items ?? [img];
+                                        const isNew = !expandedGroupId
+                                            ? rowItems.some(i => unseenIds.has(i.id))
+                                            : unseenIds.has(img.id);
+                                        return (
+                                            <FeedGridItem
+                                                key={img.id}
+                                                img={img}
+                                                idx={idx}
+                                                isSelected={selectedIdSet.has(img.id)}
+                                                isKeyboardActive={activeIndex === idx}
+                                                isSelectMode={!!isSelectMode}
+                                                onSelectImage={onSelectImage}
+                                                onToggleSelect={onToggleSelect}
+                                                setActiveIndex={setActiveIndex}
+                                                actions={actions}
+                                                parentSrc={parentSrc}
+                                                groupCount={gc}
+                                                hasGenerating={hasGen}
+                                                onOpenGroup={gc > 1 && row ? () => {
+                                                    actions?.markGroupSeen?.(row.items.map(i => i.id));
+                                                    onExpandedGroupChange(row.id);
+                                                } : undefined}
+                                                staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
+                                                isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
+                                                isNew={isNew}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </>
                         ) : !isLoading && (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                                 <div className="flex flex-col items-center gap-8">
@@ -566,14 +603,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 </div>
 
                 {/* Infinite scroll sentinel + loading indicator */}
-                {hasMore && (
-                    <div ref={sentinelRef} className="flex items-center justify-center h-16">
-                        {isLoading && <Loader2 className="w-5 h-5 animate-spin text-zinc-300 dark:text-zinc-600" />}
+                {(hasMore || isFetchingMore) && (
+                    <div ref={sentinelRef} className="flex flex-col items-center justify-center min-h-[8rem] py-8 gap-4">
+                        <div className={`transition-all duration-1000 ease-in-out flex flex-col items-center ${ (isLoading || isFetchingMore) ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none' }`}>
+                            <Loader2 className="w-10 h-10 animate-[spin_3s_linear_infinite] text-zinc-300 dark:text-zinc-800" />
+                        </div>
+                        
+                        {!isLoading && !isFetchingMore && hasMore && (
+                            <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-2 text-zinc-400/50 dark:text-zinc-600/50">
+                                <div className="text-[10px] uppercase tracking-[0.3em] font-medium">Scroll for more</div>
+                            </div>
+                        )}
                     </div>
                 )}
 
-<div className="mt-auto">
-                    <GlobalFooter t={t || ((key: string) => key)} />
+                <div className="mt-auto">
+                    <GlobalFooter
+                        t={t}
+                        onGalleryClick={() => {
+                            // Already on feed, just scroll to top
+                            scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                    />
                 </div>
             </div>
 

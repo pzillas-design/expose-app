@@ -131,7 +131,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[60] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
+            className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
             onClick={onClose}
         >
             <div

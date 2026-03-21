@@ -241,7 +241,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
             {/* Popover */}
             {isOpen && (
                 <div
-                    className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}
+                    className={`absolute top-full mt-2 left-0 z-50 w-64 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg overflow-hidden ${isPopoverClosing ? 'opacity-0' : 'animate-in fade-in zoom-in-95 duration-150'}`}
                     style={{ transition: isPopoverClosing ? 'opacity 600ms ease-out' : undefined }}
                 >
                     {/* Items */}

@@ -202,7 +202,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                 ) : (
                     <>
                         {/* Sticky header — full width, flush border */}
-                        <div className="shrink-0 flex items-center justify-between px-6 lg:px-8 py-3 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 bg-white dark:bg-zinc-950 z-10">
+                        <div className="shrink-0 flex items-center justify-between px-6 lg:px-8 py-3 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 bg-white dark:bg-black z-10">
                             <div className="flex items-center gap-3 min-w-0">
                                 {/* Emoji picker */}
                                 <input
@@ -228,7 +228,7 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
                         </div>
 
                         {/* Scrollable content */}
-                        <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950">
+                        <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-black">
                             <div className="p-6 lg:p-8 space-y-10">
 
                                 {/* DE / EN Columns */}
@@ -388,7 +388,7 @@ const ControlsEditor = ({ controls, onChange }: { controls: PresetControl[], onC
     const grid = "grid-cols-[1fr_2fr_32px]";
 
     return (
-        <div ref={containerRef} className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-zinc-950">
+        <div ref={containerRef} className="border border-zinc-100 dark:border-zinc-800/50 rounded-xl overflow-hidden bg-white dark:bg-black">
             <div className={`grid ${grid} bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 text-xs font-medium text-zinc-400 dark:text-zinc-500`}>
                 <div className="p-2.5 pl-4">Label</div>
                 <div className="p-2.5 border-l border-zinc-100 dark:border-zinc-800">Optionen (kommagetrennt)</div>

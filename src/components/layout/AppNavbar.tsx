@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, DollarSign } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { useMobile } from '@/hooks/useMobile';
 import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
@@ -46,6 +47,12 @@ interface AppNavbarProps {
     onGenerateMoreById?: (id: string) => void;
     isGroupDrillDown?: boolean;
     onCloseGroup?: () => void;
+    /** 0 = hero/expanded, 1 = compact. Grid mode only. */
+    heroProgress?: number;
+    /** Called when upload button is clicked in hero navbar mode */
+    onHeroUploadClick?: () => void;
+    isPublic?: boolean;
+    onStartApp?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -88,15 +95,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onGenerateMoreById,
     isGroupDrillDown = false,
     onCloseGroup,
+    heroProgress,
+    onHeroUploadClick,
+    isPublic = false,
+    onStartApp
 }) => {
+    const isMobile = useMobile();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
+    const [isPublicMenuOpen, setIsPublicMenuOpen] = useState(false);
     const createDropdownRef = useRef<HTMLDivElement>(null);
     const mobileCreateDropdownRef = useRef<HTMLDivElement>(null);
     const gridMenuRef = useRef<HTMLDivElement>(null);
     const detailMenuRef = useRef<HTMLDivElement>(null);
     const mobileDetailMenuRef = useRef<HTMLDivElement>(null);
+    const publicMenuRef = useRef<HTMLDivElement>(null);
 
     // Animated credit counter
     const [displayCredits, setDisplayCredits] = useState<number | null>(null);
@@ -163,11 +177,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 && (!mobileDetailMenuRef.current || !mobileDetailMenuRef.current.contains(target))) {
                 setIsDetailMenuOpen(false);
             }
+            if (isPublicMenuOpen && publicMenuRef.current && !publicMenuRef.current.contains(target)) {
+                setIsPublicMenuOpen(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen]);
+    }, [isCreateOpen, isGridMenuOpen, isDetailMenuOpen, isPublicMenuOpen]);
 
     const isDetail = mode === 'detail';
     const isCreate = mode === 'create';
@@ -194,12 +211,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         />
     );
 
-    const leftContent = isCreate ? (
+    const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
             {progressRing}
         </div>
-    ) : isDetail ? (
+    ) : isCreate ? (
         <div className="flex items-center gap-1">
             <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" />
             {progressRing}
@@ -216,7 +233,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <div className="flex items-center gap-1">
-            {user && (
+            {!isPublic && user && (
+                <RoundIconButton
+                    icon={<Upload className="w-5 h-5" />}
+                    onClick={onHeroUploadClick}
+                    variant="ghost"
+                    tooltip={t('nav_upload')}
+                />
+            )}
+            {!isPublic && user && (
                 <RoundIconButton
                     icon={<Plus className="w-5 h-5" />}
                     onClick={onCreate}
@@ -263,13 +288,38 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <button
             type="button"
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={onBack}
+            onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}
         >
             <Logo className="w-7 h-7" />
         </button>
     );
 
-    const rightContent = isCreate ? null : isDetail ? (
+    const rightContent = isCreate ? (
+        <div className="flex items-center gap-2">
+            {!isPublic && user && balanceDisplay}
+            <div className="relative" ref={gridMenuRef}>
+                <RoundIconButton
+                    icon={<MoreHorizontal className="w-4 h-4" />}
+                    onClick={() => setIsGridMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isGridMenuOpen}
+                    tooltip={t('nav_menu')}
+                />
+                {isGridMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 z-50">
+                        <DropdownMenu
+                            items={[
+                                { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    ) : isDetail ? (
         <div className="flex items-center gap-1">
             {/* Mobile: 3-dot menu in the right corner */}
             <div className="relative md:hidden" ref={mobileDetailMenuRef}>
@@ -346,7 +396,20 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <>
-            {!user ? (
+            {isPublic ? (
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={onStartApp}
+                        variant="primary-mono"
+                        size="s"
+                        icon={<ChevronLeft className="w-4 h-4 rotate-180" />}
+                        iconPosition="right"
+                        className="min-w-[88px]"
+                    >
+                        {t('nav_start') || 'Start'}
+                    </Button>
+                </div>
+            ) : !user ? (
                 <button
                     onClick={onSignIn}
                     className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
@@ -368,9 +431,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
                                     items={[
-                                        { label: t('nav_select'), icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
-                                        { label: t('nav_settings'), icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                        { label: t('nav_contact'), separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                        { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                        { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                        { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                        { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                     ]}
                                 />
                             </div>
@@ -381,9 +445,188 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </>
     );
 
+    // Expanded navbar — 3-column layout, collapses on scroll with CSS transitions
+    // Expandable only for non-functional top-level pages
+    const isHeroMode = heroProgress !== undefined && !isDetail && !isCreate && !isSelectMode && !isGroupDrillDown;
+
+    if (isHeroMode) {
+        const hp = heroProgress!;
+        const isScrolled = hp > 0.4;
+        const showBorder = hp > 0.9;
+
+        return (
+            <header
+                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 transition-all duration-300 border-b ${showBorder
+                    ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
+                    : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
+                    } ${isScrolled
+                        ? 'h-14 backdrop-blur-none'
+                        : 'h-[148px] backdrop-blur-none border-transparent pointer-events-none'
+                    }`}
+            >
+                {/* LEFT: Upload + Create (with labels when expanded) */}
+                <div className="flex items-center gap-2 w-1/3 justify-start relative z-10 pointer-events-auto">
+                    {!isPublic && user && (
+                        <>
+                            <button
+                                className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                    : isMobile
+                                        ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                        : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                    }`}
+                                onClick={onHeroUploadClick}
+                            >
+                                <Upload className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                <div
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                        }`}
+                                >
+                                    <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        {t('nav_upload') || 'Hochladen'}
+                                    </span>
+                                </div>
+                            </button>
+                            <button
+                                className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                    : isMobile
+                                        ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                        : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                    }`}
+                                onClick={onCreate}
+                            >
+                                <Plus className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                <div
+                                    className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                        }`}
+                                >
+                                    <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        {t('nav_create') || 'Generieren'}
+                                    </span>
+                                </div>
+                            </button>
+                        </>
+                    )}
+                    {progressRing}
+                </div>
+
+                {/* CENTER: Logo + Wordmark */}
+                <div className="flex items-center justify-center w-1/3 relative group cursor-pointer z-10 pointer-events-auto" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
+                    <div className="flex items-center justify-center gap-[11.4px]">
+                        {/* Official Logo */}
+                        <Logo
+                            className={`shrink-0 object-contain transition-all duration-500 ease-out ${isScrolled
+                                ? 'w-7 h-7'
+                                : 'w-[30.5px] h-[30.5px] md:w-[45px] md:h-[45px] lg:w-[52px] h-[52px] group-active:scale-95'
+                                }`}
+                        />
+
+                        {/* Text "EXPOSE" (shrinks and fades when scrolling) */}
+                        <div
+                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 opacity-0' : 'w-[72px] md:w-[106px] lg:w-[129px] opacity-100'
+                                }`}
+                        >
+                            <span
+                                className="font-kumbh font-normal text-[18.5px] md:text-[27px] lg:text-[31.5px] text-zinc-900 dark:text-white whitespace-nowrap leading-none pb-[1px] md:pb-[1.5px] lg:pb-[2px]"
+                                style={{ letterSpacing: '-0.005em' }}
+                            >
+                                exposé
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT: System Actions / Login */}
+                <div className="flex items-center justify-end w-1/3 pointer-events-auto">
+                    <div className="flex items-center gap-1.5">
+                        {isPublic ? (
+                            <>
+                                <Button
+                                    onClick={onStartApp}
+                                    variant="primary-mono"
+                                    size={isScrolled ? "s" : "m"}
+                                    icon={<ChevronLeft className="w-4 h-4 rotate-180" />}
+                                    iconPosition="right"
+                                    className="min-w-[88px]"
+                                >
+                                    {t('nav_start') || 'Start'}
+                                </Button>
+                            </>
+                        ) : !user ? (
+                            <button
+                                onClick={onSignIn}
+                                className={`px-5 transition-all duration-300 font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 ${isScrolled ? 'h-8 text-[12px]' : 'h-10 text-[13px]'}`}
+                            >
+                                {t('login_btn') || 'Login'}
+                            </button>
+                        ) : (
+                            <>
+                                {credits !== undefined && credits !== null && (
+                                    <Tooltip text={t('balance')}>
+                                        <button
+                                            onClick={onOpenCredits}
+                                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                                ? isMobile
+                                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                                    : 'h-9 px-3 bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-1.5'
+                                                : isMobile
+                                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                                }`}
+                                        >
+                                            <DollarSign className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[14px] h-[14px]' : 'w-4 h-4'}`} />
+                                            <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'} ${isMobile ? 'hidden' : ''}`}>
+                                                {(displayCredits ?? credits).toFixed(2)}
+                                            </span>
+                                        </button>
+                                    </Tooltip>
+                                )}
+
+                                <div className="relative" ref={gridMenuRef}>
+                                    <button
+                                        className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                            ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                            : isMobile
+                                                ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                                : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                            }`}
+                                        onClick={() => setIsGridMenuOpen(p => !p)}
+                                    >
+                                        <MoreHorizontal className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                                }`}
+                                        >
+                                            <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                                {t('nav_menu') || 'Menü'}
+                                            </span>
+                                        </div>
+                                    </button>
+                                    {isGridMenuOpen && (
+                                        <div className="absolute top-full mt-2 right-0 z-50">
+                                            <DropdownMenu
+                                                items={[
+                                                    { label: t('nav_select') || 'Bilder markieren', icon: <CircleCheck className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onSelectMode?.(); } },
+                                                    { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                    { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                    { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                                ]}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </header>
+        );
+    }
+
     return (
         <header className="fixed top-0 left-0 right-0 h-14 z-50 pointer-events-none">
-            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-900">
+            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-black border-b border-zinc-100 dark:border-zinc-900">
 
                 <div className="flex items-center w-1/3">
                     {leftContent}

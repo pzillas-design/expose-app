@@ -225,9 +225,27 @@ Deno.serve(async (req) => {
             }
         };
 
-        // Prepare parts array (Multimodal Interleaving)
+        // (1) Resolve all reference paths to signed URLs for both Gemini and Kie.ai
+        const resolvedReferences: any[] = [];
+        if (payloadReferences?.length) {
+            for (const ref of payloadReferences) {
+                if (resolvedReferences.length >= 8) break;
+                if (ref.src?.startsWith('http') || ref.src?.startsWith('data:')) {
+                    resolvedReferences.push(ref);
+                } else if (ref.src) {
+                    const { data: signedData } = await supabaseAdmin.storage
+                        .from('user-content')
+                        .createSignedUrl(ref.src, 3600);
+                    if (signedData?.signedUrl) {
+                        resolvedReferences.push({ ...ref, src: signedData.signedUrl });
+                    }
+                }
+            }
+        }
+
+        // (2) Prepare parts array (Multimodal Interleaving for Gemini path)
         const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
-            payload,
+            { ...payload, references: resolvedReferences },
             finalSourceBase64
         );
 
@@ -241,6 +259,7 @@ Deno.serve(async (req) => {
             hasMask,
             hasReferenceImages: hasRefs,
             referenceImagesCount: allRefs.length,
+            references: allRefs,
             generationConfig,
             timestamp: new Date().toISOString()
         };
@@ -269,7 +288,7 @@ Deno.serve(async (req) => {
             sourceBaseName: sourceImage?.baseName || sourceImage?.title,
             sourceVersion: sourceImage?.version,
             sourceId: sourceImage?.id || null,
-            annotations: (requestType === 'create' && payloadReferences) ? JSON.stringify(payloadReferences.map((r: any) => ({
+            annotations: (resolvedReferences.length > 0) ? JSON.stringify(resolvedReferences.map((r: any) => ({
                 id: crypto.randomUUID(),
                 type: 'reference_image',
                 referenceImage: r.src,
@@ -308,12 +327,10 @@ Deno.serve(async (req) => {
             if (annUrl) kieImageUrls.push(annUrl);
         }
 
-        // References that are already HTTP URLs
-        if (payloadReferences?.length) {
-            for (const ref of payloadReferences) {
-                if (ref.src?.startsWith('http') && kieImageUrls.length < 8) {
-                    kieImageUrls.push(ref.src);
-                }
+        // References (Already resolved above)
+        for (const ref of resolvedReferences) {
+            if (kieImageUrls.length < 8) {
+                kieImageUrls.push(ref.src);
             }
         }
 

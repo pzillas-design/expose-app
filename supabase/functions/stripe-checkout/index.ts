@@ -19,13 +19,30 @@ Deno.serve(async (req) => {
     }
 
     try {
-        const supabaseClient = createClient(
+        // Authenticate user — extract sub from JWT payload without signature verification.
+        // verify_jwt=false is set in config.toml so expired tokens still reach us; we look
+        // up the user via service-role to confirm they exist (avoids getUser() network call
+        // failing on expired tokens in supabase-js v2.99+ which triggers sign-out).
+        const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-            { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        const { data: { user } } = await supabaseClient.auth.getUser()
+        const authHeader = req.headers.get('Authorization') ?? '';
+        const jwtToken = authHeader.replace(/^Bearer\s+/i, '');
+        let userId: string | null = null;
+        try {
+            const parts = jwtToken.split('.');
+            if (parts.length === 3) {
+                const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+                userId = JSON.parse(payloadJson)?.sub ?? null;
+            }
+        } catch { /* malformed JWT */ }
+
+        if (!userId) throw new Error('User not found')
+
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId)
+        const user = authUser?.user ?? null
         if (!user) throw new Error('User not found')
 
         const { amount, success_url, cancel_url } = await req.json()

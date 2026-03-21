@@ -51,7 +51,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
  ];
 
  return (
-  <div className="absolute top-0 bottom-0 right-0 w-[400px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 z-50 flex flex-col animate-in slide-in-from-right duration-300">
+  <div className="absolute top-0 bottom-0 right-0 w-[400px] bg-white dark:bg-black border-l border-zinc-200 dark:border-zinc-800 z-50 flex flex-col animate-in slide-in-from-right duration-300">
 
    {/* Header */}
    <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">

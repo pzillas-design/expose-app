@@ -158,7 +158,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
  {isMenuOpen && (
  <div className={`
  absolute top-full left-0 mt-2 min-w-[200px] z-50 py-1
- bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 
+ bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 
  rounded-lg ring-1 ring-black/5
  flex flex-col animate-in fade-in zoom-in-95 duration-100 origin-top-left
  `}>

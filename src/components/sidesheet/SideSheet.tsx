@@ -528,7 +528,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
                                                         onClick={() => deleteAnnotation(ann.id)}
-                                                        className="absolute top-1 right-1 w-6 h-6 bg-zinc-950/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="absolute top-1 right-1 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
                                                         <X className="w-4 h-4" />
                                                     </button>
@@ -834,7 +834,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 <div className="lg:hidden fixed inset-0 z-[100] pointer-events-none">
                     <div
                         ref={sheetRef}
-                        className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
+                        className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
                         style={{ maxHeight: '90vh', overflow: 'hidden', paddingBottom: 'env(safe-area-inset-bottom)' }}
                         onDragOver={e => e.preventDefault()}
                         onDrop={handleDrop}
@@ -867,7 +867,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                className={`relative flex flex-col bg-white dark:bg-zinc-950 ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
+                className={`relative flex flex-col bg-white dark:bg-black ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
                 style={{ width }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}

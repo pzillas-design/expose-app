@@ -111,7 +111,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
             <div className="md:flex-1 relative overflow-hidden"
                 style={isMobile ? { height: `calc(100vw * ${ratioH} / ${ratioW})`, minHeight: 200, maxHeight: '55vw' } : undefined}
             >
-                <div ref={canvasAreaRef} className={`absolute inset-0 flex items-center justify-center p-6 md:p-12 dark:bg-zinc-950 ${mode === 'choose' ? 'bg-white' : 'bg-zinc-100'}`}>
+                <div ref={canvasAreaRef} className={`absolute inset-0 flex items-center justify-center p-6 md:p-12 dark:bg-black ${mode === 'choose' ? 'bg-white' : 'bg-zinc-100'}`}>
 
                     {mode === 'choose' ? (
                         /* ── Welcome / choice screen ── */
@@ -182,7 +182,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
 
             {/* ── SideSheet ── */}
             <aside
-                className="flex flex-col relative shrink-0 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:border-l md:border-zinc-100 dark:md:border-zinc-900"
+                className="flex flex-col relative shrink-0 bg-zinc-50 dark:bg-black border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:border-l md:border-zinc-100 dark:md:border-zinc-900"
                 style={{ width: isMobile ? undefined : `${sidebarWidth}px` }}
             >
                 <SideSheet

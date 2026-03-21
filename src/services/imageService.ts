@@ -443,16 +443,17 @@ export const imageService = {
      * Loads all images for the user from DB and Storage.
      * Converts them back into the ImageRow structure used by the app.
      */
-    async loadUserImages(userId: string, limit = 50, offset = 0): Promise<{ rows: ImageRow[]; rawCount: number }> {
+    async loadUserImages(userId: string, limit = 50, offset = 0): Promise<{ rows: ImageRow[]; rawCount: number; batchSize: number }> {
         console.log(`[DEBUG] loadUserImages for userId=${userId}`);
         console.log('Deep Sync: Loading user history (Priority: Newest First)...');
 
         // 1. Get Completed Images & Active Jobs in parallel
         const imgsQuery = supabase
             .from('images')
-            .select('*')
+            .select('*', { count: 'exact' })
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
             .range(offset, offset + limit - 1);
 
         const jobsQuery = supabase
@@ -468,7 +469,7 @@ export const imageService = {
 
         if (imgsRes.error) {
             console.error('Deep Sync: Load Images Failed:', imgsRes.error);
-            return { rows: [], rawCount: 0 };
+            return { rows: [], rawCount: 0, batchSize: 0 };
         }
 
         const dbImages = imgsRes.data || [];
@@ -651,7 +652,7 @@ export const imageService = {
         // Sort rows by newest first (Apple Photos style: newest groups at the top)
         rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-        return { rows, rawCount: dbImages.length };
+        return { rows, rawCount: imgsRes.count || dbImages.length, batchSize: dbImages.length };
     },
 
     /**

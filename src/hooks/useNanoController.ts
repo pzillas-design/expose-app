@@ -55,7 +55,9 @@ export const useNanoController = () => {
         });
     }, [activeId]);
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const isLoadingRef = useRef(false);
     const [hasMore, setHasMore] = useState(true);
     const offsetRef = useRef(0);
     const PAGE_SIZE = 50;
@@ -183,6 +185,8 @@ export const useNanoController = () => {
 
     const loadFeed = useCallback(async (isInitial = false) => {
         if (!user) return;
+        if (isLoadingRef.current) return;
+        isLoadingRef.current = true;
 
         // Beta/local mode: restore from localStorage instead of Supabase.
         // This matches useAutoSave() behavior when auth is disabled.
@@ -210,6 +214,7 @@ export const useNanoController = () => {
                     setTimeout(() => setLoadingProgress(0), 300);
                     setIsCanvasLoading(false);
                 }
+                isLoadingRef.current = false;
             }
             return;
         }
@@ -219,6 +224,8 @@ export const useNanoController = () => {
             setLoadingProgress(10);
             offsetRef.current = 0;
             setHasMore(true);
+        } else {
+            setIsFetchingMore(true);
         }
 
         const currentOffset = offsetRef.current;
@@ -230,8 +237,8 @@ export const useNanoController = () => {
         }, 200) : null;
 
         try {
-            const { rows: loadedRows, rawCount } = await imageService.loadUserImages(user.id, PAGE_SIZE, currentOffset);
-            console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows (${rawCount} images) for offset ${currentOffset}`);
+            const { rows: loadedRows, rawCount, batchSize } = await imageService.loadUserImages(user.id, PAGE_SIZE, currentOffset);
+            console.log(`[DEBUG] loadUserImages result: ${loadedRows.length} rows (${batchSize} images, total ${rawCount}) for offset ${currentOffset}`);
 
             if (progressInterval) clearInterval(progressInterval);
             if (isInitial) {
@@ -239,7 +246,9 @@ export const useNanoController = () => {
                 setTimeout(() => setLoadingProgress(0), 500);
             }
 
-            if (rawCount < PAGE_SIZE) {
+            const currentFetchedTotal = currentOffset + batchSize;
+            
+            if (currentFetchedTotal >= rawCount) {
                 setHasMore(false);
             }
 
@@ -282,6 +291,8 @@ export const useNanoController = () => {
             if (progressInterval) clearInterval(progressInterval);
         } finally {
             if (isInitial) setIsCanvasLoading(false);
+            else setIsFetchingMore(false);
+            isLoadingRef.current = false;
         }
     }, [user, isAuthDisabled, setActiveId, setRows]);
 
@@ -300,10 +311,10 @@ export const useNanoController = () => {
     }, [user, loadFeed]);
 
     const handleLoadMore = useCallback(() => {
-        if (!isCanvasLoading && hasMore) {
+        if (!isCanvasLoading && !isFetchingMore && hasMore) {
             loadFeed(false);
         }
-    }, [isCanvasLoading, hasMore, loadFeed]);
+    }, [isCanvasLoading, isFetchingMore, hasMore, loadFeed]);
 
     const ensureImageLoaded = useCallback(async (id: string) => {
         if (!user) return;
@@ -352,7 +363,7 @@ export const useNanoController = () => {
 
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
-        qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, setIsAuthModalOpen, showToast, t, confirm,
+        qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
         onGenerationComplete: handleGenerationComplete,
     });
@@ -711,6 +722,7 @@ export const useNanoController = () => {
         currentLang,
         sideSheetMode,
         isCanvasLoading,
+        isFetchingMore,
         loadingProgress,
         brushSize,
         maskTool,
@@ -744,7 +756,7 @@ export const useNanoController = () => {
             : totalImageCount,
     }), [
         rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
-        qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, loadingProgress,
+        qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, isFetchingMore, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
         isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode, storageAutoDelete,

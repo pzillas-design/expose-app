@@ -17,7 +17,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children, user, userProf
     // 1. Auth still initializing — wait before making any decisions
     if (isAuthLoading || (user && !userProfile)) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+            <div className="h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-black">
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
             </div>
         );

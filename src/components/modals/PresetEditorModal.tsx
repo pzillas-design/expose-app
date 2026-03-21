@@ -131,13 +131,13 @@ const LanguageForm = ({
                                             <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                                 {t('title_label')}
                                             </label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-black border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                                 {t('options')}
                                             </label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-black border-zinc-200/50 dark:border-zinc-800/50" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-2">
                                             <button
@@ -185,13 +185,13 @@ const LanguageForm = ({
                                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                         Titel
                                     </label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-black border-zinc-200/50 dark:border-zinc-800/50" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-black ml-2`}>
                                         Optionen
                                     </label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/50" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="py-2.5 rounded-full bg-white dark:bg-black border-zinc-200/50 dark:border-zinc-800/50" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-2">
                                     <div className="flex-1" />
@@ -316,7 +316,7 @@ export const PresetEditorModal: React.FC<PresetEditorModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[100] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div

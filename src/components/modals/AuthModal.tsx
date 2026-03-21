@@ -132,7 +132,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
     };
 
     return (
-        <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-zinc-950/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] bg-white/80 dark:bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-4 animate-in fade-in duration-200">
 
             <div
                 className={`

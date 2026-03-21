@@ -48,7 +48,7 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[200] bg-zinc-950/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
@@ -70,7 +70,7 @@ export const ShareTemplateModal: React.FC<ShareTemplateModalProps> = ({
                             value={shareUrl}
                             placeholder={slug ? '' : t('share_placeholder_unsaved')}
                             readOnly
-                            className="font-mono text-[11px] bg-zinc-50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800"
+                            className="font-mono text-[11px] bg-zinc-50 dark:bg-black/50 border-zinc-200 dark:border-zinc-800"
                         />
                     </div>
                 </div>
