@@ -71,7 +71,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
         const searchLower = search.toLowerCase();
         const ident = (u.email || u.name || u.id).toLowerCase();
         return ident.includes(searchLower);
-    });
+    }).sort((a, b) => b.lastActiveAt - a.lastActiveAt);
 
     const getRelativeTime = (timestamp: number) => {
         const now = Date.now();
