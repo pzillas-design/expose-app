@@ -47,7 +47,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     // Build variable display: { season: ['winter'] } → "Jahreszeit: Winter"
     const variableEntries = image.variableValues
-        ? Object.entries(image.variableValues).filter(([, vals]) => vals && vals.length > 0)
+        ? Object.entries(image.variableValues).filter(([, vals]) => vals && (vals as string[]).length > 0)
         : [];
 
     return (
@@ -114,15 +114,19 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         })() : '-'}
                     </span>
 
-                    {/* Model */}
-                    <span className={labelClass}>{t('model')}</span>
-                    <span className={valueClass}>
-                        {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
-                            image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
-                                image.quality === 'pro-1k' ? 'Nano Banana Pro 1K' :
-                                    image.quality === 'fast' ? 'Nano Banana (Fast)' :
-                                        (image.modelVersion || 'Nano Banana')}
-                    </span>
+                    {/* Model - only show for generated images */}
+                    {image.generationPrompt && (
+                        <>
+                            <span className={labelClass}>{t('model')}</span>
+                            <span className={valueClass}>
+                                {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
+                                    image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
+                                        image.quality === 'pro-1k' ? 'Nano Banana Pro 1K' :
+                                            image.quality === 'fast' ? 'Nano Banana (Fast)' :
+                                                (image.modelVersion || 'Nano Banana')}
+                            </span>
+                        </>
+                    )}
 
                     {/* Resolution */}
                     <span className={labelClass}>{t('dimensions') || 'Auflösung'}</span>
@@ -148,7 +152,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     {image.generationPrompt}
                                     {variableEntries.length > 0 && (
                                         <span className="text-zinc-400 dark:text-zinc-500">
-                                            {' · '}{variableEntries.map(([k, v]) => `${k}: ${v.join(', ')}`).join(' · ')}
+                                            {' · '}{variableEntries.map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`).join(' · ')}
                                         </span>
                                     )}
                                 </span>

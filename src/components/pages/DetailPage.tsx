@@ -340,25 +340,36 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // even at the start/end of the list (no dependency on padding math).
     // Load more images when near the end of the loaded list.
     useEffect(() => {
+        const centerActiveThumb = () => {
+            const strip = thumbStripRef.current;
+            if (!strip) return;
+            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
+            if (!activeThumb) return;
+
+            // Center using BoundingClientRect — accurate regardless of scroll position / padding
+            const stripRect = strip.getBoundingClientRect();
+            const thumbRect = activeThumb.getBoundingClientRect();
+            const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
+            const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
+            isFirstStripScrollRef.current = false;
+            const scrollTarget = thumbCenterInContent - strip.clientWidth / 2;
+            strip.scrollTo({ left: scrollTarget, behavior });
+        };
+
         let raf1: number, raf2: number;
         raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => {
-                const strip = thumbStripRef.current;
-                if (!strip) return;
-                const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-                if (!activeThumb) return;
-
-                // Center using BoundingClientRect — accurate regardless of scroll position / padding
-                const stripRect = strip.getBoundingClientRect();
-                const thumbRect = activeThumb.getBoundingClientRect();
-                const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
-                const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
-                isFirstStripScrollRef.current = false;
-                strip.scrollTo({ left: thumbCenterInContent - strip.clientWidth / 2, behavior });
-            });
+            raf2 = requestAnimationFrame(centerActiveThumb);
         });
-        return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
-    }, [selectedId, combinedStrip]);
+        
+        // Ensure centering on resize/Sidesheet toggle
+        window.addEventListener('resize', centerActiveThumb);
+
+        return () => { 
+            cancelAnimationFrame(raf1); 
+            cancelAnimationFrame(raf2);
+            window.removeEventListener('resize', centerActiveThumb);
+        };
+    }, [selectedId, combinedStrip, isSideSheetVisible]);
 
     // Lazy-load more images when the active image is near the end of the loaded list
     useEffect(() => {
