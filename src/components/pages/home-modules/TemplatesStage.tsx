@@ -43,6 +43,7 @@ const SidepanelMockup = ({
     isTimePressed,
     generationProgress = 0,
     isGenerating = false,
+    t,
 }: any) => {
     const highlightClass = "border-zinc-400 dark:border-zinc-600";
     return (
@@ -52,21 +53,21 @@ const SidepanelMockup = ({
                 
                 {/* 1. Prompt Text Area */}
                 <div className="p-4 text-xs lg:text-[13px] text-zinc-500 h-[72px]">
-                    Inszeniere das Bild neu, indem du Folgendes anpasst: <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
+                    {t('home_mockup_prompt_hint')} <span className="inline-block w-[1.5px] h-[14px] bg-zinc-900 dark:bg-zinc-100 ml-0.5 align-middle -translate-y-[1px] mockup-cursor" />
                 </div>
 
                 {/* 2. Controls (Season & Time) */}
                 <div className="px-4 flex flex-col gap-5 pb-4">
                     <div className="flex flex-col gap-2">
-                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>Jahreszeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>{t('home_mockup_season')}</span>
                         <div className="flex flex-wrap gap-1.5">
-                            <ChipGroup items={['Frühling', 'Sommer', 'Winter']} activeItem={activeSeason} pressedItem={isSeasonPressed} targetItem="Winter" scale={seasonScale} />
+                            <ChipGroup items={[t('home_spring'), t('home_summer'), t('home_winter')]} activeItem={activeSeason} pressedItem={isSeasonPressed} targetItem={t('home_winter')} scale={seasonScale} />
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>Uhrzeit</span>
+                        <span className={`${Typo.Label} text-zinc-400 dark:text-zinc-500`}>{t('home_mockup_time')}</span>
                         <div className="flex flex-wrap gap-1.5">
-                            <ChipGroup items={['Morgen', 'Mittag', 'Nachmittag', 'Golden Hour', 'Blue Hour']} activeItem={activeTime} pressedItem={isTimePressed} targetItem="Golden Hour" scale={timeScale} hideOnMobile={['Nachmittag', 'Blue Hour']} />
+                            <ChipGroup items={[t('home_morning'), t('home_noon'), t('home_afternoon'), t('home_golden_hour'), t('home_blue_hour')]} activeItem={activeTime} pressedItem={isTimePressed} targetItem={t('home_golden_hour')} scale={timeScale} hideOnMobile={[t('home_afternoon'), t('home_blue_hour')]} />
                         </div>
                     </div>
                 </div>
@@ -85,7 +86,7 @@ const SidepanelMockup = ({
                         className="h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer shadow-sm shadow-orange-500/20"
                         style={{ transform: `scale(${buttonScale})` }}
                     >
-                        <span className="relative z-10">Generieren</span>
+                        <span className="relative z-10">{t('home_mockup_generate')}</span>
                     </div>
                 </div>
             </div>
@@ -94,7 +95,7 @@ const SidepanelMockup = ({
             
             {/* Presets Chips Footer */}
             <div className="hidden lg:flex flex-none flex-col mt-auto pt-4">
-                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>Vorlagen</span>
+                <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>{t('home_mockup_templates')}</span>
                 <div className="flex flex-wrap gap-2">
                     <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
                         🏡 <span>Home Staging</span>
@@ -103,7 +104,7 @@ const SidepanelMockup = ({
                         🧹 <span>Cleanup</span>
                     </div>
                     <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
-                        ❄️ <span>Jahreszeit</span>
+                        ❄️ <span>{t('home_mockup_season')}</span>
                     </div>
                 </div>
             </div>
@@ -116,9 +117,10 @@ export interface TemplatesStageProps {
     scrollActive: boolean;
     enterProgress?: number; // 0 -> 1 (100% -> 0% translateY)
     exitProgress?: number; // 0 -> 1 (0% -> -100% translateY)
+    t: (key: string) => string;
 }
 
-export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scrollActive, enterProgress = 1, exitProgress = 0 }) => {
+export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scrollActive, enterProgress = 1, exitProgress = 0, t }) => {
     // Interaction logic adapted from InteractiveSeasonPanel
     const [autoProgress, setAutoProgress] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
@@ -157,7 +159,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
             setIsSeasonStepPressed(true);
             setTimeout(() => {
                 setIsSeasonStepPressed(false);
-                setSeasonState('Winter');
+                setSeasonState(t('home_winter'));
             }, 150);
         }
 
@@ -166,7 +168,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
             setIsTimeStepPressed(true);
             setTimeout(() => {
                 setIsTimeStepPressed(false);
-                setTimeState('Golden Hour');
+                setTimeState(t('home_golden_hour'));
             }, 150);
         }
 
@@ -209,11 +211,11 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 <div className="w-full h-[50vh] lg:h-full lg:flex-1 flex items-center lg:items-center justify-start lg:pr-40 z-20 order-2 lg:order-1 text-left pointer-events-auto py-8 lg:py-0">
                     <div className="flex flex-col max-w-xl">
                         <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Vorlagen</span> <br className="hidden lg:block" />
-                            nutzen & anlegen
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">{t('home_section_templates_title').split(' ')[0]}</span> <br className="hidden lg:block" />
+                            {t('home_section_templates_title').split(' ').slice(1).join(' ')}
                         </h2>
                         <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 leading-relaxed font-light">
-                            Definieren Sie Ihren Stil und nutzen Sie ihn immer wieder für konsistente Ergebnisse.
+                            {t('home_section_templates_desc')}
                         </p>
                     </div>
                 </div>
@@ -241,6 +243,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                                 buttonScale={isButtonStepPressed ? 0.95 : 1}
                                 seasonScale={isSeasonStepPressed ? 0.9 : 1}
                                 timeScale={isTimeStepPressed ? 0.9 : 1}
+                                t={t}
                             />
                         </div>
 

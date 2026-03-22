@@ -29,9 +29,10 @@ export interface VisualPromptingStageProps {
     progress: number; // Local progress [0, 1]
     scrollActive: boolean;
     enterProgress?: number; // 0 -> 1 (100% -> 0% translateY)
+    t: (key: string) => string;
 }
 
-export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ progress, scrollActive, enterProgress = 1 }) => {
+export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ progress, scrollActive, enterProgress = 1, t }) => {
     // Refs for internal animations
     const image2Ref = useRef<HTMLImageElement>(null);
     const lampRef = useRef<SVGSVGElement>(null);
@@ -177,9 +178,9 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
 
                 <div className="absolute inset-0 pointer-events-none z-[110] flex items-center justify-center overflow-hidden">
                     <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
-                        <AnnotationChip label="Küche" position={{ top: '45%', left: '27%' }} opacity={labelOpacity(0.02, 0.6)} />
-                        <AnnotationChip label="Esstisch" position={{ bottom: '25%', left: '20%' }} opacity={labelOpacity(0.14, 0.7)} />
-                        <AnnotationChip label="Sofa" position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.26, 0.8)} />
+                        <AnnotationChip label={t('home_kitchen')} position={{ top: '45%', left: '27%' }} opacity={labelOpacity(0.02, 0.6)} />
+                        <AnnotationChip label={t('home_table')} position={{ bottom: '25%', left: '20%' }} opacity={labelOpacity(0.14, 0.7)} />
+                        <AnnotationChip label={t('home_sofa')} position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.26, 0.8)} />
 
                         <svg ref={lampRef} viewBox="0 0 1700 1141" fill="none" className="absolute inset-0 w-full h-full opacity-0 z-10 lg:transition-all lg:duration-500">
                             <path ref={lampPath1Ref} d="M449.761 177.57C445.213 305 444.653 357.523 449.761 393.07" stroke="#ED693D" strokeWidth="8" strokeLinecap="round" />
@@ -200,7 +201,7 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
                         Visual <br className="hidden lg:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting</span>
                     </h2>
                     <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 dark:text-zinc-400 leading-relaxed font-light">
-                        Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.
+                        {t('home_section_visual_desc')}
                     </p>
                 </div>
             </div>

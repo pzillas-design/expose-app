@@ -50,7 +50,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
                 <section ref={mainTrackRef} className="relative h-[1800vh]">
-                    <UniversalStage progress={progress} />
+                    <UniversalStage progress={progress} t={t} />
                 </section>
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
@@ -61,8 +61,8 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1]">
-                            Bereit für <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span> Creation?
+                            {(t('home_hero_headline') || 'Bereit für Next-Gen Creation?').split('Next-Gen')[0]}<br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Next-Gen</span>{(t('home_hero_headline') || 'Bereit für Next-Gen Creation?').split('Next-Gen')[1]}
                         </h2>
 
                         <div className="flex flex-col items-center justify-center gap-12 mt-16">
