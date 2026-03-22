@@ -223,10 +223,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     iconPosition?: 'left' | 'right';
     isLoading?: boolean;
     tooltip?: string;
+    tooltipSide?: 'top' | 'bottom';
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, ...props
+    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, tooltipSide, ...props
 }) => {
     // Structural classes — typography from Typo.ButtonLabel
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
@@ -264,7 +265,7 @@ export const Button: React.FC<ButtonProps> = ({
     );
 
     if (tooltip && !disabled && !isLoading) {
-        return <Tooltip text={tooltip}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };
@@ -274,9 +275,10 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
     tooltip?: string;
+    tooltipSide?: 'top' | 'bottom';
 }
 
-export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, className = '', ...props }) => {
+export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, tooltipSide, className = '', ...props }) => {
     const btn = (
         <button
             className={`
@@ -294,7 +296,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, c
     );
 
     if (tooltip) {
-        return <Tooltip text={tooltip}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };
@@ -304,10 +306,11 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
     tooltip?: string;
+    tooltipSide?: 'top' | 'bottom';
     variant?: 'default' | 'danger' | 'ghost' | 'primary';
 }
 
-export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, variant = 'default', className = '', ...props }) => {
+export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
     const base = `w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95`;
 
@@ -331,7 +334,7 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
     );
 
     if (tooltip) {
-        return <Tooltip text={tooltip}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };

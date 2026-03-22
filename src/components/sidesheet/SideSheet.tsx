@@ -662,7 +662,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {/* Bottom Controls + Generate */}
                                     <div className="!mt-10 flex items-center gap-3">
                                         <div className="flex items-center gap-2">
-                                            <Tooltip text={t('add_reference')}>
+                                            <Tooltip text={t('add_reference')} side="top">
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
                                                     disabled={selectedImage?.isGenerating}
@@ -676,7 +676,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     )}
                                                 </button>
                                             </Tooltip>
-                                            <Tooltip text={t('tt_annotate')}>
+                                            <Tooltip text={t('tt_annotate')} side="top">
                                                 <button
                                                     onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
                                                     disabled={selectedImage?.isGenerating || isMulti}
@@ -764,6 +764,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         onClick={handleGenerate}
                                                         variant="primary"
                                                         tooltip={t('generate')}
+                                                        tooltipSide="top"
                                                     />
                                                 ) : (
                                                     <Button
@@ -816,6 +817,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 icon={<MoreHorizontal className="w-4 h-4" />}
                                                 onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
                                                 tooltip={t('edit_presets')}
+                                                tooltipSide="top"
                                                 variant="ghost"
                                             />
                                         )}
