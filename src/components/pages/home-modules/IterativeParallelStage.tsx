@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { Check } from 'lucide-react';
 
 export interface IterativeParallelStageProps {
@@ -10,7 +10,9 @@ export interface IterativeParallelStageProps {
 }
 
 const CanvasMockup = ({ progress }: { progress: number }) => {
+    // Refs for individual image containers for direct DOM manipulation
     const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const checkmarkRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Irregular grid logic
     const imageRows = [
@@ -20,15 +22,62 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
         ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
     ];
 
-    // Effect for animations based on progress prop
-    // We use useMemo to avoid recalculating on every render if not needed, 
-    // but styles need to be updated. We'll use the progress directly in the render or via refs.
-    // For "absolute stillness" and performance, we can apply transforms in a render phase or useEffect.
-    // Since progress changes frequently, we'll use it in the render with style property.
-
     const flatIndices = useMemo(() => {
         let count = 0;
         return imageRows.map(row => row.map(img => img === null ? -1 : count++));
+    }, []);
+
+    // Flatten logic for refs
+    const checkmarkedIndices = [1, 6, 8, 12];
+
+    useEffect(() => {
+        let ticking = false;
+        const handleScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => {
+                const track = document.querySelector('[data-hero-scroll-track]');
+                if (track) {
+                    const rect = track.getBoundingClientRect();
+                    const pTotal = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+                    // Map [0.2, 0.45] to local [0, 1]
+                    const pLocal = Math.min(Math.max((pTotal - 0.2) / 0.25, 0), 1);
+
+                    imageRefs.current.forEach((ref, index) => {
+                        if (!ref) return;
+                        const delay = Math.abs(index - 6) * 0.04;
+                        const zoomDuration = 0.45;
+                        const normalizedProgress = pLocal > delay
+                            ? Math.min((pLocal - delay) / Math.max(0.01, zoomDuration - delay), 1)
+                            : 0;
+
+                        const opacity = Math.min(normalizedProgress * 1.5, 1);
+                        const currentZ = 400 - (normalizedProgress * 400);
+                        
+                        ref.style.opacity = opacity.toString();
+                        ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
+
+                        // Checkmark logic
+                        const checkmarkOrder = checkmarkedIndices.indexOf(index);
+                        if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
+                            const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
+                            const checkmarkProgress = pLocal > checkmarkPhaseStart
+                                ? Math.min((pLocal - checkmarkPhaseStart) / 0.05, 1)
+                                : 0;
+                            const checkmarkRef = checkmarkRefs.current[index];
+                            if (checkmarkRef) {
+                                checkmarkRef.style.opacity = checkmarkProgress.toString();
+                                checkmarkRef.style.transform = `scale(${0.5 + checkmarkProgress * 0.5})`;
+                            }
+                        }
+                    });
+                }
+                ticking = false;
+            });
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     return (
@@ -41,34 +90,17 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                             return <div key={`dummy-${rowIndex}-${imgIndex}`} className="flex-1 basis-0 min-w-0" />;
                         }
 
-                        // Animation logic same as before but driven by prop
-                        const delay = Math.abs(index - 6) * 0.04;
-                        const zoomDuration = 0.45; // Finish all zooms early to allow pause
-                        const normalizedProgress = progress > delay
-                            ? Math.min((progress - delay) / Math.max(0.01, zoomDuration - delay), 1)
-                            : 0;
-
-                        const opacity = Math.min(normalizedProgress * 1.5, 1);
-                        const currentZ = 400 - (normalizedProgress * 400);
-
-                        // Checkmark animation: Appears sequentially after zoom phase
-                        const checkmarkedIndices = [1, 6, 8, 12];
-                        const checkmarkOrder = checkmarkedIndices.indexOf(index);
-                        const isCheckmarked = checkmarkOrder !== -1;
-                        
-                        const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
-                        const checkmarkProgress = isCheckmarked && progress > checkmarkPhaseStart
-                            ? Math.min((progress - checkmarkPhaseStart) / 0.05, 1)
-                            : 0;
+                        const isCheckmarked = checkmarkedIndices.includes(index);
 
                         return (
                             <div
                                 key={index}
+                                ref={el => imageRefs.current[index] = el}
                                 className="relative flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800"
                                 style={{
-                                    opacity: opacity,
-                                    transform: `translate3d(0, 0, ${currentZ}px)`,
-                                    willChange: opacity > 0 && opacity < 1 ? 'opacity, transform' : 'auto'
+                                    opacity: 0,
+                                    transform: 'translate3d(0, 0, 400px)',
+                                    willChange: 'opacity, transform'
                                 }}
                             >
                                 <img
@@ -78,10 +110,11 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                                 />
                                 {isCheckmarked && (
                                     <div 
+                                        ref={el => checkmarkRefs.current[index] = el}
                                         className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-orange-500 flex items-center justify-center shadow-lg"
                                         style={{ 
-                                            opacity: checkmarkProgress,
-                                            transform: `scale(${0.5 + checkmarkProgress * 0.5})`
+                                            opacity: 0,
+                                            transform: 'scale(0.5)'
                                         }}
                                     >
                                         <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" strokeWidth={3} />
@@ -97,8 +130,6 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 };
 
 export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ progress, scrollActive, exitProgress = 0, t, lang = 'en' }) => {
-    // Map global progress for this section (e.g. 0.2 to 0.5)
-
     // Smooth exit easing
     const easedExit = exitProgress < 0.5 ? 2 * exitProgress * exitProgress : 1 - Math.pow(-2 * exitProgress + 2, 2) / 2;
 
@@ -124,7 +155,6 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
                 }
             `}</style>
 
-            {/* Left: Image Cluster */}
             <div className="w-full lg:w-3/5 h-[50vh] lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible pt-[20vh] lg:pt-0">
                 <div
                     id="desktop-cluster-container"
@@ -139,7 +169,6 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
                 </div>
             </div>
 
-            {/* Right: Text */}
             <div className="w-full lg:w-2/5 h-[50vh] lg:h-full flex items-center lg:items-center justify-start px-6 lg:px-12 xl:px-24 py-8 lg:py-0 text-left relative z-10">
                 <div className="flex flex-col max-w-2xl will-change-transform">
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase text-zinc-900 dark:text-white">

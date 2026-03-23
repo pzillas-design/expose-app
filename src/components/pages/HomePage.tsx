@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
@@ -16,50 +16,9 @@ interface HomePageProps {
     lang?: string;
 }
 
-// PERFORMANCE: UniversalStage is memoized — it only re-renders when progress prop actually changes.
-// The scroll listener now pushes progress directly to the stage via a ref/callback instead of
-// causing a full React root re-render on every scroll frame.
-const MemoizedUniversalStage = React.memo(UniversalStage);
-
 export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t, lang }) => {
     const navigate = useNavigate();
     const mainTrackRef = useRef<HTMLElement>(null);
-    // Stable ref to hold the current progress so we can pass it without re-rendering
-    const progressRef = useRef(0);
-    // We still need a small amount of React state to trigger re-renders for stage *transitions*,
-    // but we throttle it: only update state when the value changes enough to cross a stage boundary.
-    const [stageProgress, setStageProgress] = React.useState(0);
-
-    useEffect(() => {
-        let ticking = false;
-
-        const handleScroll = () => {
-            if (!ticking) {
-                window.requestAnimationFrame(() => {
-                    if (mainTrackRef.current) {
-                        const rect = mainTrackRef.current.getBoundingClientRect();
-                        const windowHeight = window.innerHeight;
-                        const travelDistance = rect.height - windowHeight;
-                        const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
-                        progressRef.current = p;
-
-                        // Higher threshold on mobile = fewer React re-renders = smoother scroll
-                        const threshold = window.innerWidth < 1024 ? 0.008 : 0.003;
-                        setStageProgress(prev => {
-                            if (Math.abs(p - prev) > threshold) return p;
-                            return prev;
-                        });
-                    }
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
@@ -67,7 +26,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
                 <section ref={mainTrackRef} data-hero-scroll-track className="relative h-[1800vh]">
-                    <MemoizedUniversalStage progress={stageProgress} t={t} lang={lang} />
+                    <UniversalStage t={t} lang={lang} />
                 </section>
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
