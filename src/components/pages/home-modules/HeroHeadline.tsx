@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 
-const WORDS = ['create', 'more', 'faster', 'better'] as const;
+const ANIMATED_WORDS = ['more', 'faster', 'better'] as const;
 
 interface HeroHeadlineProps {
     /** Local scroll progress 0–1 within the hero section */
@@ -8,11 +8,9 @@ interface HeroHeadlineProps {
 }
 
 export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
-    // create → more → faster → better, all early in the scroll
-    const wordIndex = progress < 0.06 ? 0 : progress < 0.14 ? 1 : progress < 0.22 ? 2 : 3;
+    // more → faster → better, all early in the scroll
+    const wordIndex = progress < 0.12 ? 0 : progress < 0.28 ? 1 : 2;
     const prevIndexRef = useRef(wordIndex);
-
-    const direction = wordIndex > prevIndexRef.current ? 1 : wordIndex < prevIndexRef.current ? -1 : 0;
 
     useEffect(() => {
         prevIndexRef.current = wordIndex;
@@ -27,15 +25,33 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
 
     const transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
 
+    // Fade out the headline at the very end of the hero section with a swoosh up
+    const isFadingOut = progress > 0.85;
+    const fadeOutProgress = isFadingOut ? (progress - 0.85) / 0.15 : 0; // 0→1
+
     return (
         <div
             className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none whitespace-nowrap"
-            style={{ fontSize: 'clamp(3.5rem, 11vw, 8rem)', lineHeight: 1 }}
+            style={{
+                fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
+                lineHeight: 1,
+                // Swoosh up + fade out at end of hero section
+                ...(isFadingOut ? {
+                    opacity: 1 - fadeOutProgress,
+                    transform: `translateY(${-fadeOutProgress * 60}px)`,
+                    filter: `blur(${fadeOutProgress * 12}px)`,
+                    transition: 'none',
+                } : {}),
+            }}
         >
-            <span className="relative inline-flex overflow-hidden align-bottom" style={{ height: '1.05em' }}>
-                {WORDS.map((word, i) => {
+            {/* Static "create" */}
+            <span className="text-zinc-900 dark:text-white">create </span>
+
+            {/* Animated word slot */}
+            <span className="relative inline-flex overflow-hidden align-baseline" style={{ height: '1.05em' }}>
+                {ANIMATED_WORDS.map((word, i) => {
                     const isActive = i === wordIndex;
-                    const isFirst = i === 0;
+                    const isPast = i < wordIndex;
 
                     return (
                         <span
@@ -48,15 +64,14 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
                                 opacity: isActive ? 1 : 0,
                                 transform: isActive
                                     ? 'translateY(0) scale(1)'
-                                    : `translateY(${direction >= 0 ? 110 : -110}%) scale(0.7)`,
+                                    : isPast
+                                        ? 'translateY(-110%) scale(0.7)'
+                                        : 'translateY(110%) scale(0.7)',
                                 filter: isActive ? 'blur(0px)' : 'blur(8px)',
                                 transition,
                                 willChange: 'transform, opacity, filter',
-                                ...(isFirst
-                                    ? { color: undefined }
-                                    : gradientStyle),
+                                ...gradientStyle,
                             }}
-                            className={isFirst ? 'text-zinc-900 dark:text-white' : undefined}
                         >
                             {word}
                         </span>

@@ -52,14 +52,15 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
     const opacity = localProgress > 0.9 ? (1 - localProgress) * 10 : 1;
 
     const floatingImages = [
-        { src: '/home/1 creation reimagined/41.jpg', x: '-15%', y: '85%', depth: -300, size: '35vw' },
-        { src: '/home/1 creation reimagined/11.jpg', x: '80%', y: '5%', depth: -500, size: '44vw' },
-        { src: '/home/1 creation reimagined/21.jpg', x: '45%', y: '95%', depth: -150, size: '17vw' },
-        { src: '/home/1 creation reimagined/31.jpg', x: '-15%', y: '0%', depth: -950, size: '48vw' },
-        { src: '/home/1 creation reimagined/42.jpg', x: '90%', y: '85%', depth: -400, size: '32vw' },
-        { src: '/home/1 creation reimagined/12.jpg', x: '75%', y: '50%', depth: -800, size: '29vw' },
-        { src: '/home/1 creation reimagined/22.jpg', x: '35%', y: '-5%', depth: -600, size: '25vw' },
-        { src: '/home/1 creation reimagined/32.jpg', x: '10%', y: '80%', depth: -1200, size: '23vw' },
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-12%', y: '78%', depth: -300, size: '38vw' },   // wide landscape, bottom-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '78%', y: '2%', depth: -500, size: '30vw' },     // tall portrait, top-right
+        { src: '/home/1 creation reimagined/9.jpeg', x: '42%', y: '92%', depth: -150, size: '19vw' },    // wide, bottom-center peek
+        { src: '/home/1 creation reimagined/7.jpeg', x: '-18%', y: '-5%', depth: -950, size: '46vw' },   // wide landscape, top-left deep
+        { src: '/home/1 creation reimagined/1.jpeg', x: '88%', y: '82%', depth: -400, size: '28vw' },    // square, bottom-right
+        { src: '/home/1 creation reimagined/5.jpeg', x: '72%', y: '45%', depth: -800, size: '26vw' },    // tall portrait, mid-right deep
+        { src: '/home/1 creation reimagined/3.jpeg', x: '32%', y: '-8%', depth: -600, size: '24vw' },    // square-ish, top-center
+        { src: '/home/1 creation reimagined/8.jpeg', x: '8%', y: '40%', depth: -1200, size: '22vw' },    // wide, mid-left very deep
+        { src: '/home/1 creation reimagined/6.jpeg', x: '55%', y: '60%', depth: -700, size: '20vw' },    // wide landscape, center-right
     ];
 
     // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
@@ -86,7 +87,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                         width: 85% !important;
                     }
                     .hero-headline {
-                        font-size: clamp(3.5rem, 12vw, 8.5rem) !important;
+                        font-size: clamp(4.55rem, 15.6vw, 11rem) !important;
                     }
                 }
             `}</style>
@@ -104,7 +105,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                     <div
                         className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none hero-headline-container"
                         style={{
-                            transform: 'translate3d(0, 0, 150px)',
+                            transform: 'translate3d(0, 0, 50px)',
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
                         }}
