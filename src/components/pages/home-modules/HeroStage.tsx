@@ -16,16 +16,18 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
 
     return (
         <div
-            className="absolute hero-floating-image"
+            // hidden on mobile — too many GPU layers, kills scroll performance
+            className="absolute hero-floating-image hidden lg:block"
             style={{
                 left: x,
                 top: `calc(50% + ((${y} - 50%) * var(--y-scale, 1)))`,
-                width: `calc(var(--base-vw, ${sizeVal}) * var(--mobile-scale, 1) * 1vw)`,
+                width: `calc(var(--base-vw, ${sizeVal}) * 1vw)`,
                 transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
                 transition: 'transform 0.4s ease-out',
                 zIndex: Math.floor(depth) + 1000,
                 '--base-vw': sizeVal,
-                willChange: 'transform'
+                // willChange only when actually hovered — reduces constant GPU layer promotion
+                willChange: isHovered ? 'transform' : 'auto'
             } as any}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -213,10 +215,14 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
 
-            <div className="w-full h-full" style={{ perspective: '1000px' }}>
+            <div className="w-full h-full lg:perspective-1000" style={{ perspective: 'none' }}>
                 <div
-                    className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out"
-                    style={{ transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }}
+                    className="relative w-full h-full preserve-3d"
+                    // 3D scroll parallax only on desktop — perspective on mobile kills performance
+                    style={(typeof window !== 'undefined' && window.innerWidth >= 1024)
+                        ? { transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }
+                        : {}
+                    }
                 >
                     {/* Hero Text Headline Layer */}
                     <div

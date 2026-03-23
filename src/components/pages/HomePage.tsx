@@ -43,10 +43,10 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                         const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
                         progressRef.current = p;
 
-                        // Only trigger React re-render if we've moved enough to cross a visible threshold.
-                        // This reduces React renders from ~60/s to ~5-10/s while still keeping animation smooth.
+                        // Higher threshold on mobile = fewer React re-renders = smoother scroll
+                        const threshold = window.innerWidth < 1024 ? 0.008 : 0.003;
                         setStageProgress(prev => {
-                            if (Math.abs(p - prev) > 0.003) return p;
+                            if (Math.abs(p - prev) > threshold) return p;
                             return prev;
                         });
                     }
@@ -72,9 +72,9 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
                 <section className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 pt-20 pb-20 overflow-hidden">
-                    {/* Background Gradients - Brand Consistency */}
-                    <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
-                    <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
+                    {/* Background Gradients - hidden on mobile for perf */}
+                    <div className="hidden md:block absolute top-1/4 -left-20 w-80 h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
+                    <div className="hidden md:block absolute bottom-1/4 -right-20 w-80 h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-4xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1] lowercase">
