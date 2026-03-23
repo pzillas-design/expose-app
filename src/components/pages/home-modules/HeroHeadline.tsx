@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, memo } from 'react';
 
 const ANIMATED_WORDS = ['more', 'faster', 'better'] as const;
 
@@ -7,7 +7,7 @@ interface HeroHeadlineProps {
     progress: number;
 }
 
-export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
+export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => {
     // more → faster → better, all early in the scroll
     const wordIndex = progress < 0.12 ? 0 : progress < 0.28 ? 1 : 2;
     const prevIndexRef = useRef(wordIndex);
@@ -31,11 +31,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
 
     return (
         <div
-            className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none"
+            className="hero-headline font-kumbh font-bold tracking-tighter select-none w-full text-center"
             style={{
                 fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
                 lineHeight: 1.1,
-                // Swoosh up + fade out at end of hero section
                 ...(isFadingOut ? {
                     opacity: 1 - fadeOutProgress,
                     transform: `translateY(${-fadeOutProgress * 60}px)`,
@@ -44,11 +43,25 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
                 } : {}),
             }}
         >
-            {/* Static "create" */}
-            <span className="text-zinc-900 dark:text-white block md:inline md:mr-[0.18em]">create</span>
+            {/*
+             * CENTERING FIX:
+             * On mobile we render "create" and the animated word as two separate block lines,
+             * both inside a w-full text-center parent. This guarantees the browser centres
+             * each line independently with no flex/inline quirks.
+             * On desktop (md+) we use inline-block for both so they flow on one line.
+             */}
 
-            {/* Animated word slot */}
-            <span className="relative block md:inline-flex overflow-hidden align-baseline h-[1.2em] md:h-auto" style={{ verticalAlign: 'baseline' }}>
+            {/* Static "create" */}
+            <span className="text-zinc-900 dark:text-white block md:inline-block md:mr-[0.18em]">create</span>
+
+            {/* Animated word slot — block on mobile (full-width, text-center inherited), inline-block on desktop */}
+            <span
+                className="relative block md:inline-block overflow-hidden"
+                style={{
+                    height: '1.25em',
+                    verticalAlign: 'bottom',
+                }}
+            >
                 {ANIMATED_WORDS.map((word, i) => {
                     const isActive = i === wordIndex;
                     const isPast = i < wordIndex;
@@ -57,19 +70,19 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
                         <span
                             key={word}
                             aria-hidden={!isActive}
-                            className="px-[0.05em]"
                             style={{
-                                position: isActive ? 'relative' : 'absolute',
-                                left: 0,
-                                right: 0,
-                                display: 'inline-block',
-                                textAlign: 'center',
-                                opacity: isActive ? 1 : 0,
+                                position: 'absolute',
+                                // Center each word within the slot on both mobile and desktop
+                                left: '50%',
                                 transform: isActive
-                                    ? 'translateY(0) scale(1)'
+                                    ? 'translateX(-50%) translateY(0) scale(1)'
                                     : isPast
-                                        ? 'translateY(-110%) scale(0.7)'
-                                        : 'translateY(110%) scale(0.7)',
+                                        ? 'translateX(-50%) translateY(-110%) scale(0.7)'
+                                        : 'translateX(-50%) translateY(110%) scale(0.7)',
+                                display: 'inline-block',
+                                whiteSpace: 'nowrap',
+                                padding: '0 0.08em',
+                                opacity: isActive ? 1 : 0,
                                 filter: isActive ? 'blur(0px)' : 'blur(8px)',
                                 transition,
                                 willChange: 'transform, opacity, filter',
@@ -83,4 +96,4 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
             </span>
         </div>
     );
-};
+});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { HeroHeadline } from './HeroHeadline';
 
 interface FloatingImageProps {
@@ -10,18 +10,19 @@ interface FloatingImageProps {
     key?: React.Key;
 }
 
-const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
+const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const sizeVal = parseInt(size);
 
     return (
         <div
-            className="absolute lg:transition-all lg:duration-700 lg:ease-out hero-floating-image"
+            className="absolute hero-floating-image"
             style={{
                 left: x,
                 top: `calc(50% + ((${y} - 50%) * var(--y-scale, 1)))`,
                 width: `calc(var(--base-vw, ${sizeVal}) * var(--mobile-scale, 1) * 1vw)`,
                 transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
+                transition: 'transform 0.4s ease-out',
                 zIndex: Math.floor(depth) + 1000,
                 '--base-vw': sizeVal,
                 willChange: 'transform'
@@ -32,21 +33,23 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
             <div className="relative group cursor-none">
                 <img
                     src={src}
-                    className="w-full h-full transition-all duration-500 rounded-sm"
+                    className="w-full h-full rounded-sm"
                     alt="Canvas Element"
+                    loading="lazy"
+                    decoding="async"
                 />
                 <div className={`absolute -inset-4 bg-orange-500/10 rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </div>
         </div>
     );
-};
+});
 
 export interface HeroStageProps {
     progress: number; // Global progress [0, 1]
     scrollActive: boolean;
 }
 
-export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) => {
+export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActive }) => {
     // Local progress for Hero: we want it to finish early (around 0.15 global)
     // Map global [0, 0.15] to local [0, 1]
     const localProgress = Math.min(progress / 0.15, 1);
@@ -234,4 +237,4 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
             </div>
         </div>
     );
-};
+});
