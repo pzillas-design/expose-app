@@ -35,12 +35,14 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 
     useEffect(() => {
         let active = true;
+        let animationFrameId: number;
         const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
 
         const updateLoop = () => {
             if (!active) return;
             const delta = targetP.current - currentP.current;
-            if (Math.abs(delta) > 0.0001) {
+            
+            if (Math.abs(delta) > 0.00001) {
                 currentP.current += delta * 0.15;
                 const pLocal = Math.min(Math.max((currentP.current - 0.22) / 0.23, 0), 1);
 
@@ -72,8 +74,10 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         }
                     }
                 });
+                animationFrameId = requestAnimationFrame(updateLoop);
+            } else {
+                currentP.current = targetP.current; // snap
             }
-            requestAnimationFrame(updateLoop);
         };
 
         const handleScroll = () => {
@@ -81,15 +85,18 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                 const rect = track.getBoundingClientRect();
                 const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
                 targetP.current = p;
+                // Wake up loop on scroll if it was sleeping
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(updateLoop);
             }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-        requestAnimationFrame(updateLoop);
         handleScroll();
         
         return () => {
             active = false;
+            cancelAnimationFrame(animationFrameId);
             window.removeEventListener('scroll', handleScroll);
         };
     }, []);

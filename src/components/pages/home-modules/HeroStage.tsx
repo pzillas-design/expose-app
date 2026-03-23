@@ -74,21 +74,25 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
 
     useEffect(() => {
         let active = true;
+        let animationFrameId: number;
         const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
 
         const updateLoop = () => {
             if (!active) return;
-            // Lerp: move 15% of the distance each frame for butter-smooth feel on desktop
             const delta = targetP.current - currentP.current;
-            if (Math.abs(delta) > 0.0001) {
+            
+            // Only continue loop if there is a meaningful difference to close
+            if (Math.abs(delta) > 0.00001) {
                 currentP.current += delta * 0.15;
                 if (zoomRef.current) {
                     const lp = Math.min(currentP.current / 0.18, 1);
                     const depth = lp * 1950;
                     zoomRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
                 }
+                animationFrameId = requestAnimationFrame(updateLoop);
+            } else {
+                currentP.current = targetP.current; // snap to target
             }
-            requestAnimationFrame(updateLoop);
         };
 
         const handleScroll = () => {
@@ -96,15 +100,18 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
                 const rect = track.getBoundingClientRect();
                 const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
                 targetP.current = p;
+                // Wake up loop on scroll if it was sleeping
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(updateLoop);
             }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-        requestAnimationFrame(updateLoop);
         handleScroll();
         
         return () => {
             active = false;
+            cancelAnimationFrame(animationFrameId);
             window.removeEventListener('scroll', handleScroll);
         };
     }, []);
