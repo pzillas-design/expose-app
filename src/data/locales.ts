@@ -525,7 +525,7 @@ export const translations = {
     home_hero_headline: "Ready for Next-Gen Creation?",
     home_section_iterative_title: "Rapid Iterations",
     home_section_iterative_desc: "Generate entire image series at once — compare, refine, and perfect them side by side.",
-    home_section_templates_title: "Smart Templates",
+    home_section_templates_title: "Custom Templates",
     home_section_templates_desc: "Prompt once, scale forever. Build your own template library and generate consistent image assets at scale.",
     home_section_visual_title: "Visual Prompting",
     home_section_visual_desc: "Don't just tell the AI what to do — show it exactly where.",
