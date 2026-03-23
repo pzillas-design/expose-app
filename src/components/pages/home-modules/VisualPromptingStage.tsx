@@ -43,83 +43,68 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
     // Standardize easing to remove wobble: Exact match with TemplatesStage
     const easedEnter = enterProgress < 0.5 ? 2 * enterProgress * enterProgress : 1 - Math.pow(-2 * enterProgress + 2, 2) / 2;
 
-    // 1. Scroll-Driven Intro (Chips & Lamp) - Replaces Auto-Play
-    const introProgress = Math.min(Math.max(progress / 0.25, 0), 1);
-
-    // Zoom Effect: 1.05 -> 1.0 (Zoom Out) over the course of the section
-    // DISABLED ON MOBILE as requested
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
-    const zoomScale = isMobile ? 1 : 1.05 - Math.max(0, progress * 0.05);
-
-    // 2. Fixed-Timing Progress Bar & Auto-Fade
-    const [barProgress, setBarProgress] = React.useState(0);
-    const [imageFade, setImageFade] = React.useState(0);
-    const sequenceStartedRef = useRef(false);
+    // 1. Scripted Sequence State
+    const [scriptProgress, setScriptProgress] = React.useState(0);
+    const animationStartedRef = useRef(false);
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
         let animationFrameId: number;
+        // Start scripted sequence when the section is at least 30% entered
+        if (enterProgress > 0.3 && !animationStartedRef.current) {
+            animationStartedRef.current = true;
+            const startTime = Date.now();
+            const duration = 5000; // Total duration of the scripted scene (5 seconds)
 
-        if (introProgress < 0.5 && sequenceStartedRef.current) {
-            sequenceStartedRef.current = false;
-            setBarProgress(0);
-            setImageFade(0);
-            return;
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const p = Math.min(elapsed / duration, 1);
+                setScriptProgress(p);
+                if (p < 1) {
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+            };
+            animationFrameId = requestAnimationFrame(animate);
+        } else if (enterProgress < 0.1 && animationStartedRef.current) {
+            // Reset if user scrolls far away
+            animationStartedRef.current = false;
+            setScriptProgress(0);
         }
 
-        if (introProgress >= 1 && !sequenceStartedRef.current) {
-            sequenceStartedRef.current = true;
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [enterProgress]);
 
-            timer = setTimeout(() => {
-                const startTime = Date.now();
-                const barDuration = 1500;
-                const fadeDuration = 800;
+    // 2. Map Script Time to sub-animations
+    // Intro chips [0 - 0.2]
+    const introP = Math.min(scriptProgress / 0.2, 1);
+    // Lamp drawing [0.2 - 0.5]
+    const lampDrawP = Math.min(Math.max((scriptProgress - 0.2) / 0.3, 0), 1);
+    // Progress bar [0.5 - 0.8]
+    const barP = Math.min(Math.max((scriptProgress - 0.5) / 0.3, 0), 1);
+    // Image Fade [0.8 - 1.0]
+    const fadeP = Math.min(Math.max((scriptProgress - 0.8) / 0.2, 0), 1);
 
-                const animateSequence = () => {
-                    const elapsed = Date.now() - startTime;
+    // Zoom Effect: Scripted 1.05 -> 1.0
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const zoomScale = isMobile ? 1 : 1.05 - (scriptProgress * 0.05);
 
-                    if (elapsed < barDuration) {
-                        const p = elapsed / barDuration;
-                        setBarProgress(Math.pow(p, 2));
-                    } else {
-                        setBarProgress(1);
-                        const fadeElapsed = elapsed - barDuration;
-                        const fp = Math.min(fadeElapsed / fadeDuration, 1);
-                        setImageFade(fp);
-                    }
-
-                    if (elapsed < barDuration + fadeDuration) {
-                        animationFrameId = requestAnimationFrame(animateSequence);
-                    }
-                };
-                animationFrameId = requestAnimationFrame(animateSequence);
-            }, 500);
-        }
-
-        return () => {
-            clearTimeout(timer);
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, [introProgress]);
-
-
-    // 3. Scroll-Driven Outro: Image & Fades (Reversible)
+    // 3. Scroll-Driven Outro (Still scroll dependent)
     const outroProgress = Math.min(Math.max((progress - 0.75) / 0.25, 0), 1);
 
+    // Apply animations to refs
     useEffect(() => {
-        const drawProgress = Math.min(Math.max((introProgress - 0.4) / 0.6, 0), 1);
-        const stemProgress = Math.min(drawProgress / 0.4, 1);
+        // Lamp Stem 
+        const stemProgress = Math.min(lampDrawP / 0.4, 1);
         const easedStem = stemProgress < 0.5 ? 2 * stemProgress * stemProgress : 1 - Math.pow(-2 * stemProgress + 2, 2) / 2;
-
-        const shadeProgress = Math.max((drawProgress - 0.2) / 0.8, 0);
+        // Lamp Shade
+        const shadeProgress = Math.max((lampDrawP - 0.2) / 0.8, 0);
         const easedShade = shadeProgress < 0.5 ? 2 * shadeProgress * shadeProgress : 1 - Math.pow(-2 * shadeProgress + 2, 2) / 2;
 
         const resultFade = Math.min(Math.max(outroProgress / 0.3, 0), 1);
         const lampFadeOut = Math.min(Math.max((outroProgress - 0.3) / 0.3, 0), 1);
 
         if (lampRef.current) {
-            const baseOpacity = drawProgress > 0 ? 1 : 0;
-            const effectiveFadeOut = Math.max(lampFadeOut, imageFade);
+            const baseOpacity = lampDrawP > 0 ? 1 : 0;
+            const effectiveFadeOut = Math.max(lampFadeOut, fadeP);
             const finalOpacity = Math.max(baseOpacity - effectiveFadeOut, 0);
             lampRef.current.style.opacity = finalOpacity.toString();
         }
@@ -136,30 +121,27 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
         }
 
         if (progressBarRef.current) {
-            progressBarRef.current.style.width = `${barProgress * 100}%`;
-            progressBarRef.current.style.opacity = (barProgress > 0 && imageFade < 1 && outroProgress < 0.1) ? '1' : '0';
+            progressBarRef.current.style.width = `${barP * 100}%`;
+            progressBarRef.current.style.opacity = (barP > 0 && fadeP < 1 && outroProgress < 0.1) ? '1' : '0';
         }
 
         if (image2Ref.current) {
-            const finalImageOpacity = Math.max(resultFade, imageFade);
+            const finalImageOpacity = Math.max(resultFade, fadeP);
             image2Ref.current.style.opacity = finalImageOpacity.toString();
         }
 
-    }, [introProgress, outroProgress, barProgress, imageFade]);
+    }, [scriptProgress, outroProgress, lampDrawP, barP, fadeP]);
 
-    const labelOpacity = (appearTime: number, fadeOutTime: number) => {
-        if (introProgress < appearTime) return 0;
-        if (imageFade > 0) return 1 - imageFade;
-        if (introProgress < 0.4) {
-            if (introProgress >= appearTime) return Math.min((introProgress - appearTime) / 0.1, 1);
-        }
-        if (outroProgress > fadeOutTime) return Math.max(1 - (outroProgress - fadeOutTime) / 0.1, 0);
+    const labelOpacity = (appearTime: number) => {
+        if (scriptProgress < appearTime) return 0;
+        if (fadeP > 0) return 1 - fadeP;
+        if (scriptProgress < appearTime + 0.1) return (scriptProgress - appearTime) / 0.1;
         return 1;
     };
 
     const typoOpacity = (typeof window !== 'undefined' && window.innerWidth < 1024)
         ? 1
-        : Math.max(0, 1 - Math.max(outroProgress / 0.3, imageFade));
+        : Math.max(0, 1 - Math.max(outroProgress / 0.3, fadeP * 0)); // Text stays until scroll
 
     return (
         <div
@@ -180,8 +162,8 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
 
                 <div className="absolute inset-0 pointer-events-none z-[110] flex items-center justify-center overflow-hidden">
                     <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
-                        <AnnotationChip label={t('home_table')} position={{ bottom: '25%', left: '20%' }} opacity={labelOpacity(0.14, 0.7)} />
-                        <AnnotationChip label={t('home_sofa')} position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.26, 0.8)} />
+                        <AnnotationChip label={t('home_table')} position={{ bottom: '25%', left: '20%' }} opacity={labelOpacity(0.05)} />
+                        <AnnotationChip label={t('home_sofa')} position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.12)} />
 
                         <svg ref={lampRef} viewBox="0 0 1700 1141" fill="none" className="absolute inset-0 w-full h-full opacity-0 z-10 lg:transition-all lg:duration-500">
                             <path ref={lampPath1Ref} d="M449.761 177.57C445.213 305 444.653 357.523 449.761 393.07" stroke="#ED693D" strokeWidth="8" strokeLinecap="round" />
