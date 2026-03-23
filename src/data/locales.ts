@@ -522,7 +522,7 @@ export const translations = {
     preset_select_placeholder: "Select a preset or create a new one",
 
     // Home Page
-    home_hero_headline: "ready for next-gen creation?",
+    home_hero_headline: "ready for next-gen?",
     home_section_iterative_title: "rapid iterations",
     home_section_iterative_desc: "Generate entire image series at once — compare, refine, and perfect them side by side.",
     home_section_templates_title: "custom templates",
@@ -1055,7 +1055,7 @@ export const translations = {
 
     // Home Page
     home_hero_cta: "Projekt starten",
-    home_hero_headline: "bereit für next-gen creation?",
+    home_hero_headline: "bereit für next-gen?",
     home_section_iterative_title: "iterativ & parallel arbeiten",
     home_section_iterative_desc: "Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.",
     home_section_templates_title: "smarte vorlagen",
