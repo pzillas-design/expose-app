@@ -208,14 +208,10 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             `}</style>
             
 
-            <div className="w-full h-full lg:perspective-1000" style={{ perspective: 'none' }}>
+            <div className="w-full h-full" style={{ perspective: '1000px' }}>
                 <div
                     className="relative w-full h-full preserve-3d"
-                    // 3D scroll parallax only on desktop — perspective on mobile kills performance
-                    style={(typeof window !== 'undefined' && window.innerWidth >= 1024)
-                        ? { transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }
-                        : {}
-                    }
+                    style={{ transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }}
                 >
                     {/* Hero Text Headline Layer */}
                     <div
