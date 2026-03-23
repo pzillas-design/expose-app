@@ -97,7 +97,73 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/6.jpeg', x: '50%', y: '-15%', depth: -900, size: '18vw' },   // top-center deep
     ];
 
-    const floatingImages = floatingImagesV5;
+    const floatingImagesV6 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '50%', y: '10%', depth: -200, size: '25vw' },    // top-center
+        { src: '/home/1 creation reimagined/2.jpeg', x: '82%', y: '28%', depth: -450, size: '28vw' },    // top-right
+        { src: '/home/1 creation reimagined/10.jpeg', x: '88%', y: '72%', depth: -700, size: '32vw' },   // bottom-right
+        { src: '/home/1 creation reimagined/7.jpeg', x: '52%', y: '92%', depth: -950, size: '36vw' },    // bottom-center
+        { src: '/home/1 creation reimagined/9.jpeg', x: '12%', y: '78%', depth: -1200, size: '30vw' },   // bottom-left
+        { src: '/home/1 creation reimagined/3.jpeg', x: '8%', y: '32%', depth: -1450, size: '26vw' },    // top-left
+        { src: '/home/1 creation reimagined/8.jpeg', x: '28%', y: '52%', depth: -1700, size: '22vw' },   // inner-left deep
+        { src: '/home/1 creation reimagined/6.jpeg', x: '72%', y: '48%', depth: -850, size: '20vw' },    // inner-right mid
+    ];
+
+    const floatingImagesV7 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-10%', y: '5%', depth: -150, size: '48vw' },    // huge, top-left, very close
+        { src: '/home/1 creation reimagined/2.jpeg', x: '75%', y: '15%', depth: -800, size: '22vw' },    // small, top-right, mid-deep
+        { src: '/home/1 creation reimagined/10.jpeg', x: '45%', y: '85%', depth: -300, size: '30vw' },   // mid, bottom-center, close
+        { src: '/home/1 creation reimagined/7.jpeg', x: '82%', y: '65%', depth: -1200, size: '42vw' },   // large, bottom-right, deep
+        { src: '/home/1 creation reimagined/9.jpeg', x: '5%', y: '92%', depth: -500, size: '18vw' },     // small, bottom-left, mid-close
+        { src: '/home/1 creation reimagined/3.jpeg', x: '15%', y: '-15%', depth: -1800, size: '35vw' },  // mid, far-top-left, very deep
+        { src: '/home/1 creation reimagined/8.jpeg', x: '95%', y: '35%', depth: -400, size: '26vw' },    // mid, far-right-center, close
+        { src: '/home/1 creation reimagined/6.jpeg', x: '-20%', y: '55%', depth: -1500, size: '20vw' },  // small, far-left-center, very deep
+    ];
+
+    const floatingImagesV8 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-25%', y: '-10%', depth: -50, size: '55vw' },    // ultra-close, top-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '85%', y: '85%', depth: -1800, size: '45vw' },   // ultra-deep, bottom-right
+        { src: '/home/1 creation reimagined/10.jpeg', x: '15%', y: '105%', depth: -300, size: '25vw' },  // close, bottom-left
+        { src: '/home/1 creation reimagined/7.jpeg', x: '65%', y: '-25%', depth: -1200, size: '60vw' },  // very deep, top-right huge
+        { src: '/home/1 creation reimagined/9.jpeg', x: '45%', y: '50%', depth: -2200, size: '15vw' },   // ultra-deep, center tiny
+        { src: '/home/1 creation reimagined/3.jpeg', x: '-15%', y: '45%', depth: -900, size: '20vw' },   // mid-deep, left
+        { src: '/home/1 creation reimagined/8.jpeg', x: '95%', y: '10%', depth: -150, size: '35vw' },    // close, right
+        { src: '/home/1 creation reimagined/6.jpeg', x: '20%', y: '15%', depth: -2500, size: '40vw' },   // deepest, top-left
+    ];
+
+    const floatingImagesV9 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-30%', y: '-20%', depth: -100, size: '65vw' },    // Massive, very close, top-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '90%', y: '90%', depth: -2500, size: '50vw' },    // Large, very deep, bottom-right
+        { src: '/home/1 creation reimagined/10.jpeg', x: '10%', y: '110%', depth: -500, size: '20vw' },   // Small, bottom-left, mid-close
+        { src: '/home/1 creation reimagined/7.jpeg', x: '70%', y: '-30%', depth: -1500, size: '55vw' },   // Large, far-top-right, deep
+        { src: '/home/1 creation reimagined/9.jpeg', x: '50%', y: '50%', depth: -1000, size: '12vw' },    // Tiny, center, deep
+        { src: '/home/1 creation reimagined/3.jpeg', x: '-25%', y: '55%', depth: -3000, size: '42vw' },   // Large, far-left, deepest
+        { src: '/home/1 creation reimagined/8.jpeg', x: '105%', y: '20%', depth: -200, size: '38vw' },    // Mid-large, far-right, close
+        { src: '/home/1 creation reimagined/6.jpeg', x: '0%', y: '0%', depth: -400, size: '15vw' },       // Small, top-left, close
+    ];
+
+    const floatingImagesV10 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '5%', y: '10%', depth: -300, size: '38vw' },     // top-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '72%', y: '12%', depth: -600, size: '32vw' },    // top-right
+        { src: '/home/1 creation reimagined/10.jpeg', x: '78%', y: '78%', depth: -200, size: '35vw' },   // bottom-right
+        { src: '/home/1 creation reimagined/7.jpeg', x: '10%', y: '82%', depth: -900, size: '42vw' },    // bottom-left
+        { src: '/home/1 creation reimagined/9.jpeg', x: '45%', y: '5%', depth: -1200, size: '20vw' },    // top-center deep
+        { src: '/home/1 creation reimagined/3.jpeg', x: '88%', y: '45%', depth: -500, size: '26vw' },    // mid-right
+        { src: '/home/1 creation reimagined/8.jpeg', x: '-12%', y: '48%', depth: -1400, size: '24vw' },   // mid-left deep
+        { src: '/home/1 creation reimagined/6.jpeg', x: '48%', y: '92%', depth: -750, size: '18vw' },    // bottom-center
+    ];
+
+    const floatingImagesV11 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-15%', y: '10%', depth: -150, size: '45vw' },    // Layer 1 (close)
+        { src: '/home/1 creation reimagined/10.jpeg', x: '82%', y: '80%', depth: -250, size: '32vw' },    // Layer 1
+        { src: '/home/1 creation reimagined/2.jpeg', x: '10%', y: '90%', depth: -800, size: '25vw' },     // Layer 2 (mid)
+        { src: '/home/1 creation reimagined/7.jpeg', x: '75%', y: '15%', depth: -950, size: '40vw' },     // Layer 2
+        { src: '/home/1 creation reimagined/9.jpeg', x: '45%', y: '50%', depth: -1900, size: '20vw' },    // Layer 3 (far)
+        { src: '/home/1 creation reimagined/3.jpeg', x: '0%', y: '-10%', depth: -2100, size: '35vw' },    // Layer 3
+        { src: '/home/1 creation reimagined/8.jpeg', x: '95%', y: '45%', depth: -500, size: '28vw' },     // Mid-layer
+        { src: '/home/1 creation reimagined/6.jpeg', x: '35%', y: '105%', depth: -1400, size: '15vw' },   // Mid-deep
+    ];
+
+    const floatingImages = floatingImagesV1;
 
     // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
     // Since we're sticky, we rely on progress. 
