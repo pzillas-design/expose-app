@@ -210,7 +210,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Typography Part: Left on Desktop */}
                 <div className="w-full h-[50vh] lg:h-full lg:flex-1 flex items-center lg:items-center justify-start lg:pr-40 z-20 order-2 lg:order-1 text-left pointer-events-auto py-8 lg:py-0">
                     <div className="flex flex-col max-w-xl">
-                        <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
+                        <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase">
                             {t('home_section_templates_title').split(' ')[0]} <br className="hidden lg:block" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">{t('home_section_templates_title').split(' ').slice(1).join(' ')}</span>
                         </h2>
