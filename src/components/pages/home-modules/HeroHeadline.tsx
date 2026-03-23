@@ -47,7 +47,7 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
             <span className="flex flex-col items-center md:flex-row md:justify-center md:items-baseline">
 
                 {/* Static "create" */}
-                <span className="text-zinc-900 dark:text-white md:mr-[0.09em]">create</span>
+                <span className="text-zinc-900 dark:text-white md:mr-[0.1em]">create</span>
 
                 {/*
                  * Animated word slot.
