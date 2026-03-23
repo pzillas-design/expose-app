@@ -67,33 +67,46 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
 
     const opacity = localProgress > 0.9 ? (1 - localProgress) * 10 : 1;
 
-    // Ref for the 3D zoom container — updated directly from a scroll listener
-    // This completely bypasses React re-renders for the zoom animation (true 60fps)
+    // Refs for smooth interpolated progress (Lerp)
     const zoomRef = useRef<HTMLDivElement>(null);
+    const targetP = useRef(0);
+    const currentP = useRef(0);
 
     useEffect(() => {
-        let ticking = false;
-        const handleScroll = () => {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(() => {
-                if (!zoomRef.current) { ticking = false; return; }
-                // Find the scroll track (1800vh section) to compute raw scroll progress
-                const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
-                if (track) {
-                    const rect = track.getBoundingClientRect();
-                    const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                    const lp = Math.min(p / 0.18, 1);
-                    // Increased depth from 1500 to 1950 (+30%) for complete fly-through past camera
+        let active = true;
+        const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
+
+        const updateLoop = () => {
+            if (!active) return;
+            // Lerp: move 15% of the distance each frame for butter-smooth feel on desktop
+            const delta = targetP.current - currentP.current;
+            if (Math.abs(delta) > 0.0001) {
+                currentP.current += delta * 0.15;
+                if (zoomRef.current) {
+                    const lp = Math.min(currentP.current / 0.18, 1);
                     const depth = lp * 1950;
                     zoomRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
                 }
-                ticking = false;
-            });
+            }
+            requestAnimationFrame(updateLoop);
         };
+
+        const handleScroll = () => {
+            if (track) {
+                const rect = track.getBoundingClientRect();
+                const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+                targetP.current = p;
+            }
+        };
+
         window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // set initial value
-        return () => window.removeEventListener('scroll', handleScroll);
+        requestAnimationFrame(updateLoop);
+        handleScroll();
+        
+        return () => {
+            active = false;
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
 
     const floatingImagesV1 = [

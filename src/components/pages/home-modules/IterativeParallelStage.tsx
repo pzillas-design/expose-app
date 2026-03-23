@@ -27,57 +27,71 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
         return imageRows.map(row => row.map(img => img === null ? -1 : count++));
     }, []);
 
-    // Flatten logic for refs
     const checkmarkedIndices = [1, 6, 8, 12];
 
+    // Refs for smooth interpolated progress (Lerp)
+    const targetP = useRef(0);
+    const currentP = useRef(0);
+
     useEffect(() => {
-        let ticking = false;
-        const handleScroll = () => {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(() => {
-                const track = document.querySelector('[data-hero-scroll-track]');
-                if (track) {
-                    const rect = track.getBoundingClientRect();
-                    const pTotal = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                    // Map [0.22, 0.45] to local [0, 1] to match UniversalStage transition
-                    const pLocal = Math.min(Math.max((pTotal - 0.22) / 0.23, 0), 1);
+        let active = true;
+        const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
 
-                    imageRefs.current.forEach((ref, index) => {
-                        if (!ref) return;
-                        const delay = Math.abs(index - 6) * 0.04;
-                        const zoomDuration = 0.45;
-                        const normalizedProgress = pLocal > delay
-                            ? Math.min((pLocal - delay) / Math.max(0.01, zoomDuration - delay), 1)
+        const updateLoop = () => {
+            if (!active) return;
+            const delta = targetP.current - currentP.current;
+            if (Math.abs(delta) > 0.0001) {
+                currentP.current += delta * 0.15;
+                const pLocal = Math.min(Math.max((currentP.current - 0.22) / 0.23, 0), 1);
+
+                imageRefs.current.forEach((ref, index) => {
+                    if (!ref) return;
+                    const delay = Math.abs(index - 6) * 0.04;
+                    const zoomDuration = 0.45;
+                    const normalizedProgress = pLocal > delay
+                        ? Math.min((pLocal - delay) / Math.max(0.01, zoomDuration - delay), 1)
+                        : 0;
+
+                    const opacity = Math.min(normalizedProgress * 1.5, 1);
+                    const currentZ = 400 - (normalizedProgress * 400);
+                    
+                    ref.style.opacity = opacity.toString();
+                    ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
+
+                    // Checkmark logic
+                    const checkmarkOrder = checkmarkedIndices.indexOf(index);
+                    if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
+                        const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
+                        const checkmarkProgress = pLocal > checkmarkPhaseStart
+                            ? Math.min((pLocal - checkmarkPhaseStart) / 0.05, 1)
                             : 0;
-
-                        const opacity = Math.min(normalizedProgress * 1.5, 1);
-                        const currentZ = 400 - (normalizedProgress * 400);
-                        
-                        ref.style.opacity = opacity.toString();
-                        ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
-
-                        // Checkmark logic
-                        const checkmarkOrder = checkmarkedIndices.indexOf(index);
-                        if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
-                            const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
-                            const checkmarkProgress = pLocal > checkmarkPhaseStart
-                                ? Math.min((pLocal - checkmarkPhaseStart) / 0.05, 1)
-                                : 0;
-                            const checkmarkRef = checkmarkRefs.current[index];
-                            if (checkmarkRef) {
-                                checkmarkRef.style.opacity = checkmarkProgress.toString();
-                                checkmarkRef.style.transform = `scale(${0.5 + checkmarkProgress * 0.5})`;
-                            }
+                        const checkmarkRef = checkmarkRefs.current[index];
+                        if (checkmarkRef) {
+                            checkmarkRef.style.opacity = checkmarkProgress.toString();
+                            checkmarkRef.style.transform = `scale(${0.5 + checkmarkProgress * 0.5})`;
                         }
-                    });
-                }
-                ticking = false;
-            });
+                    }
+                });
+            }
+            requestAnimationFrame(updateLoop);
         };
+
+        const handleScroll = () => {
+            if (track) {
+                const rect = track.getBoundingClientRect();
+                const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+                targetP.current = p;
+            }
+        };
+
         window.addEventListener('scroll', handleScroll, { passive: true });
+        requestAnimationFrame(updateLoop);
         handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
+        
+        return () => {
+            active = false;
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
 
     return (
