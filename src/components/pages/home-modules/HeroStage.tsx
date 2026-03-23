@@ -86,7 +86,18 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/6.jpeg', x: '50%', y: '95%', depth: -700, size: '18vw' },     // bottom middle deep
     ];
 
-    const floatingImages = floatingImagesV4;
+    const floatingImagesV5 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '10%', y: '-10%', depth: -400, size: '35vw' },   // top-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '60%', y: '5%', depth: -600, size: '30vw' },    // top-right
+        { src: '/home/1 creation reimagined/10.jpeg', x: '5%', y: '90%', depth: -200, size: '32vw' },    // bottom-left
+        { src: '/home/1 creation reimagined/7.jpeg', x: '70%', y: '85%', depth: -800, size: '38vw' },   // bottom-right
+        { src: '/home/1 creation reimagined/9.jpeg', x: '35%', y: '105%', depth: -350, size: '20vw' },   // bottom-center peek
+        { src: '/home/1 creation reimagined/3.jpeg', x: '80%', y: '-20%', depth: -1100, size: '28vw' },  // top-far-right deep
+        { src: '/home/1 creation reimagined/8.jpeg', x: '-15%', y: '0%', depth: -1300, size: '24vw' },   // top-far-left deep
+        { src: '/home/1 creation reimagined/6.jpeg', x: '50%', y: '-15%', depth: -900, size: '18vw' },   // top-center deep
+    ];
+
+    const floatingImages = floatingImagesV5;
 
     // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
     // Since we're sticky, we rely on progress. 
