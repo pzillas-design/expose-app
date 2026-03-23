@@ -64,18 +64,19 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/6.jpeg', x: '55%', y: '60%', depth: -700, size: '20vw' },    // wide landscape, center-right
     ];
 
-    const floatingImagesV2 = [
-        { src: '/home/1 creation reimagined/4.jpeg', x: '5%', y: '15%', depth: -400, size: '32vw' },     // scattered top-left
-        { src: '/home/1 creation reimagined/2.jpeg', x: '65%', y: '68%', depth: -250, size: '28vw' },    // scattered bottom-right
-        { src: '/home/1 creation reimagined/9.jpeg', x: '-5%', y: '82%', depth: -600, size: '24vw' },    // scattered bottom-left
-        { src: '/home/1 creation reimagined/7.jpeg', x: '75%', y: '-10%', depth: -800, size: '40vw' },   // scattered top-right deep
-        { src: '/home/1 creation reimagined/5.jpeg', x: '85%', y: '35%', depth: -950, size: '30vw' },    // far right deep
-        { src: '/home/1 creation reimagined/3.jpeg', x: '-15%', y: '45%', depth: -1100, size: '26vw' },  // far left very deep
-        { src: '/home/1 creation reimagined/8.jpeg', x: '50%', y: '-15%', depth: -1300, size: '20vw' },  // top center deep
-        { src: '/home/1 creation reimagined/6.jpeg', x: '25%', y: '5%', depth: -500, size: '18vw' },     // top left-ish
+    const floatingImagesV3 = [
+        { src: '/home/1 creation reimagined/4.jpeg', x: '-15%', y: '10%', depth: -200, size: '45vw' },    // Very close, large, top-left
+        { src: '/home/1 creation reimagined/2.jpeg', x: '70%', y: '75%', depth: -400, size: '35vw' },     // Middle-close, bottom-right
+        { src: '/home/1 creation reimagined/9.jpeg', x: '10%', y: '85%', depth: -1200, size: '25vw' },    // Very deep, bottom-left
+        { src: '/home/1 creation reimagined/7.jpeg', x: '80%', y: '-15%', depth: -600, size: '38vw' },    // Deep-ish, top-right
+        { src: '/home/1 creation reimagined/5.jpeg', x: '45%', y: '95%', depth: -900, size: '20vw' },     // Deep, center-bottom
+        { src: '/home/1 creation reimagined/3.jpeg', x: '-20%', y: '60%', depth: -1500, size: '30vw' },   // Very deep, far-left
+        { src: '/home/1 creation reimagined/8.jpeg', x: '25%', y: '-20%', depth: -800, size: '22vw' },    // Deep, top-left
+        { src: '/home/1 creation reimagined/6.jpeg', x: '55%', y: '15%', depth: -1100, size: '28vw' },    // Deep, center-right
+        { src: '/home/1 creation reimagined/1.jpeg', x: '85%', y: '40%', depth: -300, size: '24vw' },     // Middle-close, far-right (Added back for V3 as a variant)
     ];
 
-    const floatingImages = floatingImagesV2;
+    const floatingImages = floatingImagesV3;
 
     // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
     // Since we're sticky, we rely on progress. 
