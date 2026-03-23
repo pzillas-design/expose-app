@@ -63,10 +63,11 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                         return (
                             <div
                                 key={index}
-                                className="relative flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800 will-change-transform"
+                                className="relative flex-1 basis-0 min-w-0 aspect-[4/3] rounded-sm overflow-hidden bg-zinc-100 dark:bg-zinc-800"
                                 style={{
                                     opacity: opacity,
-                                    transform: `translateZ(${currentZ}px)`
+                                    transform: `translate3d(0, 0, ${currentZ}px)`,
+                                    willChange: opacity > 0 && opacity < 1 ? 'opacity, transform' : 'auto'
                                 }}
                             >
                                 <img

@@ -200,7 +200,7 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter text-zinc-900 dark:text-white mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
                         Visual <br className="hidden lg:block" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">Prompting</span>
                     </h2>
-                    <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 dark:text-zinc-400 leading-relaxed font-light">
+                    <p className="text-base sm:text-xl lg:text-2xl text-zinc-900 dark:text-zinc-400 leading-relaxed font-light">
                         {t('home_section_visual_desc')}
                     </p>
                 </div>

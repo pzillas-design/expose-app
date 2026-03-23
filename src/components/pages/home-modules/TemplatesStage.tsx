@@ -83,7 +83,7 @@ const SidepanelMockup = ({
                         </div>
                     </div>
                     <div
-                        className="h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer shadow-sm shadow-orange-500/20"
+                        className="w-full lg:w-auto h-10 lg:h-11 px-6 rounded-full font-bold text-[13px] flex items-center justify-center relative transition-all duration-150 transform-gpu bg-gradient-to-r from-orange-500 to-red-600 text-white ml-auto cursor-pointer shadow-sm shadow-orange-500/20"
                         style={{ transform: `scale(${buttonScale})` }}
                     >
                         <span className="relative z-10">{t('home_mockup_generate')}</span>
@@ -97,13 +97,13 @@ const SidepanelMockup = ({
             <div className="hidden lg:flex flex-none flex-col mt-auto pt-4">
                 <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>{t('home_mockup_templates')}</span>
                 <div className="flex flex-wrap gap-2">
-                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         🏡 <span>Home Staging</span>
                     </div>
-                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         🧹 <span>Cleanup</span>
                     </div>
-                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shadow-sm">
+                    <div className="px-3.5 py-1.5 rounded-full bg-white dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         ❄️ <span>{t('home_mockup_season')}</span>
                     </div>
                 </div>
@@ -223,7 +223,8 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Visual Part: Right on Desktop */}
                 <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[50vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
                     <div
-                        className="absolute bottom-0 left-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none will-change-transform will-change-opacity origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
+                        className="absolute bottom-0 left-0 flex items-stretch bg-zinc-50 dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
+                        style={{ willChange: scrollActive ? 'transform, opacity' : 'auto' }}
                     >
                         {/* Progress Bar */}
                         <div className={`absolute top-0 left-0 h-[3px] z-[60] transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`} style={{ width: '100%' }}>

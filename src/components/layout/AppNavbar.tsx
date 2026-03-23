@@ -482,7 +482,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     }`}
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}
-                <div className="flex items-center gap-2 w-1/3 justify-start relative z-10 pointer-events-auto">
+                <div className="flex items-center gap-2 flex-1 justify-start relative z-10 pointer-events-auto">
                     {!isPublic && user && (
                         <>
                             <button
@@ -529,7 +529,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </div>
 
                 {/* CENTER: Logo + Wordmark */}
-                <div className="flex items-center justify-center w-1/3 relative group cursor-pointer z-10 pointer-events-auto" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
+                <div className="flex items-center justify-center flex-none relative group cursor-pointer z-10 pointer-events-auto" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
                     <div className="flex items-center justify-center gap-[11.4px]">
                         {/* Official Logo */}
                         <Logo
@@ -555,7 +555,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </div>
 
                 {/* RIGHT: System Actions / Login */}
-                <div className="flex items-center justify-end w-1/3 pointer-events-auto">
+                <div className="flex items-center justify-end flex-1 pointer-events-auto">
                     <div className="flex items-center gap-1.5">
                         {isPublic ? (
                             <>

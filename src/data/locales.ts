@@ -523,9 +523,9 @@ export const translations = {
 
     // Home Page
     home_hero_headline: "Ready for Next-Gen Creation?",
-    home_section_iterative_title: "Work iteratively & in parallel",
+    home_section_iterative_title: "Rapid Iterations",
     home_section_iterative_desc: "Generate entire image series at once — compare, refine, and perfect them side by side.",
-    home_section_templates_title: "Prompt templates",
+    home_section_templates_title: "Template Library",
     home_section_templates_desc: "Prompt once, scale forever. Build your own template library and generate consistent image assets at scale.",
     home_section_visual_title: "Visual Prompting",
     home_section_visual_desc: "Don't just tell the AI what to do — show it exactly where.",
@@ -1058,7 +1058,7 @@ export const translations = {
     home_hero_headline: "Bereit für Next-Gen Creation?",
     home_section_iterative_title: "Iterativ & parallel arbeiten",
     home_section_iterative_desc: "Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.",
-    home_section_templates_title: "Prompt-Vorlagen",
+    home_section_templates_title: "Vorlagen-Bibliothek",
     home_section_templates_desc: "Prompt once, scale forever. Wählen oder erstellen Sie Ihre eigenen Prompt-Vorlagen für perfekt konsistente Ergebnisse in Serie.",
     home_section_visual_title: "Visual Prompting",
     home_section_visual_desc: "Sagen Sie der KI nicht nur was, sondern zeigen Sie ihr exakt wo.",

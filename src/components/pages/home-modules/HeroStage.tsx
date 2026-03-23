@@ -21,9 +21,10 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
                 left: x,
                 top: y,
                 width: `calc(var(--base-vw, ${sizeVal}) * var(--mobile-scale, 1) * 1vw)`,
-                transform: `translateZ(${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
+                transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
                 zIndex: Math.floor(depth) + 1000,
-                '--base-vw': sizeVal
+                '--base-vw': sizeVal,
+                willChange: 'transform'
             } as any}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -98,8 +99,8 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
 
             <div className="w-full h-full" style={{ perspective: '1000px' }}>
                 <div
-                    className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out will-change-transform"
-                    style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
+                    className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out"
+                    style={{ transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }}
                 >
                     {/* Hero Text Headline Layer */}
                     <div
