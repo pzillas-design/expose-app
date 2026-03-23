@@ -57,9 +57,10 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/2.jpeg', x: '78%', y: '2%', depth: -500, size: '30vw' },     // tall portrait, top-right
         { src: '/home/1 creation reimagined/9.jpeg', x: '42%', y: '92%', depth: -150, size: '19vw' },    // wide, bottom-center peek
         { src: '/home/1 creation reimagined/7.jpeg', x: '-18%', y: '-5%', depth: -950, size: '46vw' },   // wide landscape, top-left deep
+        { src: '/home/1 creation reimagined/10.jpeg', x: '88%', y: '82%', depth: -400, size: '28vw' },   // square, bottom-right (replaced 1.jpeg)
         { src: '/home/1 creation reimagined/5.jpeg', x: '72%', y: '45%', depth: -800, size: '26vw' },    // tall portrait, mid-right deep
         { src: '/home/1 creation reimagined/3.jpeg', x: '32%', y: '-8%', depth: -600, size: '24vw' },    // square-ish, top-center
-        { src: '/home/1 creation reimagined/8.jpeg', x: '88%', y: '82%', depth: -400, size: '28vw' },    // swapped from pos 1
+        { src: '/home/1 creation reimagined/8.jpeg', x: '8%', y: '40%', depth: -1200, size: '22vw' },    // wide, mid-left very deep
         { src: '/home/1 creation reimagined/6.jpeg', x: '55%', y: '60%', depth: -700, size: '20vw' },    // wide landscape, center-right
     ];
 
