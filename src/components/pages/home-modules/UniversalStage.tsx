@@ -7,9 +7,10 @@ import { VisualPromptingStage } from './VisualPromptingStage';
 export interface UniversalStageProps {
     progress: number; // Global progress [0, 1]
     t: (key: string) => string;
+    lang?: string;
 }
 
-export const UniversalStage: React.FC<UniversalStageProps> = ({ progress, t }) => {
+export const UniversalStage: React.FC<UniversalStageProps> = ({ progress, t, lang }) => {
     // Stage Transitions mapping global [0, 1] to specific active sections
     // 0.00 - 0.20: Hero
     // 0.20 - 0.45: Iterative & Parallel
@@ -49,6 +50,7 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ progress, t }) =
                     scrollActive={progress > 0.15 && progress <= 0.5}
                     exitProgress={transition23}
                     t={t}
+                    lang={lang}
                 />
             )}
 

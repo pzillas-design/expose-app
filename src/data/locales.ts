@@ -1056,7 +1056,7 @@ export const translations = {
     // Home Page
     home_hero_cta: "Projekt starten",
     home_hero_headline: "bereit für next-gen creation?",
-    home_section_iterative_title: "iterativ & parallel arbeiten",
+    home_section_iterative_title: "iterativ und parallel arbeiten",
     home_section_iterative_desc: "Ganze Bildstrecken gleichzeitig generieren, vergleichen und perfektionieren.",
     home_section_templates_title: "smarte vorlagen",
     home_section_templates_desc: "Prompt once, scale forever. Wählen oder erstellen Sie Ihre eigenen Prompt-Vorlagen für perfekt konsistente Ergebnisse in Serie.",

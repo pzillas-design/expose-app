@@ -13,9 +13,10 @@ interface HomePageProps {
     onGetStarted: () => void;
     onSignIn?: () => void;
     t: TranslationFunction;
+    lang?: string;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t }) => {
+export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t, lang }) => {
     const navigate = useNavigate();
     const [progress, setProgress] = useState(0);
     const mainTrackRef = useRef<HTMLElement>(null);
@@ -50,7 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
                 <section ref={mainTrackRef} className="relative h-[1800vh]">
-                    <UniversalStage progress={progress} t={t} />
+                    <UniversalStage progress={progress} t={t} lang={lang} />
                 </section>
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
@@ -60,7 +61,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                     <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
-                        <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1] lowercase">
+                        <h2 className="text-4xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1] lowercase">
                             {t('home_hero_headline').toLowerCase().split('next-gen')[0]}<br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 pr-2">next-gen</span> {t('home_hero_headline').toLowerCase().split('next-gen')[1]}
                         </h2>

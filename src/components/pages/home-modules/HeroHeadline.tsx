@@ -31,7 +31,7 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
 
     return (
         <div
-            className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none whitespace-nowrap"
+            className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none flex flex-col md:block items-center"
             style={{
                 fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
                 lineHeight: 1,
@@ -48,7 +48,7 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
             <span className="text-zinc-900 dark:text-white">create </span>
 
             {/* Animated word slot */}
-            <span className="relative inline-flex overflow-hidden align-baseline" style={{ height: '1.05em' }}>
+            <span className="relative flex md:inline-flex overflow-hidden align-baseline" style={{ height: '1.2em' }}>
                 {ANIMATED_WORDS.map((word, i) => {
                     const isActive = i === wordIndex;
                     const isPast = i < wordIndex;

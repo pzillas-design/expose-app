@@ -182,7 +182,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="space-y-5">
 
                         {/* Model + Resolution */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <p className={fieldLabel}>{t('settings_model_label')}</p>
                                 <div className="relative">

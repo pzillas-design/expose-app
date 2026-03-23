@@ -106,8 +106,15 @@ export function App() {
 
     useEffect(() => {
         pathnameRef.current = location.pathname;
-        if (location.pathname !== '/create') setCreateMode('choose');
-    }, [location.pathname]);
+        if (location.pathname !== '/create') {
+            setCreateMode('choose');
+        } else {
+            const params = new URLSearchParams(location.search);
+            if (params.get('m') === 'create') {
+                setCreateMode('create');
+            }
+        }
+    }, [location.pathname, location.search]);
 
     // Keep URL in sync with active selection only while user is already in detail view.
     // This prevents forced jumps back into detail when the user intentionally returns to grid.
@@ -601,6 +608,7 @@ export function App() {
                                     userProfile={userProfile}
                                     credits={credits}
                                     t={t}
+                                    lang={state.currentLang}
                                     onSignIn={() => {
                                         setAuthModalMode('signin');
                                         setIsAuthModalOpen(true);
@@ -618,6 +626,7 @@ export function App() {
                                 userProfile={userProfile}
                                 credits={credits}
                                 t={t}
+                                lang={state.currentLang}
                                 onSignIn={() => {
                                     setAuthModalMode('signin');
                                     setIsAuthModalOpen(true);

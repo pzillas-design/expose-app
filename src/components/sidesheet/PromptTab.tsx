@@ -349,6 +349,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             placeholder={t('describe_changes')}
                             className={`w-full bg-transparent border-none outline-none px-4 py-4 pb-3 ${Typo.Prompt} leading-relaxed resize-none min-h-[80px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 placeholder:opacity-80`}
                             disabled={selectedImage?.isGenerating}
+                            autoComplete="off"
+                            autoCorrect="off"
+                            autoCapitalize="off"
+                            spellCheck={false}
+                            enterKeyHint="done"
                         />
                     </div>
 

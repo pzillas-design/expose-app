@@ -19,7 +19,7 @@ const FloatingImage = ({ src, depth, x, y, size }: FloatingImageProps) => {
             className="absolute lg:transition-all lg:duration-700 lg:ease-out hero-floating-image"
             style={{
                 left: x,
-                top: y,
+                top: `calc(50% + ((${y} - 50%) * var(--y-scale, 1)))`,
                 width: `calc(var(--base-vw, ${sizeVal}) * var(--mobile-scale, 1) * 1vw)`,
                 transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
                 zIndex: Math.floor(depth) + 1000,
@@ -194,13 +194,14 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                 @media (max-width: 768px) {
                     .hero-floating-image {
                         --mobile-scale: 1.5;
+                        --y-scale: 0.8;
                         max-width: 95vw;
                     }
                     .hero-headline-container {
                         width: 85% !important;
                     }
                     .hero-headline {
-                        font-size: clamp(4.55rem, 15.6vw, 11rem) !important;
+                        font-size: clamp(3.75rem, 13vw, 9rem) !important;
                     }
                 }
             `}</style>

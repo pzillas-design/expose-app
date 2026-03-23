@@ -491,7 +491,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
                     } ${isScrolled
                         ? 'h-14 backdrop-blur-none'
-                        : 'h-[148px] backdrop-blur-none border-transparent pointer-events-none'
+                        : 'h-[112px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
                     }`}
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}

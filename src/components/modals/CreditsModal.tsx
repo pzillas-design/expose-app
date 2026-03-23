@@ -4,6 +4,7 @@ import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
 import { X, Loader2, Plus } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
+import { useMobile } from '@/hooks/useMobile';
 
 interface CreditsModalProps {
     isOpen: boolean;
@@ -22,6 +23,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     isReduced = false,
     t
 }) => {
+    const isMobile = useMobile();
     const [customAmount, setCustomAmount] = useState('');
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
     const [showMinError, setShowMinError] = useState(false);
@@ -63,9 +65,18 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             <div className={`p-8 flex flex-col ${isTopUpExpanded ? 'gap-2' : 'gap-8'}`}>
                 <div className={`text-center space-y-2 ${isTopUpExpanded ? 'py-1' : 'py-6'}`}>
                     <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100`}
-                        style={{ fontSize: isTopUpExpanded ? '1.5rem' : '3.75rem', lineHeight: isTopUpExpanded ? '2rem' : '1' }}>
+                        style={{ 
+                            fontSize: isTopUpExpanded 
+                                ? (isMobile ? '1.05rem' : '1.35rem') 
+                                : (isMobile ? '2.625rem' : '3.375rem'), 
+                            lineHeight: isTopUpExpanded ? '2rem' : '1' 
+                        }}>
                         {animatedBalance.toFixed(2)}<span className="ml-2"
-                            style={{ fontSize: isTopUpExpanded ? '1.25rem' : '3rem' }}>€</span>
+                            style={{ 
+                                fontSize: isTopUpExpanded 
+                                    ? (isMobile ? '0.875rem' : '1.125rem') 
+                                    : (isMobile ? '2.1rem' : '2.7rem') 
+                            }}>€</span>
                     </div>
                 </div>
 
