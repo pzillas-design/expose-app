@@ -40,8 +40,8 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                 if (track) {
                     const rect = track.getBoundingClientRect();
                     const pTotal = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                    // Map [0.2, 0.45] to local [0, 1]
-                    const pLocal = Math.min(Math.max((pTotal - 0.2) / 0.25, 0), 1);
+                    // Map [0.22, 0.45] to local [0, 1] to match UniversalStage transition
+                    const pLocal = Math.min(Math.max((pTotal - 0.22) / 0.23, 0), 1);
 
                     imageRefs.current.forEach((ref, index) => {
                         if (!ref) return;

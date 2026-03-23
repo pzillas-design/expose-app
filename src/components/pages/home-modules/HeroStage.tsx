@@ -57,10 +57,11 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
     // Stage-specific word calculation: only update state when the index actually changes
     // This prevents HeroHeadline from re-rendering on every scroll frame.
     const [wordIndex, setWordIndex] = useState(0);
-    const localProgress = Math.min(progress / 0.15, 1);
+    // Extended range to 0.18 (from 0.15) to allow deeper zoom before Section 2 fully takes over
+    const localProgress = Math.min(progress / 0.18, 1);
     
     useEffect(() => {
-        const nextIndex = localProgress < 0.12 ? 0 : localProgress < 0.28 ? 1 : 2;
+        const nextIndex = localProgress < 0.15 ? 0 : localProgress < 0.35 ? 1 : 2;
         if (nextIndex !== wordIndex) setWordIndex(nextIndex);
     }, [localProgress, wordIndex]);
 
@@ -82,8 +83,9 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
                 if (track) {
                     const rect = track.getBoundingClientRect();
                     const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                    const lp = Math.min(p / 0.15, 1);
-                    const depth = lp * 1500;
+                    const lp = Math.min(p / 0.18, 1);
+                    // Increased depth from 1500 to 1950 (+30%) for complete fly-through past camera
+                    const depth = lp * 1950;
                     zoomRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
                 }
                 ticking = false;

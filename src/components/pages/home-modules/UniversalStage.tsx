@@ -51,8 +51,8 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
         return Math.min(Math.max((progress - start) / (end - start), 0), 1);
     };
 
-    const heroProgress = getLocalProgress([0, 0.2]);
-    const ipProgress = getLocalProgress([0.2, 0.45]);
+    const heroProgress = getLocalProgress([0, 0.22]);
+    const ipProgress = getLocalProgress([0.22, 0.45]);
     const templateProgress = getLocalProgress([0.45, 0.70]);
     const vpProgress = getLocalProgress([0.8, 1.0]);
 
@@ -64,10 +64,10 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
     return (
         <div ref={containerRef} className="sticky top-0 h-screen w-full overflow-hidden bg-white dark:bg-zinc-950">
             {/* Render stages conditionally based on throttled progress state */}
-            {progress <= 0.3 && (
+            {progress <= 0.35 && (
                 <HeroStage
                     progress={progress}
-                    scrollActive={progress <= 0.25}
+                    scrollActive={progress <= 0.28}
                 />
             )}
 

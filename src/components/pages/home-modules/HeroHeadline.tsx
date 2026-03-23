@@ -24,10 +24,16 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
 
     return (
         <div
-            className="hero-headline font-kumbh font-bold tracking-tighter select-none w-full"
+            className="hero-headline font-kumbh font-bold tracking-tighter select-none w-full antialiased subpixel-antialiased"
             style={{
                 fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
                 lineHeight: 1.1,
+                // These help prevent "shattered" font during flythrough
+                WebkitFontSmoothing: 'antialiased',
+                MozOsxFontSmoothing: 'grayscale',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                transformStyle: 'preserve-3d',
                 ...(isFadingOut ? {
                     opacity: 1 - fadeOutProgress,
                     transform: `translateY(${-fadeOutProgress * 60}px)`,
