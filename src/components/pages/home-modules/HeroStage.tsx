@@ -54,8 +54,16 @@ export interface HeroStageProps {
 }
 
 export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActive }) => {
-    // Derived from progress (still needed for HeroHeadline word changes + fade-out)
+    // Stage-specific word calculation: only update state when the index actually changes
+    // This prevents HeroHeadline from re-rendering on every scroll frame.
+    const [wordIndex, setWordIndex] = useState(0);
     const localProgress = Math.min(progress / 0.15, 1);
+    
+    useEffect(() => {
+        const nextIndex = localProgress < 0.12 ? 0 : localProgress < 0.28 ? 1 : 2;
+        if (nextIndex !== wordIndex) setWordIndex(nextIndex);
+    }, [localProgress, wordIndex]);
+
     const opacity = localProgress > 0.9 ? (1 - localProgress) * 10 : 1;
 
     // Ref for the 3D zoom container — updated directly from a scroll listener
@@ -221,8 +229,13 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             <style>{`
                 @media (max-width: 1023px) {
                     .hero-floating-image { --img-scale: 0.55; --y-scale: 0.7; }
-                    .hero-headline-container { width: 85% !important; }
-                    .hero-headline { font-size: clamp(4.5rem, 15.6vw, 10rem) !important; }
+                    .hero-headline-container { 
+                        width: 90% !important; 
+                        align-items: start !important;
+                        padding-top: 20vh !important;
+                        justify-content: center !important;
+                    }
+                    .hero-headline { font-size: clamp(3.2rem, 12vw, 7rem) !important; }
                 }
                 @media (min-width: 1024px) {
                     .hero-floating-image { --img-scale: 1; }
@@ -239,14 +252,14 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
                 >
                     {/* Hero Text Headline Layer */}
                     <div
-                        className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none hero-headline-container"
+                        className="absolute inset-0 flex items-center md:items-center justify-center p-6 pointer-events-none hero-headline-container md:pt-0"
                         style={{
                             transform: 'translate3d(0, 0, 50px)',
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
                         }}
                     >
-                        <HeroHeadline progress={localProgress} />
+                        <HeroHeadline wordIndex={wordIndex} progress={localProgress} />
                     </div>
 
                     {floatingImages.map((img, i) => (

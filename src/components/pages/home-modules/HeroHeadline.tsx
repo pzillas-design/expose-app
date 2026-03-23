@@ -4,15 +4,11 @@ const ANIMATED_WORDS = ['more', 'faster', 'better'] as const;
 
 interface HeroHeadlineProps {
     progress: number;
+    wordIndex: number;
 }
 
-export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => {
-    const wordIndex = progress < 0.12 ? 0 : progress < 0.28 ? 1 : 2;
-    const prevIndexRef = useRef(wordIndex);
+export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordIndex }) => {
 
-    useEffect(() => {
-        prevIndexRef.current = wordIndex;
-    }, [wordIndex]);
 
     const gradientStyle = {
         background: 'linear-gradient(90deg, #f97316, #dc2626)',
