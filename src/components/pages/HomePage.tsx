@@ -62,7 +62,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                     <div className="relative z-10 w-full max-w-5xl mx-auto text-center">
                         <h2 className="text-5xl sm:text-7xl lg:text-8xl font-kumbh font-bold tracking-tighter mb-12 leading-[1.1] lowercase">
                             {t('home_hero_headline').toLowerCase().split('next-gen')[0]}<br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">next-gen</span>{t('home_hero_headline').toLowerCase().split('next-gen')[1]}
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 pr-2">next-gen</span> {t('home_hero_headline').toLowerCase().split('next-gen')[1]}
                         </h2>
 
                         <div className="flex flex-col items-center justify-center gap-12 mt-16">
