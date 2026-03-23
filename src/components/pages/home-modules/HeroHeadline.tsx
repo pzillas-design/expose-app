@@ -31,10 +31,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
 
     return (
         <div
-            className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none flex flex-col md:block items-center"
+            className="hero-headline font-kumbh font-bold tracking-tighter text-center select-none"
             style={{
                 fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
-                lineHeight: 1,
+                lineHeight: 1.1,
                 // Swoosh up + fade out at end of hero section
                 ...(isFadingOut ? {
                     opacity: 1 - fadeOutProgress,
@@ -45,10 +45,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
             }}
         >
             {/* Static "create" */}
-            <span className="text-zinc-900 dark:text-white md:mr-[0.25em]">create</span>
+            <span className="text-zinc-900 dark:text-white block md:inline md:mr-[0.18em]">create</span>
 
             {/* Animated word slot */}
-            <span className="relative flex md:inline-flex overflow-hidden align-baseline justify-center min-w-[3ch]" style={{ height: '1.2em' }}>
+            <span className="relative block md:inline-flex overflow-hidden align-baseline h-[1.2em] md:h-auto" style={{ verticalAlign: 'baseline' }}>
                 {ANIMATED_WORDS.map((word, i) => {
                     const isActive = i === wordIndex;
                     const isPast = i < wordIndex;
@@ -57,13 +57,13 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
                         <span
                             key={word}
                             aria-hidden={!isActive}
+                            className="px-[0.05em]"
                             style={{
                                 position: isActive ? 'relative' : 'absolute',
                                 left: 0,
                                 right: 0,
                                 display: 'inline-block',
                                 textAlign: 'center',
-                                padding: '0 0.1em',
                                 opacity: isActive ? 1 : 0,
                                 transform: isActive
                                     ? 'translateY(0) scale(1)'
