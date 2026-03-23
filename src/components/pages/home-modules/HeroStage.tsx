@@ -76,7 +76,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/1.jpeg', x: '85%', y: '40%', depth: -300, size: '24vw' },     // Middle-close, far-right (Added back for V3 as a variant)
     ];
 
-    const floatingImages = floatingImagesV3;
+    const floatingImages = floatingImagesV1;
 
     // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
     // Since we're sticky, we rely on progress. 
