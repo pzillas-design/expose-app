@@ -229,7 +229,7 @@ export const useGeneration = ({
         attachedJobIds.current.add(jobId);
 
         let attempts = 0;
-        const maxAttempts = 60; // 5 minutes at 5s interval
+        const maxAttempts = 90; // 7.5 minutes at 5s interval — covers worst-case Pro·4K (2-5 min)
 
         const poll = async () => {
             attempts++;
@@ -336,8 +336,10 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2b. Detect stuck "processing" jobs (Edge Function killed by Supabase before catch ran)
-            if (jobData?.status === 'processing' && attempts >= 55) { // ~4.5 minutes (background task has up to 5 min)
+            // 2b. Detect stuck "processing" jobs — only after 6 min (72×5s)
+            // We wait longer than the Edge Function's own background limit so the webhook
+            // still has a chance to fire for slow Pro·4K jobs before we declare failure.
+            if (jobData?.status === 'processing' && attempts >= 72) {
                 // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
                 try {
                     // Fetch job cost and current profile credits fresh (don't use stale closure)
