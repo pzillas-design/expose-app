@@ -16,17 +16,16 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
 
     return (
         <div
-            // hidden on mobile — too many GPU layers, kills scroll performance
-            className="absolute hero-floating-image hidden lg:block"
+            className="absolute hero-floating-image"
             style={{
                 left: x,
                 top: `calc(50% + ((${y} - 50%) * var(--y-scale, 1)))`,
-                width: `calc(var(--base-vw, ${sizeVal}) * 1vw)`,
+                // Mobile: 55% of desktop vw-size = smaller footprint, same layout
+                width: `calc(var(--base-vw, ${sizeVal}) * var(--img-scale, 1) * 1vw)`,
                 transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
                 transition: 'transform 0.4s ease-out',
                 zIndex: Math.floor(depth) + 1000,
                 '--base-vw': sizeVal,
-                // willChange only when actually hovered — reduces constant GPU layer promotion
                 willChange: isHovered ? 'transform' : 'auto'
             } as any}
             onMouseEnter={() => setIsHovered(true)}
@@ -35,6 +34,8 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
             <div className="relative group cursor-none">
                 <img
                     src={src}
+                    srcSet={`${src.replace('/home/1 creation reimagined/', '/home/1 creation reimagined/mobile/')} 600w, ${src} 2000w`}
+                    sizes="(max-width: 1023px) 60vw, 40vw"
                     className="w-full h-full rounded-sm"
                     alt="Canvas Element"
                     loading="lazy"
@@ -196,24 +197,16 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             }}
         >
             <style>{`
-                @media (max-width: 768px) {
-                    .hero-floating-image {
-                        --mobile-scale: 1.5;
-                        --y-scale: 0.8;
-                        max-width: 95vw;
-                    }
-                    .hero-headline-container {
-                        width: 85% !important;
-                    }
-                    .hero-headline {
-                        font-size: clamp(4.5rem, 15.6vw, 10rem) !important;
-                    }
+                @media (max-width: 1023px) {
+                    .hero-floating-image { --img-scale: 0.55; --y-scale: 0.7; }
+                    .hero-headline-container { width: 85% !important; }
+                    .hero-headline { font-size: clamp(4.5rem, 15.6vw, 10rem) !important; }
+                }
+                @media (min-width: 1024px) {
+                    .hero-floating-image { --img-scale: 1; }
                 }
             `}</style>
             
-            {/* Background Gradients - Shared with ContactPage for brand consistency */}
-            <div className="absolute top-1/4 -left-24 md:-left-20 w-64 md:w-80 h-64 md:h-80 bg-orange-500/13 rounded-full blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-1/4 -right-24 md:-right-20 w-64 md:w-80 h-64 md:h-80 bg-red-600/13 rounded-full blur-[120px] pointer-events-none" />
 
             <div className="w-full h-full lg:perspective-1000" style={{ perspective: 'none' }}>
                 <div
