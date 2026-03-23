@@ -39,12 +39,12 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
             <div className="relative group cursor-none">
                 <img
                     src={src}
-                    srcSet={`${src.replace('/home/1 creation reimagined/', '/home/1 creation reimagined/mobile/')} 600w, ${src} 2000w`}
+                    srcSet={`${src.replace('/home/1 creation reimagined/', '/home/1 creation reimagined/mobile/').replace(/ /g, '%20')} 600w, ${src.replace(/ /g, '%20')} 2000w`}
                     sizes="(max-width: 1023px) 60vw, 40vw"
-                    className="w-full h-full rounded-sm"
+                    className="w-full h-full rounded-sm transition-opacity duration-300"
                     alt="Canvas Element"
-                    loading="lazy"
-                    decoding="async"
+                    loading="eager"
+                    decoding="sync"
                 />
                 <div className={`absolute -inset-4 bg-orange-500/10 rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </div>
