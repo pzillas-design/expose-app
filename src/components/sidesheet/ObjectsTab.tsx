@@ -27,6 +27,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
 }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
     const [stickerName, setStickerName] = useState('');
     const [stickerEmoji, setStickerEmoji] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +43,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         if (isModalOpen) {
             setStickerName('');
             setStickerEmoji('');
+            setShowAddForm(false);
         }
     }, [isModalOpen]);
 
@@ -49,8 +51,10 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
         if (!stickerName.trim() || isSubmitting) return;
         setIsSubmitting(true);
         try {
-            await onAddUserItem('basics', stickerName.trim(), stickerEmoji.trim() || undefined);
-            setIsModalOpen(false);
+            await onAddUserItem('basics', stickerName.trim(), stickerEmoji.trim() || '');
+            setStickerName('');
+            setStickerEmoji('');
+            setShowAddForm(false);
         } catch (err) { console.error(err); }
         finally { setIsSubmitting(false); }
     };
@@ -102,7 +106,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     ))}
                 </SidebarAccordion>
             ) : (
-                <div className="flex items-center gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-4 before:content-[''] before:w-4 before:shrink-0 after:content-[''] after:w-4 after:shrink-0">
+                <div className="flex items-center justify-center gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-4 px-4">
                     {/* Edit Stickers Button */}
                     <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }}
@@ -202,7 +206,9 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                             {item.icon ? (
                                                 <span className="text-xl leading-none">{item.icon}</span>
                                             ) : (
-                                                <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-500 font-bold uppercase">{item.label.substring(0, 2)}</div>
+                                                <div className="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600" />
+                                                </div>
                                             )}
                                             <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{item.label}</span>
                                         </div>
@@ -221,34 +227,44 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                                 )}
                             </div>
 
-                            {/* Add New Form */}
-                            <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900 flex flex-col gap-3">
-                                <label className={`${Typo.H5} text-zinc-500 pl-1`}>
-                                    {t('add_new_sticker')}
-                                </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        value={stickerEmoji}
-                                        onChange={(e) => setStickerEmoji(e.target.value.slice(0, 2))}
-                                        placeholder="😀"
-                                        className="w-12 h-10 px-0 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-lg outline-none focus:border-zinc-400 transition-all text-zinc-900 dark:text-white"
-                                    />
-                                    <input
-                                        value={stickerName}
-                                        onChange={(e) => setStickerName(e.target.value)}
-                                        placeholder={t('enter_sticker_name') || 'Name...'}
-                                        className="flex-1 h-10 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none focus:border-zinc-400 transition-all text-zinc-900 dark:text-white"
-                                        onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                                    />
-                                    <button
-                                        onClick={handleCreate}
-                                        disabled={!stickerName.trim() || isSubmitting}
-                                        className="h-10 px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center font-medium shadow-sm"
-                                    >
-                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                    </button>
+                            {/* Add New Sticker */}
+                            {!showAddForm ? (
+                                <div className="p-4 border-t border-zinc-100 dark:border-zinc-900">
+                                    <Button variant="secondary" onClick={() => setShowAddForm(true)} className="w-full">
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        {t('add_new_sticker')}
+                                    </Button>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="p-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                    <label className={`${Typo.H5} text-zinc-500 pl-1`}>
+                                        {t('add_new_sticker')}
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={stickerEmoji}
+                                            onChange={(e) => setStickerEmoji(e.target.value.slice(0, 2))}
+                                            placeholder="✦"
+                                            className="w-12 h-10 px-0 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-lg outline-none focus:border-zinc-400 transition-all text-zinc-900 dark:text-white"
+                                        />
+                                        <input
+                                            value={stickerName}
+                                            onChange={(e) => setStickerName(e.target.value)}
+                                            placeholder={t('enter_sticker_name') || 'Name...'}
+                                            className="flex-1 h-10 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm outline-none focus:border-zinc-400 transition-all text-zinc-900 dark:text-white"
+                                            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                                            autoFocus
+                                        />
+                                        <button
+                                            onClick={handleCreate}
+                                            disabled={!stickerName.trim() || isSubmitting}
+                                            className="h-10 px-4 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center font-medium shadow-sm"
+                                        >
+                                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>,

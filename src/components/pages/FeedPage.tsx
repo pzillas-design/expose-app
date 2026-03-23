@@ -251,6 +251,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     }, [onScrollProgress, hasImages]);
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
+    const lastSelectImageRef = React.useRef<string | null>(null);
 
     // When entering select mode, scroll to the first selected image (which may have
     // shifted position because the grid re-mounts with all individual images ungrouped)
@@ -263,10 +264,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     React.useEffect(() => {
         const isEntering = !!isSelectMode && !prevSelectModeRef.current;
+        const isExiting = !isSelectMode && prevSelectModeRef.current;
         const isFirstSelection = !!isSelectMode && prevSelectModeRef.current && prevSelectedCountRef.current === 0 && selectedIds.length > 0;
-        
+
         prevSelectModeRef.current = !!isSelectMode;
         prevSelectedCountRef.current = selectedIds.length;
+
+        // Track last selected image for scroll restoration on exit
+        if (isSelectMode && selectedIds.length > 0) {
+            lastSelectImageRef.current = selectedIds[selectedIds.length - 1];
+        }
 
         if ((isEntering || isFirstSelection) && selectedIds.length > 0) {
             const targetId = selectedIds[0];
@@ -282,7 +289,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             };
             requestAnimationFrame(scrollFn);
         }
-    }, [isSelectMode, selectedIds, expandedGroupId]);
+
+        // Scroll to the cover tile of the last selected image's group when exiting select mode
+        if (isExiting && lastSelectImageRef.current) {
+            const targetId = lastSelectImageRef.current;
+            const start = Date.now();
+            const tryScroll = () => {
+                // Find cover tile for this image's group
+                const row = rows.find(r => r.items.some(i => i.id === targetId));
+                const coverId = row ? row.items[row.items.length - 1].id : targetId;
+                const el = document.querySelector(`[data-image-id="${coverId}"]`);
+                if (el) {
+                    el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                } else if (Date.now() - start < 500) {
+                    requestAnimationFrame(tryScroll);
+                }
+            };
+            requestAnimationFrame(tryScroll);
+            lastSelectImageRef.current = null;
+        }
+    }, [isSelectMode, selectedIds, expandedGroupId, rows]);
 
     // Map: cover image id → row (for quick group lookup)
     // Cover = newest item (last in row, items sorted oldest→newest)
@@ -326,6 +352,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             if (cover) {
                 setReturnCoverId(cover.id);
                 setTimeout(() => setReturnCoverId(null), 500);
+                // Scroll cover into view after grid re-renders
+                const start = Date.now();
+                const tryScroll = () => {
+                    const el = document.querySelector(`[data-image-id="${cover.id}"]`);
+                    if (el) {
+                        el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+                    } else if (Date.now() - start < 500) {
+                        requestAnimationFrame(tryScroll);
+                    }
+                };
+                requestAnimationFrame(tryScroll);
             }
         }
         prevExpandedGroupId.current = expandedGroupId;
@@ -354,11 +391,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const didScrollRef = React.useRef(false);
     React.useEffect(() => {
         if (!lastViewedRowCoverId || didScrollRef.current) return;
-        const el = document.querySelector(`[data-image-id="${lastViewedRowCoverId}"]`);
-        if (el) {
-            didScrollRef.current = true;
-            el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-        }
+        const start = Date.now();
+        const tryScroll = () => {
+            const el = document.querySelector(`[data-image-id="${lastViewedRowCoverId}"]`);
+            if (el) {
+                didScrollRef.current = true;
+                el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+            } else if (Date.now() - start < 500) {
+                requestAnimationFrame(tryScroll);
+            }
+        };
+        requestAnimationFrame(tryScroll);
     }, [lastViewedRowCoverId, displayImages]);
 
     // O(1) lookups instead of O(n) per item

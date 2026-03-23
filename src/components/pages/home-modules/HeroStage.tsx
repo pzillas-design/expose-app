@@ -100,18 +100,16 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                     className="relative w-full h-full preserve-3d lg:transition-transform lg:duration-500 lg:ease-out will-change-transform"
                     style={{ transform: `translate3d(0, 0, ${scrollDepth}px)` }}
                 >
-                    {/* Hero SVG Headline Layer */}
+                    {/* Hero Text Headline Layer */}
                     <div
-                        className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none"
+                        className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none hero-headline-container"
                         style={{
                             transform: 'translate3d(0, 0, 150px)',
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
                         }}
                     >
-                        <div className="w-[60%] lg:w-[40%] mt-[-2vh] text-zinc-900 dark:text-white">
-                            <HeroHeadline />
-                        </div>
+                        <HeroHeadline progress={localProgress} />
                     </div>
 
                     {floatingImages.map((img, i) => (

@@ -23,7 +23,7 @@ export const adminService = {
             credits: user.credits || 0.0,
             totalSpent: user.total_spent || 0.0,
             joinedAt: new Date(user.created_at).getTime(),
-            lastActiveAt: new Date(user.last_active_at).getTime(),
+            lastActiveAt: user.last_active_at ? new Date(user.last_active_at).getTime() : 0,
         }));
     },
 

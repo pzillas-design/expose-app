@@ -724,6 +724,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         key={img.id}
                                         src={img.src}
                                         alt={img.title}
+                                        crossOrigin="anonymous"
                                         draggable={true}
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;

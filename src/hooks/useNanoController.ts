@@ -63,8 +63,8 @@ export const useNanoController = () => {
     const PAGE_SIZE = 50;
 
     // --- Storage Limits ---
-    const IMAGE_LIMIT = 150;
-    const IMAGE_WARNING_THRESHOLD = 130;
+    const IMAGE_LIMIT = 100;          // only counts originals (no parentId)
+    const IMAGE_WARNING_THRESHOLD = 80;
     const [storageAutoDelete, setStorageAutoDelete] = useState(() =>
         localStorage.getItem('expose_storage_auto_delete') === 'true'
     );
@@ -380,8 +380,8 @@ export const useNanoController = () => {
     // trim back down automatically whenever auto-delete is enabled.
     React.useEffect(() => {
         if (!storageAutoDelete) return;
-        const nonGenerating = allImages.filter(i => !i.isGenerating);
-        if (nonGenerating.length > IMAGE_LIMIT) {
+        const originals = allImages.filter(i => !i.parentId && !i.isGenerating);
+        if (originals.length > IMAGE_LIMIT) {
             deleteOldestToMakeRoom();
         }
     }, [allImages.length, storageAutoDelete]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -455,29 +455,44 @@ export const useNanoController = () => {
     }, [user, isAuthDisabled]);
 
     const deleteOldestToMakeRoom = useCallback(() => {
-        // Delete only the single oldest LEAF image (no children) so we never orphan child images.
-        // A parent image must not be deleted while children exist — that would corrupt stack grouping.
-        const childParentIds = new Set(allImages.map(img => img.parentId).filter(Boolean));
-        const oldest = [...allImages]
-            .filter(img => !img.isGenerating && !childParentIds.has(img.id))
-            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))[0];
-        if (!oldest) return;
+        // Delete the oldest ORIGINAL image (no parentId) and ALL its descendants.
+        // Only originals (uploads + parentless generations) count toward the limit.
+        const originals = allImages
+            .filter(img => !img.parentId && !img.isGenerating)
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        if (originals.length === 0) return;
+
+        const oldest = originals[0];
+
+        // Collect all descendants via parentId chain
+        const toDelete = new Set<string>([oldest.id]);
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const img of allImages) {
+                if (img.parentId && toDelete.has(img.parentId) && !toDelete.has(img.id)) {
+                    toDelete.add(img.id);
+                    changed = true;
+                }
+            }
+        }
 
         setRows(prev =>
-            prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== oldest.id) }))
+            prev.map(row => ({ ...row, items: row.items.filter(i => !toDelete.has(i.id)) }))
                 .filter(row => row.items.length > 0)
         );
-        if (activeId === oldest.id) setActiveId(null);
-        setTotalImageCount(prev => Math.max(0, prev - 1));
+        if (activeId && toDelete.has(activeId)) setActiveId(null);
+        setTotalImageCount(prev => Math.max(0, prev - toDelete.size));
         if (user) {
-            imageService.deleteImages([oldest.id], user.id).catch(err => {
+            imageService.deleteImages(Array.from(toDelete), user.id).catch(err => {
                 console.error('Auto-delete failed:', err);
             });
         }
     }, [allImages, activeId, setRows, setActiveId, setTotalImageCount, user]);
 
     const checkStorageLimit = useCallback(async (): Promise<boolean> => {
-        const count = allImages.length;
+        // Only count originals (no parentId) — children don't count toward the limit
+        const count = allImages.filter(img => !img.parentId).length;
 
         if (count >= IMAGE_LIMIT) {
             if (storageAutoDelete) {
@@ -488,8 +503,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Speicherlimit erreicht' : 'Storage limit reached',
                 description: currentLang === 'de'
-                    ? `${count} von ${IMAGE_LIMIT} Bildern. Beim Fortfahren wird das älteste Bild automatisch entfernt.`
-                    : `${count} of ${IMAGE_LIMIT} images. The oldest image will be removed automatically.`,
+                    ? `${count} von ${IMAGE_LIMIT} Quellbildern. Beim Fortfahren wird das älteste Quellbild mit allen Varianten automatisch entfernt.`
+                    : `${count} of ${IMAGE_LIMIT} source images. The oldest source image and all its variants will be removed automatically.`,
                 content: React.createElement('div', { className: 'flex flex-col gap-1.5' },
                     React.createElement('div', { className: 'flex items-center justify-between' },
                         React.createElement('span', { className: 'text-xs text-zinc-500 dark:text-zinc-400' },
@@ -520,12 +535,12 @@ export const useNanoController = () => {
             return false;
         }
 
-        if (count >= IMAGE_WARNING_THRESHOLD && !storageWarnedRef.current) {
+        if (count >= IMAGE_WARNING_THRESHOLD && !storageWarnedRef.current && !storageAutoDelete) {
             storageWarnedRef.current = true;
             showToast(
                 currentLang === 'de'
-                    ? `${count} / ${IMAGE_LIMIT} Bilder – fast voll.`
-                    : `${count} / ${IMAGE_LIMIT} images – almost full.`,
+                    ? `${count} / ${IMAGE_LIMIT} Quellbilder – fast voll.`
+                    : `${count} / ${IMAGE_LIMIT} source images – almost full.`,
                 'warning',
                 5000
             );

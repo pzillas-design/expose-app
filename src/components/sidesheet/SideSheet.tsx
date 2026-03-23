@@ -392,6 +392,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     // ── Reference Image ──
+    // Listen for global paste-reference-image events (Cmd+V with image in clipboard)
+    React.useEffect(() => {
+        const handler = (e: Event) => {
+            const file = (e as CustomEvent<File>).detail;
+            if (file && selectedImage) handleAddReferenceImage(file);
+        };
+        document.addEventListener('paste-reference-image', handler);
+        return () => document.removeEventListener('paste-reference-image', handler);
+    });
+
     const handleAddReferenceImage = (file: File, annotationId?: string) => {
         setPendingAnnotationId(annotationId || null);
         const reader = new FileReader();

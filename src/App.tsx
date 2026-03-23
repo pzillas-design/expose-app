@@ -15,7 +15,6 @@ import { CreatePage } from '@/components/pages/CreatePage';
 
 // Lazy loaded pages
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
-const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
 const SettingsModal = React.lazy(() => import('@/components/settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTemplatePage').then(m => ({ default: m.SharedTemplatePage })));
@@ -267,6 +266,62 @@ export function App() {
         };
     }, []); // intentionally empty: actionsRef + locationRef2 handle staleness
 
+    // ── Global clipboard paste upload (Cmd+V / Ctrl+V) ───────────────────────
+    React.useEffect(() => {
+        const handlePaste = (e: ClipboardEvent) => {
+            // Only handle when user is logged in and on an app route
+            if (!actionsRef.current?.processFile) return;
+            const loc = locationRef2.current;
+            if (loc !== '/' && !loc.startsWith('/image/') && loc !== '/create') return;
+
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            // Check if clipboard contains images
+            const imageFiles: File[] = [];
+            let hasText = false;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    if (file) imageFiles.push(file);
+                }
+                if (items[i].type === 'text/plain') hasText = true;
+            }
+
+            if (imageFiles.length === 0) return;
+
+            // If focus is in a text field and clipboard also has text, let the
+            // browser handle it normally (user likely wants to paste text)
+            const tag = (e.target as HTMLElement)?.tagName;
+            const isTextField = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable;
+            if (isTextField && hasText) return;
+
+            // On detail view → add as reference image instead of uploading
+            if (loc.startsWith('/image/')) {
+                e.preventDefault();
+                document.dispatchEvent(new CustomEvent('paste-reference-image', { detail: imageFiles[0] }));
+                return;
+            }
+
+            // Image paste → treat as upload (works everywhere, including from text fields)
+            e.preventDefault();
+            if (imageFiles.length === 1) {
+                // Single image → navigate to detail view (same as drop/upload button)
+                actionsRef.current.processFile(imageFiles[0]).then((id: string | undefined) => {
+                    if (id) {
+                        isNavigatingProgrammatically.current = true;
+                        navigate(`/image/${id}`);
+                    }
+                });
+            } else {
+                imageFiles.forEach(f => actionsRef.current.processFile(f));
+            }
+        };
+
+        document.addEventListener('paste', handlePaste);
+        return () => document.removeEventListener('paste', handlePaste);
+    }, []);
+
     // ── Global scroll progress for landing pages ──────────────────────────────
     const [globalScrollProgress, setGlobalScrollProgress] = React.useState(0);
     React.useEffect(() => {
@@ -282,10 +337,10 @@ export function App() {
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
-    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/impressum');
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum');
     
     // Pages that should have an expandable Hero header
-    const expandableRoutes = ['/', '/about', '/contact', '/impressum'];
+    const expandableRoutes = ['/', '/about', '/impressum'];
     const isExpandableRoute = expandableRoutes.includes(location.pathname);
 
     const outerContainerClasses = (isAppLayout || isAdminRoute)
@@ -649,15 +704,6 @@ export function App() {
                             </AdminRoute>
                         } />
 
-                        <Route path="/contact" element={<ContactPage
-                            user={user}
-                            userProfile={userProfile}
-                            credits={credits}
-                            currentLang={state.currentLang}
-                            t={t}
-                            onCreateNew={() => setIsCreationModalOpen(true)}
-                            onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
-                        />} />
                         <Route path="/impressum" element={<ImpressumPage
                             user={user}
                             userProfile={userProfile}
