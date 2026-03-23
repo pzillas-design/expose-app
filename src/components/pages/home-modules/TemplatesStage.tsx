@@ -223,7 +223,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Visual Part: Right on Desktop */}
                 <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[50vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
                     <div
-                        className="absolute bottom-0 left-0 flex items-stretch bg-zinc-50 dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
+                        className="absolute bottom-0 left-0 flex items-stretch bg-zinc-100 dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
                         style={{ willChange: scrollActive ? 'transform, opacity' : 'auto' }}
                     >
                         {/* Progress Bar */}
@@ -249,7 +249,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                         </div>
 
                         {/* Scene Display */}
-                        <div className="relative flex-1 bg-zinc-50 dark:bg-zinc-950 overflow-hidden">
+                        <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-hidden">
                             <img src="/home/3 vorlagen/edit_sommer.jpg" className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`} alt="Sommer Scene" />
                             <img src="/home/3 vorlagen/edit_winter.jpg" className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-100' : 'opacity-0'}`} alt="Winter Scene Result" />
                         </div>
