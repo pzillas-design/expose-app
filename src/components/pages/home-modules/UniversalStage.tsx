@@ -22,28 +22,69 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
 
     useEffect(() => {
         let ticking = false;
+        let snapTimeout: NodeJS.Timeout;
+        let isUserScrolling = false;
+
         const handleScroll = () => {
+            isUserScrolling = true;
             if (ticking) return;
             ticking = true;
+
             requestAnimationFrame(() => {
-                // Find the parent track section (h-[1800vh])
-                const track = document.querySelector('[data-hero-scroll-track]');
+                const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement;
                 if (track) {
                     const rect = track.getBoundingClientRect();
                     const windowHeight = window.innerHeight;
                     const travelDistance = rect.height - windowHeight;
                     const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
                     
-                    // Throttled React state update for structural stage changes (more responsive on desktop)
                     const threshold = window.innerWidth < 1024 ? 0.007 : 0.0015;
-                    setProgress(prev => Math.abs(p - prev) > threshold ? p : prev);
+                    setProgress(prev => {
+                        const newP = Math.abs(p - prev) > threshold ? p : prev;
+                        
+                        // Handle Snapping after scroll stops
+                        clearTimeout(snapTimeout);
+                        snapTimeout = setTimeout(() => {
+                            isUserScrolling = false;
+                            // Targets for snapping (Hero, S2, S3, S4)
+                            const snapPoints = [0, 0.22, 0.45, 0.85];
+                            const currentP = p;
+                            
+                            // Find nearest snap point if we're close enough (within 0.08 range)
+                            let nearest = snapPoints[0];
+                            let minDistance = 1;
+                            snapPoints.forEach(sp => {
+                                const dist = Math.abs(currentP - sp);
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                    nearest = sp;
+                                }
+                            });
+
+                            // Only snap if we are "close but not quite there" (between 0.015 and 0.08 distance)
+                            if (minDistance > 0.015 && minDistance < 0.08) {
+                                const targetScrollTop = rect.height * nearest;
+                                // Smooth scroll to target
+                                window.scrollTo({
+                                    top: track.offsetTop + (nearest * (rect.height - windowHeight)),
+                                    behavior: 'smooth'
+                                });
+                            }
+                        }, 400); // 400ms after last scroll event
+
+                        return newP;
+                    });
                 }
                 ticking = false;
             });
         };
+
         window.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearTimeout(snapTimeout);
+        };
     }, []);
 
     const getLocalProgress = (range: [number, number]) => {
