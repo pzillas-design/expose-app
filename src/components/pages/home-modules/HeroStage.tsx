@@ -201,7 +201,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
                         width: 85% !important;
                     }
                     .hero-headline {
-                        font-size: clamp(3.75rem, 13vw, 9rem) !important;
+                        font-size: clamp(4.5rem, 15.6vw, 10rem) !important;
                     }
                 }
             `}</style>

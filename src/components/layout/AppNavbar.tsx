@@ -491,11 +491,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
                     } ${isScrolled
                         ? 'h-14 backdrop-blur-none'
-                        : 'h-[112px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
+                        : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
                     }`}
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}
-                <div className="flex items-center gap-2 flex-1 justify-start relative z-10 pointer-events-auto">
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isSpecialPage ? (
                         <button
                             className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
@@ -564,7 +564,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </div>
 
                 {/* CENTER: Logo + Wordmark */}
-                <div className="flex items-center justify-center flex-none relative group cursor-pointer z-10 pointer-events-auto" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
+                <div className="flex-none flex items-center justify-center relative group cursor-pointer z-10 pointer-events-auto mx-4" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
                     <div className="flex items-center justify-center gap-[11.4px]">
                         {/* Official Logo */}
                         <Logo
@@ -590,7 +590,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </div>
 
                 {/* RIGHT: System Actions / Login */}
-                <div className="flex items-center justify-end flex-1 pointer-events-auto">
+                <div className="flex-1 basis-0 grow flex items-center justify-end pointer-events-auto min-w-0">
                     <div className="flex items-center gap-1.5">
                         {isPublic ? (
                             <>
@@ -685,20 +685,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     }
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-14 z-50 pointer-events-none">
-            <div className="flex items-center justify-between px-4 h-full pointer-events-auto bg-white dark:bg-black border-b border-zinc-100 dark:border-zinc-900">
+        <header
+            className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300`}
+        >
+            {/* LEFT: Back or Actions */}
+            <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
+                {leftContent}
+            </div>
 
-                <div className="flex items-center w-1/3">
-                    {leftContent}
-                </div>
+            {/* CENTER: Logo (Centered) */}
+            <div className="flex-none flex items-center justify-center cursor-pointer mx-4 whitespace-nowrap" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
+                <Logo className="w-7 h-7" />
+            </div>
 
-                <div className="flex items-center justify-center gap-2 w-1/3">
-                    {centerContent}
-                </div>
-
-                <div className="flex items-center justify-end gap-2 w-1/3">
-                    {rightContent}
-                </div>
+            {/* RIGHT: User / System */}
+            <div className="flex-1 basis-0 grow flex items-center justify-end gap-1 min-w-0">
+                {rightContent}
             </div>
         </header>
     );
