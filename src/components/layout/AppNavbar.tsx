@@ -188,7 +188,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const isDetail = mode === 'detail';
     const isCreate = mode === 'create';
-    const isGallery = !isDetail && !isCreate && (window.location.pathname === '/' || window.location.pathname === '');
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
+    const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz'].includes(currentPath);
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -234,21 +236,32 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <div className="flex items-center gap-1">
-            {!isPublic && user && (
+            {isSpecialPage ? (
                 <RoundIconButton
-                    icon={<Upload className="w-5 h-5" />}
-                    onClick={onHeroUploadClick}
+                    icon={<LayoutGrid className="w-5 h-5" />}
+                    onClick={user ? (onBack || (() => window.location.href = '/')) : onSignIn}
                     variant="ghost"
-                    tooltip={t('nav_upload')}
+                    tooltip={t('nav_gallery') || 'Galerie'}
                 />
-            )}
-            {!isPublic && user && (
-                <RoundIconButton
-                    icon={<Plus className="w-5 h-5" />}
-                    onClick={onCreate}
-                    variant="ghost"
-                    tooltip={t('nav_create')}
-                />
+            ) : (
+                <>
+                    {!isPublic && user && (
+                        <RoundIconButton
+                            icon={<Upload className="w-5 h-5" />}
+                            onClick={onHeroUploadClick}
+                            variant="ghost"
+                            tooltip={t('nav_upload')}
+                        />
+                    )}
+                    {!isPublic && user && (
+                        <RoundIconButton
+                            icon={<Plus className="w-5 h-5" />}
+                            onClick={onCreate}
+                            variant="ghost"
+                            tooltip={t('nav_create')}
+                        />
+                    )}
+                </>
             )}
             {progressRing}
         </div>
@@ -483,47 +496,69 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex items-center gap-2 flex-1 justify-start relative z-10 pointer-events-auto">
-                    {!isPublic && user && (
-                        <>
-                            <button
-                                className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                    : isMobile
-                                        ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                        : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                    {isSpecialPage ? (
+                        <button
+                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                : isMobile
+                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                }`}
+                            onClick={user ? (onBack || (() => window.location.href = '/')) : onSignIn}
+                        >
+                            <LayoutGrid className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                            <div
+                                className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                     }`}
-                                onClick={onHeroUploadClick}
                             >
-                                <Upload className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
-                                <div
-                                    className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                    {t('nav_gallery') || 'Galerie'}
+                                </span>
+                            </div>
+                        </button>
+                    ) : (
+                        !isPublic && user && (
+                            <>
+                                <button
+                                    className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                        ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                        : isMobile
+                                            ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                            : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
                                         }`}
+                                    onClick={onHeroUploadClick}
                                 >
-                                    <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
-                                        {t('nav_upload') || 'Hochladen'}
-                                    </span>
-                                </div>
-                            </button>
-                            <button
-                                className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                    : isMobile
-                                        ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                        : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
-                                    }`}
-                                onClick={onCreate}
-                            >
-                                <Plus className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
-                                <div
-                                    className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                    <Upload className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                    <div
+                                        className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                            }`}
+                                    >
+                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                            {t('nav_upload') || 'Hochladen'}
+                                        </span>
+                                    </div>
+                                </button>
+                                <button
+                                    className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                        ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                        : isMobile
+                                            ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                            : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
                                         }`}
+                                    onClick={onCreate}
                                 >
-                                    <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
-                                        {t('nav_create') || 'Generieren'}
-                                    </span>
-                                </div>
-                            </button>
-                        </>
+                                    <Plus className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                    <div
+                                        className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                            }`}
+                                    >
+                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                            {t('nav_create') || 'Generieren'}
+                                        </span>
+                                    </div>
+                                </button>
+                            </>
+                        )
                     )}
                     {progressRing}
                 </div>

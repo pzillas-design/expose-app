@@ -53,14 +53,14 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
     const opacity = localProgress > 0.9 ? (1 - localProgress) * 10 : 1;
 
     const floatingImagesV1 = [
-        { src: '/home/1 creation reimagined/4.jpeg', x: '-12%', y: '78%', depth: -300, size: '38vw' },   // wide landscape, bottom-left
+        { src: '/home/1 creation reimagined/8.jpeg', x: '-12%', y: '85%', depth: -400, size: '34vw' },   // bottom-left (remixed V9)
         { src: '/home/1 creation reimagined/2.jpeg', x: '78%', y: '2%', depth: -500, size: '30vw' },     // tall portrait, top-right
-        { src: '/home/1 creation reimagined/9.jpeg', x: '42%', y: '92%', depth: -150, size: '19vw' },    // wide, bottom-center peek
+        { src: '/home/1 creation reimagined/10.jpeg', x: '42%', y: '92%', depth: -150, size: '19vw' },    // wide, bottom-center peek (shuffled)
         { src: '/home/1 creation reimagined/7.jpeg', x: '-18%', y: '-5%', depth: -950, size: '46vw' },   // wide landscape, top-left deep
-        { src: '/home/1 creation reimagined/10.jpeg', x: '88%', y: '82%', depth: -400, size: '28vw' },   // square, bottom-right (replaced 1.jpeg)
-        { src: '/home/1 creation reimagined/3.jpeg', x: '32%', y: '-8%', depth: -600, size: '24vw' },    // square-ish, top-center
-        { src: '/home/1 creation reimagined/8.jpeg', x: '12%', y: '82%', depth: -1150, size: '24vw' },   // wide, bottom-left very deep (repositioned)
-        { src: '/home/1 creation reimagined/6.jpeg', x: '55%', y: '60%', depth: -700, size: '20vw' },    // wide landscape, center-right
+        { src: '/home/1 creation reimagined/3.jpeg', x: '90%', y: '75%', depth: -550, size: '26vw' },    // bottom-right (remixed V9)
+        { src: '/home/1 creation reimagined/6.jpeg', x: '32%', y: '-8%', depth: -600, size: '24vw' },    // square-ish, top-center (shuffled)
+        { src: '/home/1 creation reimagined/9.jpeg', x: '15%', y: '75%', depth: -1200, size: '30vw' },   // bottom-left deep (remixed)
+        { src: '/home/1 creation reimagined/4.jpeg', x: '58%', y: '62%', depth: -750, size: '30vw' },    // center-right (remixed V9)
     ];
 
     const floatingImagesV3 = [
@@ -161,6 +161,17 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/3.jpeg', x: '0%', y: '-10%', depth: -2100, size: '35vw' },    // Layer 3
         { src: '/home/1 creation reimagined/8.jpeg', x: '95%', y: '45%', depth: -500, size: '28vw' },     // Mid-layer
         { src: '/home/1 creation reimagined/6.jpeg', x: '35%', y: '105%', depth: -1400, size: '15vw' },   // Mid-deep
+    ];
+
+    const floatingImagesV12 = [
+        { src: '/home/1 creation reimagined/10.jpeg', x: '-12%', y: '78%', depth: -300, size: '38vw' },   // wide landscape, bottom-left (was 4)
+        { src: '/home/1 creation reimagined/7.jpeg', x: '78%', y: '2%', depth: -500, size: '30vw' },     // tall portrait, top-right (was 2)
+        { src: '/home/1 creation reimagined/6.jpeg', x: '42%', y: '92%', depth: -150, size: '19vw' },    // wide, bottom-center peek (was 9)
+        { src: '/home/1 creation reimagined/2.jpeg', x: '-18%', y: '-5%', depth: -950, size: '46vw' },   // wide landscape, top-left deep (was 7)
+        { src: '/home/1 creation reimagined/4.jpeg', x: '88%', y: '82%', depth: -400, size: '28vw' },    // square, bottom-right (was 10)
+        { src: '/home/1 creation reimagined/9.jpeg', x: '32%', y: '-8%', depth: -600, size: '24vw' },    // square-ish, top-center (was 3)
+        { src: '/home/1 creation reimagined/3.jpeg', x: '12%', y: '82%', depth: -1150, size: '24vw' },   // wide, bottom-left very deep (was 8)
+        { src: '/home/1 creation reimagined/8.jpeg', x: '55%', y: '60%', depth: -700, size: '20vw' },    // wide landscape, center-right (was 6)
     ];
 
     const floatingImages = floatingImagesV1;
