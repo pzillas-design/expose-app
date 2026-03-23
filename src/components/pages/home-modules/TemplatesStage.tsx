@@ -49,7 +49,7 @@ const SidepanelMockup = ({
     return (
         <div className="flex flex-col h-full overflow-hidden px-4 lg:px-6 pt-4 lg:pt-6 pb-4">
             {/* Unified Prompt Input Box */}
-            <div className={`flex-none flex flex-col rounded-2xl bg-zinc-200/50 dark:bg-white/5 focus-within:ring-1 focus-within:ring-zinc-300 dark:focus-within:ring-zinc-700 transition-all duration-300 overflow-hidden`}>
+            <div className={`flex-none flex flex-col rounded-2xl bg-zinc-50 dark:bg-white/5 focus-within:ring-1 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-800 transition-all duration-300 overflow-hidden`}>
                 
                 {/* 1. Prompt Text Area */}
                 <div className="p-4 text-xs lg:text-[13px] text-zinc-500 h-[72px]">
@@ -97,13 +97,13 @@ const SidepanelMockup = ({
             <div className="hidden lg:flex flex-none flex-col mt-auto pt-4">
                 <span className={`${Typo.Micro} text-zinc-400 dark:text-zinc-500 mb-2`}>{t('home_mockup_templates')}</span>
                 <div className="flex flex-wrap gap-2">
-                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-200/50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         🏡 <span>Home Staging</span>
                     </div>
-                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-200/50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         🧹 <span>Cleanup</span>
                     </div>
-                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-200/50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-medium text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
                         ❄️ <span>{t('home_mockup_season')}</span>
                     </div>
                 </div>
@@ -223,7 +223,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                 {/* Visual Part: Right on Desktop */}
                 <div className="w-[calc(100%+32px)] lg:w-[calc(100%+50vw-50%)] -mr-8 lg:mr-[calc(50%-50vw)] h-[50vh] lg:h-[80vh] relative order-1 lg:order-2 overflow-visible pointer-events-auto lg:my-auto">
                     <div
-                        className="absolute bottom-0 left-0 flex items-stretch bg-zinc-100 dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
+                        className="absolute bottom-0 left-0 flex items-stretch bg-white dark:bg-zinc-900 rounded-tl-[12px] rounded-bl-[12px] border-t border-l border-b border-zinc-200 dark:border-zinc-800 overflow-hidden z-10 pointer-events-none origin-bottom-left lg:origin-top-left scale-[0.7] lg:scale-100 w-[142.8%] h-[64.3vh] lg:w-full lg:h-full"
                         style={{ willChange: scrollActive ? 'transform, opacity' : 'auto' }}
                     >
                         {/* Progress Bar */}
@@ -232,7 +232,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                         </div>
 
                         {/* Sidepanel Mockup */}
-                        <div className="flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-900/50 w-[245px] lg:w-[350px] origin-left">
+                        <div className="flex flex-none border-r border-zinc-200 dark:border-zinc-800 flex-col overflow-hidden bg-white dark:bg-zinc-900/50 w-[245px] lg:w-[350px] origin-left">
                             <SidepanelMockup
                                 activeSeason={seasonState}
                                 activeTime={timeState}
@@ -249,7 +249,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                         </div>
 
                         {/* Scene Display */}
-                        <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-950 overflow-hidden">
+                        <div className="relative flex-1 bg-white dark:bg-zinc-950 overflow-hidden">
                             <img src="/home/3 vorlagen/edit_sommer.jpg" className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-0' : 'opacity-100'}`} alt="Sommer Scene" />
                             <img src="/home/3 vorlagen/edit_winter.jpg" className={`absolute inset-0 w-full h-full object-cover ${isFinished ? 'opacity-100' : 'opacity-0'}`} alt="Winter Scene Result" />
                         </div>
