@@ -69,7 +69,6 @@ export const HeroStage: React.FC<HeroStageProps> = ({ progress, scrollActive }) 
         { src: '/home/1 creation reimagined/2.jpeg', x: '65%', y: '68%', depth: -250, size: '28vw' },    // scattered bottom-right
         { src: '/home/1 creation reimagined/9.jpeg', x: '-5%', y: '82%', depth: -600, size: '24vw' },    // scattered bottom-left
         { src: '/home/1 creation reimagined/7.jpeg', x: '75%', y: '-10%', depth: -800, size: '40vw' },   // scattered top-right deep
-        { src: '/home/1 creation reimagined/1.jpeg', x: '35%', y: '88%', depth: -150, size: '22vw' },    // center bottom peek
         { src: '/home/1 creation reimagined/5.jpeg', x: '85%', y: '35%', depth: -950, size: '30vw' },    // far right deep
         { src: '/home/1 creation reimagined/3.jpeg', x: '-15%', y: '45%', depth: -1100, size: '26vw' },  // far left very deep
         { src: '/home/1 creation reimagined/8.jpeg', x: '50%', y: '-15%', depth: -1300, size: '20vw' },  // top center deep
