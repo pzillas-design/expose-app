@@ -41,38 +41,44 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
             }}
         >
             {/*
-             * Mobile: flex column, each row is text-center + w-full
-             * Desktop: flex row, baseline-aligned
+             * CSS override: on desktop (md+) words are LEFT-aligned within the slot
+             * so that ALL words have the same left-edge distance from "create".
+             * On mobile they stay centered via translateX(-50%).
              */}
+            <style>{`
+                @media (min-width: 768px) {
+                    .hero-word { left: 0 !important; }
+                    .hero-word-active  { transform: translateY(0) scale(1) !important; }
+                    .hero-word-past    { transform: translateY(-110%) scale(0.7) !important; }
+                    .hero-word-future  { transform: translateY(110%) scale(0.7) !important; }
+                }
+            `}</style>
+
             <span className="flex flex-col items-center md:flex-row md:justify-center md:items-baseline">
 
                 {/* Static "create" */}
                 <span className="text-zinc-900 dark:text-white">create</span>
 
-
-                {/*
-                 * Animated word slot.
-                 * The invisible "better" (longest word) gives the container its natural width
-                 * so inline-block works on desktop. All animated words are absolute within it.
-                 */}
+                {/* Animated word slot — invisible "better" sizer sets container width */}
                 <span
                     className="relative inline-block overflow-hidden"
                     style={{ height: '1.2em', verticalAlign: 'bottom' }}
                 >
-                    {/* Invisible sizer: takes up max word width */}
                     <span className="invisible" aria-hidden>better</span>
-
 
                     {ANIMATED_WORDS.map((word, i) => {
                         const isActive = i === wordIndex;
                         const isPast = i < wordIndex;
+                        const stateClass = isActive ? 'hero-word-active' : isPast ? 'hero-word-past' : 'hero-word-future';
 
                         return (
                             <span
                                 key={word}
                                 aria-hidden={!isActive}
+                                className={`hero-word ${stateClass}`}
                                 style={{
                                     position: 'absolute',
+                                    // Mobile: center within full-width block. Desktop: overridden to left:0 via CSS above.
                                     left: '50%',
                                     top: '0',
                                     transform: isActive
@@ -82,7 +88,6 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
                                             : 'translateX(-50%) translateY(110%) scale(0.7)',
                                     display: 'inline-block',
                                     whiteSpace: 'nowrap',
-                                    padding: '0',
                                     opacity: isActive ? 1 : 0,
                                     filter: isActive ? 'blur(0px)' : 'blur(8px)',
                                     transition,
