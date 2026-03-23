@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
 
             // Legacy/Fallback fields
             sourceImage,
+            groupParentId,
             attachments: legacyAttachments
         } = payload;
 
@@ -280,7 +281,7 @@ Deno.serve(async (req) => {
             targetTitle,
             userId: user.id,
             userEmail: user.email,
-            parentId: sourceImage?.id || null,
+            parentId: groupParentId || sourceImage?.id || null,
             sourceWidth: sourceImage?.width,
             sourceHeight: sourceImage?.height,
             sourceRealWidth: sourceImage?.realWidth || sourceImage?.width,

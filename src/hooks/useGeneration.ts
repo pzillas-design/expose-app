@@ -577,6 +577,7 @@ export const useGeneration = ({
                     targetVersion: newVersion,
                     targetTitle: placeholder.title,
                     activeTemplateId: activeTemplateId,
+                    groupParentId,
                 });
 
                 if (finalImage) {

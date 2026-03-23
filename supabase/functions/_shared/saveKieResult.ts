@@ -168,7 +168,7 @@ export const saveKieResult = async (
             base_name: dbBaseName,
             version: currentVersion,
             prompt: prompt,
-            parent_id: (requestType === 'edit' || parentId) ? (sourceId || null) : null,
+            parent_id: (requestType === 'edit' || parentId) ? (parentId || sourceId || null) : null,
             annotations: annotations || '[]',
             generation_params: {
                 quality: qualityMode,

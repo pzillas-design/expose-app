@@ -692,10 +692,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {showBlob && (() => {
                                         const parentImg = img.parentId ? imageMap.get(img.parentId) : null;
                                         const parentLoadSrc = parentImg?.thumbSrc || parentImg?.src;
-                                        if (parentLoadSrc) {
+                                        // Fallback: use the placeholder's own thumbSrc (copied from source during creation)
+                                        const blurSrc = parentLoadSrc || img.thumbSrc;
+                                        if (blurSrc) {
                                             return (
                                                 <div className="absolute inset-0 overflow-hidden">
-                                                    <img src={parentLoadSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-100 dark:brightness-50" alt="" />
+                                                    <img src={blurSrc} className="w-full h-full object-cover scale-110 blur-2xl brightness-100 dark:brightness-50" alt="" />
                                                 </div>
                                             );
                                         }
