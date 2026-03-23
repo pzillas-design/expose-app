@@ -47,7 +47,9 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
     const introProgress = Math.min(Math.max(progress / 0.25, 0), 1);
 
     // Zoom Effect: 1.05 -> 1.0 (Zoom Out) over the course of the section
-    const zoomScale = 1.05 - Math.max(0, progress * 0.05);
+    // DISABLED ON MOBILE as requested
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+    const zoomScale = isMobile ? 1 : 1.05 - Math.max(0, progress * 0.05);
 
     // 2. Fixed-Timing Progress Bar & Auto-Fade
     const [barProgress, setBarProgress] = React.useState(0);
