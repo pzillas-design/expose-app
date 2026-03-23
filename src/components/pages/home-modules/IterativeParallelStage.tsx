@@ -142,8 +142,8 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
             <div className="w-full lg:w-2/5 h-[50vh] lg:h-full flex items-center lg:items-center justify-start px-6 lg:px-12 xl:px-24 py-8 lg:py-0 text-left relative z-10">
                 <div className="flex flex-col max-w-2xl will-change-transform">
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2]">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">{t('home_section_iterative_title').split(' ')[0]}</span> <br className="hidden lg:block" />
-                        {t('home_section_iterative_title').split(' ').slice(1).join(' ')}
+                        {t('home_section_iterative_title').split(' ')[0]} <br className="hidden lg:block" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">{t('home_section_iterative_title').split(' ').slice(1).join(' ')}</span>
                     </h2>
                     <p className="text-base sm:text-xl lg:text-2xl text-zinc-500 leading-relaxed font-light">
                         {t('home_section_iterative_desc')}
