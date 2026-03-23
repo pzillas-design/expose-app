@@ -1,4 +1,5 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
+
 import { HeroHeadline } from './HeroHeadline';
 
 interface FloatingImageProps {
@@ -53,10 +54,37 @@ export interface HeroStageProps {
 }
 
 export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActive }) => {
-    // Local progress for Hero: we want it to finish early (around 0.15 global)
-    // Map global [0, 0.15] to local [0, 1]
+    // Derived from progress (still needed for HeroHeadline word changes + fade-out)
     const localProgress = Math.min(progress / 0.15, 1);
     const opacity = localProgress > 0.9 ? (1 - localProgress) * 10 : 1;
+
+    // Ref for the 3D zoom container — updated directly from a scroll listener
+    // This completely bypasses React re-renders for the zoom animation (true 60fps)
+    const zoomRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        let ticking = false;
+        const handleScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => {
+                if (!zoomRef.current) { ticking = false; return; }
+                // Find the scroll track (1800vh section) to compute raw scroll progress
+                const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
+                if (track) {
+                    const rect = track.getBoundingClientRect();
+                    const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+                    const lp = Math.min(p / 0.15, 1);
+                    const depth = lp * 1500;
+                    zoomRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
+                }
+                ticking = false;
+            });
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // set initial value
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const floatingImagesV1 = [
         { src: '/home/1 creation reimagined/8.jpeg', x: '-12%', y: '85%', depth: -400, size: '34vw' },   // bottom-left (remixed V9)
@@ -182,12 +210,6 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
 
     const floatingImages = floatingImagesV1;
 
-    // Scroll depth for 3D parallax: we'll use a fixed multiplier based on window height during orchestration
-    // Since we're sticky, we rely on progress. 
-    // y = globalProgress * totalHeight
-    // For 1800vh, y at progress 0.15 is 270vh
-    const scrollDepth = localProgress * 1500; // Arbitrary depth constant for the fly-through
-
     return (
         <div
             className="absolute inset-0 z-20 overflow-hidden transition-opacity duration-1000 will-change-opacity"
@@ -209,9 +231,11 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             
 
             <div className="w-full h-full" style={{ perspective: '1000px' }}>
+                {/* Zoom container: transform driven by direct scroll listener (ref), NOT React state */}
                 <div
+                    ref={zoomRef}
                     className="relative w-full h-full preserve-3d"
-                    style={{ transform: `translate3d(0, 0, ${scrollDepth}px)`, willChange: 'transform' }}
+                    style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
                 >
                     {/* Hero Text Headline Layer */}
                     <div

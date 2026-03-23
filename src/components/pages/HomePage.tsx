@@ -66,7 +66,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
-                <section ref={mainTrackRef} className="relative h-[1800vh]">
+                <section ref={mainTrackRef} data-hero-scroll-track className="relative h-[1800vh]">
                     <MemoizedUniversalStage progress={stageProgress} t={t} lang={lang} />
                 </section>
 
