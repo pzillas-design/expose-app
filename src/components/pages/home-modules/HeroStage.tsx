@@ -26,6 +26,10 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
                 transform: `translate3d(0, 0, ${depth}px) ${isHovered ? 'scale(1.05)' : 'scale(1)'}`,
                 transition: 'transform 0.4s ease-out',
                 zIndex: Math.floor(depth) + 1000,
+                WebkitBackfaceVisibility: 'hidden',
+                backfaceVisibility: 'hidden',
+                perspective: '1000px',
+                transformStyle: 'preserve-3d',
                 '--base-vw': sizeVal,
                 willChange: isHovered ? 'transform' : 'auto'
             } as any}
@@ -75,35 +79,33 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
     useEffect(() => {
         let active = true;
         let animationFrameId: number;
+        // CACHE THE DOM QUERY! Doing this on every frame was the performance bottleneck.
         const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
+        if (!track) return;
 
         const updateLoop = () => {
             if (!active) return;
             const delta = targetP.current - currentP.current;
             
-            // Only continue loop if there is a meaningful difference to close
             if (Math.abs(delta) > 0.00001) {
                 currentP.current += delta * 0.15;
-                if (zoomRef.current) {
-                    const lp = Math.min(currentP.current / 0.18, 1);
-                    const depth = lp * 1950;
-                    zoomRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
-                }
+                const lp = Math.min(currentP.current / 0.18, 1);
+                const depth = lp * 2200; 
+                document.documentElement.style.setProperty('--hero-zoom-z', `${depth}px`);
                 animationFrameId = requestAnimationFrame(updateLoop);
             } else {
-                currentP.current = targetP.current; // snap to target
+                currentP.current = targetP.current;
+                const lp = Math.min(currentP.current / 0.18, 1);
+                document.documentElement.style.setProperty('--hero-zoom-z', `${lp * 2200}px`);
             }
         };
 
         const handleScroll = () => {
-            if (track) {
-                const rect = track.getBoundingClientRect();
-                const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                targetP.current = p;
-                // Wake up loop on scroll if it was sleeping
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(updateLoop);
-            }
+            const rect = track.getBoundingClientRect();
+            const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+            targetP.current = p;
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(updateLoop);
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -252,12 +254,10 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
                 @media (max-width: 1023px) {
                     .hero-floating-image { --img-scale: 0.55; --y-scale: 0.7; }
                     .hero-headline-container { 
-                        width: 90% !important; 
-                        align-items: start !important;
-                        padding-top: 20vh !important;
-                        justify-content: center !important;
+                        transform: translateY(-12vh) translate3d(0, 0, 50px) !important;
+                        width: 90% !important;
                     }
-                    .hero-headline { font-size: clamp(3.2rem, 12vw, 7rem) !important; }
+                    .hero-headline { font-size: clamp(3rem, 12vw, 6.5rem) !important; }
                 }
                 @media (min-width: 1024px) {
                     .hero-floating-image { --img-scale: 1; }
@@ -265,16 +265,16 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
             `}</style>
             
 
-            <div className="w-full h-full" style={{ perspective: '1000px' }}>
-                {/* Zoom container: transform driven by direct scroll listener (ref), NOT React state */}
+            <div className="w-full h-full" style={{ perspective: '2000px' }}>
+                {/* Zoom container: transform driven by CSS variable for maximum robustness */}
                 <div
                     ref={zoomRef}
                     className="relative w-full h-full preserve-3d"
-                    style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
+                    style={{ transform: 'translate3d(0, 0, var(--hero-zoom-z, 0px))' }}
                 >
                     {/* Hero Text Headline Layer */}
                     <div
-                        className="absolute inset-0 flex items-center md:items-center justify-center p-6 pointer-events-none hero-headline-container md:pt-0"
+                        className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none hero-headline-container"
                         style={{
                             transform: 'translate3d(0, 0, 50px)',
                             backfaceVisibility: 'hidden',

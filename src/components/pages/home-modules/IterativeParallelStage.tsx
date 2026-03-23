@@ -36,7 +36,9 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
     useEffect(() => {
         let active = true;
         let animationFrameId: number;
+        // CACHE THE DOM QUERY! This was the reason for "buggy" feeling.
         const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
+        if (!track) return;
 
         const updateLoop = () => {
             if (!active) return;
@@ -81,14 +83,11 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
         };
 
         const handleScroll = () => {
-            if (track) {
-                const rect = track.getBoundingClientRect();
-                const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-                targetP.current = p;
-                // Wake up loop on scroll if it was sleeping
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(updateLoop);
-            }
+            const rect = track.getBoundingClientRect();
+            const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
+            targetP.current = p;
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(updateLoop);
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -121,7 +120,9 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                                 style={{
                                     opacity: 0,
                                     transform: 'translate3d(0, 0, 400px)',
-                                    willChange: 'opacity, transform'
+                                    willChange: 'opacity, transform',
+                                    backfaceVisibility: 'hidden',
+                                    WebkitBackfaceVisibility: 'hidden',
                                 }}
                             >
                                 <img
