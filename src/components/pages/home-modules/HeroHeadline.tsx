@@ -47,7 +47,8 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
             <span className="flex flex-col items-center md:flex-row md:justify-center md:items-baseline">
 
                 {/* Static "create" */}
-                <span className="text-zinc-900 dark:text-white md:mr-[0.1em]">create</span>
+                <span className="text-zinc-900 dark:text-white">create</span>
+
 
                 {/*
                  * Animated word slot.
@@ -59,7 +60,8 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
                     style={{ height: '1.2em', verticalAlign: 'bottom' }}
                 >
                     {/* Invisible sizer: takes up max word width */}
-                    <span className="invisible px-[0.08em]" aria-hidden>better</span>
+                    <span className="invisible" aria-hidden>better</span>
+
 
                     {ANIMATED_WORDS.map((word, i) => {
                         const isActive = i === wordIndex;
@@ -80,7 +82,7 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress }) => 
                                             : 'translateX(-50%) translateY(110%) scale(0.7)',
                                     display: 'inline-block',
                                     whiteSpace: 'nowrap',
-                                    padding: '0 0.08em',
+                                    padding: '0',
                                     opacity: isActive ? 1 : 0,
                                     filter: isActive ? 'blur(0px)' : 'blur(8px)',
                                     transition,

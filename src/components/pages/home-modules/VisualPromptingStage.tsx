@@ -192,11 +192,13 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
             <div ref={progressBarRef} className="absolute top-[50vh] lg:top-0 left-0 h-[3px] bg-orange-500 z-[120] transition-all duration-300" style={{ width: '0%' }} />
 
             <div
-                className="relative h-[50vh] lg:h-full lg:absolute lg:inset-0 lg:z-[5] z-[100] container mx-auto px-6 lg:px-12 2xl:px-16 flex flex-col items-center justify-center text-center pointer-events-none bg-white dark:bg-zinc-950 lg:bg-transparent lg:dark:bg-transparent transition-opacity duration-500"
-                style={{ opacity: typoOpacity }}
+                className="relative h-[50vh] lg:h-full lg:absolute lg:inset-0 lg:z-[5] z-[100] container mx-auto px-6 lg:px-12 2xl:px-16 flex flex-col items-center justify-center text-center pointer-events-none bg-white dark:bg-zinc-950 lg:bg-transparent lg:dark:bg-transparent"
             >
                 <div className="flex flex-col max-w-xl lg:max-w-4xl pointer-events-auto">
-                    <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase text-zinc-900 dark:text-white">
+                    <h2
+                        className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase text-zinc-900 dark:text-white transition-opacity duration-500"
+                        style={{ opacity: typoOpacity }}
+                    >
                         visual prompting
                     </h2>
                     <p className="text-base sm:text-xl lg:text-2xl text-zinc-900 dark:text-zinc-400 leading-relaxed font-light">
