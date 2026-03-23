@@ -178,7 +178,6 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
 
                 <div className="absolute inset-0 pointer-events-none z-[110] flex items-center justify-center overflow-hidden">
                     <div className="relative aspect-[3/2] min-w-full min-h-full flex-none scale-[0.8] lg:scale-100">
-                        <AnnotationChip label={t('home_kitchen')} position={{ top: '45%', left: '27%' }} opacity={labelOpacity(0.02, 0.6)} />
                         <AnnotationChip label={t('home_table')} position={{ bottom: '25%', left: '20%' }} opacity={labelOpacity(0.14, 0.7)} />
                         <AnnotationChip label={t('home_sofa')} position={{ bottom: '20%', right: '20%' }} opacity={labelOpacity(0.26, 0.8)} />
 
@@ -198,7 +197,7 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
             >
                 <div className="flex flex-col max-w-xl lg:max-w-4xl pointer-events-auto">
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter text-zinc-900 dark:text-white mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">visual</span> <br className="hidden lg:block" />prompting
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600">visual</span> prompting
                     </h2>
                     <p className="text-base sm:text-xl lg:text-2xl text-zinc-900 dark:text-zinc-400 leading-relaxed font-light">
                         {t('home_section_visual_desc')}
