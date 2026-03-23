@@ -45,10 +45,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
             }}
         >
             {/* Static "create" */}
-            <span className="text-zinc-900 dark:text-white">create </span>
+            <span className="text-zinc-900 dark:text-white md:mr-[0.25em]">create</span>
 
             {/* Animated word slot */}
-            <span className="relative flex md:inline-flex overflow-hidden align-baseline" style={{ height: '1.2em' }}>
+            <span className="relative flex md:inline-flex overflow-hidden align-baseline justify-center min-w-[3ch]" style={{ height: '1.2em' }}>
                 {ANIMATED_WORDS.map((word, i) => {
                     const isActive = i === wordIndex;
                     const isPast = i < wordIndex;
@@ -60,7 +60,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = ({ progress }) => {
                             style={{
                                 position: isActive ? 'relative' : 'absolute',
                                 left: 0,
+                                right: 0,
                                 display: 'inline-block',
+                                textAlign: 'center',
+                                padding: '0 0.1em',
                                 opacity: isActive ? 1 : 0,
                                 transform: isActive
                                     ? 'translateY(0) scale(1)'
