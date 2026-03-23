@@ -17,7 +17,7 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
         backgroundClip: 'text',
     } as React.CSSProperties;
 
-    const transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+    const transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
 
     const isFadingOut = progress > 0.85;
     const fadeOutProgress = isFadingOut ? (progress - 0.85) / 0.15 : 0;
@@ -37,7 +37,6 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
                 ...(isFadingOut ? {
                     opacity: 1 - fadeOutProgress,
                     transform: `translateY(${-fadeOutProgress * 60}px)`,
-                    filter: `blur(${fadeOutProgress * 12}px)`,
                     transition: 'none',
                 } : {}),
             }}
@@ -91,9 +90,8 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
                                     display: 'inline-block',
                                     whiteSpace: 'nowrap',
                                     opacity: isActive ? 1 : 0,
-                                    filter: isActive ? 'blur(0px)' : 'blur(8px)',
                                     transition,
-                                    willChange: 'transform, opacity, filter',
+                                    willChange: 'transform, opacity',
                                     ...gradientStyle,
                                 }}
                             >

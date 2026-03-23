@@ -65,7 +65,7 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
     const localProgress = Math.min(progress / 0.18, 1);
     
     useEffect(() => {
-        const nextIndex = localProgress < 0.15 ? 0 : localProgress < 0.35 ? 1 : 2;
+        const nextIndex = localProgress < 0.12 ? 0 : localProgress < 0.32 ? 1 : 2;
         if (nextIndex !== wordIndex) setWordIndex(nextIndex);
     }, [localProgress, wordIndex]);
 

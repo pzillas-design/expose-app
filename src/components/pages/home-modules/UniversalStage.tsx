@@ -34,8 +34,8 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
                     const travelDistance = rect.height - windowHeight;
                     const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
                     
-                    // Throttled React state update for structural stage changes
-                    const threshold = window.innerWidth < 1024 ? 0.008 : 0.003;
+                    // Throttled React state update for structural stage changes (more responsive on desktop)
+                    const threshold = window.innerWidth < 1024 ? 0.007 : 0.0015;
                     setProgress(prev => Math.abs(p - prev) > threshold ? p : prev);
                 }
                 ticking = false;
