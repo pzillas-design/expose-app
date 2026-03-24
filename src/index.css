@@ -228,7 +228,7 @@ html:not(.dark) {
 }
 .hero-headline {
   /* Mobile: huge as requested */
-  font-size: clamp(9.1rem, 28.6vw, 12rem);
+  font-size: clamp(4.55rem, 14.3vw, 12rem);
 }
 
 @media (min-width: 768px) {
