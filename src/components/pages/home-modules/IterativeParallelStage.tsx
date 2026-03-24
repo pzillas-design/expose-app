@@ -28,75 +28,38 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
     const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
     const checkmarkRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-    // Scroll-driven lerp animation
-    const targetP = useRef(0);
-    const currentP = useRef(0);
-
     useEffect(() => {
-        let active = true;
-        let animationFrameId: number;
-        const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
-        if (!track) return;
+        const pLocal = progress;
 
-        const updateLoop = () => {
-            if (!active) return;
-            const delta = targetP.current - currentP.current;
+        imageRefs.current.forEach((ref, index) => {
+            if (!ref) return;
+            const delay = Math.abs(index - 6) * 0.04;
+            const zoomDuration = 0.45;
+            const normalizedProgress = pLocal > delay
+                ? Math.min((pLocal - delay) / Math.max(0.01, zoomDuration - delay), 1)
+                : 0;
 
-            if (Math.abs(delta) > 0.00001) {
-                currentP.current += delta * 0.15;
-                const pLocal = Math.min(Math.max((currentP.current - 0.22) / 0.23, 0), 1);
+            const opacity = Math.min(normalizedProgress * 1.5, 1);
+            const currentZ = 400 - (normalizedProgress * 400);
 
-                imageRefs.current.forEach((ref, index) => {
-                    if (!ref) return;
-                    const delay = Math.abs(index - 6) * 0.04;
-                    const zoomDuration = 0.45;
-                    const normalizedProgress = pLocal > delay
-                        ? Math.min((pLocal - delay) / Math.max(0.01, zoomDuration - delay), 1)
-                        : 0;
+            ref.style.opacity = opacity.toString();
+            ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
 
-                    const opacity = Math.min(normalizedProgress * 1.5, 1);
-                    const currentZ = 400 - (normalizedProgress * 400);
-
-                    ref.style.opacity = opacity.toString();
-                    ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
-
-                    // Checkmark logic
-                    const checkmarkOrder = CHECKMARKED_INDICES.indexOf(index);
-                    if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
-                        const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
-                        const checkmarkProgress = pLocal > checkmarkPhaseStart
-                            ? Math.min((pLocal - checkmarkPhaseStart) / 0.05, 1)
-                            : 0;
-                        const checkmarkRef = checkmarkRefs.current[index];
-                        if (checkmarkRef) {
-                            checkmarkRef.style.opacity = checkmarkProgress.toString();
-                            checkmarkRef.style.transform = `scale(${0.5 + checkmarkProgress * 0.5})`;
-                        }
-                    }
-                });
-                animationFrameId = requestAnimationFrame(updateLoop);
-            } else {
-                currentP.current = targetP.current;
+            // Checkmark logic
+            const checkmarkOrder = CHECKMARKED_INDICES.indexOf(index);
+            if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
+                const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
+                const checkmarkProgress = pLocal > checkmarkPhaseStart
+                    ? Math.min((pLocal - checkmarkPhaseStart) / 0.05, 1)
+                    : 0;
+                const checkmarkRef = checkmarkRefs.current[index];
+                if (checkmarkRef) {
+                    checkmarkRef.style.opacity = checkmarkProgress.toString();
+                    checkmarkRef.style.transform = `scale(${0.5 + checkmarkProgress * 0.5})`;
+                }
             }
-        };
-
-        const handleScroll = () => {
-            const rect = track.getBoundingClientRect();
-            const p = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-            targetP.current = p;
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = requestAnimationFrame(updateLoop);
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-
-        return () => {
-            active = false;
-            cancelAnimationFrame(animationFrameId);
-            window.removeEventListener('scroll', handleScroll);
-        };
-    }, []);
+        });
+    }, [progress]);
 
     return (
         <div className="w-full flex flex-col gap-4 sm:gap-6 lg:gap-8" style={{ transformStyle: 'preserve-3d' }}>
@@ -118,7 +81,7 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                                 style={{
                                     opacity: 0,
                                     transform: 'translate3d(0, 0, 400px)',
-                                    willChange: 'opacity, transform',
+                                    willChange: typeof window !== 'undefined' && window.innerWidth < 1024 ? 'auto' : 'opacity, transform',
                                     backfaceVisibility: 'hidden',
                                     WebkitBackfaceVisibility: 'hidden',
                                 }}

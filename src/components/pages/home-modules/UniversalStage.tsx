@@ -14,31 +14,47 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const trackRef = useRef<HTMLElement | null>(null);
 
+    const targetP = useRef(0);
+    const currentP = useRef(0);
+
     useEffect(() => {
-        let ticking = false;
+        let active = true;
+        let animationFrameId: number;
         trackRef.current = document.querySelector('[data-hero-scroll-track]') as HTMLElement;
 
+        const updateLoop = () => {
+            if (!active) return;
+            const delta = targetP.current - currentP.current;
+
+            if (Math.abs(delta) > 0.0001) {
+                currentP.current += delta * 0.15; // Smoothing factor
+                setProgress(currentP.current);
+                animationFrameId = requestAnimationFrame(updateLoop);
+            } else {
+                currentP.current = targetP.current;
+                setProgress(currentP.current);
+            }
+        };
+
         const handleScroll = () => {
-            if (ticking) return;
-            ticking = true;
-
-            requestAnimationFrame(() => {
-                const track = trackRef.current;
-                if (track) {
-                    const rect = track.getBoundingClientRect();
-                    const travelDistance = rect.height - window.innerHeight;
-                    const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
-
-                    const threshold = window.innerWidth < 1024 ? 0.007 : 0.0015;
-                    setProgress(prev => Math.abs(p - prev) > threshold ? p : prev);
-                }
-                ticking = false;
-            });
+            const track = trackRef.current;
+            if (track) {
+                const rect = track.getBoundingClientRect();
+                const travelDistance = rect.height - window.innerHeight;
+                const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
+                targetP.current = p;
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(updateLoop);
+            }
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll();
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            active = false;
+            window.removeEventListener('scroll', handleScroll);
+            cancelAnimationFrame(animationFrameId);
+        };
     }, []);
 
     const getLocalProgress = (range: [number, number]) => {

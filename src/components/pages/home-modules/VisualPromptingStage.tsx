@@ -47,97 +47,61 @@ export const VisualPromptingStage: React.FC<VisualPromptingStageProps> = ({ prog
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
     const outroProgress = Math.min(Math.max((progress - 0.75) / 0.25, 0), 1);
     const isExiting = outroProgress > 0.05;
-    const typoOpacity = isExiting ? 0 : 1;
+    
+    // Fixed: On mobile, headline and subline do NOT fade out
+    const typoOpacity = (isMobile || !isExiting) ? 1 : 0;
 
-    // Lerp-smoothed scroll animation — same technique as Section 2
-    // Reads scroll position directly from DOM, interpolates with delta * 0.15
-    // = buttery smooth with "floating" inertia when user stops scrolling
-    //
-    // Timeline (local progress 0-1):
-    //   0.05-0.15  chip1 fade in
-    //   0.12-0.22  chip2 fade in
-    //   0.22-0.55  lamp draw
-    //   0.50-0.65  bar fills
-    //   0.55-0.68  chips + lamp fade out
-    //   0.65-0.78  image swap
-    //   0.78-1.00  final image stays, zoom continues = breathing room
+    // Direct animation based on 'progress' prop (Section 4 local progress [0,1])
     useEffect(() => {
-        let active = true;
-        let animationFrameId: number;
-        const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
-        if (!track) return;
+        const sp = progress;
 
-        const updateLoop = () => {
-            if (!active) return;
-            const rect = track.getBoundingClientRect();
-            const targetP = Math.min(Math.max(-rect.top / (rect.height - window.innerHeight), 0), 1);
-            const delta = targetP - currentP.current;
+        // Sub-progressions
+        const chip1In = Math.min(Math.max((sp - 0.05) / 0.10, 0), 1);
+        const chip2In = Math.min(Math.max((sp - 0.12) / 0.10, 0), 1);
+        const chipFadeOut = 1 - Math.min(Math.max((sp - 0.55) / 0.13, 0), 1);
+        const lampDrawP = Math.min(Math.max((sp - 0.22) / 0.33, 0), 1);
+        const lampFadeOut = 1 - Math.min(Math.max((sp - 0.55) / 0.13, 0), 1);
+        const barP = Math.min(Math.max((sp - 0.50) / 0.15, 0), 1);
+        const fadeP = Math.min(Math.max((sp - 0.65) / 0.13, 0), 1);
 
-            if (Math.abs(delta) > 0.00001) {
-                currentP.current += delta * 0.15;
-            } else {
-                currentP.current = targetP;
-            }
+        // Zoom
+        if (zoomContainerRef.current && !isMobile) {
+            zoomContainerRef.current.style.transform = `scale(${1.05 - sp * 0.05})`;
+        }
+        // Chips — fade in AND out
+        if (chip1Ref.current) {
+            chip1Ref.current.style.opacity = (chip1In * chipFadeOut).toString();
+            chip1Ref.current.style.transform = `scale(${0.9 + chip1In * 0.1})`;
+        }
+        if (chip2Ref.current) {
+            chip2Ref.current.style.opacity = (chip2In * chipFadeOut).toString();
+            chip2Ref.current.style.transform = `scale(${0.9 + chip2In * 0.1})`;
+        }
+        // Lamp — draws then fades out with chips
+        if (lampRef.current) {
+            lampRef.current.style.opacity = ((lampDrawP > 0 ? 1 : 0) * lampFadeOut).toString();
+        }
+        const stemP = Math.min(lampDrawP / 0.4, 1);
+        const easedStem = stemP < 0.5 ? 2 * stemP * stemP : 1 - Math.pow(-2 * stemP + 2, 2) / 2;
+        const shadeP = Math.max((lampDrawP - 0.2) / 0.8, 0);
+        const easedShade = shadeP < 0.5 ? 2 * shadeP * shadeP : 1 - Math.pow(-2 * shadeP + 2, 2) / 2;
 
-            // Map global progress to Section 4 local progress [0,1]
-            const sp = Math.min(Math.max((currentP.current - 0.8) / 0.2, 0), 1);
-
-            // Sub-progressions
-            const chip1In = Math.min(Math.max((sp - 0.05) / 0.10, 0), 1);
-            const chip2In = Math.min(Math.max((sp - 0.12) / 0.10, 0), 1);
-            const chipFadeOut = 1 - Math.min(Math.max((sp - 0.55) / 0.13, 0), 1);
-            const lampDrawP = Math.min(Math.max((sp - 0.22) / 0.33, 0), 1);
-            const lampFadeOut = 1 - Math.min(Math.max((sp - 0.55) / 0.13, 0), 1);
-            const barP = Math.min(Math.max((sp - 0.50) / 0.15, 0), 1);
-            const fadeP = Math.min(Math.max((sp - 0.65) / 0.13, 0), 1);
-
-            // Zoom
-            if (zoomContainerRef.current && !isMobile) {
-                zoomContainerRef.current.style.transform = `scale(${1.05 - sp * 0.05})`;
-            }
-            // Chips — fade in AND out
-            if (chip1Ref.current) {
-                chip1Ref.current.style.opacity = (chip1In * chipFadeOut).toString();
-                chip1Ref.current.style.transform = `scale(${0.9 + chip1In * 0.1})`;
-            }
-            if (chip2Ref.current) {
-                chip2Ref.current.style.opacity = (chip2In * chipFadeOut).toString();
-                chip2Ref.current.style.transform = `scale(${0.9 + chip2In * 0.1})`;
-            }
-            // Lamp — draws then fades out with chips
-            if (lampRef.current) {
-                lampRef.current.style.opacity = ((lampDrawP > 0 ? 1 : 0) * lampFadeOut).toString();
-            }
-            const stemP = Math.min(lampDrawP / 0.4, 1);
-            const easedStem = stemP < 0.5 ? 2 * stemP * stemP : 1 - Math.pow(-2 * stemP + 2, 2) / 2;
-            const shadeP = Math.max((lampDrawP - 0.2) / 0.8, 0);
-            const easedShade = shadeP < 0.5 ? 2 * shadeP * shadeP : 1 - Math.pow(-2 * shadeP + 2, 2) / 2;
-
-            if (lampPath1Ref.current) {
-                lampPath1Ref.current.style.strokeDashoffset = (400 * (1 - easedStem)).toString();
-            }
-            if (lampPath2Ref.current) {
-                lampPath2Ref.current.style.strokeDashoffset = (1000 * (1 - easedShade)).toString();
-            }
-            // Progress Bar
-            if (progressBarRef.current) {
-                progressBarRef.current.style.width = `${barP * 100}%`;
-                progressBarRef.current.style.opacity = (barP > 0 && fadeP < 1) ? '1' : '0';
-            }
-            // Image Swap
-            if (image2Ref.current) {
-                image2Ref.current.style.opacity = fadeP.toString();
-            }
-
-            animationFrameId = requestAnimationFrame(updateLoop);
-        };
-
-        animationFrameId = requestAnimationFrame(updateLoop);
-        return () => {
-            active = false;
-            cancelAnimationFrame(animationFrameId);
-        };
-    }, [isMobile]);
+        if (lampPath1Ref.current) {
+            lampPath1Ref.current.style.strokeDashoffset = (400 * (1 - easedStem)).toString();
+        }
+        if (lampPath2Ref.current) {
+            lampPath2Ref.current.style.strokeDashoffset = (1000 * (1 - easedShade)).toString();
+        }
+        // Progress Bar
+        if (progressBarRef.current) {
+            progressBarRef.current.style.width = `${barP * 100}%`;
+            progressBarRef.current.style.opacity = (barP > 0 && fadeP < 1) ? '1' : '0';
+        }
+        // Image Swap
+        if (image2Ref.current) {
+            image2Ref.current.style.opacity = fadeP.toString();
+        }
+    }, [progress, isMobile]);
 
     return (
         <div
