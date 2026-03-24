@@ -238,6 +238,7 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
                     <div className="flex flex-col max-w-xl">
                         <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase text-zinc-900 dark:text-white">
                             {t('home_section_templates_title').split(' ')[0]}
+                            <span className="lg:hidden"> </span>
                             <br className="hidden lg:block" />
                             {t('home_section_templates_title').split(' ').slice(1).join(' ')}
                         </h2>
