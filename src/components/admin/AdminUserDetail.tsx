@@ -123,7 +123,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
  <div className="grid grid-cols-2 gap-4 mb-4">
  <div className="p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <div className="text-xs font-medium text-zinc-500 mb-1">{t('admin_total_spent')}</div>
-              <div className={`text-xl font-mono ${user.totalSpent === 0 ? 'text-zinc-400 dark:text-zinc-600' : 'text-emerald-600 dark:text-emerald-400'}`}>{user.totalSpent.toFixed(2)} €</div>
+              <div className={`text-xl font-mono ${user.totalSpent === 0 ? 'text-zinc-400 dark:text-zinc-600' : 'text-black dark:text-white'}`}>{user.totalSpent.toFixed(2)} €</div>
  </div>
  <div className={`p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800`}>
               <div className="text-xs font-medium text-zinc-500 mb-1">{t('admin_balance')}</div>
