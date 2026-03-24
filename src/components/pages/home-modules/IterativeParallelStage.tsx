@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Check } from 'lucide-react';
 
 export interface IterativeParallelStageProps {
@@ -9,41 +9,39 @@ export interface IterativeParallelStageProps {
     lang?: string;
 }
 
+// Module-level constants
+const IMAGE_ROWS = [
+    ['11.jpg', '12.jpg', '14.jpg', '13.jpg'],
+    ['21.jpg', '22.jpg', '23.jpg', null],
+    ['31.jpg', '32.jpg', null, null],
+    ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
+] as const;
+
+const CHECKMARKED_INDICES: number[] = [1, 6, 8, 12];
+
+const FLAT_INDEX_MAP = (() => {
+    let count = 0;
+    return IMAGE_ROWS.map(row => row.map(img => img === null ? -1 : count++));
+})();
+
 const CanvasMockup = ({ progress }: { progress: number }) => {
-    // Refs for individual image containers for direct DOM manipulation
     const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
     const checkmarkRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-    // Irregular grid logic
-    const imageRows = [
-        ['11.jpg', '12.jpg', '14.jpg', '13.jpg'],
-        ['21.jpg', '22.jpg', '23.jpg', null],
-        ['31.jpg', '32.jpg', null, null],
-        ['41.jpg', '42.jpg', '43.jpg', '44.jpg']
-    ];
-
-    const flatIndices = useMemo(() => {
-        let count = 0;
-        return imageRows.map(row => row.map(img => img === null ? -1 : count++));
-    }, []);
-
-    const checkmarkedIndices = [1, 6, 8, 12];
-
-    // Refs for smooth interpolated progress (Lerp)
+    // Scroll-driven lerp animation
     const targetP = useRef(0);
     const currentP = useRef(0);
 
     useEffect(() => {
         let active = true;
         let animationFrameId: number;
-        // CACHE THE DOM QUERY! This was the reason for "buggy" feeling.
         const track = document.querySelector('[data-hero-scroll-track]') as HTMLElement | null;
         if (!track) return;
 
         const updateLoop = () => {
             if (!active) return;
             const delta = targetP.current - currentP.current;
-            
+
             if (Math.abs(delta) > 0.00001) {
                 currentP.current += delta * 0.15;
                 const pLocal = Math.min(Math.max((currentP.current - 0.22) / 0.23, 0), 1);
@@ -58,12 +56,12 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 
                     const opacity = Math.min(normalizedProgress * 1.5, 1);
                     const currentZ = 400 - (normalizedProgress * 400);
-                    
+
                     ref.style.opacity = opacity.toString();
                     ref.style.transform = `translate3d(0, 0, ${currentZ}px)`;
 
                     // Checkmark logic
-                    const checkmarkOrder = checkmarkedIndices.indexOf(index);
+                    const checkmarkOrder = CHECKMARKED_INDICES.indexOf(index);
                     if (checkmarkOrder !== -1 && checkmarkRefs.current[index]) {
                         const checkmarkPhaseStart = 0.45 + checkmarkOrder * 0.06;
                         const checkmarkProgress = pLocal > checkmarkPhaseStart
@@ -78,7 +76,7 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
                 });
                 animationFrameId = requestAnimationFrame(updateLoop);
             } else {
-                currentP.current = targetP.current; // snap
+                currentP.current = targetP.current;
             }
         };
 
@@ -92,7 +90,7 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 
         window.addEventListener('scroll', handleScroll, { passive: true });
         handleScroll();
-        
+
         return () => {
             active = false;
             cancelAnimationFrame(animationFrameId);
@@ -102,15 +100,15 @@ const CanvasMockup = ({ progress }: { progress: number }) => {
 
     return (
         <div className="w-full flex flex-col gap-4 sm:gap-6 lg:gap-8" style={{ transformStyle: 'preserve-3d' }}>
-            {imageRows.map((row, rowIndex) => (
+            {IMAGE_ROWS.map((row, rowIndex) => (
                 <div key={rowIndex} className="flex gap-2 sm:gap-3 lg:gap-4 justify-start" style={{ transformStyle: 'preserve-3d' }}>
                     {row.map((img, imgIndex) => {
-                        const index = flatIndices[rowIndex][imgIndex];
+                        const index = FLAT_INDEX_MAP[rowIndex][imgIndex];
                         if (img === null || index === -1) {
                             return <div key={`dummy-${rowIndex}-${imgIndex}`} className="flex-1 basis-0 min-w-0" />;
                         }
 
-                        const isCheckmarked = checkmarkedIndices.includes(index);
+                        const isCheckmarked = CHECKMARKED_INDICES.includes(index);
 
                         return (
                             <div
@@ -164,19 +162,6 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
                 transform: `translateY(${-easedExit * 100}vh)`
             }}
         >
-            <style>{`
-                #desktop-cluster-container { 
-                    width: 100%; 
-                    min-width: 100%;
-                }
-                @media (min-width: 1024px) {
-                    #desktop-cluster-container { 
-                        width: 125% !important; 
-                        min-width: 125% !important; 
-                    }
-                }
-            `}</style>
-
             <div className="w-full lg:w-3/5 h-[50vh] lg:h-full flex items-center justify-start px-6 lg:pl-0 lg:pr-6 pointer-events-none overflow-visible pt-[20vh] lg:pt-0">
                 <div
                     id="desktop-cluster-container"

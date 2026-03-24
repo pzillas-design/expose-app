@@ -216,3 +216,60 @@ html:not(.dark) {
     transform: rotate(-3deg);
   }
 }
+
+/* ── Homepage Stage Styles ─────────────────────────────── */
+
+.preserve-3d { transform-style: preserve-3d; }
+
+/* Hero floating images: responsive scaling */
+/* Hero: single fluid system — no breakpoint jumps */
+.hero-headline-container {
+  text-align: center;
+}
+.hero-headline {
+  /* Mobile: huge as requested */
+  font-size: clamp(9.1rem, 28.6vw, 12rem);
+}
+
+@media (min-width: 768px) {
+  /* Tablet: significantly smaller for row layout */
+  .hero-headline {
+    font-size: clamp(5rem, 8vw, 9rem);
+  }
+}
+
+@media (min-width: 1200px) {
+  /* Desktop: larger again */
+  .hero-headline {
+    font-size: clamp(8rem, 12vw, 10.4rem);
+  }
+}
+
+/* Hero word cycling: desktop alignment override */
+@media (min-width: 768px) {
+  .hero-word { left: 0 !important; }
+  .hero-word-active  { transform: translateY(0) scale(1) !important; }
+  .hero-word-past    { transform: translateY(-110%) scale(0.7) !important; }
+  .hero-word-future  { transform: translateY(110%) scale(0.7) !important; }
+}
+
+/* Iterative stage: desktop cluster width */
+#desktop-cluster-container {
+  width: 100%;
+  min-width: 100%;
+}
+@media (min-width: 1024px) {
+  #desktop-cluster-container {
+    width: 125% !important;
+    min-width: 125% !important;
+  }
+}
+
+/* Templates stage: cursor blink */
+.mockup-cursor {
+  animation: cursor-blink 1s steps(1, start) infinite;
+}
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}

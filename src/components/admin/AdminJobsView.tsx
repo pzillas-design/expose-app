@@ -57,7 +57,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="relative flex flex-col flex-1 min-h-0">
             <AdminViewHeader
                 title={t('admin_jobs')}
                 search={{ value: search, onChange: setSearch, placeholder: t('search') }}
@@ -162,11 +162,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
             </div>
 
             {selectedJob && (
-                <AdminJobDetail
-                    job={selectedJob}
-                    onClose={() => setSelectedJob(null)}
-                    t={t}
-                />
+                <>
+                    <div className="absolute inset-0 z-10" onClick={() => setSelectedJob(null)} />
+                    <AdminJobDetail
+                        job={selectedJob}
+                        onClose={() => setSelectedJob(null)}
+                        t={t}
+                    />
+                </>
             )}
         </div>
     );

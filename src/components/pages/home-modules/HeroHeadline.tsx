@@ -2,6 +2,15 @@ import React, { useRef, useEffect, memo } from 'react';
 
 const ANIMATED_WORDS = ['more', 'faster', 'better'] as const;
 
+const GRADIENT_STYLE: React.CSSProperties = {
+    background: 'linear-gradient(90deg, #f97316, #dc2626)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+};
+
+const WORD_TRANSITION = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+
 interface HeroHeadlineProps {
     progress: number;
     wordIndex: number;
@@ -9,24 +18,13 @@ interface HeroHeadlineProps {
 
 export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordIndex }) => {
 
-
-    const gradientStyle = {
-        background: 'linear-gradient(90deg, #f97316, #dc2626)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-    } as React.CSSProperties;
-
-    const transition = 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-
     const isFadingOut = progress > 0.85;
     const fadeOutProgress = isFadingOut ? (progress - 0.85) / 0.15 : 0;
 
     return (
         <div
-            className="hero-headline font-kumbh font-bold tracking-tighter select-none w-full antialiased subpixel-antialiased"
+            className="hero-headline font-kumbh font-bold tracking-tighter select-none antialiased subpixel-antialiased"
             style={{
-                fontSize: 'clamp(4.55rem, 14.3vw, 10.4rem)',
                 lineHeight: 1.1,
                 // These help prevent "shattered" font during flythrough
                 WebkitFontSmoothing: 'antialiased',
@@ -46,15 +44,6 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
              * so that ALL words have the same left-edge distance from "create".
              * On mobile they stay centered via translateX(-50%).
              */}
-            <style>{`
-                @media (min-width: 768px) {
-                    .hero-word { left: 0 !important; }
-                    .hero-word-active  { transform: translateY(0) scale(1) !important; }
-                    .hero-word-past    { transform: translateY(-110%) scale(0.7) !important; }
-                    .hero-word-future  { transform: translateY(110%) scale(0.7) !important; }
-                }
-            `}</style>
-
             <span className="flex flex-col items-center md:flex-row md:justify-center md:items-baseline">
 
                 {/* Static "create" */}
@@ -62,10 +51,10 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
 
                 {/* Animated word slot — invisible "better" sizer sets container width */}
                 <span
-                    className="relative inline-block overflow-hidden"
+                    className="relative inline-block overflow-visible"
                     style={{ height: '1.2em', verticalAlign: 'bottom' }}
                 >
-                    <span className="invisible" aria-hidden>better</span>
+                    <span className="invisible" aria-hidden>more&nbsp;</span>
 
                     {ANIMATED_WORDS.map((word, i) => {
                         const isActive = i === wordIndex;
@@ -90,9 +79,9 @@ export const HeroHeadline: React.FC<HeroHeadlineProps> = memo(({ progress, wordI
                                     display: 'inline-block',
                                     whiteSpace: 'nowrap',
                                     opacity: isActive ? 1 : 0,
-                                    transition,
+                                    transition: WORD_TRANSITION,
                                     willChange: 'transform, opacity',
-                                    ...gradientStyle,
+                                    ...GRADIENT_STYLE,
                                 }}
                             >
                                 {word}

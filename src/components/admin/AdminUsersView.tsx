@@ -93,7 +93,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
     };
 
     return (
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="relative flex flex-col flex-1 min-h-0">
             <AdminViewHeader
                 title={t('admin_users')}
                 search={{ value: search, onChange: setSearch, placeholder: t('search') }}
@@ -145,13 +145,16 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
             </div>
 
             {selectedUser && (
-                <AdminUserDetail
-                    user={selectedUser}
-                    onClose={() => setSelectedUser(null)}
-                    onUpdateUser={handleUpdateUser}
-                    onDeleteUser={handleDeleteUser}
-                    t={t}
-                />
+                <>
+                    <div className="absolute inset-0 z-10" onClick={() => setSelectedUser(null)} />
+                    <AdminUserDetail
+                        user={selectedUser}
+                        onClose={() => setSelectedUser(null)}
+                        onUpdateUser={handleUpdateUser}
+                        onDeleteUser={handleDeleteUser}
+                        t={t}
+                    />
+                </>
             )}
 
             <ConfirmDialog

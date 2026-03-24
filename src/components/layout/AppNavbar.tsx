@@ -516,8 +516,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 </span>
                             </div>
                         </button>
+                    ) : isPublic ? (
+                        <button
+                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                : isMobile
+                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                }`}
+                            onClick={user ? (onBack || (() => window.location.href = '/')) : onSignIn}
+                        >
+                            <LayoutGrid className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                            <div
+                                className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                    }`}
+                            >
+                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                    {t('nav_gallery') || 'Galerie'}
+                                </span>
+                            </div>
+                        </button>
                     ) : (
-                        !isPublic && user && (
+                        user && (
                             <>
                                 <button
                                     className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
@@ -563,9 +583,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {progressRing}
                 </div>
 
-                {/* CENTER: Logo + Wordmark */}
-                <div className="flex-none flex items-center justify-center relative group cursor-pointer z-10 pointer-events-auto mx-4" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
-                    <div className="flex items-center justify-center gap-[11.4px]">
+                {/* CENTER: Logo + Wordmark — absolute for true centering regardless of left/right width */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center group cursor-pointer z-10 pointer-events-auto" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
+                    <div className="flex items-center justify-center">
                         {/* Official Logo */}
                         <Logo
                             className={`shrink-0 object-contain transition-all duration-500 ease-out ${isScrolled
@@ -574,9 +594,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 }`}
                         />
 
-                        {/* Text "EXPOSE" (shrinks and fades when scrolling) */}
+                        {/* Text "EXPOSE" — ml transitions to 0 when collapsed so icon stays centered */}
                         <div
-                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 opacity-0' : 'w-[72px] md:w-[106px] lg:w-[129px] opacity-100'
+                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 ml-0 opacity-0' : 'w-[72px] md:w-[106px] lg:w-[129px] ml-[11.4px] opacity-100'
                                 }`}
                         >
                             <span

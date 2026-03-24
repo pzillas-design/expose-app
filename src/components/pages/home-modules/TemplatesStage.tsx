@@ -121,79 +121,105 @@ export interface TemplatesStageProps {
 }
 
 export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scrollActive, enterProgress = 1, exitProgress = 0, t }) => {
-    // Interaction logic adapted from InteractiveSeasonPanel
     const [autoProgress, setAutoProgress] = useState(0);
     const [isFinished, setIsFinished] = useState(false);
     const [seasonState, setSeasonState] = useState<string | undefined>(undefined);
     const [timeState, setTimeState] = useState<string | undefined>(undefined);
-
     const [isSeasonStepPressed, setIsSeasonStepPressed] = useState(false);
     const [isTimeStepPressed, setIsTimeStepPressed] = useState(false);
     const [isButtonStepPressed, setIsButtonStepPressed] = useState(false);
+    const [activeSection, setActiveSection] = useState<string>('prompt');
 
-    const hasTriggeredSeason = useRef(false);
-    const hasTriggeredTime = useRef(false);
-    const hasTriggeredGenerate = useRef(false);
+    const animationStartedRef = useRef(false);
+    const animFrameRef = useRef<number>(0);
+    const delayTimerRef = useRef<ReturnType<typeof setTimeout>>();
+    const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
     // Standardize easing to remove wobble: Both Enter and Exit use the exact same curve
     const easedEnter = enterProgress < 0.5 ? 2 * enterProgress * enterProgress : 1 - Math.pow(-2 * enterProgress + 2, 2) / 2;
     const easedExit = exitProgress < 0.5 ? 2 * exitProgress * exitProgress : 1 - Math.pow(-2 * exitProgress + 2, 2) / 2;
 
+    const isGenerating = autoProgress > 0 && !isFinished;
+
+    const schedule = (fn: () => void, delay: number) => {
+        const id = setTimeout(fn, delay);
+        timeoutsRef.current.push(id);
+    };
+
+    // Time-based scripted sequence (not scroll-dependent)
     useEffect(() => {
-        if (progress < 0.05) {
-            hasTriggeredSeason.current = false;
-            hasTriggeredTime.current = false;
-            hasTriggeredGenerate.current = false;
+        if (scrollActive && !animationStartedRef.current) {
+            animationStartedRef.current = true;
+
+            // Delay to let enter transition settle
+            delayTimerRef.current = setTimeout(() => {
+                // Phase 1: Season chip select at 1000ms
+                schedule(() => {
+                    setActiveSection('season');
+                    setIsSeasonStepPressed(true);
+                    schedule(() => {
+                        setIsSeasonStepPressed(false);
+                        setSeasonState(t('home_winter'));
+                    }, 150);
+                }, 1000);
+
+                // Phase 2: Time chip select at 2500ms
+                schedule(() => {
+                    setActiveSection('time');
+                    setIsTimeStepPressed(true);
+                    schedule(() => {
+                        setIsTimeStepPressed(false);
+                        setTimeState(t('home_golden_hour'));
+                    }, 150);
+                }, 2500);
+
+                // Phase 3: Generate button at 4000ms
+                schedule(() => {
+                    setActiveSection('generate');
+                    setIsButtonStepPressed(true);
+                    schedule(() => {
+                        setIsButtonStepPressed(false);
+                        let start: number | null = null;
+                        const animate = (time: number) => {
+                            if (!start) start = time;
+                            const elapsed = time - start;
+                            const p = Math.min(elapsed / 1250, 1);
+                            setAutoProgress(Math.pow(p, 2.0));
+                            if (p < 1) animFrameRef.current = requestAnimationFrame(animate);
+                            else setIsFinished(true);
+                        };
+                        animFrameRef.current = requestAnimationFrame(animate);
+                    }, 150);
+                }, 4000);
+            }, 600);
+        }
+
+        return () => {
+            clearTimeout(delayTimerRef.current);
+            cancelAnimationFrame(animFrameRef.current);
+            timeoutsRef.current.forEach(id => clearTimeout(id));
+            timeoutsRef.current = [];
+        };
+    }, [scrollActive]);
+
+    // Reset when leaving section
+    useEffect(() => {
+        if (!scrollActive && animationStartedRef.current) {
+            animationStartedRef.current = false;
+            cancelAnimationFrame(animFrameRef.current);
+            clearTimeout(delayTimerRef.current);
+            timeoutsRef.current.forEach(id => clearTimeout(id));
+            timeoutsRef.current = [];
             setSeasonState(undefined);
             setTimeState(undefined);
             setAutoProgress(0);
             setIsFinished(false);
-            return;
+            setIsSeasonStepPressed(false);
+            setIsTimeStepPressed(false);
+            setIsButtonStepPressed(false);
+            setActiveSection('prompt');
         }
-
-        // Pause internal triggers if we are exiting (swiping out)
-        if (exitProgress > 0.1) return;
-
-        if (progress >= 0.2 && !hasTriggeredSeason.current) {
-            hasTriggeredSeason.current = true;
-            setIsSeasonStepPressed(true);
-            setTimeout(() => {
-                setIsSeasonStepPressed(false);
-                setSeasonState(t('home_winter'));
-            }, 150);
-        }
-
-        if (progress >= 0.4 && !hasTriggeredTime.current) {
-            hasTriggeredTime.current = true;
-            setIsTimeStepPressed(true);
-            setTimeout(() => {
-                setIsTimeStepPressed(false);
-                setTimeState(t('home_golden_hour'));
-            }, 150);
-        }
-
-        if (progress >= 0.6 && !hasTriggeredGenerate.current) {
-            hasTriggeredGenerate.current = true;
-            setIsButtonStepPressed(true);
-            setTimeout(() => {
-                setIsButtonStepPressed(false);
-                let start: number | null = null;
-                const animate = (t: number) => {
-                    if (!start) start = t;
-                    const elapsed = t - start;
-                    const p = Math.min(elapsed / 1250, 1);
-                    setAutoProgress(Math.pow(p, 2.0));
-                    if (p < 1) requestAnimationFrame(animate);
-                    else setIsFinished(true);
-                };
-                requestAnimationFrame(animate);
-            }, 150);
-        }
-    }, [progress, exitProgress]);
-
-    // Derived UI states
-    const activeSection = progress < 0.15 ? 'prompt' : progress < 0.35 ? 'season' : progress < 0.55 ? 'time' : 'generate';
-    const isGenerating = autoProgress > 0 && !isFinished;
+    }, [scrollActive]);
 
     return (
         <div
@@ -261,22 +287,3 @@ export const TemplatesStage: React.FC<TemplatesStageProps> = ({ progress, scroll
     );
 };
 
-const styleContent = `
- .mockup-cursor {
- animation: cursor-blink 1s steps(1, start) infinite;
- }
- @keyframes cursor-blink {
- 0%, 100% { opacity: 1; }
- 50% { opacity: 0; }
- }
-`;
-
-if (typeof document !== 'undefined') {
-    const styleId = 'templates-stage-styles';
-    if (!document.getElementById(styleId)) {
-        const styleEl = document.createElement('style');
-        styleEl.id = styleId;
-        styleEl.innerHTML = styleContent;
-        document.head.appendChild(styleEl);
-    }
-}

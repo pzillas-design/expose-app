@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
@@ -18,14 +18,13 @@ interface HomePageProps {
 
 export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, onGetStarted, onSignIn, t, lang }) => {
     const navigate = useNavigate();
-    const mainTrackRef = useRef<HTMLElement>(null);
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
-                <section ref={mainTrackRef} data-hero-scroll-track className="relative h-[1800vh]">
+                <section data-hero-scroll-track className="relative h-[1800vh]">
                     <UniversalStage t={t} lang={lang} />
                 </section>
 
@@ -67,16 +66,6 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 />
             </main>
 
-            <style>{`
-                .preserve-3d { transform-style: preserve-3d; }
-                .perspective-1000 { perspective: 1000px; }
-                @media (max-width: 768px) {
-                    .hero-floating-image {
-                        --mobile-scale: 1.5;
-                        max-width: 95vw;
-                    }
-                }
-            `}</style>
         </div>
     );
 };
