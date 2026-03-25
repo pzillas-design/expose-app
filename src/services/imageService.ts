@@ -255,7 +255,9 @@ export const imageService = {
                 groupParentId: groupParentId || undefined,
                 // Pass the storage path so the edge function can download the image
                 // directly from Supabase Storage (faster & more reliable than fetching signed URL)
-                sourceStoragePath: sourceImage?.storage_path || undefined
+                sourceStoragePath: sourceImage?.storage_path || undefined,
+                // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
+                provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
             }
         });
 
