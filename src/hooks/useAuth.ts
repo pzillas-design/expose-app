@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../services/supabaseClient';
+import { supabase, initialUrlHashType } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { ImageRow } from '../types';
 import { LocaleKey } from '../data/locales';
@@ -25,7 +25,8 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
 
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const isRecoveryFlowRef = useRef(false);
+    // Initialized from module-level snapshot — see supabaseClient.ts for why
+    const isRecoveryFlowRef = useRef(initialUrlHashType === 'recovery');
     const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(!isAuthDisabled);
@@ -77,20 +78,19 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             return;
         }
 
-        if (window.location.hash) {
+        // Open update-password modal if this page load came from a recovery link.
+        // initialUrlHashType was captured synchronously before Supabase's async init
+        // had a chance to clear the hash — this is the only reliable detection point.
+        if (isRecoveryFlowRef.current) {
+            setAuthModalMode('update-password');
+            setIsAuthModalOpen(true);
+        } else if (window.location.hash) {
             const params = new URLSearchParams(window.location.hash.substring(1));
             const errorMsg = params.get('error_description');
-            const tokenType = params.get('type');
             if (errorMsg) {
                 setAuthError(errorMsg.replace(/\+/g, ' '));
                 setIsAuthModalOpen(true);
                 window.history.replaceState(null, '', window.location.pathname);
-            } else if (tokenType === 'recovery') {
-                // Recovery link clicked — open update-password modal immediately.
-                // Do NOT clear the hash; Supabase needs it to establish the recovery session.
-                isRecoveryFlowRef.current = true;
-                setAuthModalMode('update-password');
-                setIsAuthModalOpen(true);
             }
         }
 
