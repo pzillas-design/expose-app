@@ -94,8 +94,12 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             }
         }
 
-        // Get initial session
+        // Get initial session — skip if this is a recovery redirect (user must set new password first)
         supabase.auth.getSession().then(({ data: { session } }) => {
+            if (isRecoveryFlowRef.current) {
+                setIsAuthLoading(false);
+                return;
+            }
             if (session?.user) {
                 fetchProfile(session.user);
             } else {
