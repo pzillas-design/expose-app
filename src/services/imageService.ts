@@ -436,6 +436,7 @@ export const imageService = {
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
             userId: record.user_id,
+            jobId: record.job_id || undefined,
             createdAt: new Date(record.created_at).getTime(),
             generationStartTime: new Date(record.created_at).getTime(),
             updatedAt: new Date(record.updated_at).getTime()

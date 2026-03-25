@@ -590,6 +590,16 @@ export const useNanoController = () => {
                 'expose-images.zip'
             );
         }
+
+        // Track downloads: set downloaded_at on associated generation_jobs (fire-and-forget)
+        const jobIds = imagesToDownload.map(img => img.jobId).filter(Boolean) as string[];
+        if (jobIds.length > 0) {
+            supabase
+                .from('generation_jobs')
+                .update({ downloaded_at: new Date().toISOString() })
+                .in('id', jobIds)
+                .then(({ error }) => { if (error) console.warn('Download tracking failed:', error); });
+        }
     }, [allImages]);
 
     const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {

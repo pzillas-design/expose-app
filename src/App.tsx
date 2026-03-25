@@ -797,6 +797,11 @@ export function App() {
                             imageLimit={state.imageLimit}
                             storageAutoDelete={state.storageAutoDelete}
                             onStorageAutoDeleteChange={actions.handleStorageAutoDeleteChange}
+                            onChangePassword={() => {
+                                setIsSettingsModalOpen(false);
+                                setAuthModalMode('update-password');
+                                setIsAuthModalOpen(true);
+                            }}
                         />
                     )}
                 </Suspense>
