@@ -58,6 +58,7 @@ export interface CanvasImage {
   estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
   userId?: string; // Owner ID (mapped from DB user_id)
+  jobId?: string; // generation_jobs FK — used for download tracking
   createdAt?: number; // DB Prep
   updatedAt?: number; // DB Prep
 }

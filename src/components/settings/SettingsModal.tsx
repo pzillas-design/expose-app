@@ -36,13 +36,15 @@ interface SettingsModalProps {
     imageLimit?: number;
     storageAutoDelete?: boolean;
     onStorageAutoDeleteChange?: (val: boolean) => void;
+    onChangePassword?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose,
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
     themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t,
-    imageCount = 0, imageLimit = 100, storageAutoDelete = false, onStorageAutoDeleteChange
+    imageCount = 0, imageLimit = 100, storageAutoDelete = false, onStorageAutoDeleteChange,
+    onChangePassword
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -157,7 +159,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm text-zinc-800 dark:text-zinc-200 truncate">{user?.email}</p>
-                            <button className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors mt-0.5">
+                            <button
+                                onClick={onChangePassword}
+                                className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors mt-0.5">
                                 {t('settings_change_password')}
                             </button>
                         </div>

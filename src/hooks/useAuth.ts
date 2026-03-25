@@ -25,6 +25,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
 
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'reset' | 'update-password'>('signin');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const isRecoveryFlowRef = useRef(false);
     const [authEmail, setAuthEmail] = useState('');
     const [authError, setAuthError] = useState<string | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(!isAuthDisabled);
@@ -79,10 +80,17 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         if (window.location.hash) {
             const params = new URLSearchParams(window.location.hash.substring(1));
             const errorMsg = params.get('error_description');
+            const tokenType = params.get('type');
             if (errorMsg) {
                 setAuthError(errorMsg.replace(/\+/g, ' '));
                 setIsAuthModalOpen(true);
                 window.history.replaceState(null, '', window.location.pathname);
+            } else if (tokenType === 'recovery') {
+                // Recovery link clicked — open update-password modal immediately.
+                // Do NOT clear the hash; Supabase needs it to establish the recovery session.
+                isRecoveryFlowRef.current = true;
+                setAuthModalMode('update-password');
+                setIsAuthModalOpen(true);
             }
         }
 
@@ -100,10 +108,19 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             const newUserId = session?.user?.id;
 
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                if (newUserId !== currentUserId) {
+                if (isRecoveryFlowRef.current) {
+                    // Recovery flow active — don't silently log user in, wait for password update
+                    setIsAuthLoading(false);
+                } else if (newUserId !== currentUserId) {
                     fetchProfile(session?.user ?? null);
                 } else {
                     setIsAuthLoading(false);
+                }
+            } else if (event === 'USER_UPDATED') {
+                // Password was successfully updated — clear recovery flag and complete login
+                isRecoveryFlowRef.current = false;
+                if (session?.user) {
+                    fetchProfile(session.user);
                 }
             } else if (event === 'TOKEN_REFRESHED') {
                 // Only re-fetch if the user actually changed 
@@ -115,6 +132,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             } else if (event === 'SIGNED_OUT') {
                 fetchProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
+                isRecoveryFlowRef.current = true;
                 if (session?.user?.email) {
                     setAuthEmail(session.user.email);
                 }
