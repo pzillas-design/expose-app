@@ -297,7 +297,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const tryScroll = () => {
                 // Find cover tile for this image's group
                 const row = rows.find(r => r.items.some(i => i.id === targetId));
-                const coverId = row ? row.items[row.items.length - 1].id : targetId;
+                const coverId = row ? row.items[0].id : targetId;
                 const el = document.querySelector(`[data-image-id="${coverId}"]`);
                 if (el) {
                     el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
@@ -311,11 +311,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     }, [isSelectMode, selectedIds, expandedGroupId, rows]);
 
     // Map: cover image id → row (for quick group lookup)
-    // Cover = newest item (last in row, items sorted oldest→newest)
+    // Cover = newest item (first in row, items sorted newest→oldest)
     const groupCountMap = useMemo(() => {
         const map = new Map<string, number>();
         rows.forEach(r => {
-            const cover = r.items[r.items.length - 1];
+            const cover = r.items[0];
             if (cover) map.set(cover.id, r.items.length);
         });
         return map;
@@ -324,7 +324,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const groupRowMap = useMemo(() => {
         const map = new Map<string, ImageRow>();
         rows.forEach(r => {
-            const cover = r.items[r.items.length - 1];
+            const cover = r.items[0];
             if (cover) map.set(cover.id, r);
         });
         return map;
@@ -339,7 +339,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (isSelectMode) {
             return rows.flatMap(r => r.items);
         }
-        return rows.map(r => r.items[r.items.length - 1]).filter(Boolean) as CanvasImage[];
+        return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
     }, [expandedGroupId, isSelectMode, rows]);
 
     // Track which cover tile to animate when closing a group
@@ -348,7 +348,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     React.useEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {
             const row = rows.find(r => r.id === prevExpandedGroupId.current);
-            const cover = row?.items[row.items.length - 1];
+            const cover = row?.items[0];
             if (cover) {
                 setReturnCoverId(cover.id);
                 setTimeout(() => setReturnCoverId(null), 500);
@@ -374,7 +374,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (displayImages.some(i => i.id === lastViewedId)) return lastViewedId;
         const row = rows.find(r => r.items.some(i => i.id === lastViewedId));
         if (!row) return null;
-        return row.items[row.items.length - 1].id;
+        return row.items[0].id;
     }, [lastViewedId, displayImages, rows]);
 
     // Gate the return-from-detail animation so it plays only once per mount.

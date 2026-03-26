@@ -6,7 +6,7 @@ import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/as
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { createKieTask } from './services/kie.ts';
 import { saveKieResult } from '../_shared/saveKieResult.ts';
-import { prepareParts } from './services/gemini.ts';
+import { prepareParts, generateImage as geminiGenerateImage } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -217,17 +217,21 @@ Deno.serve(async (req) => {
                     logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
                 }
 
-                // Prepare generation config (Standard AI Studio format)
+                // Resolution for image output
+                const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
+                    : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
+
+                // aspectRatio logic:
+                // - Create mode (no source): always set, otherwise Gemini defaults to 1:1
+                // - Edit with references: always set, otherwise Gemini adopts last reference's ratio
+                // - Edit without references: omit — Gemini preserves original ratio automatically
+                const hasRefImages = payloadReferences?.length > 0;
+                const needsExplicitRatio = !finalSourceBase64 || hasRefImages;
+
                 const generationConfig: any = {
-                    temperature: 0.7,
-                    topP: 0.95,
-                    topK: 40,
-                    maxOutputTokens: 8192,
                     imageConfig: {
-                        ...(isEditMode ? {} : { aspectRatio: bestRatio }),
-                        ...(finalModelName === 'gemini-3-pro-image-preview' ? {
-                            imageSize: qualityMode === 'pro-4k' ? '4K' : (qualityMode === 'pro-2k' ? '2K' : '1K')
-                        } : {})
+                        ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}),
+                        imageSize: kieResolution
                     }
                 };
 
@@ -357,9 +361,6 @@ Deno.serve(async (req) => {
                         kieImageUrls.push(ref.src);
                     }
                 }
-
-                const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
-                    : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
 
                 // ═══════════════════════════════════════════════════════════════════
                 // Phase 1: Create Kie.ai task (synchronous — fast, <5s)

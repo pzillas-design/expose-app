@@ -632,8 +632,8 @@ export const imageService = {
         });
 
         groups.forEach((items, groupId) => {
-            // Within a row, sort oldest to newest
-            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            // Within a row, sort newest to oldest (consistent with gallery-level sorting)
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
             // Determine row title from root or first visible item
             let rowTitle = 'untitled';
@@ -743,7 +743,7 @@ export const imageService = {
         });
 
         groups.forEach((items, groupId) => {
-            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             let rowTitle = items[0].baseName || items[0].title || 'untitled';
             let rowCreatedAt = items[0].createdAt;
             const root = imageMap.get(groupId);
