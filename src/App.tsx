@@ -434,6 +434,14 @@ export function App() {
                         }
                         return undefined;
                     })()}
+                    groupInfo={(() => {
+                        if (expandedGroupId) {
+                            const row = state.rows.find((r: any) => r.id === expandedGroupId);
+                            const root = row?.items?.find((item: any) => !item.parentId) || row?.items?.[0];
+                            return root?.title || row?.title || undefined;
+                        }
+                        return undefined;
+                    })()}
                     detailActions={null}
                     detailHasPrompt={(() => {
                         if (location.pathname.startsWith('/image/')) {

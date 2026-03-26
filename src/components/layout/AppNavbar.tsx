@@ -28,6 +28,7 @@ interface AppNavbarProps {
     lang?: string;
     mode?: 'grid' | 'detail' | 'create';
     detailInfo?: string;
+    groupInfo?: string;
     detailActions?: React.ReactNode;
     onBack?: () => void;
     hasImages?: boolean;
@@ -76,6 +77,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     lang,
     mode = 'grid',
     detailInfo,
+    groupInfo,
     detailActions,
     onBack,
     hasImages = true,
@@ -298,6 +300,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 )}
             </span>
         </div>
+    ) : isGroupDrillDown && groupInfo ? (
+        <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[220px]">
+            {groupInfo}
+        </span>
     ) : (
         <button
             type="button"
@@ -713,9 +719,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 {leftContent}
             </div>
 
-            {/* CENTER: Logo (Centered) */}
-            <div className="flex-none flex items-center justify-center cursor-pointer mx-4 whitespace-nowrap" onClick={() => { if (onBack) onBack(); else window.location.href = '/'; }}>
-                <Logo className="w-7 h-7" />
+            {/* CENTER: Title / Logo */}
+            <div className="flex-none flex items-center justify-center mx-4 whitespace-nowrap min-w-0">
+                {centerContent}
             </div>
 
             {/* RIGHT: User / System */}
