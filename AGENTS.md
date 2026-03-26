@@ -53,6 +53,31 @@ If you get `503 BOOT_ERROR`, the function failed to start. Check recent code cha
   - the response shape still matches `extractImageBase64()`
 - Do not assume staging and main are using isolated Supabase projects unless explicitly confirmed.
 
+## Google AI Studio / Gemini Image Notes
+
+- For the current staging `NB2` path, the canonical Google API model is `gemini-3.1-flash-image-preview`
+- For `NB Pro`, the canonical Google API model is `gemini-3-pro-image-preview`
+- Do not infer API model names from AI Studio URLs. AI Studio may use URL slugs like `gemini-3-1-flash-image`, while the Gemini API model name is `gemini-3.1-flash-image-preview`
+- The canonical request shape for our Google image path is `ai.models.generateContent(...)`
+- The expected image response shape is in `response.candidates[*].content.parts[*].inlineData`
+- `gemini-3.1-flash-image-preview` supports text-to-image and text+image-to-image flows, which matches our create/edit flow with source image, annotation image, and references
+- `gemini-3.1-flash-image-preview` is a Preview model, so names, limits, and feature support can still change; verify before changing model strings
+- Relevant current limits/capabilities to keep in mind:
+  - supports image generation via `generateContent`
+  - supports text and image input
+  - returns text and image parts
+  - does not support function calling / structured outputs / caching in this image workflow
+  - supports sizes including `1K`, `2K`, and `4K`
+
+## Google Doc Anchors
+
+- Primary doc hub for our image pipeline:
+  - [Google Gemini image generation docs](https://ai.google.dev/gemini-api/docs/image-generation?hl=de)
+- Best model-specific verification page for `NB2`:
+  - [Gemini 3.1 Flash Image Preview model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview?hl=de)
+- If pricing or current feature support is in doubt:
+  - [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing?hl=de#gemini-3.1-flash-image-preview)
+
 ## Existing Project References
 
 These older project docs already exist and may still contain useful context:
