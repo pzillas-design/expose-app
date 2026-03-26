@@ -69,6 +69,30 @@ If you get `503 BOOT_ERROR`, the function failed to start. Check recent code cha
   - does not support function calling / structured outputs / caching in this image workflow
   - supports sizes including `1K`, `2K`, and `4K`
 
+## Generation Semantics
+
+- `Create` means text-to-image generation with optional reference images
+- `Edit` means source-image editing with prompt, optional annotation image, and optional reference images
+- `Annotation Image` means a muted version of the original plus visible red annotation overlays that indicate where to change the image
+- `Reference Images` are visual guidance and may be general or tied to a specific edit context
+
+## Gemini Payload Rules We Actually Use
+
+- Build the Gemini request as multimodal `parts`
+- Keep the sequence stable:
+  - prompt text first
+  - variable text second, if present
+  - original image next, if present
+  - annotation image next, if present
+  - reference images last
+- After every image `inlineData` part, add a short identifying text part such as `Original Image`, `Annotation Image`, or `Reference Image`
+- Use scenario-specific system instructions based on:
+  - source image present or not
+  - annotation image present or not
+  - references present or not
+- For edit flows without references, let the model preserve the original aspect ratio
+- For create flows and edit flows with references, pass explicit aspect ratio in `generationConfig.imageConfig.aspectRatio`
+
 ## Google Doc Anchors
 
 - Primary doc hub for our image pipeline:
