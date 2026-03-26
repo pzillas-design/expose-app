@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
                     throw new Error('Only NB2 quality modes are supported on staging');
                 }
 
-                const finalModelName = 'nano-banana-2';
+                const finalModelName = 'gemini-3.1-flash-image-preview';
 
                 // Determine aspect ratio
                 let bestRatio = '1:1';
