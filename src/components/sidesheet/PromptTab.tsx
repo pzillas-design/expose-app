@@ -82,9 +82,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.07 €' },
-        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.17 €' },
-        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.35 €' },
+        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
+        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
+        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
     ];
 
     const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';

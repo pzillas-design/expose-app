@@ -31,9 +31,9 @@ interface UseGenerationProps {
 }
 
 const COSTS: Record<string, number> = {
-    'nb2-1k': 0.07,
-    'nb2-2k': 0.17,
-    'nb2-4k': 0.35,
+    'nb2-1k': 0.10,
+    'nb2-2k': 0.20,
+    'nb2-4k': 0.40,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
@@ -554,7 +554,7 @@ export const useGeneration = ({
                             referenceImagesCount: refs.length,
                             variables: variableValues || {},
                         }
-                    }).then(() => attachedJobIds.current.add(newId));
+                    }).then(() => {});
                 }
 
                 const finalImage = await imageService.processGeneration({
@@ -683,7 +683,7 @@ export const useGeneration = ({
                         prompt_preview: prompt,
                         quality_mode: modelId,
                         model: modelId
-                    }).then(() => attachedJobIds.current.add(newId));
+                    }).then(() => {});
                 }
 
                 const structuredRequest: StructuredGenerationRequest = {

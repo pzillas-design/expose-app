@@ -42,9 +42,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     initialTemplate
 }) => {
     const MODELS = [
-        { id: 'nb2-1k', name: 'Nano Banana 2 · 1K', price: '0.07 €', res: '1024 px · schnell' },
-        { id: 'nb2-2k', name: 'Nano Banana 2 · 2K', price: '0.17 €', res: '2048 px · schnell' },
-        { id: 'nb2-4k', name: 'Nano Banana 2 · 4K', price: '0.35 €', res: '4096 px · schnell' },
+        { id: 'nb2-1k', name: 'Nano Banana 2 · 1K', price: '0.10 €', res: '1024 px · schnell' },
+        { id: 'nb2-2k', name: 'Nano Banana 2 · 2K', price: '0.20 €', res: '2048 px · schnell' },
+        { id: 'nb2-4k', name: 'Nano Banana 2 · 4K', price: '0.40 €', res: '4096 px · schnell' },
     ];
 
     const [prompt, setPrompt] = useState('');

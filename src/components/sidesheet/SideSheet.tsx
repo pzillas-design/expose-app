@@ -715,7 +715,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             {/* Resolution + Price */}
                                                             {(['1k', '2k', '4k'] as const).map(res => {
                                                                 const q = `nb2-${res}` as GenerationQuality;
-                                                                const COSTS: Record<string, number> = { 'nb2-1k': 0.07, 'nb2-2k': 0.17, 'nb2-4k': 0.35 };
+                                                                const COSTS: Record<string, number> = { 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
                                                                 const cost = COSTS[q];
                                                                 const isActive = qualityMode === q;
                                                                 return (
