@@ -160,3 +160,48 @@ export const generateImage = async (
 
     throw lastError;
 };
+
+export const extractGeneratedImage = (response: any): { base64: string; mimeType: string } | null => {
+    const visit = (node: any): { base64: string; mimeType: string } | null => {
+        if (!node) return null;
+
+        if (Array.isArray(node)) {
+            for (const item of node) {
+                const found = visit(item);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        if (typeof node !== 'object') return null;
+
+        const inline = node.inlineData || node.inline_data;
+        if (inline?.data && typeof inline.data === 'string') {
+            const mimeType = inline.mimeType || inline.mime_type || 'image/png';
+            if (mimeType.startsWith('image/')) {
+                return { base64: inline.data, mimeType };
+            }
+        }
+
+        if (typeof node.imageBase64 === 'string') {
+            return { base64: node.imageBase64, mimeType: node.mimeType || 'image/png' };
+        }
+
+        if (typeof node.imageBytes === 'string') {
+            return { base64: node.imageBytes, mimeType: node.mimeType || 'image/png' };
+        }
+
+        if (typeof node.bytesBase64Encoded === 'string') {
+            return { base64: node.bytesBase64Encoded, mimeType: node.mimeType || 'image/png' };
+        }
+
+        for (const value of Object.values(node)) {
+            const found = visit(value);
+            if (found) return found;
+        }
+
+        return null;
+    };
+
+    return visit(response);
+};

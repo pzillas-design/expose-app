@@ -42,16 +42,13 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     initialTemplate
 }) => {
     const MODELS = [
-        { id: 'pro-1k', name: 'Nano Banana Pro 1K', price: '0.10 €', res: '1024 px' },
-        { id: 'pro-2k', name: 'Nano Banana Pro 2K', price: '0.25 €', res: '2048 px' },
-        { id: 'pro-4k', name: 'Nano Banana Pro 4K', price: '0.50 €', res: '4096 px' },
         { id: 'nb2-1k', name: 'Nano Banana 2 · 1K', price: '0.07 €', res: '1024 px · schnell' },
         { id: 'nb2-2k', name: 'Nano Banana 2 · 2K', price: '0.17 €', res: '2048 px · schnell' },
         { id: 'nb2-4k', name: 'Nano Banana 2 · 4K', price: '0.35 €', res: '4096 px · schnell' },
     ];
 
     const [prompt, setPrompt] = useState('');
-    const [selectedModel, setSelectedModel] = useState('pro-2k');
+    const [selectedModel, setSelectedModel] = useState('nb2-2k');
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [openDropdown, setOpenDropdown] = useState<'model' | 'ratio' | null>(null);
     const [isDragging, setIsDragging] = useState(false);

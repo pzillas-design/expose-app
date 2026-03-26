@@ -6,7 +6,7 @@ import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/as
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { createKieTask } from './services/kie.ts';
 import { saveKieResult } from '../_shared/saveKieResult.ts';
-import { prepareParts, generateImage as geminiGenerateImage } from './services/gemini.ts';
+import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
 
 const corsHeaders = {
@@ -51,6 +51,133 @@ const buildUploadDateFolder = (date: Date) => {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = String(date.getFullYear());
     return `upload${dd}${mm}${yyyy}`;
+};
+
+const claimSave = async (supabaseAdmin: any, jobId: string): Promise<boolean> => {
+    const { data } = await supabaseAdmin
+        .from('generation_jobs')
+        .update({ status: 'saving' })
+        .eq('id', jobId)
+        .eq('status', 'processing')
+        .select('id');
+
+    return Array.isArray(data) && data.length > 0;
+};
+
+const saveGeminiResult = async (
+    supabaseAdmin: any,
+    jobId: string,
+    imageAsset: { base64: string; mimeType: string },
+    webhookData: any,
+    usageMetadata?: any
+) => {
+    const claimed = await claimSave(supabaseAdmin, jobId);
+    if (!claimed) {
+        console.log(`[INFO] saveGeminiResult: job ${jobId} already claimed, skipping`);
+        return;
+    }
+
+    const {
+        requestType, qualityMode, finalModelName, prompt, targetTitle,
+        userId, userEmail, parentId, sourceWidth, sourceHeight,
+        sourceRealWidth, sourceRealHeight, sourceBaseName, sourceVersion, sourceId,
+        annotations, apiRequestPayload, generationStartTime,
+        activeTemplateId, variableValues
+    } = webhookData;
+
+    let dbBaseName = "";
+    let dbTitle = "";
+    let currentVersion = 1;
+
+    if (requestType === 'create') {
+        const promptSnippet = prompt.substring(0, 15).trim();
+        dbBaseName = targetTitle || promptSnippet || 'Image';
+        dbTitle = dbBaseName;
+    } else {
+        const rawBaseName = sourceBaseName || "Image";
+        dbBaseName = rawBaseName.replace(/_v\d+$/, '');
+
+        try {
+            const { data: siblings, error: siblingsError } = await supabaseAdmin
+                .from('images')
+                .select('version, base_name, title')
+                .eq('user_id', userId)
+                .or(`base_name.eq.${dbBaseName},title.ilike.${dbBaseName}%`);
+
+            if (siblingsError) {
+                currentVersion = (sourceVersion || 0) + 1;
+            } else if (siblings && siblings.length > 0) {
+                const maxVersion = siblings.reduce((max: number, img: any) => {
+                    const imgBaseName = (img.base_name || img.title || '').replace(/_v\d+$/, '');
+                    if (imgBaseName === dbBaseName) return Math.max(max, img.version || 1);
+                    return max;
+                }, 0);
+                currentVersion = maxVersion + 1;
+            } else {
+                currentVersion = (sourceVersion || 0) + 1;
+            }
+        } catch {
+            currentVersion = (sourceVersion || 0) + 1;
+        }
+
+        dbTitle = targetTitle || `${dbBaseName}_v${currentVersion}`;
+    }
+
+    const rootFolder = sanitizeEmailForPath(userEmail) || userId;
+    const uploadDateFolder = buildUploadDateFolder(new Date());
+    const extension = imageAsset.mimeType === 'image/jpeg' ? 'jpg' : 'png';
+    const fileRole = currentVersion <= 1 ? 'original' : `variante${currentVersion}`;
+    const filename = `${fileRole}_${jobId.substring(0, 8)}.${extension}`;
+    const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
+    const binaryData = decodeBase64(imageAsset.base64);
+
+    const { error: uploadError } = await supabaseAdmin.storage
+        .from('user-content')
+        .upload(filePath, binaryData, { contentType: imageAsset.mimeType, upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const newImage: any = {
+        id: jobId,
+        user_id: userId,
+        job_id: jobId,
+        storage_path: filePath,
+        width: Math.round(sourceWidth || 512),
+        height: Math.round(sourceHeight || 512),
+        real_width: Math.round(sourceRealWidth || sourceWidth || 1024),
+        real_height: Math.round(sourceRealHeight || sourceHeight || 1024),
+        model_version: finalModelName,
+        title: dbTitle,
+        base_name: dbBaseName,
+        version: currentVersion,
+        prompt: prompt,
+        parent_id: (requestType === 'edit' || parentId) ? (parentId || sourceId || null) : null,
+        annotations: annotations || '[]',
+        generation_params: {
+            quality: qualityMode,
+            ...(activeTemplateId ? { activeTemplateId } : {}),
+            ...(variableValues ? { variableValues } : {}),
+        }
+    };
+
+    const { error: dbError } = await supabaseAdmin.from('images').insert(newImage);
+    if (dbError && dbError.code !== '23505') throw dbError;
+
+    const durationMs = Date.now() - generationStartTime;
+    await supabaseAdmin
+        .from('generation_jobs')
+        .update({
+            status: 'completed',
+            model: finalModelName,
+            api_cost: 0,
+            tokens_prompt: usageMetadata?.promptTokenCount || 0,
+            tokens_completion: usageMetadata?.candidatesTokenCount || 0,
+            tokens_total: usageMetadata?.totalTokenCount || 0,
+            duration_ms: durationMs,
+            quality_mode: qualityMode,
+            request_payload: apiRequestPayload
+        })
+        .eq('id', jobId);
 };
 
 /**
@@ -196,8 +323,12 @@ Deno.serve(async (req) => {
                     finalSourceBase64 = await prepareSourceImage(sourceToProcess);
                 }
 
-                // Model: nano-banana-2 for nb2-* quality modes, else nano-banana-pro
-                const finalModelName = qualityMode.startsWith('nb2-') ? 'nano-banana-2' : 'nano-banana-pro';
+                const isNb2Mode = qualityMode.startsWith('nb2-');
+                if (!isNb2Mode) {
+                    throw new Error('Only NB2 quality modes are supported on staging');
+                }
+
+                const finalModelName = 'nano-banana-2';
 
                 // Determine aspect ratio
                 let bestRatio = '1:1';
@@ -218,8 +349,8 @@ Deno.serve(async (req) => {
                 }
 
                 // Resolution for image output
-                const kieResolution = (qualityMode === 'pro-4k' || qualityMode === 'nb2-4k') ? '4K'
-                    : (qualityMode === 'pro-2k' || qualityMode === 'nb2-2k') ? '2K' : '1K';
+                const kieResolution = qualityMode === 'nb2-4k' ? '4K'
+                    : qualityMode === 'nb2-2k' ? '2K' : '1K';
 
                 // aspectRatio logic:
                 // - Create mode (no source): always set, otherwise Gemini defaults to 1:1
@@ -312,6 +443,38 @@ Deno.serve(async (req) => {
                     variableValues: variables || null,
                     refundCredits: profile.credits  // already-decremented credits to restore on failure
                 };
+
+                const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+                if (!geminiApiKey) {
+                    throw new Error('Google API key missing');
+                }
+
+                logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
+                const geminiResponse = await geminiGenerateImage(
+                    geminiApiKey,
+                    finalModelName,
+                    parts,
+                    generationConfig,
+                    !!finalSourceBase64,
+                    hasMask,
+                    hasRefs
+                );
+
+                const generatedImage = extractGeneratedImage(geminiResponse);
+                if (!generatedImage) {
+                    throw new Error('Google response did not contain an image');
+                }
+
+                await saveGeminiResult(
+                    supabaseAdmin,
+                    newId,
+                    generatedImage,
+                    webhookData,
+                    geminiResponse?.usageMetadata
+                );
+
+                logInfo('Google Generation Saved', `Job ${newId} completed via Google`);
+                return;
 
                 // Prepare image URLs for Kie.ai (image_input requires URLs, not base64)
                 const kieImageUrls: string[] = [];

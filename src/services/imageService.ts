@@ -434,7 +434,7 @@ export const imageService = {
             userDraftPrompt: record.user_draft_prompt || '',
             annotations: resolvedAnns,
             parentId: record.parent_id,
-            quality: record.generation_params?.quality || 'pro-1k',
+            quality: record.generation_params?.quality || 'nb2-2k',
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
             userId: record.user_id,

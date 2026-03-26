@@ -47,7 +47,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onChangePassword
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const [isResDropdownOpen, setIsResDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -56,23 +55,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const { confirm } = useItemDialog();
 
     const closeAll = () => {
-        setIsModelDropdownOpen(false);
         setIsResDropdownOpen(false);
         setIsAppearanceDropdownOpen(false);
         setIsLangDropdownOpen(false);
     };
 
     const safeQuality = (qualityMode as string) || 'nb2-2k';
-    const currentModel = safeQuality.startsWith('nb2') ? 'nb2' : 'pro';
     const currentRes = (safeQuality.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
 
-    const setModel = (model: string) => { onQualityModeChange(`${model}-${currentRes}` as GenerationQuality); closeAll(); };
-    const setRes = (res: string) => { onQualityModeChange(`${currentModel}-${res}` as GenerationQuality); closeAll(); };
-
-    const MODELS = [
-        { id: 'nb2', label: '🍌 Nano Banana 2', desc: t('model_nb2_desc') },
-        { id: 'pro', label: '🍌 Nano Banana Pro', desc: t('model_pro_desc') },
-    ];
+    const setRes = (res: string) => { onQualityModeChange(`nb2-${res}` as GenerationQuality); closeAll(); };
     const RESOLUTIONS = [
         { id: '1k', label: '1K', desc: '1024 px' },
         { id: '2k', label: '2K', desc: '2048 px' },
@@ -189,30 +180,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <p className={fieldLabel}>{t('settings_model_label')}</p>
-                                <div className="relative">
-                                    <button onClick={() => { closeAll(); setIsModelDropdownOpen(v => !v); }} className={trigger}>
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                            {MODELS.find(m => m.id === currentModel)?.label}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {isModelDropdownOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-30" onClick={closeAll} />
-                                            <div className={menu}>
-                                                {MODELS.map(m => (
-                                                    <button key={m.id} onClick={() => setModel(m.id)}
-                                                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${currentModel === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}>
-                                                        <div className="flex flex-col items-start gap-0.5">
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300">{m.label}</span>
-                                                            <span className="text-xs text-zinc-400">{m.desc}</span>
-                                                        </div>
-                                                        {currentModel === m.id && <Check className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
+                                <div className={`${trigger} cursor-default`}>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">🍌 Nano Banana 2</span>
+                                        <span className="text-xs text-zinc-400">{t('model_nb2_desc')}</span>
+                                    </div>
                                 </div>
                             </div>
 

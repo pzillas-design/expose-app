@@ -119,9 +119,9 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         <>
                             <span className={labelClass}>{t('model')}</span>
                             <span className={valueClass}>
-                                {image.quality === 'pro-4k' ? 'Nano Banana Pro 4K' :
-                                    image.quality === 'pro-2k' ? 'Nano Banana Pro 2K' :
-                                        image.quality === 'pro-1k' ? 'Nano Banana Pro 1K' :
+                                {image.quality === 'nb2-4k' ? 'Nano Banana 2 · 4K' :
+                                    image.quality === 'nb2-2k' ? 'Nano Banana 2 · 2K' :
+                                        image.quality === 'nb2-1k' ? 'Nano Banana 2 · 1K' :
                                             image.quality === 'fast' ? 'Nano Banana (Fast)' :
                                                 (image.modelVersion || 'Nano Banana')}
                             </span>
@@ -135,8 +135,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                             ? `${actualDimensions.width} × ${actualDimensions.height}px`
                             : image.realWidth && image.realHeight
                                 ? `${image.realWidth} × ${image.realHeight}px`
-                                : image.quality === 'pro-4k' ? '4096 × 4096px'
-                                    : image.quality === 'pro-2k' ? '2048 × 2048px'
+                                : image.quality === 'nb2-4k' ? '4096 × 4096px'
+                                    : image.quality === 'nb2-2k' ? '2048 × 2048px'
                                         : '1024 × 1024px'}
                     </span>
 

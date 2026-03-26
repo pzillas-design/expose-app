@@ -31,32 +31,19 @@ interface UseGenerationProps {
 }
 
 const COSTS: Record<string, number> = {
-    'pro-1k': 0.10,
-    'pro-2k': 0.25,
-    'pro-4k': 0.50,
     'nb2-1k': 0.07,
     'nb2-2k': 0.17,
     'nb2-4k': 0.35,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'pro-1k': 60000,  // no real data — kept as estimate
-    'pro-2k': 65000,  // DB median 58.5s (+10% buffer)
-    'pro-4k': 100000, // DB median 90.7s (+10% buffer)
     'nb2-1k': 38000,  // no real data — kept as estimate
     'nb2-2k': 45000,  // DB median 42.8s — nearly exact
     'nb2-4k': 95000,  // DB avg 93.6s (only 3 samples, but clear signal)
 };
 
-// Map quality modes to model names for historical lookup
-const QUALITY_TO_MODEL: Record<string, string> = {
-    'pro-1k': 'google/nano-banana-pro',
-    'pro-2k': 'google/nano-banana-pro',
-    'pro-4k': 'google/nano-banana-pro'
-};
-
 const resolveTargetModel = (_quality: string): string | undefined => {
-    // Return undefined — let the Edge Function use its own default model ('gemini-3-pro-image-preview')
+    // Let the Edge Function choose the active provider/model for the selected quality mode.
     return undefined;
 };
 
@@ -651,9 +638,10 @@ export const useGeneration = ({
         const baseName = t('new_generation') || 'Generation';
 
         // Ratio calc (Sync)
+        const resolution = modelId.split('-')[1];
         let baseSize = 1024;
-        if (modelId === 'pro-2k') baseSize = 2048;
-        if (modelId === 'pro-4k') baseSize = 4096;
+        if (resolution === '2k') baseSize = 2048;
+        if (resolution === '4k') baseSize = 4096;
         let wRatio = 1, hRatio = 1;
         const parts = ratio.split(':').map(Number);
         if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { wRatio = parts[0]; hRatio = parts[1]; }
