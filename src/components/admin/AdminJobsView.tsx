@@ -59,6 +59,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         (j.userName || '').toLowerCase().includes(search.toLowerCase()) ||
         (j.id || '').toLowerCase().includes(search.toLowerCase())
     );
+    const maxDurationMs = Math.max(
+        ...filteredJobs.map((job) => Number(job.durationMs || 0)),
+        0
+    );
 
     useEffect(() => {
         if (!isResizing) return;
@@ -112,6 +116,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_date')}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
+                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Dauer</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Tools</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-center">Download</th>
@@ -151,6 +156,25 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                     </span>
                                                                 );
                                                             })()}
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
+                                                            {j.durationMs ? (
+                                                                <div className="flex flex-col items-start gap-1">
+                                                                    <span className="font-mono text-xs text-zinc-500">
+                                                                        {`${Math.round(j.durationMs / 1000)}s`}
+                                                                    </span>
+                                                                    <div className="w-20 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                                        <div
+                                                                            className="h-full rounded-full bg-zinc-500 dark:bg-zinc-400"
+                                                                            style={{
+                                                                                width: maxDurationMs > 0 ? `${(Number(j.durationMs) / maxDurationMs) * 100}%` : '0%',
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-xs text-zinc-400">–</span>
+                                                            )}
                                                         </td>
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1">
