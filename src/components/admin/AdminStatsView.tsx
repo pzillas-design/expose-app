@@ -72,7 +72,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [stripePaymentCount, setStripePaymentCount] = useState(0);
     const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState<TimeRange>('monat');
+    const [timeRange, setTimeRange] = useState<TimeRange>('tag');
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -122,7 +122,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         const now = new Date();
 
         if (timeRange === 'tag') {
-            for (let i = 13; i >= 0; i--) {
+            for (let i = 29; i >= 0; i--) {
                 const d = new Date(now);
                 d.setDate(d.getDate() - i);
                 const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
