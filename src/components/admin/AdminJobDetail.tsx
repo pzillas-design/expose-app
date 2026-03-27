@@ -124,7 +124,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
    className={
     variant === 'page'
      ? "w-full min-h-[100dvh] bg-white dark:bg-black flex flex-col"
-     : "w-[400px] max-w-full h-full bg-white dark:bg-black border-l border-zinc-200 dark:border-zinc-800 flex flex-col"
+     : "w-full h-full bg-white dark:bg-black flex flex-col"
    }
   >
 

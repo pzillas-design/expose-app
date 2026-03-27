@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminJobDetail } from './AdminJobDetail';
 import { AdminViewHeader } from './AdminViewHeader';
+import { useMobile } from '@/hooks/useMobile';
 
 interface AdminJobsViewProps {
     t: TranslationFunction;
@@ -20,6 +21,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     const [selectedJob, setSelectedJob] = useState<any | null>(null);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const isMobile = useMobile();
+    const [sidebarWidth, setSidebarWidth] = useState(440);
+    const [isResizing, setIsResizing] = useState(false);
 
     const fetchJobs = useCallback(async (pageNum: number, isInitial: boolean = false) => {
         if (isInitial) setLoading(true);
@@ -56,7 +60,33 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         (j.id || '').toLowerCase().includes(search.toLowerCase())
     );
 
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    useEffect(() => {
+        if (!isResizing) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const newWidth = window.innerWidth - e.clientX;
+            const clampedWidth = Math.min(Math.max(newWidth, 340), 720);
+            setSidebarWidth(clampedWidth);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        };
+    }, [isResizing]);
 
     return (
         <div className="relative flex flex-col flex-1 min-h-0">
@@ -163,7 +193,16 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                             </div>
                         </div>
 
-                        <div className="hidden md:flex w-[400px] lg:w-[440px] xl:w-[480px] shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black">
+                        <div
+                            className={`hidden md:flex relative shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black ${isResizing ? 'select-none' : 'transition-[width] duration-200 ease-out'}`}
+                            style={{ width: `${sidebarWidth}px` }}
+                        >
+                            <div
+                                onMouseDown={() => setIsResizing(true)}
+                                className="absolute left-0 top-0 bottom-0 w-1.5 -translate-x-1/2 cursor-col-resize z-20 group"
+                            >
+                                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
+                            </div>
                             {selectedJob ? (
                                 <AdminJobDetail
                                     job={selectedJob}
