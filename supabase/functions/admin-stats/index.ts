@@ -18,6 +18,19 @@ Deno.serve(async (req) => {
     }
 
     try {
+        let startDate: Date | null = null
+        if (req.method !== 'GET') {
+            try {
+                const body = await req.json()
+                if (body?.startDate) {
+                    const parsed = new Date(body.startDate)
+                    if (!Number.isNaN(parsed.getTime())) startDate = parsed
+                }
+            } catch {
+                // ignore invalid optional body
+            }
+        }
+
         // Verify admin
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
@@ -54,7 +67,11 @@ Deno.serve(async (req) => {
             }
         }
 
-        const succeeded = allPayments.filter(pi => pi.status === 'succeeded')
+        const succeeded = allPayments.filter(pi => {
+            if (pi.status !== 'succeeded') return false
+            if (!startDate) return true
+            return new Date(pi.created * 1000) >= startDate
+        })
         const totalRevenueCents = succeeded.reduce((sum, pi) => sum + pi.amount_received, 0)
         const totalRevenue = totalRevenueCents / 100
 
