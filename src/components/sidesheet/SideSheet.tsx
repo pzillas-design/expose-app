@@ -630,13 +630,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key="masks"
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                                                             >
                                                                 <span>{masks.length > 1 ? `${masks.length}× ` : ''}{t('brush_label')}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
+                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
                                                                 >
                                                                     <X className="w-3 h-3" />
                                                                 </span>
@@ -654,13 +654,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key={ann.id}
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-all"
+                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
                                                             >
                                                                 <span>{label}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-white/60 dark:text-zinc-900/60 hover:text-white dark:hover:text-zinc-900 hover:bg-white/10 dark:hover:bg-zinc-900/10 transition-colors"
+                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
                                                                 >
                                                                     <X className="w-3 h-3" />
                                                                 </span>
