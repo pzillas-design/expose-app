@@ -586,11 +586,6 @@ export const useGeneration = ({
                         cost: cost,
                         prompt_preview: prompt,
                         parent_id: groupParentId ?? sourceImage.id,
-                        request_type: 'edit',
-                        has_source_image: true,
-                        has_mask: !!maskDataUrl,
-                        reference_count: refs.length,
-                        image_size: getImageSizeFromQuality(qualityMode),
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
@@ -732,12 +727,7 @@ export const useGeneration = ({
                         cost,
                         prompt_preview: prompt,
                         quality_mode: modelId,
-                        model: modelId,
-                        request_type: 'create',
-                        has_source_image: false,
-                        has_mask: false,
-                        reference_count: attachments.length,
-                        image_size: getImageSizeFromQuality(modelId)
+                        model: modelId
                     }).then(() => {});
                 }
 
