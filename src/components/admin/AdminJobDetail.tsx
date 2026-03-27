@@ -41,11 +41,63 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
  const resH = img?.real_height || img?.height;
 
  const payload = job.requestPayload || {};
+ const webhookData = job.webhookData || {};
  const hasSource = job.hasSourceImage ?? !!payload.hasSourceImage;
  const hasMask   = job.hasMask ?? !!payload.hasMask;
  const refCount  = job.referenceCount ?? payload.referenceImagesCount ?? 0;
  const imageSize = job.imageSize || (qm.includes('4k') ? '4K' : qm.includes('2k') ? '2K' : qm.includes('1k') ? '1K' : null);
  const requestType = job.requestType || (hasSource ? 'edit' : 'create');
+ const rawModel = job.model || '';
+ const lowerModel = rawModel.toLowerCase();
+ const provider =
+  lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
+   ? 'google'
+   : 'legacy';
+ const providerModelVersion = img?.model_version || rawModel || '–';
+ const generationConfig = payload.generationConfig || {};
+ const imageConfig = generationConfig.imageConfig || {};
+ const responseModalities = generationConfig.responseModalities || null;
+ const aspectRatioRequested = imageConfig.aspectRatio || null;
+ const toolsEnabled = Array.isArray(payload.tools)
+  ? payload.tools.map((tool: any) => Object.keys(tool || {})).flat().filter(Boolean)
+  : [];
+ const groundingUsed = !!payload.groundingConfig || toolsEnabled.includes('google_search');
+ const usageMetadata = job.tokensPrompt != null || job.tokensCompletion != null || job.tokensTotal != null
+  ? {
+    prompt: job.tokensPrompt || 0,
+    completion: job.tokensCompletion || 0,
+    total: job.tokensTotal || 0
+   }
+  : null;
+
+ const formatValue = (value: any): string => {
+  if (value === null || value === undefined || value === '') return '–';
+  if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '–';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+ };
+
+ const providerRows: { label: string; value: React.ReactNode }[] = [
+  { label: 'Provider', value: provider },
+  { label: 'Provider Model', value: formatValue(rawModel) },
+  { label: 'Provider Model Version', value: formatValue(providerModelVersion) },
+  { label: 'Provider Response ID', value: formatValue(webhookData.providerResponseId || payload.responseId) },
+  { label: 'Finish Reason', value: formatValue(webhookData.finishReason || payload.finishReason) },
+  { label: 'Finish Message', value: formatValue(webhookData.finishMessage || payload.finishMessage) },
+  { label: 'Prompt Block Reason', value: formatValue(webhookData.promptBlockReason || payload.promptBlockReason) },
+  { label: 'Prompt Safety Ratings', value: formatValue(webhookData.promptSafetyRatings || payload.promptSafetyRatings) },
+  { label: 'Candidate Safety Ratings', value: formatValue(webhookData.candidateSafetyRatings || payload.candidateSafetyRatings) },
+  { label: 'Usage Metadata', value: formatValue(webhookData.usageMetadata || usageMetadata) },
+  { label: 'Response Modalities', value: formatValue(responseModalities) },
+  { label: 'Aspect Ratio Requested', value: formatValue(aspectRatioRequested) },
+  { label: 'Image Size', value: formatValue(imageSize) },
+  { label: 'Reference Count', value: formatValue(refCount) },
+  { label: 'Has Source Image', value: formatValue(hasSource) },
+  { label: 'Has Mask', value: formatValue(hasMask) },
+  { label: 'Tools Enabled', value: formatValue(toolsEnabled) },
+  { label: 'Grounding Used', value: formatValue(groundingUsed) },
+ ];
 
  // Single flat table rows — only truthy values shown
  const rows: { label: string; value: React.ReactNode }[] = [
@@ -125,6 +177,18 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
        <span className="text-zinc-900 dark:text-zinc-100 text-right">{value}</span>
       </div>
      ))}
+    </div>
+
+    <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800">
+     <p className="text-[10px] font-medium text-zinc-400 mb-2">Google / Provider</p>
+     <div className="divide-y divide-zinc-100 dark:divide-zinc-800 rounded-lg border border-zinc-100 dark:border-zinc-800 overflow-hidden">
+      {providerRows.map(({ label, value }) => (
+       <div key={label} className="flex justify-between items-center px-4 py-2.5 text-xs">
+        <span className="text-zinc-400 shrink-0 mr-4">{label}</span>
+        <span className="text-zinc-900 dark:text-zinc-100 text-right break-all">{value}</span>
+       </div>
+      ))}
+     </div>
     </div>
 
     {/* Prompt + Variables */}

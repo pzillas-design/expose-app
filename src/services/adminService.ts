@@ -107,7 +107,7 @@ export const adminService = {
         await Promise.all([
             jobIds.length > 0 ? supabase
                 .from('images')
-                .select('job_id, storage_path, width, height, real_width, real_height, title, base_name')
+                .select('job_id, storage_path, width, height, real_width, real_height, title, base_name, model_version')
                 .in('job_id', jobIds)
                 .then(({ data: images }) => {
                     if (images) images.forEach(img => { if (img.job_id) imagesMap[img.job_id] = img; });
@@ -139,7 +139,12 @@ export const adminService = {
             hasMask: job.has_mask ?? null,
             referenceCount: job.reference_count ?? null,
             imageSize: job.image_size || null,
-            durationMs: job.duration_ms || null
+            durationMs: job.duration_ms || null,
+            apiCost: job.api_cost || null,
+            tokensPrompt: job.tokens_prompt ?? null,
+            tokensCompletion: job.tokens_completion ?? null,
+            tokensTotal: job.tokens_total ?? null,
+            webhookData: job.webhook_data || null
         }));
     },
 
