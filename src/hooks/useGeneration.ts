@@ -539,6 +539,11 @@ export const useGeneration = ({
         // Auto-navigate to finished result when the async job completes
         navigateOnCompleteIds.current.add(newId);
 
+        // Immediately snap to the loading skeleton so user sees progress
+        if (shouldSnap) {
+            setTimeout(() => selectAndSnapRef.current(newId, false, false), 100);
+        }
+
         // --- ASYNC PROCESSING STARTS HERE ---
         // Credits are deducted server-side; local UI update happens only on success.
 
