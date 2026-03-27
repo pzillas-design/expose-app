@@ -194,6 +194,19 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         }).filter(Boolean) as Array<{ resolution: ResolutionBucket; label: string; color: string; count: number; avg: number; total: number }>;
     }, [completedJobs]);
 
+    const topUsers = useMemo(() => {
+        const byUser = new Map<string, { name: string; count: number }>();
+        completedJobs.forEach((job) => {
+            const name = job.userName || 'Unknown';
+            const current = byUser.get(name) || { name, count: 0 };
+            current.count += 1;
+            byUser.set(name, current);
+        });
+        return Array.from(byUser.values())
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+            .slice(0, 10);
+    }, [completedJobs]);
+
     const showStripeLine = timeRange === 'monat' || timeRange === 'jahr';
 
     if (loading) return (
@@ -348,6 +361,36 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 <td className="px-6 py-3" />
                                 <td className="px-6 py-3 text-right font-mono text-red-500">{googleAiCost.toFixed(2)}€</td>
                             </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                        <h3 className="text-sm font-bold">Häufigste Nutzer</h3>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Top 10 nach abgeschlossenen Generierungen.</p>
+                    </div>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-zinc-50/50 dark:bg-zinc-800/30 text-[10px] font-medium text-zinc-500">
+                                <th className="px-6 py-3">Benutzer</th>
+                                <th className="px-6 py-3 text-right">Generierungen</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                            {topUsers.map((user) => (
+                                <tr key={user.name} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
+                                    <td className="px-6 py-3 font-medium text-zinc-900 dark:text-zinc-100">{user.name}</td>
+                                    <td className="px-6 py-3 text-right font-mono text-sm text-zinc-500">{user.count}</td>
+                                </tr>
+                            ))}
+                            {topUsers.length === 0 && (
+                                <tr>
+                                    <td colSpan={2} className="px-6 py-8 text-center text-sm text-zinc-400">
+                                        Keine Daten vorhanden
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
