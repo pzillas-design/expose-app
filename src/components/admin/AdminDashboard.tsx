@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
 
    {/* ── Content ──────────────────────────────────────────── */}
    <main className="flex-1">
-    <div className="max-w-[1700px] mx-auto w-full flex flex-col">
+    <div className={`${activeTab === 'jobs' ? 'w-full' : 'max-w-[1700px] mx-auto w-full'} flex flex-col`}>
      {activeTab === 'users'   && <AdminUsersView   t={t} />}
      {activeTab === 'jobs'    && <AdminJobsView    t={t} />}
      {activeTab === 'stats'   && <AdminStatsView   t={t} />}
