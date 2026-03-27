@@ -131,12 +131,18 @@ const saveGeminiResult = async (
     const filePath = `${rootFolder}/user-content/${uploadDateFolder}/${filename}`;
     const binaryData = decodeBase64(imageAsset.base64);
 
+    // Track storage upload timing
+    let saveStage = 'storage_upload';
+    const storageStart = Date.now();
+
     const { error: uploadError } = await supabaseAdmin.storage
         .from('user-content')
         .upload(filePath, binaryData, { contentType: imageAsset.mimeType, upsert: true });
 
     if (uploadError) throw uploadError;
+    const storageLatencyMs = Date.now() - storageStart;
 
+    saveStage = 'image_insert';
     const newImage: any = {
         id: jobId,
         user_id: userId,
@@ -163,7 +169,15 @@ const saveGeminiResult = async (
     const { error: dbError } = await supabaseAdmin.from('images').insert(newImage);
     if (dbError && dbError.code !== '23505') throw dbError;
 
+    saveStage = 'job_update';
     const durationMs = Date.now() - generationStartTime;
+
+    // Enrich apiRequestPayload with save-stage telemetry
+    if (apiRequestPayload && typeof apiRequestPayload === 'object') {
+        apiRequestPayload.storageLatencyMs = storageLatencyMs;
+        apiRequestPayload.saveStage = 'completed';
+    }
+
     await supabaseAdmin
         .from('generation_jobs')
         .update({
@@ -315,8 +329,10 @@ Deno.serve(async (req) => {
         // Response is returned immediately below so the client is never left waiting.
         // EdgeRuntime.waitUntil keeps the function alive up to 5 minutes after response.
         EdgeRuntime.waitUntil((async () => {
+            let bgStage = 'init';
             try {
                 // Prepare source image (base64)
+                bgStage = 'prepare_source';
                 let finalSourceBase64 = null;
                 const sourceToProcess = payloadOriginalImage || sourceImage?.src;
                 if (sourceToProcess) {
@@ -450,7 +466,9 @@ Deno.serve(async (req) => {
                     throw new Error('Google API key missing');
                 }
 
+                bgStage = 'gemini_call';
                 logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
+                const providerStartTime = Date.now();
                 const geminiResponse = await geminiGenerateImage(
                     geminiApiKey,
                     finalModelName,
@@ -460,12 +478,38 @@ Deno.serve(async (req) => {
                     hasMask,
                     hasRefs
                 );
+                const providerLatencyMs = Date.now() - providerStartTime;
 
                 const generatedImage = extractGeneratedImage(geminiResponse);
                 if (!generatedImage) {
                     throw new Error('Google response did not contain an image');
                 }
 
+                // Extract provider metadata from Google response
+                const candidate = geminiResponse?.candidates?.[0];
+                const providerMetadata = {
+                    // Provider response fields
+                    responseId: geminiResponse?.responseId || null,
+                    finishReason: candidate?.finishReason || null,
+                    finishMessage: candidate?.finishMessage || null,
+                    promptBlockReason: geminiResponse?.promptFeedback?.blockReason || null,
+                    promptSafetyRatings: geminiResponse?.promptFeedback?.safetyRatings || null,
+                    candidateSafetyRatings: candidate?.safetyRatings || null,
+                    providerModelVersion: geminiResponse?.modelVersion || finalModelName,
+                    // Request context (server-side, consistent)
+                    responseModalities: ['TEXT', 'IMAGE'],
+                    aspectRatioRequested: bestRatio || null,
+                    hasSourceImage: !!finalSourceBase64,
+                    hasMask,
+                    referenceCount: allRefs.length,
+                    // Timing
+                    providerLatencyMs,
+                };
+
+                // Merge provider metadata into apiRequestPayload for storage
+                Object.assign(apiRequestPayload, providerMetadata);
+
+                bgStage = 'save_result';
                 await saveGeminiResult(
                     supabaseAdmin,
                     newId,
@@ -616,7 +660,7 @@ Deno.serve(async (req) => {
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
-                logError('Background Task', errorMsg, { jobId: newId });
+                logError('Background Task', errorMsg, { jobId: newId, failureStage: bgStage });
 
                 // Refund credits on background failure
                 if (refundData) {
@@ -631,12 +675,12 @@ Deno.serve(async (req) => {
                     }
                 }
 
-                // Mark job as failed
+                // Mark job as failed with failure_stage in error details
                 if (newId) {
                     try {
                         await supabaseAdmin
                             .from('generation_jobs')
-                            .update({ status: 'failed', error: errorMsg })
+                            .update({ status: 'failed', error: `[${bgStage}] ${errorMsg}` })
                             .eq('id', newId);
                     } catch (e) {
                         logError('Job Update Failed (BG)', e);
