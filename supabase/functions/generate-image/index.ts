@@ -175,7 +175,12 @@ const saveGeminiResult = async (
             tokens_total: usageMetadata?.totalTokenCount || 0,
             duration_ms: durationMs,
             quality_mode: qualityMode,
-            request_payload: apiRequestPayload
+            request_payload: apiRequestPayload,
+            request_type: requestType,
+            has_source_image: !!apiRequestPayload?.hasSourceImage,
+            has_mask: !!apiRequestPayload?.hasMask,
+            reference_count: apiRequestPayload?.referenceImagesCount || 0,
+            image_size: apiRequestPayload?.imageSize || null
         })
         .eq('id', jobId);
 };
@@ -400,6 +405,7 @@ Deno.serve(async (req) => {
                     hasMask,
                     hasReferenceImages: hasRefs,
                     referenceImagesCount: allRefs.length,
+                    imageSize: kieResolution,
                     references: allRefs,
                     generationConfig,
                     timestamp: new Date().toISOString()

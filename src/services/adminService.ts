@@ -133,7 +133,13 @@ export const adminService = {
             cost: job.cost || 0,
             createdAt: new Date(job.created_at).getTime(),
             resultImage: imagesMap[job.id] || null,  // Attach result image if available
-            requestPayload: job.request_payload || null  // Attach API request for debugging
+            requestPayload: job.request_payload || null,  // Attach API request for debugging
+            requestType: job.request_type || null,
+            hasSourceImage: job.has_source_image ?? null,
+            hasMask: job.has_mask ?? null,
+            referenceCount: job.reference_count ?? null,
+            imageSize: job.image_size || null,
+            durationMs: job.duration_ms || null
         }));
     },
 

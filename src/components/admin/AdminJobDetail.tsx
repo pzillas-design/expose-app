@@ -33,9 +33,11 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
  const resH = img?.real_height || img?.height;
 
  const payload = job.requestPayload || {};
- const hasSource = !!payload.hasSourceImage;
- const hasMask   = !!payload.hasMask;
- const refCount  = payload.referenceImagesCount || 0;
+ const hasSource = job.hasSourceImage ?? !!payload.hasSourceImage;
+ const hasMask   = job.hasMask ?? !!payload.hasMask;
+ const refCount  = job.referenceCount ?? payload.referenceImagesCount ?? 0;
+ const imageSize = job.imageSize || (qm.includes('4k') ? '4K' : qm.includes('2k') ? '2K' : qm.includes('1k') ? '1K' : null);
+ const requestType = job.requestType || (hasSource ? 'edit' : 'create');
 
  // Single flat table rows — only truthy values shown
  const rows: { label: string; value: React.ReactNode }[] = [
@@ -45,6 +47,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
   { label: t('admin_job_date'),  value: new Date(job.createdAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }) },
   { label: t('model'),           value: formatModel(qm) },
   { label: t('admin_job_cost'),  value: `${(job.cost || 0).toFixed(2)} €` },
+  ...(requestType ? [{ label: 'Typ', value: requestType === 'edit' ? 'Edit' : 'Create' }] : []),
+  ...(imageSize ? [{ label: 'Bildgröße', value: imageSize }] : []),
+  ...(job.durationMs ? [{ label: 'Dauer', value: `${Math.round(job.durationMs / 1000)}s` }] : []),
   ...(job.apiCost ? [{ label: t('admin_job_api_cost'), value: `$${job.apiCost.toFixed(6)}` }] : []),
   ...(resW && resH ? [{ label: t('resolution'), value: `${resW} × ${resH} px` }] : []),
   { label: 'Job ID',        value: <span className="font-mono text-[10px] text-zinc-400">{job.id}</span> },
