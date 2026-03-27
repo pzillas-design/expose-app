@@ -37,9 +37,9 @@ const COSTS: Record<string, number> = {
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'nb2-1k': 38000,  // no real data — kept as estimate
-    'nb2-2k': 45000,  // DB median 42.8s — nearly exact
-    'nb2-4k': 95000,  // DB avg 93.6s (only 3 samples, but clear signal)
+    'nb2-1k': 50000,  // DB default 50s
+    'nb2-2k': 65000,  // DB default 65s
+    'nb2-4k': 110000, // DB default 110s
 };
 
 const resolveTargetModel = (_quality: string): string | undefined => {
