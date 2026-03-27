@@ -1,5 +1,5 @@
 import React from 'react';
-import { X } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { IconButton } from '@/components/ui/DesignSystem';
 
@@ -7,9 +7,10 @@ interface AdminJobDetailProps {
  job: any;
  onClose: () => void;
  t: TranslationFunction;
+ variant?: 'sidebar' | 'page';
 }
 
-export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t }) => {
+export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t, variant = 'sidebar' }) => {
  const qm = job.qualityMode || job.model || '';
 
  // Format quality mode: "nb2-2k" → "NB2 · 2K", "pro-4k" → "Pro · 4K"
@@ -119,7 +120,13 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
  ];
 
  return (
-  <div className="absolute top-0 bottom-0 right-0 w-[400px] bg-white dark:bg-black border-l border-zinc-200 dark:border-zinc-800 z-50 flex flex-col animate-in slide-in-from-right duration-300">
+  <div
+   className={
+    variant === 'page'
+     ? "w-full min-h-[100dvh] bg-white dark:bg-black flex flex-col"
+     : "w-[400px] max-w-full h-full bg-white dark:bg-black border-l border-zinc-200 dark:border-zinc-800 flex flex-col"
+   }
+  >
 
    {/* Header */}
    <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
@@ -130,7 +137,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
      }
      <span className="text-[10px] font-mono text-zinc-400">{job.id}</span>
     </div>
-    <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+    <IconButton icon={variant === 'page' ? <ChevronLeft className="w-5 h-5" /> : <X className="w-5 h-5" />} onClick={onClose} />
    </div>
 
    <div className="flex-1 overflow-y-auto">
