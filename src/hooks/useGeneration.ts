@@ -31,32 +31,19 @@ interface UseGenerationProps {
 }
 
 const COSTS: Record<string, number> = {
-    'pro-1k': 0.10,
-    'pro-2k': 0.25,
-    'pro-4k': 0.50,
-    'nb2-1k': 0.07,
-    'nb2-2k': 0.17,
-    'nb2-4k': 0.35,
+    'nb2-1k': 0.10,
+    'nb2-2k': 0.20,
+    'nb2-4k': 0.40,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'pro-1k': 60000,  // no real data — kept as estimate
-    'pro-2k': 65000,  // DB median 58.5s (+10% buffer)
-    'pro-4k': 100000, // DB median 90.7s (+10% buffer)
     'nb2-1k': 38000,  // no real data — kept as estimate
     'nb2-2k': 45000,  // DB median 42.8s — nearly exact
     'nb2-4k': 95000,  // DB avg 93.6s (only 3 samples, but clear signal)
 };
 
-// Map quality modes to model names for historical lookup
-const QUALITY_TO_MODEL: Record<string, string> = {
-    'pro-1k': 'google/nano-banana-pro',
-    'pro-2k': 'google/nano-banana-pro',
-    'pro-4k': 'google/nano-banana-pro'
-};
-
 const resolveTargetModel = (_quality: string): string | undefined => {
-    // Return undefined — let the Edge Function use its own default model ('gemini-3-pro-image-preview')
+    // Let the Edge Function choose the active provider/model for the selected quality mode.
     return undefined;
 };
 
@@ -140,36 +127,65 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // ── Local timing learning ─────────────────────────────────────────────────────
 // Persists rolling averages of actual generation durations in localStorage.
 // After ≥2 samples the stored average is used instead of the hardcoded fallback.
-const LS_TIMING_KEY = 'expose_gen_timing_v1';
+const LS_TIMING_KEY = 'expose_gen_timing_v2';
 interface TimingBucket { sum: number; count: number; }
+
+const getImageSizeFromQuality = (quality: string): string => {
+    if (quality.includes('4k')) return '4K';
+    if (quality.includes('2k')) return '2K';
+    return '1K';
+};
+
+const buildEstimateKey = ({
+    qualityMode,
+    requestType,
+    hasSourceImage,
+    hasMask,
+    referenceCount,
+    imageSize,
+}: {
+    qualityMode: string;
+    requestType: 'create' | 'edit';
+    hasSourceImage: boolean;
+    hasMask: boolean;
+    referenceCount: number;
+    imageSize?: string;
+}) => {
+    const resolvedSize = imageSize || getImageSizeFromQuality(qualityMode);
+    const hasReferences = referenceCount > 0;
+    return [qualityMode, requestType, String(hasSourceImage), String(hasMask), String(hasReferences), resolvedSize].join('|');
+};
 
 const loadTimingStore = (): Record<string, TimingBucket> => {
     try { return JSON.parse(localStorage.getItem(LS_TIMING_KEY) || '{}'); } catch { return {}; }
 };
-const recordActualDuration = (quality: string, ms: number) => {
+const recordActualDuration = (keys: string[], ms: number) => {
     // Ignore hard limits (< 3s or > 5 min)
     if (ms < 3000 || ms > 300000) return;
     try {
         const store = loadTimingStore();
-        const prev = store[quality] || { sum: 0, count: 0 };
-        // Outlier filter: if we have enough data and new value is >2.5x or <0.4x the current avg, skip it
-        if (prev.count >= 3) {
-            const currentAvg = prev.sum / prev.count;
-            if (ms > currentAvg * 2.5 || ms < currentAvg * 0.4) return;
+        for (const key of keys) {
+            const prev = store[key] || { sum: 0, count: 0 };
+            if (prev.count >= 3) {
+                const currentAvg = prev.sum / prev.count;
+                if (ms > currentAvg * 2.5 || ms < currentAvg * 0.4) continue;
+            }
+            const count = Math.min(prev.count + 1, 20);
+            const sum = prev.count >= 20
+                ? (prev.sum / prev.count) * 19 + ms
+                : prev.sum + ms;
+            store[key] = { sum, count };
         }
-        // Exponential moving average: keep at most 20 samples worth of weight
-        const count = Math.min(prev.count + 1, 20);
-        const sum = prev.count >= 20
-            ? (prev.sum / prev.count) * 19 + ms  // slide out oldest
-            : prev.sum + ms;
-        store[quality] = { sum, count };
         localStorage.setItem(LS_TIMING_KEY, JSON.stringify(store));
     } catch { /* storage full or unavailable */ }
 };
-const getLearnedDuration = (quality: string): number | null => {
+const getLearnedDuration = (keys: string[]): number | null => {
     try {
-        const bucket = loadTimingStore()[quality];
-        if (bucket && bucket.count >= 2) return Math.round(bucket.sum / bucket.count);
+        const store = loadTimingStore();
+        for (const key of keys) {
+            const bucket = store[key];
+            if (bucket && bucket.count >= 2) return Math.round(bucket.sum / bucket.count);
+        }
     } catch { /* */ }
     return null;
 };
@@ -201,7 +217,7 @@ export const useGeneration = ({
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
-    const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string }>>({});
+    const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string; estimateKey: string }>>({});
     // Always-current ref to selectAndSnap — prevents stale closure in completion callbacks
     const selectAndSnapRef = React.useRef(selectAndSnap);
     React.useEffect(() => { selectAndSnapRef.current = selectAndSnap; }, [selectAndSnap]);
@@ -256,7 +272,7 @@ export const useGeneration = ({
                 const timing = jobTimingRef.current[jobId];
                 if (timing) {
                     const actualMs = Date.now() - timing.startTime;
-                    recordActualDuration(timing.quality, actualMs);
+                    recordActualDuration([timing.estimateKey, `quality:${timing.quality}`], actualMs);
                     // Write duration_ms to generation_jobs so get_smart_generation_estimates has real data
                     supabase.from('generation_jobs')
                         .update({ duration_ms: Math.round(actualMs) })
@@ -386,8 +402,8 @@ export const useGeneration = ({
                 if (data && data.length > 0) {
                     const estimates: Record<string, any> = {};
                     data.forEach((row: any) => {
-                        if (row.quality_mode) {
-                            estimates[row.quality_mode] = {
+                        if (row.estimate_key) {
+                            estimates[row.estimate_key] = {
                                 baseDurationMs: Math.round(row.base_duration_ms || 0),
                                 concurrencyFactor: row.concurrency_factor || 0.3,
                                 sampleCount: row.sample_count || 0
@@ -449,18 +465,27 @@ export const useGeneration = ({
         });
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
+        const currentAnnotations = sourceImage.annotations || [];
+        const currentRefs = currentAnnotations.filter(a => a.type === 'reference_image');
+        const estimateKey = buildEstimateKey({
+            qualityMode,
+            requestType: 'edit',
+            hasSourceImage: true,
+            hasMask: currentAnnotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)),
+            referenceCount: currentRefs.length,
+        });
 
         // 2. CONCURRENCY & DURATION (Sync)
         const activeCount = allImages.filter(i => i.isGenerating).length;
         const currentConcurrency = activeCount + batchSize;
         // Prefer: (1) learned from localStorage, (2) smart DB estimate, (3) hardcoded fallback
-        const learnedBase = getLearnedDuration(qualityMode);
+        const learnedBase = getLearnedDuration([estimateKey, `quality:${qualityMode}`]);
         let estimatedDuration: number;
         const nowMs = Date.now();
         if (learnedBase) {
             estimatedDuration = Math.round(learnedBase * (1 + 0.25 * currentConcurrency));
-        } else if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[qualityMode]) {
-            const estimate = smartEstimatesCache[qualityMode];
+        } else if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[estimateKey]) {
+            const estimate = smartEstimatesCache[estimateKey];
             let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
             duration *= (1 + (estimate.concurrencyFactor || 0.3) * currentConcurrency);
             estimatedDuration = Math.round(duration);
@@ -503,7 +528,7 @@ export const useGeneration = ({
         });
 
         // Track start time so pollForJob can record actual duration
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode };
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode, estimateKey };
 
         // Record which image was active when generate was pressed — used to guard auto-navigate
         generationSourceIds.current[newId] = activeIdRef.current;
@@ -561,13 +586,18 @@ export const useGeneration = ({
                         cost: cost,
                         prompt_preview: prompt,
                         parent_id: groupParentId ?? sourceImage.id,
+                        request_type: 'edit',
+                        has_source_image: true,
+                        has_mask: !!maskDataUrl,
+                        reference_count: refs.length,
+                        image_size: getImageSizeFromQuality(qualityMode),
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
                             referenceImagesCount: refs.length,
                             variables: variableValues || {},
                         }
-                    }).then(() => attachedJobIds.current.add(newId));
+                    }).then(() => {});
                 }
 
                 const finalImage = await imageService.processGeneration({
@@ -651,9 +681,10 @@ export const useGeneration = ({
         const baseName = t('new_generation') || 'Generation';
 
         // Ratio calc (Sync)
+        const resolution = modelId.split('-')[1];
         let baseSize = 1024;
-        if (modelId === 'pro-2k') baseSize = 2048;
-        if (modelId === 'pro-4k') baseSize = 4096;
+        if (resolution === '2k') baseSize = 2048;
+        if (resolution === '4k') baseSize = 4096;
         let wRatio = 1, hRatio = 1;
         const parts = ratio.split(':').map(Number);
         if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) { wRatio = parts[0]; hRatio = parts[1]; }
@@ -672,10 +703,17 @@ export const useGeneration = ({
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
             annotations: creationAnns, userId: user?.id
         };
+        const estimateKey = buildEstimateKey({
+            qualityMode: modelId,
+            requestType: 'create',
+            hasSourceImage: false,
+            hasMask: false,
+            referenceCount: attachments.length,
+        });
 
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         // Track start time so we can record actual duration on completion
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId };
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId, estimateKey };
         // Record source ID (null for create — no "source" image to stay on)
         generationSourceIds.current[newId] = activeIdRef.current;
         // Navigate to the placeholder immediately (user sees blob animation on detail page).
@@ -694,8 +732,13 @@ export const useGeneration = ({
                         cost,
                         prompt_preview: prompt,
                         quality_mode: modelId,
-                        model: modelId
-                    }).then(() => attachedJobIds.current.add(newId));
+                        model: modelId,
+                        request_type: 'create',
+                        has_source_image: false,
+                        has_mask: false,
+                        reference_count: attachments.length,
+                        image_size: getImageSizeFromQuality(modelId)
+                    }).then(() => {});
                 }
 
                 const structuredRequest: StructuredGenerationRequest = {
@@ -711,7 +754,10 @@ export const useGeneration = ({
                 if (finalImage) {
                     // Synchronous completion (legacy path) — record actual duration
                     const t0 = jobTimingRef.current[newId];
-                    if (t0) { recordActualDuration(t0.quality, Date.now() - t0.startTime); delete jobTimingRef.current[newId]; }
+                    if (t0) {
+                        recordActualDuration([t0.estimateKey, `quality:${t0.quality}`], Date.now() - t0.startTime);
+                        delete jobTimingRef.current[newId];
+                    }
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
                     navigateOnCompleteIds.current.delete(newId);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HeroStage } from './HeroStage';
 import { IterativeParallelStage } from './IterativeParallelStage';
+import { EditorialTilesStage } from './EditorialTilesStage';
 import { TemplatesStage } from './TemplatesStage';
 import { VisualPromptingStage } from './VisualPromptingStage';
 
@@ -62,15 +63,16 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
         return Math.min(Math.max((progress - start) / (end - start), 0), 1);
     };
 
-    const heroProgress = getLocalProgress([0, 0.22]);
-    const ipProgress = getLocalProgress([0.22, 0.45]);
-    const templateProgress = getLocalProgress([0.45, 0.70]);
-    const vpProgress = getLocalProgress([0.8, 1.0]);
+    const heroProgress = getLocalProgress([0, 0.18]);
+    const ipProgress = getLocalProgress([0.18, 0.38]);
+    const editorialProgress = getLocalProgress([0.38, 0.58]);
+    const templateProgress = getLocalProgress([0.58, 0.80]);
+    const vpProgress = getLocalProgress([0.84, 1.0]);
 
-    // Transition overlap for Sec 2 -> Sec 3
-    const transition23 = getLocalProgress([0.4, 0.5]);
-    // Transition overlap for Sec 3 -> Sec 4 (slightly later to allow generation to finish)
-    const transition34 = getLocalProgress([0.7, 0.8]);
+    const transition12 = getLocalProgress([0.16, 0.24]);
+    const transition23 = getLocalProgress([0.36, 0.44]);
+    const transition34 = getLocalProgress([0.56, 0.64]);
+    const transition45 = getLocalProgress([0.78, 0.86]);
 
     return (
         <div ref={containerRef} className="sticky top-0 h-screen w-full overflow-hidden bg-white dark:bg-zinc-950">
@@ -78,34 +80,45 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
                 Clean cut at 0.20: Hero fully owns 0-0.20, Section 2 starts at 0.20. No overlap. */}
             <HeroStage
                 progress={progress}
-                scrollActive={progress <= 0.20}
+                scrollActive={progress <= 0.16}
             />
 
-            {progress > 0.18 && progress <= 0.58 && (
+            {progress > 0.14 && progress <= 0.44 && (
                 <IterativeParallelStage
                     progress={ipProgress}
-                    scrollActive={progress > 0.20 && progress <= 0.5}
-                    exitProgress={transition23}
+                    scrollActive={progress > 0.16 && progress <= 0.40}
+                    exitProgress={transition12}
                     t={t}
                     lang={lang}
                 />
             )}
 
-            {progress > 0.32 && progress <= 0.88 && (
-                <TemplatesStage
-                    progress={templateProgress}
-                    scrollActive={progress > 0.4 && progress <= 0.8}
+            {progress > 0.34 && progress <= 0.66 && (
+                <EditorialTilesStage
+                    progress={editorialProgress}
+                    scrollActive={progress > 0.40 && progress <= 0.60}
                     enterProgress={transition23}
                     exitProgress={transition34}
+                    t={t}
+                    lang={lang}
+                />
+            )}
+
+            {progress > 0.52 && progress <= 0.90 && (
+                <TemplatesStage
+                    progress={templateProgress}
+                    scrollActive={progress > 0.60 && progress <= 0.82}
+                    enterProgress={transition34}
+                    exitProgress={transition45}
                     t={t}
                 />
             )}
 
-            {progress > 0.62 && (
+            {progress > 0.76 && (
                 <VisualPromptingStage
                     progress={vpProgress}
-                    scrollActive={progress > 0.7}
-                    enterProgress={transition34}
+                    scrollActive={progress > 0.82}
+                    enterProgress={transition45}
                     t={t}
                 />
             )}

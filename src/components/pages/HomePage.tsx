@@ -24,7 +24,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
-                <section data-hero-scroll-track className="relative h-[1800vh]">
+                <section data-hero-scroll-track className="relative h-[2200vh]">
                     <UniversalStage t={t} lang={lang} />
                 </section>
 

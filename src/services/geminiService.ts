@@ -38,7 +38,7 @@ export const editImageWithGemini = async (
   imageBase64: string,
   prompt: string,
   maskImageBase64?: string,
-  qualityMode: GenerationQuality = 'pro-1k',
+  qualityMode: GenerationQuality = 'nb2-2k',
   annotations: AnnotationObject[] = []
 ): Promise<{ imageBase64: string; usageMetadata?: any; modelVersion?: string }> => {
   try {

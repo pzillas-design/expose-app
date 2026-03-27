@@ -80,7 +80,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     const handleGenerate = useCallback((prompt: string) => {
         setIsGenerating(true);
         // onCreateNew calls selectAndSnap(newId) which navigates directly to /image/newId
-        onCreateNew(prompt, state.qualityMode || 'pro-2k', selectedRatio, []);
+        onCreateNew(prompt, state.qualityMode || 'nb2-2k', selectedRatio, []);
     }, [onCreateNew, state.qualityMode, selectedRatio]);
 
     const triggerUpload = () => uploadRef.current?.click();

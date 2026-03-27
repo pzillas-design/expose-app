@@ -714,9 +714,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
                                                             {/* Resolution + Price */}
                                                             {(['1k', '2k', '4k'] as const).map(res => {
-                                                                const model = qualityMode.startsWith('pro') ? 'pro' : 'nb2';
-                                                                const q = `${model}-${res}` as GenerationQuality;
-                                                                const COSTS: Record<string, number> = { 'pro-1k': 0.10, 'pro-2k': 0.25, 'pro-4k': 0.50, 'nb2-1k': 0.07, 'nb2-2k': 0.17, 'nb2-4k': 0.35 };
+                                                                const q = `nb2-${res}` as GenerationQuality;
+                                                                const COSTS: Record<string, number> = { 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
                                                                 const cost = COSTS[q];
                                                                 const isActive = qualityMode === q;
                                                                 return (
@@ -730,28 +729,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                     </button>
                                                                 );
                                                             })}
-                                                            {/* Pro / Flash Switch */}
-                                                            <div className="flex items-center gap-1 mt-2 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
-                                                                {(['nb2', 'pro'] as const).map(model => {
-                                                                    const isModelActive = qualityMode.startsWith(model);
-                                                                    const tooltipText = model === 'pro'
-                                                                        ? t('quality_highest')
-                                                                        : t('quality_faster');
-                                                                    return (
-                                                                        <Tooltip key={model} text={tooltipText} side="top">
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    const res = qualityMode.split('-')[1];
-                                                                                    onQualityModeChange(`${model}-${res}` as GenerationQuality);
-                                                                                }}
-                                                                                className={`flex-1 py-1 rounded-md text-[11px] font-medium transition-colors ${isModelActive ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-                                                                            >
-                                                                                {model === 'pro' ? '🍌pro' : '🍌v2'}
-                                                                            </button>
-                                                                        </Tooltip>
-                                                                    );
-                                                                })}
-                                                            </div>
                                                         </div>
                                                     </>
                                                 )}

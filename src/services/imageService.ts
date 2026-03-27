@@ -255,7 +255,9 @@ export const imageService = {
                 groupParentId: groupParentId || undefined,
                 // Pass the storage path so the edge function can download the image
                 // directly from Supabase Storage (faster & more reliable than fetching signed URL)
-                sourceStoragePath: sourceImage?.storage_path || undefined
+                sourceStoragePath: sourceImage?.storage_path || undefined,
+                // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
+                provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
             }
         });
 
@@ -432,7 +434,7 @@ export const imageService = {
             userDraftPrompt: record.user_draft_prompt || '',
             annotations: resolvedAnns,
             parentId: record.parent_id,
-            quality: record.generation_params?.quality || 'pro-1k',
+            quality: record.generation_params?.quality || 'nb2-2k',
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
             userId: record.user_id,
@@ -630,8 +632,8 @@ export const imageService = {
         });
 
         groups.forEach((items, groupId) => {
-            // Within a row, sort oldest to newest
-            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            // Within a row, sort newest to oldest (consistent with gallery-level sorting)
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
             // Determine row title from root or first visible item
             let rowTitle = 'untitled';
@@ -741,7 +743,7 @@ export const imageService = {
         });
 
         groups.forEach((items, groupId) => {
-            items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             let rowTitle = items[0].baseName || items[0].title || 'untitled';
             let rowCreatedAt = items[0].createdAt;
             const root = imageMap.get(groupId);

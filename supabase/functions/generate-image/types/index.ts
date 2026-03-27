@@ -27,7 +27,7 @@ export const COSTS: Record<string, number> = {
     'pro-1k': 0.10,
     'pro-2k': 0.25,
     'pro-4k': 0.50,
-    'nb2-1k': 0.07,
-    'nb2-2k': 0.17,
-    'nb2-4k': 0.35,
+    'nb2-1k': 0.10,
+    'nb2-2k': 0.20,
+    'nb2-4k': 0.40,
 };

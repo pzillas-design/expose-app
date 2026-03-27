@@ -3,9 +3,21 @@ import { GenerationQuality, TranslationFunction, TranslationKey } from '../types
 import { translations, LocaleKey } from '../data/locales';
 
 export const useConfig = () => {
+    const normalizeQualityMode = (value: string | null): GenerationQuality => {
+        if (!value) return 'nb2-2k';
+        if (value.startsWith('nb2-')) return value as GenerationQuality;
+
+        const resolution = value.split('-')[1];
+        if (resolution === '1k' || resolution === '2k' || resolution === '4k') {
+            return `nb2-${resolution}` as GenerationQuality;
+        }
+
+        return 'nb2-2k';
+    };
+
     // Quality Settings
     const [qualityMode, setQualityMode] = useState<GenerationQuality>(() => {
-        return (localStorage.getItem('nano_quality') as GenerationQuality) || 'nb2-2k';
+        return normalizeQualityMode(localStorage.getItem('nano_quality'));
     });
 
     // Theme Logic

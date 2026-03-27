@@ -1,8 +1,37 @@
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai';
+import { GoogleGenAI } from 'https://esm.sh/@google/genai';
 import { urlToBase64, extractBase64FromDataUrl } from '../utils/imageProcessing.ts';
 
 /**
- * Prepares the parts array for Gemini API request with structured interleaving.
+ * Builds a scenario-appropriate system instruction based on what inputs are present.
+ *
+ * A: Just prompt (no image)           → "Generate an image..."
+ * B: Prompt + original                → "Edit the original image..."
+ * C: Prompt + original + annotations  → "Image 1 original, Image 2 annotations..."
+ * D: Prompt + original + references   → "Edit original, use references..."
+ * E: Prompt + original + ann + refs   → "Image 1 original, Image 2 annotations, references..."
+ */
+export const getSystemInstruction = (hasSource: boolean, hasMask: boolean, hasRefs: boolean): string => {
+    if (!hasSource) {
+        return "Generate an image based on the prompt.";
+    }
+
+    if (hasMask && hasRefs) {
+        return "Image 1 is the original. Image 2 shows red annotations marking where and what to change. Reference images provide visual guidance. Apply changes at the annotated locations using references as style guide. Do not render the red markings in the output. Maintain original style and perspective.";
+    }
+
+    if (hasMask) {
+        return "Image 1 is the original. Image 2 shows red annotations marking where and what to change. Apply all changes at the annotated locations. Do not render the red markings in the output. Maintain original style and perspective.";
+    }
+
+    if (hasRefs) {
+        return "Edit the original image based on the prompt. Use the reference images as visual guidance for style and content. Maintain the original aspect ratio and perspective.";
+    }
+
+    return "Edit the original image based on the prompt. Maintain the overall style and perspective.";
+};
+
+/**
+ * Prepares the parts array for Gemini API request.
  * Sequence: Prompt -> Variables -> Original -> Annotation -> References
  */
 export const prepareParts = async (
@@ -12,16 +41,12 @@ export const prepareParts = async (
     const parts: any[] = [];
     const { prompt, variables, annotationImage, references } = payload;
 
-    console.log('[DEBUG] prepareParts - payload keys:', Object.keys(payload));
-    console.log('[DEBUG] prepareParts - has annotationImage:', !!annotationImage);
-    console.log('[DEBUG] prepareParts - has references:', !!references, 'count:', references?.length || 0);
-
     // 1. User Prompt
     if (prompt) {
-        parts.push({ text: `User Prompt: ${prompt}` });
+        parts.push({ text: prompt });
     }
 
-    // 2. Design Variables
+    // 2. Variables
     if (variables && Object.keys(variables).length > 0) {
         const varString = Object.entries(variables)
             .map(([key, vals]) => `${key}: ${(vals as string[]).join(', ')}`)
@@ -29,7 +54,7 @@ export const prepareParts = async (
         parts.push({ text: varString });
     }
 
-    // 3. Image 1: Original Image
+    // 3. Original Image
     if (sourceBase64) {
         parts.push({
             inlineData: {
@@ -37,28 +62,27 @@ export const prepareParts = async (
                 data: sourceBase64
             }
         });
-        parts.push({ text: "Image 1: The Original Image" });
+        parts.push({ text: "Original Image" });
     }
 
-    // 4. Image 2: Annotation Image
+    // 4. Annotation Image
     let hasMask = false;
     if (annotationImage) {
         hasMask = true;
         const maskBase64 = extractBase64FromDataUrl(annotationImage);
-        console.log('[DEBUG] prepareParts - annotationImage base64 length:', maskBase64?.length || 0);
         parts.push({
             inlineData: {
                 mimeType: 'image/png',
                 data: maskBase64
             }
         });
-        parts.push({ text: "Image 2: The Annotation Image (Muted original + annotations showing where and what to change. Do not include the annotations themselves in the output; strictly interpret them as instructions for modification)." });
+        parts.push({ text: "Annotation Image (muted original with red annotations)" });
     }
 
     // 5. Reference Images
     const allRefs: string[] = [];
     let hasRefs = false;
-    if (references && Array.isArray(references)) {
+    if (references && Array.isArray(references) && references.length > 0) {
         hasRefs = true;
         for (let i = 0; i < references.length; i++) {
             const ref = references[i];
@@ -77,9 +101,7 @@ export const prepareParts = async (
                     }
                 });
 
-                // Simplified reference labeling as requested
-                const label = ref.instruction || "Reference Image";
-                parts.push({ text: `${label} (Image ${i + 3 + (hasMask ? 0 : -1)})` });
+                parts.push({ text: ref.instruction || "Reference Image" });
                 allRefs.push(ref.src);
             } catch (err) {
                 console.warn(`Failed to process reference image ${i}:`, err);
@@ -87,45 +109,43 @@ export const prepareParts = async (
         }
     }
 
-    console.log('[DEBUG] prepareParts - final parts count:', parts.length, 'hasMask:', hasMask, 'hasRefs:', hasRefs);
+    console.log('[DEBUG] prepareParts - parts:', parts.length, 'mask:', hasMask, 'refs:', hasRefs);
     return { parts, hasMask, hasRefs, allRefs };
 };
 
 /**
- * Calls Gemini API to generate an image
+ * Calls Gemini API to generate an image.
+ * System instruction adapts to the scenario (create, edit, annotations, refs).
  */
 export const generateImage = async (
     apiKey: string,
     modelName: string,
     parts: any[],
     generationConfig: any,
-    requestType: 'create' | 'edit' = 'edit'
+    hasSource: boolean,
+    hasMask: boolean,
+    hasRefs: boolean
 ) => {
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey });
+    const systemInstruction = getSystemInstruction(hasSource, hasMask, hasRefs);
 
-    let systemInstruction = "You are an expert AI designer. You interpret prompts and visual context to generate high-quality, photorealistic images.";
+    console.log('[DEBUG] System Instruction:', systemInstruction);
 
-    if (requestType === 'edit') {
-        systemInstruction += " You are provided with an ORIGINAL image (Image 1) and an ANNOTATION image (Image 2) which identifies target areas for modification. CRITICAL: All annotations in Image 2 are rendered in BRIGHT RED color for maximum visibility. Each red annotation (shape, line, or text label on red background) indicates a specific object or modification that MUST be implemented in the exact location shown. You MUST strictly follow ALL red annotations shown in Image 2. Your goal is to modify the ORIGINAL image according to the User Prompt and Design Parameters, strictly adhering to the locations and objects specified by the RED annotations in the ANNOTATION image. Maintain the overall style and perspective of the original image unless instructed otherwise. IMPORTANT: The red annotations in Image 2 are only logical guides and instructions; do not include or render any of the red annotation markings themselves in the final generated image - only implement what they indicate.";
-    } else {
-        systemInstruction += " Create a brand new image from scratch based on the User Prompt and Design Parameters provided.";
-    }
-
-    const model = genAI.getGenerativeModel({
-        model: modelName,
-        systemInstruction: systemInstruction
-    });
-
-    // Implement simple retry for transient 500/503 errors
+    // Retry for transient errors
     let lastError: any;
     for (let i = 0; i < 2; i++) {
         try {
-            const geminiResult = await model.generateContent({
-                contents: [{ parts: parts }],
-                generationConfig: Object.keys(generationConfig).length > 0 ? generationConfig : undefined
+            const response = await ai.models.generateContent({
+                model: modelName,
+                contents: [{ parts }],
+                config: {
+                    systemInstruction,
+                    responseModalities: ['TEXT', 'IMAGE'],
+                    ...generationConfig
+                }
             });
 
-            return geminiResult.response;
+            return response;
         } catch (err: any) {
             lastError = err;
             const status = err.status || (err.message?.match(/\[(\d+)\]/)?.[1]);
@@ -139,4 +159,49 @@ export const generateImage = async (
     }
 
     throw lastError;
+};
+
+export const extractGeneratedImage = (response: any): { base64: string; mimeType: string } | null => {
+    const visit = (node: any): { base64: string; mimeType: string } | null => {
+        if (!node) return null;
+
+        if (Array.isArray(node)) {
+            for (const item of node) {
+                const found = visit(item);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        if (typeof node !== 'object') return null;
+
+        const inline = node.inlineData || node.inline_data;
+        if (inline?.data && typeof inline.data === 'string') {
+            const mimeType = inline.mimeType || inline.mime_type || 'image/png';
+            if (mimeType.startsWith('image/')) {
+                return { base64: inline.data, mimeType };
+            }
+        }
+
+        if (typeof node.imageBase64 === 'string') {
+            return { base64: node.imageBase64, mimeType: node.mimeType || 'image/png' };
+        }
+
+        if (typeof node.imageBytes === 'string') {
+            return { base64: node.imageBytes, mimeType: node.mimeType || 'image/png' };
+        }
+
+        if (typeof node.bytesBase64Encoded === 'string') {
+            return { base64: node.bytesBase64Encoded, mimeType: node.mimeType || 'image/png' };
+        }
+
+        for (const value of Object.values(node)) {
+            const found = visit(value);
+            if (found) return found;
+        }
+
+        return null;
+    };
+
+    return visit(response);
 };

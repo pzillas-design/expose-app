@@ -114,7 +114,7 @@ export const useAutoSave = (
                         prompt: img.generationPrompt || '',
                         user_draft_prompt: img.userDraftPrompt || '',
                         generation_params: {
-                            quality: img.quality || 'pro-1k',
+                            quality: img.quality || 'nb2-2k',
                             activeTemplateId: img.activeTemplateId,
                             variableValues: img.variableValues
                         },
@@ -181,7 +181,7 @@ export const useAutoSave = (
                             prompt: img.generationPrompt || '',
                             user_draft_prompt: img.userDraftPrompt || '',
                             generation_params: {
-                                quality: img.quality || 'pro-1k',
+                                quality: img.quality || 'nb2-2k',
                                 activeTemplateId: img.activeTemplateId,
                                 variableValues: img.variableValues
                             },

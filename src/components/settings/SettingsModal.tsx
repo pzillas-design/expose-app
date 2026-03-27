@@ -32,6 +32,7 @@ interface SettingsModalProps {
     user: any;
     userProfile: any;
     t: TranslationFunction;
+    currentLang?: 'de' | 'en';
     imageCount?: number;
     imageLimit?: number;
     storageAutoDelete?: boolean;
@@ -43,11 +44,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose,
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
     themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t,
+    currentLang = 'en',
     imageCount = 0, imageLimit = 100, storageAutoDelete = false, onStorageAutoDeleteChange,
     onChangePassword
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const [isResDropdownOpen, setIsResDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -56,23 +57,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const { confirm } = useItemDialog();
 
     const closeAll = () => {
-        setIsModelDropdownOpen(false);
         setIsResDropdownOpen(false);
         setIsAppearanceDropdownOpen(false);
         setIsLangDropdownOpen(false);
     };
 
     const safeQuality = (qualityMode as string) || 'nb2-2k';
-    const currentModel = safeQuality.startsWith('nb2') ? 'nb2' : 'pro';
     const currentRes = (safeQuality.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
 
-    const setModel = (model: string) => { onQualityModeChange(`${model}-${currentRes}` as GenerationQuality); closeAll(); };
-    const setRes = (res: string) => { onQualityModeChange(`${currentModel}-${res}` as GenerationQuality); closeAll(); };
-
-    const MODELS = [
-        { id: 'nb2', label: '🍌 Nano Banana 2', desc: t('model_nb2_desc') },
-        { id: 'pro', label: '🍌 Nano Banana Pro', desc: t('model_pro_desc') },
-    ];
+    const setRes = (res: string) => { onQualityModeChange(`nb2-${res}` as GenerationQuality); closeAll(); };
     const RESOLUTIONS = [
         { id: '1k', label: '1K', desc: '1024 px' },
         { id: '2k', label: '2K', desc: '2048 px' },
@@ -185,70 +178,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <section className="py-7">
                     <div className="space-y-5">
 
-                        {/* Model + Resolution */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <p className={fieldLabel}>{t('settings_model_label')}</p>
-                                <div className="relative">
-                                    <button onClick={() => { closeAll(); setIsModelDropdownOpen(v => !v); }} className={trigger}>
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                            {MODELS.find(m => m.id === currentModel)?.label}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isModelDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {isModelDropdownOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-30" onClick={closeAll} />
-                                            <div className={menu}>
-                                                {MODELS.map(m => (
-                                                    <button key={m.id} onClick={() => setModel(m.id)}
-                                                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${currentModel === m.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}>
-                                                        <div className="flex flex-col items-start gap-0.5">
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300">{m.label}</span>
-                                                            <span className="text-xs text-zinc-400">{m.desc}</span>
-                                                        </div>
-                                                        {currentModel === m.id && <Check className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <p className={fieldLabel}>{t('settings_quality_label')}</p>
-                                <div className="relative">
-                                    <button onClick={() => { closeAll(); setIsResDropdownOpen(v => !v); }} className={trigger}>
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                            {RESOLUTIONS.find(r => r.id === currentRes)?.label}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isResDropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {isResDropdownOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-30" onClick={closeAll} />
-                                            <div className={menu}>
-                                                {RESOLUTIONS.map(r => (
-                                                    <button key={r.id} onClick={() => setRes(r.id)}
-                                                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${currentRes === r.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}>
-                                                        <div className="flex flex-col items-start gap-0.5">
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300">{r.label}</span>
-                                                            <span className="text-xs text-zinc-400">{r.desc}</span>
-                                                        </div>
-                                                        {currentRes === r.id && <Check className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                        <div>
+                            <p className={fieldLabel}>{t('settings_quality_label')}</p>
+                            <div className="relative">
+                                <button onClick={() => { closeAll(); setIsResDropdownOpen(v => !v); }} className={trigger}>
+                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                                        {RESOLUTIONS.find(r => r.id === currentRes)?.label}
+                                    </span>
+                                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isResDropdownOpen ? 'rotate-180' : ''}`} />
+                                </button>
+                                {isResDropdownOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={closeAll} />
+                                        <div className={menu}>
+                                            {RESOLUTIONS.map(r => (
+                                                <button key={r.id} onClick={() => setRes(r.id)}
+                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${currentRes === r.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}>
+                                                    <div className="flex flex-col items-start gap-0.5">
+                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">{r.label}</span>
+                                                        <span className="text-xs text-zinc-400">{r.desc}</span>
+                                                    </div>
+                                                    {currentRes === r.id && <Check className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
-                        {/* Appearance */}
+                        {/* Design Theme */}
                         <div>
-                            <p className={fieldLabel}>{t('app_section')}</p>
+                            <p className={fieldLabel}>{currentLang === 'de' ? 'Designthema' : 'Design Theme'}</p>
                             <div className="relative">
                                 <button onClick={() => { closeAll(); setIsAppearanceDropdownOpen(v => !v); }} className={trigger}>
                                     <span className="text-sm text-zinc-700 dark:text-zinc-300">
