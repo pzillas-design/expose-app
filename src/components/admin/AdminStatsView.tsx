@@ -22,9 +22,9 @@ const GOOGLE_OUTPUT_IMAGE_USD_PER_M = 60;
 const GOOGLE_OUTPUT_TEXT_USD_PER_M = 3;
 
 const RESOLUTION_INFO: Record<ResolutionBucket, { label: string; color: string; fallbackUsd: number }> = {
-    '1K': { label: '1K', color: '#3b82f6', fallbackUsd: 0.067 },
-    '2K': { label: '2K', color: '#14b8a6', fallbackUsd: 0.101 },
-    '4K': { label: '4K', color: '#d97706', fallbackUsd: 0.151 },
+    '1K': { label: '1K', color: '#eab308', fallbackUsd: 0.067 },
+    '2K': { label: '2K', color: '#f97316', fallbackUsd: 0.101 },
+    '4K': { label: '4K', color: '#ef4444', fallbackUsd: 0.151 },
     'Other': { label: 'Other', color: '#71717a', fallbackUsd: 0 },
 };
 
