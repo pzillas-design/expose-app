@@ -218,6 +218,16 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             .slice(0, 10);
     }, [completedJobs]);
 
+    const maxResolutionTotal = useMemo(
+        () => Math.max(...breakdownRows.map(row => row.total), 0),
+        [breakdownRows]
+    );
+
+    const maxUserCount = useMemo(
+        () => Math.max(...topUsers.map(user => user.count), 0),
+        [topUsers]
+    );
+
     const showStripeLine = timeRange === 'monat' || timeRange === 'jahr';
 
     if (loading) return (
@@ -363,7 +373,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     </td>
                                     <td className="px-6 py-3 text-right font-medium">{row.count}</td>
                                     <td className="px-6 py-3 text-right font-mono text-xs text-zinc-400">{row.avg.toFixed(3)}€</td>
-                                    <td className="px-6 py-3 text-right font-mono text-xs font-bold text-red-500">{row.total.toFixed(2)}€</td>
+                                    <td className="px-6 py-3">
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="font-mono text-xs font-bold text-zinc-900 dark:text-zinc-100">{row.total.toFixed(2)}€</span>
+                                            <div className="w-28 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full"
+                                                    style={{
+                                                        width: maxResolutionTotal > 0 ? `${(row.total / maxResolutionTotal) * 100}%` : '0%',
+                                                        backgroundColor: row.color,
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             <tr className="bg-zinc-50/30 dark:bg-zinc-800/20 font-bold text-sm">
@@ -392,7 +415,17 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             {topUsers.map((user) => (
                                 <tr key={user.name} className="text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
                                     <td className="px-6 py-3 font-medium text-zinc-900 dark:text-zinc-100">{user.name}</td>
-                                    <td className="px-6 py-3 text-right font-mono text-sm text-zinc-500">{user.count}</td>
+                                    <td className="px-6 py-3">
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="font-mono text-sm text-zinc-500">{user.count}</span>
+                                            <div className="w-28 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                <div
+                                                    className="h-full rounded-full bg-zinc-500 dark:bg-zinc-400"
+                                                    style={{ width: maxUserCount > 0 ? `${(user.count / maxUserCount) * 100}%` : '0%' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {topUsers.length === 0 && (
