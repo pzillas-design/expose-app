@@ -207,9 +207,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Design Theme */}
                         <div>
-                            <p className={fieldLabel}>{currentLang === 'de' ? 'Designthema' : 'Design Theme'}</p>
+                            <p className={fieldLabel}>{t('app_section')}</p>
                             <div className="relative">
                                 <button onClick={() => { closeAll(); setIsAppearanceDropdownOpen(v => !v); }} className={trigger}>
                                     <span className="text-sm text-zinc-700 dark:text-zinc-300">
