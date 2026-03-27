@@ -194,7 +194,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                         </div>
 
                         <div
-                            className={`hidden md:flex relative shrink-0 border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black ${isResizing ? 'select-none' : 'transition-[width] duration-200 ease-out'}`}
+                            className={`hidden md:flex relative shrink-0 self-start sticky top-14 h-[calc(100dvh-56px)] overflow-hidden border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black ${isResizing ? 'select-none' : 'transition-[width] duration-200 ease-out'}`}
                             style={{ width: `${sidebarWidth}px` }}
                         >
                             <div
