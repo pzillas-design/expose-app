@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
+import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { useMobile } from '@/hooks/useMobile';
@@ -32,12 +33,14 @@ interface AppNavbarProps {
     detailActions?: React.ReactNode;
     onBack?: () => void;
     hasImages?: boolean;
+    imageCount?: number;
     onDetailRename?: () => void;
     onDetailDownload?: () => void;
     onDetailDelete?: () => void;
     onDetailInfo?: () => void;
     onDetailRegenerate?: () => void;
     detailHasPrompt?: boolean;
+    detailIsNew?: boolean;
     isSideSheetVisible?: boolean;
     isFeedSideSheetVisible?: boolean;
     onToggleSideSheet?: () => void;
@@ -81,12 +84,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     detailActions,
     onBack,
     hasImages = true,
+    imageCount = 0,
     onDetailRename,
     onDetailDownload,
     onDetailDelete,
     onDetailInfo,
     onDetailRegenerate,
     detailHasPrompt,
+    detailIsNew = false,
     isSideSheetVisible,
     isFeedSideSheetVisible,
     onToggleSideSheet,
@@ -380,12 +385,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 />
             </span>
             {detailHasPrompt && (
-                <span className="hidden md:contents">
+                <span className="relative hidden md:block">
                     <RoundIconButton
                         icon={<Repeat className="w-[18px] h-[18px]" />}
                         onClick={onDetailRegenerate}
                         variant="ghost"
                         tooltip={t('generate_more')}
+                    />
+                    <ContextTip
+                        storageKey="expose_tip_generate_more_button_v4"
+                        content={
+                                <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                    {lang === 'de' ? 'Tippe auf ' : 'Click '}
+                                <ContextTipChip
+                                    icon={<Repeat className="h-3.5 w-3.5" />}
+                                />
+                                {lang === 'de'
+                                    ? ', um mehr Varianten wie diese zu generieren.'
+                                    : ' to generate more variations like this.'}
+                                </p>
+                        }
+                        placement="below"
+                        enabled={detailIsNew && detailHasPrompt}
                     />
                 </span>
             )}
@@ -455,6 +476,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             active={isGridMenuOpen}
                             tooltip={t('nav_menu')}
                         />
+                        {isGallery && (
+                            <ContextTip
+                                storageKey="expose_tip_select_images_v1"
+                                content={
+                                    <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                        {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                        <ContextTipChip
+                                            icon={<CircleCheck className="h-3.5 w-3.5" />}
+                                            label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                        />
+                                        {lang === 'de'
+                                            ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
+                                            : ' to edit multiple images at once.'}
+                                    </p>
+                                }
+                                placement="below"
+                                enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                anchorClassName="absolute left-0 top-0 h-9 w-9 pointer-events-none"
+                            />
+                        )}
                         {isGridMenuOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
@@ -681,6 +722,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             </span>
                                         </div>
                                     </button>
+                                    {isGallery && (
+                                        <ContextTip
+                                            storageKey="expose_tip_select_images_v1"
+                                            content={
+                                                <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                                    {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                                    <ContextTipChip
+                                                        icon={<CircleCheck className="h-3.5 w-3.5" />}
+                                                        label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                                    />
+                                                    {lang === 'de'
+                                                        ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
+                                                        : ' to edit multiple images at once.'}
+                                                </p>
+                                            }
+                                            placement="below"
+                                            enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                            anchorClassName={isScrolled || isMobile
+                                                ? 'absolute left-0 top-0 h-9 w-9 pointer-events-none'
+                                                : 'absolute left-0 top-0 h-10 w-10 pointer-events-none'}
+                                        />
+                                    )}
                                     {isGridMenuOpen && (
                                         <div className="absolute top-full mt-2 right-0 z-50">
                                             <DropdownMenu
