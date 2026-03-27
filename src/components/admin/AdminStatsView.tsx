@@ -6,7 +6,6 @@ import {
 } from 'recharts';
 import { TranslationFunction } from '@/types';
 import { adminService } from '@/services/adminService';
-import { supabase } from '@/services/supabaseClient';
 import { AdminViewHeader } from './AdminViewHeader';
 
 interface AdminStatsViewProps {
@@ -76,21 +75,11 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const [jobsData, { data: { session } }] = await Promise.all([
-                    adminService.getJobs(),
-                    supabase.auth.getSession()
-                ]);
+                const jobsData = await adminService.getJobs();
                 setJobs(jobsData);
-                if (session?.access_token) {
-                    const res = await supabase.functions.invoke('admin-stats', {
-                        headers: { Authorization: `Bearer ${session.access_token}` }
-                    });
-                    if (!res.error && res.data) {
-                        setStripeRevenue(res.data.totalRevenue ?? null);
-                        setStripePaymentCount(res.data.paymentCount ?? 0);
-                        setStripeMonthly(res.data.monthlyRevenue ?? {});
-                    }
-                }
+                setStripeRevenue(0);
+                setStripePaymentCount(0);
+                setStripeMonthly({});
             } catch (e) {
                 console.error('AdminStatsView fetch error:', e);
             } finally {
