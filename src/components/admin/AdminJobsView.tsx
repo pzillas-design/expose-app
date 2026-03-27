@@ -85,6 +85,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     {filteredJobs.map(j => {
                                         const payload = j.requestPayload || {};
                                         const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
+                                        const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                         // hasMask from new jobs; fall back to type='Edit' for old jobs without requestPayload
                                         const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
                                         const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
@@ -119,6 +120,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-1">
                                                     {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400" />}
+                                                    {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                     {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                     {hasVars      && <span className={badgeClass}>Variablen</span>}
                                                 </div>

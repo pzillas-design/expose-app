@@ -651,7 +651,7 @@ export const useNanoController = () => {
                 const isFirst = snapIndex === 0;
                 snapIndex++;
                 setTimeout(() => {
-                    performGeneration(img, finalPrompt, 1, isFirst, draftPrompt, activeTemplateId, variableValues);
+                    performGeneration(img, finalPrompt, selectedImages.length, isFirst, draftPrompt, activeTemplateId, variableValues);
                 }, batchIdx * 200);
             });
             // Exit multiselect after confirming batch generation

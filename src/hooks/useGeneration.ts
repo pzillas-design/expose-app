@@ -590,6 +590,8 @@ export const useGeneration = ({
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
                             referenceImagesCount: refs.length,
+                            batchSize,
+                            isMultiEdit: batchSize > 1,
                             variables: variableValues || {},
                         }
                     }).then(() => {});
