@@ -136,7 +136,7 @@ export const AdminObjectsView: React.FC<AdminObjectsViewProps> = ({ t }) => {
                 }
             />
 
-            <div className="flex-1 overflow-auto">
+            <div className="overflow-x-auto">
                 <div style={{ minWidth }} className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     <div className={`sticky top-0 z-20 grid ${gridTemplate} bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60 text-xs font-medium text-zinc-400`}>
                         <div className="p-4 text-center"></div>

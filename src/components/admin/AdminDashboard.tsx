@@ -48,7 +48,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   activeTab === id || (id === 'stamps' && (activeTab as string) === 'objects');
 
  return (
-  <div className="h-full min-h-0 flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 overflow-hidden">
+  <div className="min-h-[100dvh] flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-100">
 
    {/* ── Header ───────────────────────────────────────────── */}
    <header className="md:sticky md:top-0 z-50 shrink-0 bg-white dark:bg-black border-b border-zinc-200/60 dark:border-zinc-800/60">
@@ -104,8 +104,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
    </header>
 
    {/* ── Content ──────────────────────────────────────────── */}
-   <main className="flex-1 min-h-0 overflow-hidden">
-    <div className="max-w-[1700px] mx-auto w-full h-full flex flex-col">
+   <main className="flex-1">
+    <div className="max-w-[1700px] mx-auto w-full flex flex-col">
      {activeTab === 'users'   && <AdminUsersView   t={t} />}
      {activeTab === 'jobs'    && <AdminJobsView    t={t} />}
      {activeTab === 'stats'   && <AdminStatsView   t={t} />}

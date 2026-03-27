@@ -99,7 +99,7 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                 search={{ value: search, onChange: setSearch, placeholder: t('search') }}
             />
 
-            <div className="flex-1 min-h-0 overflow-auto">
+            <div className="overflow-x-auto">
                 <div className="min-w-[900px]">
                     {loading ? (
                         <div className="py-20 flex items-center justify-center">
