@@ -891,19 +891,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             onMouseUp={() => actions.setIsBrushResizing(false)}
                                             className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-orange-500 relative"
                                         />
-                                        <button
-                                            onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'path') || [])}
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
-                                        >
-                                            <Trash className="w-4 h-4" />
-                                        </button>
+                                        <Tooltip text={t('clear_all_brush') || 'Pinselstriche löschen'} side="top">
+                                            <button
+                                                onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'path') || [])}
+                                                className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
+                                            >
+                                                <Trash className="w-4 h-4" />
+                                            </button>
+                                        </Tooltip>
                                     </div>
                                 )}
                             </div>
 
                             {/* Primary Row: 3 Tools + Done */}
                             <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
-                                <Tooltip text={t('tool_text') || 'Text'} side="top">
+                                <Tooltip text={t('tooltip_tool_text') || 'Text platzieren'} side="top">
                                     <button
                                         onClick={() => {
                                             setSubMenu('text');
@@ -915,7 +917,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     </button>
                                 </Tooltip>
 
-                                <Tooltip text={t('tool_shapes') || 'Formen'} side="top">
+                                <Tooltip text={t('tooltip_tool_shapes') || 'Formen zeichnen'} side="top">
                                     <button
                                         onClick={() => {
                                             setSubMenu('shapes');
@@ -927,7 +929,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     </button>
                                 </Tooltip>
 
-                                <Tooltip text={t('tool_brush') || 'Pinsel'} side="top">
+                                <Tooltip text={t('tooltip_tool_brush') || 'Pinsel'} side="top">
                                     <button
                                         onClick={() => {
                                             setSubMenu('brush');

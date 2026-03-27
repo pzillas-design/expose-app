@@ -702,8 +702,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     />
                                 </svg>
                                 {isActiveItem && (
-                                    <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
+                                    <button className="annotation-ui absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                         style={{ left: `${maskCenterPct?.left ?? leftPct}%`, top: `${maskCenterPct?.top ?? topPct}%`, transform: 'translate(-50%, -50%)' }}
+                                        onMouseDown={(e) => e.stopPropagation()}
                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                         <Trash className="w-4 h-4" />
                                     </button>

@@ -454,7 +454,10 @@ export const translations = {
     tool_circle: "Circle",
     tool_line: "Line",
     tool_brush: "Brush",
-    clear_all_brush: "Clear all",
+    clear_all_brush: "Clear brush strokes",
+    tooltip_tool_text: "Place text",
+    tooltip_tool_shapes: "Draw shapes",
+    tooltip_tool_brush: "Brush",
 
     // ObjectsTab
     manage_stickers: "Manage Stickers",
@@ -998,7 +1001,10 @@ export const translations = {
     tool_circle: "Kreis",
     tool_line: "Linie",
     tool_brush: "Pinsel",
-    clear_all_brush: "Alle löschen",
+    clear_all_brush: "Pinselstriche löschen",
+    tooltip_tool_text: "Text platzieren",
+    tooltip_tool_shapes: "Formen zeichnen",
+    tooltip_tool_brush: "Pinsel",
 
     // ObjectsTab
     manage_stickers: "Sticker verwalten",
