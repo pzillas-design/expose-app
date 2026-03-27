@@ -158,6 +158,34 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
      </div>
     )}
 
+    {/* Prompt + Variables */}
+    {job.promptPreview && (
+     <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 space-y-3">
+      <div>
+       <p className="text-[10px] font-medium text-zinc-400 mb-1.5">Prompt</p>
+       <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">{job.promptPreview}</p>
+      </div>
+      {(() => {
+       const vars = payload.variables as Record<string, string[]> | undefined;
+       if (!vars || Object.keys(vars).length === 0) return null;
+       return (
+        <div>
+         <p className="text-[10px] font-medium text-zinc-400 mb-1.5">Variablen</p>
+         <div className="flex flex-wrap gap-1.5">
+          {Object.entries(vars).flatMap(([, vals]) =>
+           (vals || []).map(v => (
+            <span key={v} className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300">
+             {v}
+            </span>
+           ))
+          )}
+         </div>
+        </div>
+       );
+      })()}
+     </div>
+    )}
+
     {/* Resource badges */}
     {(hasSource || hasMask || refCount > 0) && (
      <div className="px-5 py-3 border-b border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-1.5">
@@ -201,33 +229,6 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
      </div>
     </div>
 
-    {/* Prompt + Variables */}
-    {job.promptPreview && (
-     <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 space-y-3">
-      <div>
-       <p className="text-[10px] font-medium text-zinc-400 mb-1.5">Prompt</p>
-       <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">{job.promptPreview}</p>
-      </div>
-      {(() => {
-       const vars = payload.variables as Record<string, string[]> | undefined;
-       if (!vars || Object.keys(vars).length === 0) return null;
-       return (
-        <div>
-         <p className="text-[10px] font-medium text-zinc-400 mb-1.5">Variablen</p>
-         <div className="flex flex-wrap gap-1.5">
-          {Object.entries(vars).flatMap(([, vals]) =>
-           (vals || []).map(v => (
-            <span key={v} className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300">
-             {v}
-            </span>
-           ))
-          )}
-         </div>
-        </div>
-       );
-      })()}
-     </div>
-    )}
    </div>
   </div>
  );
