@@ -356,6 +356,8 @@ export function App() {
 
     const mainContainerClasses = isAppLayout
         ? "flex-1 flex flex-col overflow-hidden pt-14"
+        : isAdminRoute
+        ? "flex-1 flex flex-col overflow-hidden"
         : "flex-1 flex flex-col";
 
     const showGlobalNavbar = !isAdminRoute;

@@ -48,7 +48,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   activeTab === id || (id === 'stamps' && (activeTab as string) === 'objects');
 
  return (
-  <div className="h-screen flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 overflow-hidden">
+  <div className="h-full min-h-0 flex flex-col bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 overflow-hidden">
 
    {/* ── Header ───────────────────────────────────────────── */}
    <header className="md:sticky md:top-0 z-50 shrink-0 bg-white dark:bg-black border-b border-zinc-200/60 dark:border-zinc-800/60">
