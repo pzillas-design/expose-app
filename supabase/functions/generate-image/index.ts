@@ -175,12 +175,7 @@ const saveGeminiResult = async (
             tokens_total: usageMetadata?.totalTokenCount || 0,
             duration_ms: durationMs,
             quality_mode: qualityMode,
-            request_payload: apiRequestPayload,
-            request_type: requestType,
-            has_source_image: !!apiRequestPayload?.hasSourceImage,
-            has_mask: !!apiRequestPayload?.hasMask,
-            reference_count: apiRequestPayload?.referenceImagesCount || 0,
-            image_size: apiRequestPayload?.imageSize || null
+            request_payload: apiRequestPayload
         })
         .eq('id', jobId);
 };
