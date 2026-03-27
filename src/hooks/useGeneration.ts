@@ -422,7 +422,10 @@ export const useGeneration = ({
 
     React.useEffect(() => {
         const generatingIds = rows.flatMap(r => r.items)
-            .filter(i => i.isGenerating)
+            // Only true generation placeholders should be polled.
+            // Upload skeletons also use isGenerating for shimmer UI, but they do not
+            // have generationStartTime and must never trigger generation-complete flows.
+            .filter(i => i.isGenerating && !!i.generationStartTime)
             .map(i => i.id);
 
         generatingIds.forEach(id => {
