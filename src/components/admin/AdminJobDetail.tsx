@@ -101,6 +101,8 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   ...(payload.providerLatencyMs ? [{ label: 'Provider Latency', value: `${Math.round(payload.providerLatencyMs / 1000)}s` }] : []),
   ...(payload.storageLatencyMs ? [{ label: 'Storage Latency', value: `${Math.round(payload.storageLatencyMs / 1000)}s` }] : []),
   ...(payload.saveStage ? [{ label: 'Save Stage', value: formatValue(payload.saveStage) }] : []),
+  ...(payload.current_stage ? [{ label: 'Last Known Stage', value: <span className="font-mono text-yellow-500">{payload.current_stage}</span> }] : []),
+  ...(payload.stage_updated_at ? [{ label: 'Stage Updated At', value: new Date(payload.stage_updated_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'medium' }) }] : []),
  ];
 
  // Single flat table rows — only truthy values shown

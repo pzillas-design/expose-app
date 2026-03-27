@@ -5,6 +5,7 @@ import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
+import { ContextTip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
@@ -93,6 +94,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     if (!selectedImage) return null;
 
     const isMulti = selectedImages && selectedImages.length > 1;
+    const referenceTipText = currentLang === 'de'
+        ? 'Lade ein Bild hoch, um Stil oder Details als Referenz vorzugeben.'
+        : 'Upload an image to guide style or details as a reference.';
 
     const lastIdRef = useRef<string | null>(selectedImage?.id || null);
 
@@ -571,26 +575,56 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                 <div className="flex flex-col">
                     {/* Tools Buttons */}
                     <div className="grid grid-cols-2 gap-2 py-4">
-                        <Button
-                            variant="secondary"
-                            onClick={onAddBrush}
-                            disabled={selectedImage?.isGenerating || isMulti}
-                            icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-orange-500'}`} />}
-                            className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
-                            tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
-                        >
-                            <span>{t('annotate') || 'Annotate'}</span>
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={selectedImage?.isGenerating}
-                            icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
-                            className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
-                            tooltip={t('tt_upload_ref')}
-                        >
-                            <span>{t('reference_image_btn')}</span>
-                        </Button>
+                        <div className="relative">
+                            <Button
+                                variant="secondary"
+                                onClick={onAddBrush}
+                                disabled={selectedImage?.isGenerating || isMulti}
+                                icon={<Pen className={`w-3.5 h-3.5 ${isMulti ? 'text-zinc-300' : 'text-orange-500'}`} />}
+                                className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
+                                tooltip={isMulti ? t('tool_disabled_multi') : t('tt_annotate')}
+                            >
+                                <span>{t('annotate') || 'Annotate'}</span>
+                            </Button>
+                            {!isMulti && !selectedImage?.isGenerating && (
+                                <ContextTip
+                                    storageKey="expose_tip_annotate_button_v1"
+                                    content={
+                                        <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                            {currentLang === 'de' ? 'Nutze ' : 'Use '}
+                                            <ContextTipChip icon={<Pen className="h-3.5 w-3.5" />} />
+                                            {currentLang === 'de'
+                                                ? ', um Änderungen direkt im Bild zu markieren.'
+                                                : ' to mark changes directly in the image.'}
+                                        </p>
+                                    }
+                                    inline
+                                    placement="below"
+                                    showArrow={false}
+                                />
+                            )}
+                        </div>
+                        <div className="relative">
+                            <Button
+                                variant="secondary"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={selectedImage?.isGenerating}
+                                icon={<Camera className="w-3.5 h-3.5 text-orange-500" />}
+                                className="w-full !normal-case !font-normal !tracking-normal !text-xs !h-9"
+                                tooltip={t('tt_upload_ref')}
+                            >
+                                <span>{t('reference_image_btn')}</span>
+                            </Button>
+                            {!isMulti && !selectedImage?.isGenerating && (
+                                <ContextTip
+                                    storageKey="expose_tip_reference_image_button_v2"
+                                    text={referenceTipText}
+                                    inline
+                                    placement="below"
+                                    showArrow={false}
+                                />
+                            )}
+                        </div>
                         <input
                             type="file"
                             ref={fileInputRef}

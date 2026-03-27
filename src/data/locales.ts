@@ -435,8 +435,6 @@ export const translations = {
     notifications_disabled: "Currently disabled",
     notifications_ask: "Permission will be requested when enabled",
     notifications_allow_in_browser: "Allow notifications in your browser settings",
-    auto_delete_oldest: "Auto-delete oldest image",
-    auto_delete_desc: "Removes the oldest image on each generation & upload",
     // SettingsModal — extended
     settings_model_label: "Default Model",
     settings_quality_label: "Quality",
@@ -444,7 +442,6 @@ export const translations = {
     notifications_browser_label: "Browser Notifications",
     notifications_browser_desc: "After completed generations",
     notification_generation_done: "exposé · Image ready",
-    auto_delete_desc_short: "Generation & upload",
     model_nb2_desc: "Faster",
     model_pro_desc: "Highest quality",
 
@@ -982,8 +979,6 @@ export const translations = {
     notifications_disabled: "Aktuell deaktiviert",
     notifications_ask: "Erlaubnis wird beim Aktivieren angefragt",
     notifications_allow_in_browser: "Benachrichtigungen in den Browser-Einstellungen erlauben",
-    auto_delete_oldest: "Ältestes Bild automatisch löschen",
-    auto_delete_desc: "Entfernt das älteste Bild bei Generierung & Upload",
     // SettingsModal — extended
     settings_model_label: "Standardmodell",
     settings_quality_label: "Qualität",
@@ -991,7 +986,6 @@ export const translations = {
     notifications_browser_label: "Browser-Benachrichtigungen",
     notifications_browser_desc: "Nach abgeschlossenen Generierungen",
     notification_generation_done: "exposé · Ihr Bild ist fertig",
-    auto_delete_desc_short: "Generierung & Upload",
     model_nb2_desc: "Schneller",
     model_pro_desc: "Höchste Qualität",
 

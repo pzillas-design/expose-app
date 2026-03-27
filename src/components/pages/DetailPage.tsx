@@ -182,7 +182,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMobile = useMobile();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
-    const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('brush');
+    const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('text');
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
     const isSideSheetVisible = isSideSheetVisibleProp ?? isSideSheetVisibleLocal;
@@ -444,7 +444,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     useEffect(() => {
         if (state.sideSheetMode === 'brush') {
-            actions.setMaskTool(subMenu === 'brush' ? 'brush' : 'select');
+            actions.setMaskTool(subMenu === 'brush' ? 'brush' : subMenu === 'text' ? 'text' : 'select');
         }
     }, [subMenu, state.sideSheetMode, actions]);
 
@@ -902,48 +902,50 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
 
                             {/* Primary Row: 3 Tools + Done */}
-                            <div className={`flex items-center gap-2 p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
-                                <button
-                                    onClick={() => {
-                                        setSubMenu('text');
-                                        actions.setMaskTool('select');
-                                        // Auto-add text if there's no selection? Let's rely on user clicking chips
-                                    }}
-                                    className={`w-[52px] h-[52px] flex flex-col items-center justify-center rounded-full transition-all gap-0.5 ${subMenu === 'text' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
-                                >
-                                    <Type className="w-5 h-5" />
-                                    <div className={`w-1 h-1 rounded-full bg-zinc-800 dark:bg-zinc-300 transition-opacity ${subMenu === 'text' ? 'opacity-100' : 'opacity-0'}`} />
-                                </button>
+                            <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
+                                <Tooltip text={t('tool_text') || 'Text'} side="top">
+                                    <button
+                                        onClick={() => {
+                                            setSubMenu('text');
+                                            actions.setMaskTool('select');
+                                        }}
+                                        className={`w-[44px] h-[44px] flex items-center justify-center rounded-full transition-all ${subMenu === 'text' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+                                    >
+                                        <Type className="w-5 h-5" />
+                                    </button>
+                                </Tooltip>
 
-                                <button
-                                    onClick={() => {
-                                        setSubMenu('shapes');
-                                        actions.setMaskTool('select');
-                                    }}
-                                    className={`w-[52px] h-[52px] flex flex-col items-center justify-center rounded-full transition-all gap-0.5 ${subMenu === 'shapes' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
-                                >
-                                    <Shapes className="w-5 h-5" />
-                                    <div className={`w-1 h-1 rounded-full bg-zinc-800 dark:bg-zinc-300 transition-opacity ${subMenu === 'shapes' ? 'opacity-100' : 'opacity-0'}`} />
-                                </button>
+                                <Tooltip text={t('tool_shapes') || 'Formen'} side="top">
+                                    <button
+                                        onClick={() => {
+                                            setSubMenu('shapes');
+                                            actions.setMaskTool('select');
+                                        }}
+                                        className={`w-[44px] h-[44px] flex items-center justify-center rounded-full transition-all ${subMenu === 'shapes' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+                                    >
+                                        <Shapes className="w-5 h-5" />
+                                    </button>
+                                </Tooltip>
 
-                                <button
-                                    onClick={() => {
-                                        setSubMenu('brush');
-                                        actions.setMaskTool('brush');
-                                    }}
-                                    className={`w-[52px] h-[52px] flex flex-col items-center justify-center rounded-full transition-all gap-0.5 ${subMenu === 'brush' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
-                                >
-                                    <Pen className="w-5 h-5" />
-                                    <div className={`w-1 h-1 rounded-full bg-zinc-800 dark:bg-zinc-300 transition-opacity ${subMenu === 'brush' ? 'opacity-100' : 'opacity-0'}`} />
-                                </button>
+                                <Tooltip text={t('tool_brush') || 'Pinsel'} side="top">
+                                    <button
+                                        onClick={() => {
+                                            setSubMenu('brush');
+                                            actions.setMaskTool('brush');
+                                        }}
+                                        className={`w-[44px] h-[44px] flex items-center justify-center rounded-full transition-all ${subMenu === 'brush' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
+                                    >
+                                        <Pen className="w-5 h-5" />
+                                    </button>
+                                </Tooltip>
 
-                                <div className="w-[1px] h-8 bg-zinc-200 dark:bg-zinc-800 mx-2" />
+                                <div className="w-[1px] h-8 bg-zinc-200 dark:bg-zinc-800 mx-1" />
 
                                 <Button
                                     onClick={() => actions.handleModeChange('prompt')}
                                     variant="primary-mono"
                                     size="l"
-                                    className={`!h-[52px] !rounded-full ${Theme.Effects.ShadowSm} hover:${Theme.Effects.Shadow}`}
+                                    className={`!h-[44px] !rounded-full ${Theme.Effects.ShadowSm} hover:${Theme.Effects.Shadow}`}
                                 >
                                     {t('done') || 'Fertig'}
                                 </Button>
