@@ -334,8 +334,9 @@ Deno.serve(async (req) => {
             // the admin/client can see where a killed background task got stuck.
             const updateStage = (stage: string) => {
                 bgStage = stage;
+                const payload = typeof apiRequestPayload !== 'undefined' ? apiRequestPayload : {};
                 supabaseAdmin.from('generation_jobs')
-                    .update({ request_payload: { ...apiRequestPayload, current_stage: stage, stage_updated_at: new Date().toISOString() } })
+                    .update({ request_payload: { ...payload, current_stage: stage, stage_updated_at: new Date().toISOString() } })
                     .eq('id', newId)
                     .then(() => {});
             };

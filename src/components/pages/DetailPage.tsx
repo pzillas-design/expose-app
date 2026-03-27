@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Pen, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
@@ -937,7 +937,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         }}
                                         className={`w-[44px] h-[44px] flex items-center justify-center rounded-full transition-all ${subMenu === 'brush' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100'}`}
                                     >
-                                        <Pen className="w-5 h-5" />
+                                        <Brush className="w-5 h-5" />
                                     </button>
                                 </Tooltip>
 
