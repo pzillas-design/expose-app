@@ -144,7 +144,8 @@ export const adminService = {
             tokensPrompt: job.tokens_prompt ?? null,
             tokensCompletion: job.tokens_completion ?? null,
             tokensTotal: job.tokens_total ?? null,
-            webhookData: job.webhook_data || null
+            webhookData: job.webhook_data || null,
+            downloadedAt: job.downloaded_at || null
         }));
     },
 

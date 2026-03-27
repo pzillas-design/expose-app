@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock, Download } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -133,6 +133,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             </td>
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-1">
+                                                    {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400" />}
                                                     {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                     {hasVars      && <span className={badgeClass}>Variablen</span>}
                                                 </div>
