@@ -104,37 +104,6 @@ If you get `503 BOOT_ERROR`, the function failed to start. Check recent code cha
 - If pricing or current feature support is in doubt:
   - [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing?hl=de#gemini-3.1-flash-image-preview)
 
-## Admin Panel Google Tracking
-
-For Google-backed image jobs, the admin/debug data model should aim to store and ideally display at least:
-
-- `provider`
-- `provider_model`
-- `provider_model_version`
-- `provider_response_id`
-- `finish_reason`
-- `finish_message`
-- `prompt_block_reason`
-- `prompt_safety_ratings`
-- `candidate_safety_ratings`
-- `usage_metadata`
-- `response_modalities`
-- `aspect_ratio_requested`
-- `image_size`
-- `reference_count`
-- `has_source_image`
-- `has_mask`
-- `tools_enabled`
-- `grounding_used`
-- `provider_latency_ms`
-- `storage_latency_ms`
-- `save_stage` / `failure_stage`
-
-Reason:
-- Google AI Studio alone is not enough for product debugging
-- we need our own job-level telemetry tied to internal `job_id`, user, credits/refunds, source/mask/reference context, storage save status, and UI delivery status
-- `provider_response_id`, `finish_reason`, safety fields, and `usage_metadata` are especially valuable when the model returns errors, blocks content, or behaves differently across preview model updates
-
 ## Existing Project References
 
 - [`./.agent/workflows/deployment_strategy.md`](./.agent/workflows/deployment_strategy.md) — deployment strategy and branch rules
