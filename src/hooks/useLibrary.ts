@@ -177,11 +177,14 @@ export const useLibrary = ({ lang, currentLang, user }: UseLibraryProps) => {
         if (user && user.id !== 'guest') {
             try {
                 const isCustom = userLibrary.some(c => c.items.some(i => i.id === itemId));
+                // Optimistic update — hide immediately in UI
+                if (!isCustom) {
+                    setHiddenObjectIds(prev => [...prev, itemId]);
+                }
                 if (isCustom) {
                     await userService.deleteUserObject(user.id, itemId);
                 } else {
                     await userService.hideSystemObject(user.id, itemId);
-                    setHiddenObjectIds(prev => [...prev, itemId]);
                 }
             } catch (err) {
                 console.error("Failed to delete user object from DB", err);
