@@ -219,9 +219,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
 
     <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800">
      <p className="text-[10px] font-medium text-zinc-400 mb-2">Google / Provider</p>
-     <div className="divide-y divide-zinc-100 dark:divide-zinc-800 rounded-lg border border-zinc-100 dark:border-zinc-800 overflow-hidden">
+     <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
       {providerRows.map(({ label, value }) => (
-       <div key={label} className="flex justify-between items-center px-4 py-2.5 text-xs">
+       <div key={label} className="flex justify-between items-center py-2.5 text-xs">
         <span className="text-zinc-400 shrink-0 mr-4">{label}</span>
         <span className="text-zinc-900 dark:text-zinc-100 text-right break-all">{value}</span>
        </div>
