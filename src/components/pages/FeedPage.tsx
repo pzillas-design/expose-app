@@ -6,10 +6,21 @@ import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
-import { Theme, Typo, Button } from '@/components/ui/DesignSystem';
+import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
+
+/* ── TTL helpers ── */
+const TTL_DAYS = 30;
+const WARNING_DAYS = 7;
+
+function getDaysRemaining(createdAt: string | number | undefined): number | null {
+    if (!createdAt) return null;
+    const created = typeof createdAt === 'number' ? createdAt : new Date(createdAt).getTime();
+    const expiresAt = created + TTL_DAYS * 24 * 60 * 60 * 1000;
+    return Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+}
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -36,9 +47,13 @@ interface FeedGridItemProps {
     isLastViewed?: boolean;
     /** Generated image not yet opened by user */
     isNew?: boolean;
+    /** Days remaining before auto-deletion (≤7 shows yellow warning dot) */
+    daysRemaining?: number | null;
+    /** Current UI language for tooltip text */
+    currentLang?: 'de' | 'en';
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en' }) => {
     const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
@@ -179,10 +194,17 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                 </div>
 
-                {/* "New" dot — sits on the top-right corner of the image bounds (outside overflow-hidden) */}
-                {isNew && !isGen && (
+                {/* Priority: isNew orange dot > expiring yellow dot */}
+                {isNew && !isGen ? (
                     <span className="absolute -top-1 -right-1 z-30 w-3 h-3 rounded-full bg-gradient-to-br from-orange-400 to-red-500 shadow-sm pointer-events-none" />
-                )}
+                ) : (daysRemaining != null && daysRemaining <= WARNING_DAYS && !isGen) ? (
+                    <Tooltip text={currentLang === 'de'
+                        ? `Wird in ${Math.max(0, daysRemaining)} ${daysRemaining === 1 ? 'Tag' : 'Tagen'} gelöscht`
+                        : `Will be deleted in ${Math.max(0, daysRemaining)} ${daysRemaining === 1 ? 'day' : 'days'}`
+                    }>
+                        <span className="absolute -top-1 -right-1 z-30 w-3 h-3 rounded-full bg-yellow-400 shadow-sm cursor-default" />
+                    </Tooltip>
+                ) : null}
             </div>
         </div>
     );
@@ -602,6 +624,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         const isNew = !expandedGroupId
                                             ? rowItems.some(i => unseenIds.has(i.id))
                                             : unseenIds.has(img.id);
+                                        // TTL: use root image's createdAt for group covers
+                                        const rootImg = rowItems.find(i => !i.parentId) ?? img;
+                                        const daysLeft = getDaysRemaining(rootImg.createdAt);
                                         return (
                                             <FeedGridItem
                                                 key={img.id}
@@ -624,6 +649,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
                                                 isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
                                                 isNew={isNew}
+                                                daysRemaining={daysLeft}
+                                                currentLang={state?.currentLang}
                                             />
                                         );
                                     })}

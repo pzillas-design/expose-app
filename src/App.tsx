@@ -426,6 +426,7 @@ export function App() {
                     mode={location.pathname === '/create' ? 'create' : location.pathname.startsWith('/image/') ? 'detail' : 'grid'}
                     rightInset={location.pathname.startsWith('/image/') ? detailSidebarWidth : 0}
                     hasImages={allImages.length > 0}
+                    imageCount={allImages.length}
                     detailInfo={(() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
@@ -448,6 +449,13 @@ export function App() {
                             const id = location.pathname.split('/').pop();
                             const img = allImages.find(i => i.id === id);
                             return !!(img?.generationPrompt);
+                        }
+                        return false;
+                    })()}
+                    detailIsNew={(() => {
+                        if (location.pathname.startsWith('/image/')) {
+                            const id = location.pathname.split('/').pop();
+                            return !!(id && state.unseenIds?.has(id));
                         }
                         return false;
                     })()}

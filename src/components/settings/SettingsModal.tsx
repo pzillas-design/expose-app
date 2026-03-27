@@ -33,10 +33,6 @@ interface SettingsModalProps {
     userProfile: any;
     t: TranslationFunction;
     currentLang?: 'de' | 'en';
-    imageCount?: number;
-    imageLimit?: number;
-    storageAutoDelete?: boolean;
-    onStorageAutoDeleteChange?: (val: boolean) => void;
     onChangePassword?: () => void;
 }
 
@@ -45,7 +41,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     qualityMode, onQualityModeChange, currentBalance, onAddFunds,
     themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t,
     currentLang = 'en',
-    imageCount = 0, imageLimit = 100, storageAutoDelete = false, onStorageAutoDeleteChange,
     onChangePassword
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
@@ -278,27 +273,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* ── Speicher ── */}
                 <section className="py-7">
                     <p className={sectionLabel}>{t('storage_section')}</p>
-                    <div className="space-y-4">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <p className={rowTitle}>{imageCount} / {imageLimit} {t('images_label')}</p>
-                                <p className="text-xs text-zinc-400">{imageLimit > 0 ? Math.round((imageCount / imageLimit) * 100) : 0}%</p>
-                            </div>
-                            <div className="h-1 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-zinc-400 dark:bg-zinc-500 rounded-full transition-all duration-500"
-                                    style={{ width: `${Math.min((imageCount / imageLimit) * 100, 100)}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4 pt-2">
-                            <div>
-                                <p className={rowTitle}>{t('auto_delete_oldest')}</p>
-                            </div>
-                            <Toggle checked={storageAutoDelete} onChange={() => onStorageAutoDeleteChange?.(!storageAutoDelete)} />
-                        </div>
-                    </div>
+                    <p className={rowSub}>
+                        {currentLang === 'de'
+                            ? 'Bilder werden 30 Tage nach Erstellung automatisch gelöscht.'
+                            : 'Images are automatically deleted 30 days after creation.'}
+                    </p>
                 </section>
 
                 {/* ── Sonstiges ── */}

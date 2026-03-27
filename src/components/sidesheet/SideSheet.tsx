@@ -11,6 +11,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { CropModal } from '@/components/modals/CropModal';
 import { generateId } from '@/utils/ids';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
+import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
@@ -481,6 +482,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // ── Count of active visual annotations ──
     const visibleAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
     const referenceAnns = annotations.filter(a => a.type === 'reference_image');
+    const hasPromptText = !!prompt?.trim();
+    const hasCommentAnnotations = visibleAnns.length > 0;
 
     // ─── PROMPT MODE (Main View) ───────────────────────────────────────────────
     const isMobileSheet = isMobile && !props.disableMobileSheet;
@@ -672,29 +675,59 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {/* Bottom Controls + Generate */}
                                     <div className="!mt-10 flex items-center gap-3">
                                         <div className="flex items-center gap-2">
-                                            <Tooltip text={t('add_reference')} side="top">
-                                                <button
-                                                    onClick={() => fileInputRef.current?.click()}
-                                                    disabled={selectedImage?.isGenerating}
-                                                    className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
-                                                >
-                                                    <Camera className="w-4 h-4" />
-                                                    {referenceAnns.length > 0 && (
-                                                        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-                                                            {referenceAnns.length}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            </Tooltip>
-                                            <Tooltip text={t('tt_annotate')} side="top">
-                                                <button
-                                                    onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
-                                                    disabled={selectedImage?.isGenerating || isMulti}
-                                                    className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
-                                                >
-                                                    <Pen className="w-4 h-4" />
-                                                </button>
-                                            </Tooltip>
+                                            <div className="relative">
+                                                <Tooltip text={t('add_reference')} side="top">
+                                                    <button
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        disabled={selectedImage?.isGenerating}
+                                                        className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
+                                                    >
+                                                        <Camera className="w-4 h-4" />
+                                                        {referenceAnns.length > 0 && (
+                                                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                                                {referenceAnns.length}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                </Tooltip>
+                                                {!selectedImage?.isGenerating && (
+                                                    <ContextTip
+                                                        storageKey="expose_tip_reference_image_button_live_v1"
+                                                        text={lang === 'de'
+                                                            ? 'Lade ein Referenzbild hoch, an dem sich die KI orientieren soll.'
+                                                            : 'Upload a reference image the AI can use as guidance.'}
+                                                        placement="auto"
+                                                        enabled={hasPromptText && referenceAnns.length === 0}
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="relative">
+                                                <Tooltip text={t('tt_annotate')} side="top">
+                                                    <button
+                                                        onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
+                                                        disabled={selectedImage?.isGenerating || isMulti}
+                                                        className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
+                                                    >
+                                                        <Pen className="w-4 h-4" />
+                                                    </button>
+                                                </Tooltip>
+                                                {!selectedImage?.isGenerating && !isMulti && (
+                                                    <ContextTip
+                                                        storageKey="expose_tip_annotate_button_live_v1"
+                                                        content={
+                                                            <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                                                {lang === 'de' ? 'Mit ' : 'With '}
+                                                                <ContextTipChip icon={<Pen className="h-3.5 w-3.5" />} />
+                                                                {lang === 'de'
+                                                                    ? ' kannst du Anmerkung im Bild machen.'
+                                                                    : ' you can make annotations in the image.'}
+                                                            </p>
+                                                        }
+                                                        placement="auto"
+                                                        enabled={hasPromptText && !hasCommentAnnotations}
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
 
                                         {/* Quality Dropdown + Generate */}
@@ -800,13 +833,24 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 {t('new_preset') || 'Neue Vorlage'}
                                             </button>
                                         ) : (
-                                            <RoundIconButton
-                                                icon={<MoreHorizontal className="w-4 h-4" />}
-                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                tooltip={t('edit_presets')}
-                                                tooltipSide="top"
-                                                variant="ghost"
-                                            />
+                                            <div className="relative inline-flex shrink-0">
+                                                <RoundIconButton
+                                                    icon={<MoreHorizontal className="w-4 h-4" />}
+                                                    onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                    tooltip={t('edit_presets')}
+                                                    tooltipSide="top"
+                                                    variant="ghost"
+                                                />
+                                                <ContextTip
+                                                    storageKey="expose_tip_presets_manage_v1"
+                                                    text={lang === 'de'
+                                                        ? 'Hier kannst du Prompt-Vorlagen erstellen und bearbeiten.'
+                                                        : 'Manage your presets here so you can reuse them later.'}
+                                                    placement="auto"
+                                                    enabled={hasPromptText}
+                                                    anchorClassName="absolute inset-0 pointer-events-none"
+                                                />
+                                            </div>
                                         )}
                                     </div>
                                 </div>

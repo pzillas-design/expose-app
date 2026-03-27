@@ -330,9 +330,18 @@ Deno.serve(async (req) => {
         // EdgeRuntime.waitUntil keeps the function alive up to 5 minutes after response.
         EdgeRuntime.waitUntil((async () => {
             let bgStage = 'init';
+            // Fire-and-forget stage tracker — writes current_stage to request_payload so
+            // the admin/client can see where a killed background task got stuck.
+            const updateStage = (stage: string) => {
+                bgStage = stage;
+                supabaseAdmin.from('generation_jobs')
+                    .update({ request_payload: { ...apiRequestPayload, current_stage: stage, stage_updated_at: new Date().toISOString() } })
+                    .eq('id', newId)
+                    .then(() => {});
+            };
             try {
                 // Prepare source image (base64)
-                bgStage = 'prepare_source';
+                updateStage('prepare_source');
                 let finalSourceBase64 = null;
                 const sourceToProcess = payloadOriginalImage || sourceImage?.src;
                 if (sourceToProcess) {
@@ -341,7 +350,7 @@ Deno.serve(async (req) => {
 
                 const isNb2Mode = qualityMode.startsWith('nb2-');
                 if (!isNb2Mode) {
-                    throw new Error('Only NB2 quality modes are supported on staging');
+                    throw new Error('Only NB2 quality modes are supported');
                 }
 
                 const finalModelName = 'gemini-3.1-flash-image-preview';
@@ -466,7 +475,7 @@ Deno.serve(async (req) => {
                     throw new Error('Google API key missing');
                 }
 
-                bgStage = 'gemini_call';
+                updateStage('gemini_call');
                 logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
                 const providerStartTime = Date.now();
                 const geminiResponse = await geminiGenerateImage(
@@ -509,7 +518,7 @@ Deno.serve(async (req) => {
                 // Merge provider metadata into apiRequestPayload for storage
                 Object.assign(apiRequestPayload, providerMetadata);
 
-                bgStage = 'save_result';
+                updateStage('save_result');
                 await saveGeminiResult(
                     supabaseAdmin,
                     newId,

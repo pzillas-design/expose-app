@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Box, Square, Circle, Minus, Eraser, Loader2, Check, Trash, MoreVertical, Smile, X, Plus, Type, Pen } from 'lucide-react';
+import { Box, Square, Circle, Minus, Eraser, Loader2, Check, Trash, MoreVertical, Smile, X, Plus, Type, Pen, Ellipsis } from 'lucide-react';
 import { Typo, Theme, Button } from '@/components/ui/DesignSystem';
 import { SidebarAccordion, SidebarAccordionItem } from '@/components/ui/SidebarAccordion';
 import { TranslationFunction, LibraryCategory } from '@/types';
@@ -106,14 +106,14 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     ))}
                 </SidebarAccordion>
             ) : (
-                <div className="flex items-center justify-center gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-4 px-4">
+                <div className="flex items-center justify-start gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-4 px-4">
                     {/* Edit Stickers Button */}
                     <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }}
                         className="shrink-0 h-10 w-10 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center transition-all group"
                         title={t('edit_stickers_btn')}
                     >
-                        <Pen className="w-4 h-4 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
+                        <Ellipsis className="w-4 h-4 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
                     </button>
 
                     {/* Free Text Chip */}

@@ -3,7 +3,7 @@ import { useState } from 'react';
 export const useUIState = () => {
     const [sideSheetMode, setSideSheetMode] = useState<'prompt' | 'brush' | 'objects'>('prompt');
     const [brushSize, setBrushSize] = useState(150);
-    const [maskTool, setMaskTool] = useState<'brush' | 'text' | 'shape' | 'select' | 'stamps'>('select');
+    const [maskTool, setMaskTool] = useState<'brush' | 'text' | 'shape' | 'select' | 'stamps'>('text');
     const [activeShape, setActiveShape] = useState<'rect' | 'circle' | 'line'>('rect');
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
