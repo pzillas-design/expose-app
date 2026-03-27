@@ -350,14 +350,12 @@ export function App() {
     const expandableRoutes = ['/', '/about', '/impressum'];
     const isExpandableRoute = expandableRoutes.includes(location.pathname);
 
-    const outerContainerClasses = (isAppLayout || isAdminRoute)
+    const outerContainerClasses = isAppLayout
         ? "h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
         ? "flex-1 flex flex-col overflow-hidden pt-14"
-        : isAdminRoute
-        ? "flex-1 flex flex-col overflow-hidden"
         : "flex-1 flex flex-col";
 
     const showGlobalNavbar = !isAdminRoute;

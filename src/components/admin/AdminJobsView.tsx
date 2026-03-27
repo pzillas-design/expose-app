@@ -63,7 +63,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                 search={{ value: search, onChange: setSearch, placeholder: t('search') }}
             />
 
-            <div className="flex-1 min-h-0 overflow-auto">
+            <div className="overflow-x-auto">
                 <div className="min-w-[960px] flex flex-col">
                     {loading && jobs.length === 0 ? (
                         <div className="py-20 flex items-center justify-center">
