@@ -53,11 +53,11 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
   lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
    ? 'google'
    : 'legacy';
- const providerModelVersion = img?.model_version || rawModel || '–';
+ const providerModelVersion = payload.providerModelVersion || img?.model_version || rawModel || '–';
  const generationConfig = payload.generationConfig || {};
  const imageConfig = generationConfig.imageConfig || {};
- const responseModalities = generationConfig.responseModalities || null;
- const aspectRatioRequested = imageConfig.aspectRatio || null;
+ const responseModalities = payload.responseModalities || generationConfig.responseModalities || null;
+ const aspectRatioRequested = payload.aspectRatioRequested || imageConfig.aspectRatio || null;
  const toolsEnabled = Array.isArray(payload.tools)
   ? payload.tools.map((tool: any) => Object.keys(tool || {})).flat().filter(Boolean)
   : [];
@@ -97,6 +97,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
   { label: 'Has Mask', value: formatValue(hasMask) },
   { label: 'Tools Enabled', value: formatValue(toolsEnabled) },
   { label: 'Grounding Used', value: formatValue(groundingUsed) },
+  ...(payload.providerLatencyMs ? [{ label: 'Provider Latency', value: `${Math.round(payload.providerLatencyMs / 1000)}s` }] : []),
+  ...(payload.storageLatencyMs ? [{ label: 'Storage Latency', value: `${Math.round(payload.storageLatencyMs / 1000)}s` }] : []),
+  ...(payload.saveStage ? [{ label: 'Save Stage', value: formatValue(payload.saveStage) }] : []),
  ];
 
  // Single flat table rows — only truthy values shown

@@ -51,12 +51,14 @@ If you get `503 BOOT_ERROR`, the function failed to start. Check recent code cha
   - the import exists in the Edge runtime
   - the API call shape still matches the SDK
   - the response shape still matches `extractImageBase64()`
-- Do not assume staging and main are using isolated Supabase projects unless explicitly confirmed.
+- Do not assume staging and main are isolated for Edge Function deploys.
+- Current verified state: both `www.expose.ae` and `staging.expose.ae` use `https://rhocpnetpxficxnrprsq.supabase.co`.
+- That means a deploy to Supabase project `rhocpnetpxficxnrprsq` affects both `main` and `staging`.
 
 ## Google AI Studio / Gemini Image Notes
 
-- For the current staging `NB2` path, the canonical Google API model is `gemini-3.1-flash-image-preview`
-- For `NB Pro`, the canonical Google API model is `gemini-3-pro-image-preview`
+- The only supported model is `NB2` (Nano Banana 2), using `gemini-3.1-flash-image-preview`
+- Pro models have been removed from the product — do not re-introduce them
 - Do not infer API model names from AI Studio URLs. AI Studio may use URL slugs like `gemini-3-1-flash-image`, while the Gemini API model name is `gemini-3.1-flash-image-preview`
 - The canonical request shape for our Google image path is `ai.models.generateContent(...)`
 - The expected image response shape is in `response.candidates[*].content.parts[*].inlineData`
@@ -102,10 +104,37 @@ If you get `503 BOOT_ERROR`, the function failed to start. Check recent code cha
 - If pricing or current feature support is in doubt:
   - [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing?hl=de#gemini-3.1-flash-image-preview)
 
+## Admin Panel Google Tracking
+
+For Google-backed image jobs, the admin/debug data model should aim to store and ideally display at least:
+
+- `provider`
+- `provider_model`
+- `provider_model_version`
+- `provider_response_id`
+- `finish_reason`
+- `finish_message`
+- `prompt_block_reason`
+- `prompt_safety_ratings`
+- `candidate_safety_ratings`
+- `usage_metadata`
+- `response_modalities`
+- `aspect_ratio_requested`
+- `image_size`
+- `reference_count`
+- `has_source_image`
+- `has_mask`
+- `tools_enabled`
+- `grounding_used`
+- `provider_latency_ms`
+- `storage_latency_ms`
+- `save_stage` / `failure_stage`
+
+Reason:
+- Google AI Studio alone is not enough for product debugging
+- we need our own job-level telemetry tied to internal `job_id`, user, credits/refunds, source/mask/reference context, storage save status, and UI delivery status
+- `provider_response_id`, `finish_reason`, safety fields, and `usage_metadata` are especially valuable when the model returns errors, blocks content, or behaves differently across preview model updates
+
 ## Existing Project References
 
-These older project docs already exist and may still contain useful context:
-
-- [`./.agent/workflows/deployment_strategy.md`](./.agent/workflows/deployment_strategy.md)
-- [`./.agent/workflows/generation_logic.md`](./.agent/workflows/generation_logic.md)
-- [`./_agents/workflows/generation_logic.md`](./_agents/workflows/generation_logic.md)
+- [`./.agent/workflows/deployment_strategy.md`](./.agent/workflows/deployment_strategy.md) — deployment strategy and branch rules
