@@ -657,7 +657,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                         {/* Floating action buttons (desktop only) */}
                         {!isMobile && state.sideSheetMode !== 'brush' && (
-                            <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${img.isGenerating ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <div className="flex items-center gap-2 pointer-events-auto">
                                     {img.generationPrompt && img.parentId && (
                                         <Tooltip text={t('generate_more')}>
