@@ -15,10 +15,18 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t 
  // Format quality mode: "nb2-2k" → "NB2 · 2K", "pro-4k" → "Pro · 4K"
  const formatModel = (m: string) => {
   if (!m || m === 'unknown') return '–';
-  const isNb2 = m.startsWith('nb2') || m.includes('nano-banana-2');
-  const isPro = !isNb2 && (m.includes('pro') || m.includes('nano-banana-pro'));
+  const value = m.toLowerCase();
+  const isNb2 =
+   value.startsWith('nb2') ||
+   value.includes('nano-banana-2') ||
+   value.includes('gemini-3.1-flash-image-preview');
+  const isPro =
+   !isNb2 &&
+   (value.includes('pro') ||
+    value.includes('nano-banana-pro') ||
+    value.includes('gemini-3-pro-image-preview'));
   const tier = isNb2 ? 'NB2' : isPro ? 'Pro' : m;
-  const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : null;
+  const res = value.includes('4k') ? '4K' : value.includes('2k') ? '2K' : value.includes('1k') ? '1K' : null;
   return res ? `${tier} · ${res}` : tier;
  };
 
