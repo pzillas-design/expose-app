@@ -116,8 +116,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_date')}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
-                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Dauer</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Tools</th>
+                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Dauer</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-center">Download</th>
                                                 </tr>
@@ -158,6 +158,13 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                             })()}
                                                         </td>
                                                         <td className="px-5 py-3.5">
+                                                            <div className="flex items-center gap-1">
+                                                                {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
+                                                                {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
+                                                                {hasVars      && <span className={badgeClass}>Variablen</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-5 py-3.5">
                                                             {j.durationMs ? (
                                                                 <div className="flex flex-col items-start gap-1">
                                                                     <span className="font-mono text-xs text-zinc-500">
@@ -175,13 +182,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                             ) : (
                                                                 <span className="text-xs text-zinc-400">–</span>
                                                             )}
-                                                        </td>
-                                                        <td className="px-5 py-3.5">
-                                                            <div className="flex items-center gap-1">
-                                                                {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
-                                                                {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
-                                                                {hasVars      && <span className={badgeClass}>Variablen</span>}
-                                                            </div>
                                                         </td>
                                                         <td className="px-5 py-3.5 text-right">
                                                             {j.status?.toLowerCase() === 'completed'
