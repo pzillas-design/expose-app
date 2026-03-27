@@ -76,7 +76,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     <tr>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_date')}</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
-                                        <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('model')}</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Tools</th>
                                         <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
@@ -101,34 +100,20 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                             <td className="px-5 py-3.5 font-medium text-black dark:text-white">{j.userName}</td>
                                             <td className="px-5 py-3.5">
                                                 {(() => {
-                                                    const m = (j.model || 'unknown').toLowerCase();
-                                                    const isNb2 =
-                                                        m.startsWith('nb2') ||
-                                                        m.includes('nano-banana-2') ||
-                                                        m.includes('gemini-3.1-flash-image-preview');
-                                                    const isPro =
-                                                        !isNb2 &&
-                                                        (m.includes('pro') ||
-                                                            m.includes('nano-banana-pro') ||
-                                                            m.includes('gemini-3-pro-image-preview'));
-                                                    const displayName = isNb2 ? 'NB2' : isPro ? 'NB Pro' : 'Legacy';
-                                                    const color = isNb2
-                                                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
-                                                        : isPro
+                                                    const m = j.qualityMode || j.model || '';
+                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : '–';
+                                                    const color = res === '4K'
+                                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                        : res === '2K'
                                                         ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                                                        : res === '1K'
+                                                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
                                                         : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
                                                     return (
                                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${color}`}>
-                                                            {displayName}
+                                                            {res}
                                                         </span>
                                                     );
-                                                })()}
-                                            </td>
-                                            <td className="px-5 py-3.5">
-                                                {(() => {
-                                                    const m = j.qualityMode || j.model || '';
-                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : '–';
-                                                    return <span className="text-xs text-zinc-500">{res}</span>;
                                                 })()}
                                             </td>
                                             <td className="px-5 py-3.5">
