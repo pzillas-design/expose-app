@@ -23,7 +23,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
 
             <main className="flex-1 w-full max-w-3xl mx-auto px-6 pt-12 sm:pt-44 pb-12 sm:pb-24">
-                <article className="prose prose-zinc dark:prose-invert max-w-none prose-p:leading-7 prose-p:mb-5 prose-h1:mb-8 prose-h3:mt-10 prose-h3:mb-4 prose-h4:mt-6 prose-h4:mb-2">
+                <article className="prose prose-zinc dark:prose-invert max-w-none prose-p:leading-7 prose-p:mb-5 prose-h1:mb-8 prose-h2:mt-14 prose-h2:mb-6 prose-h2:text-2xl prose-h2:font-semibold prose-h2:text-zinc-900 dark:prose-h2:text-white prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-lg prose-h3:font-semibold prose-h3:text-zinc-900 dark:prose-h3:text-zinc-100 prose-h4:mt-6 prose-h4:mb-2 prose-h4:text-sm prose-h4:font-semibold prose-h4:uppercase prose-h4:tracking-[0.08em] prose-h4:text-zinc-500 dark:prose-h4:text-zinc-400">
                     <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Impressum</h1>
 
                     <h3>Angaben gemäß § 5 DDG</h3>
@@ -63,7 +63,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
                     <div className="my-16 border-t border-zinc-200 dark:border-zinc-800" />
 
-                    <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Datenschutzerklärung</h1>
+                    <h2>Datenschutzerklärung</h2>
 
                     <h3>1. Datenschutz auf einen Blick</h3>
                     <h4>Allgemeine Hinweise</h4>
@@ -170,7 +170,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
                     <div className="my-16 border-t border-zinc-200 dark:border-zinc-800" />
 
-                    <h1 className="text-3xl font-bold mb-8 text-zinc-900 dark:text-white">Allgemeine Geschäftsbedingungen (AGB)</h1>
+                    <h2>Allgemeine Geschäftsbedingungen (AGB)</h2>
 
                     <h3>1. Geltungsbereich</h3>
                     <p>
