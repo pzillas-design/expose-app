@@ -19,7 +19,7 @@ export async function verifyJwtSignature(token: string): Promise<{ sub: string; 
 
     const [headerB64, payloadB64, signatureB64] = parts;
 
-    const secret = Deno.env.get('JWT_SECRET');
+    const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET');
     if (!secret) throw new Error('JWT secret not configured');
 
     // Import HMAC key
