@@ -83,15 +83,30 @@ export const ContextTip: React.FC<ContextTipProps> = ({
             // ignore storage errors and still show for this session
         }
 
+        // Random delay (2–6s) so tips appear sporadically, not all at once on page load
+        const delay = 2000 + Math.random() * 4000;
         const showId = window.setTimeout(() => {
+            // Check if anchor is actually visible (prevents tips for hidden sidepanel)
+            const anchor = anchorRef.current;
+            if (anchor && !inline) {
+                const rect = anchor.getBoundingClientRect();
+                const styles = window.getComputedStyle(anchor);
+                if (rect.width === 0 || rect.height === 0 || styles.display === 'none' || styles.visibility === 'hidden') return;
+            }
             try {
+                // Re-check cooldown and active tip — another tip may have claimed the slot during the delay
+                const lastShown = Number(localStorage.getItem(LAST_TIP_SHOWN_AT_KEY) || '0');
+                if (Date.now() - lastShown < TIP_COOLDOWN_MS) return;
+                const active = localStorage.getItem(ACTIVE_TIP_KEY);
+                if (active && active !== storageKey) return;
+
                 localStorage.setItem(ACTIVE_TIP_KEY, storageKey);
                 localStorage.setItem(LAST_TIP_SHOWN_AT_KEY, String(Date.now()));
             } catch {
                 // ignore storage errors
             }
             setVisible(true);
-        }, 500);
+        }, delay);
 
         return () => {
             window.clearTimeout(showId);

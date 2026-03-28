@@ -319,8 +319,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
     const isFirstStripScrollRef = useRef(true);
 
-    // Update padding on mount + resize only — never on selectedId change to avoid layout
-    // reflows that interrupt the opacity CSS transition on the thumb buttons.
+    // Update padding on mount + resize — re-run when combinedStrip changes so refs are attached.
+    // Never depends on selectedId to avoid layout reflows that interrupt opacity transitions.
     useEffect(() => {
         const strip = thumbStripRef.current;
         const inner = thumbStripInnerRef.current;
@@ -334,7 +334,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         const obs = new ResizeObserver(updatePadding);
         obs.observe(strip);
         return () => obs.disconnect();
-    }, []);
+    }, [combinedStrip.length]);
 
     // Scroll active thumb to center. Uses getBoundingClientRect so the result is correct
     // even at the start/end of the list (no dependency on padding math).
@@ -361,19 +361,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             raf2 = requestAnimationFrame(centerActiveThumb);
         });
 
-        // On initial load/reload, padding may not be ready yet — retry after a short delay
-        let retryTimer: ReturnType<typeof setTimeout> | undefined;
-        if (isFirstStripScrollRef.current) {
-            retryTimer = setTimeout(centerActiveThumb, 150);
-        }
-
         // Ensure centering on resize/Sidesheet toggle
         window.addEventListener('resize', centerActiveThumb);
 
         return () => {
             cancelAnimationFrame(raf1);
             cancelAnimationFrame(raf2);
-            if (retryTimer) clearTimeout(retryTimer);
             window.removeEventListener('resize', centerActiveThumb);
         };
     }, [selectedId, combinedStrip, isSideSheetVisible]);
