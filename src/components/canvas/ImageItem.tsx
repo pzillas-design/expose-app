@@ -411,7 +411,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 {/* Halo animation while generating — also brief "finishing" flash at 100% */}
                 {(image.isGenerating || isFinishing) && (
                     <>
-                        {image.isGenerating && <BlobBackground className="z-30" speedScale={1.8} />}
+                        {image.isGenerating && <BlobBackground className="z-30" />}
                         <GenerationProgressBar
                             startTime={image.generationStartTime}
                             estimatedDuration={image.estimatedDuration}
