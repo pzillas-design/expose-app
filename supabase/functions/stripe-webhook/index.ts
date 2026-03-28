@@ -26,6 +26,21 @@ Deno.serve(async (req) => {
         console.log(`Webhook received: ${event.type}`);
 
         if (event.type === 'checkout.session.completed') {
+            // Idempotency check — prevent double-crediting on Stripe retries
+            const { data: existing } = await supabaseAdmin
+                .from('stripe_events')
+                .select('event_id')
+                .eq('event_id', event.id)
+                .maybeSingle()
+
+            if (existing) {
+                console.log(`Event ${event.id} already processed, skipping`);
+                return new Response(JSON.stringify({ received: true }), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200
+                })
+            }
+
             const session = event.data.object
             const userId = session.metadata.user_id
             const amount = parseFloat(session.metadata.amount)
@@ -52,6 +67,11 @@ Deno.serve(async (req) => {
                         updated_at: new Date().toISOString()
                     })
                     .eq('id', userId)
+
+                // 3. Record event as processed
+                await supabaseAdmin
+                    .from('stripe_events')
+                    .insert({ event_id: event.id })
 
                 console.log(`Successfully added ${amount}€ to user ${userId}. New balance: ${newCredits}`);
             } else {

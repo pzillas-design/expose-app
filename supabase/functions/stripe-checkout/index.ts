@@ -1,6 +1,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.25.0?target=deno'
+import { verifyJwtSignature } from '../_shared/auth.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
     apiVersion: '2023-10-16',
@@ -19,10 +20,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-        // Authenticate user — extract sub from JWT payload without signature verification.
-        // verify_jwt=false is set in config.toml so expired tokens still reach us; we look
-        // up the user via service-role to confirm they exist (avoids getUser() network call
-        // failing on expired tokens in supabase-js v2.99+ which triggers sign-out).
+        // Authenticate user — verify JWT signature but skip expiration check.
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -30,22 +28,26 @@ Deno.serve(async (req) => {
 
         const authHeader = req.headers.get('Authorization') ?? '';
         const jwtToken = authHeader.replace(/^Bearer\s+/i, '');
-        let userId: string | null = null;
-        try {
-            const parts = jwtToken.split('.');
-            if (parts.length === 3) {
-                const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-                userId = JSON.parse(payloadJson)?.sub ?? null;
-            }
-        } catch { /* malformed JWT */ }
-
-        if (!userId) throw new Error('User not found')
+        const jwtPayload = await verifyJwtSignature(jwtToken);
+        const userId = jwtPayload.sub;
 
         const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId)
         const user = authUser?.user ?? null
         if (!user) throw new Error('User not found')
 
         const { amount, success_url, cancel_url } = await req.json()
+
+        // Server-side validation — prevent amount manipulation and open redirects
+        const MIN_AMOUNT = 5.0;
+        const MAX_AMOUNT = 500.0;
+        if (typeof amount !== 'number' || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+            throw new Error(`Amount must be between ${MIN_AMOUNT} and ${MAX_AMOUNT} EUR`);
+        }
+        const ALLOWED_ORIGIN = 'https://expose.ae';
+        if (!success_url?.startsWith(ALLOWED_ORIGIN) || !cancel_url?.startsWith(ALLOWED_ORIGIN)) {
+            throw new Error('Invalid redirect URL');
+        }
+
         console.log(`Creating checkout session for user ${user.email}, amount: ${amount}`);
 
         const session = await stripe.checkout.sessions.create({

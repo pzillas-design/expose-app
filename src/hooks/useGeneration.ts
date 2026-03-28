@@ -358,19 +358,9 @@ export const useGeneration = ({
             if (jobData?.status === 'processing' && attempts >= 72) {
                 // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
                 try {
-                    // Fetch job cost, request_payload (for stage info), and current profile credits
-                    const [{ data: job }, { data: profile }] = await Promise.all([
-                        supabase.from('generation_jobs').select('cost, request_payload').eq('id', jobId).maybeSingle(),
-                        user ? supabase.from('profiles').select('credits').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null })
-                    ]);
-                    if (job?.cost && user && profile) {
-                        const refundedCredits = (profile.credits ?? 0) + parseFloat(job.cost);
-                        suppressCreditToast(4000); // prevent "credits added" toast for refunds
-                        await supabase
-                            .from('profiles')
-                            .update({ credits: refundedCredits })
-                            .eq('id', user.id);
-                    }
+                    // Mark job as failed — credit refund happens server-side via pg_cron
+                    const { data: job } = await supabase
+                        .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
                     const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
                     await supabase
                         .from('generation_jobs')
