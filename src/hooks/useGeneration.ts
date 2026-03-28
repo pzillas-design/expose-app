@@ -421,6 +421,8 @@ export const useGeneration = ({
 
         generatingIds.forEach(id => {
             if (!attachedJobIds.current.has(id)) {
+                // Ensure auto-navigation works for jobs resumed after reload
+                navigateOnCompleteIds.current.add(id);
                 pollForJob(id);
             }
         });

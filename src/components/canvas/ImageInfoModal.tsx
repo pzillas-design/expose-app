@@ -64,7 +64,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                 setIsEditingTitle(true);
                             }}>
                                 <span className={`${Typo.Mono} text-black dark:text-white text-xs truncate select-all`}>
-                                    {image.title || 'Untitled'}_v{image.version || 1}
+                                    {image.title || 'Untitled'}
                                 </span>
                                 <Edit2 className="w-3 h-3 text-zinc-400 opacity-0 group-hover/text:opacity-100 transition-opacity" />
                             </div>

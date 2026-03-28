@@ -360,13 +360,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         raf1 = requestAnimationFrame(() => {
             raf2 = requestAnimationFrame(centerActiveThumb);
         });
-        
+
+        // On initial load/reload, padding may not be ready yet — retry after a short delay
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+        if (isFirstStripScrollRef.current) {
+            retryTimer = setTimeout(centerActiveThumb, 150);
+        }
+
         // Ensure centering on resize/Sidesheet toggle
         window.addEventListener('resize', centerActiveThumb);
 
-        return () => { 
-            cancelAnimationFrame(raf1); 
+        return () => {
+            cancelAnimationFrame(raf1);
             cancelAnimationFrame(raf2);
+            if (retryTimer) clearTimeout(retryTimer);
             window.removeEventListener('resize', centerActiveThumb);
         };
     }, [selectedId, combinedStrip, isSideSheetVisible]);
@@ -701,21 +708,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                                 </div>
                                             );
                                         }
-                                        return <BlobBackground speedScale={2} />;
+                                        return <BlobBackground />;
                                     })()}
-                                    {img.isGenerating && (
-                                        <GenerationProgressBar
-                                            startTime={img.generationStartTime}
-                                            estimatedDuration={img.estimatedDuration}
-                                        />
-                                    )}
-
                                     {img.thumbSrc && !isMainLoaded && (
                                         <img
                                             src={img.thumbSrc}
                                             className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
                                             style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
                                             alt=""
+                                        />
+                                    )}
+                                    {img.isGenerating && (
+                                        <GenerationProgressBar
+                                            startTime={img.generationStartTime}
+                                            estimatedDuration={img.estimatedDuration}
                                         />
                                     )}
 

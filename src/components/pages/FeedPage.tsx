@@ -133,7 +133,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                     <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
                                 </div>
                             ) : (
-                                <BlobBackground orbScale={0.77} speedScale={3.5} />
+                                <BlobBackground />
                             )}
                             <GenerationProgressBar
                                 startTime={img.generationStartTime}
