@@ -110,6 +110,12 @@ export const prepareParts = async (
     }
 
     console.log('[DEBUG] prepareParts - parts:', parts.length, 'mask:', hasMask, 'refs:', hasRefs);
+
+    // Guard: Google API rejects empty contents
+    if (parts.length === 0) {
+        throw new Error('Cannot generate: no prompt or image provided.');
+    }
+
     return { parts, hasMask, hasRefs, allRefs };
 };
 

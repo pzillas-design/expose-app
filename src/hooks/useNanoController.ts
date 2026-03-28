@@ -535,6 +535,15 @@ export const useNanoController = () => {
                 return;
             }
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
+            if (!finalPrompt.trim() && !(selectedImage.annotations?.length)) {
+                showToast(
+                    currentLang === 'de'
+                        ? 'Bitte gib einen Prompt ein'
+                        : 'Please enter a prompt',
+                    'error'
+                );
+                return;
+            }
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang]);
@@ -563,7 +572,15 @@ export const useNanoController = () => {
         // Full request body is stored on the image (generationPrompt + variableValues + activeTemplateId).
         // "Mehr" simply replays it. userDraftPrompt is '' for children (clean SideSheet), so fall back to generationPrompt.
         const prompt = img.generationPrompt || img.userDraftPrompt || '';
-        if (!prompt) return;
+        if (!prompt) {
+            showToast(
+                currentLang === 'de'
+                    ? 'Kein Prompt vorhanden'
+                    : 'No prompt available',
+                'error'
+            );
+            return;
+        }
 
         // Use the DIRECT parent as the API source (the image that was the input when img was
         // originally generated). For a direct child of root this is the same as root; for
