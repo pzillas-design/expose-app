@@ -20,7 +20,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
     const emailAddress = `${emailUser}@${emailDomain}`;
     const h2Class = "text-2xl sm:text-[30px] font-semibold tracking-tight text-zinc-900 dark:text-white mt-16 mb-6 not-prose";
     const h3Class = "text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-10 mb-4 not-prose";
-    const h4Class = "text-xs sm:text-sm font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400 mt-6 mb-2 not-prose";
+    const h4Class = "text-sm font-semibold text-zinc-600 dark:text-zinc-300 mt-6 mb-2 not-prose";
 
     return (
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
