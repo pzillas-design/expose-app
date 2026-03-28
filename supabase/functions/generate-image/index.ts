@@ -8,6 +8,7 @@ import { createKieTask } from './services/kie.ts';
 import { saveKieResult } from '../_shared/saveKieResult.ts';
 import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
+import { verifyJwtSignature } from '../_shared/auth.ts';
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -231,23 +232,13 @@ Deno.serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
-        // Authenticate user — extract sub from JWT payload without signature verification.
-        // verify_jwt=false is set in config.toml so expired tokens still reach us; we look
-        // up the user via service-role to confirm they exist (avoids getUser() network call
-        // failing on expired tokens in supabase-js v2.99+ which triggers sign-out).
+        // Authenticate user — verify JWT signature (HMAC-SHA256) but skip expiration check.
+        // verify_jwt=false is set in config.toml to allow expired tokens; we verify the
+        // signature manually to prevent identity spoofing, then confirm user exists via admin API.
         const authHeader = req.headers.get('Authorization') ?? '';
         const jwtToken = authHeader.replace(/^Bearer\s+/i, '');
-        let userId: string | null = null;
-        try {
-            const parts = jwtToken.split('.');
-            if (parts.length === 3) {
-                const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-                userId = JSON.parse(payloadJson)?.sub ?? null;
-            }
-        } catch { /* malformed JWT */ }
-        if (!userId) {
-            throw new Error('User not found');
-        }
+        const jwtPayload = await verifyJwtSignature(jwtToken);
+        const userId = jwtPayload.sub;
         const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
         const user = authUser?.user ?? null;
         if (!user) {
@@ -332,11 +323,14 @@ Deno.serve(async (req) => {
             let bgStage = 'init';
             // Fire-and-forget stage tracker — writes current_stage to request_payload so
             // the admin/client can see where a killed background task got stuck.
-            const updateStage = (stage: string) => {
+            const updateStage = (stage: string, extra?: Record<string, any>) => {
                 bgStage = stage;
-                const payload = typeof apiRequestPayload !== 'undefined' ? apiRequestPayload : {};
+                const payload = typeof apiRequestPayload !== 'undefined' ? { ...apiRequestPayload } : {};
+                payload.current_stage = stage;
+                payload.stage_updated_at = new Date().toISOString();
+                if (extra) Object.assign(payload, extra);
                 supabaseAdmin.from('generation_jobs')
-                    .update({ request_payload: { ...payload, current_stage: stage, stage_updated_at: new Date().toISOString() } })
+                    .update({ request_payload: payload })
                     .eq('id', newId)
                     .then(() => {});
             };
@@ -492,7 +486,20 @@ Deno.serve(async (req) => {
 
                 const generatedImage = extractGeneratedImage(geminiResponse);
                 if (!generatedImage) {
-                    throw new Error('Google response did not contain an image');
+                    // Extract rejection reason from response for better error messages
+                    const candidate = geminiResponse?.candidates?.[0];
+                    const blockReason = geminiResponse?.promptFeedback?.blockReason;
+                    const finishReason = candidate?.finishReason;
+                    const textPart = candidate?.content?.parts?.find((p: any) => p.text)?.text;
+                    const detail = blockReason
+                        ? `blocked: ${blockReason}`
+                        : finishReason && finishReason !== 'STOP'
+                            ? `finish: ${finishReason}`
+                            : textPart
+                                ? `response: ${textPart.slice(0, 120)}`
+                                : 'no image in response';
+                    console.warn('[DEBUG] No image generated -', detail);
+                    throw new Error(`Google response did not contain an image (${detail})`);
                 }
 
                 // Extract provider metadata from Google response
@@ -685,12 +692,16 @@ Deno.serve(async (req) => {
                     }
                 }
 
-                // Mark job as failed with failure_stage in error details
+                // Mark job as failed with failure_stage in error details + preserve request payload
                 if (newId) {
                     try {
+                        const failPayload = typeof apiRequestPayload !== 'undefined' ? { ...apiRequestPayload } : {};
+                        failPayload.current_stage = bgStage;
+                        failPayload.stage_updated_at = new Date().toISOString();
+                        failPayload.failed = true;
                         await supabaseAdmin
                             .from('generation_jobs')
-                            .update({ status: 'failed', error: `[${bgStage}] ${errorMsg}` })
+                            .update({ status: 'failed', error: `[${bgStage}] ${errorMsg}`, request_payload: failPayload })
                             .eq('id', newId);
                     } catch (e) {
                         logError('Job Update Failed (BG)', e);

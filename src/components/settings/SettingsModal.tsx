@@ -270,16 +270,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                 </section>
 
-                {/* ── Speicher ── */}
-                <section className="py-7">
-                    <p className={sectionLabel}>{t('storage_section')}</p>
-                    <p className={rowSub}>
-                        {currentLang === 'de'
-                            ? 'Bilder werden 30 Tage nach Erstellung automatisch gelöscht.'
-                            : 'Images are automatically deleted 30 days after creation.'}
-                    </p>
-                </section>
-
                 {/* ── Sonstiges ── */}
                 <section className="pt-6">
                     <div className="flex items-center justify-between">
