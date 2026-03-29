@@ -469,6 +469,8 @@ export function useGeminiLiveVoice({
     const speakingRef = useRef(false);
     const greetingTimeoutRef = useRef<number | null>(null);
     const lastVisualContextKeyRef = useRef<string | null>(null);
+    const lastRequestTimeRef = useRef<number>(0);
+    const firstAudioReceivedRef = useRef<boolean>(false);
 
     const isAvailable = enabled && typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
 
@@ -491,9 +493,10 @@ export function useGeminiLiveVoice({
         const queue = playbackQueueRef.current;
         if (queue.length === 0) return;
 
-        // Schedule all queued chunks back-to-back
+        // Schedule all queued chunks back-to-back with a tiny safety buffer (30ms)
+        // to prevent clicking/pops if the network jitter is high.
         const now = ctx.currentTime;
-        let startAt = Math.max(playbackScheduledUntilRef.current, now);
+        let startAt = Math.max(playbackScheduledUntilRef.current, now + 0.03);
 
         while (queue.length > 0) {
             const samples = queue.shift()!;
@@ -688,6 +691,13 @@ export function useGeminiLiveVoice({
             text: message.serverContent?.modelTurn?.parts?.map(p => p.text).filter(Boolean).join(' ').slice(0, 50),
         }));
 
+        // Latency tracking: If this is the first server part after a user input
+        if (message.serverContent?.modelTurn && !firstAudioReceivedRef.current) {
+            const latency = performance.now() - lastRequestTimeRef.current;
+            console.log(`[voice] First response latency: ${Math.round(latency)}ms`);
+            firstAudioReceivedRef.current = true;
+        }
+
         // Tool calls
         if (message.toolCall?.functionCalls?.length) {
             setState('thinking');
@@ -709,6 +719,10 @@ export function useGeminiLiveVoice({
             for (const part of parts) {
                 if (part.inlineData?.data) {
                     enqueueAudio(part.inlineData.data);
+                } else if (part.text) {
+                    // Log "thoughts" or hidden text parts for observability
+                    // Gemini Live sometimes sends non-audio text parts as chain-of-thought or similar.
+                    console.log(`[voice] Model thought/text: ${part.text}`);
                 }
             }
         }
@@ -757,11 +771,20 @@ export function useGeminiLiveVoice({
             const rms = Math.sqrt(energy / samples.length);
             setLevel(prev => (speakingRef.current ? prev : Math.max(rms * 8, prev * 0.45)));
 
-            if (!sessionRef.current || speakingRef.current || stateRef.current === 'starting' || stateRef.current === 'greeting') {
+            if (!sessionRef.current || stateRef.current === 'starting' || stateRef.current === 'greeting') {
                 return;
             }
 
-            sessionRef.current.sendRealtimeInput({ audio: encodePcm16(samples) });
+            // Always send mic data to enable server-side VAD (Voice Activity Detection) and barge-in.
+            // If we're speaking, we still send audio so the server knows the user is interrupting.
+            const payload = encodePcm16(samples);
+            sessionRef.current.sendRealtimeInput({ audio: payload });
+            
+            // Track last active mic input for latency measurement
+            if (energy > 0.0001) {
+                lastRequestTimeRef.current = performance.now();
+                firstAudioReceivedRef.current = false;
+            }
         };
 
         sourceNode.connect(processorNode);
