@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic, Cpu, Lightbulb, Workflow, Info, CheckCircle2, ChevronRight } from 'lucide-react';
+import { AudioLines, Cpu, Lightbulb, Workflow, Info, CheckCircle2, ChevronRight } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction } from '@/types';
 
@@ -53,7 +53,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t }) => {
                         label="Voice" 
                         value="Charon" 
                         sub="Natural Speech" 
-                        icon={<Mic className="w-4 h-4 text-purple-500" />}
+                        icon={<AudioLines className="w-4 h-4 text-purple-500" />}
                         iconBg="bg-purple-50 dark:bg-purple-900/20"
                     />
                     <StatCard 
@@ -97,15 +97,19 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t }) => {
                         </div>
                         <div className="p-6 flex-1 text-[11px] leading-relaxed text-zinc-500 space-y-4 font-mono">
                             <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                                <span className="block font-bold text-zinc-400 mb-1 text-[9px] uppercase tracking-wider">Verhaltens-Regeln</span>
-                                - Gekürzte Antworten (Prägnanz)<br/>
-                                - Stille Funktionsnutzung (Kein Gelaber über Tools)<br/>
-                                - Fokus auf visuelle Navigation (Galerie -&gt; Stapel -&gt; Detail)
+                                <span className="block font-bold text-zinc-400 mb-1 text-[9px] uppercase tracking-wider">Kern-Instruktion (System Prompt)</span>
+                                <p className="text-[10px] text-zinc-600 dark:text-zinc-300 italic mb-2">"Du bist Exposé, Sprachassistent einer KI-Bildgenerator-App..."</p>
+                                <div className="space-y-1">
+                                    <div className="flex gap-2"><span className="text-blue-500">•</span> <span>Navigation: Galerie (L1) -&gt; Stapel (L2) -&gt; Detail (L3)</span></div>
+                                    <div className="flex gap-2"><span className="text-blue-500">•</span> <span>Sprich knapp &amp; prägnant</span></div>
+                                    <div className="flex gap-2"><span className="text-blue-500">•</span> <span>Nutze Funktionen still (keine Tool-Kommentare)</span></div>
+                                    <div className="flex gap-2"><span className="text-blue-500">•</span> <span>VARIABLEN: Erst auf Nachfrage ("Optionen") anbieten</span></div>
+                                </div>
                             </div>
                             <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                                <span className="block font-bold text-zinc-400 mb-1 text-[9px] uppercase tracking-wider">Variablen vs Prompt</span>
-                                <span className="text-emerald-500 font-bold">Prompt:</span> Für direkte Korrekturen ("Hintergrund rot").<br/>
-                                <span className="text-amber-500 font-bold">Variablen:</span> Für Inspiration ("Welche Optionen habe ich?").
+                                <span className="block font-bold text-zinc-400 mb-1 text-[9px] uppercase tracking-wider">Begrüßung</span>
+                                <span className="text-emerald-500 font-bold">Trigger:</span> Session Start<br/>
+                                <span className="text-[10px]">"Willkommen bei Exposé. Möchtest du ein Bild hochladen, bearbeiten oder etwas Neues erstellen?"</span>
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, Mic, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -237,9 +237,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const voiceMenuItem = voiceFeatureEnabled
         ? [{
             label: voiceModeActive
-                ? (lang === 'de' ? 'Sprachassistent beenden' : 'Stop voice assistant')
-                : (lang === 'de' ? 'Sprachassistent starten' : 'Start voice assistant'),
-            icon: voiceModeActive ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />,
+                ? (lang === 'de' ? 'Sprachassistent beenden' : 'Stop assistant')
+                : (lang === 'de' ? 'Sprachassistent' : 'Voice assistant'),
+            icon: voiceModeActive ? <MicOff className="w-4 h-4" /> : <AudioLines className="w-4 h-4" />,
             onClick: () => {
                 setIsGridMenuOpen(false);
                 if (voiceModeActive) {
@@ -373,8 +373,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         else window.location.href = '/';
                                     } 
                                 },
-                                ...voiceMenuItem,
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                ...voiceMenuItem,
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                             ]}
@@ -540,8 +540,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                         else window.location.href = '/';
                                                     } 
                                                 },
-                                                ...voiceMenuItem,
                                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                ...voiceMenuItem,
                                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                             ]}
@@ -790,8 +790,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                             else window.location.href = '/';
                                                         }
                                                     },
-                                                    ...voiceMenuItem,
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                    ...voiceMenuItem,
                                                     { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                     { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                                 ]}
