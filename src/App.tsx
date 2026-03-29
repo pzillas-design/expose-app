@@ -87,7 +87,7 @@ export function App() {
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
     // createMode removed — Create page now always shows aspect ratio picker directly
-    const voiceFeatureEnabled = (import.meta.env.VITE_ENABLE_VOICE_ASSISTANT === 'true') || import.meta.env.DEV;
+    const voiceFeatureEnabled = true; // Enabled by default on this prototype branch
 
     const clickVoiceAction = React.useCallback(async (selector: string) => {
         for (let attempt = 0; attempt < 12; attempt += 1) {
@@ -775,7 +775,7 @@ export function App() {
                 actions.setIsSelectMode(true);
             }
             setFeedSideSheetVisible(true);
-            actions.toggleSelect(img.id);
+            actions.handleSelection(img.id);
             return { ok: true, message: `${state.selectedIds.includes(img.id) ? 'Deselected' : 'Selected'} ${img.id}.` };
         }
     });
@@ -1034,30 +1034,14 @@ export function App() {
                         <Route path="/" element={
                             user ? (
                                 <FeedPage
-                                    images={allImages}
+                                    images={state.allImages}
                                     rows={state.rows}
-                                    isLoading={isCanvasLoading}
+                                    isLoading={state.isCanvasLoading}
                                     hasMore={state.hasMore}
-                                    onSelectImage={handleSelectImage}
-                                    onCreateNew={() => navigate('/create')}
-                                    onGenerate={() => navigate('/create?m=create')}
-                                    onUpload={async (files) => {
-                                        const arr = Array.from(files ?? []);
-                                        if (arr.length === 0) return;
-                                        if (arr.length === 1) {
-                                            const id = await actions.processFile(arr[0]);
-                                            if (id) {
-                                                setDetailSideSheetVisible(true);
-                                                isNavigatingProgrammatically.current = true;
-                                                navigate(`/image/${id}`);
-                                            }
-                                        } else {
-                                            arr.forEach(f => actions.processFile(f));
-                                            // multiple uploads → back to top-level grid so user sees all incoming images
-                                            navigate('/');
-                                        }
-                                    }}
                                     onLoadMore={actions.handleLoadMore}
+                                    onSelectImage={handleSelectImage}
+                                    onCreateNew={handleCreateNew}
+                                    onUpload={actions.handleFileDrop}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
@@ -1079,7 +1063,7 @@ export function App() {
                                         }
                                     }}
                                     expandedGroupId={expandedGroupId}
-                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate('/')}
+                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
                                     lastViewedId={state.activeId}
                                     state={state}
                                     actions={actions}
@@ -1112,19 +1096,14 @@ export function App() {
                                 setIsAuthModalOpen(true);
                             }}>
                                 <FeedPage
-                                    images={allImages}
-                                    rows={state.rows}
-                                    isLoading={isCanvasLoading}
-                                    hasMore={state.hasMore}
+                                    images={state.allImages.filter(img => img.groupId === expandedGroupId)}
+                                    rows={state.rows.filter(r => r.id === expandedGroupId)}
+                                    isLoading={state.isCanvasLoading}
+                                    hasMore={false}
                                     onSelectImage={handleSelectImage}
-                                    onCreateNew={() => navigate('/create')}
-                                    onGenerate={() => navigate('/create?m=create')}
-                                    onUpload={async (files) => {
-                                        const arr = Array.from(files ?? []);
-                                        if (arr.length === 0) return;
-                                        arr.forEach(f => actions.processFile(f));
-                                    }}
-                                    onLoadMore={actions.handleLoadMore}
+                                    onCreateNew={handleCreateNew}
+                                    onUpload={actions.handleFileDrop}
+                                    onLoadMore={() => { }}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
@@ -1137,7 +1116,7 @@ export function App() {
                                         actions.handleSelection(id, true, isRange);
                                     }}
                                     expandedGroupId={expandedGroupId}
-                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate('/')}
+                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
                                     lastViewedId={state.activeId}
                                     state={state}
                                     actions={actions}
