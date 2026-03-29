@@ -4,6 +4,7 @@ import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lu
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
+import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -25,6 +26,7 @@ const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboar
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
+import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: { children: React.ReactNode }) {
@@ -86,8 +88,47 @@ export function App() {
     const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
-    // createMode removed — Create page now always shows aspect ratio picker directly
-    const voiceFeatureEnabled = true; // Enabled by default on this prototype branch
+    const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
+    const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => getEmptyVoiceDiagnostics());
+    const voiceFeatureEnabled = voiceAdminConfig.enabled;
+    const voiceRemoteLoadedRef = React.useRef(false);
+
+    useEffect(() => {
+        saveVoiceAdminConfig(voiceAdminConfig);
+    }, [voiceAdminConfig]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        void fetchVoiceAdminConfig()
+            .then((config) => {
+                if (cancelled) return;
+                setVoiceAdminConfig(config);
+            })
+            .catch((error) => {
+                console.error('[voice-admin] failed to fetch remote config', error);
+            })
+            .finally(() => {
+                if (!cancelled) voiceRemoteLoadedRef.current = true;
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!voiceRemoteLoadedRef.current) return;
+        if (userProfile?.role !== 'admin') return;
+
+        const timer = window.setTimeout(() => {
+            void updateVoiceAdminConfig(voiceAdminConfig).catch((error) => {
+                console.error('[voice-admin] failed to persist config', error);
+            });
+        }, 500);
+
+        return () => window.clearTimeout(timer);
+    }, [voiceAdminConfig, userProfile?.role]);
 
     const clickVoiceAction = React.useCallback(async (selector: string) => {
         for (let attempt = 0; attempt < 12; attempt += 1) {
@@ -403,41 +444,92 @@ export function App() {
         return null;
     }, [allImages, detailSideSheetVisible, expandedGroupId, feedSideSheetVisible, location.pathname, state.currentLang, state.gridColumns, state.isSelectMode, state.rows, state.selectedIds]);
 
+    const currentVoiceAppContext = React.useMemo(() => {
+        const isDetail = location.pathname.startsWith('/image/');
+        const isStack = location.pathname.startsWith('/stack/');
+        const isGallery = location.pathname === '/';
+        const isCreate = location.pathname === '/create';
+        const displayImages = isStack && expandedGroupId
+            ? allImages.filter(i => i.groupId === expandedGroupId)
+            : allImages.filter(i => !i.groupId || i.id === i.groupId);
+
+        const viewLevel: 'gallery' | 'stack' | 'detail' | 'create' | 'other' = isDetail
+            ? 'detail'
+            : (isStack ? 'stack' : (isGallery ? 'gallery' : (isCreate ? 'create' : 'other')));
+
+        return {
+            route: isDetail ? 'detail' : (isCreate ? 'create' : 'grid'),
+            viewLevel,
+            isSelectMode: !!state.isSelectMode,
+            imageCount: displayImages.length,
+            images: (isGallery || isStack) ? displayImages.map((img) => ({
+                id: img.id,
+                timestamp: img.timestamp,
+                prompt: img.generationPrompt || undefined
+            })).slice(0, 48) : undefined,
+            detailHasPrompt: (() => {
+                if (!isDetail) return false;
+                const id = location.pathname.split('/').pop();
+                const img = id ? allImages.find(i => i.id === id) : null;
+                return !!img?.generationPrompt;
+            })(),
+            canOpenPresets: isDetail,
+            canAddReferenceImage: isDetail || isCreate,
+            canAnnotateImage: isDetail
+        };
+    }, [allImages, expandedGroupId, location.pathname, state.isSelectMode]);
+
+    useEffect(() => {
+        const visualContext = getVoiceVisualContext();
+        setVoiceDiagnostics(prev => ({
+            ...prev,
+            appContextSummary: JSON.stringify(currentVoiceAppContext, null, 2),
+            visualContextSummary: visualContext?.summary || null,
+            visualFrameCount: visualContext?.frames.length || 0,
+        }));
+    }, [currentVoiceAppContext, getVoiceVisualContext]);
+
+    const appendVoiceToolCall = React.useCallback((entry: VoiceToolCallLog) => {
+        setVoiceDiagnostics(prev => ({
+            ...prev,
+            toolCalls: [entry, ...prev.toolCalls].slice(0, 20),
+        }));
+    }, []);
+
+    const appendVoiceTranscript = React.useCallback((entry: VoiceTranscriptLog) => {
+        const normalizedText = entry.text.trim();
+        if (!normalizedText) return;
+        setVoiceDiagnostics(prev => ({
+            ...prev,
+            transcripts: [entry, ...prev.transcripts].slice(0, 20),
+        }));
+    }, []);
+
     const voice = useGeminiLiveVoice({
         enabled: voiceFeatureEnabled && !!user,
         lang: state.currentLang,
-        getAppContext: () => {
-            const isDetail = location.pathname.startsWith('/image/');
-            const isStack = location.pathname.startsWith('/stack/');
-            const isGallery = location.pathname === '/';
-            const isCreate = location.pathname === '/create';
-
-            const displayImages = isStack && expandedGroupId 
-                ? allImages.filter(i => i.groupId === expandedGroupId)
-                : allImages.filter(i => !i.groupId || i.id === i.groupId);
-
-            return {
-                route: isDetail ? 'detail' : (isCreate ? 'create' : 'grid'),
-                viewLevel: (isDetail ? 'detail' : (isStack ? 'stack' : (isGallery ? 'gallery' : 'other'))) as any,
-                isSelectMode: !!state.isSelectMode,
-                imageCount: displayImages.length,
-                images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
-                    id: img.id,
-                    timestamp: img.timestamp,
-                    prompt: img.generationPrompt || undefined
-                })).slice(0, 48) : undefined,
-                detailHasPrompt: (() => {
-                    if (!isDetail) return false;
-                    const id = location.pathname.split('/').pop();
-                    const img = id ? allImages.find(i => i.id === id) : null;
-                    return !!img?.generationPrompt;
-                })(),
-                canOpenPresets: isDetail,
-                canAddReferenceImage: isDetail || isCreate,
-                canAnnotateImage: isDetail
-            };
-        },
+        config: voiceAdminConfig,
+        getAppContext: () => currentVoiceAppContext,
         getVisualContext: getVoiceVisualContext,
+        onSessionConfig: ({ model, voiceName }) => {
+            setVoiceDiagnostics(prev => ({
+                ...prev,
+                sessionModel: model,
+                sessionVoice: voiceName,
+            }));
+        },
+        onAppContextChange: (summary) => {
+            setVoiceDiagnostics(prev => ({ ...prev, appContextSummary: summary }));
+        },
+        onVisualContextChange: (summary, frameCount) => {
+            setVoiceDiagnostics(prev => ({
+                ...prev,
+                visualContextSummary: summary,
+                visualFrameCount: frameCount,
+            }));
+        },
+        onToolCall: appendVoiceToolCall,
+        onTranscript: appendVoiceTranscript,
         openGallery: async () => {
             setExpandedGroupId(null);
             navigate('/');
@@ -1215,6 +1307,9 @@ export function App() {
                                     credits={credits}
                                     onCreateBoard={() => setIsCreationModalOpen(true)}
                                     t={t}
+                                    voiceConfig={voiceAdminConfig}
+                                    voiceDiagnostics={voiceDiagnostics}
+                                    onVoiceConfigChange={setVoiceAdminConfig}
                                 />
                             </AdminRoute>
                         } />

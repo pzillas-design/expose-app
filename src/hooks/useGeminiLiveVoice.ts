@@ -2,6 +2,7 @@ import { GoogleGenAI, Modality, Type, type FunctionCall, type FunctionDeclaratio
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import type { VoiceUiState } from '@/components/voice/VoiceModeIndicator';
+import type { VoiceAdminConfig, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 
 type VoiceAppRoute = 'grid' | 'detail' | 'create' | 'other';
 
@@ -71,6 +72,12 @@ interface VoiceCommandHandlers {
 interface UseGeminiLiveVoiceOptions extends VoiceCommandHandlers {
     enabled: boolean;
     lang: string;
+    config: VoiceAdminConfig;
+    onSessionConfig?: (details: { model: string; voiceName: string }) => void;
+    onAppContextChange?: (summary: string) => void;
+    onVisualContextChange?: (summary: string, frameCount: number) => void;
+    onToolCall?: (entry: VoiceToolCallLog) => void;
+    onTranscript?: (entry: VoiceTranscriptLog) => void;
 }
 
 interface TokenResponse {
@@ -367,11 +374,11 @@ function decodePcm16(base64: string): Float32Array {
     return float32;
 }
 
-async function fetchVoiceToken() {
+async function fetchVoiceToken(modelOverride?: string) {
     const response = await fetch('/api/gemini-live-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
+        body: JSON.stringify(modelOverride ? { model: modelOverride } : {})
     });
     if (!response.ok) {
         const message = await response.text();
@@ -407,6 +414,7 @@ async function fetchFramePayload(frame: VoiceVisualFrame) {
 export function useGeminiLiveVoice({
     enabled,
     lang,
+    config,
     getAppContext,
     getVisualContext,
     openGallery,
@@ -436,7 +444,12 @@ export function useGeminiLiveVoice({
     selectImageByIndex,
     selectImageByPosition,
     highlightImage,
-    toggleImageSelection
+    toggleImageSelection,
+    onSessionConfig,
+    onAppContextChange,
+    onVisualContextChange,
+    onToolCall,
+    onTranscript
 }: UseGeminiLiveVoiceOptions): UseGeminiLiveVoiceResult {
     const { showToast } = useToast();
     const [state, setState] = useState<VoiceUiState>('off');
@@ -472,7 +485,12 @@ export function useGeminiLiveVoice({
     const lastRequestTimeRef = useRef<number>(0);
     const firstAudioReceivedRef = useRef<boolean>(false);
 
-    const isAvailable = enabled && typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+    const isAvailable = enabled && config.enabled && typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+    const enabledToolNames = useMemo(() => new Set(config.tools.filter(tool => tool.enabled).map(tool => tool.name)), [config.tools]);
+    const activeToolDeclarations = useMemo(
+        () => toolDeclarations.filter(tool => enabledToolNames.has(tool.name || '')),
+        [enabledToolNames]
+    );
 
     // --- Native audio playback ---
 
@@ -594,10 +612,12 @@ export function useGeminiLiveVoice({
 
     const syncVisualContext = useCallback(async () => {
         if (!sessionRef.current) return;
+        if (!config.visualContextEnabled) return;
 
         const visualContext = getVisualContext();
         if (!visualContext || visualContext.contextKey === lastVisualContextKeyRef.current) return;
         lastVisualContextKeyRef.current = visualContext.contextKey;
+        onVisualContextChange?.(visualContext.summary, visualContext.frames.length);
 
         try {
             sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
@@ -609,12 +629,19 @@ export function useGeminiLiveVoice({
         } catch (syncError) {
             console.error('[voice] visual context sync failed', syncError);
         }
-    }, [getVisualContext]);
+    }, [config.visualContextEnabled, getVisualContext, onVisualContextChange]);
 
     // --- Tool execution ---
 
     const executeToolCall = useCallback(async (call: FunctionCall) => {
         const name = call.name || '';
+        const argsSummary = (() => {
+            try {
+                return call.args ? JSON.stringify(call.args) : '{}';
+            } catch {
+                return '{}';
+            }
+        })();
         const result = (() => {
             switch (name) {
                 case 'get_app_context':
@@ -661,6 +688,14 @@ export function useGeminiLiveVoice({
         })();
 
         const awaitedResult = await Promise.resolve(result);
+        onToolCall?.({
+            id: call.id || `${name}-${Date.now()}`,
+            name,
+            status: awaitedResult.ok ? 'ok' : 'error',
+            argsSummary,
+            message: awaitedResult.message,
+            timestamp: Date.now(),
+        });
 
         return {
             id: call.id,
@@ -675,7 +710,8 @@ export function useGeminiLiveVoice({
         openPresets, openReferenceImagePicker, openSettings, openStack, openUpload,
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
         setPromptText, setQuality, showDetailPanel, startAnnotationMode,
-        stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition
+        stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
+        onToolCall
     ]);
 
     // --- Message handling ---
@@ -723,6 +759,12 @@ export function useGeminiLiveVoice({
                     // Log "thoughts" or hidden text parts for observability
                     // Gemini Live sometimes sends non-audio text parts as chain-of-thought or similar.
                     console.log(`[voice] Model thought/text: ${part.text}`);
+                    onTranscript?.({
+                        id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        source: 'assistant',
+                        text: part.text,
+                        timestamp: Date.now(),
+                    });
                 }
             }
         }
@@ -731,6 +773,12 @@ export function useGeminiLiveVoice({
         if (message.serverContent?.outputTranscription?.text) {
             // Could surface this to UI in the future
             console.debug('[voice] transcript:', message.serverContent.outputTranscription.text);
+            onTranscript?.({
+                id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                source: 'user',
+                text: message.serverContent.outputTranscription.text,
+                timestamp: Date.now(),
+            });
         }
 
         // Turn complete
@@ -740,7 +788,7 @@ export function useGeminiLiveVoice({
                 setState('listening');
             }
         }
-    }, [cancelPlayback, enqueueAudio, executeToolCall]);
+    }, [cancelPlayback, enqueueAudio, executeToolCall, onTranscript]);
 
     // --- Microphone ---
 
@@ -808,23 +856,25 @@ export function useGeminiLiveVoice({
             setError(null);
             setVoiceState('starting');
 
-            const { token, model } = await fetchVoiceToken();
+            const { token, model } = await fetchVoiceToken(config.model);
             const ai = new GoogleGenAI({ apiKey: token, httpOptions: { apiVersion: 'v1alpha' } });
 
             console.log('[voice] connecting with model:', model);
+            onSessionConfig?.({ model, voiceName: config.voiceName });
+            onAppContextChange?.(JSON.stringify(getAppContext()));
             const session = await ai.live.connect({
                 model,
                 config: {
                     responseModalities: [Modality.AUDIO],
                     speechConfig: {
                         voiceConfig: {
-                            prebuiltVoiceConfig: { voiceName: 'Charon' }
+                            prebuiltVoiceConfig: { voiceName: config.voiceName }
                         }
                     },
-                    systemInstruction: lang === 'de'
-                        ? 'Du bist Exposé, Sprachassistent einer KI-Bildgenerator-App. Navigation: Galerie (L1) -> Stapel (L2) -> Detailansicht (L3). Nutze Begriffe "Galerie", "Stapel", "Detailansicht" konsistent. Sprich knapp. Aktionen: Vor/Zurück navigiert linear. "Zurück" (go_back) geht Ebene höher. Nutze Funktionen still. Prompts kurz & pragmatisch. Bei Edits nur Änderung beschreiben. VARIABLEN vs PROMPT: Nutze `set_prompt_text` für direkte, gezielte Korrekturen (z.B. "Hintergrund blau"). Nutze `create_variables` NUR wenn der Nutzer nach "Optionen", "Variationen", "Vorschlägen" oder "Möglichkeiten" fragt, um kreative Chips (Stil, Licht, Stimmung) zum Probieren anzubieten. Nie eigenständig generieren — erst Prompt/Variablen setzen, kurz begründen, auf Kommando generieren.'
-                        : 'You are Exposé, voice assistant of an AI image generation app. Hierarchy: Gallery (L1) -> Stack (2) -> Detail View (L3). Use these terms consistently. Speak briefly. Next/Prev navigates within context. "Back" (go_back) goes up one level. Use functions silently. Prompts short and pragmatic. VARIABLES vs PROMPT: Use `set_prompt_text` for direct, specific edits (e.g. "make background blue"). Use `create_variables` ONLY when the user asks for "options", "variations", "suggestions" or "possibilities" to provide creative chips (Style, Lighting, Mood) for exploration. Never generate on your own — set prompt/variables, briefly explain, generate only on command.',
-                    tools: [{ functionDeclarations: toolDeclarations }],
+                    ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
+                    ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
+                    systemInstruction: lang === 'de' ? config.systemPromptDe : config.systemPromptEn,
+                    ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },
                 callbacks: {
                     onopen: () => {
@@ -851,9 +901,7 @@ export function useGeminiLiveVoice({
             sessionRef.current = session;
 
             // Send greeting BEFORE starting mic
-            const greeting = lang === 'de'
-                ? 'Begrüße den Nutzer als Exposé. Sage sinngemäß: "Willkommen bei Exposé. Möchtest du ein Bild hochladen, bearbeiten oder etwas Neues erstellen?" Variiere leicht, halte es kurz.'
-                : 'Greet the user as Exposé. Say: "Welcome to Exposé. Upload, edit, or create something new?" Vary slightly, keep it brief.';
+            const greeting = lang === 'de' ? config.greetingDe : config.greetingEn;
             console.log('[voice] sending greeting via sendRealtimeInput');
             session.sendRealtimeInput({ text: greeting });
             console.log('[voice] greeting sent ok');
@@ -869,7 +917,27 @@ export function useGeminiLiveVoice({
             showToast(lang === 'de' ? 'Sprachmodus konnte nicht gestartet werden' : 'Voice mode could not be started', 'error');
             stop();
         }
-    }, [handleLiveMessage, isAvailable, lang, setVoiceState, showToast, startMicrophone, stop, syncVisualContext]);
+    }, [
+        activeToolDeclarations,
+        config.greetingDe,
+        config.greetingEn,
+        config.inputTranscriptionEnabled,
+        config.outputTranscriptionEnabled,
+        config.systemPromptDe,
+        config.systemPromptEn,
+        config.voiceName,
+        getAppContext,
+        handleLiveMessage,
+        isAvailable,
+        lang,
+        onAppContextChange,
+        onSessionConfig,
+        setVoiceState,
+        showToast,
+        startMicrophone,
+        stop,
+        syncVisualContext
+    ]);
 
     // Animated level for speaking/listening states
     useEffect(() => {

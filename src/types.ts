@@ -154,6 +154,51 @@ export interface AdminJob {
   promptPreview: string;
 }
 
+export interface VoiceAdminToolConfig {
+  name: string;
+  enabled: boolean;
+}
+
+export interface VoiceAdminConfig {
+  enabled: boolean;
+  model: string;
+  voiceName: string;
+  inputTranscriptionEnabled: boolean;
+  outputTranscriptionEnabled: boolean;
+  visualContextEnabled: boolean;
+  systemPromptDe: string;
+  systemPromptEn: string;
+  greetingDe: string;
+  greetingEn: string;
+  tools: VoiceAdminToolConfig[];
+}
+
+export interface VoiceToolCallLog {
+  id: string;
+  name: string;
+  status: 'ok' | 'error';
+  argsSummary: string;
+  message: string;
+  timestamp: number;
+}
+
+export interface VoiceTranscriptLog {
+  id: string;
+  source: 'user' | 'assistant';
+  text: string;
+  timestamp: number;
+}
+
+export interface VoiceDiagnostics {
+  sessionModel: string | null;
+  sessionVoice: string | null;
+  appContextSummary: string | null;
+  visualContextSummary: string | null;
+  visualFrameCount: number;
+  toolCalls: VoiceToolCallLog[];
+  transcripts: VoiceTranscriptLog[];
+}
+
 // --- GENERATION TYPES ---
 
 export interface StructuredReference {

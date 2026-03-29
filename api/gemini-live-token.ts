@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY;
+        const apiKey = process.env.VOICE_ASSIST_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
             Object.entries(corsHeaders).forEach(([k, v]) => res.setHeader(k, v));
@@ -34,7 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
         const newSessionExpireTime = new Date(Date.now() + 2 * 60 * 1000).toISOString();
-        const model = process.env.GEMINI_LIVE_MODEL || DEFAULT_LIVE_MODEL;
+        const requestedModel = typeof req.body?.model === 'string' ? req.body.model.trim() : '';
+        const model = requestedModel || process.env.GEMINI_LIVE_MODEL || DEFAULT_LIVE_MODEL;
 
         // Note: liveConnectConstraints omitted — causes 1011 errors with current SDK
         const token = await ai.authTokens.create({
