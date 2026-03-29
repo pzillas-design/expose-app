@@ -188,10 +188,17 @@ export function App() {
         }
         const urlId = location.pathname.split('/').pop();
         if (urlId && urlId !== state.activeId && !isNavigatingProgrammatically.current) {
-            handleSelectImage(urlId);
+            if (state.activeId && allImages.some(i => i.id === state.activeId)) {
+                // activeId changed programmatically (e.g. generation snap) — update URL to follow
+                isNavigatingProgrammatically.current = true;
+                navigate(`/image/${state.activeId}`, { replace: true });
+            } else {
+                // URL changed (user navigation) — sync activeId to URL
+                handleSelectImage(urlId);
+            }
         }
         isNavigatingProgrammatically.current = false;
-        
+
         // Reset voice highlight on navigation
         setVoiceFocusIndex(null);
     }, [location.pathname, state.activeId, actions, expandedGroupId]);
@@ -638,22 +645,17 @@ export function App() {
                 setDetailSideSheetVisible(true);
                 await new Promise(resolve => window.setTimeout(resolve, 200));
             }
-            const clicked = await clickVoiceAction('[data-voice-action="focus-prompt"]');
-            // Find the prompt textarea and set its value
-            const textarea = document.querySelector<HTMLTextAreaElement>('[data-voice-action="prompt-input"]');
-            if (textarea) {
-                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
-                nativeInputValueSetter?.call(textarea, text);
-                textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                return { ok: true, message: state.currentLang === 'de' ? `Prompt gesetzt: "${text}"` : `Prompt set: "${text}"` };
-            }
-            return { ok: false, message: state.currentLang === 'de' ? 'Prompt-Feld nicht gefunden.' : 'Prompt field not found.' };
+            window.dispatchEvent(new CustomEvent('expose:set-prompt', { detail: { text } }));
+            return { ok: true, message: state.currentLang === 'de' ? `Prompt gesetzt: "${text}"` : `Prompt set: "${text}"` };
         },
         triggerGeneration: async () => {
-            const clicked = await clickVoiceAction('[data-voice-action="generate-button"]');
-            return clicked
-                ? { ok: true, message: state.currentLang === 'de' ? 'Generierung wurde GESTARTET. Das Bild ist noch NICHT fertig — das dauert 10-60 Sekunden. Sage dem Nutzer nur dass es jetzt generiert wird, NICHT dass es fertig ist.' : 'Generation was STARTED. The image is NOT finished yet — it takes 10-60 seconds. Only tell the user it is generating, NOT that it is done.' }
-                : { ok: false, message: state.currentLang === 'de' ? 'Generieren-Button nicht gefunden.' : 'Generate button not found.' };
+            // Auto-show sidesheet so generation can run (SideSheet assembles prompt + variables)
+            if (location.pathname.startsWith('/image/') && !detailSideSheetVisible) {
+                setDetailSideSheetVisible(true);
+                await new Promise(resolve => window.setTimeout(resolve, 200));
+            }
+            window.dispatchEvent(new CustomEvent('expose:trigger-generation'));
+            return { ok: true, message: state.currentLang === 'de' ? 'Generierung wurde GESTARTET. Das Bild ist noch NICHT fertig — das dauert 10-60 Sekunden. Sage dem Nutzer nur dass es jetzt generiert wird, NICHT dass es fertig ist.' : 'Generation was STARTED. The image is NOT finished yet — it takes 10-60 seconds. Only tell the user it is generating, NOT that it is done.' };
         },
         nextImage: async () => {
             if (!location.pathname.startsWith('/image/')) {
@@ -1205,8 +1207,8 @@ export function App() {
                                 setIsAuthModalOpen(true);
                             }}>
                                 <FeedPage
-                                    images={state.allImages.filter(img => img.groupId === expandedGroupId)}
-                                    rows={state.rows.filter(r => r.id === expandedGroupId)}
+                                    images={state.allImages.filter(img => img.groupId === (expandedGroupId || location.pathname.split('/').pop()))}
+                                    rows={state.rows.filter(r => r.id === (expandedGroupId || location.pathname.split('/').pop()))}
                                     isLoading={state.isCanvasLoading}
                                     hasMore={false}
                                     onSelectImage={handleSelectImage}

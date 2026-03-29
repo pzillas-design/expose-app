@@ -442,6 +442,23 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onGenerate(finalPrompt, prompt, activeTemplate?.id, controlValues);
     };
 
+    // Voice: unified generation + prompt events (no more DOM hacks)
+    useEffect(() => {
+        const onTriggerGeneration = () => handleGenerate();
+        const onSetPrompt = (e: Event) => {
+            const { text } = (e as CustomEvent).detail as { text: string };
+            setPrompt(text);
+            if (selectedImage?.id && !isMulti) onUpdatePrompt(selectedImage.id, text);
+        };
+
+        window.addEventListener('expose:trigger-generation', onTriggerGeneration);
+        window.addEventListener('expose:set-prompt', onSetPrompt);
+        return () => {
+            window.removeEventListener('expose:trigger-generation', onTriggerGeneration);
+            window.removeEventListener('expose:set-prompt', onSetPrompt);
+        };
+    });
+
     const handleSelectTemplate = (tpl: PromptTemplate) => {
         // Append text
         const newText = prompt ? `${prompt}\n${tpl.prompt}` : tpl.prompt;
