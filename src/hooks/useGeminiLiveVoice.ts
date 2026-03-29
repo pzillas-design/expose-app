@@ -98,7 +98,7 @@ interface UseGeminiLiveVoiceResult {
 const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'get_app_context',
-        description: 'Read the current Expose app screen (Gallery, Stack, or Detail View) and what actions are currently possible.',
+        description: 'Read current screen state, available actions, and the user\'s installed presets/templates. Call this first to understand context before suggesting edits.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -163,7 +163,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_prompt_text',
-        description: 'Set or replace the text in the prompt input field for image generation.',
+        description: 'Write a prompt for image generation or editing. Write in the user\'s language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.',
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -243,7 +243,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'create_variables',
-        description: 'Create creative variable controls for the current prompt so the user can explore variations. ONLY call when the user explicitly asks for options, variables, or variations. Generate 3-6 controls with 3-6 options each that are creative and meaningful for the prompt context (e.g. Color, Style, Scene, Mood, Perspective, Lighting).',
+        description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each (e.g. Mood, Intensity, Style, Color). The user clicks options to fine-tune before generating.',
         parameters: {
             type: Type.OBJECT,
             properties: {

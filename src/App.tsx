@@ -484,9 +484,14 @@ export function App() {
             })(),
             canOpenPresets: isDetail,
             canAddReferenceImage: isDetail || isCreate,
-            canAnnotateImage: isDetail
+            canAnnotateImage: isDetail,
+            presets: state.templates?.filter((t: any) => !t.isHistory).map((t: any) => ({
+                title: t.title,
+                prompt: t.prompt,
+                hasControls: !!(t.controls?.length),
+            })) || [],
         };
-    }, [allImages, expandedGroupId, location.pathname, state.isSelectMode]);
+    }, [allImages, expandedGroupId, location.pathname, state.isSelectMode, state.templates]);
 
     useEffect(() => {
         const visualContext = getVoiceVisualContext();
