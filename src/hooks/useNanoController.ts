@@ -423,13 +423,17 @@ export const useNanoController = () => {
         return true;
     }, [user, rows, activeId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
+    const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[]) => {
+        const fileArray = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f && f.type.startsWith('image/'));
+        if (fileArray.length === 0) return;
+        processFiles(fileArray);
+    }, [processFiles]);
+
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false);
-        const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
-        if (files.length === 0) return;
-        processFiles(files);
-    }, [processFiles, setIsDragOver]);
+        handleProcessFiles(e.dataTransfer.files);
+    }, [handleProcessFiles, setIsDragOver]);
 
     const handleDownload = useCallback(async (idOrIds: string | string[]) => {
         const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
@@ -719,6 +723,10 @@ export const useNanoController = () => {
         savePreset: saveTemplate,
         refreshImageCount,
         setGridColumns,
+        handleLoadMore,
+        ensureValidSession,
+        ensureImageLoaded,
+        handleProcessFiles,
     }), [
         setRows, setQualityMode, setThemeMode, setLang, handleModeChange, setSideSheetMode,
         setBrushSize, setMaskTool, setActiveShape,
@@ -729,7 +737,8 @@ export const useNanoController = () => {
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
-        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount, setGridColumns
+        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount, setGridColumns,
+        handleProcessFiles
     ]);
 
     return React.useMemo(() => ({

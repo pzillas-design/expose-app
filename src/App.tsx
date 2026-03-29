@@ -685,6 +685,16 @@ export function App() {
             if (!controls || controls.length === 0) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
             }
+            // Ensure sidebar is open so the listener is mounted
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+            } else if (state.isSelectMode) {
+                setFeedSideSheetVisible(true);
+            }
+            
+            // Short delay to ensure mount
+            await new Promise(resolve => window.setTimeout(resolve, 50));
+
             window.dispatchEvent(new CustomEvent('expose:set-voice-variables', {
                 detail: { controls }
             }));
@@ -693,8 +703,15 @@ export function App() {
         },
         selectVariableOption: async (label: string, option: string) => {
             if (!label || !option) {
-                return { ok: false, message: state.currentLang === 'de' ? 'Label und Option benötigt.' : 'Label and option required.' };
+                return { ok: false, message: state.currentLang === 'de' ? 'Label and option needed.' : 'Label and option required.' };
             }
+            // Ensure sidebar is open
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+            } else if (state.isSelectMode) {
+                setFeedSideSheetVisible(true);
+            }
+
             window.dispatchEvent(new CustomEvent('expose:toggle-voice-variable', {
                 detail: { label, option }
             }));
@@ -1041,7 +1058,7 @@ export function App() {
                                     onLoadMore={actions.handleLoadMore}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={handleCreateNew}
-                                    onUpload={actions.handleFileDrop}
+                                    onUpload={actions.handleProcessFiles}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}
                                     isSelectionSideSheetOpen={feedSideSheetVisible}
@@ -1102,7 +1119,7 @@ export function App() {
                                     hasMore={false}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={handleCreateNew}
-                                    onUpload={actions.handleFileDrop}
+                                    onUpload={actions.handleProcessFiles}
                                     onLoadMore={() => { }}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}

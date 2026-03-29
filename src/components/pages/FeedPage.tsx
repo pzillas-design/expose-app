@@ -546,7 +546,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && !isLoading && !isFetchingMore && hasMore) {
                 console.log('[FeedPage] Sentinel hit, triggering onLoadMore');
-                onLoadMore();
+                if (typeof onLoadMore === 'function') {
+                    onLoadMore();
+                }
             }
         }, {
             threshold: 0.1,
