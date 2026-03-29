@@ -47,10 +47,9 @@ interface VoiceCommandHandlers {
     enterMultiSelect: () => Promise<VoiceActionResult> | VoiceActionResult;
     leaveMultiSelect: () => Promise<VoiceActionResult> | VoiceActionResult;
     repeatCurrentImage: () => Promise<VoiceActionResult> | VoiceActionResult;
-    showDetailPanel: () => Promise<VoiceActionResult> | VoiceActionResult;
-    hideDetailPanel: () => Promise<VoiceActionResult> | VoiceActionResult;
     openPresets: () => Promise<VoiceActionResult> | VoiceActionResult;
     openReferenceImagePicker: () => Promise<VoiceActionResult> | VoiceActionResult;
+    downloadCurrentImage: () => Promise<VoiceActionResult> | VoiceActionResult;
     startAnnotationMode: () => Promise<VoiceActionResult> | VoiceActionResult;
     setPromptText: (text: string) => Promise<VoiceActionResult> | VoiceActionResult;
     triggerGeneration: () => Promise<VoiceActionResult> | VoiceActionResult;
@@ -133,13 +132,8 @@ const toolDeclarations: FunctionDeclaration[] = [
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
-        name: 'show_detail_panel',
-        description: 'Show the edit/info panel on the current screen if it exists.',
-        parameters: { type: Type.OBJECT, properties: {} }
-    },
-    {
-        name: 'hide_detail_panel',
-        description: 'Hide the edit/info panel on the current screen if it exists.',
+        name: 'download_current_image',
+        description: 'Download the currently viewed image. Opens a download dialog so the user can save it.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -425,10 +419,9 @@ export function useGeminiLiveVoice({
     enterMultiSelect,
     leaveMultiSelect,
     repeatCurrentImage,
-    showDetailPanel,
-    hideDetailPanel,
     openPresets,
     openReferenceImagePicker,
+    downloadCurrentImage,
     startAnnotationMode,
     setPromptText,
     triggerGeneration,
@@ -652,8 +645,7 @@ export function useGeminiLiveVoice({
                 case 'enter_multi_select': return enterMultiSelect();
                 case 'leave_multi_select': return leaveMultiSelect();
                 case 'repeat_current_image': return repeatCurrentImage();
-                case 'show_detail_panel': return showDetailPanel();
-                case 'hide_detail_panel': return hideDetailPanel();
+                case 'download_current_image': return downloadCurrentImage();
                 case 'open_presets': return openPresets();
                 case 'open_reference_image_picker': return openReferenceImagePicker();
                 case 'start_annotation_mode': return startAnnotationMode();
@@ -705,11 +697,11 @@ export function useGeminiLiveVoice({
                 : { error: awaitedResult.message }
         };
     }, [
-        createVariables, enterMultiSelect, getAppContext, goBack, hideDetailPanel,
+        createVariables, downloadCurrentImage, enterMultiSelect, getAppContext, goBack,
         leaveMultiSelect, nextImage, openCreate, openCreateNew, openGallery,
         openPresets, openReferenceImagePicker, openSettings, openStack, openUpload,
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
-        setPromptText, setQuality, showDetailPanel, startAnnotationMode,
+        setPromptText, setQuality, startAnnotationMode,
         stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
         onToolCall
     ]);

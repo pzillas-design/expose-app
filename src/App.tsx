@@ -9,6 +9,7 @@ import { AppNavbar } from '@/components/layout/AppNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { VoiceUploadModal } from '@/components/modals/VoiceUploadModal';
+import { VoiceDownloadModal } from '@/components/modals/VoiceDownloadModal';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { FeedPage } from '@/components/pages/FeedPage';
 import { DetailPage } from '@/components/pages/DetailPage';
@@ -87,6 +88,7 @@ export function App() {
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
     const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
+    const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
     const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
     const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => getEmptyVoiceDiagnostics());
@@ -590,27 +592,17 @@ export function App() {
             actions.handleGenerateMore(id);
             return { ok: true, message: state.currentLang === 'de' ? 'Weitere Varianten gestartet.' : 'Started more variations.' };
         },
-        showDetailPanel: async () => {
-            if (location.pathname.startsWith('/image/')) {
-                setDetailSideSheetVisible(true);
-                return { ok: true, message: state.currentLang === 'de' ? 'Bearbeitungsleiste geöffnet.' : 'Opened the image panel.' };
+        downloadCurrentImage: async () => {
+            if (!location.pathname.startsWith('/image/')) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
             }
-            if (state.isSelectMode) {
-                setFeedSideSheetVisible(true);
-                return { ok: true, message: state.currentLang === 'de' ? 'Auswahlleiste geöffnet.' : 'Opened the selection panel.' };
+            const id = location.pathname.split('/').pop();
+            const img = id ? allImages.find(i => i.id === id) : null;
+            if (!img || img.isGenerating) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Dieses Bild kann nicht heruntergeladen werden.' : 'This image cannot be downloaded.' };
             }
-            return { ok: false, message: state.currentLang === 'de' ? 'Hier gibt es keine Seitenleiste.' : 'There is no panel here.' };
-        },
-        hideDetailPanel: async () => {
-            if (location.pathname.startsWith('/image/')) {
-                setDetailSideSheetVisible(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Bearbeitungsleiste ausgeblendet.' : 'Hid the image panel.' };
-            }
-            if (state.isSelectMode) {
-                setFeedSideSheetVisible(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Auswahlleiste ausgeblendet.' : 'Hid the selection panel.' };
-            }
-            return { ok: false, message: state.currentLang === 'de' ? 'Hier gibt es keine Seitenleiste.' : 'There is no panel here.' };
+            setVoiceDownloadImage({ id: img.id, name: img.title || 'image' });
+            return { ok: true, message: state.currentLang === 'de' ? 'Download-Dialog geöffnet.' : 'Download dialog opened.' };
         },
         openPresets: async () => {
             if (location.pathname.startsWith('/image/')) {
@@ -1443,6 +1435,18 @@ export function App() {
                         arr.forEach(f => actions.processFile(f));
                     }
                 }}
+                lang={langSetting as 'de' | 'en'}
+            />
+
+            <VoiceDownloadModal
+                isOpen={!!voiceDownloadImage}
+                onClose={() => setVoiceDownloadImage(null)}
+                onDownload={() => {
+                    if (voiceDownloadImage) {
+                        actions.handleDownload(voiceDownloadImage.id);
+                    }
+                }}
+                imageName={voiceDownloadImage?.name || ''}
                 lang={langSetting as 'de' | 'en'}
             />
         </div>
