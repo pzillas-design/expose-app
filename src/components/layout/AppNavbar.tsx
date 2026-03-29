@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, Mic, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { CanvasImage } from '@/types';
 
@@ -57,6 +58,12 @@ interface AppNavbarProps {
     onHeroUploadClick?: () => void;
     isPublic?: boolean;
     onStartApp?: () => void;
+    voiceFeatureEnabled?: boolean;
+    voiceModeActive?: boolean;
+    voiceModeState?: VoiceUiState;
+    voiceLevel?: number;
+    onStartVoiceMode?: () => void;
+    onStopVoiceMode?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -105,7 +112,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     heroProgress,
     onHeroUploadClick,
     isPublic = false,
-    onStartApp
+    onStartApp,
+    voiceFeatureEnabled = false,
+    voiceModeActive = false,
+    voiceModeState = 'off',
+    voiceLevel = 0,
+    onStartVoiceMode,
+    onStopVoiceMode
 }) => {
     const isMobile = useMobile();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -220,6 +233,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             autoCloseWhenDone={mode === 'detail'}
         />
     );
+
+    const voiceMenuItem = voiceFeatureEnabled
+        ? [{
+            label: voiceModeActive
+                ? (lang === 'de' ? 'Sprachassistent beenden' : 'Stop voice assistant')
+                : (lang === 'de' ? 'Sprachassistent starten' : 'Start voice assistant'),
+            icon: voiceModeActive ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />,
+            onClick: () => {
+                setIsGridMenuOpen(false);
+                if (voiceModeActive) {
+                    onStopVoiceMode?.();
+                } else {
+                    onStartVoiceMode?.();
+                }
+            }
+        }]
+        : [];
 
     const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
@@ -343,6 +373,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         else window.location.href = '/';
                                     } 
                                 },
+                                ...voiceMenuItem,
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
@@ -499,20 +530,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         {isGridMenuOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
-                                    items={[
-                                        { 
-                                            label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
-                                            icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
-                                            onClick: () => { 
-                                                setIsGridMenuOpen(false); 
-                                                if (isGallery) onSelectMode?.(); 
-                                                else window.location.href = '/';
-                                            } 
-                                        },
-                                        { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                        { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
-                                        { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
-                                    ]}
+                                            items={[
+                                                { 
+                                                    label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
+                                                    icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
+                                                    onClick: () => { 
+                                                        setIsGridMenuOpen(false); 
+                                                        if (isGallery) onSelectMode?.(); 
+                                                        else window.location.href = '/';
+                                                    } 
+                                                },
+                                                ...voiceMenuItem,
+                                                { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                            ]}
                                 />
                             </div>
                         )}
@@ -541,6 +573,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
                     }`}
             >
+                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isSpecialPage ? (
@@ -748,15 +781,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         <div className="absolute top-full mt-2 right-0 z-50">
                                             <DropdownMenu
                                                 items={[
-                                                    { 
-                                                        label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
-                                                        icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
-                                                        onClick: () => { 
-                                                            setIsGridMenuOpen(false); 
-                                                            if (isGallery) onSelectMode?.(); 
+                                                    {
+                                                        label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'),
+                                                        icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />,
+                                                        onClick: () => {
+                                                            setIsGridMenuOpen(false);
+                                                            if (isGallery) onSelectMode?.();
                                                             else window.location.href = '/';
-                                                        } 
+                                                        }
                                                     },
+                                                    ...voiceMenuItem,
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                     { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                     { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
@@ -777,6 +811,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <header
             className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300`}
         >
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
                 {leftContent}

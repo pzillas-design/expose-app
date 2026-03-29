@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
     CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction,
-    LibraryCategory, GenerationQuality
+    LibraryCategory, GenerationQuality, PresetControl
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
@@ -132,12 +132,85 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [editControlValue, setEditControlValue] = useState('');
     const [labelOverrides, setLabelOverrides] = useState<Record<string, string>>({});
 
+    // Resolve active template + standalone controls early so voice event handlers can reference them
+    const activeTemplate = templates?.find(t => t.id === activeTemplateId) || null;
+    const [standaloneControlsMap, setStandaloneControlsMap] = useState<Record<string, PresetControl[]>>({});
+    const standaloneControls = selectedImage?.id ? (standaloneControlsMap[selectedImage.id] ?? []) : [];
+    const setStandaloneControls = React.useCallback((controls: PresetControl[]) => {
+        if (!selectedImage?.id) return;
+        setStandaloneControlsMap(prev => ({ ...prev, [selectedImage.id]: controls }));
+    }, [selectedImage?.id]);
+
     // Reset hidden controls when template changes
     useEffect(() => {
         setHiddenControlIds([]);
         setLabelOverrides({});
         setEditingControlId(null);
     }, [activeTemplateId]);
+
+    // Voice-created variables: listen for custom events from the voice assistant
+    useEffect(() => {
+        const handleSetVariables = (e: Event) => {
+            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
+            if (!controls?.length) return;
+
+            const presetControls: PresetControl[] = controls.map((c, ci) => ({
+                id: `voice-${ci}-${Date.now()}`,
+                label: c.label,
+                options: c.options.map((opt, oi) => ({
+                    id: `voice-opt-${ci}-${oi}-${Date.now()}`,
+                    label: opt,
+                    value: opt
+                }))
+            }));
+
+            setStandaloneControls(presetControls);
+            setControlValues({});
+            setHiddenControlIds([]);
+        };
+
+        const handleToggleVariable = (e: Event) => {
+            const { label, option } = (e as CustomEvent).detail as { label: string; option: string };
+            const controls = activeTemplate?.controls ?? standaloneControls;
+            if (!controls?.length) return;
+
+            const ctrl = controls.find(c =>
+                c.label.toLowerCase() === label.toLowerCase() ||
+                (labelOverrides[c.id] || '').toLowerCase() === label.toLowerCase()
+            );
+            if (!ctrl) return;
+
+            const matchedOpt = ctrl.options.find(o =>
+                o.value.toLowerCase() === option.toLowerCase() ||
+                o.label.toLowerCase() === option.toLowerCase()
+            );
+            if (!matchedOpt) return;
+
+            setControlValues(prev => {
+                const current = prev[ctrl.id] || [];
+                let updated: Record<string, string[]>;
+                if (current.includes(matchedOpt.value)) {
+                    const filtered = current.filter(v => v !== matchedOpt.value);
+                    updated = { ...prev };
+                    if (filtered.length === 0) delete updated[ctrl.id];
+                    else updated[ctrl.id] = filtered;
+                } else {
+                    updated = { ...prev, [ctrl.id]: [...current, matchedOpt.value] };
+                }
+                if (selectedImage?.id) {
+                    onUpdateVariables?.(selectedImage.id, activeTemplate?.id, updated);
+                }
+                return updated;
+            });
+        };
+
+        window.addEventListener('expose:set-voice-variables', handleSetVariables);
+        window.addEventListener('expose:toggle-voice-variable', handleToggleVariable);
+        return () => {
+            window.removeEventListener('expose:set-voice-variables', handleSetVariables);
+            window.removeEventListener('expose:toggle-voice-variable', handleToggleVariable);
+        };
+    }, [selectedImage?.id, activeTemplate, standaloneControls, labelOverrides, onUpdateVariables]);
 
     // Annotation History
     const [historyMap, setHistoryMap] = useState<Map<string, AnnotationObject[][]>>(new Map());
@@ -165,7 +238,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // ── Computed ──
     const isMulti = !!selectedImages && selectedImages.length > 1;
     const annotations = selectedImage?.annotations || [];
-    const activeTemplate = templates?.find(t => t.id === activeTemplateId) || null;
     const history = selectedImage?.id ? (historyMap.get(selectedImage.id) || []) : [];
     const historyIndex = selectedImage?.id ? (historyIndexMap.get(selectedImage.id) ?? -1) : -1;
 
@@ -352,7 +424,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleGenerate = () => {
-        const finalPrompt = prompt.trim();
+        let finalPrompt = prompt.trim();
+        // Append standalone controls (voice-created) to prompt
+        if (!activeTemplate && standaloneControls.length > 0) {
+            const parts = standaloneControls
+                .filter(c => !hiddenControlIds.includes(c.id))
+                .map(c => {
+                    const vals = controlValues[c.id];
+                    if (!vals?.length) return null;
+                    const label = labelOverrides[c.id] || c.label;
+                    return `${label}: ${vals.join(', ')}`;
+                })
+                .filter(Boolean);
+            if (parts.length) finalPrompt += '\n\n' + parts.join('. ');
+        }
         if (onSaveRecentPrompt && finalPrompt) onSaveRecentPrompt(finalPrompt).catch(() => { });
         onGenerate(finalPrompt, prompt, activeTemplate?.id, controlValues);
     };
@@ -377,7 +462,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const toggleControlOption = (controlId: string, value: string) => {
         setControlValues(prev => {
             const cur = prev[controlId] || [];
-            const isSingle = activeTemplate?.controls?.find(c => c.id === controlId)?.type === 'single';
+            const displayControls = activeTemplate?.controls ?? standaloneControls;
+            const isSingle = displayControls?.find(c => c.id === controlId)?.type === 'single';
 
             let updated: string[];
             if (isSingle) {
@@ -525,6 +611,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     <div>
                                         <textarea
                                             ref={textareaRef}
+                                            data-voice-action="prompt-input"
                                             value={prompt}
                                             onChange={e => handlePromptChange(e.target.value)}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
@@ -551,7 +638,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     )}
 
                                     {/* Active Template Variable Chips */}
-                                    {activeTemplate?.controls?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
+                                    {(activeTemplate?.controls ?? (standaloneControls.length > 0 ? standaloneControls : null))?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
                                         const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
                                         const isEditing = editingControlId === ctrl.id;
 
@@ -680,6 +767,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <button
                                                         onClick={() => fileInputRef.current?.click()}
                                                         disabled={selectedImage?.isGenerating}
+                                                        data-voice-action="open-reference-image-picker"
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
                                                     >
                                                         <Camera className="w-4 h-4" />
@@ -706,6 +794,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <button
                                                         onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
                                                         disabled={selectedImage?.isGenerating || isMulti}
+                                                        data-voice-action="toggle-annotation-mode"
                                                         className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
                                                     >
                                                         <Pen className="w-4 h-4" />
@@ -782,6 +871,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <RoundIconButton
                                                         icon={<Play className="w-[18px] h-[18px]" />}
                                                         onClick={handleGenerate}
+                                                        data-voice-action="generate-button"
                                                         variant="primary"
                                                         tooltip={t('generate')}
                                                         tooltipSide="top"
@@ -789,6 +879,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 ) : (
                                                     <Button
                                                         onClick={handleGenerate}
+                                                        data-voice-action="generate-button"
                                                         variant="generate"
                                                         size="m"
                                                         className={`${w < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
@@ -840,6 +931,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     tooltip={t('edit_presets')}
                                                     tooltipSide="top"
                                                     variant="ghost"
+                                                    data-voice-action="open-presets-manager"
                                                 />
                                                 <ContextTip
                                                     storageKey="expose_tip_presets_manage_v1"

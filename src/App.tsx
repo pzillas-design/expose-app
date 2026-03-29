@@ -3,9 +3,11 @@ import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 're
 import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useNanoController } from '@/hooks/useNanoController';
+import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
+import { VoiceUploadModal } from '@/components/modals/VoiceUploadModal';
 import { CreditsModal } from '@/components/modals/CreditsModal';
 import { FeedPage } from '@/components/pages/FeedPage';
 import { DetailPage } from '@/components/pages/DetailPage';
@@ -81,8 +83,23 @@ export function App() {
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
+    const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
+    const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
-    const [createMode, setCreateMode] = React.useState<'choose' | 'create'>('choose');
+    // createMode removed — Create page now always shows aspect ratio picker directly
+    const voiceFeatureEnabled = (import.meta.env.VITE_ENABLE_VOICE_ASSISTANT === 'true') || import.meta.env.DEV;
+
+    const clickVoiceAction = React.useCallback(async (selector: string) => {
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+            const element = document.querySelector<HTMLElement>(selector);
+            if (element) {
+                element.click();
+                return true;
+            }
+            await new Promise(resolve => window.setTimeout(resolve, 90));
+        }
+        return false;
+    }, []);
 
     // Initial auth check / redirect logic
     useEffect(() => {
@@ -106,50 +123,37 @@ export function App() {
 
     useEffect(() => {
         pathnameRef.current = location.pathname;
-        if (location.pathname !== '/create') {
-            setCreateMode('choose');
-        } else {
-            const params = new URLSearchParams(location.search);
-            if (params.get('m') === 'create') {
-                setCreateMode('create');
-            }
-        }
+        // Route sync — no createMode to manage anymore
     }, [location.pathname, location.search]);
 
-    // Keep URL in sync with active selection only while user is already in detail view.
-    // This prevents forced jumps back into detail when the user intentionally returns to grid.
+    // Logic to sync URL with App State (activeId and expandedGroupId)
     useEffect(() => {
-        // If activeId cleared while in detail view (e.g. last image in group deleted) → go to grid
-        if (!state.activeId) {
-            // Only redirect if activeId was previously set — avoids premature redirect on page refresh
-            // before images have loaded and the URL-sync effect has had a chance to restore activeId.
-            if (pathnameRef.current.startsWith('/image/') && activeIdEverSetRef.current) {
-                isNavigatingProgrammatically.current = true;
-                navigate('/', { replace: true });
+        // Sync Stack expansion from URL
+        if (location.pathname.startsWith('/stack/')) {
+            const stackId = location.pathname.split('/').pop();
+            if (stackId && stackId !== expandedGroupId) {
+                setExpandedGroupId(stackId);
             }
-            return;
+        } else if (location.pathname === '/') {
+            if (expandedGroupId) setExpandedGroupId(null);
         }
-        if (!pathnameRef.current.startsWith('/image/')) return;
-        const urlId = pathnameRef.current.split('/').pop();
-        if (urlId === state.activeId) return; // Already in sync, do nothing
-        isNavigatingProgrammatically.current = true;
-        navigate(`/image/${state.activeId}`, { replace: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.activeId, navigate]);
 
-    // When URL changes (from browser back/forward), update state.activeId — but skip if WE triggered the navigation
-    useEffect(() => {
-        if (isNavigatingProgrammatically.current) {
-            isNavigatingProgrammatically.current = false;
+        // Sync Detail view from URL
+        if (!location.pathname.startsWith('/image/')) {
+            if (state.activeId && !isNavigatingProgrammatically.current) {
+                actions.handleSelection(null, false, false);
+            }
             return;
         }
-        if (location.pathname.startsWith('/image/')) {
-            const urlId = location.pathname.split('/').pop();
-            if (urlId && urlId !== state.activeId) {
-                actions.handleSelection(urlId, false, false);
-            }
+        const urlId = location.pathname.split('/').pop();
+        if (urlId && urlId !== state.activeId && !isNavigatingProgrammatically.current) {
+            handleSelectImage(urlId);
         }
-    }, [location.pathname, state.activeId, actions.handleSelection]);
+        isNavigatingProgrammatically.current = false;
+        
+        // Reset voice highlight on navigation
+        setVoiceFocusIndex(null);
+    }, [location.pathname, state.activeId, actions, expandedGroupId]);
 
 
     // Close SideSheet when navigating to a generating image via generation (not user arrow/thumb clicks)
@@ -186,9 +190,13 @@ export function App() {
         setIsDetailExiting(true);
         setTimeout(() => {
             setIsDetailExiting(false);
-            navigate('/');
+            if (expandedGroupId) {
+                navigate(`/stack/${expandedGroupId}`);
+            } else {
+                navigate('/');
+            }
         }, 180);
-    }, [navigate]);
+    }, [navigate, expandedGroupId]);
 
     // Detail-view delete: navigate to the adjacent image URL BEFORE removing the deleted image from state.
     // Without this, DetailPage's `!img → onBack()` fires and the 180ms timer navigates to grid,
@@ -342,6 +350,464 @@ export function App() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const getVoiceVisualContext = React.useCallback(() => {
+        if (location.pathname.startsWith('/image/')) {
+            const id = location.pathname.split('/').pop();
+            const img = id ? allImages.find(i => i.id === id) : null;
+            const thumb = img?.thumbSrc || img?.src;
+
+            if (!img || !thumb) return null;
+
+            return {
+                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}`,
+                summary: state.currentLang === 'de'
+                    ? `Aktueller Kontext: Detailansicht eines Bildes. Titel: ${img.title || 'Unbenannt'}. ${img.generationPrompt ? `Prompt vorhanden.` : `Kein Prompt gespeichert.`}`
+                    : `Current context: detail view for one image. Title: ${img.title || 'Untitled'}. ${img.generationPrompt ? 'A prompt is available.' : 'No prompt is stored.'}`,
+                frames: [
+                    {
+                        id: img.id,
+                        src: thumb,
+                        label: img.title || 'detail-image'
+                    }
+                ]
+            };
+        }
+
+        if (location.pathname === '/' || location.pathname === '') {
+            const cols = state.gridColumns || 2;
+            const displayImages = expandedGroupId
+                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
+                : state.isSelectMode
+                    ? state.rows.flatMap((r: any) => r.items)
+                    : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
+
+            const itemsText = displayImages.slice(0, 20).map((img: any, i: number) => {
+                const row = Math.floor(i / cols) + 1;
+                const col = (i % cols) + 1;
+                return `[${i + 1}] Reihe ${row}, Bild ${col}: ${img.title || 'Unbenannt'}`;
+            }).join('\n');
+
+            return {
+                contextKey: `grid:${expandedGroupId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
+                summary: state.currentLang === 'de'
+                    ? `Aktueller Kontext: Galerie-Ansicht (${expandedGroupId ? 'Stapel geöffnet' : 'Hauptübersicht'}). Es sind ${cols} Bilder pro Reihe nebeneinander. Hier sind die ersten sichtbaren Bilder:\n${itemsText}`
+                    : `Current context: gallery view (${expandedGroupId ? 'stack expanded' : 'main overview'}). There are ${cols} images per row. Here are the first visible images:\n${itemsText}`,
+                frames: displayImages.slice(0, 4).map((img: any) => ({
+                    id: img.id,
+                    src: img.thumbSrc || img.src,
+                    label: img.title || 'grid-image'
+                }))
+            };
+        }
+
+        return null;
+    }, [allImages, detailSideSheetVisible, expandedGroupId, feedSideSheetVisible, location.pathname, state.currentLang, state.gridColumns, state.isSelectMode, state.rows, state.selectedIds]);
+
+    const voice = useGeminiLiveVoice({
+        enabled: voiceFeatureEnabled && !!user,
+        lang: state.currentLang,
+        getAppContext: () => {
+            const isDetail = location.pathname.startsWith('/image/');
+            const isStack = location.pathname.startsWith('/stack/');
+            const isGallery = location.pathname === '/';
+            const isCreate = location.pathname === '/create';
+
+            const displayImages = isStack && expandedGroupId 
+                ? allImages.filter(i => i.groupId === expandedGroupId)
+                : allImages.filter(i => !i.groupId || i.id === i.groupId);
+
+            return {
+                route: isDetail ? 'detail' : (isCreate ? 'create' : 'grid'),
+                viewLevel: (isDetail ? 'detail' : (isStack ? 'stack' : (isGallery ? 'gallery' : 'other'))) as any,
+                isSelectMode: !!state.isSelectMode,
+                imageCount: displayImages.length,
+                images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
+                    id: img.id,
+                    timestamp: img.timestamp,
+                    prompt: img.generationPrompt || undefined
+                })).slice(0, 48) : undefined,
+                detailHasPrompt: (() => {
+                    if (!isDetail) return false;
+                    const id = location.pathname.split('/').pop();
+                    const img = id ? allImages.find(i => i.id === id) : null;
+                    return !!img?.generationPrompt;
+                })(),
+                canOpenPresets: isDetail,
+                canAddReferenceImage: isDetail || isCreate,
+                canAnnotateImage: isDetail
+            };
+        },
+        getVisualContext: getVoiceVisualContext,
+        openGallery: async () => {
+            setExpandedGroupId(null);
+            navigate('/');
+            return { ok: true, message: state.currentLang === 'de' ? 'Galerie geöffnet.' : 'Opened the gallery.' };
+        },
+        openCreate: async () => {
+            navigate('/create');
+            return { ok: true, message: state.currentLang === 'de' ? 'Generieren geöffnet.' : 'Opened create.' };
+        },
+        openCreateNew: async () => {
+            navigate('/create');
+            return { ok: true, message: state.currentLang === 'de' ? 'Neues Bild erstellen.' : 'Create a new image.' };
+        },
+        openUpload: async () => {
+            setIsVoiceUploadOpen(true);
+            return { ok: true, message: state.currentLang === 'de' ? 'Upload-Fenster wird angezeigt. Der Nutzer kann jetzt eine Datei auswählen.' : 'Upload window shown. User can now pick a file.' };
+        },
+        openSettings: async () => {
+            setIsSettingsModalOpen(true);
+            actions.refreshImageCount?.();
+            return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geöffnet.' : 'Opened settings.' };
+        },
+        enterMultiSelect: async () => {
+            if (location.pathname !== '/') {
+                navigate('/');
+                await new Promise(resolve => window.setTimeout(resolve, 120));
+            }
+            if (!state.isSelectMode) {
+                actions.setIsSelectMode(true);
+                setExpandedGroupId(null);
+            }
+            return { ok: true, message: state.currentLang === 'de' ? 'Mehrfachauswahl aktiviert.' : 'Enabled multi-select.' };
+        },
+        leaveMultiSelect: async () => {
+            if (state.isSelectMode) {
+                actions.setIsSelectMode(false);
+                actions.deselectAll();
+                setFeedSideSheetVisible(false);
+            }
+            return { ok: true, message: state.currentLang === 'de' ? 'Mehrfachauswahl beendet.' : 'Exited multi-select.' };
+        },
+        repeatCurrentImage: async () => {
+            if (!location.pathname.startsWith('/image/')) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild im Detail.' : 'Open an image detail first.' };
+            }
+            const id = location.pathname.split('/').pop();
+            const img = id ? allImages.find(i => i.id === id) : null;
+            if (!id || !img?.generationPrompt) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Für dieses Bild sind keine Varianten verfügbar.' : 'More variations are not available for this image.' };
+            }
+            actions.handleGenerateMore(id);
+            return { ok: true, message: state.currentLang === 'de' ? 'Weitere Varianten gestartet.' : 'Started more variations.' };
+        },
+        showDetailPanel: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+                return { ok: true, message: state.currentLang === 'de' ? 'Bearbeitungsleiste geöffnet.' : 'Opened the image panel.' };
+            }
+            if (state.isSelectMode) {
+                setFeedSideSheetVisible(true);
+                return { ok: true, message: state.currentLang === 'de' ? 'Auswahlleiste geöffnet.' : 'Opened the selection panel.' };
+            }
+            return { ok: false, message: state.currentLang === 'de' ? 'Hier gibt es keine Seitenleiste.' : 'There is no panel here.' };
+        },
+        hideDetailPanel: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Bearbeitungsleiste ausgeblendet.' : 'Hid the image panel.' };
+            }
+            if (state.isSelectMode) {
+                setFeedSideSheetVisible(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Auswahlleiste ausgeblendet.' : 'Hid the selection panel.' };
+            }
+            return { ok: false, message: state.currentLang === 'de' ? 'Hier gibt es keine Seitenleiste.' : 'There is no panel here.' };
+        },
+        openPresets: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+            }
+            const clicked = await clickVoiceAction('[data-voice-action="open-presets-manager"]');
+            return clicked
+                ? { ok: true, message: state.currentLang === 'de' ? 'Vorlagen geöffnet.' : 'Opened presets.' }
+                : { ok: false, message: state.currentLang === 'de' ? 'Ich finde die Vorlagen hier gerade nicht.' : 'I cannot find presets here right now.' };
+        },
+        openReferenceImagePicker: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+            }
+            const clicked = await clickVoiceAction('[data-voice-action="open-reference-image-picker"]');
+            return clicked
+                ? { ok: true, message: state.currentLang === 'de' ? 'Referenzbild-Auswahl geöffnet.' : 'Opened the reference image picker.' }
+                : { ok: false, message: state.currentLang === 'de' ? 'Ich finde die Referenzbild-Funktion hier gerade nicht.' : 'I cannot find the reference image picker here right now.' };
+        },
+        startAnnotationMode: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                setDetailSideSheetVisible(true);
+            }
+            const clicked = await clickVoiceAction('[data-voice-action="toggle-annotation-mode"]');
+            return clicked
+                ? { ok: true, message: state.currentLang === 'de' ? 'Anmerkungen aktiviert.' : 'Enabled annotations.' }
+                : { ok: false, message: state.currentLang === 'de' ? 'Ich finde die Anmerkungsfunktion hier gerade nicht.' : 'I cannot find annotations here right now.' };
+        },
+        setPromptText: async (text: string) => {
+            // Auto-show sidesheet so the user can see the prompt
+            if (location.pathname.startsWith('/image/') && !detailSideSheetVisible) {
+                setDetailSideSheetVisible(true);
+                await new Promise(resolve => window.setTimeout(resolve, 200));
+            }
+            const clicked = await clickVoiceAction('[data-voice-action="focus-prompt"]');
+            // Find the prompt textarea and set its value
+            const textarea = document.querySelector<HTMLTextAreaElement>('[data-voice-action="prompt-input"]');
+            if (textarea) {
+                const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                nativeInputValueSetter?.call(textarea, text);
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                return { ok: true, message: state.currentLang === 'de' ? `Prompt gesetzt: "${text}"` : `Prompt set: "${text}"` };
+            }
+            return { ok: false, message: state.currentLang === 'de' ? 'Prompt-Feld nicht gefunden.' : 'Prompt field not found.' };
+        },
+        triggerGeneration: async () => {
+            const clicked = await clickVoiceAction('[data-voice-action="generate-button"]');
+            return clicked
+                ? { ok: true, message: state.currentLang === 'de' ? 'Generierung wurde GESTARTET. Das Bild ist noch NICHT fertig — das dauert 10-60 Sekunden. Sage dem Nutzer nur dass es jetzt generiert wird, NICHT dass es fertig ist.' : 'Generation was STARTED. The image is NOT finished yet — it takes 10-60 seconds. Only tell the user it is generating, NOT that it is done.' }
+                : { ok: false, message: state.currentLang === 'de' ? 'Generieren-Button nicht gefunden.' : 'Generate button not found.' };
+        },
+        nextImage: async () => {
+            if (!location.pathname.startsWith('/image/')) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
+            }
+            const currentId = location.pathname.split('/').pop();
+            
+            // Context-aware flat list: if we are in a stack, cycle only within that stack
+            let flat: any[] = [];
+            if (expandedGroupId) {
+                const row = state.rows.find((r: any) => r.id === expandedGroupId);
+                flat = row ? row.items : [];
+            } else {
+                // Not in a stack context (entered from gallery)
+                // In this case, we navigate through all root items (covers or single images)
+                flat = state.rows.map((r: any) => r.items[0]).filter(Boolean);
+            }
+            
+            if (flat.length === 0) flat = allImages; // Fallback to all if something is wrong
+
+            const idx = flat.findIndex(img => img.id === currentId);
+            if (idx === -1) {
+                // Current image not in current list? Fallback to global
+                const gIdx = allImages.findIndex(img => img.id === currentId);
+                const next = allImages[(gIdx + 1) % allImages.length];
+                handleSelectImage(next.id);
+                return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild (global).' : 'Next image (global).' };
+            }
+
+            const next = flat[(idx + 1) % flat.length];
+            handleSelectImage(next.id);
+            return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild.' : 'Next image.' };
+        },
+        previousImage: async () => {
+            if (!location.pathname.startsWith('/image/')) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
+            }
+            const currentId = location.pathname.split('/').pop();
+
+            // Context-aware flat list
+            let flat: any[] = [];
+            if (expandedGroupId) {
+                const row = state.rows.find((r: any) => r.id === expandedGroupId);
+                flat = row ? row.items : [];
+            } else {
+                flat = state.rows.map((r: any) => r.items[0]).filter(Boolean);
+            }
+            
+            if (flat.length === 0) flat = allImages;
+
+            const idx = flat.findIndex(img => img.id === currentId);
+            if (idx === -1) {
+                const gIdx = allImages.findIndex(img => img.id === currentId);
+                const prev = allImages[(gIdx - 1 + allImages.length) % allImages.length];
+                handleSelectImage(prev.id);
+                return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild (global).' : 'Previous image (global).' };
+            }
+
+            const prev = flat[(idx - 1 + flat.length) % flat.length];
+            handleSelectImage(prev.id);
+            return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
+        },
+        goBack: async () => {
+            // L3 (Detail) -> L2 (Stack) if belongs to one, or L1 (Gallery)
+            if (location.pathname.startsWith('/image/')) {
+                const currentId = location.pathname.split('/').pop();
+                const row = state.rows.find((r: any) => r.items.some((i: any) => i.id === currentId));
+                
+                if (row && row.items.length > 1) {
+                    navigate(`/stack/${row.id}`);
+                    return { ok: true, message: state.currentLang === 'de' ? 'Zurück zum Stapel.' : 'Back to stack.' };
+                }
+                
+                navigate('/');
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+            }
+
+            if (location.pathname === '/create') {
+                navigate('/');
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+            }
+
+            // L2 (Stack) -> L1 (Gallery)
+            if (location.pathname.startsWith('/stack/') || (location.pathname === '/' && expandedGroupId)) {
+                navigate('/');
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+            }
+
+            return { ok: false, message: state.currentLang === 'de' ? 'Bereits in der Galerie.' : 'Already in the gallery.' };
+        },
+        openStack: async () => {
+            if (location.pathname.startsWith('/image/')) {
+                const currentId = location.pathname.split('/').pop();
+                const row = state.rows.find((r: any) => r.items.some((i: any) => i.id === currentId));
+                if (row && row.items.length > 1) {
+                    navigate(`/stack/${row.id}`);
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel mit ${row.items.length} Bildern geöffnet.` : `Opened stack with ${row.items.length} images.` };
+                }
+                return { ok: false, message: state.currentLang === 'de' ? 'Dieses Bild hat keinen Stapel.' : 'This image has no stack.' };
+            }
+            return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
+        },
+        stopVoiceMode: () => {
+            // Will be called by the hook itself to trigger stop
+        },
+        setAspectRatio: async (ratio: string) => {
+            const validRatios = ['16:9', '4:3', '1:1', '3:4', '9:16'];
+            if (!validRatios.includes(ratio)) {
+                return { ok: false, message: state.currentLang === 'de' ? `Ungültiges Format. Verfügbar: ${validRatios.join(', ')}` : `Invalid ratio. Available: ${validRatios.join(', ')}` };
+            }
+            if (location.pathname !== '/create') {
+                navigate('/create');
+                await new Promise(resolve => window.setTimeout(resolve, 300));
+            }
+            const clicked = await clickVoiceAction(`[data-voice-action="ratio-${ratio}"]`);
+            return clicked
+                ? { ok: true, message: state.currentLang === 'de' ? `Format ${ratio} ausgewählt.` : `Selected ${ratio} ratio.` }
+                : { ok: false, message: state.currentLang === 'de' ? 'Format konnte nicht gesetzt werden.' : 'Could not set aspect ratio.' };
+        },
+        createVariables: async (controls: Array<{ label: string; options: string[] }>) => {
+            if (!controls || controls.length === 0) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
+            }
+            window.dispatchEvent(new CustomEvent('expose:set-voice-variables', {
+                detail: { controls }
+            }));
+            const labels = controls.map(c => c.label).join(', ');
+            return { ok: true, message: state.currentLang === 'de' ? `Variablen erstellt: ${labels}. Der Nutzer sieht sie jetzt als Chips und kann Optionen auswählen.` : `Variables created: ${labels}. The user can now see and select options.` };
+        },
+        selectVariableOption: async (label: string, option: string) => {
+            if (!label || !option) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Label und Option benötigt.' : 'Label and option required.' };
+            }
+            window.dispatchEvent(new CustomEvent('expose:toggle-voice-variable', {
+                detail: { label, option }
+            }));
+            return { ok: true, message: state.currentLang === 'de' ? `Option "${option}" bei "${label}" umgeschaltet.` : `Toggled "${option}" in "${label}".` };
+        },
+        setQuality: async (quality: string) => {
+            const map: Record<string, string> = { '1k': 'nb2-1k', '2k': 'nb2-2k', '4k': 'nb2-4k' };
+            const mode = map[quality.toLowerCase()];
+            if (!mode) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Ungültige Qualität. Verfügbar: 1K, 2K, 4K.' : 'Invalid quality. Available: 1K, 2K, 4K.' };
+            }
+            actions.setQualityMode(mode as any);
+            return { ok: true, message: state.currentLang === 'de' ? `Qualität auf ${quality.toUpperCase()} gesetzt.` : `Quality set to ${quality.toUpperCase()}.` };
+        },
+        selectImageByIndex: async (index: number) => {
+            const idx = index - 1; // 1-based to 0-based
+            const displayImages = expandedGroupId
+                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
+                : state.isSelectMode
+                    ? state.rows.flatMap((r: any) => r.items)
+                    : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
+
+            const img = displayImages[idx];
+            if (!img) return { ok: false, message: state.currentLang === 'de' ? `Bild an Index ${index} nicht gefunden.` : `Image at index ${index} not found.` };
+
+            const gc = (expandedGroupId || state.isSelectMode) ? 1 : (state.rows.find((r: any) => r.items[0]?.id === img.id)?.items.length ?? 1);
+            if (gc > 1) {
+                const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
+                if (row) {
+                    setExpandedGroupId(row.id);
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".` };
+                }
+            }
+
+            handleSelectImage(img.id);
+            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".` };
+        },
+        selectImageByPosition: async (rowIdx: number, columnIdx: number) => {
+            const cols = state.gridColumns || 2;
+            const index = (rowIdx - 1) * cols + (columnIdx - 1) + 1;
+            
+            const displayImages = expandedGroupId
+                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
+                : state.isSelectMode
+                    ? state.rows.flatMap((r: any) => r.items)
+                    : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
+
+            const img = displayImages[index - 1];
+            if (!img) return { ok: false, message: state.currentLang === 'de' ? `Position (Reihe ${rowIdx}, Bild ${columnIdx}) existiert nicht.` : `Position (Row ${rowIdx}, Image ${columnIdx}) does not exist.` };
+
+            const gc = (expandedGroupId || state.isSelectMode) ? 1 : (state.rows.find((r: any) => r.items[0]?.id === img.id)?.items.length ?? 1);
+            if (gc > 1) {
+                const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
+                if (row) {
+                    setExpandedGroupId(row.id);
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".` };
+                }
+            }
+
+            handleSelectImage(img.id);
+            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".` };
+        },
+        highlightImage: async (index: number) => {
+            if (index < 1) return { ok: false, message: 'Invalid index.' };
+            setVoiceFocusIndex(index - 1);
+            return { ok: true, message: `Highlighted image ${index}.` };
+        },
+        toggleImageSelection: async (index: number) => {
+            const isStack = location.pathname.startsWith('/stack/');
+            const displayImages = isStack && expandedGroupId 
+                ? allImages.filter(i => i.groupId === expandedGroupId)
+                : allImages.filter(i => !i.groupId || i.id === i.groupId);
+
+            const img = displayImages[index - 1];
+            if (!img) return { ok: false, message: `Image at index ${index} not found.` };
+            
+            if (!state.isSelectMode) {
+                actions.setIsSelectMode(true);
+            }
+            setFeedSideSheetVisible(true);
+            actions.toggleSelect(img.id);
+            return { ok: true, message: `${state.selectedIds.includes(img.id) ? 'Deselected' : 'Selected'} ${img.id}.` };
+        }
+    });
+
+    // Play "tong" notification sound when a generation completes while voice mode is active
+    useEffect(() => {
+        const handler = () => {
+            if (voice.isActive) playVoiceSound('voice-start');
+        };
+        window.addEventListener('expose:generation-complete', handler);
+        return () => window.removeEventListener('expose:generation-complete', handler);
+    }, [voice.isActive]);
+
+    // Keyboard shortcut: V to toggle voice mode (only when no text field is focused)
+    useEffect(() => {
+        if (!voiceFeatureEnabled || !user) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key !== 'v' && e.key !== 'V') return;
+            if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+            // Don't trigger when typing in a text field
+            const tag = (e.target as HTMLElement)?.tagName;
+            const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+                (e.target as HTMLElement)?.isContentEditable;
+            if (isEditable) return;
+            e.preventDefault();
+            if (voice.isActive) voice.stop();
+            else void voice.start();
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [voiceFeatureEnabled, user, voice]);
+
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum');
@@ -369,7 +835,7 @@ export function App() {
                     userProfile={userProfile}
                     isPublic={!user}
                     credits={credits || 0}
-                    onCreate={() => navigate('/create?m=create')}
+                    onCreate={() => navigate('/create')}
                     onSignIn={() => {
                         setAuthModalMode('signin');
                         setIsAuthModalOpen(true);
@@ -460,10 +926,8 @@ export function App() {
                         return false;
                     })()}
                     isGroupDrillDown={!!expandedGroupId}
-                    onCloseGroup={() => setExpandedGroupId(null)}
-                    onBack={location.pathname === '/create'
-                        ? () => { if (createMode === 'create') setCreateMode('choose'); else handleBackToFeed(); }
-                        : handleBackToFeed}
+                    onCloseGroup={() => navigate('/')}
+                    onBack={handleBackToFeed}
                     onDetailRename={() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
@@ -505,6 +969,12 @@ export function App() {
                         ? (location.pathname === '/' && user ? feedHeroProgress : globalScrollProgress)
                         : undefined}
                     onHeroUploadClick={() => { (document.getElementById('feed-upload-input') as HTMLInputElement | null)?.click(); }}
+                    voiceFeatureEnabled={voiceFeatureEnabled}
+                    voiceModeActive={voice.isActive}
+                    voiceModeState={voice.state}
+                    voiceLevel={voice.level}
+                    onStartVoiceMode={() => { void voice.start(); }}
+                    onStopVoiceMode={voice.stop}
                 />
             )}
 
@@ -584,7 +1054,7 @@ export function App() {
                                         } else {
                                             arr.forEach(f => actions.processFile(f));
                                             // multiple uploads → back to top-level grid so user sees all incoming images
-                                            setExpandedGroupId(null);
+                                            navigate('/');
                                         }
                                     }}
                                     onLoadMore={actions.handleLoadMore}
@@ -594,12 +1064,10 @@ export function App() {
                                     selectedIds={state.selectedIds}
                                     onToggleSelect={(id, isRange) => {
                                         if (!state.isSelectMode) {
-                                            // Entering select mode for first time — reset to exactly this image
                                             actions.selectAndSnap(id);
                                             return;
                                         }
                                         if (isRange) {
-                                            // Shift+click — extend selection range, never deselects
                                             actions.handleSelection(id, false, true);
                                         } else {
                                             const isCurrentlySelected = state.selectedIds.includes(id);
@@ -611,12 +1079,13 @@ export function App() {
                                         }
                                     }}
                                     expandedGroupId={expandedGroupId}
-                                    onExpandedGroupChange={setExpandedGroupId}
+                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate('/')}
                                     lastViewedId={state.activeId}
                                     state={state}
                                     actions={actions}
                                     t={t}
                                     onScrollProgress={setFeedHeroProgress}
+                                    voiceFocusIndex={voiceFocusIndex}
                                 />
                             ) : (
                                 <HomePage
@@ -636,6 +1105,49 @@ export function App() {
                                 />
                             )
                         } />
+
+                        <Route path="/stack/:id" element={
+                            <ProtectedRoute user={user} isAuthLoading={isAuthLoading} onAuthRequired={() => {
+                                setAuthModalMode('signin');
+                                setIsAuthModalOpen(true);
+                            }}>
+                                <FeedPage
+                                    images={allImages}
+                                    rows={state.rows}
+                                    isLoading={isCanvasLoading}
+                                    hasMore={state.hasMore}
+                                    onSelectImage={handleSelectImage}
+                                    onCreateNew={() => navigate('/create')}
+                                    onGenerate={() => navigate('/create?m=create')}
+                                    onUpload={async (files) => {
+                                        const arr = Array.from(files ?? []);
+                                        if (arr.length === 0) return;
+                                        arr.forEach(f => actions.processFile(f));
+                                    }}
+                                    onLoadMore={actions.handleLoadMore}
+                                    isFetchingMore={state.isFetchingMore}
+                                    isSelectMode={state.isSelectMode}
+                                    isSelectionSideSheetOpen={feedSideSheetVisible}
+                                    selectedIds={state.selectedIds}
+                                    onToggleSelect={(id, isRange) => {
+                                        if (!state.isSelectMode) {
+                                            actions.selectAndSnap(id);
+                                            return;
+                                        }
+                                        actions.handleSelection(id, true, isRange);
+                                    }}
+                                    expandedGroupId={expandedGroupId}
+                                    onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate('/')}
+                                    lastViewedId={state.activeId}
+                                    state={state}
+                                    actions={actions}
+                                    t={t}
+                                    onScrollProgress={setFeedHeroProgress}
+                                    voiceFocusIndex={voiceFocusIndex}
+                                />
+                            </ProtectedRoute>
+                        } />
+
                         <Route path="/about" element={
                             <HomePage
                                 user={user}
@@ -691,25 +1203,7 @@ export function App() {
                             }}>
                                 <CreatePage
                                     onCreateNew={handleCreateNew}
-                                    onUpload={async (files) => {
-                                        const arr = Array.from(files);
-                                        if (arr.length === 0) return;
-                                        if (arr.length === 1) {
-                                            const id = await actions.processFile(arr[0]);
-                                            if (id) {
-                                                setDetailSideSheetVisible(true);
-                                                isNavigatingProgrammatically.current = true;
-                                                navigate(`/image/${id}`);
-                                            }
-                                        } else {
-                                            arr.forEach(f => actions.processFile(f));
-                                            isNavigatingProgrammatically.current = true;
-                                            navigate('/');
-                                        }
-                                    }}
                                     onBack={() => navigate('/')}
-                                    createMode={createMode}
-                                    onCreateModeChange={setCreateMode}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -838,6 +1332,26 @@ export function App() {
                     })()}
                 </Suspense>
             </ModalErrorBoundary>
+
+            <VoiceUploadModal
+                isOpen={isVoiceUploadOpen}
+                onClose={() => setIsVoiceUploadOpen(false)}
+                onUpload={async (files) => {
+                    setIsVoiceUploadOpen(false);
+                    const arr = Array.from(files);
+                    if (arr.length === 1) {
+                        const id = await actions.processFile(arr[0]);
+                        if (id) {
+                            setDetailSideSheetVisible(true);
+                            isNavigatingProgrammatically.current = true;
+                            navigate(`/image/${id}`);
+                        }
+                    } else {
+                        arr.forEach(f => actions.processFile(f));
+                    }
+                }}
+                lang={langSetting as 'de' | 'en'}
+            />
         </div>
     );
 }

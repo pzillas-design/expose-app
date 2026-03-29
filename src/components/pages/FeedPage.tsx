@@ -233,9 +233,10 @@ interface FeedPageProps {
     onExpandedGroupChange: (id: string | null) => void;
     lastViewedId?: string | null;
     onScrollProgress?: (p: number) => void;
+    voiceFocusIndex?: number | null;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex }) => {
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -481,15 +482,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const children = Array.from(gridRef.current.children) as HTMLElement[];
             if (children.length === 0) return;
             const firstTop = children[0].offsetTop;
-            let colCount = 0;
+            let colCountRaw = 0;
             for (const child of children) {
                 if (child.offsetTop === firstTop) {
-                    colCount++;
+                    colCountRaw++;
                 } else {
                     break;
                 }
             }
-            setColumns(colCount > 0 ? colCount : 2);
+            const colCount = colCountRaw > 0 ? colCountRaw : 2;
+            setColumns(colCount);
+            actions?.setGridColumns?.(colCount);
         };
         requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
@@ -610,7 +613,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-8 sm:pt-16 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
@@ -633,7 +636,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 img={img}
                                                 idx={idx}
                                                 isSelected={selectedIdSet.has(img.id)}
-                                                isKeyboardActive={activeIndex === idx}
+                                                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
                                                 isSelectMode={!!isSelectMode}
                                                 onSelectImage={onSelectImage}
                                                 onToggleSelect={onToggleSelect}

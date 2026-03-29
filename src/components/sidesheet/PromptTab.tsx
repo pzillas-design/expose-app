@@ -118,6 +118,83 @@ export const PromptTab: React.FC<PromptTabProps> = ({
         }
     }, [selectedImage?.id, selectedImage?.activeTemplateId, selectedImage?.variableValues, templates]);
 
+    // Voice-created variables: listen for custom events from the voice assistant
+    useEffect(() => {
+        const handleSetVariables = (e: Event) => {
+            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
+            if (!controls?.length || !selectedImage) return;
+
+            // Convert to PresetControl format with generated IDs
+            const presetControls: PresetControl[] = controls.map((c, ci) => ({
+                id: `voice-${ci}-${Date.now()}`,
+                label: c.label,
+                options: c.options.map((opt, oi) => ({
+                    id: `voice-opt-${ci}-${oi}-${Date.now()}`,
+                    label: opt,
+                    value: opt
+                }))
+            }));
+
+            // Create a temporary template object (not persisted to DB)
+            const tempTemplate: PromptTemplate = {
+                id: `voice-temp-${Date.now()}`,
+                title: 'Voice Variables',
+                prompt: '',
+                tags: [],
+                isPinned: false,
+                isCustom: true,
+                usageCount: 0,
+                controls: presetControls
+            };
+
+            setActiveTemplate(tempTemplate);
+            setControlValues({});
+            setHiddenControlIds([]);
+            onUpdateVariables(selectedImage.id, tempTemplate.id, {});
+        };
+
+        const handleToggleVariable = (e: Event) => {
+            const { label, option } = (e as CustomEvent).detail as { label: string; option: string };
+            if (!activeTemplate?.controls || !selectedImage) return;
+
+            // Find control by label (case-insensitive)
+            const ctrl = activeTemplate.controls.find(c =>
+                c.label.toLowerCase() === label.toLowerCase() ||
+                (labelOverrides[c.id] || '').toLowerCase() === label.toLowerCase()
+            );
+            if (!ctrl) return;
+
+            // Find matching option (case-insensitive)
+            const matchedOpt = ctrl.options.find(o =>
+                o.value.toLowerCase() === option.toLowerCase() ||
+                o.label.toLowerCase() === option.toLowerCase()
+            );
+            if (!matchedOpt) return;
+
+            setControlValues(prev => {
+                const current = prev[ctrl.id] || [];
+                let updated: Record<string, string[]>;
+                if (current.includes(matchedOpt.value)) {
+                    const filtered = current.filter(v => v !== matchedOpt.value);
+                    updated = { ...prev };
+                    if (filtered.length === 0) delete updated[ctrl.id];
+                    else updated[ctrl.id] = filtered;
+                } else {
+                    updated = { ...prev, [ctrl.id]: [...current, matchedOpt.value] };
+                }
+                onUpdateVariables(selectedImage.id, activeTemplate?.id, updated);
+                return updated;
+            });
+        };
+
+        window.addEventListener('expose:set-voice-variables', handleSetVariables);
+        window.addEventListener('expose:toggle-voice-variable', handleToggleVariable);
+        return () => {
+            window.removeEventListener('expose:set-voice-variables', handleSetVariables);
+            window.removeEventListener('expose:toggle-voice-variable', handleToggleVariable);
+        };
+    }, [selectedImage, activeTemplate, labelOverrides, onUpdateVariables]);
+
     useLayoutEffect(() => {
         if (textAreaRef.current) {
             textAreaRef.current.style.height = 'auto';

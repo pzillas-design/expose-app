@@ -59,6 +59,7 @@ export const useNanoController = () => {
     const [loadingProgress, setLoadingProgress] = useState(0);
     const isLoadingRef = useRef(false);
     const [hasMore, setHasMore] = useState(true);
+    const [gridColumns, setGridColumns] = useState(2);
     const offsetRef = useRef(0);
     const PAGE_SIZE = 50;
 
@@ -87,6 +88,8 @@ export const useNanoController = () => {
             localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
             return next;
         });
+        // Dispatch custom event so voice mode can play a notification sound
+        window.dispatchEvent(new CustomEvent('expose:generation-complete', { detail: { id } }));
     }, []);
 
     // --- Modular Hooks ---
@@ -644,18 +647,19 @@ export const useNanoController = () => {
         isAdminOpen,
         isAuthLoading,
         isBrushResizing,
+        isSelectMode,
         isMobile,
         templates,
         hasMore,
-        isSelectMode,
         unseenIds,
+        gridColumns,
     }), [
         rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
         qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, isFetchingMore, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
         isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode,
-        totalImageCount, unseenIds
+        totalImageCount, unseenIds, gridColumns
     ]);
 
     const actions = React.useMemo(() => ({
@@ -713,12 +717,8 @@ export const useNanoController = () => {
         recordPresetUsage,
         refreshTemplates,
         savePreset: saveTemplate,
-        setIsCanvasLoading,
-        deletePreset: deleteTemplate,
-        ensureValidSession,
-        handleLoadMore,
-        ensureImageLoaded,
         refreshImageCount,
+        setGridColumns,
     }), [
         setRows, setQualityMode, setThemeMode, setLang, handleModeChange, setSideSheetMode,
         setBrushSize, setMaskTool, setActiveShape,
@@ -729,7 +729,7 @@ export const useNanoController = () => {
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
-        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount
+        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount, setGridColumns
     ]);
 
     return React.useMemo(() => ({
