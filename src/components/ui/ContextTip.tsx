@@ -251,7 +251,7 @@ export const ContextTip: React.FC<ContextTipProps> = ({
             <button
                 type="button"
                 onClick={handleClose}
-                className={`relative mt-2 w-full px-4 py-3 text-left transition-transform hover:scale-[0.995] ${shellClassName} ${shadowClassName} ${className}`}
+                className={`relative mt-2 w-full px-4 py-3 text-left transition-all hover:scale-[0.995] hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
             >
                 {cardBody}
             </button>
@@ -271,7 +271,7 @@ export const ContextTip: React.FC<ContextTipProps> = ({
                     type="button"
                     onClick={handleClose}
                     ref={tipRef}
-                    className={`fixed z-[120] overflow-visible px-4 py-3 text-left ${shellClassName} ${shadowClassName} ${className}`}
+                    className={`fixed z-[120] overflow-visible px-4 py-3 text-left transition-opacity hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
                     style={{
                         top: portalStyle.top,
                         left: portalStyle.left,
