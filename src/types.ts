@@ -174,6 +174,7 @@ export interface VoiceAdminConfig {
 
 export interface VoiceToolCallLog {
   id: string;
+  sessionId: string;
   name: string;
   status: 'ok' | 'error';
   argsSummary: string;
@@ -184,6 +185,7 @@ export interface VoiceToolCallLog {
 
 export interface VoiceTranscriptLog {
   id: string;
+  sessionId: string;
   source: 'user' | 'assistant';
   text: string;
   timestamp: number;

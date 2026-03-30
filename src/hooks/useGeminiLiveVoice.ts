@@ -409,6 +409,9 @@ export function useGeminiLiveVoice({
     const [level, setLevel] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
+    // Current session ID — set when a new session starts
+    const sessionIdRef = useRef<string>('');
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -643,6 +646,7 @@ export function useGeminiLiveVoice({
         const awaitedResult = await Promise.resolve(result);
         onToolCall?.({
             id: call.id || `${name}-${Date.now()}`,
+            sessionId: sessionIdRef.current,
             name,
             status: awaitedResult.ok ? 'ok' : 'error',
             argsSummary,
@@ -714,6 +718,7 @@ export function useGeminiLiveVoice({
                     console.log(`[voice] Model thought/text: ${part.text}`);
                     onTranscript?.({
                         id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        sessionId: sessionIdRef.current,
                         source: 'assistant',
                         text: part.text,
                         timestamp: Date.now(),
@@ -728,6 +733,7 @@ export function useGeminiLiveVoice({
             if (text) {
                 onTranscript?.({
                     id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    sessionId: sessionIdRef.current,
                     source: 'user',
                     text,
                     timestamp: Date.now(),
@@ -741,6 +747,7 @@ export function useGeminiLiveVoice({
             if (text) {
                 onTranscript?.({
                     id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    sessionId: sessionIdRef.current,
                     source: 'assistant',
                     text,
                     timestamp: Date.now(),
@@ -822,6 +829,7 @@ export function useGeminiLiveVoice({
         try {
             setError(null);
             setVoiceState('starting');
+            sessionIdRef.current = `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
             const { token, model } = await fetchVoiceToken(config.model);
             const ai = new GoogleGenAI({ apiKey: token, httpOptions: { apiVersion: 'v1alpha' } });

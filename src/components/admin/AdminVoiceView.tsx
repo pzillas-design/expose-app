@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Trash2, Wrench } from 'lucide-react';
+import { Check, ChevronRight, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Trash2, Wrench } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { Input, TextArea } from '@/components/ui/DesignSystem';
@@ -113,93 +113,183 @@ const ToolCallDetail: React.FC<{ call: VoiceToolCallLog }> = ({ call }) => {
     );
 };
 
+// ─── Session grouping ────────────────────────────────────────────────────────
+
+interface VoiceSession {
+    sessionId: string;
+    entries: FeedEntry[];
+    startedAt: number;
+    endedAt: number;
+    messageCount: number;
+    toolCount: number;
+    firstUserMessage: string | null;
+}
+
+function groupSessions(feedEntries: FeedEntry[]): VoiceSession[] {
+    const map = new Map<string, FeedEntry[]>();
+    for (const e of feedEntries) {
+        const sid = e.kind === 'transcript' ? e.entry.sessionId : e.call.sessionId;
+        const key = sid || '__legacy__';
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(e);
+    }
+    return Array.from(map.entries())
+        .map(([sessionId, entries]) => {
+            const sorted = [...entries].sort((a, b) => a.timestamp - b.timestamp);
+            const transcripts = sorted.filter(e => e.kind === 'transcript') as (FeedEntry & { kind: 'transcript' })[];
+            const tools = sorted.filter(e => e.kind === 'tool') as (FeedEntry & { kind: 'tool' })[];
+            const firstUser = transcripts.find(e => e.entry.source === 'user')?.entry.text ?? null;
+            return {
+                sessionId,
+                entries: sorted,
+                startedAt: sorted[0]?.timestamp ?? 0,
+                endedAt: sorted[sorted.length - 1]?.timestamp ?? 0,
+                messageCount: transcripts.length,
+                toolCount: tools.length,
+                firstUserMessage: firstUser,
+            };
+        })
+        .sort((a, b) => b.startedAt - a.startedAt); // newest first
+}
+
+// ─── Chat view for one session ───────────────────────────────────────────────
+
+const SessionChat: React.FC<{ entries: FeedEntry[] }> = ({ entries }) => {
+    const chatRef = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }, [entries.length]);
+
+    return (
+        <div ref={chatRef} className="overflow-y-auto h-full px-6 py-5 space-y-3">
+            {entries.map(entry => {
+                if (entry.kind === 'transcript') {
+                    const isUser = entry.entry.source === 'user';
+                    return (
+                        <div key={entry.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            <div className="max-w-[78%]">
+                                <div className={`text-[10px] font-medium mb-1 text-zinc-400 ${isUser ? 'text-right' : ''}`}>
+                                    {isUser ? 'Du' : 'Exposé'} · {formatDate(entry.timestamp)}
+                                </div>
+                                <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                                    isUser
+                                        ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm'
+                                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-tl-sm'
+                                }`}>
+                                    {entry.entry.text}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                } else {
+                    const call = entry.call;
+                    return (
+                        <div key={entry.id} className="flex justify-center py-0.5">
+                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium border-zinc-200 dark:border-zinc-700 ${call.status === 'ok' ? 'text-zinc-400 dark:text-zinc-500' : 'text-red-400 dark:text-red-500 border-red-200 dark:border-red-900/40'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                                <span className="font-mono">{call.name}</span>
+                                {call.argsSummary && call.argsSummary !== '{}' && (
+                                    <>
+                                        <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                                        <span className="text-zinc-300 dark:text-zinc-600 max-w-[120px] truncate font-normal">{call.argsSummary}</span>
+                                    </>
+                                )}
+                                <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                                <span className="tabular-nums">{formatDate(call.timestamp)}</span>
+                            </div>
+                        </div>
+                    );
+                }
+            })}
+        </div>
+    );
+};
+
 // ─── Two-pane monitor feed ───────────────────────────────────────────────────
 
 const MonitorFeed: React.FC<{ feedEntries: FeedEntry[] }> = ({ feedEntries }) => {
-    const [selectedToolId, setSelectedToolId] = React.useState<string | null>(null);
-    const chatRef = React.useRef<HTMLDivElement>(null);
+    const sessions = React.useMemo(() => groupSessions(feedEntries), [feedEntries]);
+    const [selectedSessionId, setSelectedSessionId] = React.useState<string | null>(null);
 
-    // Auto-scroll chat to bottom on new entries
+    // Auto-select most recent session when sessions change
     React.useEffect(() => {
-        if (chatRef.current) {
-            chatRef.current.scrollTop = chatRef.current.scrollHeight;
-        }
-    }, [feedEntries.length]);
+        if (sessions.length > 0) setSelectedSessionId(sessions[0].sessionId);
+    }, [sessions.length]);
 
-    const selectedTool = feedEntries.find(
-        e => e.id === selectedToolId && e.kind === 'tool'
-    ) as (FeedEntry & { kind: 'tool' }) | undefined;
+    const selectedSession = sessions.find(s => s.sessionId === selectedSessionId) ?? null;
+
+    if (feedEntries.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-48 gap-2 text-center p-6">
+                <MessageSquareText className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
+                <p className="text-sm text-zinc-400">Noch keine Aktivität</p>
+                <p className="text-xs text-zinc-300 dark:text-zinc-600">Starte eine Voice-Session um Logs zu sehen</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] min-h-[400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] min-h-[420px]">
 
-            {/* ── Left: continuous chat flow ── */}
-            <div
-                ref={chatRef}
-                className="overflow-y-auto max-h-[500px] px-6 py-5 space-y-3 border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800"
-            >
-                {feedEntries.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-center">
-                        <MessageSquareText className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
-                        <p className="text-sm text-zinc-400">Noch keine Aktivität</p>
-                        <p className="text-xs text-zinc-300 dark:text-zinc-600">Starte eine Voice-Session um Logs zu sehen</p>
-                    </div>
-                )}
-
-                {feedEntries.map(entry => {
-                    if (entry.kind === 'transcript') {
-                        const isUser = entry.entry.source === 'user';
-                        return (
-                            <div key={entry.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                                <div className="max-w-[78%]">
-                                    <div className={`text-[10px] font-medium mb-1 text-zinc-400 ${isUser ? 'text-right' : ''}`}>
-                                        {isUser ? 'Du' : 'Exposé'} · {formatDate(entry.timestamp)}
-                                    </div>
-                                    <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                                        isUser
-                                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm'
-                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-tl-sm'
-                                    }`}>
-                                        {entry.entry.text}
-                                    </div>
-                                </div>
+            {/* ── Left: session list ── */}
+            <div className="border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto max-h-[500px]">
+                {sessions.map(session => {
+                    const isSelected = session.sessionId === selectedSessionId;
+                    const durationSec = Math.round((session.endedAt - session.startedAt) / 1000);
+                    const durationLabel = durationSec < 60
+                        ? `${durationSec}s`
+                        : `${Math.floor(durationSec / 60)}m ${durationSec % 60}s`;
+                    return (
+                        <button
+                            key={session.sessionId}
+                            type="button"
+                            onClick={() => setSelectedSessionId(session.sessionId)}
+                            className={`w-full text-left px-4 py-3.5 border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 transition-colors ${
+                                isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
+                            }`}
+                        >
+                            <div className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 mb-0.5 tabular-nums">
+                                {formatDate(session.startedAt)}
                             </div>
-                        );
-                    } else {
-                        // ── Tool call chip ──
-                        const call = entry.call;
-                        const isSelected = entry.id === selectedToolId;
-                        return (
-                            <div key={entry.id} className="flex justify-center py-0.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedToolId(isSelected ? null : entry.id)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
-                                        isSelected
-                                            ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 shadow-sm'
-                                            : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
-                                    }`}
-                                >
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
-                                    <span className="font-mono">{call.name}</span>
-                                    <span className="text-zinc-300 dark:text-zinc-600">·</span>
-                                    <span className="tabular-nums">{formatDate(call.timestamp)}</span>
-                                </button>
+                            {session.firstUserMessage && (
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate leading-snug mb-1.5">
+                                    {session.firstUserMessage}
+                                </p>
+                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {session.messageCount > 0 && (
+                                    <span className="text-[10px] text-zinc-400">
+                                        {session.messageCount} Msg
+                                    </span>
+                                )}
+                                {session.toolCount > 0 && (
+                                    <>
+                                        <span className="text-zinc-200 dark:text-zinc-700">·</span>
+                                        <span className="text-[10px] text-zinc-400">
+                                            {session.toolCount} Tools
+                                        </span>
+                                    </>
+                                )}
+                                {durationSec > 1 && (
+                                    <>
+                                        <span className="text-zinc-200 dark:text-zinc-700">·</span>
+                                        <span className="text-[10px] text-zinc-400">{durationLabel}</span>
+                                    </>
+                                )}
                             </div>
-                        );
-                    }
+                        </button>
+                    );
                 })}
             </div>
 
-            {/* ── Right: tool call detail ── */}
-            <div className="p-6 overflow-y-auto max-h-[500px]">
-                {selectedTool ? (
-                    <ToolCallDetail call={selectedTool.call} />
+            {/* ── Right: chat content ── */}
+            <div className="max-h-[500px] overflow-hidden flex flex-col">
+                {selectedSession ? (
+                    <SessionChat entries={selectedSession.entries} />
                 ) : (
-                    <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center p-6">
                         <Wrench className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
-                        <p className="text-sm text-zinc-400">Tool-Aufruf anklicken</p>
-                        <p className="text-xs text-zinc-300 dark:text-zinc-600">Details erscheinen hier</p>
+                        <p className="text-sm text-zinc-400">Gespräch auswählen</p>
                     </div>
                 )}
             </div>
