@@ -37,9 +37,9 @@ const COSTS: Record<string, number> = {
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'nb2-1k': 50000,  // DB default 50s
-    'nb2-2k': 65000,  // DB default 65s
-    'nb2-4k': 110000, // DB default 110s
+    'nb2-1k': 18000,  // ~18s observed average
+    'nb2-2k': 30000,  // ~30s observed average
+    'nb2-4k': 55000,  // ~55s observed average
 };
 
 const resolveTargetModel = (_quality: string): string | undefined => {
@@ -471,23 +471,8 @@ export const useGeneration = ({
             referenceCount: currentRefs.length,
         });
 
-        // 2. CONCURRENCY & DURATION (Sync)
-        const activeCount = allImages.filter(i => i.isGenerating).length;
-        const currentConcurrency = activeCount + batchSize;
-        // Prefer: (1) learned from localStorage, (2) smart DB estimate, (3) hardcoded fallback
-        const learnedBase = getLearnedDuration([estimateKey, `quality:${qualityMode}`]);
-        let estimatedDuration: number;
-        const nowMs = Date.now();
-        if (learnedBase) {
-            estimatedDuration = Math.round(learnedBase * (1 + 0.25 * currentConcurrency));
-        } else if (smartEstimatesCache && (nowMs - cacheTimestamp) < CACHE_TTL && smartEstimatesCache[estimateKey]) {
-            const estimate = smartEstimatesCache[estimateKey];
-            let duration = estimate.baseDurationMs || ESTIMATED_DURATIONS[qualityMode] || 23000;
-            duration *= (1 + (estimate.concurrencyFactor || 0.3) * currentConcurrency);
-            estimatedDuration = Math.round(duration);
-        } else {
-            estimatedDuration = Math.round((ESTIMATED_DURATIONS[qualityMode] || 23000) * (1 + 0.3 * currentConcurrency));
-        }
+        // 2. CONCURRENCY & DURATION — simple hardcoded values per quality
+        const estimatedDuration = ESTIMATED_DURATIONS[qualityMode] || 25000;
 
         // 3. SHOW PLACEHOLDER IMMEDIATELY
         const placeholder: CanvasImage = {
@@ -700,7 +685,8 @@ export const useGeneration = ({
             id: newId, src: '', storage_path: '', width: displayWidth, height: displayHeight, realWidth, realHeight,
             title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
-            annotations: creationAnns, userId: user?.id
+            annotations: creationAnns, userId: user?.id,
+            estimatedDuration: ESTIMATED_DURATIONS[modelId] || 25000,
         };
         const estimateKey = buildEstimateKey({
             qualityMode: modelId,
