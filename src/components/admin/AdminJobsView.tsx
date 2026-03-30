@@ -128,6 +128,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
+                                                    const isRepeat = !!payload.isRepeat;
                                                     const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
                                                     return (
                                                     <tr
@@ -162,6 +163,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                                 {hasVars      && <span className={badgeClass}>Variablen</span>}
+                                                                {isRepeat     && <span className={badgeClass}>Mehr</span>}
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-3.5">

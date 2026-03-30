@@ -561,6 +561,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     e.preventDefault();
                     navigate(1);
                     break;
+                case 'd':
+                case 'D':
+                    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        if (selectedId) onDownload(selectedId);
+                    }
+                    break;
                 case 'Backspace':
                 case 'Delete':
                     e.preventDefault();
@@ -572,7 +579,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [navigate, confirm, onDelete, selectedId, onBack]);
+    }, [navigate, confirm, onDelete, onDownload, selectedId, onBack]);
 
     // Resizable Sidebar States
     const [sidebarWidth, setSidebarWidth] = useState(380);

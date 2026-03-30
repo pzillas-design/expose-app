@@ -519,7 +519,7 @@ export const useGeneration = ({
             const newRows = [...prev];
             const idx = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
             if (idx === -1) return prev;
-            newRows[idx] = { ...newRows[idx], items: [...newRows[idx].items, placeholder] };
+            newRows[idx] = { ...newRows[idx], items: [placeholder, ...newRows[idx].items] };
             return newRows;
         });
 
@@ -593,6 +593,7 @@ export const useGeneration = ({
                             referenceImagesCount: refs.length,
                             batchSize,
                             isMultiEdit: batchSize > 1,
+                            isRepeat: !!groupParentId,
                             variables: variableValues || {},
                         }
                     }).then(() => {});

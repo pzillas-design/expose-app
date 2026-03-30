@@ -112,7 +112,7 @@ export const Typo = {
 
 // -- Tooltip --
 interface TooltipProps {
-    text: string;
+    text: React.ReactNode;
     children: React.ReactElement<any>;
     side?: 'top' | 'bottom';
 }
@@ -131,7 +131,8 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
         const padding = 8;
         const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const estimatedHalfWidth = Math.max(20, (text.length * charWidth) / 2 + 10);
+        const textLen = typeof text === 'string' ? text.length : 20;
+        const estimatedHalfWidth = Math.max(20, (textLen * charWidth) / 2 + 10);
 
         let left = rect.left + rect.width / 2;
         const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
@@ -222,7 +223,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon?: React.ReactNode;
     iconPosition?: 'left' | 'right';
     isLoading?: boolean;
-    tooltip?: string;
+    tooltip?: React.ReactNode;
     tooltipSide?: 'top' | 'bottom';
 }
 
@@ -274,7 +275,7 @@ export const Button: React.FC<ButtonProps> = ({
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
-    tooltip?: string;
+    tooltip?: React.ReactNode;
     tooltipSide?: 'top' | 'bottom';
 }
 
@@ -305,7 +306,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, t
 interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
-    tooltip?: string;
+    tooltip?: React.ReactNode;
     tooltipSide?: 'top' | 'bottom';
     variant?: 'default' | 'danger' | 'ghost' | 'primary';
 }

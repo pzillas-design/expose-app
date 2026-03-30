@@ -256,7 +256,7 @@ export const useNanoController = () => {
                         if (addItems.length > 0) {
                             const merged = {
                                 ...existing,
-                                items: [...existing.items, ...addItems].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                                items: [...existing.items, ...addItems].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
                             };
                             rowMap.set(newRow.id, merged);
                         }

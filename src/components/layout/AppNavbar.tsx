@@ -412,7 +412,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     icon={<Download className="w-[18px] h-[18px]" />}
                     onClick={onDetailDownload}
                     variant="ghost"
-                    tooltip={t('nav_download')}
+                    tooltip={<>{t('nav_download')} <span className="ml-1 font-mono text-zinc-400">D</span></>}
                 />
             </span>
             {detailHasPrompt && (
