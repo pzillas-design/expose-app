@@ -152,6 +152,105 @@ function groupSessions(feedEntries: FeedEntry[]): VoiceSession[] {
         .sort((a, b) => b.startedAt - a.startedAt); // newest first
 }
 
+// ─── Expandable tool call chip ───────────────────────────────────────────────
+
+const ToolChip: React.FC<{ call: VoiceToolCallLog }> = ({ call }) => {
+    const [open, setOpen] = React.useState(false);
+    const ctx = parseCtxSnapshot(call.contextSnapshot);
+    let args: Record<string, any> | null = null;
+    try { args = call.argsSummary && call.argsSummary !== '{}' ? JSON.parse(call.argsSummary) : null; } catch { /* raw */ }
+
+    return (
+        <div className="flex justify-center py-0.5 w-full">
+            <div className="w-full max-w-md">
+                {/* Chip row */}
+                <button
+                    type="button"
+                    onClick={() => setOpen(o => !o)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                        open
+                            ? `rounded-b-none border-b-0 ${call.status === 'ok' ? 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300' : 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 text-red-500'}`
+                            : `${call.status === 'ok' ? 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300' : 'border-red-200 dark:border-red-900/40 text-red-400 dark:text-red-500'}`
+                    }`}
+                >
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                    <span className="font-mono">{call.name}</span>
+                    {args && Object.keys(args).length > 0 && (
+                        <>
+                            <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                            <span className="text-zinc-400 dark:text-zinc-500 truncate max-w-[140px] font-normal">
+                                {Object.entries(args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ')}
+                            </span>
+                        </>
+                    )}
+                    <span className="ml-auto tabular-nums text-zinc-300 dark:text-zinc-600">{formatDate(call.timestamp)}</span>
+                    <ChevronRight className={`w-3 h-3 shrink-0 text-zinc-300 dark:text-zinc-600 transition-transform ${open ? 'rotate-90' : ''}`} />
+                </button>
+
+                {/* Expanded detail */}
+                {open && (
+                    <div className={`border border-t-0 rounded-b-2xl px-4 py-3 space-y-3 text-xs ${call.status === 'ok' ? 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/40' : 'border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20'}`}>
+
+                        {/* Arguments */}
+                        {args && Object.keys(args).length > 0 && (
+                            <div>
+                                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Parameter</div>
+                                <div className="space-y-1">
+                                    {Object.entries(args).map(([k, v]) => (
+                                        <div key={k} className="flex items-start gap-3">
+                                            <span className="text-zinc-400 font-mono w-24 shrink-0 truncate">{k}</span>
+                                            <span className="font-semibold text-zinc-700 dark:text-zinc-200 font-mono">{JSON.stringify(v)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Result */}
+                        {call.message && (
+                            <div>
+                                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Ergebnis</div>
+                                <p className={call.status === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+                                    {call.message}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Context snapshot */}
+                        {ctx && (
+                            <div>
+                                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Kontext</div>
+                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                        ctx.viewLevel === 'detail' ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
+                                        : ctx.viewLevel === 'stack' ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400'
+                                        : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500'
+                                    }`}>{viewLevelLabel(ctx.viewLevel)}</span>
+                                    {ctx.imageCount != null && <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-700 text-[10px] text-zinc-500">{ctx.imageCount} Bilder</span>}
+                                    {ctx.viewLevel === 'detail' && <span className={`px-2 py-0.5 rounded-md text-[10px] ${ctx.detailHasPrompt ? 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-400'}`}>{ctx.detailHasPrompt ? 'Hat Prompt' : 'Kein Prompt'}</span>}
+                                    {ctx.canOpenPresets && <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-700 text-[10px] text-zinc-500">Presets</span>}
+                                    {ctx.gridColumns != null && <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-700 text-[10px] text-zinc-500">{ctx.gridColumns} Spalten</span>}
+                                </div>
+                                {ctx.images && ctx.images.length > 0 && (
+                                    <div className="space-y-0.5 max-h-20 overflow-y-auto">
+                                        {ctx.images.slice(0, 6).map((img: any, i: number) => (
+                                            <div key={img.id || i} className="flex items-center gap-2 text-[10px] text-zinc-500">
+                                                <span className="text-zinc-300 dark:text-zinc-600 font-mono w-4 shrink-0">#{i + 1}</span>
+                                                <span className="truncate">{img.prompt || <span className="italic text-zinc-300 dark:text-zinc-600">kein Prompt</span>}</span>
+                                            </div>
+                                        ))}
+                                        {ctx.images.length > 6 && <div className="text-[10px] text-zinc-400 italic">+{ctx.images.length - 6} weitere</div>}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // ─── Chat view for one session ───────────────────────────────────────────────
 
 const SessionChat: React.FC<{ entries: FeedEntry[] }> = ({ entries }) => {
@@ -161,7 +260,7 @@ const SessionChat: React.FC<{ entries: FeedEntry[] }> = ({ entries }) => {
     }, [entries.length]);
 
     return (
-        <div ref={chatRef} className="overflow-y-auto h-full px-6 py-5 space-y-3">
+        <div ref={chatRef} className="overflow-y-auto h-full px-6 py-5 space-y-2.5">
             {entries.map(entry => {
                 if (entry.kind === 'transcript') {
                     const isUser = entry.entry.source === 'user';
@@ -182,23 +281,7 @@ const SessionChat: React.FC<{ entries: FeedEntry[] }> = ({ entries }) => {
                         </div>
                     );
                 } else {
-                    const call = entry.call;
-                    return (
-                        <div key={entry.id} className="flex justify-center py-0.5">
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium border-zinc-200 dark:border-zinc-700 ${call.status === 'ok' ? 'text-zinc-400 dark:text-zinc-500' : 'text-red-400 dark:text-red-500 border-red-200 dark:border-red-900/40'}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
-                                <span className="font-mono">{call.name}</span>
-                                {call.argsSummary && call.argsSummary !== '{}' && (
-                                    <>
-                                        <span className="text-zinc-300 dark:text-zinc-600">·</span>
-                                        <span className="text-zinc-300 dark:text-zinc-600 max-w-[120px] truncate font-normal">{call.argsSummary}</span>
-                                    </>
-                                )}
-                                <span className="text-zinc-300 dark:text-zinc-600">·</span>
-                                <span className="tabular-nums">{formatDate(call.timestamp)}</span>
-                            </div>
-                        </div>
-                    );
+                    return <ToolChip key={entry.id} call={entry.call} />;
                 }
             })}
         </div>

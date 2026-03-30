@@ -412,6 +412,12 @@ export function useGeminiLiveVoice({
     // Current session ID — set when a new session starts
     const sessionIdRef = useRef<string>('');
 
+    // Transcript buffers — Gemini sends tokens one by one; we accumulate and
+    // flush as a single message so the UI shows one bubble per turn, not one
+    // bubble per token.
+    const outputBufRef = useRef<{ text: string; ts: number } | null>(null);
+    const inputBufRef  = useRef<{ text: string; ts: number } | null>(null);
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -680,19 +686,56 @@ export function useGeminiLiveVoice({
             interrupted: !!message.serverContent?.interrupted,
             turnComplete: !!message.serverContent?.turnComplete,
             generationComplete: !!message.serverContent?.generationComplete,
-            hasTranscription: !!message.serverContent?.outputTranscription?.text,
-            text: message.serverContent?.modelTurn?.parts?.map(p => p.text).filter(Boolean).join(' ').slice(0, 50),
+            hasOutputTranscription: !!message.serverContent?.outputTranscription?.text,
+            hasInputTranscription: !!message.serverContent?.inputTranscription?.text,
+            text: message.serverContent?.modelTurn?.parts?.map((p: any) => p.text).filter(Boolean).join(' ').slice(0, 50),
         }));
+
+        // ── Flush helpers ────────────────────────────────────────────────────
+        // Emit buffered input transcript as one message (called when model starts responding)
+        const flushInput = () => {
+            if (!inputBufRef.current) return;
+            const { text, ts } = inputBufRef.current;
+            inputBufRef.current = null;
+            if (text.trim()) {
+                onTranscript?.({
+                    id: `user-${ts}-${Math.random().toString(36).slice(2, 7)}`,
+                    sessionId: sessionIdRef.current,
+                    source: 'user',
+                    text: text.trim(),
+                    timestamp: ts,
+                });
+            }
+        };
+
+        // Emit buffered output transcript as one message (called on turnComplete)
+        const flushOutput = () => {
+            if (!outputBufRef.current) return;
+            const { text, ts } = outputBufRef.current;
+            outputBufRef.current = null;
+            if (text.trim()) {
+                onTranscript?.({
+                    id: `assistant-${ts}-${Math.random().toString(36).slice(2, 7)}`,
+                    sessionId: sessionIdRef.current,
+                    source: 'assistant',
+                    text: text.trim(),
+                    timestamp: ts,
+                });
+            }
+        };
 
         // Latency tracking: If this is the first server part after a user input
         if (message.serverContent?.modelTurn && !firstAudioReceivedRef.current) {
             const latency = performance.now() - lastRequestTimeRef.current;
             console.log(`[voice] First response latency: ${Math.round(latency)}ms`);
             firstAudioReceivedRef.current = true;
+            // Model is now responding — flush whatever user said
+            flushInput();
         }
 
-        // Tool calls
+        // Tool calls — flush user input first, then handle
         if (message.toolCall?.functionCalls?.length) {
+            flushInput();
             setState('thinking');
             const functionResponses = await Promise.all(message.toolCall.functionCalls.map(executeToolCall));
             sessionRef.current?.sendToolResponse({ functionResponses });
@@ -701,6 +744,7 @@ export function useGeminiLiveVoice({
 
         // Barge-in: model was interrupted by user speech
         if (message.serverContent?.interrupted) {
+            flushOutput();
             cancelPlayback();
             setState('listening');
             return;
@@ -713,50 +757,35 @@ export function useGeminiLiveVoice({
                 if (part.inlineData?.data) {
                     enqueueAudio(part.inlineData.data);
                 } else if (part.text) {
-                    // Log "thoughts" or hidden text parts for observability
-                    // Gemini Live sometimes sends non-audio text parts as chain-of-thought or similar.
-                    console.log(`[voice] Model thought/text: ${part.text}`);
-                    onTranscript?.({
-                        id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                        sessionId: sessionIdRef.current,
-                        source: 'assistant',
-                        text: part.text,
-                        timestamp: Date.now(),
-                    });
+                    // Model thought/chain-of-thought text — log but don't surface as transcript
+                    console.log(`[voice] Model thought: ${part.text}`);
                 }
             }
         }
 
-        // User speech transcription (inputAudioTranscription must be enabled in session config)
+        // User speech transcription — accumulate tokens into one buffer
         if (message.serverContent?.inputTranscription?.text) {
-            const text = message.serverContent.inputTranscription.text.trim();
-            if (text) {
-                onTranscript?.({
-                    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                    sessionId: sessionIdRef.current,
-                    source: 'user',
-                    text,
-                    timestamp: Date.now(),
-                });
+            const token = message.serverContent.inputTranscription.text;
+            if (inputBufRef.current) {
+                inputBufRef.current.text += token;
+            } else {
+                inputBufRef.current = { text: token, ts: Date.now() };
             }
         }
 
-        // Model speech transcription (outputAudioTranscription must be enabled in session config)
+        // Model speech transcription — accumulate tokens into one buffer
         if (message.serverContent?.outputTranscription?.text) {
-            const text = message.serverContent.outputTranscription.text.trim();
-            if (text) {
-                onTranscript?.({
-                    id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                    sessionId: sessionIdRef.current,
-                    source: 'assistant',
-                    text,
-                    timestamp: Date.now(),
-                });
+            const token = message.serverContent.outputTranscription.text;
+            if (outputBufRef.current) {
+                outputBufRef.current.text += token;
+            } else {
+                outputBufRef.current = { text: token, ts: Date.now() };
             }
         }
 
-        // Turn complete
+        // Turn complete — flush the accumulated output transcript as one message
         if (message.serverContent?.turnComplete || message.serverContent?.generationComplete) {
+            flushOutput();
             // Audio playback timer handles the speaking→listening transition
             if (!speakingRef.current) {
                 setState('listening');
