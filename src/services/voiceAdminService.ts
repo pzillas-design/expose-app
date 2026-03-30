@@ -1,16 +1,30 @@
 import type { VoiceAdminConfig, VoiceDiagnostics, VoiceAdminToolConfig } from '@/types';
 import { supabase } from './supabaseClient';
 
-const STORAGE_KEY = 'expose_voice_admin_config_v1';
+const STORAGE_KEY = 'expose_voice_admin_config_v2';
 const DB_KEY = 'voice-assistant';
 
 export const DEFAULT_VOICE_MODEL = 'gemini-3.1-flash-live-preview';
 export const DEFAULT_VOICE_NAME = 'Enceladus';
 
-export const DEFAULT_SYSTEM_PROMPT_DE = 'Du bist Exposé — KI-Art-Director und Retouching-Profi. Du denkst wie ein Senior-Retoucher: Lichtstimmung, Kontrast, Farbpalette, Komposition, Tiefenschärfe — du weißt was Bilder aufwertet.\n\nSTIL: Knapp, konkret, auf Deutsch. Nicht fragen "was möchtest du?" — stattdessen vorschlagen. Prompt nie vorlesen, nur kurz die kreative Idee erklären.\n\nVARIABLEN: Bei jedem Edit-Vorschlag automatisch 2-4 Variablen erstellen (Stimmung, Intensität, Stil, Farbton etc.) damit der User zwischen Richtungen wählen kann.\n\nPRESETS: Wenn eine installierte Vorlage zum Wunsch passt, nutze deren Prompt als Basis.\n\nWORKFLOW: Prompt + Variablen setzen → kurz erklären → auf Kommando generieren.\n\nKONTEXT: Wenn der User in der Galerie "bearbeiten" sagt ohne ein Bild zu nennen, frage welches Bild. Nicht Upload öffnen.';
-export const DEFAULT_SYSTEM_PROMPT_EN = 'You are Exposé — AI art director and retouching pro. Think like a senior retoucher: lighting mood, contrast, color palette, composition, depth of field — you know what elevates images.\n\nSTYLE: Brief, concrete. Don\'t ask "what do you want?" — suggest instead. Never read back the prompt, just briefly explain the creative idea.\n\nVARIABLES: Automatically create 2-4 variables with each edit suggestion (mood, intensity, style, color tone etc.) so the user can choose between directions.\n\nPRESETS: When an installed preset fits the request, use its prompt as a base.\n\nWORKFLOW: Set prompt + variables → briefly explain → generate only on command.\n\nCONTEXT: When the user is in the gallery and says "edit" without specifying an image, ask which image. Don\'t open upload.';
-export const DEFAULT_GREETING_DE = 'Begrüße den Nutzer als Exposé. Sage sinngemäß: "Willkommen bei Exposé. Möchtest du ein Bild hochladen, bearbeiten oder etwas Neues erstellen?" Variiere leicht, halte es kurz.';
-export const DEFAULT_GREETING_EN = 'Greet the user as Exposé. Say: "Welcome to Exposé. Upload, edit, or create something new?" Vary slightly, keep it brief.';
+export const GEMINI_LIVE_VOICES = [
+    'Aoede', 'Charon', 'Enceladus', 'Fenrir', 'Kore',
+    'Leda', 'Orus', 'Puck', 'Zephyr', 'Sulafat',
+] as const;
+
+export const DEFAULT_SYSTEM_PROMPT = `You are Exposé — AI art director and retouching pro. Think like a senior retoucher: lighting mood, contrast, color palette, composition, depth of field — you know what elevates images.
+
+STYLE: Brief, concrete. Don't ask "what do you want?" — suggest instead. Never read back the prompt, just briefly explain the creative idea.
+
+VARIABLES: Automatically create 2-4 variables with each edit suggestion (mood, intensity, style, color tone etc.) so the user can choose between directions.
+
+PRESETS: When an installed preset fits the request, use its prompt as a base.
+
+WORKFLOW: Set prompt + variables → briefly explain → generate only on command.
+
+CONTEXT: When the user is in the gallery and says "edit" without specifying an image, ask which image. Don't open upload.`;
+
+export const DEFAULT_GREETING = `Greet the user as Exposé. Say something like "Welcome to Exposé. Want to edit an image, create something new, or upload?" — vary slightly, keep it brief. Respond in the session language.`;
 
 export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     get_app_context: "Read current screen state, available actions, and the user's installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.",
@@ -86,33 +100,52 @@ export function getDefaultVoiceAdminConfig(): VoiceAdminConfig {
         inputTranscriptionEnabled: true,
         outputTranscriptionEnabled: true,
         visualContextEnabled: true,
-        systemPromptDe: DEFAULT_SYSTEM_PROMPT_DE,
-        systemPromptEn: DEFAULT_SYSTEM_PROMPT_EN,
-        greetingDe: DEFAULT_GREETING_DE,
-        greetingEn: DEFAULT_GREETING_EN,
+        systemPrompt: DEFAULT_SYSTEM_PROMPT,
+        greeting: DEFAULT_GREETING,
         tools: buildDefaultTools(),
+    };
+}
+
+function migrateConfig(parsed: any): Partial<VoiceAdminConfig> {
+    // Migrate from old DE/EN split format
+    const out: any = { ...parsed };
+    if (!out.systemPrompt && out.systemPromptDe) out.systemPrompt = out.systemPromptDe;
+    if (!out.greeting && out.greetingDe) out.greeting = out.greetingDe;
+    // Clean up old keys
+    delete out.systemPromptDe;
+    delete out.systemPromptEn;
+    delete out.greetingDe;
+    delete out.greetingEn;
+    return out;
+}
+
+function resolveConfig(parsed: any): VoiceAdminConfig {
+    const migrated = migrateConfig(parsed);
+    const defaults = getDefaultVoiceAdminConfig();
+    const storedTools = new Map((migrated.tools || []).map((t: any) => [t.name, { enabled: !!t.enabled, description: t.description }]));
+
+    return {
+        ...defaults,
+        ...migrated,
+        tools: DEFAULT_VOICE_TOOL_NAMES.map(name => {
+            const stored = storedTools.get(name);
+            return {
+                name,
+                enabled: stored ? stored.enabled : true,
+                ...(stored?.description ? { description: stored.description } : {}),
+            };
+        }),
     };
 }
 
 export function loadVoiceAdminConfig(): VoiceAdminConfig {
     if (typeof window === 'undefined') return getDefaultVoiceAdminConfig();
-
     try {
-        const raw = window.localStorage.getItem(STORAGE_KEY);
+        // Try new key first, then old key for migration
+        const raw = window.localStorage.getItem(STORAGE_KEY)
+            ?? window.localStorage.getItem('expose_voice_admin_config_v1');
         if (!raw) return getDefaultVoiceAdminConfig();
-
-        const parsed = JSON.parse(raw) as Partial<VoiceAdminConfig>;
-        const defaults = getDefaultVoiceAdminConfig();
-        const storedTools = new Map((parsed.tools || []).map(tool => [tool.name, !!tool.enabled]));
-
-        return {
-            ...defaults,
-            ...parsed,
-            tools: DEFAULT_VOICE_TOOL_NAMES.map(name => ({
-                name,
-                enabled: storedTools.has(name) ? !!storedTools.get(name) : true,
-            })),
-        };
+        return resolveConfig(JSON.parse(raw));
     } catch {
         return getDefaultVoiceAdminConfig();
     }
@@ -130,45 +163,20 @@ export async function fetchVoiceAdminConfig(): Promise<VoiceAdminConfig> {
         .eq('key', DB_KEY)
         .maybeSingle();
 
-    if (error) {
-        throw error;
-    }
+    if (error) throw error;
+    if (!data?.value) return loadVoiceAdminConfig();
 
-    if (!data?.value) {
-        return loadVoiceAdminConfig();
-    }
-
-    const defaults = getDefaultVoiceAdminConfig();
-    const parsed = data.value as Partial<VoiceAdminConfig>;
-    const storedTools = new Map((parsed.tools || []).map(tool => [tool.name, !!tool.enabled]));
-
-    const resolved: VoiceAdminConfig = {
-        ...defaults,
-        ...parsed,
-        tools: DEFAULT_VOICE_TOOL_NAMES.map(name => ({
-            name,
-            enabled: storedTools.has(name) ? !!storedTools.get(name) : true,
-        })),
-    };
-
+    const resolved = resolveConfig(data.value);
     saveVoiceAdminConfig(resolved);
     return resolved;
 }
 
 export async function updateVoiceAdminConfig(config: VoiceAdminConfig) {
     saveVoiceAdminConfig(config);
-
     const { error } = await supabase
         .from('app_settings')
-        .upsert({
-            key: DB_KEY,
-            value: config,
-            updated_at: new Date().toISOString(),
-        });
-
-    if (error) {
-        throw error;
-    }
+        .upsert({ key: DB_KEY, value: config, updated_at: new Date().toISOString() });
+    if (error) throw error;
 }
 
 export function getEmptyVoiceDiagnostics(): VoiceDiagnostics {

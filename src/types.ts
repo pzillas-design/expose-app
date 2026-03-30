@@ -167,10 +167,8 @@ export interface VoiceAdminConfig {
   inputTranscriptionEnabled: boolean;
   outputTranscriptionEnabled: boolean;
   visualContextEnabled: boolean;
-  systemPromptDe: string;
-  systemPromptEn: string;
-  greetingDe: string;
-  greetingEn: string;
+  systemPrompt: string;
+  greeting: string;
   tools: VoiceAdminToolConfig[];
 }
 

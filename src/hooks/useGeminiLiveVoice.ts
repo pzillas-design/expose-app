@@ -870,7 +870,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    systemInstruction: lang === 'de' ? config.systemPromptDe : config.systemPromptEn,
+                    systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },
                 callbacks: {
@@ -898,7 +898,7 @@ export function useGeminiLiveVoice({
             sessionRef.current = session;
 
             // Send greeting BEFORE starting mic
-            const greeting = lang === 'de' ? config.greetingDe : config.greetingEn;
+            const greeting = config.greeting;
             console.log('[voice] sending greeting via sendRealtimeInput');
             session.sendRealtimeInput({ text: greeting });
             console.log('[voice] greeting sent ok');
@@ -916,12 +916,10 @@ export function useGeminiLiveVoice({
         }
     }, [
         activeToolDeclarations,
-        config.greetingDe,
-        config.greetingEn,
+        config.greeting,
         config.inputTranscriptionEnabled,
         config.outputTranscriptionEnabled,
-        config.systemPromptDe,
-        config.systemPromptEn,
+        config.systemPrompt,
         config.voiceName,
         getAppContext,
         handleLiveMessage,
