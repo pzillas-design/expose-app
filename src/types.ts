@@ -157,6 +157,7 @@ export interface AdminJob {
 export interface VoiceAdminToolConfig {
   name: string;
   enabled: boolean;
+  description?: string; // custom override sent to the API; falls back to DEFAULT_TOOL_DESCRIPTIONS
 }
 
 export interface VoiceAdminConfig {

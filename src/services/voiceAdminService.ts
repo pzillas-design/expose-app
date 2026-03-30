@@ -12,6 +12,37 @@ export const DEFAULT_SYSTEM_PROMPT_EN = 'You are Exposé — AI art director and
 export const DEFAULT_GREETING_DE = 'Begrüße den Nutzer als Exposé. Sage sinngemäß: "Willkommen bei Exposé. Möchtest du ein Bild hochladen, bearbeiten oder etwas Neues erstellen?" Variiere leicht, halte es kurz.';
 export const DEFAULT_GREETING_EN = 'Greet the user as Exposé. Say: "Welcome to Exposé. Upload, edit, or create something new?" Vary slightly, keep it brief.';
 
+export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
+    get_app_context: "Read current screen state, available actions, and the user's installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.",
+    open_gallery: 'Go to the main gallery/feed view (Level 1).',
+    open_create: 'Open the create/generate view.',
+    open_settings: 'Open the settings dialog.',
+    enter_multi_select: 'Enter multi-select mode in the gallery to work with multiple images.',
+    leave_multi_select: 'Leave multi-select mode in the gallery.',
+    repeat_current_image: 'Generate more variations from the currently open image.',
+    download_current_image: 'Download the currently viewed image. Opens a download dialog so the user can save it.',
+    open_presets: 'Open prompt presets inside the current editing panel.',
+    open_reference_image_picker: 'Open the reference image picker in the current editing panel.',
+    start_annotation_mode: 'Activate image annotation mode in the current editing panel.',
+    open_create_new: 'Open the create page in creation mode with aspect ratio selection, ready for a new image.',
+    open_upload: 'Open the file upload dialog so the user can upload a BRAND NEW image from their device. Use ONLY when the user explicitly says "upload", "import", or wants to add a new file from their device. NEVER use this when the user wants to edit an existing image already in the gallery — instead ask which image they mean.',
+    set_prompt_text: "Write a prompt for image generation or editing. Write in the user's language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.",
+    trigger_generation: 'PROTECTED: Start image generation. ONLY call this when the user explicitly says "generiere", "generate", "los", "start generation" or similar direct command. NEVER call this automatically after writing a prompt — always present the prompt first and wait for the user to confirm or ask to generate.',
+    next_image: 'Navigate to the next image in the current stack or gallery.',
+    previous_image: 'Navigate to the previous image in the current stack or gallery.',
+    go_back: 'Go back to the previous view — like pressing the back/chevron button in the header. From detail view goes to stack, from stack goes to gallery.',
+    stop_voice_mode: 'End the voice assistant session and stop listening.',
+    set_aspect_ratio: 'Set the aspect ratio for a new image on the create page. Available ratios: 16:9, 4:3, 1:1, 3:4, 9:16.',
+    open_stack: 'Navigate to the stack/group view of the current image. Shows all versions and variations of the image in the feed grid.',
+    highlight_image: 'Visually highlight (hover effect) an image in the gallery or stack so the user can verify which one you mean.',
+    toggle_image_selection: 'Mark or unmark an image for multi-selection. Indices are 1-based.',
+    create_variables: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each (e.g. Mood, Intensity, Style, Color). The user clicks options to fine-tune before generating.',
+    select_variable_option: 'Toggle a variable option on or off. Use when the user says which option to activate or deactivate.',
+    set_quality: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
+    select_image_by_index: 'Open the image at a specific numeric index in the current gallery or stack (1-based index).',
+    select_image_by_position: 'Open the image at a specific grid position (row and column, both 1-based).',
+};
+
 export const DEFAULT_VOICE_TOOL_NAMES = [
     'get_app_context',
     'open_gallery',

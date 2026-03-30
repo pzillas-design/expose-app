@@ -1,5 +1,5 @@
 import React from 'react';
-import { AudioLines, Cpu, Eye, MessageSquareText, RefreshCw, Settings2, ToggleLeft, Wrench } from 'lucide-react';
+import { AudioLines, ChevronDown, Eye, MessageSquareText, RefreshCw, RotateCcw, Settings2, Wrench } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
 import { Button, Input, TextArea } from '@/components/ui/DesignSystem';
@@ -8,6 +8,7 @@ import {
     DEFAULT_GREETING_EN,
     DEFAULT_SYSTEM_PROMPT_DE,
     DEFAULT_SYSTEM_PROMPT_EN,
+    DEFAULT_TOOL_DESCRIPTIONS,
     DEFAULT_VOICE_MODEL,
     DEFAULT_VOICE_NAME,
     getDefaultVoiceAdminConfig,
@@ -20,37 +21,6 @@ interface AdminVoiceViewProps {
     onConfigChange: React.Dispatch<React.SetStateAction<VoiceAdminConfig>>;
 }
 
-const TOOL_DESCRIPTIONS: Record<string, string> = {
-    get_app_context: 'Liest den aktuellen Screen und die möglichen Aktionen.',
-    open_gallery: 'Navigiert zurück in die Galerie.',
-    open_create: 'Öffnet die Create-Ansicht.',
-    open_settings: 'Öffnet die Einstellungen.',
-    enter_multi_select: 'Aktiviert Mehrfachauswahl.',
-    leave_multi_select: 'Beendet Mehrfachauswahl.',
-    repeat_current_image: 'Startet Varianten für das aktuelle Bild.',
-    download_current_image: 'Öffnet Download-Dialog für das aktuelle Bild.',
-    open_presets: 'Öffnet Presets im Sidepanel.',
-    open_reference_image_picker: 'Öffnet den Referenzbild-Picker.',
-    start_annotation_mode: 'Aktiviert Anmerkungen.',
-    open_create_new: 'Öffnet Create im New-Image-Flow.',
-    open_upload: 'Öffnet den Upload-Dialog.',
-    set_prompt_text: 'Schreibt direkt in das Prompt-Feld.',
-    trigger_generation: 'Startet Generierung nur auf expliziten Nutzerbefehl.',
-    next_image: 'Geht zum nächsten Bild.',
-    previous_image: 'Geht zum vorherigen Bild.',
-    go_back: 'Navigiert eine Ebene zurück.',
-    stop_voice_mode: 'Beendet die Voice-Session.',
-    set_aspect_ratio: 'Setzt das Seitenverhältnis.',
-    open_stack: 'Öffnet den Stack des aktuellen Bildes.',
-    highlight_image: 'Hebt ein Bild visuell hervor.',
-    toggle_image_selection: 'Wählt ein Bild in Multi-Select an oder ab.',
-    create_variables: 'Erstellt Variable-Chips für Varianten.',
-    select_variable_option: 'Toggelt eine Variable-Option.',
-    set_quality: 'Setzt 0.5K, 1K, 2K oder 4K.',
-    select_image_by_index: 'Öffnet ein Bild per Index.',
-    select_image_by_position: 'Öffnet ein Bild per Grid-Position.',
-};
-
 function formatTimestamp(timestamp: number) {
     return new Intl.DateTimeFormat('de-DE', {
         hour: '2-digit',
@@ -59,29 +29,7 @@ function formatTimestamp(timestamp: number) {
     }).format(timestamp);
 }
 
-/* ── Compact toggle for tool list ───────────────────────────── */
-const ToolToggle: React.FC<{
-    name: string;
-    description: string;
-    checked: boolean;
-    onChange: (next: boolean) => void;
-}> = ({ name, description, checked, onChange }) => (
-    <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className="group flex items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
-    >
-        <div className={`shrink-0 h-5 w-9 rounded-full transition-colors ${checked ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'}`}>
-            <div className={`h-4 w-4 rounded-full bg-white dark:bg-zinc-900 mt-0.5 transition-transform ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
-        </div>
-        <div className="min-w-0">
-            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{name}</span>
-            <span className="text-[10px] text-zinc-400 ml-2">{description}</span>
-        </div>
-    </button>
-);
-
-/* ── Setting toggle (bigger, with description below) ────────── */
+/* ── Setting toggle ─────────────────────────────────────────── */
 const SettingToggle: React.FC<{
     label: string;
     description: string;
@@ -131,12 +79,93 @@ const InfoRow = ({ label, value, dot }: { label: string; value: string; dot?: st
     </div>
 );
 
+/* ── Expandable tool row ─────────────────────────────────────── */
+const ToolRow: React.FC<{
+    name: string;
+    enabled: boolean;
+    description: string;
+    isDefault: boolean;
+    isExpanded: boolean;
+    onToggle: (enabled: boolean) => void;
+    onExpand: () => void;
+    onDescriptionChange: (desc: string) => void;
+    onResetDescription: () => void;
+}> = ({ name, enabled, description, isDefault, isExpanded, onToggle, onExpand, onDescriptionChange, onResetDescription }) => (
+    <div className={`rounded-xl border transition-colors ${isExpanded ? 'border-zinc-300 dark:border-zinc-700' : 'border-zinc-100 dark:border-zinc-800/60'}`}>
+        {/* Header row */}
+        <div className="flex items-center gap-3 px-3 py-2.5">
+            {/* Toggle — stops propagation so it doesn't open the accordion */}
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onToggle(!enabled); }}
+                className="shrink-0"
+            >
+                <div className={`h-5 w-9 rounded-full transition-colors ${enabled ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-700'}`}>
+                    <div className={`h-4 w-4 rounded-full bg-white dark:bg-zinc-900 mt-0.5 transition-transform ${enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                </div>
+            </button>
+
+            {/* Name + description preview — click to expand */}
+            <button
+                type="button"
+                onClick={onExpand}
+                className="flex-1 min-w-0 flex items-center gap-2 text-left"
+            >
+                <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{name}</div>
+                    {!isExpanded && (
+                        <div className="text-[10px] text-zinc-400 truncate mt-0.5">{description}</div>
+                    )}
+                </div>
+                <ChevronDown className={`shrink-0 w-3.5 h-3.5 text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </button>
+        </div>
+
+        {/* Expanded: editable description */}
+        {isExpanded && (
+            <div className="px-3 pb-3 space-y-2">
+                <TextArea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => onDescriptionChange(e.target.value)}
+                    className="text-[11px] font-mono"
+                />
+                {!isDefault && (
+                    <button
+                        type="button"
+                        onClick={onResetDescription}
+                        className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                    >
+                        <RotateCcw className="w-3 h-3" />
+                        Default wiederherstellen
+                    </button>
+                )}
+            </div>
+        )}
+    </div>
+);
+
 export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagnostics, onConfigChange }) => {
     const enabledToolCount = config.tools.filter(tool => tool.enabled).length;
+    const [expandedTool, setExpandedTool] = React.useState<string | null>(null);
 
     const updateConfig = React.useCallback((updater: (current: VoiceAdminConfig) => VoiceAdminConfig) => {
         onConfigChange(current => updater(current));
     }, [onConfigChange]);
+
+    const updateToolDescription = React.useCallback((name: string, description: string) => {
+        updateConfig(c => ({
+            ...c,
+            tools: c.tools.map(t => t.name === name ? { ...t, description } : t),
+        }));
+    }, [updateConfig]);
+
+    const resetToolDescription = React.useCallback((name: string) => {
+        updateConfig(c => ({
+            ...c,
+            tools: c.tools.map(t => t.name === name ? { ...t, description: undefined } : t),
+        }));
+    }, [updateConfig]);
 
     return (
         <div className="flex flex-col">
@@ -150,7 +179,6 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 {/* ── Row 1: Status + Session Config ─────────────── */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
 
-                    {/* Status — compact info list */}
                     <Section title="Status" icon={<AudioLines className="w-3.5 h-3.5 text-zinc-400" />}>
                         <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                             <InfoRow
@@ -172,7 +200,6 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                         </div>
                     </Section>
 
-                    {/* Session config — interactive */}
                     <div className="xl:col-span-2">
                         <Section title="Session-Konfiguration" icon={<Settings2 className="w-3.5 h-3.5 text-zinc-400" />}>
                             <div className="space-y-4">
@@ -288,46 +315,34 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
 
                 {/* ── Row 3: Tools ───────────────────────────────── */}
                 <Section
-                    title={`Tools / Fähigkeiten (${enabledToolCount}/${config.tools.length})`}
+                    title={`Tools / Fähigkeiten (${enabledToolCount} / ${config.tools.length})`}
                     icon={<Wrench className="w-3.5 h-3.5 text-zinc-400" />}
-                    actions={
-                        <div className="flex gap-1.5">
-                            <Button
-                                size="s"
-                                variant="secondary"
-                                onClick={() => updateConfig(c => ({
-                                    ...c,
-                                    tools: c.tools.map(tool => ({ ...tool, enabled: true })),
-                                }))}
-                            >
-                                Alle an
-                            </Button>
-                            <Button
-                                size="s"
-                                variant="secondary"
-                                onClick={() => updateConfig(c => ({
-                                    ...c,
-                                    tools: c.tools.map(tool => ({ ...tool, enabled: false })),
-                                }))}
-                            >
-                                Alle aus
-                            </Button>
-                        </div>
-                    }
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0.5">
-                        {config.tools.map(tool => (
-                            <ToolToggle
-                                key={tool.name}
-                                name={tool.name}
-                                description={TOOL_DESCRIPTIONS[tool.name] || ''}
-                                checked={tool.enabled}
-                                onChange={(enabled) => updateConfig(c => ({
-                                    ...c,
-                                    tools: c.tools.map(item => item.name === tool.name ? { ...item, enabled } : item),
-                                }))}
-                            />
-                        ))}
+                    <div className="space-y-1.5">
+                        {config.tools.map(tool => {
+                            const defaultDesc = DEFAULT_TOOL_DESCRIPTIONS[tool.name] ?? '';
+                            const effectiveDesc = tool.description ?? defaultDesc;
+                            const isDefault = !tool.description;
+                            const isExpanded = expandedTool === tool.name;
+
+                            return (
+                                <ToolRow
+                                    key={tool.name}
+                                    name={tool.name}
+                                    enabled={tool.enabled}
+                                    description={effectiveDesc}
+                                    isDefault={isDefault}
+                                    isExpanded={isExpanded}
+                                    onToggle={(enabled) => updateConfig(c => ({
+                                        ...c,
+                                        tools: c.tools.map(item => item.name === tool.name ? { ...item, enabled } : item),
+                                    }))}
+                                    onExpand={() => setExpandedTool(isExpanded ? null : tool.name)}
+                                    onDescriptionChange={(desc) => updateToolDescription(tool.name, desc)}
+                                    onResetDescription={() => resetToolDescription(tool.name)}
+                                />
+                            );
+                        })}
                     </div>
                 </Section>
 

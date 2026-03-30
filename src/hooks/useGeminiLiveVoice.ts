@@ -481,8 +481,13 @@ export function useGeminiLiveVoice({
     const isAvailable = enabled && config.enabled && typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
     const enabledToolNames = useMemo(() => new Set(config.tools.filter(tool => tool.enabled).map(tool => tool.name)), [config.tools]);
     const activeToolDeclarations = useMemo(
-        () => toolDeclarations.filter(tool => enabledToolNames.has(tool.name || '')),
-        [enabledToolNames]
+        () => toolDeclarations
+            .filter(tool => enabledToolNames.has(tool.name || ''))
+            .map(tool => {
+                const override = config.tools.find(t => t.name === tool.name)?.description;
+                return override ? { ...tool, description: override } : tool;
+            }),
+        [enabledToolNames, config.tools]
     );
 
     // --- Native audio playback ---
