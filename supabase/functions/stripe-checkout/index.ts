@@ -49,10 +49,16 @@ Deno.serve(async (req) => {
         if (typeof amount !== 'number' || isNaN(amount) || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
             throw new Error(`Amount must be between ${MIN_AMOUNT} and ${MAX_AMOUNT} EUR`);
         }
-        const ALLOWED_ORIGINS = ['https://expose.ae', 'http://localhost', 'https://localhost'];
-        const isAllowed = (url: string) => ALLOWED_ORIGINS.some(o => url?.startsWith(o));
-        if (!isAllowed(success_url) || !isAllowed(cancel_url)) {
-            throw new Error('Invalid redirect URL');
+        const isAllowedUrl = (url: string) => {
+            if (!url) return false;
+            // Allow any subdomain of expose.ae (staging, preview, www, etc.)
+            if (/^https:\/\/([a-z0-9-]+\.)*expose\.ae(\/|$)/i.test(url)) return true;
+            // Allow localhost for development
+            if (url.startsWith('http://localhost') || url.startsWith('https://localhost')) return true;
+            return false;
+        };
+        if (!isAllowedUrl(success_url) || !isAllowedUrl(cancel_url)) {
+            throw new Error(`Invalid redirect URL: ${success_url}`);
         }
 
         console.log(`[checkout] creating Stripe session for ${user.email}, amount: ${amount}...`);

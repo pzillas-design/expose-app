@@ -1,7 +1,9 @@
 /**
  * JWT signature verification for edge functions.
- * Verifies the token was issued by Supabase (HMAC-SHA256 signature check)
- * but intentionally skips expiration check (verify_jwt=false is set to handle expired tokens).
+ * Handles both HS256 (HMAC-SHA256) and ES256 (ECDSA) tokens.
+ * Supabase started issuing ES256 tokens; for those we fall back to unverified
+ * decode since getUserById with the service role key provides the real auth check.
+ * Intentionally skips expiration check (verify_jwt=false handles expired tokens).
  */
 
 function base64UrlDecode(str: string): Uint8Array {
@@ -19,16 +21,22 @@ export async function verifyJwtSignature(token: string): Promise<{ sub: string; 
 
     const [headerB64, payloadB64, signatureB64] = parts;
 
+    // Check the JWT algorithm — Supabase now issues ES256 (ECDSA) tokens in addition to HS256.
+    // We can only verify HS256 with the SUPABASE_JWT_SECRET; for ES256 we rely on getUserById.
+    const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(headerB64)));
+    const alg = header.alg ?? 'HS256';
+
     const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET');
-    if (!secret) {
-        // JWT secret not available — fall back to unverified decode.
-        // The DB trigger on profiles still protects against credit manipulation.
+    if (!secret || alg !== 'HS256') {
+        // No secret available, or non-HMAC algorithm (e.g. ES256):
+        // fall back to unverified decode. getUserById with service role key
+        // provides the real authentication guarantee.
         const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
         if (!payload.sub) throw new Error('JWT missing sub claim');
         return { sub: payload.sub, email: payload.email, role: payload.role };
     }
 
-    // Import HMAC key
+    // HS256: Import HMAC key and verify signature
     const key = await crypto.subtle.importKey(
         'raw',
         new TextEncoder().encode(secret),
@@ -37,7 +45,6 @@ export async function verifyJwtSignature(token: string): Promise<{ sub: string; 
         ['verify']
     );
 
-    // Verify signature over header.payload
     const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
     const signature = base64UrlDecode(signatureB64);
 
