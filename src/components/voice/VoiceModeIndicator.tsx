@@ -40,10 +40,11 @@ export const VoiceModeIndicator: React.FC<VoiceModeIndicatorProps> = ({ active, 
     };
 
     const h = large ? 'h-10' : 'h-9';
+    const btnSize = large ? 'h-10 w-10' : 'h-9 w-9';
     const barH = large ? 16 : 14;
 
     return (
-        <div className={`flex items-center gap-1.5 bg-orange-500 text-white rounded-full pl-3 pr-1.5 ${h} text-xs font-medium animate-in fade-in duration-200 shrink-0`}>
+        <div className={`flex items-center gap-1.5 bg-orange-500 text-white rounded-full pl-3 pr-0 ${h} text-xs font-medium animate-[pill-in_0.28s_cubic-bezier(0.34,1.3,0.64,1)_forwards] origin-right shrink-0`}>
             {/* Waveform bars */}
             <div className="flex items-center gap-[3px]" style={{ height: barH }}>
                 {Array.from({ length: BAR_COUNT }).map((_, i) => {
@@ -65,11 +66,11 @@ export const VoiceModeIndicator: React.FC<VoiceModeIndicatorProps> = ({ active, 
                 })}
             </div>
 
-            {/* Stop button */}
+            {/* Stop button — full pill height for easy tapping */}
             {onStop && (
                 <button
                     onClick={(e) => { e.stopPropagation(); onStop(); }}
-                    className="ml-0.5 p-1 rounded-full hover:bg-orange-600 transition-colors"
+                    className={`${btnSize} flex items-center justify-center rounded-full hover:bg-orange-600 transition-colors shrink-0`}
                     aria-label="Stop voice mode"
                 >
                     <Square className="w-2.5 h-2.5 fill-current" />

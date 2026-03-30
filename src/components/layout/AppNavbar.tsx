@@ -389,7 +389,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </div>
         </div>
     ) : isDetail ? (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
             <div className="relative md:hidden" ref={mobileDetailMenuRef}>
                 <RoundIconButton
