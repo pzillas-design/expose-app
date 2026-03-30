@@ -171,7 +171,7 @@ export async function updateVoiceAdminConfig(config: VoiceAdminConfig) {
     if (error) throw error;
 }
 
-const LOGS_STORAGE_KEY = 'expose_voice_logs_v1';
+const LOGS_STORAGE_KEY = 'expose_voice_logs_v2'; // v2: sessionId added to all log entries
 const MAX_LOG_ENTRIES = 100;
 
 export function loadVoiceLogs(): { toolCalls: VoiceToolCallLog[]; transcripts: VoiceTranscriptLog[] } {
