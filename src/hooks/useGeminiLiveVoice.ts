@@ -61,6 +61,7 @@ interface VoiceCommandHandlers {
     selectVariableOption: (label: string, option: string) => Promise<VoiceActionResult> | VoiceActionResult;
     setQuality: (quality: string) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByIndex: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
+    selectImageByPosition: (row: number, column: number) => Promise<VoiceActionResult> | VoiceActionResult;
 }
 
 interface UseGeminiLiveVoiceOptions extends VoiceCommandHandlers {
@@ -260,6 +261,18 @@ const toolDeclarations: FunctionDeclaration[] = [
             required: ['index']
         }
     },
+    {
+        name: 'select_image_by_position',
+        description: 'Open the image at a specific grid position (row and column, both 1-based).',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                row: { type: Type.NUMBER, description: 'The 1-based row number in the grid' },
+                column: { type: Type.NUMBER, description: 'The 1-based column number in the grid' }
+            },
+            required: ['row', 'column']
+        }
+    },
 ];
 
 // --- Sound effects ---
@@ -384,6 +397,7 @@ export function useGeminiLiveVoice({
     selectVariableOption,
     setQuality,
     selectImageByIndex,
+    selectImageByPosition,
     onSessionConfig,
     onAppContextChange,
     onVisualContextChange,
@@ -618,6 +632,10 @@ export function useGeminiLiveVoice({
                 }
                 case 'set_quality': return setQuality((call.args as Record<string, unknown>)?.quality as string || '2k');
                 case 'select_image_by_index': return selectImageByIndex((call.args as Record<string, unknown>)?.index as number || 1);
+                case 'select_image_by_position': {
+                    const args = call.args as Record<string, unknown>;
+                    return selectImageByPosition(args?.row as number || 1, args?.column as number || 1);
+                }
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
         })();
@@ -645,7 +663,7 @@ export function useGeminiLiveVoice({
         openPresets, openReferenceImagePicker, openSettings, openStack, openUpload,
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
         setPromptText, setQuality, startAnnotationMode,
-        stopVoiceMode, triggerGeneration, selectImageByIndex,
+        stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
         onToolCall
     ]);
 

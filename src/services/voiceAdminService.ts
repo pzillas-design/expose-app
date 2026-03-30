@@ -50,6 +50,7 @@ export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     select_variable_option: 'Toggle a variable option on or off. Use when the user says which option to activate or deactivate.',
     set_quality: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
     select_image_by_index: 'Open the image at a specific numeric index in the current gallery or stack (1-based index).',
+    select_image_by_position: 'Open the image at a specific grid position (row and column, both 1-based).',
 };
 
 export const DEFAULT_VOICE_TOOL_NAMES = [
@@ -76,6 +77,7 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'select_variable_option',
     'set_quality',
     'select_image_by_index',
+    'select_image_by_position',
 ] as const;
 
 function buildDefaultTools(): VoiceAdminToolConfig[] {

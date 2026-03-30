@@ -813,6 +813,24 @@ export function App() {
 
             handleSelectImage(img.id);
             return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
+        },
+        selectImageByPosition: async (rowIdx: number, columnIdx: number) => {
+            const cols = state.gridColumns || 2;
+            const index = (rowIdx - 1) * cols + (columnIdx - 1) + 1;
+            const displayImages = expandedGroupId
+                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
+                : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
+            const img = displayImages[index - 1];
+            if (!img) return { ok: false, message: state.currentLang === 'de' ? `Position (Reihe ${rowIdx}, Bild ${columnIdx}) existiert nicht.` : `Position (Row ${rowIdx}, Image ${columnIdx}) does not exist.` };
+            if (!expandedGroupId) {
+                const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
+                if (row && row.items.length > 1) {
+                    navigate(`/stack/${row.id}`);
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                }
+            }
+            handleSelectImage(img.id);
+            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
         }
     });
 
