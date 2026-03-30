@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronRight, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Trash2, Wrench } from 'lucide-react';
+import { Check, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Trash2, Wrench } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { Input, TextArea } from '@/components/ui/DesignSystem';
@@ -113,94 +113,93 @@ const ToolCallDetail: React.FC<{ call: VoiceToolCallLog }> = ({ call }) => {
     );
 };
 
-// ─── Chat detail for a transcript ───────────────────────────────────────────
-
-const TranscriptDetail: React.FC<{ entry: VoiceTranscriptLog }> = ({ entry }) => {
-    const isUser = entry.source === 'user';
-    return (
-        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-            <div className="max-w-full space-y-2">
-                <div className={`text-xs font-semibold ${isUser ? 'text-right text-zinc-500' : 'text-zinc-500'}`}>
-                    {isUser ? 'Du' : 'Exposé'} · {formatDate(entry.timestamp)}
-                </div>
-                <div className={`${isUser ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100'} rounded-2xl ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'} px-5 py-3.5`}>
-                    <p className="text-sm leading-relaxed">{entry.text}</p>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 // ─── Two-pane monitor feed ───────────────────────────────────────────────────
 
 const MonitorFeed: React.FC<{ feedEntries: FeedEntry[] }> = ({ feedEntries }) => {
-    const [selectedId, setSelectedId] = React.useState<string | null>(feedEntries[feedEntries.length - 1]?.id ?? null);
+    const [selectedToolId, setSelectedToolId] = React.useState<string | null>(null);
+    const chatRef = React.useRef<HTMLDivElement>(null);
 
-    // When new entries arrive, select the latest
+    // Auto-scroll chat to bottom on new entries
     React.useEffect(() => {
-        const last = feedEntries[feedEntries.length - 1];
-        if (last) setSelectedId(last.id);
+        if (chatRef.current) {
+            chatRef.current.scrollTop = chatRef.current.scrollHeight;
+        }
     }, [feedEntries.length]);
 
-    const selectedEntry = feedEntries.find(e => e.id === selectedId) ?? null;
-    const listEntries = [...feedEntries].reverse(); // newest first in the list
+    const selectedTool = feedEntries.find(
+        e => e.id === selectedToolId && e.kind === 'tool'
+    ) as (FeedEntry & { kind: 'tool' }) | undefined;
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] min-h-[380px]">
-            {/* Left: scrollable entry list */}
-            <div className="border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto max-h-[380px] lg:max-h-[480px]">
-                {listEntries.map(entry => {
-                    const isSelected = entry.id === selectedId;
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] min-h-[400px]">
+
+            {/* ── Left: continuous chat flow ── */}
+            <div
+                ref={chatRef}
+                className="overflow-y-auto max-h-[500px] px-6 py-5 space-y-3 border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800"
+            >
+                {feedEntries.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-40 gap-2 text-center">
+                        <MessageSquareText className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
+                        <p className="text-sm text-zinc-400">Noch keine Aktivität</p>
+                        <p className="text-xs text-zinc-300 dark:text-zinc-600">Starte eine Voice-Session um Logs zu sehen</p>
+                    </div>
+                )}
+
+                {feedEntries.map(entry => {
                     if (entry.kind === 'transcript') {
                         const isUser = entry.entry.source === 'user';
                         return (
-                            <button
-                                key={entry.id}
-                                type="button"
-                                onClick={() => setSelectedId(entry.id)}
-                                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 transition-colors ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
-                            >
-                                <span className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${isUser ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-300'}`}>
-                                    {isUser ? 'D' : 'E'}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-snug">{entry.entry.text}</p>
-                                    <p className="text-[10px] text-zinc-400 mt-0.5">{formatDate(entry.timestamp)}</p>
+                            <div key={entry.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                <div className="max-w-[78%]">
+                                    <div className={`text-[10px] font-medium mb-1 text-zinc-400 ${isUser ? 'text-right' : ''}`}>
+                                        {isUser ? 'Du' : 'Exposé'} · {formatDate(entry.timestamp)}
+                                    </div>
+                                    <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                                        isUser
+                                            ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-tr-sm'
+                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 rounded-tl-sm'
+                                    }`}>
+                                        {entry.entry.text}
+                                    </div>
                                 </div>
-                            </button>
+                            </div>
                         );
                     } else {
+                        // ── Tool call chip ──
                         const call = entry.call;
+                        const isSelected = entry.id === selectedToolId;
                         return (
-                            <button
-                                key={entry.id}
-                                type="button"
-                                onClick={() => setSelectedId(entry.id)}
-                                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 transition-colors ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
-                            >
-                                <span className={`mt-1 shrink-0 w-1.5 h-1.5 rounded-full ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 truncate leading-snug">{call.name}</p>
-                                    <p className="text-[10px] text-zinc-400 mt-0.5">{formatDate(call.timestamp)}</p>
-                                </div>
-                                <ChevronRight className={`mt-0.5 shrink-0 w-3 h-3 transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-200 dark:text-zinc-700'}`} />
-                            </button>
+                            <div key={entry.id} className="flex justify-center py-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedToolId(isSelected ? null : entry.id)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                                        isSelected
+                                            ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-200 shadow-sm'
+                                            : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600'
+                                    }`}
+                                >
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                                    <span className="font-mono">{call.name}</span>
+                                    <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                                    <span className="tabular-nums">{formatDate(call.timestamp)}</span>
+                                </button>
+                            </div>
                         );
                     }
                 })}
             </div>
 
-            {/* Right: detail / chat view */}
-            <div className="p-6 overflow-y-auto max-h-[480px]">
-                {selectedEntry ? (
-                    selectedEntry.kind === 'tool' ? (
-                        <ToolCallDetail call={selectedEntry.call} />
-                    ) : (
-                        <TranscriptDetail entry={selectedEntry.entry} />
-                    )
+            {/* ── Right: tool call detail ── */}
+            <div className="p-6 overflow-y-auto max-h-[500px]">
+                {selectedTool ? (
+                    <ToolCallDetail call={selectedTool.call} />
                 ) : (
-                    <div className="h-full flex items-center justify-center text-sm text-zinc-400">
-                        Eintrag auswählen
+                    <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                        <Wrench className="w-5 h-5 text-zinc-300 dark:text-zinc-700" />
+                        <p className="text-sm text-zinc-400">Tool-Aufruf anklicken</p>
+                        <p className="text-xs text-zinc-300 dark:text-zinc-600">Details erscheinen hier</p>
                     </div>
                 )}
             </div>
