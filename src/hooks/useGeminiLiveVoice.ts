@@ -904,6 +904,20 @@ export function useGeminiLiveVoice({
 
             sessionRef.current = session;
 
+            // Inject current app context into conversation history before greeting.
+            // turnComplete: false = content is appended but no model response is triggered yet.
+            // This ensures the AI knows where the user is from the very first interaction.
+            try {
+                const initialCtx = JSON.stringify(getAppContext());
+                session.sendClientContent({
+                    turns: [{ role: 'user', parts: [{ text: `[System context — current app state: ${initialCtx}]` }] }],
+                    turnComplete: false
+                });
+                console.log('[voice] initial context injected');
+            } catch (ctxErr) {
+                console.warn('[voice] failed to inject initial context', ctxErr);
+            }
+
             // Send greeting BEFORE starting mic
             const greeting = config.greeting;
             console.log('[voice] sending greeting via sendRealtimeInput');
