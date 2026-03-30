@@ -485,7 +485,7 @@ export function App() {
             canOpenPresets: isDetail,
             canAddReferenceImage: isDetail || isCreate,
             canAnnotateImage: isDetail,
-            presets: state.templates?.filter((t: any) => !t.isHistory).map((t: any) => ({
+            presets: state.templates?.filter((t: any) => !t.isHistory && (!t.lang || t.lang === state.currentLang)).map((t: any) => ({
                 title: t.title,
                 prompt: t.prompt,
                 hasControls: !!(t.controls?.length),
