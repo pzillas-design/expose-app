@@ -158,7 +158,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'open_upload',
-        description: 'Open the file upload dialog so the user can upload an image to edit.',
+        description: 'Open the file upload dialog so the user can upload a BRAND NEW image from their device. Use ONLY when the user explicitly says "upload", "import", or wants to add a new file from their device. NEVER use this when the user wants to edit an existing image already in the gallery — instead ask which image they mean.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {

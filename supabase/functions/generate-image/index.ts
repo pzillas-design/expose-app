@@ -471,18 +471,50 @@ Deno.serve(async (req) => {
                     throw new Error('Google API key missing');
                 }
 
+                // Write webhook_data + stage to DB BEFORE calling Gemini
+                // so that even if the function dies mid-call we have full diagnostics
                 updateStage('gemini_call');
+                await supabaseAdmin
+                    .from('generation_jobs')
+                    .update({
+                        webhook_data: webhookData,
+                        request_payload: { ...apiRequestPayload, current_stage: 'gemini_call', gemini_start: Date.now() }
+                    })
+                    .eq('id', newId);
+
                 logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
                 const providerStartTime = Date.now();
-                const geminiResponse = await geminiGenerateImage(
-                    geminiApiKey,
-                    finalModelName,
-                    parts,
-                    generationConfig,
-                    !!finalSourceBase64,
-                    hasMask,
-                    hasRefs
-                );
+
+                // 130s per attempt — leaves ~20s for cleanup within Supabase's ~150s wall-clock limit.
+                // On timeout: one automatic retry before failing.
+                const GEMINI_TIMEOUT_MS = 130_000;
+                const callGeminiWithTimeout = () => Promise.race([
+                    geminiGenerateImage(
+                        geminiApiKey,
+                        finalModelName,
+                        parts,
+                        generationConfig,
+                        !!finalSourceBase64,
+                        hasMask,
+                        hasRefs
+                    ),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS)
+                    )
+                ]);
+
+                let geminiResponse: any;
+                try {
+                    geminiResponse = await callGeminiWithTimeout();
+                } catch (firstErr: any) {
+                    if (firstErr?.message?.includes('timeout')) {
+                        logInfo('Gemini Retry', 'First attempt timed out — retrying once...');
+                        updateStage('gemini_retry');
+                        geminiResponse = await callGeminiWithTimeout();
+                    } else {
+                        throw firstErr;
+                    }
+                }
                 const providerLatencyMs = Date.now() - providerStartTime;
 
                 const generatedImage = extractGeneratedImage(geminiResponse);
@@ -700,9 +732,15 @@ Deno.serve(async (req) => {
                         failPayload.current_stage = bgStage;
                         failPayload.stage_updated_at = new Date().toISOString();
                         failPayload.failed = true;
+                        const failDurationMs = typeof generationStartTime !== 'undefined' ? Date.now() - generationStartTime : null;
                         await supabaseAdmin
                             .from('generation_jobs')
-                            .update({ status: 'failed', error: `[${bgStage}] ${errorMsg}`, request_payload: failPayload })
+                            .update({
+                                status: 'failed',
+                                error: `[${bgStage}] ${errorMsg}`,
+                                request_payload: failPayload,
+                                ...(failDurationMs !== null ? { duration_ms: failDurationMs } : {})
+                            })
                             .eq('id', newId);
                     } catch (e) {
                         logError('Job Update Failed (BG)', e);

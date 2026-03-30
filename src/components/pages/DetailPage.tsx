@@ -722,12 +722,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         />
                                     )}
                                     {img.thumbSrc && (
-                                        <img
-                                            src={img.thumbSrc}
-                                            className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
-                                            style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
-                                            alt=""
-                                        />
+                                        <div className={`absolute inset-0 ${showBlob ? 'overflow-hidden' : ''}`}>
+                                            <img
+                                                src={img.thumbSrc}
+                                                className={`w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
+                                                style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
+                                                alt=""
+                                            />
+                                        </div>
                                     )}
                                     {img.isGenerating && (
                                         <GenerationProgressBar
