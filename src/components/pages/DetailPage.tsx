@@ -183,6 +183,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMobile = useMobile();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
+    // Track previous loaded image src so it stays visible during navigation flicker
+    const prevLoadedSrcRef = useRef<string | null>(null);
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('text');
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
@@ -711,7 +713,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         }
                                         return <BlobBackground />;
                                     })()}
-                                    {img.thumbSrc && !isMainLoaded && (
+                                    {/* Previous image stays visible during navigation to prevent white flash */}
+                                    {!isMainLoaded && !showBlob && prevLoadedSrcRef.current && (
+                                        <img
+                                            src={prevLoadedSrcRef.current}
+                                            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                                            alt=""
+                                        />
+                                    )}
+                                    {img.thumbSrc && (
                                         <img
                                             src={img.thumbSrc}
                                             className={`absolute inset-0 w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
@@ -737,6 +747,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
                                             (imgEl.decode?.() ?? Promise.resolve()).catch(() => {}).then(() => {
+                                                prevLoadedSrcRef.current = img.src;
                                                 setLoadedImageId(img.id);
                                                 setWaitingForGeneratedLoad(null);
                                             });

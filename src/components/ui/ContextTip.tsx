@@ -35,9 +35,11 @@ export const ContextTip: React.FC<ContextTipProps> = ({
     persistForSession = false,
     anchorClassName = 'absolute inset-0 pointer-events-none',
 }) => {
-    const [visible, setVisible] = useState(false);
+    const [visible, setVisible] = useState(false);   // controls DOM presence
+    const [fadeIn, setFadeIn] = useState(false);      // controls CSS opacity
     const [mounted, setMounted] = useState(false);
     const [anchorVisible, setAnchorVisible] = useState(true);
+    const FADE_DURATION = 500; // ms — must match transition duration below
     const [portalStyle, setPortalStyle] = useState<{ top: number; left: number; arrowLeft: number; showBelow: boolean; align: 'left' | 'center' | 'right' }>({
         top: 0,
         left: 0,
@@ -54,7 +56,10 @@ export const ContextTip: React.FC<ContextTipProps> = ({
 
     useEffect(() => {
         if (!enabled) {
-            setVisible(false);
+            if (visible) {
+                setFadeIn(false);
+                window.setTimeout(() => setVisible(false), FADE_DURATION);
+            }
             try {
                 if (localStorage.getItem(ACTIVE_TIP_KEY) === storageKey) {
                     localStorage.removeItem(ACTIVE_TIP_KEY);
@@ -66,7 +71,10 @@ export const ContextTip: React.FC<ContextTipProps> = ({
         }
 
         if (persistForSession) {
-            const showId = window.setTimeout(() => setVisible(true), 150);
+            const showId = window.setTimeout(() => {
+                setVisible(true);
+                window.requestAnimationFrame(() => window.requestAnimationFrame(() => setFadeIn(true)));
+            }, 800);
             return () => window.clearTimeout(showId);
         }
 
@@ -83,8 +91,8 @@ export const ContextTip: React.FC<ContextTipProps> = ({
             // ignore storage errors and still show for this session
         }
 
-        // Random delay (2–6s) so tips appear sporadically, not all at once on page load
-        const delay = 2000 + Math.random() * 4000;
+        // Delay ≥5s so tips don't appear immediately on page load
+        const delay = 5000 + Math.random() * 3000;
         const showId = window.setTimeout(() => {
             // Check if anchor is actually visible (prevents tips for hidden sidepanel)
             const anchor = anchorRef.current;
@@ -106,6 +114,8 @@ export const ContextTip: React.FC<ContextTipProps> = ({
                 // ignore storage errors
             }
             setVisible(true);
+            // Fade in after DOM mount (double rAF ensures first paint is opacity-0)
+            window.requestAnimationFrame(() => window.requestAnimationFrame(() => setFadeIn(true)));
         }, delay);
 
         return () => {
@@ -129,8 +139,7 @@ export const ContextTip: React.FC<ContextTipProps> = ({
             } catch {
                 // ignore storage errors
             }
-            setVisible(false);
-            onDismiss?.();
+            fadeOut(() => onDismiss?.());
         }, autoHideMs);
 
         return () => window.clearTimeout(hideId);
@@ -210,10 +219,17 @@ export const ContextTip: React.FC<ContextTipProps> = ({
         };
     }, [visible, inline, mounted, placement, anchorClassName]);
 
+    const fadeOut = (callback?: () => void) => {
+        setFadeIn(false);
+        window.setTimeout(() => {
+            setVisible(false);
+            callback?.();
+        }, FADE_DURATION);
+    };
+
     const handleClose = () => {
         if (persistForSession) {
-            setVisible(false);
-            onDismiss?.();
+            fadeOut(() => onDismiss?.());
             return;
         }
         try {
@@ -228,8 +244,7 @@ export const ContextTip: React.FC<ContextTipProps> = ({
         } catch {
             // ignore storage errors
         }
-        setVisible(false);
-        onDismiss?.();
+        fadeOut(() => onDismiss?.());
     };
 
     const shellClassName =
@@ -251,7 +266,8 @@ export const ContextTip: React.FC<ContextTipProps> = ({
             <button
                 type="button"
                 onClick={handleClose}
-                className={`relative mt-2 w-full px-4 py-3 text-left transition-all hover:scale-[0.995] hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
+                className={`relative mt-2 w-full px-4 py-3 text-left transition-all duration-500 hover:scale-[0.995] hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
+                style={{ opacity: fadeIn ? 1 : 0 }}
             >
                 {cardBody}
             </button>
@@ -271,12 +287,14 @@ export const ContextTip: React.FC<ContextTipProps> = ({
                     type="button"
                     onClick={handleClose}
                     ref={tipRef}
-                    className={`fixed z-[120] overflow-visible px-4 py-3 text-left transition-opacity hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
+                    className={`fixed z-[120] overflow-visible px-4 py-3 text-left hover:opacity-40 ${shellClassName} ${shadowClassName} ${className}`}
                     style={{
                         top: portalStyle.top,
                         left: portalStyle.left,
                         width: 'min(264px, calc(100vw - 32px))',
                         transformOrigin: portalStyle.align === 'left' ? 'left top' : portalStyle.align === 'right' ? 'right top' : 'center top',
+                        opacity: fadeIn ? 1 : 0,
+                        transition: `opacity ${FADE_DURATION}ms ease-in-out`,
                     }}
                 >
                     {cardBody}
