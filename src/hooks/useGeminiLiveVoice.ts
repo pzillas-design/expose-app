@@ -44,8 +44,6 @@ interface VoiceCommandHandlers {
     openCreateNew: () => Promise<VoiceActionResult> | VoiceActionResult;
     openUpload: () => Promise<VoiceActionResult> | VoiceActionResult;
     openSettings: () => Promise<VoiceActionResult> | VoiceActionResult;
-    enterMultiSelect: () => Promise<VoiceActionResult> | VoiceActionResult;
-    leaveMultiSelect: () => Promise<VoiceActionResult> | VoiceActionResult;
     repeatCurrentImage: () => Promise<VoiceActionResult> | VoiceActionResult;
     openPresets: () => Promise<VoiceActionResult> | VoiceActionResult;
     openReferenceImagePicker: () => Promise<VoiceActionResult> | VoiceActionResult;
@@ -63,9 +61,6 @@ interface VoiceCommandHandlers {
     selectVariableOption: (label: string, option: string) => Promise<VoiceActionResult> | VoiceActionResult;
     setQuality: (quality: string) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByIndex: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
-    selectImageByPosition: (row: number, column: number) => Promise<VoiceActionResult> | VoiceActionResult;
-    highlightImage: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
-    toggleImageSelection: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
 }
 
 interface UseGeminiLiveVoiceOptions extends VoiceCommandHandlers {
@@ -114,16 +109,6 @@ const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'open_settings',
         description: 'Open the settings dialog.',
-        parameters: { type: Type.OBJECT, properties: {} }
-    },
-    {
-        name: 'enter_multi_select',
-        description: 'Enter multi-select mode in the gallery to work with multiple images.',
-        parameters: { type: Type.OBJECT, properties: {} }
-    },
-    {
-        name: 'leave_multi_select',
-        description: 'Leave multi-select mode in the gallery.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -220,28 +205,6 @@ const toolDeclarations: FunctionDeclaration[] = [
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
-        name: 'highlight_image',
-        description: 'Visually highlight (hover effect) an image in the gallery or stack so the user can verify which one you mean.',
-        parameters: {
-            type: Type.OBJECT,
-            properties: {
-                index: { type: Type.NUMBER, description: '1-based index of the image' }
-            },
-            required: ['index']
-        }
-    },
-    {
-        name: 'toggle_image_selection',
-        description: 'Mark or unmark an image for multi-selection. Indices are 1-based.',
-        parameters: {
-            type: Type.OBJECT,
-            properties: {
-                index: { type: Type.NUMBER, description: '1-based index of the image' }
-            },
-            required: ['index']
-        }
-    },
-    {
         name: 'create_variables',
         description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each (e.g. Mood, Intensity, Style, Color). The user clicks options to fine-tune before generating.',
         parameters: {
@@ -297,18 +260,6 @@ const toolDeclarations: FunctionDeclaration[] = [
             required: ['index']
         }
     },
-    {
-        name: 'select_image_by_position',
-        description: 'Open the image at a specific grid position (row and column, both 1-based).',
-        parameters: {
-            type: Type.OBJECT,
-            properties: {
-                row: { type: Type.NUMBER, description: 'The 1-based row number' },
-                column: { type: Type.NUMBER, description: 'The 1-based column number' }
-            },
-            required: ['row', 'column']
-        }
-    }
 ];
 
 // --- Sound effects ---
@@ -416,8 +367,6 @@ export function useGeminiLiveVoice({
     openCreateNew,
     openUpload,
     openSettings,
-    enterMultiSelect,
-    leaveMultiSelect,
     repeatCurrentImage,
     openPresets,
     openReferenceImagePicker,
@@ -435,9 +384,6 @@ export function useGeminiLiveVoice({
     selectVariableOption,
     setQuality,
     selectImageByIndex,
-    selectImageByPosition,
-    highlightImage,
-    toggleImageSelection,
     onSessionConfig,
     onAppContextChange,
     onVisualContextChange,
@@ -647,8 +593,6 @@ export function useGeminiLiveVoice({
                 case 'open_gallery': return openGallery();
                 case 'open_create': return openCreate();
                 case 'open_settings': return openSettings();
-                case 'enter_multi_select': return enterMultiSelect();
-                case 'leave_multi_select': return leaveMultiSelect();
                 case 'repeat_current_image': return repeatCurrentImage();
                 case 'download_current_image': return downloadCurrentImage();
                 case 'open_presets': return openPresets();
@@ -674,12 +618,6 @@ export function useGeminiLiveVoice({
                 }
                 case 'set_quality': return setQuality((call.args as Record<string, unknown>)?.quality as string || '2k');
                 case 'select_image_by_index': return selectImageByIndex((call.args as Record<string, unknown>)?.index as number || 1);
-                case 'select_image_by_position': {
-                    const args = call.args as Record<string, unknown>;
-                    return selectImageByPosition(args?.row as number || 1, args?.column as number || 1);
-                }
-                case 'highlight_image': return highlightImage((call.args as any)?.index as number || 0);
-                case 'toggle_image_selection': return toggleImageSelection((call.args as any)?.index as number || 0);
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
         })();
@@ -702,12 +640,12 @@ export function useGeminiLiveVoice({
                 : { error: awaitedResult.message }
         };
     }, [
-        createVariables, downloadCurrentImage, enterMultiSelect, getAppContext, goBack,
-        leaveMultiSelect, nextImage, openCreate, openCreateNew, openGallery,
+        createVariables, downloadCurrentImage, getAppContext, goBack,
+        nextImage, openCreate, openCreateNew, openGallery,
         openPresets, openReferenceImagePicker, openSettings, openStack, openUpload,
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
         setPromptText, setQuality, startAnnotationMode,
-        stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
+        stopVoiceMode, triggerGeneration, selectImageByIndex,
         onToolCall
     ]);
 

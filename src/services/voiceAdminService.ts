@@ -31,8 +31,6 @@ export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     open_gallery: 'Go to the main gallery/feed view (Level 1).',
     open_create: 'Open the create/generate view.',
     open_settings: 'Open the settings dialog.',
-    enter_multi_select: 'Enter multi-select mode in the gallery to work with multiple images.',
-    leave_multi_select: 'Leave multi-select mode in the gallery.',
     repeat_current_image: 'Generate more variations from the currently open image.',
     download_current_image: 'Download the currently viewed image. Opens a download dialog so the user can save it.',
     open_presets: 'Open prompt presets inside the current editing panel.',
@@ -48,13 +46,10 @@ export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     stop_voice_mode: 'End the voice assistant session and stop listening.',
     set_aspect_ratio: 'Set the aspect ratio for a new image on the create page. Available ratios: 16:9, 4:3, 1:1, 3:4, 9:16.',
     open_stack: 'Navigate to the stack/group view of the current image. Shows all versions and variations of the image in the feed grid.',
-    highlight_image: 'Visually highlight (hover effect) an image in the gallery or stack so the user can verify which one you mean.',
-    toggle_image_selection: 'Mark or unmark an image for multi-selection. Indices are 1-based.',
     create_variables: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each (e.g. Mood, Intensity, Style, Color). The user clicks options to fine-tune before generating.',
     select_variable_option: 'Toggle a variable option on or off. Use when the user says which option to activate or deactivate.',
     set_quality: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
     select_image_by_index: 'Open the image at a specific numeric index in the current gallery or stack (1-based index).',
-    select_image_by_position: 'Open the image at a specific grid position (row and column, both 1-based).',
 };
 
 export const DEFAULT_VOICE_TOOL_NAMES = [
@@ -62,8 +57,6 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'open_gallery',
     'open_create',
     'open_settings',
-    'enter_multi_select',
-    'leave_multi_select',
     'repeat_current_image',
     'download_current_image',
     'open_presets',
@@ -79,13 +72,10 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'stop_voice_mode',
     'set_aspect_ratio',
     'open_stack',
-    'highlight_image',
-    'toggle_image_selection',
     'create_variables',
     'select_variable_option',
     'set_quality',
     'select_image_by_index',
-    'select_image_by_position'
 ] as const;
 
 function buildDefaultTools(): VoiceAdminToolConfig[] {

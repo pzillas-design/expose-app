@@ -469,7 +469,6 @@ export function App() {
         return {
             route: isDetail ? 'detail' : (isCreate ? 'create' : 'grid'),
             viewLevel,
-            isSelectMode: !!state.isSelectMode,
             imageCount: displayImages.length,
             images: (isGallery || isStack) ? displayImages.map((img) => ({
                 id: img.id,
@@ -491,7 +490,7 @@ export function App() {
                 hasControls: !!(t.controls?.length),
             })) || [],
         };
-    }, [allImages, expandedGroupId, location.pathname, state.isSelectMode, state.templates]);
+    }, [allImages, expandedGroupId, location.pathname, state.templates]);
 
     useEffect(() => {
         const visualContext = getVoiceVisualContext();
@@ -565,25 +564,6 @@ export function App() {
             setIsSettingsModalOpen(true);
             actions.refreshImageCount?.();
             return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geöffnet.' : 'Opened settings.' };
-        },
-        enterMultiSelect: async () => {
-            if (location.pathname !== '/') {
-                navigate('/');
-                await new Promise(resolve => window.setTimeout(resolve, 120));
-            }
-            if (!state.isSelectMode) {
-                actions.setIsSelectMode(true);
-                setExpandedGroupId(null);
-            }
-            return { ok: true, message: state.currentLang === 'de' ? 'Mehrfachauswahl aktiviert.' : 'Enabled multi-select.' };
-        },
-        leaveMultiSelect: async () => {
-            if (state.isSelectMode) {
-                actions.setIsSelectMode(false);
-                actions.deselectAll();
-                setFeedSideSheetVisible(false);
-            }
-            return { ok: true, message: state.currentLang === 'de' ? 'Mehrfachauswahl beendet.' : 'Exited multi-select.' };
         },
         repeatCurrentImage: async () => {
             if (!location.pathname.startsWith('/image/')) {
@@ -779,10 +759,8 @@ export function App() {
             // Ensure sidebar is open so the listener is mounted
             if (location.pathname.startsWith('/image/')) {
                 setDetailSideSheetVisible(true);
-            } else if (state.isSelectMode) {
-                setFeedSideSheetVisible(true);
             }
-            
+
             // Short delay to ensure mount
             await new Promise(resolve => window.setTimeout(resolve, 50));
 
@@ -799,8 +777,6 @@ export function App() {
             // Ensure sidebar is open
             if (location.pathname.startsWith('/image/')) {
                 setDetailSideSheetVisible(true);
-            } else if (state.isSelectMode) {
-                setFeedSideSheetVisible(true);
             }
 
             window.dispatchEvent(new CustomEvent('expose:toggle-voice-variable', {
@@ -821,15 +797,13 @@ export function App() {
             const idx = index - 1; // 1-based to 0-based
             const displayImages = expandedGroupId
                 ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
-                : state.isSelectMode
-                    ? state.rows.flatMap((r: any) => r.items)
-                    : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
+                : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
 
             const img = displayImages[idx];
             if (!img) return { ok: false, message: state.currentLang === 'de' ? `Bild an Index ${index} nicht gefunden.` : `Image at index ${index} not found.` };
 
-            // In gallery view: check if cover image belongs to a stack → navigate to stack (Level 2)
-            if (!expandedGroupId && !state.isSelectMode) {
+            // In gallery view: if cover belongs to a stack → navigate to stack (Level 2)
+            if (!expandedGroupId) {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
@@ -839,52 +813,6 @@ export function App() {
 
             handleSelectImage(img.id);
             return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
-        },
-        selectImageByPosition: async (rowIdx: number, columnIdx: number) => {
-            const cols = state.gridColumns || 2;
-            const index = (rowIdx - 1) * cols + (columnIdx - 1) + 1;
-
-            const displayImages = expandedGroupId
-                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
-                : state.isSelectMode
-                    ? state.rows.flatMap((r: any) => r.items)
-                    : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
-
-            const img = displayImages[index - 1];
-            if (!img) return { ok: false, message: state.currentLang === 'de' ? `Position (Reihe ${rowIdx}, Bild ${columnIdx}) existiert nicht.` : `Position (Row ${rowIdx}, Image ${columnIdx}) does not exist.` };
-
-            const gc = (expandedGroupId || state.isSelectMode) ? 1 : (state.rows.find((r: any) => r.items[0]?.id === img.id)?.items.length ?? 1);
-            if (gc > 1) {
-                const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
-                if (row) {
-                    setExpandedGroupId(row.id);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
-                }
-            }
-
-            handleSelectImage(img.id);
-            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
-        },
-        highlightImage: async (index: number) => {
-            if (index < 1) return { ok: false, message: 'Invalid index.' };
-            setVoiceFocusIndex(index - 1);
-            return { ok: true, message: `Highlighted image ${index}.` };
-        },
-        toggleImageSelection: async (index: number) => {
-            const isStack = location.pathname.startsWith('/stack/');
-            const displayImages = isStack && expandedGroupId 
-                ? allImages.filter(i => i.groupId === expandedGroupId)
-                : allImages.filter(i => !i.groupId || i.id === i.groupId);
-
-            const img = displayImages[index - 1];
-            if (!img) return { ok: false, message: `Image at index ${index} not found.` };
-            
-            if (!state.isSelectMode) {
-                actions.setIsSelectMode(true);
-            }
-            setFeedSideSheetVisible(true);
-            actions.handleSelection(img.id);
-            return { ok: true, message: `${state.selectedIds.includes(img.id) ? 'Deselected' : 'Selected'} ${img.id}.` };
         }
     });
 
