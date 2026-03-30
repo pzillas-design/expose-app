@@ -27,7 +27,7 @@ const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboar
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
-import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig } from '@/services/voiceAdminService';
+import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: { children: React.ReactNode }) {
@@ -91,7 +91,11 @@ export function App() {
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
     const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
-    const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => getEmptyVoiceDiagnostics());
+    const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => {
+        const empty = getEmptyVoiceDiagnostics();
+        const stored = loadVoiceLogs();
+        return { ...empty, ...stored };
+    });
     const voiceFeatureEnabled = voiceAdminConfig.enabled;
     const voiceRemoteLoadedRef = React.useRef(false);
 
@@ -503,19 +507,27 @@ export function App() {
     }, [currentVoiceAppContext, getVoiceVisualContext]);
 
     const appendVoiceToolCall = React.useCallback((entry: VoiceToolCallLog) => {
-        setVoiceDiagnostics(prev => ({
-            ...prev,
-            toolCalls: [entry, ...prev.toolCalls].slice(0, 20),
-        }));
-    }, []);
+        const enriched = { ...entry, contextSnapshot: JSON.stringify(currentVoiceAppContext) };
+        setVoiceDiagnostics(prev => {
+            const toolCalls = [enriched, ...prev.toolCalls].slice(0, 100);
+            saveVoiceLogs(toolCalls, prev.transcripts);
+            return { ...prev, toolCalls };
+        });
+    }, [currentVoiceAppContext]);
 
     const appendVoiceTranscript = React.useCallback((entry: VoiceTranscriptLog) => {
         const normalizedText = entry.text.trim();
         if (!normalizedText) return;
-        setVoiceDiagnostics(prev => ({
-            ...prev,
-            transcripts: [entry, ...prev.transcripts].slice(0, 20),
-        }));
+        setVoiceDiagnostics(prev => {
+            const transcripts = [entry, ...prev.transcripts].slice(0, 100);
+            saveVoiceLogs(prev.toolCalls, transcripts);
+            return { ...prev, transcripts };
+        });
+    }, []);
+
+    const clearVoiceLogs = React.useCallback(() => {
+        clearVoiceLogsStorage();
+        setVoiceDiagnostics(prev => ({ ...prev, toolCalls: [], transcripts: [] }));
     }, []);
 
     const voice = useGeminiLiveVoice({
@@ -1255,6 +1267,7 @@ export function App() {
                                     voiceConfig={voiceAdminConfig}
                                     voiceDiagnostics={voiceDiagnostics}
                                     onVoiceConfigChange={setVoiceAdminConfig}
+                                    onClearVoiceLogs={clearVoiceLogs}
                                 />
                             </AdminRoute>
                         } />

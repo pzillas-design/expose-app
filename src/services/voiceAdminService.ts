@@ -1,4 +1,4 @@
-import type { VoiceAdminConfig, VoiceDiagnostics, VoiceAdminToolConfig } from '@/types';
+import type { VoiceAdminConfig, VoiceDiagnostics, VoiceAdminToolConfig, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { supabase } from './supabaseClient';
 
 const STORAGE_KEY = 'expose_voice_admin_config_v2';
@@ -169,6 +169,35 @@ export async function updateVoiceAdminConfig(config: VoiceAdminConfig) {
         .from('app_settings')
         .upsert({ key: DB_KEY, value: config, updated_at: new Date().toISOString() });
     if (error) throw error;
+}
+
+const LOGS_STORAGE_KEY = 'expose_voice_logs_v1';
+const MAX_LOG_ENTRIES = 100;
+
+export function loadVoiceLogs(): { toolCalls: VoiceToolCallLog[]; transcripts: VoiceTranscriptLog[] } {
+    if (typeof window === 'undefined') return { toolCalls: [], transcripts: [] };
+    try {
+        const raw = window.localStorage.getItem(LOGS_STORAGE_KEY);
+        if (!raw) return { toolCalls: [], transcripts: [] };
+        return JSON.parse(raw);
+    } catch {
+        return { toolCalls: [], transcripts: [] };
+    }
+}
+
+export function saveVoiceLogs(toolCalls: VoiceToolCallLog[], transcripts: VoiceTranscriptLog[]) {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify({
+            toolCalls: toolCalls.slice(0, MAX_LOG_ENTRIES),
+            transcripts: transcripts.slice(0, MAX_LOG_ENTRIES),
+        }));
+    } catch { /* quota exceeded */ }
+}
+
+export function clearVoiceLogsStorage() {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.removeItem(LOGS_STORAGE_KEY); } catch { /* ignore */ }
 }
 
 export function getEmptyVoiceDiagnostics(): VoiceDiagnostics {

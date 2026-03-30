@@ -20,12 +20,13 @@ interface AdminDashboardProps {
  t: TranslationFunction;
  voiceConfig: VoiceAdminConfig;
  voiceDiagnostics: VoiceDiagnostics;
+ onClearVoiceLogs?: () => void;
  onVoiceConfigChange: React.Dispatch<React.SetStateAction<VoiceAdminConfig>>;
 }
 
 export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'stamps' | 'voice';
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfile, credits, onCreateBoard, t, voiceConfig, voiceDiagnostics, onVoiceConfigChange }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfile, credits, onCreateBoard, t, voiceConfig, voiceDiagnostics, onVoiceConfigChange, onClearVoiceLogs }) => {
  const { tab } = useParams<{ tab: string }>();
  const navigate = useNavigate();
 
@@ -116,7 +117,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
      {activeTab === 'stats'   && <AdminStatsView   t={t} />}
      {activeTab === 'presets' && <AdminPresetsView t={t} />}
      {(activeTab === 'objects' || activeTab === 'stamps') && <AdminObjectsView t={t} />}
-     {activeTab === 'voice'   && <AdminVoiceView t={t} config={voiceConfig} diagnostics={voiceDiagnostics} onConfigChange={onVoiceConfigChange} />}
+     {activeTab === 'voice'   && <AdminVoiceView t={t} config={voiceConfig} diagnostics={voiceDiagnostics} onConfigChange={onVoiceConfigChange} onClearLogs={onClearVoiceLogs} />}
     </div>
    </main>
   </div>

@@ -179,6 +179,7 @@ export interface VoiceToolCallLog {
   argsSummary: string;
   message: string;
   timestamp: number;
+  contextSnapshot?: string; // JSON of app context at the time of the call
 }
 
 export interface VoiceTranscriptLog {

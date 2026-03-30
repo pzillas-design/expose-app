@@ -1,7 +1,7 @@
 import React from 'react';
-import { Check, ChevronRight, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Wrench } from 'lucide-react';
+import { Check, ChevronRight, Eye, Loader2, MessageSquareText, RotateCcw, Settings2, Trash2, Wrench } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
-import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
+import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { Input, TextArea } from '@/components/ui/DesignSystem';
 import {
     DEFAULT_GREETING,
@@ -18,11 +18,197 @@ interface AdminVoiceViewProps {
     config: VoiceAdminConfig;
     diagnostics: VoiceDiagnostics;
     onConfigChange: React.Dispatch<React.SetStateAction<VoiceAdminConfig>>;
+    onClearLogs?: () => void;
 }
 
-function formatTimestamp(ts: number) {
-    return new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(ts);
+function formatDate(ts: number) {
+    const d = new Date(ts);
+    const today = new Date();
+    const isToday = d.toDateString() === today.toDateString();
+    if (isToday) {
+        return new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(ts);
+    }
+    return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(ts);
 }
+
+function viewLevelLabel(level: string): string {
+    return ({ gallery: 'Galerie', stack: 'Stapel', detail: 'Detail', create: 'Erstellen' } as Record<string, string>)[level] ?? level;
+}
+
+function parseCtxSnapshot(snapshot: string | undefined): Record<string, any> | null {
+    if (!snapshot) return null;
+    try { return JSON.parse(snapshot); } catch { return null; }
+}
+
+type FeedEntry =
+    | { id: string; timestamp: number; kind: 'transcript'; entry: VoiceTranscriptLog }
+    | { id: string; timestamp: number; kind: 'tool'; call: VoiceToolCallLog };
+
+// ─── Chat detail for a tool call ────────────────────────────────────────────
+
+const ToolCallDetail: React.FC<{ call: VoiceToolCallLog }> = ({ call }) => {
+    const ctx = parseCtxSnapshot(call.contextSnapshot);
+    let args: Record<string, any> | null = null;
+    try { args = JSON.parse(call.argsSummary); } catch { /* ignore */ }
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center gap-2.5">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                <span className="text-sm font-mono font-bold text-zinc-900 dark:text-zinc-100">{call.name}</span>
+                <span className="ml-auto text-xs text-zinc-400">{formatDate(call.timestamp)}</span>
+            </div>
+
+            {args && Object.keys(args).length > 0 && (
+                <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-1.5">
+                    <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Parameter</div>
+                    {Object.entries(args).map(([k, v]) => (
+                        <div key={k} className="flex items-start gap-3">
+                            <span className="text-xs text-zinc-400 font-mono w-20 shrink-0 truncate">{k}</span>
+                            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200 font-mono">{JSON.stringify(v)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {call.message && (
+                <div className={`rounded-xl px-4 py-3 ${call.status === 'ok' ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30' : 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30'}`}>
+                    <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Ergebnis</div>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-200">{call.message}</p>
+                </div>
+            )}
+
+            {ctx && (
+                <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-3">
+                    <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Kontext zum Zeitpunkt des Aufrufs</div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2 py-1 rounded-lg text-xs font-bold ${ctx.viewLevel === 'detail' ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400' : ctx.viewLevel === 'stack' ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>
+                            {viewLevelLabel(ctx.viewLevel)}
+                        </span>
+                        {ctx.imageCount != null && <span className="text-xs text-zinc-500">{ctx.imageCount} Bilder</span>}
+                        {ctx.viewLevel === 'detail' && (
+                            <span className={`text-xs ${ctx.detailHasPrompt ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>
+                                {ctx.detailHasPrompt ? 'Prompt vorhanden' : 'Kein Prompt'}
+                            </span>
+                        )}
+                        {ctx.canOpenPresets && <span className="text-xs text-zinc-400">Presets verfügbar</span>}
+                    </div>
+                    {ctx.images && ctx.images.length > 0 && (
+                        <div className="space-y-1">
+                            <div className="text-[10px] text-zinc-400">{ctx.images.length} Bilder im Kontext</div>
+                            <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                                {ctx.images.slice(0, 8).map((img: any, i: number) => (
+                                    <div key={img.id || i} className="flex items-center gap-2 text-[11px] text-zinc-500">
+                                        <span className="text-zinc-300 dark:text-zinc-600 font-mono w-5 shrink-0">#{i + 1}</span>
+                                        <span className="truncate">{img.prompt || <span className="italic text-zinc-300 dark:text-zinc-600">kein Prompt</span>}</span>
+                                    </div>
+                                ))}
+                                {ctx.images.length > 8 && <div className="text-[11px] text-zinc-400 italic">+{ctx.images.length - 8} weitere</div>}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ─── Chat detail for a transcript ───────────────────────────────────────────
+
+const TranscriptDetail: React.FC<{ entry: VoiceTranscriptLog }> = ({ entry }) => {
+    const isUser = entry.source === 'user';
+    return (
+        <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+            <div className="max-w-full space-y-2">
+                <div className={`text-xs font-semibold ${isUser ? 'text-right text-zinc-500' : 'text-zinc-500'}`}>
+                    {isUser ? 'Du' : 'Exposé'} · {formatDate(entry.timestamp)}
+                </div>
+                <div className={`${isUser ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100'} rounded-2xl ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'} px-5 py-3.5`}>
+                    <p className="text-sm leading-relaxed">{entry.text}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ─── Two-pane monitor feed ───────────────────────────────────────────────────
+
+const MonitorFeed: React.FC<{ feedEntries: FeedEntry[] }> = ({ feedEntries }) => {
+    const [selectedId, setSelectedId] = React.useState<string | null>(feedEntries[feedEntries.length - 1]?.id ?? null);
+
+    // When new entries arrive, select the latest
+    React.useEffect(() => {
+        const last = feedEntries[feedEntries.length - 1];
+        if (last) setSelectedId(last.id);
+    }, [feedEntries.length]);
+
+    const selectedEntry = feedEntries.find(e => e.id === selectedId) ?? null;
+    const listEntries = [...feedEntries].reverse(); // newest first in the list
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] min-h-[380px]">
+            {/* Left: scrollable entry list */}
+            <div className="border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto max-h-[380px] lg:max-h-[480px]">
+                {listEntries.map(entry => {
+                    const isSelected = entry.id === selectedId;
+                    if (entry.kind === 'transcript') {
+                        const isUser = entry.entry.source === 'user';
+                        return (
+                            <button
+                                key={entry.id}
+                                type="button"
+                                onClick={() => setSelectedId(entry.id)}
+                                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 transition-colors ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
+                            >
+                                <span className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${isUser ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-300'}`}>
+                                    {isUser ? 'D' : 'E'}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs text-zinc-700 dark:text-zinc-300 truncate leading-snug">{entry.entry.text}</p>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">{formatDate(entry.timestamp)}</p>
+                                </div>
+                            </button>
+                        );
+                    } else {
+                        const call = entry.call;
+                        return (
+                            <button
+                                key={entry.id}
+                                type="button"
+                                onClick={() => setSelectedId(entry.id)}
+                                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 transition-colors ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
+                            >
+                                <span className={`mt-1 shrink-0 w-1.5 h-1.5 rounded-full ${call.status === 'ok' ? 'bg-emerald-500' : 'bg-red-400'}`} />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 truncate leading-snug">{call.name}</p>
+                                    <p className="text-[10px] text-zinc-400 mt-0.5">{formatDate(call.timestamp)}</p>
+                                </div>
+                                <ChevronRight className={`mt-0.5 shrink-0 w-3 h-3 transition-colors ${isSelected ? 'text-zinc-400' : 'text-zinc-200 dark:text-zinc-700'}`} />
+                            </button>
+                        );
+                    }
+                })}
+            </div>
+
+            {/* Right: detail / chat view */}
+            <div className="p-6 overflow-y-auto max-h-[480px]">
+                {selectedEntry ? (
+                    selectedEntry.kind === 'tool' ? (
+                        <ToolCallDetail call={selectedEntry.call} />
+                    ) : (
+                        <TranscriptDetail entry={selectedEntry.entry} />
+                    )
+                ) : (
+                    <div className="h-full flex items-center justify-center text-sm text-zinc-400">
+                        Eintrag auswählen
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ─── Shared sub-components ───────────────────────────────────────────────────
 
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
     <button
@@ -58,10 +244,12 @@ const FeatureRow = ({ label, hint, checked, onChange }: { label: string; hint: s
 
 type SaveState = 'idle' | 'saving' | 'saved';
 
-export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagnostics, onConfigChange }) => {
+// ─── Main view ───────────────────────────────────────────────────────────────
+
+export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagnostics, onConfigChange, onClearLogs }) => {
     const enabledToolCount = config.tools.filter(tool => tool.enabled).length;
     const [selectedTool, setSelectedTool] = React.useState<string | null>(config.tools[0]?.name ?? null);
-    const [liveTab, setLiveTab] = React.useState<'calls' | 'transcript' | 'context'>('calls');
+    const [liveTab, setLiveTab] = React.useState<'feed' | 'context'>('feed');
     const [saveState, setSaveState] = React.useState<SaveState>('idle');
 
     const updateConfig = React.useCallback((updater: (c: VoiceAdminConfig) => VoiceAdminConfig) => {
@@ -79,6 +267,14 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
             setSaveState('idle');
         }
     }, [config]);
+
+    const feedEntries = React.useMemo((): FeedEntry[] => {
+        const entries: FeedEntry[] = [
+            ...diagnostics.toolCalls.map(c => ({ id: c.id, timestamp: c.timestamp, kind: 'tool' as const, call: c })),
+            ...diagnostics.transcripts.map(e => ({ id: e.id, timestamp: e.timestamp, kind: 'transcript' as const, entry: e })),
+        ];
+        return entries.sort((a, b) => a.timestamp - b.timestamp);
+    }, [diagnostics.toolCalls, diagnostics.transcripts]);
 
     const selectedToolData = config.tools.find(t => t.name === selectedTool) ?? null;
     const selectedToolDesc = selectedToolData?.description ?? DEFAULT_TOOL_DESCRIPTIONS[selectedTool ?? ''] ?? '';
@@ -215,171 +411,160 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 {/* Row 2: Live-Monitor */}
                 <Section title="Live-Monitor" icon={<Eye className="w-4 h-4" />} noPadding>
                     <div>
-                        <div className="flex gap-1 border-b border-zinc-100 dark:border-zinc-800 px-6">
-                            {([
-                                { key: 'calls', label: 'Tool-Aufrufe' },
-                                { key: 'transcript', label: 'Gespräch' },
-                                { key: 'context', label: 'Agent-Kontext' },
-                            ] as const).map(tab => (
+                        {/* Tab bar */}
+                        <div className="flex items-center border-b border-zinc-100 dark:border-zinc-800 px-6">
+                            <div className="flex gap-1 flex-1">
+                                {([
+                                    { key: 'feed', label: 'Verlauf', count: feedEntries.length },
+                                    { key: 'context', label: 'Agent-Kontext' },
+                                ] as const).map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setLiveTab(tab.key)}
+                                        className={`px-4 py-3 text-xs font-semibold border-b-2 -mb-px transition-colors ${liveTab === tab.key ? 'border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                    >
+                                        {tab.label}
+                                        {'count' in tab && tab.count > 0 && (
+                                            <span className="ml-2 text-[9px] bg-zinc-200 dark:bg-zinc-700 rounded-full px-1.5 py-0.5 tabular-nums">{tab.count}</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            {feedEntries.length > 0 && onClearLogs && (
                                 <button
-                                    key={tab.key}
                                     type="button"
-                                    onClick={() => setLiveTab(tab.key)}
-                                    className={`px-4 py-3 text-xs font-semibold border-b-2 -mb-px transition-colors ${liveTab === tab.key ? 'border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                                    onClick={onClearLogs}
+                                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-3"
+                                    title="Verlauf leeren"
                                 >
-                                    {tab.label}
-                                    {tab.key === 'calls' && diagnostics.toolCalls.length > 0 && (
-                                        <span className="ml-2 text-[9px] bg-zinc-200 dark:bg-zinc-700 rounded-full px-1.5 py-0.5">{diagnostics.toolCalls.length}</span>
-                                    )}
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Leeren</span>
                                 </button>
-                            ))}
+                            )}
                         </div>
 
-                        <div className="p-6">
-                            {liveTab === 'calls' && (
-                                <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                                    {diagnostics.toolCalls.length === 0 ? (
-                                        <p className="text-sm text-zinc-400 py-8 text-center">Noch keine Tool-Aufrufe in dieser Session.</p>
-                                    ) : diagnostics.toolCalls.map(entry => (
-                                        <div key={entry.id} className="flex items-start gap-3 py-2 px-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/30">
-                                            <span className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full ${entry.status === 'ok' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{entry.name}</span>
-                                                    <span className="text-xs text-zinc-400 shrink-0">{formatTimestamp(entry.timestamp)}</span>
+                        {/* Feed tab — list + detail two-pane */}
+                        {liveTab === 'feed' && (
+                            feedEntries.length === 0 ? (
+                                <div className="py-12 flex flex-col items-center gap-2 text-center px-6">
+                                    <MessageSquareText className="w-8 h-8 text-zinc-200 dark:text-zinc-700" />
+                                    <p className="text-sm text-zinc-400">Starte eine Voice-Session, um den Verlauf zu sehen.</p>
+                                    <p className="text-xs text-zinc-300 dark:text-zinc-600">Gespräche und Tool-Aufrufe werden dauerhaft gespeichert.</p>
+                                </div>
+                            ) : (
+                                <MonitorFeed feedEntries={feedEntries} />
+                            )
+                        )}
+
+                        {/* Context tab */}
+                        {liveTab === 'context' && (() => {
+                            let ctx: Record<string, any> | null = null;
+                            try { ctx = diagnostics.appContextSummary ? JSON.parse(diagnostics.appContextSummary) : null; } catch { /* ignore */ }
+                            const levels = [
+                                { key: 'gallery', label: 'Galerie', short: 'L1' },
+                                { key: 'stack', label: 'Stapel', short: 'L2' },
+                                { key: 'detail', label: 'Detail', short: 'L3' },
+                            ];
+                            const specialLevel = ctx && !levels.find(l => l.key === ctx!.viewLevel)
+                                ? (ctx.viewLevel === 'create' ? 'Erstellen' : ctx.viewLevel) : null;
+                            return (
+                                <div className="p-6 space-y-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="text-xs font-semibold text-zinc-400 mb-2.5">Aktuelle Ebene</div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    {levels.map((lvl, i) => {
+                                                        const isActive = ctx?.viewLevel === lvl.key;
+                                                        return (
+                                                            <React.Fragment key={lvl.key}>
+                                                                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isActive ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
+                                                                    <span className="opacity-50 text-[10px]">{lvl.short}</span>
+                                                                    <span>{lvl.label}</span>
+                                                                </div>
+                                                                {i < levels.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />}
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                    {specialLevel && (
+                                                        <>
+                                                            <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
+                                                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900">{specialLevel}</div>
+                                                        </>
+                                                    )}
                                                 </div>
-                                                {entry.message && <p className="text-xs text-zinc-500 mt-0.5 truncate">{entry.argsSummary} — {entry.message}</p>}
+                                            </div>
+                                            {ctx && (
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    {[
+                                                        { label: 'Bilder', value: String(ctx.imageCount ?? '—') },
+                                                        { label: 'Presets nutzbar', value: ctx.canOpenPresets ? 'Ja' : 'Nein' },
+                                                        { label: 'Referenzbild', value: ctx.canAddReferenceImage ? 'Möglich' : 'Nein' },
+                                                        { label: 'Annotation', value: ctx.canAnnotateImage ? 'Möglich' : 'Nein' },
+                                                        { label: 'Hat Prompt', value: ctx.detailHasPrompt ? 'Ja' : ctx.viewLevel === 'detail' ? 'Nein' : '—' },
+                                                    ].map(({ label, value }) => (
+                                                        <div key={label} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/30">
+                                                            <span className="text-xs text-zinc-400">{label}</span>
+                                                            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{value}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div className="flex items-start justify-between gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="text-xs font-semibold text-zinc-400 mb-1">Gesendete Bilder</div>
+                                                    <p className="text-xs text-zinc-400 leading-relaxed">
+                                                        {diagnostics.visualContextSummary || (config.visualContextEnabled ? 'Keine Session aktiv.' : 'Deaktiviert.')}
+                                                    </p>
+                                                </div>
+                                                <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold ${diagnostics.visualFrameCount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
+                                                    {diagnostics.visualFrameCount} {diagnostics.visualFrameCount === 1 ? 'Bild' : 'Bilder'}
+                                                </span>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {liveTab === 'transcript' && (
-                                <div className="space-y-1.5 max-h-72 overflow-y-auto">
-                                    {diagnostics.transcripts.length === 0 ? (
-                                        <p className="text-sm text-zinc-400 py-8 text-center">Noch keine Transkripte. Starte eine Voice-Session.</p>
-                                    ) : diagnostics.transcripts.map(entry => (
-                                        <div key={entry.id} className={`py-2 px-3.5 rounded-xl ${entry.source === 'user' ? 'bg-zinc-50 dark:bg-zinc-800/30' : 'bg-blue-50 dark:bg-blue-950/20'}`}>
-                                            <div className="flex items-center justify-between gap-2 mb-1">
-                                                <span className="text-xs font-semibold text-zinc-500">{entry.source === 'user' ? 'Du' : 'Exposé'}</span>
-                                                <span className="text-xs text-zinc-400">{formatTimestamp(entry.timestamp)}</span>
-                                            </div>
-                                            <p className="text-sm text-zinc-700 dark:text-zinc-200 leading-relaxed">{entry.text}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {liveTab === 'context' && (() => {
-                                let ctx: Record<string, any> | null = null;
-                                try { ctx = diagnostics.appContextSummary ? JSON.parse(diagnostics.appContextSummary) : null; } catch { /* ignore */ }
-                                const levels = [
-                                    { key: 'gallery', label: 'Galerie', short: 'L1' },
-                                    { key: 'stack', label: 'Stapel', short: 'L2' },
-                                    { key: 'detail', label: 'Detail', short: 'L3' },
-                                ];
-                                const specialLevel = ctx && !levels.find(l => l.key === ctx!.viewLevel)
-                                    ? (ctx.viewLevel === 'create' ? 'Erstellen' : ctx.viewLevel) : null;
-                                return (
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            <div className="space-y-4">
+                                        <div className="space-y-4">
+                                            {ctx?.images && ctx.images.length > 0 ? (
                                                 <div>
-                                                    <div className="text-xs font-semibold text-zinc-400 mb-2.5">Aktuelle Ebene</div>
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        {levels.map((lvl, i) => {
-                                                            const isActive = ctx?.viewLevel === lvl.key;
-                                                            return (
-                                                                <React.Fragment key={lvl.key}>
-                                                                    <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isActive ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
-                                                                        <span className="opacity-50 text-[10px]">{lvl.short}</span>
-                                                                        <span>{lvl.label}</span>
-                                                                    </div>
-                                                                    {i < levels.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />}
-                                                                </React.Fragment>
-                                                            );
-                                                        })}
-                                                        {specialLevel && (
-                                                            <>
-                                                                <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                                                                <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900">{specialLevel}</div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {ctx && (
-                                                    <div className="grid grid-cols-2 gap-1.5">
-                                                        {[
-                                                            { label: 'Bilder', value: String(ctx.imageCount ?? '—') },
-                                                            { label: 'Mehrfachauswahl', value: ctx.isSelectMode ? 'Aktiv' : 'Aus' },
-                                                            { label: 'Presets nutzbar', value: ctx.canOpenPresets ? 'Ja' : 'Nein' },
-                                                            { label: 'Referenzbild', value: ctx.canAddReferenceImage ? 'Möglich' : 'Nein' },
-                                                            { label: 'Annotation', value: ctx.canAnnotateImage ? 'Möglich' : 'Nein' },
-                                                            { label: 'Hat Prompt', value: ctx.detailHasPrompt ? 'Ja' : ctx.viewLevel === 'detail' ? 'Nein' : '—' },
-                                                        ].map(({ label, value }) => (
-                                                            <div key={label} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/30">
-                                                                <span className="text-xs text-zinc-400">{label}</span>
-                                                                <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{value}</span>
+                                                    <div className="text-xs font-semibold text-zinc-400 mb-2">Bilder im Kontext — {ctx.images.length}{ctx.images.length === 48 ? ' (max)' : ''}</div>
+                                                    <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden max-h-40 overflow-y-auto">
+                                                        {ctx.images.slice(0, 12).map((img: any, idx: number) => (
+                                                            <div key={img.id} className="flex items-center gap-3 py-2 px-3.5 border-b border-zinc-50 dark:border-zinc-800/60 last:border-0">
+                                                                <span className="text-[10px] text-zinc-300 dark:text-zinc-600 w-5 shrink-0 font-mono tabular-nums">#{idx + 1}</span>
+                                                                <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{img.prompt || <span className="text-zinc-300 dark:text-zinc-600 italic">kein Prompt</span>}</span>
                                                             </div>
                                                         ))}
+                                                        {ctx.images.length > 12 && <div className="py-2 px-3.5 text-xs text-zinc-400 italic">+{ctx.images.length - 12} weitere</div>}
                                                     </div>
-                                                )}
-                                                <div className="flex items-start justify-between gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="text-xs font-semibold text-zinc-400 mb-1">Gesendete Bilder</div>
-                                                        <p className="text-xs text-zinc-400 leading-relaxed">
-                                                            {diagnostics.visualContextSummary || (config.visualContextEnabled ? 'Keine Session aktiv.' : 'Deaktiviert.')}
-                                                        </p>
-                                                    </div>
-                                                    <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold ${diagnostics.visualFrameCount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
-                                                        {diagnostics.visualFrameCount} {diagnostics.visualFrameCount === 1 ? 'Bild' : 'Bilder'}
-                                                    </span>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-4">
-                                                {ctx?.images && ctx.images.length > 0 ? (
-                                                    <div>
-                                                        <div className="text-xs font-semibold text-zinc-400 mb-2">Bilder im Kontext — {ctx.images.length}{ctx.images.length === 48 ? ' (max)' : ''}</div>
-                                                        <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden max-h-40 overflow-y-auto">
-                                                            {ctx.images.slice(0, 12).map((img: any, idx: number) => (
-                                                                <div key={img.id} className="flex items-center gap-3 py-2 px-3.5 border-b border-zinc-50 dark:border-zinc-800/60 last:border-0">
-                                                                    <span className="text-[10px] text-zinc-300 dark:text-zinc-600 w-5 shrink-0 font-mono tabular-nums">#{idx + 1}</span>
-                                                                    <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{img.prompt || <span className="text-zinc-300 dark:text-zinc-600 italic">kein Prompt</span>}</span>
-                                                                </div>
-                                                            ))}
-                                                            {ctx.images.length > 12 && <div className="py-2 px-3.5 text-xs text-zinc-400 italic">+{ctx.images.length - 12} weitere</div>}
-                                                        </div>
+                                            ) : ctx && (
+                                                <div className="text-xs text-zinc-400 py-3 text-center">Keine Bild-Liste in dieser Ansicht.</div>
+                                            )}
+                                            {ctx?.presets && ctx.presets.length > 0 && (
+                                                <div>
+                                                    <div className="text-xs font-semibold text-zinc-400 mb-2">{ctx.presets.length} Presets</div>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {ctx.presets.slice(0, 14).map((p: any, i: number) => (
+                                                            <span key={i} className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-2.5 py-1 rounded-lg">{p.title}{p.hasControls ? ' ⚙' : ''}</span>
+                                                        ))}
+                                                        {ctx.presets.length > 14 && <span className="text-xs text-zinc-400 px-1 py-1">+{ctx.presets.length - 14}</span>}
                                                     </div>
-                                                ) : ctx && (
-                                                    <div className="text-xs text-zinc-400 py-3 text-center">Keine Bild-Liste in dieser Ansicht.</div>
-                                                )}
-                                                {ctx?.presets && ctx.presets.length > 0 && (
-                                                    <div>
-                                                        <div className="text-xs font-semibold text-zinc-400 mb-2">{ctx.presets.length} Presets</div>
-                                                        <div className="flex flex-wrap gap-1.5">
-                                                            {ctx.presets.slice(0, 14).map((p: any, i: number) => (
-                                                                <span key={i} className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-2.5 py-1 rounded-lg">{p.title}{p.hasControls ? ' ⚙' : ''}</span>
-                                                            ))}
-                                                            {ctx.presets.length > 14 && <span className="text-xs text-zinc-400 px-1 py-1">+{ctx.presets.length - 14}</span>}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-5 py-4 space-y-2.5 border border-zinc-100 dark:border-zinc-800/60">
-                                            <div className="text-xs font-bold text-zinc-500">Wie der Agent-Kontext aufgebaut ist</div>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-zinc-400 leading-relaxed">
-                                                <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">JSON-Kontext</span> — aktuelle Ebene, Bild-IDs, verfügbare Aktionen und Presets (nur die der App-Sprache).</div>
-                                                <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Bildthumbnails</span> — keine UI-Screenshots. Detail: 1 Bild, Galerie/Stapel: bis zu 4 Frames.</div>
-                                                <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Konfigurierbar</span> — Toggle "Bilder an KI senden" steuert Thumbnails. Alles andere ist hardcoded.</div>
-                                            </div>
-                                        </div>
-                                        {!ctx && <p className="text-sm text-zinc-400 py-4 text-center">Keine Kontext-Daten verfügbar.</p>}
                                     </div>
-                                );
-                            })()}
-                        </div>
+                                    <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-5 py-4 space-y-2.5 border border-zinc-100 dark:border-zinc-800/60">
+                                        <div className="text-xs font-bold text-zinc-500">Wie der Agent-Kontext aufgebaut ist</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-zinc-400 leading-relaxed">
+                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">JSON-Kontext</span> — aktuelle Ebene, Bild-IDs, verfügbare Aktionen und Presets (nur die der App-Sprache).</div>
+                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Bildthumbnails</span> — keine UI-Screenshots. Detail: 1 Bild, Galerie/Stapel: bis zu 4 Frames.</div>
+                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Konfigurierbar</span> — Toggle "Bilder an KI senden" steuert Thumbnails. Alles andere ist hardcoded.</div>
+                                        </div>
+                                    </div>
+                                    {!ctx && <p className="text-sm text-zinc-400 py-4 text-center">Keine Kontext-Daten verfügbar.</p>}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </Section>
 
