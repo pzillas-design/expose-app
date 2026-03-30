@@ -38,6 +38,7 @@ export const translations = {
     credits_added_success: "successfully added",
 
     // Error Messages
+    error_no_input: "Please add a prompt first.",
     error_generation_failed: "Generation failed",
     error_insufficient_credits: "Insufficient credits",
     error_safety_blocked: "Content blocked by safety filters",
@@ -597,6 +598,7 @@ export const translations = {
     credits_added_success: "erfolgreich hinzugefügt",
 
     // Error Messages
+    error_no_input: "Bitte zuerst einen Prompt hinzufügen.",
     error_generation_failed: "Generierung fehlgeschlagen",
     error_insufficient_credits: "Nicht genügend Credits",
     error_safety_blocked: "Inhalt durch Sicherheitsfilter blockiert",

@@ -17,15 +17,16 @@ const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: 
     useEffect(() => {
         if (!startTime) return;
         const duration = estimatedDuration || 60000;
+        let rafId: number;
         const tick = () => {
             const elapsed = Date.now() - startTime;
             const raw = elapsed / duration;
             const capped = 1 - Math.exp(-raw * 1.5);
             setProgress(Math.min(capped * 0.85, 0.85));
+            rafId = requestAnimationFrame(tick);
         };
-        tick();
-        const id = setInterval(tick, 800);
-        return () => clearInterval(id);
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
     }, [startTime, estimatedDuration]);
 
     const r = 9;
@@ -44,7 +45,7 @@ const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: 
                     strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
-                    style={{ transition: 'stroke-dashoffset 700ms ease-out' }}
+                    style={{ transition: 'none' }}
                 />
             </svg>
         </div>

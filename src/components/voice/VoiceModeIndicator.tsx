@@ -8,21 +8,68 @@ interface VoiceModeIndicatorProps {
     state: VoiceUiState;
     level: number;
     onStop?: () => void;
+    /** Match hero header sizing when not scrolled */
+    large?: boolean;
 }
 
-export const VoiceModeIndicator: React.FC<VoiceModeIndicatorProps> = ({ active, state, onStop }) => {
+const BAR_COUNT = 5;
+
+export const VoiceModeIndicator: React.FC<VoiceModeIndicatorProps> = ({ active, state, level, onStop, large = false }) => {
     if (!active || state === 'off') return null;
 
-    const isPulsing = state === 'speaking' || state === 'thinking' || state === 'greeting';
+    const isSpeaking = state === 'speaking';
+    const isThinking = state === 'thinking' || state === 'greeting' || state === 'starting';
+    const isListening = state === 'listening';
+
+    // Generate bar heights based on state and level
+    const getBarHeight = (index: number): number => {
+        if (isSpeaking) {
+            // Responsive to voice level — each bar has a slightly different base
+            const offsets = [0.3, 0.7, 1.0, 0.6, 0.4];
+            return 0.2 + (level * 0.8 * offsets[index]);
+        }
+        if (isListening) {
+            // Low idle shimmer
+            return 0.15 + 0.1 * Math.abs(Math.sin((index / BAR_COUNT) * Math.PI));
+        }
+        if (isThinking) {
+            // Medium animated pulse (CSS animation handles it)
+            return 0.4;
+        }
+        return 0.2;
+    };
+
+    const h = large ? 'h-10' : 'h-9';
+    const barH = large ? 16 : 14;
 
     return (
-        <div className="flex items-center gap-1.5 bg-orange-500 text-white rounded-full pl-2.5 pr-1.5 py-1 text-xs font-medium animate-in fade-in duration-200 shrink-0">
-            <span className={`w-1.5 h-1.5 rounded-full bg-white shrink-0 ${isPulsing ? 'animate-pulse' : ''}`} />
-            <span className="leading-none">Live</span>
+        <div className={`flex items-center gap-1.5 bg-orange-500 text-white rounded-full pl-3 pr-1.5 ${h} text-xs font-medium animate-in fade-in duration-200 shrink-0`}>
+            {/* Waveform bars */}
+            <div className="flex items-center gap-[3px]" style={{ height: barH }}>
+                {Array.from({ length: BAR_COUNT }).map((_, i) => {
+                    const fraction = getBarHeight(i);
+                    const barPx = Math.max(2, Math.round(fraction * barH));
+
+                    return (
+                        <div
+                            key={i}
+                            className={`w-[2.5px] rounded-full bg-white/90 transition-all ${
+                                isThinking ? 'animate-voice-bar' : 'duration-100'
+                            }`}
+                            style={{
+                                height: isThinking ? undefined : barPx,
+                                animationDelay: isThinking ? `${i * 120}ms` : undefined,
+                            }}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Stop button */}
             {onStop && (
                 <button
                     onClick={(e) => { e.stopPropagation(); onStop(); }}
-                    className="ml-0.5 p-0.5 rounded-full hover:bg-orange-600 transition-colors"
+                    className="ml-0.5 p-1 rounded-full hover:bg-orange-600 transition-colors"
                     aria-label="Stop voice mode"
                 >
                     <Square className="w-2.5 h-2.5 fill-current" />

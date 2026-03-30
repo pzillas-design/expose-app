@@ -442,6 +442,34 @@ export const useGeneration = ({
         groupParentId?: string
     ) => {
         if (!sourceImage) return;
+
+        // Guard: validate that there's enough input to produce a meaningful generation
+        const hasPrompt = !!prompt?.trim();
+        const hasImage = !!(sourceImage.src && !sourceImage.src.startsWith('blob:empty'));
+        const annotations = sourceImage.annotations || [];
+        const hasAnnotation = annotations.some(a => a.type !== 'reference_image');
+        const hasReferenceImage = annotations.some(a => a.type === 'reference_image' && a.src);
+        const hasVariables = variableValues && Object.keys(variableValues).length > 0;
+
+        if (hasImage) {
+            // Edit mode: need at least one instruction (prompt, annotation, variable, or reference image)
+            if (!hasPrompt && !hasAnnotation && !hasVariables && !hasReferenceImage) {
+                showToast(t('error_no_input'), 'error');
+                return;
+            }
+            // Gemini needs text — reference image alone without prompt won't work
+            if (!hasPrompt && hasReferenceImage && !hasAnnotation && !hasVariables) {
+                showToast(t('error_no_input'), 'error');
+                return;
+            }
+        } else {
+            // Create mode (no source image): must have a prompt
+            if (!hasPrompt) {
+                showToast(t('error_no_input'), 'error');
+                return;
+            }
+        }
+
         const cost = COSTS[qualityMode];
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 

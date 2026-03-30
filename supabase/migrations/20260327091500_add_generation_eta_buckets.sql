@@ -5,6 +5,8 @@ ALTER TABLE public.generation_jobs
   ADD COLUMN IF NOT EXISTS reference_count INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS image_size TEXT;
 
+DROP FUNCTION IF EXISTS get_smart_generation_estimates();
+
 CREATE OR REPLACE FUNCTION get_smart_generation_estimates()
 RETURNS TABLE(
     estimate_key TEXT,

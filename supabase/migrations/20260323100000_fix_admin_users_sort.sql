@@ -1,8 +1,10 @@
 -- Fix admin users sort: ORDER BY last_active_at instead of created_at
 -- Users with NULL last_active_at appear at the bottom
+DROP FUNCTION IF EXISTS public.get_admin_users();
+
 CREATE OR REPLACE FUNCTION public.get_admin_users()
 RETURNS TABLE (
-  id uuid,
+  user_id uuid,
   email text,
   full_name text,
   role text,
@@ -26,8 +28,8 @@ BEGIN
 
   RETURN QUERY
   SELECT
-    p.id,
-    COALESCE(au.email, p.email) as email,
+    p.id as user_id,
+    COALESCE(au.email, p.email)::text as email,
     p.full_name,
     p.role,
     p.credits,

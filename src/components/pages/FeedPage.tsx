@@ -72,13 +72,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         <div
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
-            onClick={(e) => {
-                if (onOpenGroup) { onOpenGroup(); return; }
-                if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
-                else onSelectImage(img.id);
-            }}
             data-image-id={img.id}
-            className={`relative isolate cursor-pointer group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
+            className={`relative isolate group aspect-square flex items-center justify-center`}
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -93,7 +88,15 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     : undefined}
         >
             {/* Wrapper for the image bounding box */}
-            <div className="relative isolate" style={boundedStyle}>
+            <div
+                className="relative isolate cursor-pointer transition-transform duration-100 active:scale-[1.03]"
+                style={boundedStyle}
+                onClick={(e) => {
+                    if (onOpenGroup) { onOpenGroup(); return; }
+                    if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
+                    else onSelectImage(img.id);
+                }}
+            >
 
                 {/* Stack cards — bottom center, spread on hover */}
                 {isGroup && (
@@ -160,14 +163,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     {!isGen && (
                         <div
                             className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
-                                ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                                ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
-                                    ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                    ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
                                     : isKeyboardActive
-                                        ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
                                         : isMobile
                                             ? 'opacity-0 scale-75'
-                                            : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                            : 'opacity-0 scale-75 group-hover:opacity-80 group-hover:scale-100 hover:!opacity-100 hover:!scale-110 bg-white/90 dark:bg-zinc-800/90'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -617,7 +620,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 )}
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
-                        {images.length > 0 ? (
+                        {displayImages.length > 0 ? (
                             <>
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
@@ -671,7 +674,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         ) : !isLoading && (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                                 <div className="flex flex-col items-center gap-8">
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
                                         <h1 className="text-sm font-bold tracking-tight text-black dark:text-white">
                                             {t?.('welcome_title') || 'Welcome to exposé'}
                                         </h1>

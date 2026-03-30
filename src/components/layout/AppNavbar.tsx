@@ -216,9 +216,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <Tooltip text={t('balance')}>
             <button
                 onClick={onOpenCredits}
-                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
+                className={`relative flex items-center justify-center rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all group ${isMobile ? 'h-9 w-9 gap-0' : 'h-9 px-3 gap-1.5'}`}
             >
-                {displayCredits.toFixed(2)}€
+                <Euro className="shrink-0 w-[14px] h-[14px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
+                {!isMobile && (
+                    <span className="whitespace-nowrap font-medium leading-none text-[11px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                        {displayCredits.toFixed(2)}
+                    </span>
+                )}
             </button>
         </Tooltip>
     );
@@ -500,6 +505,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             ) : (
                 <div className="flex items-center gap-3">
                     {balanceDisplay}
+                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
                             icon={<MoreHorizontal className="w-4 h-4" />}
@@ -576,7 +582,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
-                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
                     {isSpecialPage ? (
                         <button
                             className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
@@ -715,26 +720,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             </button>
                         ) : (
                             <>
-                                {credits !== undefined && credits !== null && (
+                                {credits !== undefined && credits !== null && user && (
                                     <Tooltip text={t('balance')}>
                                         <button
                                             onClick={onOpenCredits}
-                                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                                ? isMobile
-                                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                                    : 'h-9 px-3 bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-1.5'
-                                                : isMobile
-                                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
-                                                }`}
+                                            className={`relative flex items-center justify-center rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 group ${isScrolled
+                                                ? isMobile ? 'h-9 w-9 gap-0' : 'h-9 px-3 gap-1.5'
+                                                : isMobile ? 'h-10 w-10 gap-0' : 'h-10 px-5 gap-2'
+                                            }`}
                                         >
                                             <Euro className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[14px] h-[14px]' : 'w-4 h-4'}`} />
-                                            <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'} ${isMobile ? 'hidden' : ''}`}>
-                                                {(displayCredits ?? credits).toFixed(2)}
-                                            </span>
+                                            {!isMobile && (
+                                                <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'}`}>
+                                                    {(displayCredits ?? credits).toFixed(2)}
+                                                </span>
+                                            )}
                                         </button>
                                     </Tooltip>
                                 )}
+
+                                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} large={!isScrolled} />
 
                                 <div className="relative" ref={gridMenuRef}>
                                     <button
@@ -815,7 +820,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
                 {leftContent}
-                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
             </div>
 
             {/* CENTER: Title / Logo */}
