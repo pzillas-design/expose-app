@@ -62,6 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const setRes = (res: string) => { onQualityModeChange(`nb2-${res}` as GenerationQuality); closeAll(); };
     const RESOLUTIONS = [
+        { id: '05k', label: '0.5K', desc: '512 px' },
         { id: '1k', label: '1K', desc: '1024 px' },
         { id: '2k', label: '2K', desc: '2048 px' },
         { id: '4k', label: '4K', desc: '4096 px' },

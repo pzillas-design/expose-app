@@ -31,15 +31,17 @@ interface UseGenerationProps {
 }
 
 const COSTS: Record<string, number> = {
+    'nb2-05k': 0.05,
     'nb2-1k': 0.10,
     'nb2-2k': 0.20,
     'nb2-4k': 0.40,
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'nb2-1k': 18000,  // ~18s observed average
-    'nb2-2k': 30000,  // ~30s observed average
-    'nb2-4k': 55000,  // ~55s observed average
+    'nb2-05k': 10000,  // ~10s fastest option
+    'nb2-1k': 18000,   // ~18s observed average
+    'nb2-2k': 30000,   // ~30s observed average
+    'nb2-4k': 55000,   // ~55s observed average
 };
 
 const resolveTargetModel = (_quality: string): string | undefined => {
@@ -667,6 +669,7 @@ export const useGeneration = ({
         // Ratio calc (Sync)
         const resolution = modelId.split('-')[1];
         let baseSize = 1024;
+        if (resolution === '05k') baseSize = 512;
         if (resolution === '2k') baseSize = 2048;
         if (resolution === '4k') baseSize = 4096;
         let wRatio = 1, hRatio = 1;

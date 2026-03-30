@@ -143,13 +143,15 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             {(() => {
                                                                 const m = j.qualityMode || j.model || '';
-                                                                const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : '–';
+                                                                const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : m.includes('05k') ? '0.5K' : '–';
                                                                 const color = res === '4K'
                                                                     ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-200'
                                                                     : res === '2K'
                                                                     ? 'bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
                                                                     : res === '1K'
                                                                     ? 'bg-yellow-200 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
+                                                                    : res === '0.5K'
+                                                                    ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300'
                                                                     : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
                                                                 return (
                                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${color}`}>

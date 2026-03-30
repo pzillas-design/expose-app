@@ -370,7 +370,8 @@ Deno.serve(async (req) => {
 
                 // Resolution for image output
                 const kieResolution = qualityMode === 'nb2-4k' ? '4K'
-                    : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                    : qualityMode === 'nb2-2k' ? '2K'
+                    : qualityMode === 'nb2-05k' ? '512' : '1K';
 
                 // aspectRatio logic:
                 // - Create mode (no source): always set, otherwise Gemini defaults to 1:1

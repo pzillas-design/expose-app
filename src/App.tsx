@@ -809,10 +809,10 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? `Option "${option}" bei "${label}" umgeschaltet.` : `Toggled "${option}" in "${label}".` };
         },
         setQuality: async (quality: string) => {
-            const map: Record<string, string> = { '1k': 'nb2-1k', '2k': 'nb2-2k', '4k': 'nb2-4k' };
+            const map: Record<string, string> = { '0.5k': 'nb2-05k', '05k': 'nb2-05k', '1k': 'nb2-1k', '2k': 'nb2-2k', '4k': 'nb2-4k' };
             const mode = map[quality.toLowerCase()];
             if (!mode) {
-                return { ok: false, message: state.currentLang === 'de' ? 'Ungültige Qualität. Verfügbar: 1K, 2K, 4K.' : 'Invalid quality. Available: 1K, 2K, 4K.' };
+                return { ok: false, message: state.currentLang === 'de' ? 'Ungültige Qualität. Verfügbar: 0.5K, 1K, 2K, 4K.' : 'Invalid quality. Available: 0.5K, 1K, 2K, 4K.' };
             }
             actions.setQualityMode(mode as any);
             return { ok: true, message: state.currentLang === 'de' ? `Qualität auf ${quality.toUpperCase()} gesetzt.` : `Quality set to ${quality.toUpperCase()}.` };

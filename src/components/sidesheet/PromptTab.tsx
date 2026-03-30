@@ -83,12 +83,13 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
+        { id: 'nb2-05k', label: 'Nano Banana 2 · 0.5K', desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' },
         { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
         { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
         { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
     ];
 
-    const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '1k' | '2k' | '4k';
+    const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '05k' | '1k' | '2k' | '4k';
     const currentModel = MODES.find(m => m.id === qualityMode) || MODES.find(m => m.id === `nb2-${currentResolution}`) || MODES[1];
 
     if (!selectedImage) return null;

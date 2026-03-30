@@ -46,7 +46,7 @@ const TOOL_DESCRIPTIONS: Record<string, string> = {
     toggle_image_selection: 'Wählt ein Bild in Multi-Select an oder ab.',
     create_variables: 'Erstellt Variable-Chips für Varianten.',
     select_variable_option: 'Toggelt eine Variable-Option.',
-    set_quality: 'Setzt 1K, 2K oder 4K.',
+    set_quality: 'Setzt 0.5K, 1K, 2K oder 4K.',
     select_image_by_index: 'Öffnet ein Bild per Index.',
     select_image_by_position: 'Öffnet ein Bild per Grid-Position.',
 };

@@ -98,7 +98,7 @@ interface UseGeminiLiveVoiceResult {
 const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'get_app_context',
-        description: 'Read current screen state, available actions, and the user\'s installed presets/templates. Call this first to understand context before suggesting edits.',
+        description: 'Read current screen state, available actions, and the user\'s installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -277,11 +277,11 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_quality',
-        description: 'Set the generation quality/resolution. Available: "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
+        description: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
         parameters: {
             type: Type.OBJECT,
             properties: {
-                quality: { type: Type.STRING, description: 'Quality level: "1k", "2k", or "4k"' }
+                quality: { type: Type.STRING, description: 'Quality level: "0.5k", "1k", "2k", or "4k"' }
             },
             required: ['quality']
         }
