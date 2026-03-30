@@ -23,7 +23,7 @@ export const VoiceUploadModal: React.FC<VoiceUploadModalProps> = ({ isOpen, onCl
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/60" onClick={onClose} />
             <div className={`relative w-full max-w-sm mx-4 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg} p-8 flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-200`}>
                 <button
                     onClick={onClose}

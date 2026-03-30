@@ -679,12 +679,12 @@ export function App() {
                 const gIdx = allImages.findIndex(img => img.id === currentId);
                 const next = allImages[(gIdx + 1) % allImages.length];
                 handleSelectImage(next.id);
-                return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild (global).' : 'Next image (global).' };
+                return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild (global).' : 'Next image (global).', newContext: { viewLevel: 'detail', route: 'detail' } };
             }
 
             const next = flat[(idx + 1) % flat.length];
             handleSelectImage(next.id);
-            return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild.' : 'Next image.' };
+            return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild.' : 'Next image.', newContext: { viewLevel: 'detail', route: 'detail' } };
         },
         previousImage: async () => {
             if (!location.pathname.startsWith('/image/')) {
@@ -708,12 +708,12 @@ export function App() {
                 const gIdx = allImages.findIndex(img => img.id === currentId);
                 const prev = allImages[(gIdx - 1 + allImages.length) % allImages.length];
                 handleSelectImage(prev.id);
-                return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild (global).' : 'Previous image (global).' };
+                return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild (global).' : 'Previous image (global).', newContext: { viewLevel: 'detail', route: 'detail' } };
             }
 
             const prev = flat[(idx - 1 + flat.length) % flat.length];
             handleSelectImage(prev.id);
-            return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
+            return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.', newContext: { viewLevel: 'detail', route: 'detail' } };
         },
         goBack: async () => {
             // L3 (Detail) -> L2 (Stack) if belongs to one, or L1 (Gallery)
@@ -723,22 +723,22 @@ export function App() {
                 
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? 'Zurück zum Stapel.' : 'Back to stack.' };
+                    return { ok: true, message: state.currentLang === 'de' ? 'Zurück zum Stapel.' : 'Back to stack.', newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
-                
+
                 navigate('/');
-                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.', newContext: { viewLevel: 'gallery', route: 'grid' } };
             }
 
             if (location.pathname === '/create') {
                 navigate('/');
-                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.', newContext: { viewLevel: 'gallery', route: 'grid' } };
             }
 
             // L2 (Stack) -> L1 (Gallery)
             if (location.pathname.startsWith('/stack/') || (location.pathname === '/' && expandedGroupId)) {
                 navigate('/');
-                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.' };
+                return { ok: true, message: state.currentLang === 'de' ? 'Zurück zur Galerie.' : 'Back to gallery.', newContext: { viewLevel: 'gallery', route: 'grid' } };
             }
 
             return { ok: false, message: state.currentLang === 'de' ? 'Bereits in der Galerie.' : 'Already in the gallery.' };
@@ -749,7 +749,7 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items.some((i: any) => i.id === currentId));
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel mit ${row.items.length} Bildern geöffnet.` : `Opened stack with ${row.items.length} images.` };
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel mit ${row.items.length} Bildern geöffnet.` : `Opened stack with ${row.items.length} images.`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
                 return { ok: false, message: state.currentLang === 'de' ? 'Dieses Bild hat keinen Stapel.' : 'This image has no stack.' };
             }
@@ -833,17 +833,17 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row) {
                     setExpandedGroupId(row.id);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".` };
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
 
             handleSelectImage(img.id);
-            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".` };
+            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
         },
         selectImageByPosition: async (rowIdx: number, columnIdx: number) => {
             const cols = state.gridColumns || 2;
             const index = (rowIdx - 1) * cols + (columnIdx - 1) + 1;
-            
+
             const displayImages = expandedGroupId
                 ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
                 : state.isSelectMode
@@ -858,12 +858,12 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row) {
                     setExpandedGroupId(row.id);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".` };
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
 
             handleSelectImage(img.id);
-            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".` };
+            return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
         },
         highlightImage: async (index: number) => {
             if (index < 1) return { ok: false, message: 'Invalid index.' };

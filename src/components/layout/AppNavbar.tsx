@@ -573,9 +573,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
                     }`}
             >
-                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
+                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
                     {isSpecialPage ? (
                         <button
                             className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
@@ -811,10 +811,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <header
             className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300`}
         >
-            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
                 {leftContent}
+                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
             </div>
 
             {/* CENTER: Title / Logo */}

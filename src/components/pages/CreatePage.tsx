@@ -73,13 +73,13 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     const sidebarWidth = 380;
 
     return (
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-white dark:bg-black">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-white dark:bg-zinc-950">
 
             {/* ── Canvas / Format Picker ── */}
             <div className="md:flex-1 relative overflow-hidden"
                 style={isMobile ? { height: `calc(100vw * ${ratioH} / ${ratioW})`, minHeight: 200, maxHeight: '55vw' } : undefined}
             >
-                <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-zinc-100 dark:bg-black">
+                <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-zinc-100 dark:bg-zinc-950">
                     <div
                         className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-visible"
                         style={previewSize
