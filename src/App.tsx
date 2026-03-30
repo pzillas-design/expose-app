@@ -828,6 +828,15 @@ export function App() {
             const img = displayImages[idx];
             if (!img) return { ok: false, message: state.currentLang === 'de' ? `Bild an Index ${index} nicht gefunden.` : `Image at index ${index} not found.` };
 
+            // In gallery view: check if cover image belongs to a stack → navigate to stack (Level 2)
+            if (!expandedGroupId && !state.isSelectMode) {
+                const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
+                if (row && row.items.length > 1) {
+                    navigate(`/stack/${row.id}`);
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet (${row.items.length} Bilder).` : `Opened stack "${img.title || 'Untitled'}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                }
+            }
+
             handleSelectImage(img.id);
             return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
         },
