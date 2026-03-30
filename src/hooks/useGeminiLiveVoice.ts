@@ -722,16 +722,30 @@ export function useGeminiLiveVoice({
             }
         }
 
-        // Transcription text (for potential UI display / logging)
+        // User speech transcription (inputAudioTranscription must be enabled in session config)
+        if (message.serverContent?.inputTranscription?.text) {
+            const text = message.serverContent.inputTranscription.text.trim();
+            if (text) {
+                onTranscript?.({
+                    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    source: 'user',
+                    text,
+                    timestamp: Date.now(),
+                });
+            }
+        }
+
+        // Model speech transcription (outputAudioTranscription must be enabled in session config)
         if (message.serverContent?.outputTranscription?.text) {
-            // Could surface this to UI in the future
-            console.debug('[voice] transcript:', message.serverContent.outputTranscription.text);
-            onTranscript?.({
-                id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                source: 'user',
-                text: message.serverContent.outputTranscription.text,
-                timestamp: Date.now(),
-            });
+            const text = message.serverContent.outputTranscription.text.trim();
+            if (text) {
+                onTranscript?.({
+                    id: `assistant-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    source: 'assistant',
+                    text,
+                    timestamp: Date.now(),
+                });
+            }
         }
 
         // Turn complete
