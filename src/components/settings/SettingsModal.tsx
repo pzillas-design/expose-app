@@ -286,8 +286,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 const confirmed = await confirm({
                                     title: t('settings_delete_account'),
                                     description: t('settings_delete_account_desc'),
-                                    confirmLabel: t('delete').toUpperCase(),
-                                    cancelLabel: t('cancel').toUpperCase(),
+                                    confirmLabel: t('delete'),
+                                    cancelLabel: t('cancel'),
                                     variant: 'danger'
                                 });
                                 if (confirmed) onDeleteAccount();

@@ -348,8 +348,8 @@ function BoardCard({ board, onSelect, onDelete, onRename, lang, t }: BoardCardPr
                                 const confirmed = await confirm({
                                     title: t('delete'),
                                     description: t('delete_confirm_single'),
-                                    confirmLabel: t('delete').toUpperCase(),
-                                    cancelLabel: t('cancel').toUpperCase(),
+                                    confirmLabel: t('delete'),
+                                    cancelLabel: t('cancel'),
                                     variant: 'danger'
                                 });
                                 setMenuOpen(false);

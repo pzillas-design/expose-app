@@ -933,8 +933,8 @@ export function App() {
                             description: state.currentLang === 'de'
                                 ? `Möchtest du wirklich ${count} Bild${count !== 1 ? 'er' : ''} löschen?`
                                 : `Delete ${count} image${count !== 1 ? 's' : ''}?`,
-                            confirmLabel: t('delete') || 'LÖSCHEN',
-                            cancelLabel: t('cancel') || 'ABBRECHEN',
+                            confirmLabel: t('delete') || 'Löschen',
+                            cancelLabel: t('cancel') || 'Abbrechen',
                             variant: 'danger'
                         });
                         if (!confirmed) return;

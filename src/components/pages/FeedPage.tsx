@@ -539,8 +539,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const confirmed = await confirm({
                 title: toDelete.length > 1 ? (t?.('delete_confirm_multi') || 'Delete images') : (t?.('delete_confirm_single') || 'Delete image'),
                 description: toDelete.length > 1 ? (t?.('delete_confirm_multi') || `Do you really want to delete ${toDelete.length} image(s)?`) : (t?.('delete_confirm_single') || `Do you really want to delete ${toDelete.length} image(s)?`),
-                confirmLabel: (t?.('delete') || 'DELETE').toUpperCase(),
-                cancelLabel: (t?.('cancel') || 'CANCEL').toUpperCase(),
+                confirmLabel: t?.('delete') || 'Delete',
+                cancelLabel: t?.('cancel') || 'Cancel',
                 variant: 'danger'
             });
             if (confirmed && actions?.handleDeleteImage) {

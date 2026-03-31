@@ -376,8 +376,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Bild löschen' : 'Delete image',
                 description: currentLang === 'de' ? 'Möchtest du dieses Bild wirklich löschen?' : 'Do you really want to delete this image?',
-                confirmLabel: currentLang === 'de' ? 'LÖSCHEN' : 'DELETE',
-                cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
+                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
+                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
                 variant: 'danger'
             });
             if (!confirmed) return false;
