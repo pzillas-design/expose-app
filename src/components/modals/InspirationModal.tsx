@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Check, ArrowLeft, Clipboard } from 'lucide-react';
+import { Upload, Check, ArrowLeft } from 'lucide-react';
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
 import { Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
@@ -247,7 +249,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                 <Button
                     variant="secondary"
                     className="w-full justify-center"
-                    icon={<Clipboard className="w-4 h-4" />}
+                    shortcut={isMac ? '⌘V' : 'Ctrl+V'}
                     onClick={async () => {
                         try {
                             const items = await (navigator.clipboard as any).read();

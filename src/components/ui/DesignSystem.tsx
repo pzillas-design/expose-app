@@ -229,10 +229,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
     tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
+    /** Keyboard shortcut shown inline in the button — hidden on mobile (sm: breakpoint) */
+    shortcut?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, tooltipShortcut, tooltipSide, ...props
+    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, tooltipShortcut, tooltipSide, shortcut, ...props
 }) => {
     // Structural classes — typography from Typo.ButtonLabel
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
@@ -266,6 +268,9 @@ export const Button: React.FC<ButtonProps> = ({
             {!isLoading && icon && iconPosition === 'left' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {children}
             {!isLoading && icon && iconPosition === 'right' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
+            {!isLoading && shortcut && (
+                <kbd className="hidden sm:inline-flex items-center font-mono text-[11px] opacity-40 -ml-0.5">{shortcut}</kbd>
+            )}
         </button>
     );
 
