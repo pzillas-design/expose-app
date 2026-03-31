@@ -421,14 +421,18 @@ export function App() {
             };
         }
 
-        if (location.pathname === '/' || location.pathname === '') {
+        // Gallery view (root) OR Stack view (/stack/:id)
+        const isGridView = location.pathname === '/' || location.pathname === '' || location.pathname.startsWith('/stack/');
+        if (isGridView) {
             const cols = state.gridColumns || 2;
-            const displayImages = expandedGroupId
-                ? state.rows.find((r: any) => r.id === expandedGroupId)?.items || []
+            const stackId = location.pathname.startsWith('/stack/') ? location.pathname.split('/').pop() : expandedGroupId;
+            const displayImages = stackId
+                ? (state.rows.find((r: any) => r.id === stackId)?.items || allImages.filter((i: any) => i.groupId === stackId))
                 : state.isSelectMode
                     ? state.rows.flatMap((r: any) => r.items)
                     : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
 
+            const isStack = !!stackId;
             const itemsText = displayImages.slice(0, 20).map((img: any, i: number) => {
                 const row = Math.floor(i / cols) + 1;
                 const col = (i % cols) + 1;
@@ -436,10 +440,10 @@ export function App() {
             }).join('\n');
 
             return {
-                contextKey: `grid:${expandedGroupId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
+                contextKey: `grid:${stackId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
                 summary: state.currentLang === 'de'
-                    ? `Galerie (${expandedGroupId ? 'Stapel' : 'Übersicht'}), ${cols} Bilder pro Reihe:\n${itemsText}`
-                    : `Gallery (${expandedGroupId ? 'stack' : 'overview'}), ${cols} per row:\n${itemsText}`,
+                    ? `${isStack ? 'Stapel' : 'Galerie'} (${displayImages.length} Bilder), ${cols} pro Reihe:\n${itemsText}`
+                    : `${isStack ? 'Stack' : 'Gallery'} (${displayImages.length} images), ${cols} per row:\n${itemsText}`,
                 frames: []
             };
         }
