@@ -877,7 +877,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
+                    systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.\n\nCURRENT APP STATE (at session start): ${JSON.stringify(getAppContext())}`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },
                 callbacks: {
@@ -903,20 +903,6 @@ export function useGeminiLiveVoice({
             });
 
             sessionRef.current = session;
-
-            // Inject current app context into conversation history before greeting.
-            // turnComplete: false = content is appended but no model response is triggered yet.
-            // This ensures the AI knows where the user is from the very first interaction.
-            try {
-                const initialCtx = JSON.stringify(getAppContext());
-                session.sendClientContent({
-                    turns: [{ role: 'user', parts: [{ text: `[System context — current app state: ${initialCtx}]` }] }],
-                    turnComplete: false
-                });
-                console.log('[voice] initial context injected');
-            } catch (ctxErr) {
-                console.warn('[voice] failed to inject initial context', ctxErr);
-            }
 
             // Send greeting BEFORE starting mic
             const greeting = config.greeting;

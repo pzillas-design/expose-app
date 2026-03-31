@@ -27,7 +27,7 @@ const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboar
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
-import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage } from '@/services/voiceAdminService';
+import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: { children: React.ReactNode }) {
@@ -513,6 +513,8 @@ export function App() {
             saveVoiceLogs(toolCalls, prev.transcripts);
             return { ...prev, toolCalls };
         });
+        // Persist to Supabase for remote debugging (fire-and-forget)
+        persistToolCallLog(enriched);
     }, [currentVoiceAppContext]);
 
     const appendVoiceTranscript = React.useCallback((entry: VoiceTranscriptLog) => {
@@ -523,6 +525,8 @@ export function App() {
             saveVoiceLogs(prev.toolCalls, transcripts);
             return { ...prev, transcripts };
         });
+        // Persist to Supabase for remote debugging (fire-and-forget)
+        persistTranscriptLog(entry);
     }, []);
 
     const clearVoiceLogs = React.useCallback(() => {

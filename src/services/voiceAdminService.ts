@@ -202,6 +202,37 @@ export function clearVoiceLogsStorage() {
     try { window.localStorage.removeItem(LOGS_STORAGE_KEY); } catch { /* ignore */ }
 }
 
+/** Fire-and-forget: persist a tool-call log entry to Supabase for remote debugging. */
+export async function persistToolCallLog(entry: VoiceToolCallLog): Promise<void> {
+    try {
+        await supabase.from('voice_logs').insert({
+            id: entry.id,
+            session_id: entry.sessionId,
+            kind: 'tool_call',
+            tool_name: entry.name,
+            tool_status: entry.status,
+            args_summary: entry.argsSummary,
+            result_message: entry.message,
+            context_snapshot: entry.contextSnapshot ?? null,
+            ts: entry.timestamp,
+        });
+    } catch { /* non-critical — local state is source of truth */ }
+}
+
+/** Fire-and-forget: persist a transcript log entry to Supabase for remote debugging. */
+export async function persistTranscriptLog(entry: VoiceTranscriptLog): Promise<void> {
+    try {
+        await supabase.from('voice_logs').insert({
+            id: entry.id,
+            session_id: entry.sessionId,
+            kind: 'transcript',
+            source: entry.source,
+            text: entry.text,
+            ts: entry.timestamp,
+        });
+    } catch { /* non-critical */ }
+}
+
 export function getEmptyVoiceDiagnostics(): VoiceDiagnostics {
     return {
         sessionModel: null,
