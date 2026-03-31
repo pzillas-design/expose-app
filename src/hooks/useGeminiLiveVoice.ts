@@ -423,6 +423,11 @@ export function useGeminiLiveVoice({
     // change after navigation (previousImage, getAppContext, etc.) are never stale.
     const handleLiveMessageRef = useRef<((msg: LiveServerMessage) => Promise<void>) | null>(null);
 
+    // Always-fresh ref to getAppContext — used in the visual sync debounce effect
+    // to read the current viewLevel without adding getAppContext as a dep.
+    const getAppContextRef = useRef(getAppContext);
+    useEffect(() => { getAppContextRef.current = getAppContext; });
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -990,15 +995,18 @@ export function useGeminiLiveVoice({
         return () => window.clearInterval(id);
     }, [state]);
 
-    // Debounced visual context sync — wait 3s after image change before sending to model
-    // This prevents flooding the model when user quickly navigates through images
+    // Debounced visual context sync:
+    // - Detail view (gallery → image): send instantly — user just opened an image
+    // - Gallery/stack navigation: 2s debounce — prevents flooding during quick nav
     const visualSyncTimerRef = useRef<number | null>(null);
     useEffect(() => {
         if (state === 'off') return;
         if (visualSyncTimerRef.current) window.clearTimeout(visualSyncTimerRef.current);
+        const isDetail = getAppContextRef.current().viewLevel === 'detail';
+        const delay = isDetail ? 0 : 2000;
         visualSyncTimerRef.current = window.setTimeout(() => {
             void syncVisualContext();
-        }, 3000);
+        }, delay);
         return () => { if (visualSyncTimerRef.current) window.clearTimeout(visualSyncTimerRef.current); };
     }, [state, syncVisualContext]);
 
