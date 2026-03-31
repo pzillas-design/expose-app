@@ -130,24 +130,8 @@ function resolveConfig(parsed: any): VoiceAdminConfig {
     };
 }
 
-export function loadVoiceAdminConfig(): VoiceAdminConfig {
-    if (typeof window === 'undefined') return getDefaultVoiceAdminConfig();
-    try {
-        // Try new key first, then old key for migration
-        const raw = window.localStorage.getItem(STORAGE_KEY)
-            ?? window.localStorage.getItem('expose_voice_admin_config_v1');
-        if (!raw) return getDefaultVoiceAdminConfig();
-        return resolveConfig(JSON.parse(raw));
-    } catch {
-        return getDefaultVoiceAdminConfig();
-    }
-}
-
-export function saveVoiceAdminConfig(config: VoiceAdminConfig) {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-}
-
+/** Supabase is the single source of truth for voice admin config.
+ *  localStorage is no longer used — config changes take effect on next page load. */
 export async function fetchVoiceAdminConfig(): Promise<VoiceAdminConfig> {
     const { data, error } = await supabase
         .from('app_settings')
@@ -156,20 +140,21 @@ export async function fetchVoiceAdminConfig(): Promise<VoiceAdminConfig> {
         .maybeSingle();
 
     if (error) throw error;
-    if (!data?.value) return loadVoiceAdminConfig();
-
-    const resolved = resolveConfig(data.value);
-    saveVoiceAdminConfig(resolved);
-    return resolved;
+    if (!data?.value) return getDefaultVoiceAdminConfig();
+    return resolveConfig(data.value);
 }
 
 export async function updateVoiceAdminConfig(config: VoiceAdminConfig) {
-    saveVoiceAdminConfig(config);
     const { error } = await supabase
         .from('app_settings')
         .upsert({ key: DB_KEY, value: config, updated_at: new Date().toISOString() });
     if (error) throw error;
 }
+
+/** @deprecated localStorage no longer used — kept only so old import sites compile */
+export function loadVoiceAdminConfig(): VoiceAdminConfig { return getDefaultVoiceAdminConfig(); }
+/** @deprecated localStorage no longer used */
+export function saveVoiceAdminConfig(_config: VoiceAdminConfig) { /* no-op */ }
 
 const LOGS_STORAGE_KEY = 'expose_voice_logs_v2'; // v2: sessionId added to all log entries
 const MAX_LOG_ENTRIES = 100;
