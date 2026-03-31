@@ -598,10 +598,30 @@ export function useGeminiLiveVoice({
                 const payload = await fetchFramePayload(frame);
                 sessionRef.current.sendRealtimeInput({ video: payload });
             }
+
+            // Log which image was visually sent — visible in Live Monitor for debugging
+            onToolCall?.({
+                id: `visual-sync-${Date.now()}`,
+                sessionId: sessionIdRef.current,
+                name: '📷 visual_context_synced',
+                status: 'ok',
+                argsSummary: visualContext.frames.map(f => `${f.id} (${f.label})`).join(', '),
+                message: visualContext.summary,
+                timestamp: Date.now(),
+            });
         } catch (syncError) {
             console.error('[voice] visual context sync failed', syncError);
+            onToolCall?.({
+                id: `visual-sync-err-${Date.now()}`,
+                sessionId: sessionIdRef.current,
+                name: '📷 visual_context_synced',
+                status: 'error',
+                argsSummary: visualContext.frames.map(f => f.id).join(', '),
+                message: String(syncError),
+                timestamp: Date.now(),
+            });
         }
-    }, [config.visualContextEnabled, getVisualContext, onVisualContextChange]);
+    }, [config.visualContextEnabled, getVisualContext, onToolCall, onVisualContextChange]);
 
     // --- Tool execution ---
 
