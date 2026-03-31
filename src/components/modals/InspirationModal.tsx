@@ -220,8 +220,14 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                 </p>
             </div>
 
-            {/* Hint */}
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed my-1">
+            {/* Hint — mobile vs desktop */}
+            <p className="sm:hidden text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed my-1">
+                {de
+                    ? 'such nach Ideen, mach einen Screenshot und füge es hier ein'
+                    : 'find inspiration, take a screenshot and paste it here'
+                }
+            </p>
+            <p className="hidden sm:block text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed my-1">
                 {de
                     ? 'oder suche nach Ideen, kopiere ein Bild und füge es hier ein'
                     : 'or find inspiration, copy an image and paste it here'
