@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Check, ArrowLeft } from 'lucide-react';
+import { Upload, Check, ArrowLeft, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
@@ -219,15 +219,15 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
             </div>
 
             {/* Hint */}
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed -mb-1">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed my-1">
                 {de
                     ? 'oder suche nach Ideen, kopiere ein Bild und füge es hier ein'
                     : 'or find inspiration, copy an image and paste it here'
                 }
             </p>
 
-            {/* Action buttons — stacked on mobile, side-by-side on desktop */}
-            <div className="flex flex-col sm:flex-row gap-2">
+            {/* Action buttons */}
+            <div className="flex flex-col gap-2">
                 <button
                     onClick={() => {
                         const w = 900, h = 700;
@@ -235,7 +235,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                         const top = Math.round(window.screenY + (window.outerHeight - h) / 2);
                         window.open('https://www.pinterest.com', 'pinterest', `noopener,width=${w},height=${h},left=${left},top=${top}`);
                     }}
-                    className="flex-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-full font-semibold text-white text-sm transition-opacity hover:opacity-90 active:opacity-80"
+                    className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-full font-semibold text-white text-sm transition-opacity hover:opacity-90 active:opacity-80"
                     style={{ backgroundColor: '#E60023' }}
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
@@ -246,7 +246,8 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
 
                 <Button
                     variant="secondary"
-                    className="flex-1 justify-center"
+                    className="w-full justify-center"
+                    icon={<Clipboard className="w-4 h-4" />}
                     onClick={async () => {
                         try {
                             const items = await (navigator.clipboard as any).read();
