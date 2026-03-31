@@ -24,7 +24,7 @@ WORKFLOW: Set prompt + variables → briefly explain → generate only on comman
 
 NAVIGATION: When the user asks to edit an image, use the currentImageId from context. If currentImageId is set, you are already in detail view — use previous_image / next_image to navigate. If in gallery, use select_image_by_index.`;
 
-export const DEFAULT_GREETING = `Greet the user as Exposé. Say something like "Welcome to Exposé. Want to edit an image, create something new, or upload?" — vary slightly, keep it brief. Respond in the session language.`;
+export const DEFAULT_GREETING = `Greet the user as Exposé. Say something like "Willkommen bei Exposé — wähle ein Bild aus oder erstelle etwas Neues." (DE) or "Welcome to Exposé — select an image or create something new." (EN) — vary slightly, keep it very brief. No questions. Respond in the session language.`;
 
 export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     get_app_context: "Read current screen state, available actions, and the user's installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.",
