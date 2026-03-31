@@ -37,6 +37,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
     const [modalState, setModalState] = useState<ModalState>('empty');
     const [imageSrc, setImageSrc] = useState<string | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
+    const [pasteHint, setPasteHint] = useState(false);
 
     // Crop state
     const imgRef = useRef<HTMLImageElement>(null);
@@ -194,10 +195,10 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
         <div className="px-6 pb-6 pt-4 flex flex-col gap-4">
             {/* Upload drop zone */}
             <div
-                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed py-10 px-6 transition-colors cursor-pointer
+                className={`relative flex flex-col items-center justify-center gap-3 rounded-xl py-10 px-6 transition-colors cursor-pointer
                     ${isDragOver
-                        ? 'border-zinc-500 bg-zinc-100 dark:bg-zinc-800'
-                        : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
+                        ? 'bg-zinc-200 dark:bg-zinc-700'
+                        : 'bg-zinc-100 dark:bg-zinc-800/70 hover:bg-zinc-150 dark:hover:bg-zinc-800'
                     }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
@@ -209,30 +210,16 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                     if (file) loadImage(file);
                 }}
             >
-                <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center">
                     <Upload className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
                 </div>
-                <div className="text-center">
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                        {de ? 'Bild hochladen' : 'Upload image'}
-                    </p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                        {de ? 'Klicken oder hierher ziehen' : 'Click or drag & drop'}
-                    </p>
-                </div>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
-                <span className="text-xs text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">
-                    {de ? 'oder' : 'or'}
-                </span>
-                <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {de ? 'Bild hochladen' : 'Upload image'}
+                </p>
             </div>
 
             {/* Pinterest block */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
                 <button
                     onClick={() => {
                         const w = 900, h = 700;
@@ -251,13 +238,11 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                 </button>
                 <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center leading-relaxed">
                     {de
-                        ? 'Suche nach Ideen, kopiere ein Bild das dir gefällt und füge es hier ein'
-                        : 'Find inspiration, copy an image you like and paste it here'
+                        ? 'oder suche nach Ideen, kopiere ein Bild und füge es hier ein'
+                        : 'or find inspiration, copy an image and paste it here'
                     }
                     {' '}
-                    <kbd className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-mono text-[10px]">
-                        {de ? '⌘V' : '⌘V'}
-                    </kbd>
+                    <kbd className="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-mono text-[10px]">⌘V</kbd>
                 </p>
             </div>
 
