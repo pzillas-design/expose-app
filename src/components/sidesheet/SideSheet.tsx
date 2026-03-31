@@ -8,7 +8,7 @@ import {
     Undo2, Redo2, Layers, MoreHorizontal
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
-import { CropModal } from '@/components/modals/CropModal';
+import { InspirationModal } from '@/components/modals/InspirationModal';
 import { generateId } from '@/utils/ids';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
@@ -220,11 +220,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const lastSelectedIdRef = useRef<string | null>(null);
     const { confirm } = useItemDialog();
 
-    // Crop / Reference Image
-    const [isCropOpen, setIsCropOpen] = useState(false);
-    const [pendingFile, setPendingFile] = useState<string | null>(null);
-    const [pendingAnnotationId, setPendingAnnotationId] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Inspiration / Reference Image
+    const [isInspirationOpen, setIsInspirationOpen] = useState(false);
+    const [viewingRefAnn, setViewingRefAnn] = useState<AnnotationObject | null>(null);
+    const [inspirationInitialSrc, setInspirationInitialSrc] = useState<string | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Mobile Sheet
@@ -496,39 +495,36 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     // ── Reference Image ──
-    // Listen for global paste-reference-image events (Cmd+V with image in clipboard)
+    // Listen for global paste-reference-image events (Cmd+V with image in clipboard on detail page)
     React.useEffect(() => {
         const handler = (e: Event) => {
             const file = (e as CustomEvent<File>).detail;
-            if (file && selectedImage) handleAddReferenceImage(file);
+            if (!file || !selectedImage) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                if (typeof ev.target?.result === 'string') {
+                    setViewingRefAnn(null);
+                    setInspirationInitialSrc(ev.target.result);
+                    setIsInspirationOpen(true);
+                }
+            };
+            reader.readAsDataURL(file);
         };
         document.addEventListener('paste-reference-image', handler);
         return () => document.removeEventListener('paste-reference-image', handler);
     });
 
-    const handleAddReferenceImage = (file: File, annotationId?: string) => {
-        setPendingAnnotationId(annotationId || null);
-        const reader = new FileReader();
-        reader.onload = e => {
-            if (typeof e.target?.result === 'string') {
-                setPendingFile(e.target.result);
-                setIsCropOpen(true);
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleCropComplete = (croppedBase64: string) => {
+    const handleInspirationComplete = (base64: string) => {
         if (!selectedImage) return;
         const currentAnns = selectedImage.annotations || [];
-        if (pendingAnnotationId) {
-            updateAnnotationsWithHistory(currentAnns.map(a => a.id === pendingAnnotationId ? { ...a, referenceImage: croppedBase64 } : a));
+        if (viewingRefAnn) {
+            updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: base64 } : a));
         } else {
-            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: croppedBase64, createdAt: Date.now() };
+            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: base64, createdAt: Date.now() };
             updateAnnotationsWithHistory([...currentAnns, newRef]);
         }
-        setPendingFile(null);
-        setPendingAnnotationId(null);
+        setViewingRefAnn(null);
+        setInspirationInitialSrc(null);
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -540,7 +536,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         setIsSideZoneActive(false);
         if (!selectedImage) return;
         const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
-        if (files.length > 0) handleAddReferenceImage(files[0]);
+        if (files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = ev => {
+                if (typeof ev.target?.result === 'string') {
+                    setViewingRefAnn(null);
+                    setInspirationInitialSrc(ev.target.result);
+                    setIsInspirationOpen(true);
+                }
+            };
+            reader.readAsDataURL(files[0]);
+        }
     };
 
     const handleExitBrushMode = async (forceSave = false) => {
@@ -593,12 +599,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     const sheetContent = (
         <>
-            <CropModal
-                isOpen={isCropOpen}
-                imageSrc={pendingFile || ''}
-                onClose={() => { setIsCropOpen(false); setPendingFile(null); }}
-                onCropComplete={handleCropComplete}
+            <InspirationModal
+                isOpen={isInspirationOpen}
+                onClose={() => { setIsInspirationOpen(false); setViewingRefAnn(null); setInspirationInitialSrc(null); }}
+                onComplete={handleInspirationComplete}
+                initialSrc={inspirationInitialSrc ?? undefined}
                 t={t}
+                lang={lang}
             />
             {/* Drop overlay now lives inside the prompt card — see below */}
 
@@ -641,7 +648,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     {referenceAnns.length > 0 && (
                                         <div className="flex flex-wrap gap-2 pt-1">
                                             {referenceAnns.map(ann => (
-                                                <div key={ann.id} className="group relative w-[88px] h-[88px] rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700">
+                                                <div
+                                                    key={ann.id}
+                                                    className="group relative w-[88px] h-[88px] rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 cursor-pointer"
+                                                    onClick={() => { setViewingRefAnn(ann); setInspirationInitialSrc(ann.referenceImage || null); setIsInspirationOpen(true); }}
+                                                >
                                                     <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
                                                         onClick={() => deleteAnnotation(ann.id)}
@@ -782,7 +793,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <div className="relative">
                                                 <Tooltip text={t('add_reference')} side="top">
                                                     <button
-                                                        onClick={() => fileInputRef.current?.click()}
+                                                        onClick={() => { setViewingRefAnn(null); setInspirationInitialSrc(null); setIsInspirationOpen(true); }}
                                                         disabled={selectedImage?.isGenerating}
                                                         data-voice-action="open-reference-image-picker"
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
@@ -872,14 +883,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     </>
                                                 )}
                                             </div>
-
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                className="hidden"
-                                                accept="image/*"
-                                                onChange={e => { if (e.target.files?.[0]) { handleAddReferenceImage(e.target.files[0]); e.target.value = ''; } }}
-                                            />
 
                                             {/* Generate Button — collapses progressively as the sidesheet gets narrow */}
                                             {(() => {
@@ -984,13 +987,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                         {sheetContent}
                     </div>
                 </div>
-                <CropModal
-                    isOpen={isCropOpen}
-                    imageSrc={pendingFile || ''}
-                    onClose={() => { setIsCropOpen(false); setPendingFile(null); }}
-                    onCropComplete={handleCropComplete}
-                    t={t}
-                />
                 <ManagePresetsModal
                     isOpen={isPresetModalOpen}
                     onClose={() => setIsPresetModalOpen(false)}
@@ -1018,14 +1014,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 {sheetContent}
             </div>
             {/* Modals */}
-            <CropModal
-                isOpen={isCropOpen}
-                imageSrc={pendingFile || ''}
-                onClose={() => { setIsCropOpen(false); setPendingFile(null); }}
-                onCropComplete={handleCropComplete}
-                t={t}
-            />
-
             <ManagePresetsModal
                 isOpen={isPresetModalOpen}
                 onClose={() => setIsPresetModalOpen(false)}
