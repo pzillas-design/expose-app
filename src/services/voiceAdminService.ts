@@ -20,8 +20,6 @@ CONTEXT: You receive the current app state at session start. Call get_app_contex
 
 VARIABLES: Automatically create 2-4 variables with each edit suggestion (mood, intensity, style, color tone etc.) so the user can choose between directions.
 
-PRESETS: When an installed preset fits the request, use its prompt as a base.
-
 WORKFLOW: Set prompt + variables → briefly explain → generate only on command.
 
 NAVIGATION: When the user asks to edit an image, use the currentImageId from context. If currentImageId is set, you are already in detail view — use previous_image / next_image to navigate. If in gallery, use select_image_by_index.`;

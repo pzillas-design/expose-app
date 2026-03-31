@@ -685,6 +685,26 @@ export function useGeminiLiveVoice({
             timestamp: Date.now(),
         });
 
+        // After navigation, push fresh context into conversation history so the AI
+        // always knows where the user is — no extra get_app_context round-trip needed.
+        const NAV_TOOLS = new Set([
+            'open_gallery', 'open_create', 'go_back', 'open_stack',
+            'next_image', 'previous_image', 'select_image_by_index', 'select_image_by_position',
+        ]);
+        if (awaitedResult.ok && NAV_TOOLS.has(name) && sessionRef.current) {
+            setTimeout(() => {
+                if (!sessionRef.current) return;
+                const ctx = getAppContext();
+                console.log('[voice] nav context pushed:', ctx);
+                try {
+                    sessionRef.current.sendClientContent({
+                        turns: [{ role: 'user', parts: [{ text: `[Navigation complete. Current app state: ${JSON.stringify(ctx)}]` }] }],
+                        turnComplete: false,
+                    });
+                } catch { /* non-critical */ }
+            }, 50);
+        }
+
         return {
             id: call.id,
             name,
@@ -908,7 +928,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.\n\nCURRENT APP STATE (at session start): ${JSON.stringify(getAppContext())}`,
+                    systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },
                 callbacks: {
