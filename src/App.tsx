@@ -470,31 +470,27 @@ export function App() {
             ? 'detail'
             : (isStack ? 'stack' : (isGallery ? 'gallery' : (isCreate ? 'create' : 'other')));
 
+        const currentImageId = isDetail ? (location.pathname.split('/').pop() || null) : null;
+        const currentImage = currentImageId ? allImages.find(i => i.id === currentImageId) : null;
+
         return {
-            route: isDetail ? 'detail' : (isCreate ? 'create' : 'grid'),
             viewLevel,
             imageCount: displayImages.length,
-            images: (isGallery || isStack) ? displayImages.map((img) => ({
+            // Detail view: tell AI exactly which image is open
+            currentImageId: currentImageId ?? undefined,
+            currentImageTitle: currentImage?.title || undefined,
+            currentImageHasPrompt: currentImage ? !!currentImage.generationPrompt : undefined,
+            // Gallery/stack: list of images for navigation
+            images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
+                index: idx + 1,
                 id: img.id,
-                timestamp: img.timestamp,
-                prompt: img.generationPrompt || undefined
-            })).slice(0, 48) : undefined,
-            detailHasPrompt: (() => {
-                if (!isDetail) return false;
-                const id = location.pathname.split('/').pop();
-                const img = id ? allImages.find(i => i.id === id) : null;
-                return !!img?.generationPrompt;
-            })(),
+                prompt: img.generationPrompt?.slice(0, 80) || undefined,
+            })).slice(0, 30) : undefined,
             canOpenPresets: isDetail,
             canAddReferenceImage: isDetail || isCreate,
             canAnnotateImage: isDetail,
-            presets: state.templates?.filter((t: any) => !t.isHistory && (!t.lang || t.lang === state.currentLang)).map((t: any) => ({
-                title: t.title,
-                prompt: t.prompt,
-                hasControls: !!(t.controls?.length),
-            })) || [],
         };
-    }, [allImages, expandedGroupId, location.pathname, state.templates]);
+    }, [allImages, expandedGroupId, location.pathname]);
 
     useEffect(() => {
         const visualContext = getVoiceVisualContext();

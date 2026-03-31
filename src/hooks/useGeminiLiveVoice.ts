@@ -418,6 +418,11 @@ export function useGeminiLiveVoice({
     const outputBufRef = useRef<{ text: string; ts: number } | null>(null);
     const inputBufRef  = useRef<{ text: string; ts: number } | null>(null);
 
+    // Always-fresh ref to handleLiveMessage — onmessage captures this ref at connect()
+    // time but always calls the CURRENT handleLiveMessage, so handler props that
+    // change after navigation (previousImage, getAppContext, etc.) are never stale.
+    const handleLiveMessageRef = useRef<((msg: LiveServerMessage) => Promise<void>) | null>(null);
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -793,6 +798,12 @@ export function useGeminiLiveVoice({
         }
     }, [cancelPlayback, enqueueAudio, executeToolCall, onTranscript]);
 
+    // Keep the ref in sync — no deps array so it runs after every render,
+    // ensuring onmessage always calls the latest closure.
+    useEffect(() => {
+        handleLiveMessageRef.current = handleLiveMessage;
+    });
+
     // --- Microphone ---
 
     const startMicrophone = useCallback(async () => {
@@ -887,7 +898,10 @@ export function useGeminiLiveVoice({
                         setVoiceState('greeting');
                     },
                     onmessage: (message: LiveServerMessage) => {
-                        void handleLiveMessage(message);
+                        // Use ref so we always dispatch to the latest handleLiveMessage,
+                        // even if handler props (navigation, getAppContext, etc.) changed
+                        // after a route change since session start.
+                        void (handleLiveMessageRef.current ?? handleLiveMessage)(message);
                     },
                     onerror: (event: ErrorEvent) => {
                         console.error('[voice] live api error', event);
