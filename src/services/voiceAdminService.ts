@@ -205,9 +205,12 @@ export function clearVoiceLogsStorage() {
 /** Fire-and-forget: persist a tool-call log entry to Supabase for remote debugging. */
 export async function persistToolCallLog(entry: VoiceToolCallLog): Promise<void> {
     try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
         await supabase.from('voice_logs').insert({
             id: entry.id,
             session_id: entry.sessionId,
+            user_id: user.id,
             kind: 'tool_call',
             tool_name: entry.name,
             tool_status: entry.status,
@@ -222,9 +225,12 @@ export async function persistToolCallLog(entry: VoiceToolCallLog): Promise<void>
 /** Fire-and-forget: persist a transcript log entry to Supabase for remote debugging. */
 export async function persistTranscriptLog(entry: VoiceTranscriptLog): Promise<void> {
     try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
         await supabase.from('voice_logs').insert({
             id: entry.id,
             session_id: entry.sessionId,
+            user_id: user.id,
             kind: 'transcript',
             source: entry.source,
             text: entry.text,
