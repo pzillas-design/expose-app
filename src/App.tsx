@@ -48,7 +48,7 @@ const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { use
     }, [user, isAuthLoading, onAuthRequired]);
 
     if (isAuthLoading) {
-        return <div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-800" /></div>;
+        return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-zinc-800" /></div>;
     }
 
     if (!user) {
@@ -866,8 +866,8 @@ export function App() {
     const isExpandableRoute = expandableRoutes.includes(location.pathname);
 
     const outerContainerClasses = isAppLayout
-        ? "h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
-        : "min-h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
+        ? "h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
+        : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
         ? "flex-1 flex flex-col overflow-hidden pt-14"

@@ -634,13 +634,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950">
+        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
             <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
                 {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
                 <div
-                    className="md:flex-1 flex flex-col bg-white dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
+                    className="md:flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
                     style={isMobile
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
@@ -794,7 +794,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {/* Thumbnail Strip — desktop only */}
                         <div
                             ref={thumbStripRef}
-                            className={`absolute inset-0 hidden md:flex items-center overflow-x-auto no-scrollbar bg-white dark:bg-black transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+                            className={`absolute inset-0 hidden md:flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
                             style={{
                                 maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
@@ -978,7 +978,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative md:overflow-hidden bg-zinc-50 dark:bg-black border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
                     style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
                     {/* Resizer Handle — desktop only */}

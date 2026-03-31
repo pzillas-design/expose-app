@@ -135,10 +135,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Resolve active template + standalone controls early so voice event handlers can reference them
     const activeTemplate = templates?.find(t => t.id === activeTemplateId) || null;
     const [standaloneControlsMap, setStandaloneControlsMap] = useState<Record<string, PresetControl[]>>({});
-    const standaloneControls = selectedImage?.id ? (standaloneControlsMap[selectedImage.id] ?? []) : [];
+    // On create page (no selectedImage), use a dedicated key '_create'
+    const standaloneControlsKey = selectedImage?.id ?? '_create';
+    const standaloneControls = standaloneControlsMap[standaloneControlsKey] ?? [];
     const setStandaloneControls = React.useCallback((controls: PresetControl[]) => {
-        if (!selectedImage?.id) return;
-        setStandaloneControlsMap(prev => ({ ...prev, [selectedImage.id]: controls }));
+        const key = selectedImage?.id ?? '_create';
+        setStandaloneControlsMap(prev => ({ ...prev, [key]: controls }));
     }, [selectedImage?.id]);
 
     // Reset hidden controls when template changes
@@ -979,7 +981,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 <div className="lg:hidden fixed inset-0 z-[100] pointer-events-none">
                     <div
                         ref={sheetRef}
-                        className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
+                        className={`absolute bottom-0 left-0 right-0 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-900 rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
                         style={{ maxHeight: '90vh', overflow: 'hidden', paddingBottom: 'env(safe-area-inset-bottom)' }}
                         onDragOver={e => e.preventDefault()}
                         onDrop={handleDrop}
@@ -1005,7 +1007,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                className={`relative flex flex-col bg-white dark:bg-black ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
+                className={`relative flex flex-col bg-zinc-50 dark:bg-zinc-950 ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
                 style={{ width }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}

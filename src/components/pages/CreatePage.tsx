@@ -125,7 +125,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
 
             {/* ── SideSheet ── */}
             <aside
-                className="flex flex-col relative shrink-0 bg-zinc-50 dark:bg-black border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:border-l md:border-zinc-100 dark:md:border-zinc-900"
+                className="flex flex-col relative shrink-0 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:border-l md:border-zinc-100 dark:md:border-zinc-900"
                 style={{ width: isMobile ? undefined : `${sidebarWidth}px` }}
             >
                 <SideSheet
