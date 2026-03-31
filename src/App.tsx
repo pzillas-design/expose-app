@@ -476,21 +476,23 @@ export function App() {
         return {
             viewLevel,
             imageCount: displayImages.length,
-            // Detail view: tell AI exactly which image is open
+            // Grid layout — needed for select_image_by_position to make sense
+            gridColumns: (isGallery || isStack) ? state.gridColumns : undefined,
+            // Detail view: tell AI exactly which image is open + its prompt
             currentImageId: currentImageId ?? undefined,
             currentImageTitle: currentImage?.title || undefined,
-            currentImageHasPrompt: currentImage ? !!currentImage.generationPrompt : undefined,
+            currentImagePrompt: currentImage?.generationPrompt?.slice(0, 120) || undefined,
             // Gallery/stack: list of images for navigation
             images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
                 index: idx + 1,
                 id: img.id,
-                prompt: img.generationPrompt?.slice(0, 80) || undefined,
+                prompt: img.generationPrompt?.slice(0, 60) || undefined,
             })).slice(0, 30) : undefined,
             canOpenPresets: isDetail,
             canAddReferenceImage: isDetail || isCreate,
             canAnnotateImage: isDetail,
         };
-    }, [allImages, expandedGroupId, location.pathname]);
+    }, [allImages, expandedGroupId, location.pathname, state.gridColumns]);
 
     useEffect(() => {
         const visualContext = getVoiceVisualContext();
