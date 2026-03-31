@@ -7,15 +7,15 @@ import type { VoiceAdminConfig, VoiceToolCallLog, VoiceTranscriptLog } from '@/t
 type VoiceAppRoute = 'grid' | 'detail' | 'create' | 'other';
 
 export interface VoiceAppContext {
-    route: VoiceAppRoute;
     viewLevel: 'gallery' | 'stack' | 'detail' | 'create' | 'other';
-    isSelectMode: boolean;
     imageCount: number;
-    detailHasPrompt: boolean;
+    gridColumns?: number;
+    currentImageId?: string;
+    currentImageTitle?: string;
     canOpenPresets: boolean;
     canAddReferenceImage: boolean;
     canAnnotateImage: boolean;
-    images?: Array<{ id: string; timestamp: string; prompt?: string }>;
+    images?: Array<{ index: number; id: string }>;
 }
 
 export interface VoiceVisualFrame {

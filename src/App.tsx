@@ -415,15 +415,9 @@ export function App() {
             return {
                 contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}`,
                 summary: state.currentLang === 'de'
-                    ? `Aktueller Kontext: Detailansicht eines Bildes. Titel: ${img.title || 'Unbenannt'}. ${img.generationPrompt ? `Prompt vorhanden.` : `Kein Prompt gespeichert.`}`
-                    : `Current context: detail view for one image. Title: ${img.title || 'Untitled'}. ${img.generationPrompt ? 'A prompt is available.' : 'No prompt is stored.'}`,
-                frames: [
-                    {
-                        id: img.id,
-                        src: thumb,
-                        label: img.title || 'detail-image'
-                    }
-                ]
+                    ? `Detailansicht: ${img.title || 'Unbenannt'}`
+                    : `Detail view: ${img.title || 'Untitled'}`,
+                frames: [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
             };
         }
 
@@ -444,13 +438,9 @@ export function App() {
             return {
                 contextKey: `grid:${expandedGroupId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
                 summary: state.currentLang === 'de'
-                    ? `Aktueller Kontext: Galerie-Ansicht (${expandedGroupId ? 'Stapel geöffnet' : 'Hauptübersicht'}). Es sind ${cols} Bilder pro Reihe nebeneinander. Hier sind die ersten sichtbaren Bilder:\n${itemsText}`
-                    : `Current context: gallery view (${expandedGroupId ? 'stack expanded' : 'main overview'}). There are ${cols} images per row. Here are the first visible images:\n${itemsText}`,
-                frames: displayImages.slice(0, 4).map((img: any) => ({
-                    id: img.id,
-                    src: img.thumbSrc || img.src,
-                    label: img.title || 'grid-image'
-                }))
+                    ? `Galerie (${expandedGroupId ? 'Stapel' : 'Übersicht'}), ${cols} Bilder pro Reihe:\n${itemsText}`
+                    : `Gallery (${expandedGroupId ? 'stack' : 'overview'}), ${cols} per row:\n${itemsText}`,
+                frames: []
             };
         }
 
@@ -481,12 +471,10 @@ export function App() {
             // Detail view: tell AI exactly which image is open + its prompt
             currentImageId: currentImageId ?? undefined,
             currentImageTitle: currentImage?.title || undefined,
-            currentImagePrompt: currentImage?.generationPrompt?.slice(0, 120) || undefined,
             // Gallery/stack: list of images for navigation
             images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
                 index: idx + 1,
                 id: img.id,
-                prompt: img.generationPrompt?.slice(0, 60) || undefined,
             })).slice(0, 30) : undefined,
             canOpenPresets: isDetail,
             canAddReferenceImage: isDetail || isCreate,
