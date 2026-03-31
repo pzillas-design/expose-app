@@ -465,20 +465,13 @@ export function App() {
 
         return {
             viewLevel,
-            imageCount: displayImages.length,
-            // Grid layout — needed for select_image_by_position to make sense
             gridColumns: (isGallery || isStack) ? state.gridColumns : undefined,
-            // Detail view: tell AI exactly which image is open + its prompt
-            currentImageId: currentImageId ?? undefined,
             currentImageTitle: currentImage?.title || undefined,
-            // Gallery/stack: list of images for navigation
+            // On-demand image list — titles for navigation, no IDs/prompts
             images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
                 index: idx + 1,
-                id: img.id,
+                title: img.title || undefined,
             })).slice(0, 30) : undefined,
-            canOpenPresets: isDetail,
-            canAddReferenceImage: isDetail || isCreate,
-            canAnnotateImage: isDetail,
         };
     }, [allImages, expandedGroupId, location.pathname, state.gridColumns]);
 

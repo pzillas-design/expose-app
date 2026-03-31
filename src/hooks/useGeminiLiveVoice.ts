@@ -8,14 +8,9 @@ type VoiceAppRoute = 'grid' | 'detail' | 'create' | 'other';
 
 export interface VoiceAppContext {
     viewLevel: 'gallery' | 'stack' | 'detail' | 'create' | 'other';
-    imageCount: number;
     gridColumns?: number;
-    currentImageId?: string;
     currentImageTitle?: string;
-    canOpenPresets: boolean;
-    canAddReferenceImage: boolean;
-    canAnnotateImage: boolean;
-    images?: Array<{ index: number; id: string }>;
+    images?: Array<{ index: number; title?: string }>;
 }
 
 export interface VoiceVisualFrame {
