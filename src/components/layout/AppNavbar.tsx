@@ -532,8 +532,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             label={lang === 'de' ? 'Sprachassistent' : 'Voice assistant'}
                                         />
                                         {lang === 'de'
-                                            ? ' aus — bearbeite Bilder per Stimme.'
-                                            : ' — edit images with your voice.'}
+                                            ? ' aus, bearbeite Bilder per Stimme.'
+                                            : ', edit images with your voice.'}
                                     </p>
                                 }
                                 placement="below"
