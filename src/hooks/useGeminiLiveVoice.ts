@@ -625,9 +625,10 @@ export function useGeminiLiveVoice({
                 sessionRef.current.sendRealtimeInput({ video: payload });
             }
 
-            // Nudge the AI to briefly acknowledge the image when entering detail view
+            // Nudge the AI to acknowledge the image — delay so Gemini processes the frame first
             if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT')) {
-                sessionRef.current.sendRealtimeInput({ text: '[Neues Bild sichtbar — sage kurz was du siehst und frage was der User ändern möchte.]' });
+                await new Promise(r => setTimeout(r, 1500));
+                sessionRef.current?.sendRealtimeInput({ text: '[Bild wurde gesendet. Beschreibe kurz was du siehst und frage was der User ändern möchte.]' });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
