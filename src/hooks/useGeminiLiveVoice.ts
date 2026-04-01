@@ -202,7 +202,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'create_variables',
-        description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each (e.g. Mood, Intensity, Style, Color). The user clicks options to fine-tune before generating.',
+        description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -224,7 +224,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'select_variable_option',
-        description: 'Toggle a variable option on or off. Use when the user says which option to activate or deactivate.',
+        description: 'Toggle an existing variable option on or off. Only use this for options that already exist and match what the user wants. When the user describes something new that has no matching option, call create_variables instead to add it.',
         parameters: {
             type: Type.OBJECT,
             properties: {
