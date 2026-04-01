@@ -664,7 +664,16 @@ export function useGeminiLiveVoice({
                     parts.push(`Ansicht: ${viewLabels[ctx.viewLevel] || ctx.viewLevel}`);
                     if (ctx.currentImageTitle) parts.push(`Bild: ${ctx.currentImageTitle}`);
                     if (ctx.images?.length) {
-                        parts.push(`${ctx.images.length} Bilder: ${ctx.images.slice(0, 10).map(i => `${i.index}. ${i.title || 'Unbenannt'}`).join(', ')}${ctx.images.length > 10 ? ' ...' : ''}`);
+                        parts.push(`${ctx.images.length} Bilder: ${ctx.images.slice(0, 10).map((i: any) => {
+                            const tag = i.isOriginal ? ' (Original)' : i.isGenerated ? ' (generiert)' : '';
+                            return `${i.index}. ${i.title || 'Unbenannt'}${tag}`;
+                        }).join(', ')}${ctx.images.length > 10 ? ' ...' : ''}`);
+                    }
+                    if (ctx.isGenerated) {
+                        parts.push(`Generiertes Bild${ctx.usedPrompt ? `, Prompt: "${ctx.usedPrompt.slice(0, 80)}"` : ''}`);
+                        if (ctx.hasSourceImage) {
+                            parts.push(`Quellbild vorhanden: ${ctx.sourceImageTitle || 'Original'}. Für beste Qualität zum Quellbild zurückgehen und Prompt dort erweitern`);
+                        }
                     }
                     if (ctx.presets?.length) {
                         parts.push(`${ctx.presets.length} Vorlagen verfügbar`);

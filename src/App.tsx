@@ -480,14 +480,26 @@ export function App() {
                 .map((t: any) => ({ title: t.title, tags: t.tags?.slice(0, 3) }))
             : undefined;
 
+        // In detail view: tell AI if this is a generated image, its prompt, and if a source image exists
+        const isGenerated = !!(currentImage as any)?.generationPrompt;
+        const sourceImageId = (currentImage as any)?.parentId;
+        const sourceImage = sourceImageId ? allImages.find(i => i.id === sourceImageId) : null;
+
         return {
             viewLevel,
             gridColumns: (isGallery || isStack) ? state.gridColumns : undefined,
             currentImageTitle: currentImage?.title || undefined,
-            // On-demand image list — titles for navigation, no IDs/prompts
+            // Detail view: generation info so AI knows the image history
+            isGenerated: isDetail ? isGenerated : undefined,
+            usedPrompt: isDetail && isGenerated ? (currentImage as any)?.generationPrompt : undefined,
+            hasSourceImage: isDetail && sourceImage ? true : undefined,
+            sourceImageTitle: isDetail && sourceImage ? sourceImage.title : undefined,
+            // On-demand image list — titles + generation info for navigation
             images: (isGallery || isStack) ? displayImages.map((img, idx) => ({
                 index: idx + 1,
                 title: img.title || undefined,
+                ...(isStack && (img as any).generationPrompt ? { isGenerated: true } : {}),
+                ...(isStack && !(img as any).generationPrompt && !(img as any).parentId ? { isOriginal: true } : {}),
             })).slice(0, 30) : undefined,
             // Available presets in detail/create — AI can suggest fitting ones
             presets: presetSummary,
