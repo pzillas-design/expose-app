@@ -94,8 +94,8 @@ const toolDeclarations: FunctionDeclaration[] = [
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
-        name: 'open_create',
-        description: 'Open the create/generate view.',
+        name: 'open_create_new',
+        description: 'Öffnet die Erstellen-Ansicht, um ein ganz neues Bild zu erstellen.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -126,11 +126,6 @@ const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'start_annotation_mode',
         description: 'Activate image annotation mode in the current editing panel.',
-        parameters: { type: Type.OBJECT, properties: {} }
-    },
-    {
-        name: 'open_create_new',
-        description: 'Open the create page in creation mode with aspect ratio selection, ready for a new image.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -663,7 +658,8 @@ export function useGeminiLiveVoice({
             switch (name) {
                 case 'get_app_context':
                     return { ok: true, message: 'Fetched current app context.', context: getAppContext() };
-                case 'open_gallery': return goBack(); // consolidated into go_back
+                case 'open_gallery': return goBack();
+                case 'open_create_new':
                 case 'open_create': return openCreate();
                 case 'open_settings': return openSettings();
                 case 'repeat_current_image': return repeatCurrentImage();
@@ -671,7 +667,6 @@ export function useGeminiLiveVoice({
                 case 'open_presets': return openPresets();
                 case 'open_reference_image_picker': return openReferenceImagePicker();
                 case 'start_annotation_mode': return startAnnotationMode();
-                case 'open_create_new': return openCreateNew();
                 case 'open_upload': return openUpload();
                 case 'set_prompt_text': return setPromptText(str('text'));
                 case 'trigger_generation': return triggerGeneration();

@@ -53,7 +53,7 @@ export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
 
 export const DEFAULT_VOICE_TOOL_NAMES = [
     'get_app_context',
-    'open_create',
+    'open_create_new',
     'open_settings',
     'repeat_current_image',
     'download_current_image',
