@@ -70,6 +70,8 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'open_presets',
     'open_reference_image_picker',
     'start_annotation_mode',
+    'open_contact',
+    'open_about',
     'open_create_new',
     'open_upload',
     'set_prompt_text',

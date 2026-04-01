@@ -130,6 +130,16 @@ const toolDeclarations: FunctionDeclaration[] = [
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
+        name: 'open_contact',
+        description: 'Öffnet die Kontaktseite.',
+        parameters: { type: Type.OBJECT, properties: {} }
+    },
+    {
+        name: 'open_about',
+        description: 'Öffnet die Über-uns-Seite mit Infos zur App.',
+        parameters: { type: Type.OBJECT, properties: {} }
+    },
+    {
         name: 'open_upload',
         description: 'Open the file upload dialog so the user can upload a BRAND NEW image from their device. Use ONLY when the user explicitly says "upload", "import", or wants to add a new file from their device. NEVER use this when the user wants to edit an existing image already in the gallery — instead ask which image they mean.',
         parameters: { type: Type.OBJECT, properties: {} }
@@ -691,6 +701,8 @@ export function useGeminiLiveVoice({
                 case 'open_create_new':
                 case 'open_create': return openCreate();
                 case 'open_settings': return openSettings();
+                case 'open_contact': { window.location.href = '/contact'; return { ok: true, message: 'Kontaktseite geöffnet.' }; }
+                case 'open_about': { window.location.href = '/about'; return { ok: true, message: 'Über-uns-Seite geöffnet.' }; }
                 case 'repeat_current_image': return repeatCurrentImage();
                 case 'download_current_image': return downloadCurrentImage();
                 case 'open_presets': return openPresets();
