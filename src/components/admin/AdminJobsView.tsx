@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock, Download } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock, Download, Mic } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 import { AdminJobDetail } from './AdminJobDetail';
+import { VoiceSessionDetail } from './VoiceSessionDetail';
 import { AdminViewHeader } from './AdminViewHeader';
 import { useMobile } from '@/hooks/useMobile';
 
@@ -15,6 +16,7 @@ const PAGE_SIZE = 50;
 
 export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
+    const [voiceSessions, setVoiceSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [search, setSearch] = useState('');
@@ -30,9 +32,13 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         else setLoadingMore(true);
 
         try {
-            const data = await adminService.getJobs(pageNum, PAGE_SIZE);
+            const [data, sessions] = await Promise.all([
+                adminService.getJobs(pageNum, PAGE_SIZE),
+                isInitial ? adminService.getVoiceSessions(30) : Promise.resolve([]),
+            ]);
             if (isInitial) {
                 setJobs(data);
+                setVoiceSessions(sessions);
             } else {
                 setJobs(prev => [...prev, ...data]);
             }
@@ -55,12 +61,22 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         fetchJobs(nextPage, false);
     };
 
-    const filteredJobs = jobs.filter(j =>
-        (j.userName || '').toLowerCase().includes(search.toLowerCase()) ||
-        (j.id || '').toLowerCase().includes(search.toLowerCase())
-    );
+    // Merge generation jobs + voice sessions into one sorted list
+    const allRows = React.useMemo(() => {
+        const genRows = jobs.map(j => ({ ...j, _type: 'job' as const }));
+        const voiceRows = voiceSessions;
+        const merged = [...genRows, ...voiceRows].sort((a, b) => b.createdAt - a.createdAt);
+        if (!search) return merged;
+        const q = search.toLowerCase();
+        return merged.filter(r =>
+            (r.userName || '').toLowerCase().includes(q) ||
+            (r.id || '').toLowerCase().includes(q) ||
+            (r.firstUserMessage || '').toLowerCase().includes(q)
+        );
+    }, [jobs, voiceSessions, search]);
+
     const maxDurationMs = Math.max(
-        ...filteredJobs.map((job) => Number(job.durationMs || 0)),
+        ...allRows.filter(r => r._type === 'job').map((r) => Number(r.durationMs || 0)),
         0
     );
 
@@ -123,18 +139,59 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
-                                                {filteredJobs.map(j => {
+                                                {allRows.map(row => {
+                                                    const isVoice = row._type === 'voice';
+                                                    const isSelected = selectedJob?.id === row.id;
+                                                    const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
+
+                                                    if (isVoice) {
+                                                        const dSec = Math.round((row.durationMs || 0) / 1000);
+                                                        const dLabel = dSec < 60 ? `${dSec}s` : `${Math.floor(dSec / 60)}m ${dSec % 60}s`;
+                                                        return (
+                                                            <tr
+                                                                key={row.id}
+                                                                onClick={() => setSelectedJob(row)}
+                                                                className={`cursor-pointer transition-colors ${isSelected ? 'bg-orange-50/50 dark:bg-orange-950/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
+                                                            >
+                                                                <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
+                                                                    {new Date(row.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                                </td>
+                                                                <td className="px-5 py-3.5 font-medium text-black dark:text-white">{row.userName}</td>
+                                                                <td className="px-5 py-3.5"><span className="text-xs text-zinc-300 dark:text-zinc-600">–</span></td>
+                                                                <td className="px-5 py-3.5">
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400">
+                                                                        <Mic className="w-3 h-3" /> Voice
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-5 py-3.5">
+                                                                    <span className="font-mono text-xs text-zinc-500">{dLabel}</span>
+                                                                </td>
+                                                                <td className="px-5 py-3.5 text-right">
+                                                                    {row.hadGeneration
+                                                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
+                                                                        : row.status === 'failed'
+                                                                        ? <XCircle className="w-4 h-4 text-red-500 ml-auto" />
+                                                                        : <span className="text-[10px] text-zinc-400 ml-auto block text-right">Chat</span>}
+                                                                </td>
+                                                                <td className="px-5 py-3.5 text-center">
+                                                                    {row.hadGeneration && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mx-auto" />}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    }
+
+                                                    // Generation job row
+                                                    const j = row;
                                                     const payload = j.requestPayload || {};
                                                     const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
                                                     const isRepeat = !!payload.isRepeat;
-                                                    const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
                                                     return (
                                                     <tr
                                                         key={j.id}
                                                         onClick={() => setSelectedJob(j)}
-                                                        className={`cursor-pointer transition-colors ${selectedJob?.id === j.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
+                                                        className={`cursor-pointer transition-colors ${isSelected ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                                     >
                                                         <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
                                                             {new Date(j.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -231,7 +288,13 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                             >
                                 <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
                             </div>
-                            {selectedJob ? (
+                            {selectedJob?._type === 'voice' ? (
+                                <VoiceSessionDetail
+                                    session={selectedJob}
+                                    onClose={() => setSelectedJob(null)}
+                                    variant="sidebar"
+                                />
+                            ) : selectedJob ? (
                                 <AdminJobDetail
                                     job={selectedJob}
                                     onClose={() => setSelectedJob(null)}
@@ -249,6 +312,12 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                         </div>
                     </div>
                 </>
+            ) : selectedJob?._type === 'voice' ? (
+                <VoiceSessionDetail
+                    session={selectedJob}
+                    onClose={() => setSelectedJob(null)}
+                    variant="page"
+                />
             ) : (
                 <AdminJobDetail
                     job={selectedJob}

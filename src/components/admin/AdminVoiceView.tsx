@@ -605,56 +605,11 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                     </Section>
                 </div>
 
-                {/* Row 2: Live-Monitor */}
-                <Section title="Live-Monitor" icon={<Eye className="w-4 h-4" />} noPadding>
-                    <div>
-                        {/* Header bar with context badges + clear button */}
-                        <div className="flex items-center border-b border-zinc-100 dark:border-zinc-800 px-6 py-2.5 gap-3">
-                            <div className="flex items-center gap-2 flex-1 flex-wrap">
-                                <span className="text-xs font-semibold text-zinc-500">Verlauf</span>
-                                {feedEntries.length > 0 && (
-                                    <span className="text-[9px] bg-zinc-200 dark:bg-zinc-700 rounded-full px-1.5 py-0.5 tabular-nums text-zinc-600 dark:text-zinc-300">{feedEntries.length}</span>
-                                )}
-                                {(() => {
-                                    let ctx: Record<string, any> | null = null;
-                                    try { ctx = diagnostics.appContextSummary ? JSON.parse(diagnostics.appContextSummary) : null; } catch { /* ignore */ }
-                                    if (!ctx) return null;
-                                    const viewLabels: Record<string, string> = { gallery: 'Galerie', stack: 'Stapel', detail: 'Detail', create: 'Erstellen' };
-                                    return (
-                                        <>
-                                            <span className="text-[10px] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded px-1.5 py-0.5">{viewLabels[ctx.viewLevel] || ctx.viewLevel}</span>
-                                            {diagnostics.visualFrameCount > 0 && (
-                                                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-semibold rounded px-1.5 py-0.5">{diagnostics.visualFrameCount} Frame{diagnostics.visualFrameCount !== 1 ? 's' : ''}</span>
-                                            )}
-                                        </>
-                                    );
-                                })()}
-                            </div>
-                            {feedEntries.length > 0 && onClearLogs && (
-                                <button
-                                    type="button"
-                                    onClick={onClearLogs}
-                                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                    title="Verlauf leeren"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline">Leeren</span>
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Feed — list + detail two-pane */}
-                        {feedEntries.length === 0 ? (
-                            <div className="py-12 flex flex-col items-center gap-2 text-center px-6">
-                                <MessageSquareText className="w-8 h-8 text-zinc-200 dark:text-zinc-700" />
-                                <p className="text-sm text-zinc-400">Starte eine Voice-Session, um den Verlauf zu sehen.</p>
-                                <p className="text-xs text-zinc-300 dark:text-zinc-600">Gespräche und Tool-Aufrufe werden dauerhaft gespeichert.</p>
-                            </div>
-                        ) : (
-                            <MonitorFeed feedEntries={feedEntries} />
-                        )}
-
-                    </div>
+                {/* Row 2: Session-Verlauf Hinweis */}
+                <Section title="Session-Verlauf" icon={<Eye className="w-4 h-4" />}>
+                    <p className="text-sm text-zinc-400">
+                        Voice-Sessions werden unter <strong className="text-zinc-600 dark:text-zinc-300">Aufträge</strong> angezeigt — als Zeilen mit dem Badge <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400">🎤 Voice</span>. Klicke darauf, um das Chat-Protokoll zu sehen.
+                    </p>
                 </Section>
 
                 {/* Row 3: Tools */}
