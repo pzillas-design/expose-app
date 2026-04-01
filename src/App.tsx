@@ -895,6 +895,31 @@ export function App() {
             }
             const controlLabels = preset.controls?.length ? ` mit Variablen: ${preset.controls.map((c: any) => c.label).join(', ')}` : '';
             return { ok: true, message: state.currentLang === 'de' ? `Preset "${preset.title}" angewendet${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` : `Applied preset "${preset.title}"${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` };
+        },
+        goToSourceImage: async () => {
+            if (!location.pathname.startsWith('/image/')) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
+            }
+            const currentId = location.pathname.split('/').pop();
+            const currentImg = currentId ? allImages.find(i => i.id === currentId) : null;
+            if (!currentImg) return { ok: false, message: state.currentLang === 'de' ? 'Bild nicht gefunden.' : 'Image not found.' };
+
+            // Walk up the parent chain to find the root source image
+            let sourceImg = currentImg;
+            let depth = 0;
+            while ((sourceImg as any).parentId && depth < 10) {
+                const parent = allImages.find(i => i.id === (sourceImg as any).parentId);
+                if (!parent) break;
+                sourceImg = parent;
+                depth++;
+            }
+
+            if (sourceImg.id === currentImg.id) {
+                return { ok: false, message: state.currentLang === 'de' ? 'Das ist bereits das Quellbild.' : 'This is already the source image.' };
+            }
+
+            handleSelectImage(sourceImg.id);
+            return { ok: true, message: state.currentLang === 'de' ? `Zum Quellbild "${sourceImg.title || 'Original'}" gewechselt.` : `Switched to source image "${sourceImg.title || 'Original'}".` };
         }
     });
 

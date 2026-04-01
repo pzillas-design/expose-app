@@ -84,6 +84,7 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'set_quality',
     'select_image',
     'apply_preset',
+    'go_to_source_image',
 ] as const;
 
 function buildDefaultTools(): VoiceAdminToolConfig[] {

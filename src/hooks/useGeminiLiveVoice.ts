@@ -58,6 +58,7 @@ interface VoiceCommandHandlers {
     selectImageByIndex: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByPosition: (row: number, column: number) => Promise<VoiceActionResult> | VoiceActionResult;
     applyPreset: (title: string) => Promise<VoiceActionResult> | VoiceActionResult;
+    goToSourceImage: () => Promise<VoiceActionResult> | VoiceActionResult;
 }
 
 interface UseGeminiLiveVoiceOptions extends VoiceCommandHandlers {
@@ -254,6 +255,11 @@ const toolDeclarations: FunctionDeclaration[] = [
             required: ['title']
         }
     },
+    {
+        name: 'go_to_source_image',
+        description: 'Navigiert zum Quellbild des aktuellen Bildes. Wenn das aktuelle Bild generiert wurde, springt es zurück zum Original. Für beste Qualität bei Wiederbearbeitungen.',
+        parameters: { type: Type.OBJECT, properties: {} }
+    },
 ];
 
 // --- Sound effects ---
@@ -396,6 +402,7 @@ export function useGeminiLiveVoice({
     selectImageByIndex,
     selectImageByPosition,
     applyPreset,
+    goToSourceImage,
     onSessionConfig,
     onAppContextChange,
     onVisualContextChange,
@@ -723,6 +730,7 @@ export function useGeminiLiveVoice({
                     return selectImageByIndex(num('index'));
                 }
                 case 'apply_preset': return applyPreset(str('title'));
+                case 'go_to_source_image': return goToSourceImage();
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
         })();
@@ -752,7 +760,7 @@ export function useGeminiLiveVoice({
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
         setPromptText, setQuality, startAnnotationMode,
         stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
-        applyPreset, onToolCall
+        applyPreset, goToSourceImage, onToolCall
     ]);
 
     // --- Message handling ---
