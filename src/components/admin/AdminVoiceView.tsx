@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, Loader2, MessageSquareText, RotateCcw, Settings2, Sparkles, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
-import { Input, TextArea } from '@/components/ui/DesignSystem';
+import { Input } from '@/components/ui/DesignSystem';
 import {
     DEFAULT_GREETING,
     DEFAULT_SYSTEM_PROMPT,
@@ -82,6 +82,32 @@ const SettingRow: React.FC<{ label: string; hint?: string; children: React.React
     </div>
 );
 
+// ─── Auto-growing textarea (shared style) ───────────────────────────────────
+
+const AutoGrowTextarea: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string }> = ({ value, onChange, placeholder }) => {
+    const ref = React.useRef<HTMLTextAreaElement>(null);
+    React.useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [value]);
+
+    return (
+        <textarea
+            ref={ref}
+            value={value}
+            onChange={(e) => {
+                onChange(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
+            placeholder={placeholder}
+            className="w-full rounded-xl bg-zinc-50 dark:bg-zinc-800/40 px-5 py-4 text-[13px] text-zinc-700 dark:text-zinc-300 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-zinc-600 placeholder:text-zinc-300 font-mono"
+        />
+    );
+};
+
 // ─── Inline tool card ───────────────────────────────────────────────────────
 
 const ToolCard: React.FC<{
@@ -107,11 +133,10 @@ const ToolCard: React.FC<{
                 value={desc}
                 onChange={(e) => {
                     onDescChange(e.target.value);
-                    // Auto-grow on input
                     e.target.style.height = 'auto';
                     e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
-                className="w-full bg-transparent text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed resize-none focus:outline-none focus:text-zinc-700 dark:focus:text-zinc-200 placeholder:text-zinc-300"
+                className="w-full bg-transparent text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed resize-none focus:outline-none focus:text-zinc-700 dark:focus:text-zinc-200 placeholder:text-zinc-300 font-mono"
                 placeholder="Beschreibung..."
             />
         </div>
@@ -154,7 +179,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 type="button"
                 onClick={handleSave}
                 disabled={saveState === 'saving'}
-                className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${saveState === 'saved' ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${saveState === 'saved' ? 'bg-emerald-500 text-white' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'}`}
             >
                 {saveState === 'saving' && <Loader2 className="w-3 h-3 animate-spin" />}
                 {saveState === 'saved' && <Check className="w-3 h-3" />}
@@ -232,7 +257,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                                         </button>
                                     )}
                                 </div>
-                                <TextArea rows={14} value={config.systemPrompt} onChange={(e) => updateConfig(c => ({ ...c, systemPrompt: e.target.value }))} placeholder={DEFAULT_SYSTEM_PROMPT} className="font-mono text-[13px]" />
+                                <AutoGrowTextarea value={config.systemPrompt} onChange={(v) => updateConfig(c => ({ ...c, systemPrompt: v }))} placeholder={DEFAULT_SYSTEM_PROMPT} />
                             </label>
                             <label className="block space-y-3">
                                 <div className="flex items-center justify-between">
@@ -243,7 +268,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                                         </button>
                                     )}
                                 </div>
-                                <TextArea rows={4} value={config.greeting} onChange={(e) => updateConfig(c => ({ ...c, greeting: e.target.value }))} placeholder={DEFAULT_GREETING} />
+                                <AutoGrowTextarea value={config.greeting} onChange={(v) => updateConfig(c => ({ ...c, greeting: v }))} placeholder={DEFAULT_GREETING} />
                                 <p className="text-[13px] text-zinc-400">Die AI variiert den Wortlaut bei jedem Session-Start leicht.</p>
                             </label>
                         </div>
