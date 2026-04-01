@@ -53,8 +53,8 @@ const TOOL_GROUPS: Record<string, { tools: string[]; hint: string }> = {
         hint: 'Erweiterte Bearbeitungsfunktionen — Vorlagen, Referenzbilder, Anmerkungen und Varianten. Im Detail-View verfügbar.',
     },
     'tools-system': {
-        tools: ['get_app_context', 'stop_voice_mode', 'download_current_image', 'open_settings'],
-        hint: 'Systeminterne Tools — App-Status abrufen, Session beenden, Download und Einstellungen.',
+        tools: ['get_app_context', 'stop_voice_mode', 'download_current_image', 'open_settings', 'open_contact', 'open_about'],
+        hint: 'Systeminterne Tools — App-Status, Session beenden, Download, Einstellungen, Kontakt und Über-uns.',
     },
 };
 
