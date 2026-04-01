@@ -76,7 +76,7 @@ const SettingRow: React.FC<{ label: string; hint?: string; children: React.React
     <div className="flex items-center justify-between gap-4 py-3.5 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
         <div className="min-w-0 flex-1">
             <div className="text-sm text-zinc-800 dark:text-zinc-200">{label}</div>
-            {hint && <div className="text-xs text-zinc-400 mt-0.5 leading-relaxed">{hint}</div>}
+            {hint && <div className="text-[13px] text-zinc-400 mt-0.5 leading-relaxed">{hint}</div>}
         </div>
         <div className="shrink-0">{children}</div>
     </div>
@@ -100,8 +100,8 @@ const ToolCard: React.FC<{
     }, [desc]);
 
     return (
-        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 px-4 py-3.5 space-y-2">
-            <div className="text-[13px] font-mono font-medium text-zinc-700 dark:text-zinc-200">{tool.name}</div>
+        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 px-5 py-5">
+            <div className="text-sm font-mono font-medium text-zinc-700 dark:text-zinc-200 pb-3 mb-3 border-b border-zinc-200/60 dark:border-zinc-700/40">{tool.name}</div>
             <textarea
                 ref={textareaRef}
                 value={desc}
@@ -111,7 +111,7 @@ const ToolCard: React.FC<{
                     e.target.style.height = 'auto';
                     e.target.style.height = `${e.target.scrollHeight}px`;
                 }}
-                className="w-full bg-transparent text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed resize-none focus:outline-none focus:text-zinc-700 dark:focus:text-zinc-200 placeholder:text-zinc-300"
+                className="w-full bg-transparent text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed resize-none focus:outline-none focus:text-zinc-700 dark:focus:text-zinc-200 placeholder:text-zinc-300"
                 placeholder="Beschreibung..."
             />
         </div>
@@ -168,7 +168,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
             case 'general':
                 return (
                     <div>
-                        <p className="text-xs text-zinc-400 mb-4 leading-relaxed">Grundeinstellungen für den Voice-Assistenten — Modell, Stimme und Verhalten.</p>
+                        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">Grundeinstellungen für den Voice-Assistenten — Modell, Stimme und Verhalten.</p>
                         <div className="space-y-1">
                             <SettingRow label="Voice aktivieren" hint="Zeigt den Mikrofon-Button in der App">
                                 <Toggle checked={config.enabled} onChange={() => updateConfig(c => ({ ...c, enabled: !c.enabled }))} />
@@ -221,22 +221,22 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
             case 'prompt':
                 return (
                     <div>
-                        <p className="text-xs text-zinc-400 mb-6 leading-relaxed">Persönlichkeit und Verhalten der AI. Sprache wird automatisch erkannt — ein Prompt deckt DE und EN ab.</p>
-                        <div className="space-y-8">
-                            <label className="block space-y-2">
+                        <p className="text-sm text-zinc-400 mb-8 leading-relaxed">Persönlichkeit und Verhalten der AI. Sprache wird automatisch erkannt — ein Prompt deckt DE und EN ab.</p>
+                        <div className="space-y-10">
+                            <label className="block space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">System Prompt</span>
+                                    <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">System Prompt</span>
                                     {config.systemPrompt !== DEFAULT_SYSTEM_PROMPT && (
                                         <button type="button" onClick={() => updateConfig(c => ({ ...c, systemPrompt: DEFAULT_SYSTEM_PROMPT }))} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
                                             <RotateCcw className="w-3 h-3" /> Reset
                                         </button>
                                     )}
                                 </div>
-                                <TextArea rows={14} value={config.systemPrompt} onChange={(e) => updateConfig(c => ({ ...c, systemPrompt: e.target.value }))} placeholder={DEFAULT_SYSTEM_PROMPT} className="font-mono text-xs" />
+                                <TextArea rows={14} value={config.systemPrompt} onChange={(e) => updateConfig(c => ({ ...c, systemPrompt: e.target.value }))} placeholder={DEFAULT_SYSTEM_PROMPT} className="font-mono text-[13px]" />
                             </label>
-                            <label className="block space-y-2">
+                            <label className="block space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Begrüßung</span>
+                                    <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">Begrüßung</span>
                                     {config.greeting !== DEFAULT_GREETING && (
                                         <button type="button" onClick={() => updateConfig(c => ({ ...c, greeting: DEFAULT_GREETING }))} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
                                             <RotateCcw className="w-3 h-3" /> Reset
@@ -244,7 +244,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                                     )}
                                 </div>
                                 <TextArea rows={4} value={config.greeting} onChange={(e) => updateConfig(c => ({ ...c, greeting: e.target.value }))} placeholder={DEFAULT_GREETING} />
-                                <p className="text-xs text-zinc-400">Die AI variiert den Wortlaut bei jedem Session-Start leicht.</p>
+                                <p className="text-[13px] text-zinc-400">Die AI variiert den Wortlaut bei jedem Session-Start leicht.</p>
                             </label>
                         </div>
                     </div>
@@ -259,8 +259,8 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
 
                 return (
                     <div>
-                        <p className="text-xs text-zinc-400 mb-2 leading-relaxed">{group.hint}</p>
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 mt-4">
+                        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">{group.hint}</p>
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                             {tools.map(tool => (
                                 <ToolCard
                                     key={tool.name}
@@ -324,7 +324,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 {/* Content */}
                 <div className="flex-1 min-w-0 overflow-y-auto">
                     <div className="max-w-3xl px-6 md:px-10 py-6 md:py-10">
-                        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-5">
+                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
                             {NAV_ITEMS.find(n => n.id === activeSection)?.label}
                         </h2>
                         {renderContent()}
