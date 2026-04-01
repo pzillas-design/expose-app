@@ -581,7 +581,7 @@ export function App() {
         },
         openUpload: async () => {
             setIsVoiceUploadOpen(true);
-            return { ok: true, message: state.currentLang === 'de' ? 'Upload-Fenster wird angezeigt. Der Nutzer kann jetzt eine Datei auswählen.' : 'Upload window shown. User can now pick a file.' };
+            return { ok: true, message: state.currentLang === 'de' ? 'Upload-Fenster wird angezeigt. Warte bis der Nutzer ein Bild auswählt, navigiere nicht selbst.' : 'Upload window shown. Wait for user to pick a file, do not navigate.' };
         },
         openSettings: async () => {
             setIsSettingsModalOpen(true);
@@ -915,10 +915,13 @@ export function App() {
             if (e.key !== 'v' && e.key !== 'V') return;
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
             // Don't trigger when typing in a text field
-            const tag = (e.target as HTMLElement)?.tagName;
+            const el = e.target as HTMLElement;
+            const tag = el?.tagName;
             const isEditable = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
-                (e.target as HTMLElement)?.isContentEditable;
+                el?.isContentEditable || el?.closest('[contenteditable]');
             if (isEditable) return;
+            // Also skip if focus is inside a modal
+            if (el?.closest('[role="dialog"]')) return;
             e.preventDefault();
             if (voice.isActive) voice.stop();
             else void voice.start();
