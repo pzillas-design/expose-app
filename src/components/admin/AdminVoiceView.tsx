@@ -108,6 +108,18 @@ const AutoGrowTextarea: React.FC<{ value: string; onChange: (v: string) => void;
     );
 };
 
+// ─── Tool parameter badges ──────────────────────────────────────────────────
+
+const TOOL_PARAMS: Record<string, Array<{ name: string; type: string; required?: boolean }>> = {
+    set_prompt_text: [{ name: 'text', type: 'String', required: true }],
+    set_aspect_ratio: [{ name: 'ratio', type: 'String', required: true }],
+    set_quality: [{ name: 'quality', type: 'String', required: true }],
+    create_variables: [{ name: 'controls', type: 'Array<{label, options}>', required: true }],
+    select_variable_option: [{ name: 'label', type: 'String', required: true }, { name: 'option', type: 'String', required: true }],
+    select_image: [{ name: 'index', type: 'Nummer' }, { name: 'row', type: 'Nummer' }, { name: 'column', type: 'Nummer' }],
+    apply_preset: [{ name: 'title', type: 'String', required: true }],
+};
+
 // ─── Inline tool card ───────────────────────────────────────────────────────
 
 const ToolCard: React.FC<{
@@ -115,9 +127,9 @@ const ToolCard: React.FC<{
     onDescChange: (desc: string) => void;
 }> = ({ tool, onDescChange }) => {
     const desc = tool.description ?? DEFAULT_TOOL_DESCRIPTIONS[tool.name] ?? '';
+    const params = TOOL_PARAMS[tool.name];
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-    // Auto-grow textarea to fit content
     React.useEffect(() => {
         const el = textareaRef.current;
         if (!el) return;
@@ -127,7 +139,18 @@ const ToolCard: React.FC<{
 
     return (
         <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 px-5 py-5">
-            <div className="text-sm font-mono font-medium text-zinc-700 dark:text-zinc-200 pb-3 mb-3 border-b border-zinc-200/60 dark:border-zinc-700/40">{tool.name}</div>
+            <div className="pb-3 mb-3 border-b border-zinc-200/60 dark:border-zinc-700/40">
+                <div className="text-sm font-mono font-medium text-zinc-700 dark:text-zinc-200">{tool.name}</div>
+                {params && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {params.map(p => (
+                            <span key={p.name} className="inline-flex items-center gap-1 text-[10px] bg-zinc-200/70 dark:bg-zinc-700/50 text-zinc-500 dark:text-zinc-400 rounded-md px-2 py-0.5 font-mono">
+                                {p.name}<span className="text-zinc-400 dark:text-zinc-500">:{p.type}</span>{p.required && <span className="text-orange-400">*</span>}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
             <textarea
                 ref={textareaRef}
                 value={desc}
