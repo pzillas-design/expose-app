@@ -57,6 +57,7 @@ interface VoiceCommandHandlers {
     setQuality: (quality: string) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByIndex: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByPosition: (row: number, column: number) => Promise<VoiceActionResult> | VoiceActionResult;
+    applyPreset: (title: string) => Promise<VoiceActionResult> | VoiceActionResult;
 }
 
 interface UseGeminiLiveVoiceOptions extends VoiceCommandHandlers {
@@ -89,7 +90,7 @@ interface UseGeminiLiveVoiceResult {
 const toolDeclarations: FunctionDeclaration[] = [
     {
         name: 'get_app_context',
-        description: 'Read current screen state, available actions, and the user\'s installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.',
+        description: 'Read current screen state: view level, image list, and available presets (in detail/create view). Call this to understand context before suggesting edits. In detail view, the response includes preset titles and tags — suggest a fitting preset when it matches the image.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -268,6 +269,17 @@ const toolDeclarations: FunctionDeclaration[] = [
             required: ['row', 'column']
         }
     },
+    {
+        name: 'apply_preset',
+        description: 'Apply a preset/template by its title. Sets the prompt and variables from the preset. Use when a preset from the context matches the image well. The user can then adjust variables before generating.',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                title: { type: Type.STRING, description: 'The exact title of the preset to apply, as shown in the context' }
+            },
+            required: ['title']
+        }
+    },
 ];
 
 // --- Sound effects ---
@@ -409,6 +421,7 @@ export function useGeminiLiveVoice({
     setQuality,
     selectImageByIndex,
     selectImageByPosition,
+    applyPreset,
     onSessionConfig,
     onAppContextChange,
     onVisualContextChange,
@@ -705,6 +718,7 @@ export function useGeminiLiveVoice({
                 case 'select_image_by_index': return selectImageByIndex(num('index'));
                 case 'select_image_by_position':
                     return selectImageByPosition(num('row'), num('column'));
+                case 'apply_preset': return applyPreset(str('title'));
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
         })();
@@ -734,7 +748,7 @@ export function useGeminiLiveVoice({
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
         setPromptText, setQuality, startAnnotationMode,
         stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
-        onToolCall
+        applyPreset, onToolCall
     ]);
 
     // --- Message handling ---
@@ -943,7 +957,8 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    generationConfig: { temperature: 1.1 },
+                    generationConfig: { temperature: config.temperature ?? 1.1 },
+                    ...(config.thinkingLevel && config.thinkingLevel !== 'none' ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } as any } : {}),
                     systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },

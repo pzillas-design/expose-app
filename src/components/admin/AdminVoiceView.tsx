@@ -544,6 +544,43 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                                     <Input value={config.voiceName} onChange={(e) => updateConfig(c => ({ ...c, voiceName: e.target.value }))} placeholder={DEFAULT_VOICE_NAME} />
                                 </label>
                             )}
+
+                            {/* Temperature */}
+                            <label className="block space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-zinc-500">Temperature</span>
+                                    <span className="text-xs text-zinc-400 tabular-nums">{config.temperature ?? 1.1}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={2}
+                                    step={0.1}
+                                    value={config.temperature ?? 1.1}
+                                    onChange={(e) => updateConfig(c => ({ ...c, temperature: parseFloat(e.target.value) }))}
+                                    className="w-full accent-orange-500"
+                                />
+                                <div className="flex justify-between text-[10px] text-zinc-400">
+                                    <span>Präzise (0)</span>
+                                    <span>Kreativ (2)</span>
+                                </div>
+                            </label>
+
+                            {/* Thinking Level */}
+                            <label className="block space-y-2">
+                                <span className="text-xs font-semibold text-zinc-500">Thinking Level</span>
+                                <select
+                                    value={config.thinkingLevel ?? 'minimal'}
+                                    onChange={(e) => updateConfig(c => ({ ...c, thinkingLevel: e.target.value as any }))}
+                                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm"
+                                >
+                                    <option value="none">None — kein Denken</option>
+                                    <option value="minimal">Minimal — schnell, wenig Selbstkontrolle (default)</option>
+                                    <option value="low">Low — etwas mehr Nachdenken</option>
+                                    <option value="medium">Medium — ausbalanciert</option>
+                                    <option value="high">High — gründlich, langsamer</option>
+                                </select>
+                            </label>
                         </div>
                     </Section>
 

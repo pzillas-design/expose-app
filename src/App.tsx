@@ -472,6 +472,14 @@ export function App() {
         const currentImageId = isDetail ? (location.pathname.split('/').pop() || null) : null;
         const currentImage = currentImageId ? allImages.find(i => i.id === currentImageId) : null;
 
+        // Include presets in detail/create view so AI can suggest relevant ones
+        const presetSummary = (isDetail || isCreate) && state.templates?.length
+            ? state.templates
+                .filter((t: any) => !t.isHistory && (t.isCustom || !t.lang || t.lang === state.currentLang))
+                .slice(0, 15)
+                .map((t: any) => ({ title: t.title, tags: t.tags?.slice(0, 3) }))
+            : undefined;
+
         return {
             viewLevel,
             gridColumns: (isGallery || isStack) ? state.gridColumns : undefined,
@@ -481,8 +489,10 @@ export function App() {
                 index: idx + 1,
                 title: img.title || undefined,
             })).slice(0, 30) : undefined,
+            // Available presets in detail/create — AI can suggest fitting ones
+            presets: presetSummary,
         };
-    }, [allImages, expandedGroupId, location.pathname, state.gridColumns]);
+    }, [allImages, expandedGroupId, location.pathname, state.gridColumns, state.templates, state.currentLang]);
 
     useEffect(() => {
         const visualContext = getVoiceVisualContext();
@@ -839,6 +849,40 @@ export function App() {
             }
             handleSelectImage(img.id);
             return { ok: true, message: state.currentLang === 'de' ? `Bild "${img.title || 'Unbenannt'}" geöffnet.` : `Opened image "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'detail', route: 'detail' } };
+        },
+        applyPreset: async (title: string) => {
+            if (!title) return { ok: false, message: state.currentLang === 'de' ? 'Kein Preset-Titel angegeben.' : 'No preset title provided.' };
+            const preset = state.templates?.find((t: any) =>
+                t.title.toLowerCase() === title.toLowerCase()
+            );
+            if (!preset) return { ok: false, message: state.currentLang === 'de' ? `Preset "${title}" nicht gefunden.` : `Preset "${title}" not found.` };
+
+            // Apply prompt via the existing prompt input mechanism
+            if (preset.prompt) {
+                const promptInput = document.querySelector<HTMLTextAreaElement>('[data-voice-action="prompt-input"]');
+                if (promptInput) {
+                    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                    nativeSetter?.call(promptInput, preset.prompt);
+                    promptInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            // Apply preset controls as variables
+            if (preset.controls?.length) {
+                const controls = preset.controls.map((c: any) => ({
+                    label: c.label,
+                    options: c.options.map((o: any) => o.label || o.value)
+                }));
+                // Ensure sidesheet is open
+                if (location.pathname.startsWith('/image/')) {
+                    setDetailSideSheetVisible(true);
+                } else {
+                    setFeedSideSheetVisible(true);
+                }
+                await new Promise(resolve => window.setTimeout(resolve, 50));
+                window.dispatchEvent(new CustomEvent('expose:set-voice-variables', { detail: { controls } }));
+            }
+            const controlLabels = preset.controls?.length ? ` mit Variablen: ${preset.controls.map((c: any) => c.label).join(', ')}` : '';
+            return { ok: true, message: state.currentLang === 'de' ? `Preset "${preset.title}" angewendet${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` : `Applied preset "${preset.title}"${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` };
         }
     });
 

@@ -170,6 +170,8 @@ export interface VoiceAdminConfig {
   systemPrompt: string;
   greeting: string;
   tools: VoiceAdminToolConfig[];
+  temperature?: number;
+  thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high';
 }
 
 export interface VoiceToolCallLog {

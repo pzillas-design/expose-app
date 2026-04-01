@@ -84,6 +84,7 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'set_quality',
     'select_image_by_index',
     'select_image_by_position',
+    'apply_preset',
 ] as const;
 
 function buildDefaultTools(): VoiceAdminToolConfig[] {
@@ -101,6 +102,8 @@ export function getDefaultVoiceAdminConfig(): VoiceAdminConfig {
         systemPrompt: DEFAULT_SYSTEM_PROMPT,
         greeting: DEFAULT_GREETING,
         tools: buildDefaultTools(),
+        temperature: 1.1,
+        thinkingLevel: 'minimal',
     };
 }
 
