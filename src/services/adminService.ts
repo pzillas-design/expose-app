@@ -186,6 +186,7 @@ export const adminService = {
                 const userId = sorted[0]?.user_id;
                 const firstUser = transcripts.find((l: any) => l.source === 'user')?.text;
                 const hadGeneration = toolCalls.some((l: any) => l.tool_name === 'trigger_generation' && l.tool_status === 'ok');
+                const cleanExit = toolCalls.some((l: any) => l.tool_name === 'stop_voice_mode' && l.tool_status === 'ok');
                 const hadError = toolCalls.some((l: any) => l.tool_status === 'error');
                 const startedAt = sorted[0]?.ts || 0;
                 const endedAt = sorted[sorted.length - 1]?.ts || 0;
@@ -201,6 +202,7 @@ export const adminService = {
                     toolCount: toolCalls.length,
                     firstUserMessage: firstUser || null,
                     hadGeneration,
+                    cleanExit,
                     status: hadError ? 'failed' : 'completed',
                     // entries NOT included — loaded on demand
                 };

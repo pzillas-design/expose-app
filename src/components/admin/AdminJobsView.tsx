@@ -170,10 +170,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-5 py-3.5 text-right">
-                                                                    {row.hadGeneration
-                                                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
-                                                                        : row.status === 'failed'
+                                                                    {row.status === 'failed'
                                                                         ? <XCircle className="w-4 h-4 text-red-500 ml-auto" />
+                                                                        : (row.hadGeneration || row.cleanExit)
+                                                                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
                                                                         : null}
                                                                 </td>
                                                             </tr>
