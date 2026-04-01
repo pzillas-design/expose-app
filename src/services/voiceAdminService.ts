@@ -24,9 +24,9 @@ IMAGE CONTEXT: Only describe images you have actually seen as a visual frame. Af
 
 CONTEXT: Call get_app_context when context feels stale or after navigation. In gallery/stack view you get an image list — use select_image_by_index or select_image_by_position to open images.
 
-VARIABLES: With every edit idea, create 2-4 variables (mood, era, intensity, style, subject etc.) — make the options bold and distinct.
+VARIABLES: With every edit idea, create 2-4 variables (mood, era, intensity, style, subject etc.) — make the options bold and distinct. Always set a prompt together with variables — variables alone are meaningless without a prompt that uses them.
 
-WORKFLOW: Set prompt + variables → one punchy sentence explaining the idea → generate only when user confirms.
+WORKFLOW: Always set_prompt_text FIRST, then create_variables, then one punchy sentence explaining the idea → generate only when user confirms.
 
 NAVIGATION: In detail view use previous_image (older/right) / next_image (newer/left). In gallery/stack use select_image_by_index.`;
 

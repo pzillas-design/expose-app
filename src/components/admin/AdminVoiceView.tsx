@@ -421,7 +421,7 @@ type SaveState = 'idle' | 'saving' | 'saved';
 export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagnostics, onConfigChange, onClearLogs }) => {
     const enabledToolCount = config.tools.filter(tool => tool.enabled).length;
     const [selectedTool, setSelectedTool] = React.useState<string | null>(config.tools[0]?.name ?? null);
-    const [liveTab, setLiveTab] = React.useState<'feed' | 'context'>('feed');
+    // liveTab removed — Agent-Kontext tab merged into Verlauf header badges
     const [saveState, setSaveState] = React.useState<SaveState>('idle');
 
     const updateConfig = React.useCallback((updater: (c: VoiceAdminConfig) => VoiceAdminConfig) => {
@@ -620,31 +620,33 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 {/* Row 2: Live-Monitor */}
                 <Section title="Live-Monitor" icon={<Eye className="w-4 h-4" />} noPadding>
                     <div>
-                        {/* Tab bar */}
-                        <div className="flex items-center border-b border-zinc-100 dark:border-zinc-800 px-6">
-                            <div className="flex gap-1 flex-1">
-                                {([
-                                    { key: 'feed', label: 'Verlauf', count: feedEntries.length },
-                                    { key: 'context', label: 'Agent-Kontext' },
-                                ] as const).map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        type="button"
-                                        onClick={() => setLiveTab(tab.key)}
-                                        className={`px-4 py-3 text-xs font-semibold border-b-2 -mb-px transition-colors ${liveTab === tab.key ? 'border-zinc-900 dark:border-white text-zinc-900 dark:text-white' : 'border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                                    >
-                                        {tab.label}
-                                        {'count' in tab && tab.count > 0 && (
-                                            <span className="ml-2 text-[9px] bg-zinc-200 dark:bg-zinc-700 rounded-full px-1.5 py-0.5 tabular-nums">{tab.count}</span>
-                                        )}
-                                    </button>
-                                ))}
+                        {/* Header bar with context badges + clear button */}
+                        <div className="flex items-center border-b border-zinc-100 dark:border-zinc-800 px-6 py-2.5 gap-3">
+                            <div className="flex items-center gap-2 flex-1 flex-wrap">
+                                <span className="text-xs font-semibold text-zinc-500">Verlauf</span>
+                                {feedEntries.length > 0 && (
+                                    <span className="text-[9px] bg-zinc-200 dark:bg-zinc-700 rounded-full px-1.5 py-0.5 tabular-nums text-zinc-600 dark:text-zinc-300">{feedEntries.length}</span>
+                                )}
+                                {(() => {
+                                    let ctx: Record<string, any> | null = null;
+                                    try { ctx = diagnostics.appContextSummary ? JSON.parse(diagnostics.appContextSummary) : null; } catch { /* ignore */ }
+                                    if (!ctx) return null;
+                                    const viewLabels: Record<string, string> = { gallery: 'Galerie', stack: 'Stapel', detail: 'Detail', create: 'Erstellen' };
+                                    return (
+                                        <>
+                                            <span className="text-[10px] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded px-1.5 py-0.5">{viewLabels[ctx.viewLevel] || ctx.viewLevel}</span>
+                                            {diagnostics.visualFrameCount > 0 && (
+                                                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 font-semibold rounded px-1.5 py-0.5">{diagnostics.visualFrameCount} Frame{diagnostics.visualFrameCount !== 1 ? 's' : ''}</span>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                             {feedEntries.length > 0 && onClearLogs && (
                                 <button
                                     type="button"
                                     onClick={onClearLogs}
-                                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors py-3"
+                                    className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                     title="Verlauf leeren"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -653,158 +655,70 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                             )}
                         </div>
 
-                        {/* Feed tab — list + detail two-pane */}
-                        {liveTab === 'feed' && (
-                            feedEntries.length === 0 ? (
-                                <div className="py-12 flex flex-col items-center gap-2 text-center px-6">
-                                    <MessageSquareText className="w-8 h-8 text-zinc-200 dark:text-zinc-700" />
-                                    <p className="text-sm text-zinc-400">Starte eine Voice-Session, um den Verlauf zu sehen.</p>
-                                    <p className="text-xs text-zinc-300 dark:text-zinc-600">Gespräche und Tool-Aufrufe werden dauerhaft gespeichert.</p>
-                                </div>
-                            ) : (
-                                <MonitorFeed feedEntries={feedEntries} />
-                            )
+                        {/* Feed — list + detail two-pane */}
+                        {feedEntries.length === 0 ? (
+                            <div className="py-12 flex flex-col items-center gap-2 text-center px-6">
+                                <MessageSquareText className="w-8 h-8 text-zinc-200 dark:text-zinc-700" />
+                                <p className="text-sm text-zinc-400">Starte eine Voice-Session, um den Verlauf zu sehen.</p>
+                                <p className="text-xs text-zinc-300 dark:text-zinc-600">Gespräche und Tool-Aufrufe werden dauerhaft gespeichert.</p>
+                            </div>
+                        ) : (
+                            <MonitorFeed feedEntries={feedEntries} />
                         )}
 
-                        {/* Context tab */}
-                        {liveTab === 'context' && (() => {
-                            let ctx: Record<string, any> | null = null;
-                            try { ctx = diagnostics.appContextSummary ? JSON.parse(diagnostics.appContextSummary) : null; } catch { /* ignore */ }
-                            const levels = [
-                                { key: 'gallery', label: 'Galerie', short: 'L1' },
-                                { key: 'stack', label: 'Stapel', short: 'L2' },
-                                { key: 'detail', label: 'Detail', short: 'L3' },
-                            ];
-                            const specialLevel = ctx && !levels.find(l => l.key === ctx!.viewLevel)
-                                ? (ctx.viewLevel === 'create' ? 'Erstellen' : ctx.viewLevel) : null;
-                            return (
-                                <div className="p-6 space-y-6">
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <div className="space-y-4">
-                                            <div>
-                                                <div className="text-xs font-semibold text-zinc-400 mb-2.5">Aktuelle Ebene</div>
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    {levels.map((lvl, i) => {
-                                                        const isActive = ctx?.viewLevel === lvl.key;
-                                                        return (
-                                                            <React.Fragment key={lvl.key}>
-                                                                <div className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${isActive ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
-                                                                    <span className="opacity-50 text-[10px]">{lvl.short}</span>
-                                                                    <span>{lvl.label}</span>
-                                                                </div>
-                                                                {i < levels.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />}
-                                                            </React.Fragment>
-                                                        );
-                                                    })}
-                                                    {specialLevel && (
-                                                        <>
-                                                            <ChevronRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 shrink-0" />
-                                                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900">{specialLevel}</div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {ctx && (
-                                                <div className="grid grid-cols-2 gap-1.5">
-                                                    {[
-                                                        { label: 'Bilder', value: String(ctx.imageCount ?? '—') },
-                                                        { label: 'Presets nutzbar', value: ctx.canOpenPresets ? 'Ja' : 'Nein' },
-                                                        { label: 'Referenzbild', value: ctx.canAddReferenceImage ? 'Möglich' : 'Nein' },
-                                                        { label: 'Annotation', value: ctx.canAnnotateImage ? 'Möglich' : 'Nein' },
-                                                        { label: 'Hat Prompt', value: ctx.detailHasPrompt ? 'Ja' : ctx.viewLevel === 'detail' ? 'Nein' : '—' },
-                                                    ].map(({ label, value }) => (
-                                                        <div key={label} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/30">
-                                                            <span className="text-xs text-zinc-400">{label}</span>
-                                                            <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{value}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div className="flex items-start justify-between gap-3 pt-1 border-t border-zinc-100 dark:border-zinc-800">
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="text-xs font-semibold text-zinc-400 mb-1">Gesendete Bilder</div>
-                                                    <p className="text-xs text-zinc-400 leading-relaxed">
-                                                        {diagnostics.visualContextSummary || (config.visualContextEnabled ? 'Keine Session aktiv.' : 'Deaktiviert.')}
-                                                    </p>
-                                                </div>
-                                                <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold ${diagnostics.visualFrameCount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}>
-                                                    {diagnostics.visualFrameCount} {diagnostics.visualFrameCount === 1 ? 'Bild' : 'Bilder'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            {ctx?.images && ctx.images.length > 0 ? (
-                                                <div>
-                                                    <div className="text-xs font-semibold text-zinc-400 mb-2">Bilder im Kontext — {ctx.images.length}{ctx.images.length === 48 ? ' (max)' : ''}</div>
-                                                    <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 overflow-hidden max-h-40 overflow-y-auto">
-                                                        {ctx.images.slice(0, 12).map((img: any, idx: number) => (
-                                                            <div key={img.id} className="flex items-center gap-3 py-2 px-3.5 border-b border-zinc-50 dark:border-zinc-800/60 last:border-0">
-                                                                <span className="text-[10px] text-zinc-300 dark:text-zinc-600 w-5 shrink-0 font-mono tabular-nums">#{idx + 1}</span>
-                                                                <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{img.prompt || <span className="text-zinc-300 dark:text-zinc-600 italic">kein Prompt</span>}</span>
-                                                            </div>
-                                                        ))}
-                                                        {ctx.images.length > 12 && <div className="py-2 px-3.5 text-xs text-zinc-400 italic">+{ctx.images.length - 12} weitere</div>}
-                                                    </div>
-                                                </div>
-                                            ) : ctx && (
-                                                <div className="text-xs text-zinc-400 py-3 text-center">Keine Bild-Liste in dieser Ansicht.</div>
-                                            )}
-                                            {ctx?.presets && ctx.presets.length > 0 && (
-                                                <div>
-                                                    <div className="text-xs font-semibold text-zinc-400 mb-2">{ctx.presets.length} Presets</div>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {ctx.presets.slice(0, 14).map((p: any, i: number) => (
-                                                            <span key={i} className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-2.5 py-1 rounded-lg">{p.title}{p.hasControls ? ' ⚙' : ''}</span>
-                                                        ))}
-                                                        {ctx.presets.length > 14 && <span className="text-xs text-zinc-400 px-1 py-1">+{ctx.presets.length - 14}</span>}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-5 py-4 space-y-2.5 border border-zinc-100 dark:border-zinc-800/60">
-                                        <div className="text-xs font-bold text-zinc-500">Wie der Agent-Kontext aufgebaut ist</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-zinc-400 leading-relaxed">
-                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">JSON-Kontext</span> — aktuelle Ebene, Bild-IDs, verfügbare Aktionen und Presets (nur die der App-Sprache).</div>
-                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Bildthumbnails</span> — keine UI-Screenshots. Detail: 1 Bild, Galerie/Stapel: bis zu 4 Frames.</div>
-                                            <div><span className="font-semibold text-zinc-600 dark:text-zinc-300">Konfigurierbar</span> — Toggle "Bilder an KI senden" steuert Thumbnails. Alles andere ist hardcoded.</div>
-                                        </div>
-                                    </div>
-                                    {!ctx && <p className="text-sm text-zinc-400 py-4 text-center">Keine Kontext-Daten verfügbar.</p>}
-                                </div>
-                            );
-                        })()}
                     </div>
                 </Section>
 
                 {/* Row 3: Tools */}
                 <Section title={`Tools & Fähigkeiten · ${enabledToolCount} von ${config.tools.length} aktiv`} icon={<Wrench className="w-4 h-4" />} noPadding>
-                    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr]">
+                    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr]">
                         <div className="border-b lg:border-b-0 lg:border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto max-h-[420px] lg:max-h-[520px]">
-                            {config.tools.map(tool => {
-                                const isSelected = selectedTool === tool.name;
-                                const hasCustomDesc = !!tool.description;
-                                return (
-                                    <button
-                                        key={tool.name}
-                                        type="button"
-                                        onClick={() => setSelectedTool(tool.name)}
-                                        className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
-                                    >
-                                        <div
-                                            role="checkbox"
-                                            aria-checked={tool.enabled}
-                                            onClick={(e) => { e.stopPropagation(); updateConfig(c => ({ ...c, tools: c.tools.map(t => t.name === tool.name ? { ...t, enabled: !t.enabled } : t) })); }}
-                                            className={`shrink-0 h-4 w-4 rounded-[4px] border-2 flex items-center justify-center transition-colors cursor-pointer ${tool.enabled ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600'}`}
-                                        >
-                                            {tool.enabled && <Check className="w-2.5 h-2.5 text-white dark:text-zinc-900" />}
+                            {(() => {
+                                const toolGroups: Array<{ label: string; tools: string[] }> = [
+                                    { label: 'Navigation', tools: ['open_gallery', 'go_back', 'open_stack', 'next_image', 'previous_image', 'select_image_by_index', 'select_image_by_position'] },
+                                    { label: 'Kreativ-Workflow', tools: ['set_prompt_text', 'create_variables', 'select_variable_option', 'apply_preset', 'trigger_generation'] },
+                                    { label: 'Erstellen & Upload', tools: ['open_create', 'open_create_new', 'open_upload', 'set_aspect_ratio', 'set_quality'] },
+                                    { label: 'Bearbeitung', tools: ['open_presets', 'open_reference_image_picker', 'start_annotation_mode', 'repeat_current_image'] },
+                                    { label: 'System', tools: ['get_app_context', 'stop_voice_mode', 'download_current_image', 'open_settings'] },
+                                ];
+                                const groupedNames = new Set(toolGroups.flatMap(g => g.tools));
+                                const ungrouped = config.tools.filter(t => !groupedNames.has(t.name));
+                                if (ungrouped.length) toolGroups.push({ label: 'Sonstige', tools: ungrouped.map(t => t.name) });
+
+                                return toolGroups.map(group => {
+                                    const groupTools = group.tools.map(name => config.tools.find(t => t.name === name)).filter(Boolean) as typeof config.tools;
+                                    if (!groupTools.length) return null;
+                                    return (
+                                        <div key={group.label}>
+                                            <div className="px-5 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">{group.label}</div>
+                                            {groupTools.map(tool => {
+                                                const isSelected = selectedTool === tool.name;
+                                                const hasCustomDesc = !!tool.description;
+                                                return (
+                                                    <button
+                                                        key={tool.name}
+                                                        type="button"
+                                                        onClick={() => setSelectedTool(tool.name)}
+                                                        className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors border-b border-zinc-50 dark:border-zinc-800/60 last:border-0 ${isSelected ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'}`}
+                                                    >
+                                                        <div
+                                                            role="checkbox"
+                                                            aria-checked={tool.enabled}
+                                                            onClick={(e) => { e.stopPropagation(); updateConfig(c => ({ ...c, tools: c.tools.map(t => t.name === tool.name ? { ...t, enabled: !t.enabled } : t) })); }}
+                                                            className={`shrink-0 h-4 w-4 rounded-[4px] border-2 flex items-center justify-center transition-colors cursor-pointer ${tool.enabled ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600'}`}
+                                                        >
+                                                            {tool.enabled && <Check className="w-2.5 h-2.5 text-white dark:text-zinc-900" />}
+                                                        </div>
+                                                        <span className={`text-xs font-medium flex-1 truncate ${tool.enabled ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-400 dark:text-zinc-500'}`}>{tool.name}</span>
+                                                        {hasCustomDesc && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-400" title="Angepasste Beschreibung" />}
+                                                        <ChevronRight className={`shrink-0 w-3.5 h-3.5 transition-colors ${isSelected ? 'text-zinc-500 dark:text-zinc-400' : 'text-zinc-300 dark:text-zinc-600'}`} />
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
-                                        <span className={`text-xs font-medium flex-1 truncate ${tool.enabled ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-400 dark:text-zinc-500'}`}>{tool.name}</span>
-                                        {hasCustomDesc && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-400" title="Angepasste Beschreibung" />}
-                                        <ChevronRight className={`shrink-0 w-3.5 h-3.5 transition-colors ${isSelected ? 'text-zinc-500 dark:text-zinc-400' : 'text-zinc-300 dark:text-zinc-600'}`} />
-                                    </button>
-                                );
-                            })}
+                                    );
+                                });
+                            })()}
                         </div>
                         <div className="p-6">
                             {selectedTool ? (
