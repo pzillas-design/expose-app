@@ -123,18 +123,8 @@ export function App() {
         };
     }, []);
 
-    useEffect(() => {
-        if (!voiceRemoteLoadedRef.current) return;
-        if (userProfile?.role !== 'admin') return;
-
-        const timer = window.setTimeout(() => {
-            void updateVoiceAdminConfig(voiceAdminConfig).catch((error) => {
-                console.error('[voice-admin] failed to persist config', error);
-            });
-        }, 500);
-
-        return () => window.clearTimeout(timer);
-    }, [voiceAdminConfig, userProfile?.role]);
+    // Auto-persist removed — config is only saved via explicit "Speichern" button in AdminVoiceView
+    // This prevents stale browser state from overwriting DB changes made via SQL or other tools
 
     const clickVoiceAction = React.useCallback(async (selector: string) => {
         for (let attempt = 0; attempt < 12; attempt += 1) {
