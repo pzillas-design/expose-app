@@ -908,6 +908,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
+                    generationConfig: { temperature: 1.4 },
                     systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
                 },
