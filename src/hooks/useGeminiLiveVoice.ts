@@ -374,23 +374,6 @@ async function fetchFramePayload(frame: VoiceVisualFrame) {
         throw new Error(`Failed to load visual context frame: ${frame.id}`);
     }
     const blob = await response.blob();
-
-    // Resize to max 512px to reduce bandwidth — AI doesn't need HQ
-    try {
-        const img = await createImageBitmap(blob);
-        const maxDim = 512;
-        if (img.width > maxDim || img.height > maxDim) {
-            const scale = maxDim / Math.max(img.width, img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const canvas = new OffscreenCanvas(w, h);
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, 0, 0, w, h);
-            const resizedBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 });
-            return { data: await blobToBase64(resizedBlob), mimeType: 'image/jpeg' };
-        }
-    } catch { /* fallback to original if resize fails */ }
-
     return {
         data: await blobToBase64(blob),
         mimeType: frame.mimeType || blob.type || 'image/jpeg'
