@@ -150,19 +150,20 @@ export const adminService = {
     },
 
     /**
-     * Fetch voice sessions from voice_logs, grouped by session_id
+     * Fetch voice session summaries (lightweight — no entries, just metadata for table rows).
+     * Entries are loaded on-demand via getVoiceSessionEntries().
      */
     async getVoiceSessions(limit = 50): Promise<any[]> {
+        // Only fetch the minimal fields needed for the summary row
         const { data, error } = await supabase
             .from('voice_logs')
             .select('session_id, user_id, kind, tool_name, tool_status, source, text, ts')
             .order('ts', { ascending: false })
-            .limit(500); // fetch enough raw logs to build sessions
+            .limit(500);
 
         if (error) throw error;
         if (!data?.length) return [];
 
-        // Group by session_id
         const sessionMap = new Map<string, any[]>();
         for (const log of data) {
             const sid = log.session_id || '__unknown__';
@@ -170,7 +171,6 @@ export const adminService = {
             sessionMap.get(sid)!.push(log);
         }
 
-        // Resolve user names
         const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))];
         const profilesMap: Record<string, string> = {};
         if (userIds.length > 0) {
@@ -202,11 +202,25 @@ export const adminService = {
                     firstUserMessage: firstUser || null,
                     hadGeneration,
                     status: hadError ? 'failed' : 'completed',
-                    entries: sorted,
+                    // entries NOT included — loaded on demand
                 };
             })
             .sort((a, b) => b.createdAt - a.createdAt)
             .slice(0, limit);
+    },
+
+    /**
+     * Fetch full entries for a single voice session (on-demand when user clicks a row).
+     */
+    async getVoiceSessionEntries(sessionId: string): Promise<any[]> {
+        const { data, error } = await supabase
+            .from('voice_logs')
+            .select('session_id, user_id, kind, tool_name, tool_status, args_summary, result_message, source, text, ts')
+            .eq('session_id', sessionId)
+            .order('ts', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
     },
 
     /**

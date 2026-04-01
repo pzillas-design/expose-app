@@ -605,12 +605,6 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                     </Section>
                 </div>
 
-                {/* Row 2: Session-Verlauf Hinweis */}
-                <Section title="Session-Verlauf" icon={<Eye className="w-4 h-4" />}>
-                    <p className="text-sm text-zinc-400">
-                        Voice-Sessions werden unter <strong className="text-zinc-600 dark:text-zinc-300">Aufträge</strong> angezeigt — als Zeilen mit dem Badge <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400">🎤 Voice</span>. Klicke darauf, um das Chat-Protokoll zu sehen.
-                    </p>
-                </Section>
 
                 {/* Row 3: Tools */}
                 <Section title={`Tools & Fähigkeiten · ${enabledToolCount} von ${config.tools.length} aktiv`} icon={<Wrench className="w-4 h-4" />} noPadding>

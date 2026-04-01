@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Mic, MessageSquare, Wrench } from 'lucide-react';
+import { X, Mic, MessageSquare, Wrench, Loader2 } from 'lucide-react';
+import { adminService } from '@/services/adminService';
 
 // ─── Tool summary helpers (shared with AdminVoiceView) ──────────────────────
 
@@ -101,12 +102,23 @@ interface VoiceSessionDetailProps {
 }
 
 export const VoiceSessionDetail: React.FC<VoiceSessionDetailProps> = ({ session, onClose, variant = 'sidebar' }) => {
+    const [entries, setEntries] = React.useState<any[]>([]);
+    const [loading, setLoading] = React.useState(true);
     const chatRef = React.useRef<HTMLDivElement>(null);
+
+    // Load entries on-demand when session changes
+    React.useEffect(() => {
+        if (!session?.sessionId) return;
+        setLoading(true);
+        adminService.getVoiceSessionEntries(session.sessionId)
+            .then(data => setEntries(data))
+            .catch(err => console.error('[voice-detail] failed to load entries', err))
+            .finally(() => setLoading(false));
+    }, [session?.sessionId]);
+
     React.useEffect(() => {
         if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }, [session?.entries?.length]);
-
-    const entries: any[] = session?.entries || [];
+    }, [entries.length]);
     const durationSec = Math.round((session.durationMs || 0) / 1000);
     const durationLabel = durationSec < 60 ? `${durationSec}s` : `${Math.floor(durationSec / 60)}m ${durationSec % 60}s`;
 
@@ -135,7 +147,13 @@ export const VoiceSessionDetail: React.FC<VoiceSessionDetailProps> = ({ session,
 
             {/* Chat */}
             <div ref={chatRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
-                {entries.map((entry: any, i: number) => {
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-5 h-5 animate-spin text-zinc-300" />
+                    </div>
+                ) : entries.length === 0 ? (
+                    <div className="text-center py-12 text-sm text-zinc-400">Keine Einträge</div>
+                ) : entries.map((entry: any, i: number) => {
                     if (entry.kind === 'transcript') {
                         const isUser = entry.source === 'user';
                         return (
