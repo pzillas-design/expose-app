@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Loader2, MessageSquareText, RotateCcw, Settings2, Sparkles, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
+import { Check, Loader2, MessageSquareText, Settings2, Sparkles, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
 import { Input } from '@/components/ui/DesignSystem';
@@ -274,22 +274,12 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                             <label className="block space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">System Prompt</span>
-                                    {config.systemPrompt !== DEFAULT_SYSTEM_PROMPT && (
-                                        <button type="button" onClick={() => updateConfig(c => ({ ...c, systemPrompt: DEFAULT_SYSTEM_PROMPT }))} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
-                                            <RotateCcw className="w-3 h-3" /> Reset
-                                        </button>
-                                    )}
                                 </div>
                                 <AutoGrowTextarea value={config.systemPrompt} onChange={(v) => updateConfig(c => ({ ...c, systemPrompt: v }))} placeholder={DEFAULT_SYSTEM_PROMPT} />
                             </label>
                             <label className="block space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">Begrüßung</span>
-                                    {config.greeting !== DEFAULT_GREETING && (
-                                        <button type="button" onClick={() => updateConfig(c => ({ ...c, greeting: DEFAULT_GREETING }))} className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
-                                            <RotateCcw className="w-3 h-3" /> Reset
-                                        </button>
-                                    )}
                                 </div>
                                 <AutoGrowTextarea value={config.greeting} onChange={(v) => updateConfig(c => ({ ...c, greeting: v }))} placeholder={DEFAULT_GREETING} />
                                 <p className="text-[13px] text-zinc-400">Die AI variiert den Wortlaut bei jedem Session-Start leicht.</p>
