@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronDown, Loader2, MessageSquareText, RotateCcw, Settings2, Sparkles, Wrench, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
+import { Check, Loader2, MessageSquareText, RotateCcw, Settings2, Sparkles, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
 import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
 import { Input, TextArea } from '@/components/ui/DesignSystem';
@@ -86,53 +86,34 @@ const SettingRow: React.FC<{ label: string; hint?: string; children: React.React
 
 const ToolCard: React.FC<{
     tool: VoiceAdminConfig['tools'][0];
-    onToggle: () => void;
-    onDescChange: (desc: string | undefined) => void;
-}> = ({ tool, onToggle, onDescChange }) => {
-    const [expanded, setExpanded] = React.useState(false);
-    const hasCustom = !!tool.description;
+    onDescChange: (desc: string) => void;
+}> = ({ tool, onDescChange }) => {
     const desc = tool.description ?? DEFAULT_TOOL_DESCRIPTIONS[tool.name] ?? '';
-    const isDefault = !tool.description;
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+    // Auto-grow textarea to fit content
+    React.useEffect(() => {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+    }, [desc]);
 
     return (
-        <div className={`rounded-xl border transition-colors ${tool.enabled ? 'border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900' : 'border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/30 opacity-60'}`}>
-            <div className="flex items-center gap-3 px-4 py-3">
-                <div
-                    role="checkbox"
-                    aria-checked={tool.enabled}
-                    onClick={onToggle}
-                    className={`shrink-0 h-4 w-4 rounded-[4px] border-2 flex items-center justify-center transition-colors cursor-pointer ${tool.enabled ? 'bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white' : 'border-zinc-300 dark:border-zinc-600'}`}
-                >
-                    {tool.enabled && <Check className="w-2.5 h-2.5 text-white dark:text-zinc-900" />}
-                </div>
-                <span className={`text-sm font-mono flex-1 ${tool.enabled ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-400'}`}>{tool.name}</span>
-                {hasCustom && <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" title="Angepasst" />}
-                <button
-                    type="button"
-                    onClick={() => setExpanded(e => !e)}
-                    className="shrink-0 p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-                </button>
-            </div>
-            {expanded && (
-                <div className="px-4 pb-4 pt-1 border-t border-zinc-100 dark:border-zinc-800">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] text-zinc-400">{isDefault ? 'Standard-Beschreibung' : 'Angepasst'}</span>
-                        {!isDefault && (
-                            <button type="button" onClick={() => onDescChange(undefined)} className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">
-                                <RotateCcw className="w-3 h-3" /> Reset
-                            </button>
-                        )}
-                    </div>
-                    <TextArea
-                        rows={4}
-                        value={desc}
-                        onChange={(e) => onDescChange(e.target.value)}
-                        className="font-mono text-xs"
-                    />
-                </div>
-            )}
+        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/40 px-4 py-3.5 space-y-2">
+            <div className="text-[13px] font-mono font-medium text-zinc-700 dark:text-zinc-200">{tool.name}</div>
+            <textarea
+                ref={textareaRef}
+                value={desc}
+                onChange={(e) => {
+                    onDescChange(e.target.value);
+                    // Auto-grow on input
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                className="w-full bg-transparent text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed resize-none focus:outline-none focus:text-zinc-700 dark:focus:text-zinc-200 placeholder:text-zinc-300"
+                placeholder="Beschreibung..."
+            />
         </div>
     );
 };
@@ -279,13 +260,11 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
                 return (
                     <div>
                         <p className="text-xs text-zinc-400 mb-2 leading-relaxed">{group.hint}</p>
-                        <p className="text-xs text-zinc-300 dark:text-zinc-600 mb-6">{enabledCount} von {tools.length} aktiv · Beschreibung aufklappen um anzupassen</p>
-                        <div className="space-y-2.5">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 mt-4">
                             {tools.map(tool => (
                                 <ToolCard
                                     key={tool.name}
                                     tool={tool}
-                                    onToggle={() => updateConfig(c => ({ ...c, tools: c.tools.map(t => t.name === tool.name ? { ...t, enabled: !t.enabled } : t) }))}
                                     onDescChange={(desc) => updateConfig(c => ({ ...c, tools: c.tools.map(t => t.name === tool.name ? { ...t, description: desc } : t) }))}
                                 />
                             ))}
@@ -344,7 +323,7 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 overflow-y-auto">
-                    <div className="max-w-xl px-6 md:px-10 py-6 md:py-10">
+                    <div className="max-w-3xl px-6 md:px-10 py-6 md:py-10">
                         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-5">
                             {NAV_ITEMS.find(n => n.id === activeSection)?.label}
                         </h2>
