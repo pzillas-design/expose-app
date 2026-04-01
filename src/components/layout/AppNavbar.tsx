@@ -521,23 +521,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             active={isGridMenuOpen}
                             tooltip={t('nav_menu')}
                         />
-                        {isGallery && (
+                        {isGallery && voiceFeatureEnabled && !voiceModeActive && (
                             <ContextTip
-                                storageKey="expose_tip_select_images_v1"
+                                storageKey="expose_tip_voice_assistant_v1"
                                 content={
                                     <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                        {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                        {lang === 'de' ? 'Probiere den ' : 'Try the '}
                                         <ContextTipChip
-                                            icon={<CircleCheck className="h-3.5 w-3.5" />}
-                                            label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                            icon={<AudioLines className="h-3.5 w-3.5" />}
+                                            label={lang === 'de' ? 'Sprachassistent' : 'Voice assistant'}
                                         />
                                         {lang === 'de'
-                                            ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
-                                            : ' to edit multiple images at once.'}
+                                            ? ' aus — bearbeite Bilder per Stimme.'
+                                            : ' — edit images with your voice.'}
                                     </p>
                                 }
                                 placement="below"
-                                enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                enabled={isGallery && !isSelectMode && !voiceModeActive}
                                 anchorClassName="absolute left-0 top-0 h-9 w-9 pointer-events-none"
                             />
                         )}
@@ -768,23 +768,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             </span>
                                         </div>
                                     </button>
-                                    {isGallery && (
+                                    {isGallery && voiceFeatureEnabled && !voiceModeActive && (
                                         <ContextTip
-                                            storageKey="expose_tip_select_images_v1"
+                                            storageKey="expose_tip_voice_assistant_v1"
                                             content={
                                                 <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                                    {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                                    {lang === 'de' ? 'Probiere den ' : 'Try the '}
                                                     <ContextTipChip
-                                                        icon={<CircleCheck className="h-3.5 w-3.5" />}
-                                                        label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                                        icon={<AudioLines className="h-3.5 w-3.5" />}
+                                                        label={lang === 'de' ? 'Sprachassistent' : 'Voice assistant'}
                                                     />
                                                     {lang === 'de'
-                                                        ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
-                                                        : ' to edit multiple images at once.'}
+                                                        ? ' aus — bearbeite Bilder per Stimme.'
+                                                        : ' — edit images with your voice.'}
                                                 </p>
                                             }
                                             placement="below"
-                                            enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                            enabled={isGallery && !isSelectMode && !voiceModeActive}
                                             anchorClassName={isScrolled || isMobile
                                                 ? 'absolute left-0 top-0 h-9 w-9 pointer-events-none'
                                                 : 'absolute left-0 top-0 h-10 w-10 pointer-events-none'}
