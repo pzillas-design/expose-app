@@ -648,13 +648,25 @@ export function useGeminiLiveVoice({
 
     const executeToolCall = useCallback(async (call: FunctionCall) => {
         const name = call.name || '';
+        const args = (call.args || {}) as Record<string, unknown>;
         const argsSummary = (() => {
             try {
-                return call.args ? JSON.stringify(call.args) : '{}';
+                return JSON.stringify(args);
             } catch {
                 return '{}';
             }
         })();
+
+        // Sanitize helpers
+        const str = (key: string, fallback = ''): string => {
+            const v = args[key];
+            return typeof v === 'string' ? v.slice(0, 2000) : fallback;
+        };
+        const num = (key: string, fallback = 1): number => {
+            const v = args[key];
+            return typeof v === 'number' && Number.isFinite(v) ? Math.max(1, Math.round(v)) : fallback;
+        };
+
         const result = (() => {
             switch (name) {
                 case 'get_app_context':
@@ -669,28 +681,30 @@ export function useGeminiLiveVoice({
                 case 'start_annotation_mode': return startAnnotationMode();
                 case 'open_create_new': return openCreateNew();
                 case 'open_upload': return openUpload();
-                case 'set_prompt_text': return setPromptText((call.args as Record<string, unknown>)?.text as string || '');
+                case 'set_prompt_text': return setPromptText(str('text'));
                 case 'trigger_generation': return triggerGeneration();
                 case 'next_image': return nextImage();
                 case 'previous_image': return previousImage();
                 case 'go_back': return goBack();
                 case 'stop_voice_mode':
-                    // Use internal stop() directly — no need for external handler
                     setTimeout(() => stop(), 50);
                     return { ok: true, message: 'Voice mode ended.' };
-                case 'set_aspect_ratio': return setAspectRatio((call.args as Record<string, unknown>)?.ratio as string || '4:3');
+                case 'set_aspect_ratio': {
+                    const ratio = str('ratio', '4:3');
+                    const allowed = ['16:9', '4:3', '1:1', '3:4', '9:16'];
+                    return allowed.includes(ratio) ? setAspectRatio(ratio) : { ok: false, message: `Invalid ratio: ${ratio}. Allowed: ${allowed.join(', ')}` };
+                }
                 case 'open_stack': return openStack();
-                case 'create_variables': return createVariables((call.args as Record<string, unknown>)?.controls as Array<{ label: string; options: string[] }> || []);
-                case 'select_variable_option': {
-                    const args = call.args as Record<string, unknown>;
-                    return selectVariableOption(args?.label as string || '', args?.option as string || '');
+                case 'create_variables': {
+                    const controls = Array.isArray(args.controls) ? args.controls as Array<{ label: string; options: string[] }> : [];
+                    return controls.length > 0 ? createVariables(controls) : { ok: false, message: 'No controls provided.' };
                 }
-                case 'set_quality': return setQuality((call.args as Record<string, unknown>)?.quality as string || '2k');
-                case 'select_image_by_index': return selectImageByIndex((call.args as Record<string, unknown>)?.index as number || 1);
-                case 'select_image_by_position': {
-                    const args = call.args as Record<string, unknown>;
-                    return selectImageByPosition(args?.row as number || 1, args?.column as number || 1);
-                }
+                case 'select_variable_option':
+                    return selectVariableOption(str('label'), str('option'));
+                case 'set_quality': return setQuality(str('quality', '2k'));
+                case 'select_image_by_index': return selectImageByIndex(num('index'));
+                case 'select_image_by_position':
+                    return selectImageByPosition(num('row'), num('column'));
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
         })();
