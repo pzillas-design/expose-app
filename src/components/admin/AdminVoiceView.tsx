@@ -23,38 +23,33 @@ interface AdminVoiceViewProps {
 
 // ─── Sidebar nav ────────────────────────────────────────────────────────────
 
-type SectionId = 'general' | 'prompt' | 'tools-nav' | 'tools-creative' | 'tools-create' | 'tools-edit' | 'tools-system';
+type SectionId = 'general' | 'prompt' | 'tools-nav' | 'tools-edit' | 'tools-create' | 'tools-system';
 
 const NAV_ITEMS: Array<{ id: SectionId; label: string; icon: React.ReactNode; group?: string }> = [
     { id: 'general', label: 'Allgemein', icon: <Settings2 className="w-4 h-4" /> },
     { id: 'prompt', label: 'Prompt & Begrüßung', icon: <MessageSquareText className="w-4 h-4" /> },
     { id: 'tools-nav', label: 'Navigation', icon: <Navigation className="w-4 h-4" />, group: 'Tools' },
-    { id: 'tools-creative', label: 'Kreativ-Workflow', icon: <Sparkles className="w-4 h-4" />, group: 'Tools' },
-    { id: 'tools-create', label: 'Erstellen & Upload', icon: <Upload className="w-4 h-4" />, group: 'Tools' },
     { id: 'tools-edit', label: 'Bearbeitung', icon: <PenTool className="w-4 h-4" />, group: 'Tools' },
+    { id: 'tools-create', label: 'Erstellen & Upload', icon: <Upload className="w-4 h-4" />, group: 'Tools' },
     { id: 'tools-system', label: 'System', icon: <Monitor className="w-4 h-4" />, group: 'Tools' },
 ];
 
 const TOOL_GROUPS: Record<string, { tools: string[]; hint: string }> = {
     'tools-nav': {
-        tools: ['open_gallery', 'go_back', 'open_stack', 'next_image', 'previous_image', 'select_image_by_index', 'select_image_by_position'],
-        hint: 'Navigation zwischen Galerie, Stapeln und Bildern. Die AI kann diese Tools jederzeit aufrufen um dem User durch die App zu navigieren.',
-    },
-    'tools-creative': {
-        tools: ['set_prompt_text', 'create_variables', 'select_variable_option', 'apply_preset', 'trigger_generation'],
-        hint: 'Der kreative Kern — Prompt schreiben, Variablen erstellen, Presets anwenden und Generierung starten. Die AI nutzt diese im Detail- und Erstellen-View.',
-    },
-    'tools-create': {
-        tools: ['open_create', 'open_create_new', 'open_upload', 'set_aspect_ratio', 'set_quality'],
-        hint: 'Neue Bilder erstellen, hochladen, Format und Qualität einstellen. Verfügbar wenn der User etwas Neues starten will.',
+        tools: ['go_back', 'next_image', 'previous_image', 'select_image'],
+        hint: 'Navigation zwischen Galerie, Stapeln und Bildern.',
     },
     'tools-edit': {
-        tools: ['open_presets', 'open_reference_image_picker', 'start_annotation_mode', 'repeat_current_image'],
-        hint: 'Erweiterte Bearbeitungsfunktionen — Vorlagen, Referenzbilder, Anmerkungen und Varianten. Im Detail-View verfügbar.',
+        tools: ['set_prompt_text', 'create_variables', 'select_variable_option', 'apply_preset', 'trigger_generation', 'open_reference_image_picker', 'start_annotation_mode', 'repeat_current_image', 'go_to_source_image'],
+        hint: 'Prompt, Variablen, Vorlagen, Referenzbilder, Anmerkungen und Generierung. Alles was mit Bildbearbeitung zu tun hat.',
+    },
+    'tools-create': {
+        tools: ['open_create_new', 'open_upload', 'set_aspect_ratio', 'set_quality'],
+        hint: 'Neue Bilder erstellen, hochladen, Format und Qualität einstellen.',
     },
     'tools-system': {
         tools: ['get_app_context', 'stop_voice_mode', 'download_current_image', 'open_settings', 'open_contact', 'open_about'],
-        hint: 'Systeminterne Tools — App-Status, Session beenden, Download, Einstellungen, Kontakt und Über-uns.',
+        hint: 'App-Status, Session beenden, Download, Einstellungen, Kontakt und Über-uns.',
     },
 };
 
