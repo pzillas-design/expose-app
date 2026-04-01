@@ -486,6 +486,7 @@ export function useGeminiLiveVoice({
     const speakingRef = useRef(false);
     const greetingTimeoutRef = useRef<number | null>(null);
     const lastVisualContextKeyRef = useRef<string | null>(null);
+    const lastNudgedImageIdRef = useRef<string | null>(null);
     const lastRequestTimeRef = useRef<number>(0);
     const firstAudioReceivedRef = useRef<boolean>(false);
 
@@ -615,6 +616,7 @@ export function useGeminiLiveVoice({
 
         cancelPlayback();
         lastVisualContextKeyRef.current = null;
+        lastNudgedImageIdRef.current = null;
         setLevel(0);
         setError(null);
         setState('off');
@@ -642,11 +644,13 @@ export function useGeminiLiveVoice({
                 sessionRef.current.sendRealtimeInput({ video: payload });
             }
 
-            // Nudge the AI to acknowledge the image — delay so Gemini processes the frame first
-            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT')) {
+            // Nudge the AI to acknowledge the image — only once per image, not on every context update
+            const frameId = visualContext.frames[0]?.id || null;
+            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current) {
+                lastNudgedImageIdRef.current = frameId;
                 const imageLabel = visualContext.frames[0]?.label || 'Bild';
                 await new Promise(r => setTimeout(r, 1500));
-                sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe das NEUESTE Bild das du empfangen hast und frage was der User ändern möchte. Ignoriere ältere Bilder aus dem Kontext.]` });
+                sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe kurz was du siehst und frage was der User ändern möchte.]` });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
