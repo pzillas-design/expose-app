@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock, Download, Mic } from 'lucide-react';
+import { Loader2, ChevronDown, CheckCircle2, XCircle, Clock, Download } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -75,10 +75,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         );
     }, [jobs, voiceSessions, search]);
 
-    const maxDurationMs = Math.max(
-        ...allRows.filter(r => r._type === 'job').map((r) => Number(r.durationMs || 0)),
-        0
-    );
+    const maxDurationMs = 100_000; // fixed 100s cap for duration bar
 
     useEffect(() => {
         if (!isResizing) return;
@@ -119,7 +116,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
 
                     <div className="flex flex-1 min-h-0">
                         <div className="flex-1 min-w-0 overflow-x-auto">
-                            <div className="min-w-[960px] flex flex-col">
+                            <div className="min-w-[760px] flex flex-col">
                                 {loading && jobs.length === 0 ? (
                                     <div className="py-20 flex items-center justify-center">
                                         <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
@@ -131,11 +128,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                 <tr>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_date')}</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_job_user') || 'User'}</th>
-                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Auflösung</th>
-                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Tools</th>
-                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Dauer</th>
+                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Details</th>
+                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left w-40">Dauer</th>
                                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_job_status')}</th>
-                                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-center">Download</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
@@ -144,37 +139,42 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isSelected = selectedJob?.id === row.id;
                                                     const badgeClass = 'px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
 
+                                                    // Shared duration cell renderer
+                                                    const durationMs = Number(row.durationMs || 0);
+                                                    const dSec = Math.round(durationMs / 1000);
+                                                    const dLabel = dSec < 60 ? `${dSec}s` : `${Math.floor(dSec / 60)}m ${dSec % 60}s`;
+                                                    const barPct = Math.min(100, (durationMs / maxDurationMs) * 100);
+
                                                     if (isVoice) {
-                                                        const dSec = Math.round((row.durationMs || 0) / 1000);
-                                                        const dLabel = dSec < 60 ? `${dSec}s` : `${Math.floor(dSec / 60)}m ${dSec % 60}s`;
                                                         return (
                                                             <tr
                                                                 key={row.id}
                                                                 onClick={() => setSelectedJob(row)}
-                                                                className={`cursor-pointer transition-colors ${isSelected ? 'bg-orange-50/50 dark:bg-orange-950/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
+                                                                className={`cursor-pointer transition-colors ${isSelected ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                                             >
                                                                 <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
                                                                     {new Date(row.createdAt).toLocaleString('de-DE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                                 </td>
                                                                 <td className="px-5 py-3.5 font-medium text-black dark:text-white">{row.userName}</td>
-                                                                <td className="px-5 py-3.5"><span className="text-xs text-zinc-300 dark:text-zinc-600">–</span></td>
                                                                 <td className="px-5 py-3.5">
-                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400">
-                                                                        <Mic className="w-3 h-3" /> Voice
-                                                                    </span>
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className={badgeClass}>Voice</span>
+                                                                    </div>
                                                                 </td>
                                                                 <td className="px-5 py-3.5">
-                                                                    <span className="font-mono text-xs text-zinc-500">{dLabel}</span>
+                                                                    <div className="flex flex-col items-start gap-1">
+                                                                        <span className="font-mono text-xs text-zinc-500">{dLabel}</span>
+                                                                        <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                                            <div className="h-full rounded-full bg-zinc-400 dark:bg-zinc-500" style={{ width: `${barPct}%` }} />
+                                                                        </div>
+                                                                    </div>
                                                                 </td>
                                                                 <td className="px-5 py-3.5 text-right">
                                                                     {row.hadGeneration
                                                                         ? <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
                                                                         : row.status === 'failed'
                                                                         ? <XCircle className="w-4 h-4 text-red-500 ml-auto" />
-                                                                        : <span className="text-[10px] text-zinc-400 ml-auto block text-right">Chat</span>}
-                                                                </td>
-                                                                <td className="px-5 py-3.5 text-center">
-                                                                    {row.hadGeneration && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 mx-auto" />}
+                                                                        : null}
                                                                 </td>
                                                             </tr>
                                                         );
@@ -187,6 +187,16 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
                                                     const isRepeat = !!payload.isRepeat;
+
+                                                    // Resolution badge
+                                                    const m = j.qualityMode || j.model || '';
+                                                    const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : m.includes('05k') ? '0.5K' : '';
+                                                    const resColor = res === '4K' ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                                                        : res === '2K' ? 'bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
+                                                        : res === '1K' ? 'bg-yellow-200 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
+                                                        : res === '0.5K' ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300'
+                                                        : '';
+
                                                     return (
                                                     <tr
                                                         key={j.id}
@@ -198,27 +208,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         </td>
                                                         <td className="px-5 py-3.5 font-medium text-black dark:text-white">{j.userName}</td>
                                                         <td className="px-5 py-3.5">
-                                                            {(() => {
-                                                                const m = j.qualityMode || j.model || '';
-                                                                const res = m.includes('4k') ? '4K' : m.includes('2k') ? '2K' : m.includes('1k') ? '1K' : m.includes('05k') ? '0.5K' : '–';
-                                                                const color = res === '4K'
-                                                                    ? 'bg-red-200 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                                                                    : res === '2K'
-                                                                    ? 'bg-orange-200 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200'
-                                                                    : res === '1K'
-                                                                    ? 'bg-yellow-200 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200'
-                                                                    : res === '0.5K'
-                                                                    ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300'
-                                                                    : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300';
-                                                                return (
-                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${color}`}>
-                                                                        {res}
-                                                                    </span>
-                                                                );
-                                                            })()}
-                                                        </td>
-                                                        <td className="px-5 py-3.5">
-                                                            <div className="flex items-center gap-1">
+                                                            <div className="flex items-center gap-1 flex-wrap">
+                                                                {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0" />}
+                                                                {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                                 {hasVars      && <span className={badgeClass}>Variablen</span>}
@@ -228,16 +220,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             {j.durationMs ? (
                                                                 <div className="flex flex-col items-start gap-1">
-                                                                    <span className="font-mono text-xs text-zinc-500">
-                                                                        {`${Math.round(j.durationMs / 1000)}s`}
-                                                                    </span>
-                                                                    <div className="w-20 h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                                                                        <div
-                                                                            className="h-full rounded-full bg-zinc-500 dark:bg-zinc-400"
-                                                                            style={{
-                                                                                width: maxDurationMs > 0 ? `${(Number(j.durationMs) / maxDurationMs) * 100}%` : '0%',
-                                                                            }}
-                                                                        />
+                                                                    <span className="font-mono text-xs text-zinc-500">{dLabel}</span>
+                                                                    <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                                                        <div className="h-full rounded-full bg-zinc-500 dark:bg-zinc-400" style={{ width: `${barPct}%` }} />
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -250,9 +235,6 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                 : j.status?.toLowerCase() === 'failed'
                                                                 ? <span title={j.error || 'Failed'} className="ml-auto flex justify-end"><XCircle className="w-4 h-4 text-red-500" /></span>
                                                                 : <Clock className="w-4 h-4 text-amber-500 ml-auto" />}
-                                                        </td>
-                                                        <td className="px-5 py-3.5 text-center">
-                                                            {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400 mx-auto" />}
                                                         </td>
                                                     </tr>
                                                     );
