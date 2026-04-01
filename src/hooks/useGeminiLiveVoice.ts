@@ -627,8 +627,9 @@ export function useGeminiLiveVoice({
 
             // Nudge the AI to acknowledge the image — delay so Gemini processes the frame first
             if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT')) {
+                const imageLabel = visualContext.frames[0]?.label || 'Bild';
                 await new Promise(r => setTimeout(r, 1500));
-                sessionRef.current?.sendRealtimeInput({ text: '[Bild wurde gesendet. Beschreibe kurz was du siehst und frage was der User ändern möchte.]' });
+                sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe das NEUESTE Bild das du empfangen hast und frage was der User ändern möchte. Ignoriere ältere Bilder aus dem Kontext.]` });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
