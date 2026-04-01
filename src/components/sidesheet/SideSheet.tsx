@@ -156,6 +156,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
             if (!controls?.length) return;
 
+            // Build a map of old label → { controlId, selectedValues } so we can preserve selections
+            const oldControls = standaloneControls;
+            const oldLabelMap = new Map<string, { id: string; values: string[] }>();
+            oldControls.forEach(c => {
+                const selected = controlValues[c.id];
+                if (selected?.length) {
+                    oldLabelMap.set(c.label.toLowerCase(), { id: c.id, values: selected });
+                }
+            });
+
             const presetControls: PresetControl[] = controls.map((c, ci) => ({
                 id: `voice-${ci}-${Date.now()}`,
                 label: c.label,
@@ -166,8 +176,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 }))
             }));
 
+            // Carry over selections for labels that still exist with matching option values
+            const newValues: Record<string, string[]> = {};
+            presetControls.forEach(ctrl => {
+                const old = oldLabelMap.get(ctrl.label.toLowerCase());
+                if (old) {
+                    const validOptions = new Set(ctrl.options.map(o => o.value));
+                    const kept = old.values.filter(v => validOptions.has(v));
+                    if (kept.length) newValues[ctrl.id] = kept;
+                }
+            });
+
             setStandaloneControls(presetControls);
-            setControlValues({});
+            setControlValues(newValues);
             setHiddenControlIds([]);
         };
 
