@@ -656,8 +656,21 @@ export function useGeminiLiveVoice({
 
         const result = (() => {
             switch (name) {
-                case 'get_app_context':
-                    return { ok: true, message: 'Fetched current app context.', context: getAppContext() };
+                case 'get_app_context': {
+                    const ctx = getAppContext();
+                    // Build a readable summary so the AI understands the context via audio
+                    const parts: string[] = [];
+                    const viewLabels: Record<string, string> = { gallery: 'Galerie', stack: 'Stapel', detail: 'Detailansicht', create: 'Erstellen' };
+                    parts.push(`Ansicht: ${viewLabels[ctx.viewLevel] || ctx.viewLevel}`);
+                    if (ctx.currentImageTitle) parts.push(`Bild: ${ctx.currentImageTitle}`);
+                    if (ctx.images?.length) {
+                        parts.push(`${ctx.images.length} Bilder: ${ctx.images.slice(0, 10).map(i => `${i.index}. ${i.title || 'Unbenannt'}`).join(', ')}${ctx.images.length > 10 ? ' ...' : ''}`);
+                    }
+                    if (ctx.presets?.length) {
+                        parts.push(`${ctx.presets.length} Vorlagen verfügbar`);
+                    }
+                    return { ok: true, message: parts.join('. ') + '.', context: ctx };
+                }
                 case 'open_gallery': return goBack();
                 case 'open_create_new':
                 case 'open_create': return openCreate();
