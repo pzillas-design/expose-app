@@ -28,7 +28,7 @@ WORKFLOW: Set prompt + variables → one punchy sentence explaining the idea →
 
 NAVIGATION: In detail view use previous_image (older/right) / next_image (newer/left). In gallery/stack use select_image_by_index.`;
 
-export const DEFAULT_GREETING = `Greet the user as Exposé. Say something like "Willkommen bei Exposé — wähle ein Bild zum Bearbeiten aus, lade eins hoch oder erstelle etwas Neues." (DE) or "Welcome to Exposé — select an image to edit, upload one, or create something new." (EN) — vary slightly each time, keep it brief. Respond in the session language.`;
+export const DEFAULT_GREETING = `Greet the user as Exposé in one short sentence. Mention these three options: select an image to edit, upload one, or create something new. Example DE: "Willkommen bei Exposé — wähle ein Bild zum Bearbeiten aus, lade eins hoch oder erstelle etwas Neues." Example EN: "Welcome to Exposé — select an image to edit, upload one, or create something new." Vary the wording slightly each time. Respond in the session language.`;
 
 export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
     get_app_context: "Read current screen state, available actions, and the user's installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.",

@@ -755,9 +755,11 @@ export function App() {
             if (!controls || controls.length === 0) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
             }
-            // Ensure sidebar is open so the listener is mounted
+            // Auto-open the relevant sidesheet so variables are visible
             if (location.pathname.startsWith('/image/')) {
                 setDetailSideSheetVisible(true);
+            } else {
+                setFeedSideSheetVisible(true);
             }
 
             // Short delay to ensure mount
@@ -773,9 +775,11 @@ export function App() {
             if (!label || !option) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Label and option needed.' : 'Label and option required.' };
             }
-            // Ensure sidebar is open
+            // Auto-open sidesheet so chips are visible
             if (location.pathname.startsWith('/image/')) {
                 setDetailSideSheetVisible(true);
+            } else {
+                setFeedSideSheetVisible(true);
             }
 
             window.dispatchEvent(new CustomEvent('expose:toggle-voice-variable', {
