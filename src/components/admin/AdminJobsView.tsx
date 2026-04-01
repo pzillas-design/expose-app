@@ -209,12 +209,12 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5 font-medium text-black dark:text-white">{j.userName}</td>
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1 flex-wrap">
-                                                                {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0" />}
                                                                 {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                                 {hasVars      && <span className={badgeClass}>Variablen</span>}
                                                                 {isRepeat     && <span className={badgeClass}>Mehr</span>}
+                                                                {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0 mx-1" />}
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-3.5">
