@@ -174,7 +174,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'go_back',
-        description: 'Go back to the previous view — like pressing the back/chevron button in the header. From detail view goes to stack, from stack goes to gallery.',
+        description: 'Go back to the previous view. From detail: goes to stack (if image has versions) or gallery. From stack: goes to gallery. From create: goes to gallery.',
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
@@ -195,11 +195,6 @@ const toolDeclarations: FunctionDeclaration[] = [
             },
             required: ['ratio']
         }
-    },
-    {
-        name: 'open_stack',
-        description: 'Navigate to the stack/group view of the current image. Shows all versions and variations of the image in the feed grid.',
-        parameters: { type: Type.OBJECT, properties: {} }
     },
     {
         name: 'create_variables',
@@ -696,7 +691,7 @@ export function useGeminiLiveVoice({
                     const allowed = ['16:9', '4:3', '1:1', '3:4', '9:16'];
                     return allowed.includes(ratio) ? setAspectRatio(ratio) : { ok: false, message: `Invalid ratio: ${ratio}. Allowed: ${allowed.join(', ')}` };
                 }
-                case 'open_stack': return openStack();
+                case 'open_stack': return goBack(); // consolidated into go_back
                 case 'create_variables': {
                     const controls = Array.isArray(args.controls) ? args.controls as Array<{ label: string; options: string[] }> : [];
                     return controls.length > 0 ? createVariables(controls) : { ok: false, message: 'No controls provided.' };

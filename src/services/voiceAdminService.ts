@@ -78,7 +78,6 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'go_back',
     'stop_voice_mode',
     'set_aspect_ratio',
-    'open_stack',
     'create_variables',
     'select_variable_option',
     'set_quality',
