@@ -233,6 +233,11 @@ export function App() {
     };
 
     const handleBackToFeed = useCallback(() => {
+        // If annotation mode is active, close it first instead of navigating
+        if (state.sideSheetMode === 'brush') {
+            actions.setSideSheetMode('prompt');
+            return;
+        }
         setIsDetailExiting(true);
         setTimeout(() => {
             setIsDetailExiting(false);
@@ -242,7 +247,7 @@ export function App() {
                 navigate('/');
             }
         }, 180);
-    }, [navigate, expandedGroupId]);
+    }, [navigate, expandedGroupId, state.sideSheetMode, actions]);
 
     // Detail-view delete: navigate to the adjacent image URL BEFORE removing the deleted image from state.
     // Without this, DetailPage's `!img → onBack()` fires and the 180ms timer navigates to grid,
@@ -657,61 +662,28 @@ export function App() {
                 return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
             }
             const currentId = location.pathname.split('/').pop();
-            
-            // Context-aware flat list: if we are in a stack, cycle only within that stack
-            let flat: any[] = [];
-            if (expandedGroupId) {
-                const row = state.rows.find((r: any) => r.id === expandedGroupId);
-                flat = row ? row.items : [];
-            } else {
-                // Not in a stack context (entered from gallery)
-                // In this case, we navigate through all root items (covers or single images)
-                flat = state.rows.map((r: any) => r.items[0]).filter(Boolean);
-            }
-            
-            if (flat.length === 0) flat = allImages; // Fallback to all if something is wrong
+            // Navigate through ALL images like a lightbox
+            const flat = allImages.length > 0 ? allImages : [];
+            if (flat.length === 0) return { ok: false, message: state.currentLang === 'de' ? 'Keine Bilder vorhanden.' : 'No images available.' };
 
             const idx = flat.findIndex(img => img.id === currentId);
-            if (idx === -1) {
-                // Current image not in current list? Fallback to global
-                const gIdx = allImages.findIndex(img => img.id === currentId);
-                const next = allImages[(gIdx + 1) % allImages.length];
-                handleSelectImage(next.id);
-                return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild (global).' : 'Next image (global).', newContext: { viewLevel: 'detail', route: 'detail' } };
-            }
-
             const next = flat[(idx + 1) % flat.length];
             handleSelectImage(next.id);
-            return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild.' : 'Next image.', newContext: { viewLevel: 'detail', route: 'detail' } };
+            return { ok: true, message: state.currentLang === 'de' ? 'Nächstes Bild.' : 'Next image.' };
         },
         previousImage: async () => {
             if (!location.pathname.startsWith('/image/')) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
             }
             const currentId = location.pathname.split('/').pop();
-
-            // Context-aware flat list
-            let flat: any[] = [];
-            if (expandedGroupId) {
-                const row = state.rows.find((r: any) => r.id === expandedGroupId);
-                flat = row ? row.items : [];
-            } else {
-                flat = state.rows.map((r: any) => r.items[0]).filter(Boolean);
-            }
-            
-            if (flat.length === 0) flat = allImages;
+            // Navigate through ALL images like a lightbox
+            const flat = allImages.length > 0 ? allImages : [];
+            if (flat.length === 0) return { ok: false, message: state.currentLang === 'de' ? 'Keine Bilder vorhanden.' : 'No images available.' };
 
             const idx = flat.findIndex(img => img.id === currentId);
-            if (idx === -1) {
-                const gIdx = allImages.findIndex(img => img.id === currentId);
-                const prev = allImages[(gIdx - 1 + allImages.length) % allImages.length];
-                handleSelectImage(prev.id);
-                return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild (global).' : 'Previous image (global).', newContext: { viewLevel: 'detail', route: 'detail' } };
-            }
-
             const prev = flat[(idx - 1 + flat.length) % flat.length];
             handleSelectImage(prev.id);
-            return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.', newContext: { viewLevel: 'detail', route: 'detail' } };
+            return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
         },
         goBack: async () => {
             // Priority 1: Close settings modal if open
