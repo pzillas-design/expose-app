@@ -71,6 +71,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
     const [stripePaymentCount, setStripePaymentCount] = useState(0);
     const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
+    const [voiceStats, setVoiceStats] = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState<TimeRange>('tag');
 
@@ -78,11 +79,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const [jobsData, { data: { session } }] = await Promise.all([
+                const [jobsData, voiceSessions, { data: { session } }] = await Promise.all([
                     adminService.getJobs(),
+                    adminService.getVoiceSessions(200),
                     supabase.auth.getSession()
                 ]);
                 setJobs(jobsData);
+                // Calculate voice costs: Gemini Live ~$0.043/min audio (blended input+output)
+                const VOICE_USD_PER_MIN = 0.043;
+                const totalVoiceMinutes = voiceSessions.reduce((sum: number, s: any) => sum + (s.durationMs || 0) / 60000, 0);
+                setVoiceStats({
+                    sessionCount: voiceSessions.length,
+                    totalMinutes: totalVoiceMinutes,
+                    costEur: totalVoiceMinutes * VOICE_USD_PER_MIN * USD_TO_EUR,
+                });
                 if (session?.access_token) {
                     const res = await supabase.functions.invoke('admin-stats', {
                         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -113,7 +123,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
     const completedJobs = jobs.filter(j => j.status === 'completed');
     const googleAiCost = completedJobs.reduce((acc, j) => acc + calculateEstimatedGoogleCostEur(j), 0);
-    const profit = stripeRevenue != null ? stripeRevenue - googleAiCost : null;
+    const totalAiCost = googleAiCost + voiceStats.costEur;
+    const profit = stripeRevenue != null ? stripeRevenue - totalAiCost : null;
     const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
         ? (profit / stripeRevenue) * 100 : null;
 
@@ -241,7 +252,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <AdminViewHeader title="Kosten & Einnahmen" description="Stripe-Zahlungen vs. Google AI Ausgaben" />
             <div className="px-6 md:px-8 py-6 space-y-6">
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <StatCard
                         label="Stripe Einnahmen"
                         value={stripeRevenue != null ? `${stripeRevenue.toFixed(2)}€` : '—'}
@@ -251,12 +262,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         valueColor="text-emerald-600 dark:text-emerald-400"
                     />
                     <StatCard
-                        label="Google AI Ausgaben"
+                        label="Bild-Generierung"
                         value={`${googleAiCost.toFixed(2)}€`}
-                        sub={`${completedJobs.length} Generierungen (geschätzt)`}
+                        sub={`${completedJobs.length} Generierungen`}
                         icon={<ArrowDownRight className="w-4 h-4 text-red-500" />}
                         iconBg="bg-red-50 dark:bg-red-900/20"
                         valueColor="text-red-500"
+                    />
+                    <StatCard
+                        label="Voice-Assistent"
+                        value={`${voiceStats.costEur.toFixed(2)}€`}
+                        sub={`${voiceStats.sessionCount} Sessions · ${Math.round(voiceStats.totalMinutes)} Min.`}
+                        icon={<ArrowDownRight className="w-4 h-4 text-orange-500" />}
+                        iconBg="bg-orange-50 dark:bg-orange-900/20"
+                        valueColor="text-orange-500"
                     />
                     <StatCard
                         label="Gewinn"
