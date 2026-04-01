@@ -412,12 +412,17 @@ export function App() {
 
             if (!img || !thumb) return null;
 
+            const isGenerating = !!(img as any).isGenerating;
+            const genNote = isGenerating
+                ? (state.currentLang === 'de' ? ' (WIRD GENERIERT — Bild ist noch NICHT fertig, NICHT beschreiben!)' : ' (GENERATING — image is NOT ready, do NOT describe it!)')
+                : '';
+
             return {
-                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}`,
+                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}:${isGenerating ? 'gen' : 'ready'}`,
                 summary: state.currentLang === 'de'
-                    ? `Detailansicht: ${img.title || 'Unbenannt'}`
-                    : `Detail view: ${img.title || 'Untitled'}`,
-                frames: [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
+                    ? `Detailansicht: ${img.title || 'Unbenannt'}${genNote}`
+                    : `Detail view: ${img.title || 'Untitled'}${genNote}`,
+                frames: isGenerating ? [] : [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
             };
         }
 
