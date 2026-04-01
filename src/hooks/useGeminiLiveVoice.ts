@@ -328,16 +328,32 @@ function decodePcm16(base64: string): Float32Array {
 }
 
 async function fetchVoiceToken(modelOverride?: string) {
-    const response = await fetch('/api/gemini-live-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(modelOverride ? { model: modelOverride } : {})
-    });
-    if (!response.ok) {
-        const message = await response.text();
-        throw new Error(message || 'Unable to create voice session');
+    // Get current Supabase session token for auth
+    const { supabase } = await import('@/services/supabaseClient');
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+
+    try {
+        const response = await fetch('/api/gemini-live-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
+            body: JSON.stringify(modelOverride ? { model: modelOverride } : {}),
+            signal: controller.signal,
+        });
+        if (!response.ok) {
+            const message = await response.text();
+            throw new Error(message || 'Unable to create voice session');
+        }
+        return response.json() as Promise<TokenResponse>;
+    } finally {
+        window.clearTimeout(timeout);
     }
-    return response.json() as Promise<TokenResponse>;
 }
 
 async function blobToBase64(blob: Blob) {
@@ -519,6 +535,11 @@ export function useGeminiLiveVoice({
         const samples = decodePcm16(base64Pcm);
         playbackQueueRef.current.push(samples);
         speakingRef.current = true;
+        // Clear greeting timeout on first audio response
+        if (greetingTimeoutRef.current) {
+            window.clearTimeout(greetingTimeoutRef.current);
+            greetingTimeoutRef.current = null;
+        }
         setState('speaking');
         drainPlaybackQueue();
     }, [drainPlaybackQueue, ensurePlaybackCtx]);
@@ -945,6 +966,15 @@ export function useGeminiLiveVoice({
             console.log('[voice] sending greeting via sendRealtimeInput');
             session.sendRealtimeInput({ text: greeting });
             console.log('[voice] greeting sent ok');
+
+            // Greeting timeout: if no audio response within 10s, show error
+            greetingTimeoutRef.current = window.setTimeout(() => {
+                if (stateRef.current === 'greeting') {
+                    console.warn('[voice] greeting timeout — no response from Gemini');
+                    setError(lang === 'de' ? 'Keine Antwort erhalten' : 'No response received');
+                    setVoiceState('error');
+                }
+            }, 10000) as unknown as number;
 
             // Start mic AFTER greeting is sent
             await startMicrophone();

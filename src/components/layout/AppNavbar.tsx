@@ -62,8 +62,10 @@ interface AppNavbarProps {
     voiceModeActive?: boolean;
     voiceModeState?: VoiceUiState;
     voiceLevel?: number;
+    voiceError?: string | null;
     onStartVoiceMode?: () => void;
     onStopVoiceMode?: () => void;
+    onRetryVoiceMode?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -117,8 +119,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     voiceModeActive = false,
     voiceModeState = 'off',
     voiceLevel = 0,
+    voiceError,
     onStartVoiceMode,
-    onStopVoiceMode
+    onStopVoiceMode,
+    onRetryVoiceMode
 }) => {
     const isMobile = useMobile();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -390,7 +394,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isDetail ? (
         <div className="flex items-center gap-2">
-            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
             <div className="relative md:hidden" ref={mobileDetailMenuRef}>
                 <RoundIconButton
@@ -506,7 +510,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             ) : (
                 <div className="flex items-center gap-3">
                     {balanceDisplay}
-                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} />
+                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
                             icon={<MoreHorizontal className="w-4 h-4" />}
@@ -740,7 +744,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     </Tooltip>
                                 )}
 
-                                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} onStop={onStopVoiceMode} large={!isScrolled} />
+                                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} large={!isScrolled} />
 
                                 <div className="relative" ref={gridMenuRef}>
                                     <button

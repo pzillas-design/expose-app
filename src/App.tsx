@@ -1030,8 +1030,10 @@ export function App() {
                     voiceModeActive={voice.isActive}
                     voiceModeState={voice.state}
                     voiceLevel={voice.level}
+                    voiceError={voice.error}
                     onStartVoiceMode={() => { void voice.start(); }}
                     onStopVoiceMode={voice.stop}
+                    onRetryVoiceMode={() => { voice.stop(); void voice.start(); }}
                 />
             )}
 
