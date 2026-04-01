@@ -762,7 +762,7 @@ export function useGeminiLiveVoice({
             id: call.id,
             name,
             response: awaitedResult.ok
-                ? { output: awaitedResult }
+                ? { output: { result: awaitedResult.message } }
                 : { error: awaitedResult.message }
         };
     }, [
@@ -831,9 +831,11 @@ export function useGeminiLiveVoice({
             flushInput();
         }
 
-        // Tool calls — flush user input first, then handle
+        // Tool calls — flush buffers and stop playback to prevent duplicate responses
         if (message.toolCall?.functionCalls?.length) {
             flushInput();
+            flushOutput();
+            cancelPlayback();
             setState('thinking');
             const functionResponses = await Promise.all(message.toolCall.functionCalls.map(executeToolCall));
             sessionRef.current?.sendToolResponse({ functionResponses });
