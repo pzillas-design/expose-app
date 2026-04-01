@@ -82,8 +82,7 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'create_variables',
     'select_variable_option',
     'set_quality',
-    'select_image_by_index',
-    'select_image_by_position',
+    'select_image',
     'apply_preset',
 ] as const;
 

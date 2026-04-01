@@ -247,26 +247,15 @@ const toolDeclarations: FunctionDeclaration[] = [
         }
     },
     {
-        name: 'select_image_by_index',
-        description: 'Open the image at a specific numeric index in the current gallery or stack (1-based index).',
+        name: 'select_image',
+        description: 'Open an image in the current gallery or stack. Use EITHER index (flat number, e.g. 5th image) OR row+column (grid position). Both are 1-based.',
         parameters: {
             type: Type.OBJECT,
             properties: {
-                index: { type: Type.NUMBER, description: 'The 1-based index of the image to open, e.g. 5' }
-            },
-            required: ['index']
-        }
-    },
-    {
-        name: 'select_image_by_position',
-        description: 'Open the image at a specific grid position (row and column, both 1-based).',
-        parameters: {
-            type: Type.OBJECT,
-            properties: {
-                row: { type: Type.NUMBER, description: 'The 1-based row number in the grid' },
-                column: { type: Type.NUMBER, description: 'The 1-based column number in the grid' }
-            },
-            required: ['row', 'column']
+                index: { type: Type.NUMBER, description: 'Flat 1-based index of the image, e.g. 5' },
+                row: { type: Type.NUMBER, description: 'Grid row (1-based). Use with column.' },
+                column: { type: Type.NUMBER, description: 'Grid column (1-based). Use with row.' }
+            }
         }
     },
     {
@@ -715,9 +704,17 @@ export function useGeminiLiveVoice({
                 case 'select_variable_option':
                     return selectVariableOption(str('label'), str('option'));
                 case 'set_quality': return setQuality(str('quality', '2k'));
-                case 'select_image_by_index': return selectImageByIndex(num('index'));
-                case 'select_image_by_position':
-                    return selectImageByPosition(num('row'), num('column'));
+                case 'select_image':
+                case 'select_image_by_index':
+                case 'select_image_by_position': {
+                    // Unified: accept index OR row+column
+                    const rowVal = args.row as number | undefined;
+                    const colVal = args.column as number | undefined;
+                    if (typeof rowVal === 'number' && typeof colVal === 'number') {
+                        return selectImageByPosition(Math.max(1, Math.round(rowVal)), Math.max(1, Math.round(colVal)));
+                    }
+                    return selectImageByIndex(num('index'));
+                }
                 case 'apply_preset': return applyPreset(str('title'));
                 default: return { ok: false, message: `Unknown tool: ${name}` };
             }
