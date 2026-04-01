@@ -408,6 +408,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full mt-2 right-0 z-50">
                         <DropdownMenu
                             items={[
+                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
