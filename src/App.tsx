@@ -213,6 +213,8 @@ export function App() {
 
     const handleSelectImage = (id: string) => {
         isUserNavigationRef.current = true; // Mark as user-initiated (preserve SideSheet state)
+        // Reset annotation mode when navigating to a different image
+        if (state.sideSheetMode === 'brush') actions.setSideSheetMode('prompt');
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
         const img = allImages.find(i => i.id === id);
@@ -712,6 +714,18 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.', newContext: { viewLevel: 'detail', route: 'detail' } };
         },
         goBack: async () => {
+            // Priority 1: Close settings modal if open
+            if (isSettingsModalOpen) {
+                setIsSettingsModalOpen(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geschlossen.' : 'Settings closed.' };
+            }
+
+            // Priority 2: Close annotation mode if active
+            if (state.sideSheetMode === 'brush') {
+                actions.setSideSheetMode('prompt');
+                return { ok: true, message: state.currentLang === 'de' ? 'Anmerkungsmodus beendet.' : 'Annotation mode closed.' };
+            }
+
             // L3 (Detail) -> L2 (Stack) if belongs to one, or L1 (Gallery)
             if (location.pathname.startsWith('/image/')) {
                 const currentId = location.pathname.split('/').pop();
