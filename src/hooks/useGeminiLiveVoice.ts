@@ -617,11 +617,17 @@ export function useGeminiLiveVoice({
         onVisualContextChange?.(visualContext.summary, visualContext.frames.length);
 
         try {
+            const isDetailWithFrame = visualContext.frames.length > 0;
             sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
 
             for (const frame of visualContext.frames.slice(0, 4)) {
                 const payload = await fetchFramePayload(frame);
                 sessionRef.current.sendRealtimeInput({ video: payload });
+            }
+
+            // Nudge the AI to briefly acknowledge the image when entering detail view
+            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT')) {
+                sessionRef.current.sendRealtimeInput({ text: '[Neues Bild sichtbar — sage kurz was du siehst und frage was der User ändern möchte.]' });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
