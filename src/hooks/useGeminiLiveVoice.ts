@@ -94,11 +94,6 @@ const toolDeclarations: FunctionDeclaration[] = [
         parameters: { type: Type.OBJECT, properties: {} }
     },
     {
-        name: 'open_gallery',
-        description: 'Go to the main gallery/feed view (Level 1).',
-        parameters: { type: Type.OBJECT, properties: {} }
-    },
-    {
         name: 'open_create',
         description: 'Open the create/generate view.',
         parameters: { type: Type.OBJECT, properties: {} }
@@ -668,7 +663,7 @@ export function useGeminiLiveVoice({
             switch (name) {
                 case 'get_app_context':
                     return { ok: true, message: 'Fetched current app context.', context: getAppContext() };
-                case 'open_gallery': return openGallery();
+                case 'open_gallery': return goBack(); // consolidated into go_back
                 case 'open_create': return openCreate();
                 case 'open_settings': return openSettings();
                 case 'repeat_current_image': return repeatCurrentImage();
