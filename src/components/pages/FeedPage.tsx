@@ -72,13 +72,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         <div
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
-            onClick={(e) => {
-                if (onOpenGroup) { onOpenGroup(); return; }
-                if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
-                else onSelectImage(img.id);
-            }}
             data-image-id={img.id}
-            className={`relative isolate cursor-pointer group aspect-square flex items-center justify-center transition-transform duration-100 active:scale-[1.03]`}
+            className={`relative isolate group aspect-square flex items-center justify-center`}
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -93,7 +88,15 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     : undefined}
         >
             {/* Wrapper for the image bounding box */}
-            <div className="relative isolate" style={boundedStyle}>
+            <div
+                className="relative isolate cursor-pointer transition-transform duration-100 active:scale-[1.03]"
+                style={boundedStyle}
+                onClick={(e) => {
+                    if (onOpenGroup) { onOpenGroup(); return; }
+                    if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
+                    else onSelectImage(img.id);
+                }}
+            >
 
                 {/* Stack cards — bottom center, spread on hover */}
                 {isGroup && (
@@ -160,14 +163,14 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     {!isGen && (
                         <div
                             className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
-                                ? 'opacity-100 scale-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                                ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
-                                    ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                    ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
                                     : isKeyboardActive
-                                        ? 'opacity-100 scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
                                         : isMobile
                                             ? 'opacity-0 scale-75'
-                                            : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 bg-white/90 dark:bg-zinc-800/90'
+                                            : 'opacity-0 scale-75 group-hover:opacity-80 group-hover:scale-100 hover:!opacity-100 hover:!scale-110 bg-white/90 dark:bg-zinc-800/90'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -233,9 +236,17 @@ interface FeedPageProps {
     onExpandedGroupChange: (id: string | null) => void;
     lastViewedId?: string | null;
     onScrollProgress?: (p: number) => void;
+    voiceFocusIndex?: number | null;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex }) => {
+    // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
+    const effectiveGroupId = expandedGroupId || (
+        typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
+            ? window.location.pathname.split('/').pop() || null
+            : null
+    );
+
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
@@ -279,10 +290,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // shifted position because the grid re-mounts with all individual images ungrouped)
     // AND ensure we are not in a group drill-down (Select mode always ungroups).
     React.useEffect(() => {
-        if (isSelectMode && expandedGroupId) {
+        if (isSelectMode && effectiveGroupId) {
             onExpandedGroupChange(null);
         }
-    }, [isSelectMode, expandedGroupId, onExpandedGroupChange]);
+    }, [isSelectMode, effectiveGroupId, onExpandedGroupChange]);
 
     React.useEffect(() => {
         const isEntering = !!isSelectMode && !prevSelectModeRef.current;
@@ -330,7 +341,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             requestAnimationFrame(tryScroll);
             lastSelectImageRef.current = null;
         }
-    }, [isSelectMode, selectedIds, expandedGroupId, rows]);
+    }, [isSelectMode, selectedIds, effectiveGroupId, rows]);
 
     // Map: cover image id → row (for quick group lookup)
     // Cover = newest item (first in row, items sorted newest→oldest)
@@ -355,14 +366,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group,
     // select mode = all individual images (stacks dissolved)
     const displayImages = useMemo(() => {
-        if (expandedGroupId) {
-            return rows.find(r => r.id === expandedGroupId)?.items || [];
+        if (effectiveGroupId) {
+            return rows.find(r => r.id === effectiveGroupId)?.items || [];
         }
         if (isSelectMode) {
             return rows.flatMap(r => r.items);
         }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
-    }, [expandedGroupId, isSelectMode, rows]);
+    }, [effectiveGroupId, isSelectMode, rows]);
 
     // Track which cover tile to animate when closing a group
     const [returnCoverId, setReturnCoverId] = React.useState<string | null>(null);
@@ -481,15 +492,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const children = Array.from(gridRef.current.children) as HTMLElement[];
             if (children.length === 0) return;
             const firstTop = children[0].offsetTop;
-            let colCount = 0;
+            let colCountRaw = 0;
             for (const child of children) {
                 if (child.offsetTop === firstTop) {
-                    colCount++;
+                    colCountRaw++;
                 } else {
                     break;
                 }
             }
-            setColumns(colCount > 0 ? colCount : 2);
+            const colCount = colCountRaw > 0 ? colCountRaw : 2;
+            setColumns(colCount);
+            actions?.setGridColumns?.(colCount);
         };
         requestAnimationFrame(updateColumns);
         window.addEventListener('resize', updateColumns);
@@ -505,14 +518,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             return img ? document.querySelector(`[data-image-id="${img.id}"]`) : null;
         }, [displayImages]),
         onEscape: () => {
-            if (expandedGroupId) { onExpandedGroupChange(null); return; }
+            if (effectiveGroupId) { onExpandedGroupChange(null); return; }
             if (isSelectMode) actions?.setIsSelectMode?.(false);
         },
         onEnter: (idx) => {
             const img = displayImages[idx];
             if (!img) return;
-            const gc = expandedGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
-            const row = expandedGroupId ? null : groupRowMap.get(img.id);
+            const gc = effectiveGroupId ? 1 : (groupCountMap.get(img.id) ?? 1);
+            const row = effectiveGroupId ? null : groupRowMap.get(img.id);
             if (gc > 1 && row) { onExpandedGroupChange(row.id); return; }
             if (isSelectMode && onToggleSelect) onToggleSelect(img.id);
             else onSelectImage(img.id);
@@ -526,8 +539,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const confirmed = await confirm({
                 title: toDelete.length > 1 ? (t?.('delete_confirm_multi') || 'Delete images') : (t?.('delete_confirm_single') || 'Delete image'),
                 description: toDelete.length > 1 ? (t?.('delete_confirm_multi') || `Do you really want to delete ${toDelete.length} image(s)?`) : (t?.('delete_confirm_single') || `Do you really want to delete ${toDelete.length} image(s)?`),
-                confirmLabel: (t?.('delete') || 'DELETE').toUpperCase(),
-                cancelLabel: (t?.('cancel') || 'CANCEL').toUpperCase(),
+                confirmLabel: t?.('delete') || 'Delete',
+                cancelLabel: t?.('cancel') || 'Cancel',
                 variant: 'danger'
             });
             if (confirmed && actions?.handleDeleteImage) {
@@ -543,7 +556,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && !isLoading && !isFetchingMore && hasMore) {
                 console.log('[FeedPage] Sentinel hit, triggering onLoadMore');
-                onLoadMore();
+                if (typeof onLoadMore === 'function') {
+                    onLoadMore();
+                }
             }
         }, {
             threshold: 0.1,
@@ -600,28 +615,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 )}
                 {/* Fixed spacer so content starts below the expanded hero header */}
-                {!expandedGroupId && !isSelectMode && images.length > 0 && onScrollProgress && (
+                {!effectiveGroupId && !isSelectMode && images.length > 0 && onScrollProgress && (
                     <FeedHeroSection />
                 )}
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
-                        {images.length > 0 ? (
+                        {displayImages.length > 0 ? (
                             <>
                                 <div
-                                    key={`${expandedGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
+                                    key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-8 sm:pt-16 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
-                                        const gc = (expandedGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                        const row = (expandedGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
+                                        const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                        const row = (effectiveGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
                                         const hasGen = row?.items.some(i => i.isGenerating) ?? false;
                                         const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
                                         const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
                                         const unseenIds: Set<string> = state?.unseenIds ?? new Set();
                                         // For group covers: dot if any item in group is unseen
                                         const rowItems = row?.items ?? [img];
-                                        const isNew = !expandedGroupId
+                                        const isNew = !effectiveGroupId
                                             ? rowItems.some(i => unseenIds.has(i.id))
                                             : unseenIds.has(img.id);
                                         // TTL: use root image's createdAt for group covers
@@ -633,7 +648,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 img={img}
                                                 idx={idx}
                                                 isSelected={selectedIdSet.has(img.id)}
-                                                isKeyboardActive={activeIndex === idx}
+                                                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
                                                 isSelectMode={!!isSelectMode}
                                                 onSelectImage={onSelectImage}
                                                 onToggleSelect={onToggleSelect}
@@ -646,8 +661,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     actions?.markGroupSeen?.(row.items.map(i => i.id));
                                                     onExpandedGroupChange(row.id);
                                                 } : undefined}
-                                                staggerDelay={(expandedGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                                isLastViewed={!expandedGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
+                                                staggerDelay={(effectiveGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
+                                                isLastViewed={!effectiveGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
@@ -659,7 +674,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         ) : !isLoading && (
                             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
                                 <div className="flex flex-col items-center gap-8">
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
                                         <h1 className="text-sm font-bold tracking-tight text-black dark:text-white">
                                             {t?.('welcome_title') || 'Welcome to exposé'}
                                         </h1>

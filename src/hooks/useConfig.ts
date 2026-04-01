@@ -8,7 +8,7 @@ export const useConfig = () => {
         if (value.startsWith('nb2-')) return value as GenerationQuality;
 
         const resolution = value.split('-')[1];
-        if (resolution === '1k' || resolution === '2k' || resolution === '4k') {
+        if (resolution === '05k' || resolution === '1k' || resolution === '2k' || resolution === '4k') {
             return `nb2-${resolution}` as GenerationQuality;
         }
 

@@ -4,8 +4,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
-import { createKieTask } from './services/kie.ts';
-import { saveKieResult } from '../_shared/saveKieResult.ts';
 import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
 import { COSTS } from './types/index.ts';
 import { verifyJwtSignature } from '../_shared/auth.ts';
@@ -195,26 +193,6 @@ const saveGeminiResult = async (
         .eq('id', jobId);
 };
 
-/**
- * Uploads a base64 image to temp Supabase storage and returns a signed URL for Kie.ai
- */
-const uploadTempForKie = async (supabaseAdmin: any, base64: string, jobId: string, idx: number): Promise<string | null> => {
-    try {
-        const binaryData = decodeBase64(base64);
-        const tempPath = `_temp_kie/${jobId}_${idx}.jpg`;
-        const { error } = await supabaseAdmin.storage
-            .from('user-content')
-            .upload(tempPath, binaryData, { contentType: 'image/jpeg', upsert: true });
-        if (error) return null;
-        const { data } = await supabaseAdmin.storage
-            .from('user-content')
-            .createSignedUrl(tempPath, 3600);
-        return data?.signedUrl || null;
-    } catch {
-        return null;
-    }
-};
-
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
@@ -272,6 +250,11 @@ Deno.serve(async (req) => {
             attachments: legacyAttachments
         } = payload;
 
+        // Early content validation — prevents credit deduction for empty requests
+        if (!prompt?.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
+            throw new Error('A prompt or image is required.');
+        }
+
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
         console.log(`[DEBUG] Request Type: ${requestType}`);
         console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
@@ -316,16 +299,17 @@ Deno.serve(async (req) => {
             refundData = { userId: user.id, originalCredits: creditBalance };
         }
 
-        // ── All heavy work (image uploads + Kie API call) runs in background ──
+        // ── All heavy work (image uploads + Gemini API call) runs in background ──
         // Response is returned immediately below so the client is never left waiting.
         // EdgeRuntime.waitUntil keeps the function alive up to 5 minutes after response.
         EdgeRuntime.waitUntil((async () => {
             let bgStage = 'init';
+            let apiRequestPayload: any = {}; // hoisted — updateStage can reference it from first call
             // Fire-and-forget stage tracker — writes current_stage to request_payload so
             // the admin/client can see where a killed background task got stuck.
             const updateStage = (stage: string, extra?: Record<string, any>) => {
                 bgStage = stage;
-                const payload = typeof apiRequestPayload !== 'undefined' ? { ...apiRequestPayload } : {};
+                const payload = { ...apiRequestPayload };
                 payload.current_stage = stage;
                 payload.stage_updated_at = new Date().toISOString();
                 if (extra) Object.assign(payload, extra);
@@ -368,9 +352,10 @@ Deno.serve(async (req) => {
                     logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
                 }
 
-                // Resolution for image output
-                const kieResolution = qualityMode === 'nb2-4k' ? '4K'
-                    : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                // Resolution for Gemini image output
+                const geminiImageSize = qualityMode === 'nb2-4k' ? '4K'
+                    : qualityMode === 'nb2-2k' ? '2K'
+                    : qualityMode === 'nb2-05k' ? '512' : '1K';
 
                 // aspectRatio logic:
                 // - Create mode (no source): always set, otherwise Gemini defaults to 1:1
@@ -382,11 +367,11 @@ Deno.serve(async (req) => {
                 const generationConfig: any = {
                     imageConfig: {
                         ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}),
-                        imageSize: kieResolution
+                        imageSize: geminiImageSize
                     }
                 };
 
-                // (1) Resolve all reference paths to signed URLs for both Gemini and Kie.ai
+                // (1) Resolve all reference paths to signed URLs for Gemini
                 const resolvedReferences: any[] = [];
                 if (payloadReferences?.length) {
                     for (const ref of payloadReferences) {
@@ -412,15 +397,15 @@ Deno.serve(async (req) => {
 
                 logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
 
-                // Store API request for debugging
-                const apiRequestPayload = {
+                // Store API request for debugging (variable declared above for early updateStage calls)
+                apiRequestPayload = {
                     model: finalModelName,
                     userPrompt: prompt,
                     hasSourceImage: !!finalSourceBase64,
                     hasMask,
                     hasReferenceImages: hasRefs,
                     referenceImagesCount: allRefs.length,
-                    imageSize: kieResolution,
+                    imageSize: geminiImageSize,
                     references: allRefs,
                     generationConfig,
                     timestamp: new Date().toISOString()
@@ -470,18 +455,50 @@ Deno.serve(async (req) => {
                     throw new Error('Google API key missing');
                 }
 
+                // Write webhook_data + stage to DB BEFORE calling Gemini
+                // so that even if the function dies mid-call we have full diagnostics
                 updateStage('gemini_call');
+                await supabaseAdmin
+                    .from('generation_jobs')
+                    .update({
+                        webhook_data: webhookData,
+                        request_payload: { ...apiRequestPayload, current_stage: 'gemini_call', gemini_start: Date.now() }
+                    })
+                    .eq('id', newId);
+
                 logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
                 const providerStartTime = Date.now();
-                const geminiResponse = await geminiGenerateImage(
-                    geminiApiKey,
-                    finalModelName,
-                    parts,
-                    generationConfig,
-                    !!finalSourceBase64,
-                    hasMask,
-                    hasRefs
-                );
+
+                // 4K needs up to 200s; other modes use 130s. waitUntil budget is ~400s total.
+                // 4K does NOT retry on timeout (200s × 2 = 400s would exceed the budget).
+                const GEMINI_TIMEOUT_MS = qualityMode === 'nb2-4k' ? 200_000 : 130_000;
+                const callGeminiWithTimeout = () => Promise.race([
+                    geminiGenerateImage(
+                        geminiApiKey,
+                        finalModelName,
+                        parts,
+                        generationConfig,
+                        !!finalSourceBase64,
+                        hasMask,
+                        hasRefs
+                    ),
+                    new Promise<never>((_, reject) =>
+                        setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS)
+                    )
+                ]);
+
+                let geminiResponse: any;
+                try {
+                    geminiResponse = await callGeminiWithTimeout();
+                } catch (firstErr: any) {
+                    if (firstErr?.message?.includes('timeout') && qualityMode !== 'nb2-4k') {
+                        logInfo('Gemini Retry', 'First attempt timed out — retrying once...');
+                        updateStage('gemini_retry');
+                        geminiResponse = await callGeminiWithTimeout();
+                    } else {
+                        throw firstErr;
+                    }
+                }
                 const providerLatencyMs = Date.now() - providerStartTime;
 
                 const generatedImage = extractGeneratedImage(geminiResponse);
@@ -536,144 +553,6 @@ Deno.serve(async (req) => {
                 );
 
                 logInfo('Google Generation Saved', `Job ${newId} completed via Google`);
-                return;
-
-                // Prepare image URLs for Kie.ai (image_input requires URLs, not base64)
-                const kieImageUrls: string[] = [];
-
-                // Source image — use original URL if available, else upload base64 to temp storage
-                const sourceHttpUrl = (payloadOriginalImage && payloadOriginalImage.startsWith('http'))
-                    ? payloadOriginalImage
-                    : (sourceImage?.src && sourceImage.src.startsWith('http')) ? sourceImage.src : null;
-
-                // Source image: Always prefer a "clean" re-uploaded JPEG in temp storage.
-                // Direct signed URLs often contain query parameters or have extensions (like .webp)
-                // that Kie.ai may reject with "File type not supported".
-                if (finalSourceBase64) {
-                    const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
-                    if (tempUrl) kieImageUrls.push(tempUrl);
-                } else if (sourceHttpUrl) {
-                    kieImageUrls.push(sourceHttpUrl);
-                }
-
-                // Annotation image (canvas base64) — upload to temp storage
-                if (payloadAnnotationImage) {
-                    const annBase64 = payloadAnnotationImage.startsWith('data:')
-                        ? payloadAnnotationImage.split(',')[1]
-                        : payloadAnnotationImage;
-                    const annUrl = await uploadTempForKie(supabaseAdmin, annBase64, newId, kieImageUrls.length);
-                    if (annUrl) kieImageUrls.push(annUrl);
-                }
-
-                // References: Also re-upload to temp storage if they are not already "clean" URLs
-                for (const ref of resolvedReferences) {
-                    if (kieImageUrls.length >= 8) break;
-
-                    if (ref.src.startsWith('data:')) {
-                        const b64 = extractBase64FromDataUrl(ref.src);
-                        const tempUrl = await uploadTempForKie(supabaseAdmin, b64, newId, kieImageUrls.length);
-                        if (tempUrl) kieImageUrls.push(tempUrl);
-                    } else if (ref.src.startsWith('http') && (ref.src.includes('?') || !ref.src.match(/\.(jpg|jpeg|png)$/i))) {
-                        // If it's a signed URL or has no clean extension, re-upload it as JPEG
-                        try {
-                            const b64 = await urlToBase64(ref.src);
-                            const tempUrl = await uploadTempForKie(supabaseAdmin, b64, newId, kieImageUrls.length);
-                            if (tempUrl) kieImageUrls.push(tempUrl);
-                        } catch {
-                            kieImageUrls.push(ref.src); // Fallback to original
-                        }
-                    } else {
-                        kieImageUrls.push(ref.src);
-                    }
-                }
-
-                // ═══════════════════════════════════════════════════════════════════
-                // Phase 1: Create Kie.ai task (synchronous — fast, <5s)
-                // ═══════════════════════════════════════════════════════════════════
-                logInfo('Kie API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
-
-                const kieApiKey = (Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai'))!;
-                const callBackUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/kie-webhook`;
-                const kieTaskId = await createKieTask(
-                    kieApiKey,
-                    finalModelName,
-                    payload,
-                    kieImageUrls,
-                    bestRatio,
-                    kieResolution,
-                    callBackUrl
-                );
-
-                logInfo('Kie Task Created', `taskId: ${kieTaskId}, callBackUrl: ${callBackUrl}`);
-
-                const variablesUsed = variables && typeof variables === 'object' && Object.keys(variables).length > 0;
-                await supabaseAdmin
-                    .from('generation_jobs')
-                    .update({ kie_task_id: kieTaskId, webhook_data: webhookData, variables_used: variablesUsed })
-                    .eq('id', newId);
-
-                // ═══════════════════════════════════════════════════════════════════
-                // Phase 2a: Webhook is primary — Kie.ai will POST to /kie-webhook when done.
-                // Phase 2b: Background fallback — polls for up to 90s for fast jobs OR
-                //           if webhook fails to fire (network issue, cold start, etc.)
-                // ═══════════════════════════════════════════════════════════════════
-                try {
-                    // Wait 10s before first poll — give webhook a chance to fire for fast jobs
-                    await new Promise(r => setTimeout(r, 10000));
-
-                    const kieApiKeyFb = (Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai'))!;
-                    // Poll Kie for up to 80s (16 attempts × 5s) — safe within Supabase's background task limit
-                    const MAX_FB_POLLS = 16;
-                    const POLL_MS = 5000;
-
-                    for (let i = 0; i < MAX_FB_POLLS; i++) {
-                        // Check if already completed by webhook
-                        const { data: jobCheck } = await supabaseAdmin
-                            .from('generation_jobs')
-                            .select('status')
-                            .eq('id', newId)
-                            .single();
-                        if (jobCheck?.status === 'completed' || jobCheck?.status === 'failed') {
-                            console.log(`[INFO] Background fallback: job ${newId} already ${jobCheck.status} (webhook handled it)`);
-                            return;
-                        }
-
-                        const pollRes = await fetch(`https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${kieTaskId}`, {
-                            headers: { 'Authorization': `Bearer ${kieApiKeyFb}` }
-                        });
-                        if (!pollRes.ok) { await new Promise(r => setTimeout(r, POLL_MS)); continue; }
-
-                        const pollData = await pollRes.json();
-                        const taskData = pollData?.data;
-                        const state = taskData?.state || taskData?.status;
-                        console.log(`[INFO] Background fallback poll ${i+1}/${MAX_FB_POLLS} | state: ${state}`);
-
-                        if (state === 'success' || state === 'completed') {
-                            // Extract image URL using same logic as kie.ts
-                            let imageUrl: string | null = null;
-                            if (taskData?.resultJson) { try { const p = JSON.parse(taskData.resultJson); imageUrl = p?.resultUrls?.[0] || p?.images?.[0] || null; } catch {} }
-                            if (!imageUrl && Array.isArray(taskData?.resultUrls)) imageUrl = taskData.resultUrls[0] || null;
-                            if (!imageUrl) imageUrl = taskData?.resultUrl || taskData?.imageUrl || taskData?.url || null;
-                            if (imageUrl) {
-                                await saveKieResult(supabaseAdmin, newId, imageUrl, webhookData, kieApiKeyFb, taskData?.costTime);
-                            }
-                            return;
-                        }
-                        if (state === 'fail' || state === 'failed' || state === 'error') {
-                            // Refund and fail
-                            if (!isPro && cost > 0) {
-                                await supabaseAdmin.from('profiles').update({ credits: profile.credits }).eq('id', user.id);
-                            }
-                            await supabaseAdmin.from('generation_jobs').update({ status: 'failed', error: taskData?.failMsg || 'Kie task failed' }).eq('id', newId);
-                            return;
-                        }
-                        await new Promise(r => setTimeout(r, POLL_MS));
-                    }
-                    // After 90s: if still processing, leave it — webhook may still fire (Kie jobs can take 2-5 min)
-                    console.log(`[INFO] Background fallback: 90s elapsed for job ${newId}, leaving for webhook`);
-                } catch (fbErr: any) {
-                    console.error(`[ERROR] Background fallback: ${fbErr.message}`);
-                }
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
@@ -695,13 +574,19 @@ Deno.serve(async (req) => {
                 // Mark job as failed with failure_stage in error details + preserve request payload
                 if (newId) {
                     try {
-                        const failPayload = typeof apiRequestPayload !== 'undefined' ? { ...apiRequestPayload } : {};
+                        const failPayload = { ...apiRequestPayload };
                         failPayload.current_stage = bgStage;
                         failPayload.stage_updated_at = new Date().toISOString();
                         failPayload.failed = true;
+                        const failDurationMs = typeof generationStartTime !== 'undefined' ? Date.now() - generationStartTime : null;
                         await supabaseAdmin
                             .from('generation_jobs')
-                            .update({ status: 'failed', error: `[${bgStage}] ${errorMsg}`, request_payload: failPayload })
+                            .update({
+                                status: 'failed',
+                                error: `[${bgStage}] ${errorMsg}`,
+                                request_payload: failPayload,
+                                ...(failDurationMs !== null ? { duration_ms: failDurationMs } : {})
+                            })
                             .eq('id', newId);
                     } catch (e) {
                         logError('Job Update Failed (BG)', e);

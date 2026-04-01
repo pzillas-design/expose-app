@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Users, Activity, Layers, Box, BarChart3 } from 'lucide-react';
+import { Users, Activity, Layers, Box, BarChart3, Mic } from 'lucide-react';
 import { TranslationFunction } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
-export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'stamps';
+export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'stamps' | 'voice';
 
 interface AdminSidebarProps {
  activeTab: AdminTab;
@@ -38,6 +38,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, t }) => {
  {renderItem('stats', 'Token & Kosten', <BarChart3 />)}
  {renderItem('presets', t('admin_presets'), <Layers />)}
  {renderItem('stamps', t('admin_objects'), <Box />)}
+ {renderItem('voice', 'Sprach-Assistent', <Mic />)}
  </div>
  );
 };

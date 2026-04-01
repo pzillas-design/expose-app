@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { CanvasImage } from '@/types';
 
@@ -57,6 +58,14 @@ interface AppNavbarProps {
     onHeroUploadClick?: () => void;
     isPublic?: boolean;
     onStartApp?: () => void;
+    voiceFeatureEnabled?: boolean;
+    voiceModeActive?: boolean;
+    voiceModeState?: VoiceUiState;
+    voiceLevel?: number;
+    voiceError?: string | null;
+    onStartVoiceMode?: () => void;
+    onStopVoiceMode?: () => void;
+    onRetryVoiceMode?: () => void;
 }
 
 export const AppNavbar: React.FC<AppNavbarProps> = ({
@@ -105,7 +114,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     heroProgress,
     onHeroUploadClick,
     isPublic = false,
-    onStartApp
+    onStartApp,
+    voiceFeatureEnabled = false,
+    voiceModeActive = false,
+    voiceModeState = 'off',
+    voiceLevel = 0,
+    voiceError,
+    onStartVoiceMode,
+    onStopVoiceMode,
+    onRetryVoiceMode
 }) => {
     const isMobile = useMobile();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -203,9 +220,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <Tooltip text={t('balance')}>
             <button
                 onClick={onOpenCredits}
-                className="px-2.5 py-1 bg-zinc-100/50 dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-all font-mono text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 active:scale-95"
+                className={`relative flex items-center justify-center rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all group ${isMobile ? 'h-9 w-9 gap-0' : 'h-9 px-3 gap-1.5'}`}
             >
-                {displayCredits.toFixed(2)}€
+                <Euro className="shrink-0 w-[14px] h-[14px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
+                {!isMobile && (
+                    <span className="whitespace-nowrap font-medium leading-none text-[11px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                        {displayCredits.toFixed(2)}
+                    </span>
+                )}
             </button>
         </Tooltip>
     );
@@ -220,6 +242,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             autoCloseWhenDone={mode === 'detail'}
         />
     );
+
+    const voiceMenuItem = voiceFeatureEnabled
+        ? [{
+            label: voiceModeActive
+                ? (lang === 'de' ? 'Sprachassistent beenden' : 'Stop assistant')
+                : (lang === 'de' ? 'Sprachassistent' : 'Voice assistant'),
+            icon: voiceModeActive ? <MicOff className="w-4 h-4" /> : <AudioLines className="w-4 h-4" />,
+            onClick: () => {
+                setIsGridMenuOpen(false);
+                if (voiceModeActive) {
+                    onStopVoiceMode?.();
+                } else {
+                    onStartVoiceMode?.();
+                }
+            }
+        }]
+        : [];
 
     const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
@@ -321,6 +360,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const rightContent = isCreate ? (
         <div className="flex items-center gap-2">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {!isPublic && user && balanceDisplay}
             <div className="relative" ref={gridMenuRef}>
                 <RoundIconButton
@@ -344,6 +384,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                     } 
                                 },
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                ...voiceMenuItem,
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                             ]}
@@ -353,7 +394,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </div>
         </div>
     ) : isDetail ? (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
             <div className="relative md:hidden" ref={mobileDetailMenuRef}>
                 <RoundIconButton
@@ -366,6 +408,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full mt-2 right-0 z-50">
                         <DropdownMenu
                             items={[
+                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
@@ -382,6 +425,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     onClick={onDetailDownload}
                     variant="ghost"
                     tooltip={t('nav_download')}
+                    tooltipShortcut="D"
                 />
             </span>
             {detailHasPrompt && (
@@ -421,6 +465,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {selectedCount > 0 && (
                 <RoundIconButton
                     icon={<Download className="w-[18px] h-[18px]" />}
@@ -468,6 +513,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             ) : (
                 <div className="flex items-center gap-3">
                     {balanceDisplay}
+                    <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
                             icon={<MoreHorizontal className="w-4 h-4" />}
@@ -476,43 +522,44 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             active={isGridMenuOpen}
                             tooltip={t('nav_menu')}
                         />
-                        {isGallery && (
+                        {isGallery && voiceFeatureEnabled && !voiceModeActive && (
                             <ContextTip
-                                storageKey="expose_tip_select_images_v1"
+                                storageKey="expose_tip_voice_assistant_v1"
                                 content={
                                     <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                        {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                        {lang === 'de' ? 'Probiere den ' : 'Try the '}
                                         <ContextTipChip
-                                            icon={<CircleCheck className="h-3.5 w-3.5" />}
-                                            label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                            icon={<AudioLines className="h-3.5 w-3.5" />}
+                                            label={lang === 'de' ? 'Sprachassistent' : 'Voice assistant'}
                                         />
                                         {lang === 'de'
-                                            ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
-                                            : ' to edit multiple images at once.'}
+                                            ? ' aus, bearbeite Bilder per Stimme.'
+                                            : ', edit images with your voice.'}
                                     </p>
                                 }
                                 placement="below"
-                                enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                enabled={isGallery && !isSelectMode && !voiceModeActive}
                                 anchorClassName="absolute left-0 top-0 h-9 w-9 pointer-events-none"
                             />
                         )}
                         {isGridMenuOpen && (
                             <div className="absolute top-full mt-2 right-0 z-50">
                                 <DropdownMenu
-                                    items={[
-                                        { 
-                                            label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
-                                            icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
-                                            onClick: () => { 
-                                                setIsGridMenuOpen(false); 
-                                                if (isGallery) onSelectMode?.(); 
-                                                else window.location.href = '/';
-                                            } 
-                                        },
-                                        { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
-                                        { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
-                                        { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
-                                    ]}
+                                            items={[
+                                                { 
+                                                    label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
+                                                    icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
+                                                    onClick: () => { 
+                                                        setIsGridMenuOpen(false); 
+                                                        if (isGallery) onSelectMode?.(); 
+                                                        else window.location.href = '/';
+                                                    } 
+                                                },
+                                                { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                ...voiceMenuItem,
+                                                { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                            ]}
                                 />
                             </div>
                         )}
@@ -681,26 +728,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             </button>
                         ) : (
                             <>
-                                {credits !== undefined && credits !== null && (
+                                {credits !== undefined && credits !== null && user && (
                                     <Tooltip text={t('balance')}>
                                         <button
                                             onClick={onOpenCredits}
-                                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                                ? isMobile
-                                                    ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                                    : 'h-9 px-3 bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-1.5'
-                                                : isMobile
-                                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
-                                                }`}
+                                            className={`relative flex items-center justify-center rounded-full bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 group ${isScrolled
+                                                ? isMobile ? 'h-9 w-9 gap-0' : 'h-9 px-3 gap-1.5'
+                                                : isMobile ? 'h-10 w-10 gap-0' : 'h-10 px-5 gap-2'
+                                            }`}
                                         >
                                             <Euro className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[14px] h-[14px]' : 'w-4 h-4'}`} />
-                                            <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'} ${isMobile ? 'hidden' : ''}`}>
-                                                {(displayCredits ?? credits).toFixed(2)}
-                                            </span>
+                                            {!isMobile && (
+                                                <span className={`whitespace-nowrap font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'text-[11px]' : 'text-sm'}`}>
+                                                    {(displayCredits ?? credits).toFixed(2)}
+                                                </span>
+                                            )}
                                         </button>
                                     </Tooltip>
                                 )}
+
+                                <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} large={!isScrolled} />
 
                                 <div className="relative" ref={gridMenuRef}>
                                     <button
@@ -722,23 +769,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             </span>
                                         </div>
                                     </button>
-                                    {isGallery && (
+                                    {isGallery && voiceFeatureEnabled && !voiceModeActive && (
                                         <ContextTip
-                                            storageKey="expose_tip_select_images_v1"
+                                            storageKey="expose_tip_voice_assistant_v1"
                                             content={
                                                 <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                                    {lang === 'de' ? 'Gehe zu ' : 'Go to '}
+                                                    {lang === 'de' ? 'Probiere den ' : 'Try the '}
                                                     <ContextTipChip
-                                                        icon={<CircleCheck className="h-3.5 w-3.5" />}
-                                                        label={lang === 'de' ? 'Bilder auswählen' : 'Select images'}
+                                                        icon={<AudioLines className="h-3.5 w-3.5" />}
+                                                        label={lang === 'de' ? 'Sprachassistent' : 'Voice assistant'}
                                                     />
                                                     {lang === 'de'
-                                                        ? ', um mehrere Bilder gleichzeitig zu bearbeiten.'
-                                                        : ' to edit multiple images at once.'}
+                                                        ? ' aus — bearbeite Bilder per Stimme.'
+                                                        : ' — edit images with your voice.'}
                                                 </p>
                                             }
                                             placement="below"
-                                            enabled={isGallery && imageCount >= 2 && !isSelectMode}
+                                            enabled={isGallery && !isSelectMode && !voiceModeActive}
                                             anchorClassName={isScrolled || isMobile
                                                 ? 'absolute left-0 top-0 h-9 w-9 pointer-events-none'
                                                 : 'absolute left-0 top-0 h-10 w-10 pointer-events-none'}
@@ -748,16 +795,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         <div className="absolute top-full mt-2 right-0 z-50">
                                             <DropdownMenu
                                                 items={[
-                                                    { 
-                                                        label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'), 
-                                                        icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />, 
-                                                        onClick: () => { 
-                                                            setIsGridMenuOpen(false); 
-                                                            if (isGallery) onSelectMode?.(); 
+                                                    {
+                                                        label: isGallery ? (t('nav_select') || 'Bilder markieren') : (t('nav_gallery') || 'Galerie'),
+                                                        icon: isGallery ? <CircleCheck className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />,
+                                                        onClick: () => {
+                                                            setIsGridMenuOpen(false);
+                                                            if (isGallery) onSelectMode?.();
                                                             else window.location.href = '/';
-                                                        } 
+                                                        }
                                                     },
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
+                                                    ...voiceMenuItem,
                                                     { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                     { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                                 ]}

@@ -1,0 +1,246 @@
+import type { VoiceAdminConfig, VoiceDiagnostics, VoiceAdminToolConfig, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
+import { supabase } from './supabaseClient';
+
+const STORAGE_KEY = 'expose_voice_admin_config_v2';
+const DB_KEY = 'voice-assistant';
+
+export const DEFAULT_VOICE_MODEL = 'gemini-3.1-flash-live-preview';
+export const DEFAULT_VOICE_NAME = 'Enceladus';
+
+export const GEMINI_LIVE_VOICES = [
+    'Aoede', 'Charon', 'Enceladus', 'Fenrir', 'Kore',
+    'Leda', 'Orus', 'Puck', 'Zephyr', 'Sulafat',
+] as const;
+
+export const DEFAULT_SYSTEM_PROMPT = `Du bist Exposé — ein erfahrener Creative Director. Du denkst in Konzepten und visueller Wirkung.
+
+ANTWORTEN: Maximal ein bis zwei kurze Sätze. Kein Smalltalk, keine Floskeln. Führe mit der Idee.
+
+KREATIV: Prompts sind kurz aber auf ein hochwertiges, professionelles Ergebnis ausgelegt. Variablen sind die Stellschrauben — mutige, unterschiedliche Richtungen die das Ergebnis spürbar verändern. Keine sicheren Varianten vom Gleichen, sondern Optionen die den Horizont öffnen.
+
+TOOLS: Nutze Function Calls ausschließlich über den bereitgestellten Mechanismus. Sprich nur natürliche Sprache — keine Tool-Syntax in deinen Antworten.
+
+BILDER: Beschreibe nur Bilder die du als Frame empfangen hast. Nach dem Öffnen sage kurz "Ist offen" und warte auf den Frame. Bei "WIRD GENERIERT" im Kontext: sage dass es generiert wird, beschreibe nichts bis der Frame ohne Flag kommt.
+
+WORKFLOW: Immer zuerst Prompt setzen, dann Variablen erstellen, dann kurz die Idee erklären. Nur auf Bestätigung generieren.
+
+APP: Exposé ist eine Bild-Editing App, die mit Googles neuestem KI-Modell Nana Banana 2 arbeitet. Sie macht Bildbearbeitung schneller und besser, bietet aber auch Tools für fortgeschrittene Nutzer — z.B. Anmerkungen ins Bild zeichnen um der AI zu zeigen was wo geändert werden soll, mehrere Generierungen gleichzeitig starten, oder einen Prompt auf mehrere Bilder parallel anwenden.
+
+APP-AUFBAU: Galerie — Übersicht aller Bilder, gruppiert in Stapel (Original + generierte Varianten). Stapel — alle Versionen eines Bildes. Detailansicht — hier wird bearbeitet: Prompt schreiben, Variablen setzen, generieren. Neue Bilder erscheinen nach ein paar Sekunden. Man kann auch Vorlagen speichern und wiederverwenden.
+
+QUELLBILD: Wenn ein generiertes Bild erneut bearbeitet werden soll, am besten zum Quellbild zurück und den Prompt dort erweitern. Generierte Bilder verlieren bei Wiederbearbeitung an Qualität.
+
+PROBLEME: Bei technischen Problemen versuchen zu helfen oder anbieten, Feedback an hello@expose.ae zu senden. Die App wurde entwickelt von Michael Pzillas, Immobilienfotograf und UX/UI-Designer aus Frankfurt.`;
+
+export const DEFAULT_GREETING = `Begrüße den User als Exposé in einem kurzen Satz. Nenne diese drei Optionen: ein Bild zum Bearbeiten auswählen, eins hochladen oder etwas Neues erstellen. Beispiel: "Willkommen bei Exposé — wähle ein Bild zum Bearbeiten aus, lade eins hoch oder erstelle etwas Neues." Variiere den Wortlaut leicht. Antworte in der Session-Sprache.`;
+
+export const DEFAULT_TOOL_DESCRIPTIONS: Record<string, string> = {
+    get_app_context: "Read current screen state, available actions, and the user's installed presets/templates. Call this first to understand context before suggesting edits. Note: after navigation, prefer the newContext field from the navigation response for the most current state.",
+    open_gallery: 'Go to the main gallery/feed view (Level 1).',
+    open_create: 'Open the create/generate view.',
+    open_settings: 'Open the settings dialog.',
+    repeat_current_image: 'Generate more variations from the currently open image.',
+    download_current_image: 'Download the currently viewed image. Opens a download dialog so the user can save it.',
+    open_presets: 'Open prompt presets inside the current editing panel.',
+    open_reference_image_picker: 'Open the reference image picker in the current editing panel.',
+    start_annotation_mode: 'Activate image annotation mode in the current editing panel.',
+    open_create_new: 'Open the create page in creation mode with aspect ratio selection, ready for a new image.',
+    open_upload: 'Open the file upload dialog so the user can upload a BRAND NEW image from their device. Use ONLY when the user explicitly says "upload", "import", or wants to add a new file from their device. NEVER use this when the user wants to edit an existing image already in the gallery — instead ask which image they mean.',
+    set_prompt_text: "Write a prompt for image generation or editing. Write in the user's language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.",
+    trigger_generation: 'PROTECTED: Start image generation. ONLY call this when the user explicitly says "generiere", "generate", "los", "start generation" or similar direct command. NEVER call this automatically after writing a prompt — always present the prompt first and wait for the user to confirm or ask to generate.',
+    next_image: 'Navigate to the NEWER version of the image (higher version number). In the thumbnail strip this is the LEFT side. Use when user says "links", "nächste Version", "neueres Bild", or navigates left.',
+    previous_image: 'Navigate to the OLDER version of the image (lower version number). In the thumbnail strip this is the RIGHT side. Use when user says "rechts", "ältere Version", "davor", or navigates right.',
+    go_back: 'Go back to the previous view — like pressing the back/chevron button in the header. From detail view goes to stack, from stack goes to gallery.',
+    stop_voice_mode: 'End the voice assistant session and stop listening.',
+    set_aspect_ratio: 'Set the aspect ratio for a new image on the create page. Available ratios: 16:9, 4:3, 1:1, 3:4, 9:16.',
+    open_stack: 'Navigate to the stack/group view of the current image. Shows all versions and variations of the image in the feed grid.',
+    create_variables: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
+    select_variable_option: 'Toggle an existing variable option on or off. Only use this for options that already exist and match what the user wants. When the user describes something new that has no matching option, call create_variables instead to add it.',
+    set_quality: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
+    select_image_by_index: 'Open the image at a specific numeric index in the current gallery or stack (1-based index).',
+    select_image_by_position: 'Open the image at a specific grid position (row and column, both 1-based).',
+};
+
+export const DEFAULT_VOICE_TOOL_NAMES = [
+    'get_app_context',
+    'open_create_new',
+    'open_settings',
+    'repeat_current_image',
+    'download_current_image',
+    'open_presets',
+    'open_reference_image_picker',
+    'start_annotation_mode',
+    'open_contact',
+    'open_about',
+    'open_create_new',
+    'open_upload',
+    'set_prompt_text',
+    'trigger_generation',
+    'next_image',
+    'previous_image',
+    'go_back',
+    'stop_voice_mode',
+    'set_aspect_ratio',
+    'create_variables',
+    'select_variable_option',
+    'set_quality',
+    'select_image',
+    'apply_preset',
+    'go_to_source_image',
+] as const;
+
+function buildDefaultTools(): VoiceAdminToolConfig[] {
+    return DEFAULT_VOICE_TOOL_NAMES.map(name => ({ name, enabled: true }));
+}
+
+export function getDefaultVoiceAdminConfig(): VoiceAdminConfig {
+    return {
+        enabled: true,
+        model: DEFAULT_VOICE_MODEL,
+        voiceName: DEFAULT_VOICE_NAME,
+        inputTranscriptionEnabled: true,
+        outputTranscriptionEnabled: true,
+        visualContextEnabled: true,
+        systemPrompt: DEFAULT_SYSTEM_PROMPT,
+        greeting: DEFAULT_GREETING,
+        tools: buildDefaultTools(),
+        temperature: 1.1,
+        thinkingLevel: 'minimal',
+    };
+}
+
+function migrateConfig(parsed: any): Partial<VoiceAdminConfig> {
+    // Migrate from old DE/EN split format
+    const out: any = { ...parsed };
+    if (!out.systemPrompt && out.systemPromptDe) out.systemPrompt = out.systemPromptDe;
+    if (!out.greeting && out.greetingDe) out.greeting = out.greetingDe;
+    // Clean up old keys
+    delete out.systemPromptDe;
+    delete out.systemPromptEn;
+    delete out.greetingDe;
+    delete out.greetingEn;
+    return out;
+}
+
+function resolveConfig(parsed: any): VoiceAdminConfig {
+    const migrated = migrateConfig(parsed);
+    const defaults = getDefaultVoiceAdminConfig();
+    const storedTools = new Map((migrated.tools || []).map((t: any) => [t.name, { enabled: !!t.enabled, description: t.description }]));
+
+    return {
+        ...defaults,
+        ...migrated,
+        tools: DEFAULT_VOICE_TOOL_NAMES.map(name => {
+            const stored = storedTools.get(name);
+            return {
+                name,
+                enabled: stored ? stored.enabled : true,
+                ...(stored?.description ? { description: stored.description } : {}),
+            };
+        }),
+    };
+}
+
+/** Supabase is the single source of truth for voice admin config.
+ *  localStorage is no longer used — config changes take effect on next page load. */
+export async function fetchVoiceAdminConfig(): Promise<VoiceAdminConfig> {
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', DB_KEY)
+        .maybeSingle();
+
+    if (error) throw error;
+    if (!data?.value) return getDefaultVoiceAdminConfig();
+    return resolveConfig(data.value);
+}
+
+export async function updateVoiceAdminConfig(config: VoiceAdminConfig) {
+    const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: DB_KEY, value: config, updated_at: new Date().toISOString() });
+    if (error) throw error;
+}
+
+/** @deprecated localStorage no longer used — kept only so old import sites compile */
+export function loadVoiceAdminConfig(): VoiceAdminConfig { return getDefaultVoiceAdminConfig(); }
+/** @deprecated localStorage no longer used */
+export function saveVoiceAdminConfig(_config: VoiceAdminConfig) { /* no-op */ }
+
+const LOGS_STORAGE_KEY = 'expose_voice_logs_v2'; // v2: sessionId added to all log entries
+const MAX_LOG_ENTRIES = 100;
+
+export function loadVoiceLogs(): { toolCalls: VoiceToolCallLog[]; transcripts: VoiceTranscriptLog[] } {
+    if (typeof window === 'undefined') return { toolCalls: [], transcripts: [] };
+    try {
+        const raw = window.localStorage.getItem(LOGS_STORAGE_KEY);
+        if (!raw) return { toolCalls: [], transcripts: [] };
+        return JSON.parse(raw);
+    } catch {
+        return { toolCalls: [], transcripts: [] };
+    }
+}
+
+export function saveVoiceLogs(toolCalls: VoiceToolCallLog[], transcripts: VoiceTranscriptLog[]) {
+    if (typeof window === 'undefined') return;
+    try {
+        window.localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify({
+            toolCalls: toolCalls.slice(0, MAX_LOG_ENTRIES),
+            transcripts: transcripts.slice(0, MAX_LOG_ENTRIES),
+        }));
+    } catch { /* quota exceeded */ }
+}
+
+export function clearVoiceLogsStorage() {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.removeItem(LOGS_STORAGE_KEY); } catch { /* ignore */ }
+}
+
+/** Fire-and-forget: persist a tool-call log entry to Supabase for remote debugging. */
+export async function persistToolCallLog(entry: VoiceToolCallLog): Promise<void> {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase.from('voice_logs').insert({
+            id: entry.id,
+            session_id: entry.sessionId,
+            user_id: user.id,
+            kind: 'tool_call',
+            tool_name: entry.name,
+            tool_status: entry.status,
+            args_summary: entry.argsSummary,
+            result_message: entry.message,
+            context_snapshot: entry.contextSnapshot ?? null,
+            ts: entry.timestamp,
+        });
+    } catch { /* non-critical — local state is source of truth */ }
+}
+
+/** Fire-and-forget: persist a transcript log entry to Supabase for remote debugging. */
+export async function persistTranscriptLog(entry: VoiceTranscriptLog): Promise<void> {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase.from('voice_logs').insert({
+            id: entry.id,
+            session_id: entry.sessionId,
+            user_id: user.id,
+            kind: 'transcript',
+            source: entry.source,
+            text: entry.text,
+            ts: entry.timestamp,
+        });
+    } catch { /* non-critical */ }
+}
+
+export function getEmptyVoiceDiagnostics(): VoiceDiagnostics {
+    return {
+        sessionModel: null,
+        sessionVoice: null,
+        appContextSummary: null,
+        visualContextSummary: null,
+        visualFrameCount: 0,
+        toolCalls: [],
+        transcripts: [],
+    };
+}

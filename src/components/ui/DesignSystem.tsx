@@ -115,9 +115,11 @@ interface TooltipProps {
     text: string;
     children: React.ReactElement<any>;
     side?: 'top' | 'bottom';
+    /** Keyboard shortcut hint shown after text in monospace */
+    shortcut?: string;
 }
 
-export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom' }) => {
+export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom', shortcut }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
 
@@ -131,7 +133,8 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
         const padding = 8;
         const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const estimatedHalfWidth = Math.max(20, (text.length * charWidth) / 2 + 10);
+        const totalLen = text.length + (shortcut ? shortcut.length + 2 : 0);
+        const estimatedHalfWidth = Math.max(20, (totalLen * charWidth) / 2 + 10);
 
         let left = rect.left + rect.width / 2;
         const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
@@ -175,8 +178,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                         transform: `translate(-50%, ${side === 'bottom' ? '0' : '-100%'})`
                     }}
                 >
-                    <div className="text-[10px] font-medium whitespace-nowrap tracking-wide">
-                        {text}
+                    <div className="text-[10px] font-medium whitespace-nowrap tracking-wide flex items-center gap-1.5">
+                        <span>{text}</span>
+                        {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500">{shortcut}</kbd>}
                     </div>
                 </div>,
                 document.body
@@ -223,11 +227,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     iconPosition?: 'left' | 'right';
     isLoading?: boolean;
     tooltip?: string;
+    tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
+    /** Keyboard shortcut shown inline in the button — hidden on mobile (sm: breakpoint) */
+    shortcut?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, tooltipSide, ...props
+    children, variant = 'primary', size = 'm', icon, iconPosition = 'left', isLoading, className = '', disabled, tooltip, tooltipShortcut, tooltipSide, shortcut, ...props
 }) => {
     // Structural classes — typography from Typo.ButtonLabel
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
@@ -261,11 +268,14 @@ export const Button: React.FC<ButtonProps> = ({
             {!isLoading && icon && iconPosition === 'left' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {children}
             {!isLoading && icon && iconPosition === 'right' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
+            {!isLoading && shortcut && (
+                <kbd className="hidden sm:inline-flex items-center font-mono text-[11px] opacity-40 -ml-0.5">{shortcut}</kbd>
+            )}
         </button>
     );
 
     if (tooltip && !disabled && !isLoading) {
-        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} shortcut={tooltipShortcut} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };
@@ -275,10 +285,11 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
     tooltip?: string;
+    tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
 }
 
-export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, tooltipSide, className = '', ...props }) => {
+export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, className = '', ...props }) => {
     const btn = (
         <button
             className={`
@@ -296,7 +307,7 @@ export const IconButton: React.FC<IconButtonProps> = ({ icon, active, tooltip, t
     );
 
     if (tooltip) {
-        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} shortcut={tooltipShortcut} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };
@@ -306,11 +317,12 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     icon: React.ReactNode;
     active?: boolean;
     tooltip?: string;
+    tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
     variant?: 'default' | 'danger' | 'ghost' | 'primary';
 }
 
-export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipSide, variant = 'default', className = '', ...props }) => {
+export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
     const base = `w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95`;
 
@@ -334,7 +346,7 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
     );
 
     if (tooltip) {
-        return <Tooltip text={tooltip} side={tooltipSide}>{btn}</Tooltip>;
+        return <Tooltip text={tooltip} shortcut={tooltipShortcut} side={tooltipSide}>{btn}</Tooltip>;
     }
     return btn;
 };

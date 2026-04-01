@@ -59,6 +59,7 @@ export const useNanoController = () => {
     const [loadingProgress, setLoadingProgress] = useState(0);
     const isLoadingRef = useRef(false);
     const [hasMore, setHasMore] = useState(true);
+    const [gridColumns, setGridColumns] = useState(2);
     const offsetRef = useRef(0);
     const PAGE_SIZE = 50;
 
@@ -87,6 +88,8 @@ export const useNanoController = () => {
             localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
             return next;
         });
+        // Dispatch custom event so voice mode can play a notification sound
+        window.dispatchEvent(new CustomEvent('expose:generation-complete', { detail: { id } }));
     }, []);
 
     // --- Modular Hooks ---
@@ -253,7 +256,7 @@ export const useNanoController = () => {
                         if (addItems.length > 0) {
                             const merged = {
                                 ...existing,
-                                items: [...existing.items, ...addItems].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                                items: [...existing.items, ...addItems].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
                             };
                             rowMap.set(newRow.id, merged);
                         }
@@ -373,8 +376,8 @@ export const useNanoController = () => {
             const confirmed = await confirm({
                 title: currentLang === 'de' ? 'Bild löschen' : 'Delete image',
                 description: currentLang === 'de' ? 'Möchtest du dieses Bild wirklich löschen?' : 'Do you really want to delete this image?',
-                confirmLabel: currentLang === 'de' ? 'LÖSCHEN' : 'DELETE',
-                cancelLabel: currentLang === 'de' ? 'ABBRECHEN' : 'CANCEL',
+                confirmLabel: currentLang === 'de' ? 'Löschen' : 'Delete',
+                cancelLabel: currentLang === 'de' ? 'Abbrechen' : 'Cancel',
                 variant: 'danger'
             });
             if (!confirmed) return false;
@@ -420,13 +423,17 @@ export const useNanoController = () => {
         return true;
     }, [user, rows, activeId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
+    const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[]) => {
+        const fileArray = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f && f.type.startsWith('image/'));
+        if (fileArray.length === 0) return;
+        processFiles(fileArray);
+    }, [processFiles]);
+
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragOver(false);
-        const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
-        if (files.length === 0) return;
-        processFiles(files);
-    }, [processFiles, setIsDragOver]);
+        handleProcessFiles(e.dataTransfer.files);
+    }, [handleProcessFiles, setIsDragOver]);
 
     const handleDownload = useCallback(async (idOrIds: string | string[]) => {
         const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
@@ -644,18 +651,19 @@ export const useNanoController = () => {
         isAdminOpen,
         isAuthLoading,
         isBrushResizing,
+        isSelectMode,
         isMobile,
         templates,
         hasMore,
-        isSelectMode,
         unseenIds,
+        gridColumns,
     }), [
         rows, selectedIds, activeId, primarySelectedId, selectedImage, selectedImages, allImages,
         qualityMode, themeMode, currentLang, sideSheetMode, isCanvasLoading, isFetchingMore, loadingProgress,
         brushSize, maskTool, activeShape, userLibrary, globalLibrary, fullLibrary, user, userProfile, credits,
         authModalMode, isAuthModalOpen, authEmail, authError, isDragOver, isSettingsOpen, isAdminOpen,
         isAuthLoading, isBrushResizing, isMobile, templates, hasMore, isSelectMode,
-        totalImageCount, unseenIds
+        totalImageCount, unseenIds, gridColumns
     ]);
 
     const actions = React.useMemo(() => ({
@@ -713,12 +721,12 @@ export const useNanoController = () => {
         recordPresetUsage,
         refreshTemplates,
         savePreset: saveTemplate,
-        setIsCanvasLoading,
-        deletePreset: deleteTemplate,
-        ensureValidSession,
-        handleLoadMore,
-        ensureImageLoaded,
         refreshImageCount,
+        setGridColumns,
+        handleLoadMore,
+        ensureValidSession,
+        ensureImageLoaded,
+        handleProcessFiles,
     }), [
         setRows, setQualityMode, setThemeMode, setLang, handleModeChange, setSideSheetMode,
         setBrushSize, setMaskTool, setActiveShape,
@@ -729,7 +737,8 @@ export const useNanoController = () => {
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
-        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount
+        ensureValidSession, handleLoadMore, ensureImageLoaded, refreshImageCount, setGridColumns,
+        handleProcessFiles
     ]);
 
     return React.useMemo(() => ({

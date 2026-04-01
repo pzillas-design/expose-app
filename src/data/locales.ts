@@ -38,6 +38,7 @@ export const translations = {
     credits_added_success: "successfully added",
 
     // Error Messages
+    error_no_input: "Please add a prompt first.",
     error_generation_failed: "Generation failed",
     error_insufficient_credits: "Insufficient credits",
     error_safety_blocked: "Content blocked by safety filters",
@@ -411,7 +412,7 @@ export const translations = {
     shape_circle: "Circle",
     shape_line: "Line",
     stamp_label: "Stamp",
-    add_reference: "Add Reference",
+    add_reference: "Add Inspiration",
     quality_highest: "Highest quality",
     quality_faster: "Faster & cheaper",
     presets_label: "Presets",
@@ -597,6 +598,7 @@ export const translations = {
     credits_added_success: "erfolgreich hinzugefügt",
 
     // Error Messages
+    error_no_input: "Bitte zuerst einen Prompt hinzufügen.",
     error_generation_failed: "Generierung fehlgeschlagen",
     error_insufficient_credits: "Nicht genügend Credits",
     error_safety_blocked: "Inhalt durch Sicherheitsfilter blockiert",
@@ -958,7 +960,7 @@ export const translations = {
     shape_circle: "Kreis",
     shape_line: "Linie",
     stamp_label: "Stempel",
-    add_reference: "Referenzbild",
+    add_reference: "Inspiration hinzufügen",
     quality_highest: "Höchste Qualität",
     quality_faster: "Schneller & günstiger",
     presets_label: "Vorlagen",

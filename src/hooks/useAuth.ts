@@ -238,6 +238,13 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             return;
         }
 
+        // Stripe live mode does not accept localhost URLs — payments only work on the real domain
+        const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        if (isLocalhost) {
+            showToast('Payments not available on localhost — please test on expose.ae', 'error');
+            return;
+        }
+
         try {
             // Get current session token
             const { data: { session } } = await supabase.auth.getSession();
@@ -260,7 +267,19 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
 
             const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as any;
 
-            if (error) throw error;
+            if (error) {
+                // Extract the real error message from the edge function response body
+                let message = error.message;
+                try {
+                    const body = await error.context?.json?.();
+                    if (body?.error) {
+                        message = body.error;
+                        if (body.stripe_code) message += ` (${body.stripe_code})`;
+                        if (body.stripe_type) message += ` [${body.stripe_type}]`;
+                    }
+                } catch { /* ignore parse errors */ }
+                throw new Error(message);
+            }
 
             if (data?.url) {
                 // Open Stripe checkout in a new tab to preserve current canvas state

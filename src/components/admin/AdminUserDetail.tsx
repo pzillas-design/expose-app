@@ -27,9 +27,9 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
  const handleAddCredits = async () => {
  const result = await prompt({
- title: t('admin_add_funds').toUpperCase(),
+ title: t('admin_add_funds'),
  placeholder: '0.00',
- confirmLabel: t('admin_add_funds').toUpperCase(),
+ confirmLabel: t('admin_add_funds'),
  suffix: '€'
  });
 

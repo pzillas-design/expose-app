@@ -150,6 +150,82 @@ export const adminService = {
     },
 
     /**
+     * Fetch voice session summaries (lightweight — no entries, just metadata for table rows).
+     * Entries are loaded on-demand via getVoiceSessionEntries().
+     */
+    async getVoiceSessions(limit = 50): Promise<any[]> {
+        // Only fetch the minimal fields needed for the summary row
+        const { data, error } = await supabase
+            .from('voice_logs')
+            .select('session_id, user_id, kind, tool_name, tool_status, source, text, ts')
+            .order('ts', { ascending: false })
+            .limit(500);
+
+        if (error) throw error;
+        if (!data?.length) return [];
+
+        const sessionMap = new Map<string, any[]>();
+        for (const log of data) {
+            const sid = log.session_id || '__unknown__';
+            if (!sessionMap.has(sid)) sessionMap.set(sid, []);
+            sessionMap.get(sid)!.push(log);
+        }
+
+        const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))];
+        const profilesMap: Record<string, string> = {};
+        if (userIds.length > 0) {
+            const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
+            if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+        }
+
+        return Array.from(sessionMap.entries())
+            .map(([sessionId, logs]) => {
+                const sorted = logs.sort((a: any, b: any) => a.ts - b.ts);
+                const transcripts = sorted.filter((l: any) => l.kind === 'transcript');
+                const toolCalls = sorted.filter((l: any) => l.kind === 'tool_call');
+                const userId = sorted[0]?.user_id;
+                const firstUser = transcripts.find((l: any) => l.source === 'user')?.text;
+                const hadGeneration = toolCalls.some((l: any) => l.tool_name === 'trigger_generation' && l.tool_status === 'ok');
+                const cleanExit = toolCalls.some((l: any) => l.tool_name === 'stop_voice_mode' && l.tool_status === 'ok');
+                const hadError = toolCalls.some((l: any) => l.tool_status === 'error');
+                const startedAt = sorted[0]?.ts || 0;
+                const endedAt = sorted[sorted.length - 1]?.ts || 0;
+
+                return {
+                    id: `voice-${sessionId}`,
+                    _type: 'voice' as const,
+                    sessionId,
+                    userName: profilesMap[userId] || 'Unknown',
+                    createdAt: startedAt,
+                    durationMs: endedAt - startedAt,
+                    messageCount: transcripts.length,
+                    toolCount: toolCalls.length,
+                    firstUserMessage: firstUser || null,
+                    hadGeneration,
+                    cleanExit,
+                    status: hadError ? 'failed' : 'completed',
+                    // entries NOT included — loaded on demand
+                };
+            })
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, limit);
+    },
+
+    /**
+     * Fetch full entries for a single voice session (on-demand when user clicks a row).
+     */
+    async getVoiceSessionEntries(sessionId: string): Promise<any[]> {
+        const { data, error } = await supabase
+            .from('voice_logs')
+            .select('session_id, user_id, kind, tool_name, tool_status, args_summary, result_message, source, text, ts')
+            .eq('session_id', sessionId)
+            .order('ts', { ascending: true });
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    /**
      * Preset Management
      */
     /**

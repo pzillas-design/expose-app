@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TranslationFunction } from '@/types';
-import { Users, Activity, Layers, Box, BarChart3, ChevronLeft } from 'lucide-react';
+import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
+import { Users, Activity, Layers, Box, BarChart3, ChevronLeft, AudioLines } from 'lucide-react';
 import { Logo } from '@/components/ui/Logo';
 
 // Modular Views
@@ -10,6 +10,7 @@ import { AdminJobsView } from './AdminJobsView';
 import { AdminStatsView } from './AdminStatsView';
 import { AdminPresetsView } from './AdminPresetsView';
 import { AdminObjectsView } from './AdminObjectsView';
+import { AdminVoiceView } from './AdminVoiceView';
 
 interface AdminDashboardProps {
  user: any;
@@ -17,11 +18,15 @@ interface AdminDashboardProps {
  credits: number;
  onCreateBoard: () => void;
  t: TranslationFunction;
+ voiceConfig: VoiceAdminConfig;
+ voiceDiagnostics: VoiceDiagnostics;
+ onClearVoiceLogs?: () => void;
+ onVoiceConfigChange: React.Dispatch<React.SetStateAction<VoiceAdminConfig>>;
 }
 
-export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'stamps';
+export type AdminTab = 'users' | 'jobs' | 'stats' | 'presets' | 'stamps' | 'voice';
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfile, credits, onCreateBoard, t }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfile, credits, onCreateBoard, t, voiceConfig, voiceDiagnostics, onVoiceConfigChange, onClearVoiceLogs }) => {
  const { tab } = useParams<{ tab: string }>();
  const navigate = useNavigate();
 
@@ -42,6 +47,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
   { id: 'stats',   label: 'Kosten',           icon: <BarChart3 className="w-3.5 h-3.5" /> },
   { id: 'presets', label: t('admin_presets'), icon: <Layers   className="w-3.5 h-3.5" /> },
   { id: 'stamps',  label: t('admin_objects'), icon: <Box      className="w-3.5 h-3.5" /> },
+  { id: 'voice',   label: 'Sprach-Assistent', icon: <AudioLines className="w-3.5 h-3.5" /> },
  ];
 
  const isTabActive = (id: string) =>
@@ -111,6 +117,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, userProfil
      {activeTab === 'stats'   && <AdminStatsView   t={t} />}
      {activeTab === 'presets' && <AdminPresetsView t={t} />}
      {(activeTab === 'objects' || activeTab === 'stamps') && <AdminObjectsView t={t} />}
+     {activeTab === 'voice'   && <AdminVoiceView t={t} config={voiceConfig} diagnostics={voiceDiagnostics} onConfigChange={onVoiceConfigChange} onClearLogs={onClearVoiceLogs} />}
     </div>
    </main>
   </div>

@@ -124,7 +124,7 @@ export interface LibraryCategory {
   isUserCreated?: boolean; // New
 }
 
-export type GenerationQuality = 'nb2-1k' | 'nb2-2k' | 'nb2-4k';
+export type GenerationQuality = 'nb2-05k' | 'nb2-1k' | 'nb2-2k' | 'nb2-4k';
 
 // --- ADMIN TYPES ---
 
@@ -152,6 +152,55 @@ export interface AdminJob {
   createdAt: number;
   thumbnail?: string; // Mock thumbnail url
   promptPreview: string;
+}
+
+export interface VoiceAdminToolConfig {
+  name: string;
+  enabled: boolean;
+  description?: string; // custom override sent to the API; falls back to DEFAULT_TOOL_DESCRIPTIONS
+}
+
+export interface VoiceAdminConfig {
+  enabled: boolean;
+  model: string;
+  voiceName: string;
+  inputTranscriptionEnabled: boolean;
+  outputTranscriptionEnabled: boolean;
+  visualContextEnabled: boolean;
+  systemPrompt: string;
+  greeting: string;
+  tools: VoiceAdminToolConfig[];
+  temperature?: number;
+  thinkingLevel?: 'none' | 'minimal' | 'low' | 'medium' | 'high';
+}
+
+export interface VoiceToolCallLog {
+  id: string;
+  sessionId: string;
+  name: string;
+  status: 'ok' | 'error';
+  argsSummary: string;
+  message: string;
+  timestamp: number;
+  contextSnapshot?: string; // JSON of app context at the time of the call
+}
+
+export interface VoiceTranscriptLog {
+  id: string;
+  sessionId: string;
+  source: 'user' | 'assistant';
+  text: string;
+  timestamp: number;
+}
+
+export interface VoiceDiagnostics {
+  sessionModel: string | null;
+  sessionVoice: string | null;
+  appContextSummary: string | null;
+  visualContextSummary: string | null;
+  visualFrameCount: number;
+  toolCalls: VoiceToolCallLog[];
+  transcripts: VoiceTranscriptLog[];
 }
 
 // --- GENERATION TYPES ---

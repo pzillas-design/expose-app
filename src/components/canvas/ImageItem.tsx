@@ -173,17 +173,18 @@ export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDura
         if (!startTime) return;
         const duration = estimatedDuration || 60000;
 
+        let rafId: number;
         const tick = () => {
             const elapsed = Date.now() - startTime;
             const raw = elapsed / duration;
             const capped = 1 - Math.exp(-raw * 1.5);
             // Cap at 85% — only reaches 100% when the image truly arrives
             setProgress(Math.min(capped * 0.85, 0.85));
+            rafId = requestAnimationFrame(tick);
         };
 
-        tick();
-        const id = setInterval(tick, 800);
-        return () => clearInterval(id);
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
     }, [startTime, estimatedDuration, finishing]);
 
     return (
@@ -192,7 +193,7 @@ export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDura
             <div className="w-1/5 h-[3px] rounded-full bg-white/25 overflow-hidden">
                 {/* Fill */}
                 <div
-                    className={`h-full rounded-full bg-white ${finishing ? 'transition-all duration-500 ease-out' : 'transition-all duration-700 ease-out'}`}
+                    className={`h-full rounded-full bg-white ${finishing ? 'transition-all duration-500 ease-out' : ''}`}
                     style={{ width: `${progress * 100}%` }}
                 />
             </div>
