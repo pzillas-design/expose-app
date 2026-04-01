@@ -360,6 +360,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const rightContent = isCreate ? (
         <div className="flex items-center gap-2">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {!isPublic && user && balanceDisplay}
             <div className="relative" ref={gridMenuRef}>
                 <RoundIconButton
@@ -463,6 +464,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
+            <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {selectedCount > 0 && (
                 <RoundIconButton
                     icon={<Download className="w-[18px] h-[18px]" />}
