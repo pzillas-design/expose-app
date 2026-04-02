@@ -811,7 +811,9 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet (${row.items.length} Bilder).` : `Opened stack "${img.title || 'Untitled'}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                    const sourceImg = row.items.find((i: any) => !i.parentId) || row.items[row.items.length - 1];
+                    const stackName = sourceImg?.title || img.title || 'Unbenannt';
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel von "${stackName}" geöffnet (${row.items.length} Bilder).` : `Opened stack of "${stackName}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
 
@@ -830,7 +832,9 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                    const sourceImg = row.items.find((i: any) => !i.parentId) || row.items[row.items.length - 1];
+                    const stackName = sourceImg?.title || img.title || 'Unbenannt';
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel von "${stackName}" geöffnet (${row.items.length} Bilder).` : `Opened stack of "${stackName}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
             handleSelectImage(img.id);
