@@ -1034,7 +1034,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                className={`relative flex flex-col bg-zinc-50 dark:bg-zinc-950 ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
+                className={`relative flex flex-col bg-white dark:bg-zinc-950 ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
                 style={{ width }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}
