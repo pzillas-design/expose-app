@@ -5,7 +5,7 @@ import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
 import { Pen, Camera, X, Copy, ArrowLeft, Plus, RotateCcw, Eye, ChevronDown, ChevronLeft, ChevronRight, Check, Settings2, Circle, Minus, MoreHorizontal, MoreVertical, Trash, Image as ImageIcon, Download } from 'lucide-react';
 import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
-import { ContextTip } from '@/components/ui/ContextTip';
+import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';

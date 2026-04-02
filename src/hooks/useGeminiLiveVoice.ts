@@ -10,7 +10,12 @@ export interface VoiceAppContext {
     viewLevel: 'gallery' | 'stack' | 'detail' | 'create' | 'other';
     gridColumns?: number;
     currentImageTitle?: string;
-    images?: Array<{ index: number; title?: string }>;
+    images?: Array<{ index: number; title?: string; isOriginal?: boolean; isGenerated?: boolean }>;
+    isGenerated?: boolean;
+    usedPrompt?: string;
+    hasSourceImage?: boolean;
+    sourceImageTitle?: string;
+    presets?: Array<{ id: string; title: string; tags?: string[] }>;
 }
 
 export interface VoiceVisualFrame {

@@ -70,6 +70,16 @@ export interface ImageRow {
   createdAt?: number; // DB Prep
 }
 
+export interface Board {
+  id: string;
+  name: string;
+  updatedAt: Date | string | number;
+  previewImages?: string[];
+  thumbnail?: string;
+  itemCount?: number;
+  lastActivityAt?: Date | string | number;
+}
+
 
 export interface PresetOption {
   id: string;

@@ -153,7 +153,7 @@ export async function downloadImagesAsZip(
     }));
 
     const zipped = zipSync(files, { level: 0 }); // level 0 = store-only (images are already compressed)
-    const blob = new Blob([zipped], { type: 'application/zip' });
+    const blob = new Blob([zipped as unknown as BlobPart], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
     const link = Object.assign(document.createElement('a'), { href: url, download: zipName, style: 'display:none' });
     document.body.appendChild(link);

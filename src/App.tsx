@@ -30,11 +30,8 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { children: React.ReactNode }) {
-        super(props);
-        this.state = { hasError: false };
-    }
-    static getDerivedStateFromError() { return { hasError: true }; }
+    state = { hasError: false };
+    static getDerivedStateFromError(): { hasError: boolean } { return { hasError: true }; }
     componentDidCatch(error: Error) { console.error('[SettingsModal] render error:', error); }
     render() { return this.state.hasError ? null : this.props.children; }
 }
