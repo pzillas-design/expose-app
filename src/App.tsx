@@ -1165,6 +1165,7 @@ export function App() {
                                     onLoadMore={actions.handleLoadMore}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={handleCreateNew}
+                                    onGenerate={() => navigate('/create')}
                                     onUpload={actions.handleProcessFiles}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}

@@ -20,7 +20,7 @@ CREATE TABLE public.profiles (
     email TEXT,
     full_name TEXT,
     role TEXT DEFAULT 'user', -- 'user', 'pro', 'admin'
-    credits DOUBLE PRECISION DEFAULT 10.0,
+    credits DOUBLE PRECISION DEFAULT 5.0,
     last_active_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

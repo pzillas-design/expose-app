@@ -691,6 +691,11 @@ export const useGeneration = ({
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
 
+        if (!prompt?.trim() && !attachments.length) {
+            showToast(t('error_prompt_required') || 'Bitte gib einen Prompt oder ein Bild an.', 'error');
+            return;
+        }
+
         const newId = generateId();
         const baseName = t('new_generation') || 'Generation';
 
@@ -795,6 +800,10 @@ export const useGeneration = ({
                 attachedJobIds.current.delete(newId);
 
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
+
+                if (user && !isAuthDisabled) {
+                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', user.id);
+                }
 
                 const translated = translateError(error.message || "", t);
                 showToast(translated, "error");

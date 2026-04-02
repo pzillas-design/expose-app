@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
             logInfo('Profile Creation', `Creating profile for user ${user.id}`);
             const { data: newProfile } = await supabaseAdmin
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 10 })
+                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 5 })
                 .select()
                 .single();
             profile = newProfile;
@@ -408,6 +408,7 @@ Deno.serve(async (req) => {
                     imageSize: geminiImageSize,
                     references: allRefs,
                     generationConfig,
+                    variableValues: variables || null,
                     timestamp: new Date().toISOString()
                 };
 
