@@ -289,7 +289,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             const isChild = !!selectedImage.parentId;
             setPrompt(selectedImage.userDraftPrompt || '');
             setActiveTemplateId(isChild ? null : (selectedImage.activeTemplateId || null));
-            setControlValues(isMulti || isChild ? {} : (selectedImage.variableValues || {}));
+            // In multi-select: keep current controlValues so the user's variable selection
+            // survives entering batch mode. Only reset for children or single-image navigation.
+            if (isChild) {
+                setControlValues({});
+            } else if (!isMulti) {
+                setControlValues(selectedImage.variableValues || {});
+            }
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id, isMulti]);
