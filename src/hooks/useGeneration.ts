@@ -448,7 +448,7 @@ export const useGeneration = ({
         const hasImage = !!(sourceImage.src && !sourceImage.src.startsWith('blob:empty'));
         const annotations = sourceImage.annotations || [];
         const hasAnnotation = annotations.some(a => a.type !== 'reference_image');
-        const hasReferenceImage = annotations.some(a => a.type === 'reference_image' && a.src);
+        const hasReferenceImage = annotations.some(a => a.type === 'reference_image' && a.referenceImage);
         const hasVariables = variableValues && Object.keys(variableValues).length > 0;
 
         if (hasImage) {

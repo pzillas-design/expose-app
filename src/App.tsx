@@ -30,11 +30,8 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { children: React.ReactNode }) {
-        super(props);
-        this.state = { hasError: false };
-    }
-    static getDerivedStateFromError() { return { hasError: true }; }
+    state = { hasError: false };
+    static getDerivedStateFromError(): { hasError: boolean } { return { hasError: true }; }
     componentDidCatch(error: Error) { console.error('[SettingsModal] render error:', error); }
     render() { return this.state.hasError ? null : this.props.children; }
 }
@@ -415,7 +412,7 @@ export function App() {
             if ((img as any).isGenerating) return null;
 
             return {
-                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}`,
+                contextKey: `detail:${img.id}`,
                 summary: state.currentLang === 'de'
                     ? `Detailansicht: ${img.title || 'Unbenannt'}`
                     : `Detail view: ${img.title || 'Untitled'}`,
@@ -816,7 +813,9 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet (${row.items.length} Bilder).` : `Opened stack "${img.title || 'Untitled'}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                    const sourceImg = row.items.find((i: any) => !i.parentId) || row.items[row.items.length - 1];
+                    const stackName = sourceImg?.title || img.title || 'Unbenannt';
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel von "${stackName}" geöffnet (${row.items.length} Bilder).` : `Opened stack of "${stackName}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
 
@@ -835,7 +834,9 @@ export function App() {
                 const row = state.rows.find((r: any) => r.items[0]?.id === img.id);
                 if (row && row.items.length > 1) {
                     navigate(`/stack/${row.id}`);
-                    return { ok: true, message: state.currentLang === 'de' ? `Stapel "${img.title || 'Unbenannt'}" geöffnet.` : `Opened stack "${img.title || 'Untitled'}".`, newContext: { viewLevel: 'stack', route: 'grid' } };
+                    const sourceImg = row.items.find((i: any) => !i.parentId) || row.items[row.items.length - 1];
+                    const stackName = sourceImg?.title || img.title || 'Unbenannt';
+                    return { ok: true, message: state.currentLang === 'de' ? `Stapel von "${stackName}" geöffnet (${row.items.length} Bilder).` : `Opened stack of "${stackName}" (${row.items.length} images).`, newContext: { viewLevel: 'stack', route: 'grid' } };
                 }
             }
             handleSelectImage(img.id);

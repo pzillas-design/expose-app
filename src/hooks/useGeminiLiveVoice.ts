@@ -10,7 +10,12 @@ export interface VoiceAppContext {
     viewLevel: 'gallery' | 'stack' | 'detail' | 'create' | 'other';
     gridColumns?: number;
     currentImageTitle?: string;
-    images?: Array<{ index: number; title?: string }>;
+    images?: Array<{ index: number; title?: string; isOriginal?: boolean; isGenerated?: boolean }>;
+    isGenerated?: boolean;
+    usedPrompt?: string;
+    hasSourceImage?: boolean;
+    sourceImageTitle?: string;
+    presets?: Array<{ id: string; title: string; tags?: string[] }>;
 }
 
 export interface VoiceVisualFrame {
@@ -454,6 +459,10 @@ export function useGeminiLiveVoice({
     }, []);
 
     const sessionRef = useRef<any>(null);
+    // Cooldown: blocks visual sync for N ms after tool execution to prevent
+    // AI-driven state changes (set_prompt_text, create_variables, etc.) from
+    // triggering a re-sync that makes Gemini autonomously fire more tools.
+    const syncLockedUntilRef = useRef<number>(0);
     const micStreamRef = useRef<MediaStream | null>(null);
     const micAudioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -612,6 +621,13 @@ export function useGeminiLiveVoice({
     const syncVisualContext = useCallback(async () => {
         if (!sessionRef.current) return;
         if (!config.visualContextEnabled) return;
+        // Don't inject new context while AI is executing tool calls — this causes the AI
+        // to re-process and fire tools again, resulting in duplicate responses.
+        if (stateRef.current === 'thinking') return;
+        // Post-tool cooldown: AI-driven state changes (set_prompt_text, create_variables)
+        // update img.updatedAt → contextKey changes → sync fires → Gemini auto-acts.
+        // Block for 5s after any tool batch completes.
+        if (Date.now() < syncLockedUntilRef.current) return;
 
         const visualContext = getVisualContext();
         if (!visualContext || visualContext.contextKey === lastVisualContextKeyRef.current) return;
@@ -851,6 +867,10 @@ export function useGeminiLiveVoice({
             setState('thinking');
             const functionResponses = await Promise.all(message.toolCall.functionCalls.map(executeToolCall));
             sessionRef.current?.sendToolResponse({ functionResponses });
+            // Lock visual sync for 5s after tool execution — prevents AI-driven state changes
+            // (set_prompt_text, create_variables) from updating contextKey and triggering a
+            // re-sync that makes Gemini autonomously fire more tools or repeat its response.
+            syncLockedUntilRef.current = Date.now() + 5000;
             return;
         }
 
@@ -1093,7 +1113,7 @@ export function useGeminiLiveVoice({
     // - Gallery/stack navigation: 2s debounce — prevents flooding during quick nav
     const visualSyncTimerRef = useRef<number | null>(null);
     useEffect(() => {
-        if (state === 'off') return;
+        if (state === 'off' || state === 'thinking') return;
         if (visualSyncTimerRef.current) window.clearTimeout(visualSyncTimerRef.current);
         const isDetail = getAppContextRef.current().viewLevel === 'detail';
         const delay = isDetail ? 0 : 2000;
