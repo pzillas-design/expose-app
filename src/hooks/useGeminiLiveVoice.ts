@@ -636,7 +636,14 @@ export function useGeminiLiveVoice({
 
         try {
             const isDetailWithFrame = visualContext.frames.length > 0;
-            sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
+            const frameId = visualContext.frames[0]?.id || null;
+            const willNudge = isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current;
+
+            // Only send the summary text when NOT nudging — nudge replaces it.
+            // Sending both causes Gemini to respond twice (once to summary, once to nudge).
+            if (!willNudge) {
+                sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
+            }
 
             for (const frame of visualContext.frames.slice(0, 4)) {
                 const payload = await fetchFramePayload(frame);
@@ -644,9 +651,8 @@ export function useGeminiLiveVoice({
             }
 
             // Nudge the AI to acknowledge the image — only once per image, not on every context update
-            const frameId = visualContext.frames[0]?.id || null;
-            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current) {
-                lastNudgedImageIdRef.current = frameId;
+            if (willNudge) {
+                lastNudgedImageIdRef.current = frameId!;
                 const imageLabel = visualContext.frames[0]?.label || 'Bild';
                 await new Promise(r => setTimeout(r, 1500));
                 sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe kurz was du siehst und frage was der User ändern möchte.]` });
