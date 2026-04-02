@@ -75,7 +75,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             data-image-id={img.id}
-            className={`relative isolate group aspect-square flex items-center justify-center`}
+            className={`relative isolate group aspect-square flex items-center justify-center cursor-pointer`}
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -161,18 +161,16 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
-                    {/* Selection circle — group-hover only on desktop to avoid iOS two-tap issue */}
+                    {/* Selection circle — shown on pointer hover (isKeyboardActive) or in select mode */}
                     {!isGen && (
                         <div
-                            className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 transition-all duration-200 ${isSelectMode && isSelected
-                                ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                            className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 cursor-pointer transition-all duration-200 ${isSelectMode && isSelected
+                                ? 'opacity-100 scale-100 hover:scale-110 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
                                 : isSelectMode
                                     ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
-                                    : isKeyboardActive
-                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
-                                        : isMobile
-                                            ? 'opacity-0 scale-75'
-                                            : 'opacity-0 scale-75 group-hover:opacity-80 group-hover:scale-100 hover:!opacity-100 hover:!scale-110 bg-white/90 dark:bg-zinc-800/90'
+                                    : (isKeyboardActive && !isMobile)
+                                        ? 'opacity-80 scale-100 hover:opacity-100 hover:scale-110 bg-white/90 dark:bg-zinc-800/90'
+                                        : 'opacity-0 scale-75 pointer-events-none'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
