@@ -617,6 +617,9 @@ export function useGeminiLiveVoice({
     const syncVisualContext = useCallback(async () => {
         if (!sessionRef.current) return;
         if (!config.visualContextEnabled) return;
+        // Don't inject new context while AI is executing tool calls — this causes the AI
+        // to re-process and fire tools again, resulting in duplicate responses.
+        if (stateRef.current === 'thinking') return;
 
         const visualContext = getVisualContext();
         if (!visualContext || visualContext.contextKey === lastVisualContextKeyRef.current) return;
@@ -1098,7 +1101,7 @@ export function useGeminiLiveVoice({
     // - Gallery/stack navigation: 2s debounce — prevents flooding during quick nav
     const visualSyncTimerRef = useRef<number | null>(null);
     useEffect(() => {
-        if (state === 'off') return;
+        if (state === 'off' || state === 'thinking') return;
         if (visualSyncTimerRef.current) window.clearTimeout(visualSyncTimerRef.current);
         const isDetail = getAppContextRef.current().viewLevel === 'detail';
         const delay = isDetail ? 0 : 2000;
