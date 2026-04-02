@@ -409,17 +409,17 @@ export function App() {
 
             if (!img) return null;
 
-            const isGenerating = !!(img as any).isGenerating;
-            const genNote = isGenerating
-                ? (state.currentLang === 'de' ? ' (WIRD GENERIERT — Bild ist noch NICHT fertig, NICHT beschreiben!)' : ' (GENERATING — image is NOT ready, do NOT describe it!)')
-                : '';
+            // While generating: suppress visual context sync entirely.
+            // The tool-response message already told the AI generation started —
+            // sending context again causes duplicate announcements.
+            if ((img as any).isGenerating) return null;
 
             return {
-                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}:${isGenerating ? 'gen' : 'ready'}`,
+                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}`,
                 summary: state.currentLang === 'de'
-                    ? `Detailansicht: ${img.title || 'Unbenannt'}${genNote}`
-                    : `Detail view: ${img.title || 'Untitled'}${genNote}`,
-                frames: isGenerating || !thumb ? [] : [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
+                    ? `Detailansicht: ${img.title || 'Unbenannt'}`
+                    : `Detail view: ${img.title || 'Untitled'}`,
+                frames: thumb ? [{ id: img.id, src: thumb, label: img.title || 'detail-image' }] : []
             };
         }
 
@@ -435,17 +435,19 @@ export function App() {
                     : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
 
             const isStack = !!stackId;
-            const itemsText = displayImages.slice(0, 20).map((img: any, i: number) => {
+            // Exclude generating placeholders from count/context — prevents spurious sync while generation is running
+            const readyImages = displayImages.filter((img: any) => !img.isGenerating);
+            const itemsText = readyImages.slice(0, 20).map((img: any, i: number) => {
                 const row = Math.floor(i / cols) + 1;
                 const col = (i % cols) + 1;
                 return `[${i + 1}] Reihe ${row}, Bild ${col}: ${img.title || 'Unbenannt'}`;
             }).join('\n');
 
             return {
-                contextKey: `grid:${stackId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
+                contextKey: `grid:${stackId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${readyImages.length}:${cols}`,
                 summary: state.currentLang === 'de'
-                    ? `${isStack ? 'Stapel' : 'Galerie'} (${displayImages.length} Bilder), ${cols} pro Reihe:\n${itemsText}`
-                    : `${isStack ? 'Stack' : 'Gallery'} (${displayImages.length} images), ${cols} per row:\n${itemsText}`,
+                    ? `${isStack ? 'Stapel' : 'Galerie'} (${readyImages.length} Bilder), ${cols} pro Reihe:\n${itemsText}`
+                    : `${isStack ? 'Stack' : 'Gallery'} (${readyImages.length} images), ${cols} per row:\n${itemsText}`,
                 frames: []
             };
         }
