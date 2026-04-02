@@ -412,7 +412,7 @@ export function App() {
                 : '';
 
             return {
-                contextKey: `detail:${img.id}:${img.updatedAt || img.createdAt || 0}:${isGenerating ? 'gen' : 'ready'}`,
+                contextKey: `detail:${img.id}:${isGenerating ? 'gen' : 'ready'}`,
                 summary: state.currentLang === 'de'
                     ? `Detailansicht: ${img.title || 'Unbenannt'}${genNote}`
                     : `Detail view: ${img.title || 'Untitled'}${genNote}`,
