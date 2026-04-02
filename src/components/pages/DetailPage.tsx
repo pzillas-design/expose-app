@@ -503,7 +503,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     // Reset load state on image change and check cache
     useEffect(() => {
-        setSubMenu('brush');
+        setSubMenu('text');
 
         const imEl = document.getElementById(`detail-img-${selectedId}`) as HTMLImageElement;
         if (imEl && imEl.complete && imEl.naturalWidth > 0 && imEl.src && !imEl.src.includes('data:image/gif')) {
