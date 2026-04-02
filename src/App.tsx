@@ -1176,7 +1176,11 @@ export function App() {
                                     selectedIds={state.selectedIds}
                                     onToggleSelect={(id, isRange) => {
                                         if (!state.isSelectMode) {
-                                            actions.selectAndSnap(id);
+                                            // Use selectMultiple (not selectAndSnap) to avoid setting
+                                            // activeId — which would trigger the URL sync effect and
+                                            // clear lastSelectedIdRef, breaking shift-range selection.
+                                            actions.setIsSelectMode(true);
+                                            actions.selectMultiple([id]);
                                             return;
                                         }
                                         if (isRange) {
@@ -1238,7 +1242,8 @@ export function App() {
                                     selectedIds={state.selectedIds}
                                     onToggleSelect={(id, isRange) => {
                                         if (!state.isSelectMode) {
-                                            actions.selectAndSnap(id);
+                                            actions.setIsSelectMode(true);
+                                            actions.selectMultiple([id]);
                                             return;
                                         }
                                         actions.handleSelection(id, true, isRange);
