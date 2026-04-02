@@ -684,7 +684,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <div className="flex items-center gap-2 pointer-events-auto">
                                     {img.generationPrompt && img.parentId && (
-                                        <Tooltip text={t('generate_more')}>
+                                        <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
                                                 className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
