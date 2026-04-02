@@ -846,7 +846,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 )}
                                             </div>
                                             <div className="relative">
-                                                <Tooltip text={t('tt_annotate')} side="top">
+                                                <Tooltip text={t('tt_annotate')} shortcut="E" side="top">
                                                     <button
                                                         onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
                                                         disabled={selectedImage?.isGenerating || isMulti}

@@ -564,6 +564,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     e.preventDefault();
                     navigate(1);
                     break;
+                case 'e':
+                case 'E':
+                    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        actions.handleModeChange(state.sideSheetMode === 'brush' ? 'prompt' : 'brush');
+                    }
+                    break;
+                case 'm':
+                case 'M':
+                    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        if (selectedId) actions.handleGenerateMore(selectedId);
+                    }
+                    break;
                 case 'd':
                 case 'D':
                     if (!e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -582,7 +596,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [navigate, confirm, onDelete, onDownload, selectedId, onBack]);
+    }, [navigate, confirm, onDelete, onDownload, selectedId, onBack, actions, state.sideSheetMode]);
 
     // Resizable Sidebar States
     const [sidebarWidth, setSidebarWidth] = useState(380);

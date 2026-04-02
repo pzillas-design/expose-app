@@ -435,6 +435,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         onClick={onDetailRegenerate}
                         variant="ghost"
                         tooltip={t('generate_more')}
+                        tooltipShortcut="M"
                     />
                     <ContextTip
                         storageKey="expose_tip_generate_more_button_v4"
