@@ -374,23 +374,6 @@ async function fetchFramePayload(frame: VoiceVisualFrame) {
         throw new Error(`Failed to load visual context frame: ${frame.id}`);
     }
     const blob = await response.blob();
-
-    // Resize to max 512px to reduce bandwidth — AI doesn't need HQ
-    try {
-        const img = await createImageBitmap(blob);
-        const maxDim = 512;
-        if (img.width > maxDim || img.height > maxDim) {
-            const scale = maxDim / Math.max(img.width, img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const canvas = new OffscreenCanvas(w, h);
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, 0, 0, w, h);
-            const resizedBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 });
-            return { data: await blobToBase64(resizedBlob), mimeType: 'image/jpeg' };
-        }
-    } catch { /* fallback to original if resize fails */ }
-
     return {
         data: await blobToBase64(blob),
         mimeType: frame.mimeType || blob.type || 'image/jpeg'
@@ -486,6 +469,7 @@ export function useGeminiLiveVoice({
     const speakingRef = useRef(false);
     const greetingTimeoutRef = useRef<number | null>(null);
     const lastVisualContextKeyRef = useRef<string | null>(null);
+    const lastNudgedImageIdRef = useRef<string | null>(null);
     const lastRequestTimeRef = useRef<number>(0);
     const firstAudioReceivedRef = useRef<boolean>(false);
 
@@ -615,6 +599,7 @@ export function useGeminiLiveVoice({
 
         cancelPlayback();
         lastVisualContextKeyRef.current = null;
+        lastNudgedImageIdRef.current = null;
         setLevel(0);
         setError(null);
         setState('off');
@@ -642,11 +627,13 @@ export function useGeminiLiveVoice({
                 sessionRef.current.sendRealtimeInput({ video: payload });
             }
 
-            // Nudge the AI to acknowledge the image — delay so Gemini processes the frame first
-            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT')) {
+            // Nudge the AI to acknowledge the image — only once per image, not on every context update
+            const frameId = visualContext.frames[0]?.id || null;
+            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current) {
+                lastNudgedImageIdRef.current = frameId;
                 const imageLabel = visualContext.frames[0]?.label || 'Bild';
                 await new Promise(r => setTimeout(r, 1500));
-                sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe das NEUESTE Bild das du empfangen hast und frage was der User ändern möchte. Ignoriere ältere Bilder aus dem Kontext.]` });
+                sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe kurz was du siehst und frage was der User ändern möchte.]` });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging

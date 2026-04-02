@@ -405,9 +405,9 @@ export function App() {
         if (location.pathname.startsWith('/image/')) {
             const id = location.pathname.split('/').pop();
             const img = id ? allImages.find(i => i.id === id) : null;
-            const thumb = img?.thumbSrc || img?.src;
+            const thumb = img?.thumbSrc; // Only send standard thumbs, not HQ src
 
-            if (!img || !thumb) return null;
+            if (!img) return null;
 
             const isGenerating = !!(img as any).isGenerating;
             const genNote = isGenerating
@@ -419,7 +419,7 @@ export function App() {
                 summary: state.currentLang === 'de'
                     ? `Detailansicht: ${img.title || 'Unbenannt'}${genNote}`
                     : `Detail view: ${img.title || 'Untitled'}${genNote}`,
-                frames: isGenerating ? [] : [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
+                frames: isGenerating || !thumb ? [] : [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
             };
         }
 
@@ -1165,6 +1165,7 @@ export function App() {
                                     onLoadMore={actions.handleLoadMore}
                                     onSelectImage={handleSelectImage}
                                     onCreateNew={handleCreateNew}
+                                    onGenerate={() => navigate('/create')}
                                     onUpload={actions.handleProcessFiles}
                                     isFetchingMore={state.isFetchingMore}
                                     isSelectMode={state.isSelectMode}

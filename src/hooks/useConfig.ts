@@ -4,7 +4,7 @@ import { translations, LocaleKey } from '../data/locales';
 
 export const useConfig = () => {
     const normalizeQualityMode = (value: string | null): GenerationQuality => {
-        if (!value) return 'nb2-2k';
+        if (!value) return 'nb2-1k';
         if (value.startsWith('nb2-')) return value as GenerationQuality;
 
         const resolution = value.split('-')[1];
@@ -12,7 +12,7 @@ export const useConfig = () => {
             return `nb2-${resolution}` as GenerationQuality;
         }
 
-        return 'nb2-2k';
+        return 'nb2-1k';
     };
 
     // Quality Settings

@@ -168,19 +168,20 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
        <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">{job.promptPreview}</p>
       </div>
       {(() => {
-       const vars = payload.variables as Record<string, string[]> | undefined;
+       const vars = (webhookData.variableValues || payload.variableValues || payload.variables) as Record<string, any> | undefined;
        if (!vars || Object.keys(vars).length === 0) return null;
        return (
         <div>
          <p className="text-[10px] font-medium text-zinc-400 mb-1.5">Variablen</p>
-         <div className="flex flex-wrap gap-1.5">
-          {Object.entries(vars).flatMap(([, vals]) =>
-           (vals || []).map(v => (
-            <span key={v} className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300">
-             {v}
+         <div className="flex flex-col gap-1">
+          {Object.entries(vars).map(([key, val]) => (
+           <div key={key} className="flex items-baseline gap-2">
+            <span className="text-[10px] text-zinc-400 shrink-0">{key}</span>
+            <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300">
+             {Array.isArray(val) ? val.join(', ') : String(val ?? '–')}
             </span>
-           ))
-          )}
+           </div>
+          ))}
          </div>
         </div>
        );
@@ -201,6 +202,16 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
         Anmerkung
        </span>
       )}
+      {(() => {
+       const refs: { src?: string; instruction?: string }[] = payload.references || [];
+       const instructions = refs.map(r => r.instruction).filter(Boolean);
+       if (!instructions.length) return null;
+       return instructions.map((instr, i) => (
+        <span key={i} className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-[11px] text-blue-700 dark:text-blue-300 max-w-full truncate" title={instr}>
+         {instr}
+        </span>
+       ));
+      })()}
       {refCount > 0 && (
        <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
         {refCount} {t('reference_images')}
