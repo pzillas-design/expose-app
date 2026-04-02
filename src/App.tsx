@@ -758,15 +758,16 @@ export function App() {
             if (!controls || controls.length === 0) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
             }
-            // Auto-open the relevant sidesheet so variables are visible
+            // Auto-open the relevant sidesheet and switch to prompt tab so variables are visible
             if (location.pathname.startsWith('/image/')) {
                 setDetailSideSheetVisible(true);
+                actions.setSideSheetMode('prompt');
             } else {
                 setFeedSideSheetVisible(true);
             }
 
-            // Short delay to ensure mount
-            await new Promise(resolve => window.setTimeout(resolve, 50));
+            // Longer delay to ensure sidesheet mount + mode switch has rendered
+            await new Promise(resolve => window.setTimeout(resolve, 150));
 
             window.dispatchEvent(new CustomEvent('expose:set-voice-variables', {
                 detail: { controls }
