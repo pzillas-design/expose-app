@@ -883,7 +883,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     onClick={() => setIsQualityOpen(p => !p)}
                                                     className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
-                                                    {qualityMode.split('-')[1].toUpperCase()}
+                                                    {qualityMode.split('-')[1] === '05k' ? '0,5K' : qualityMode.split('-')[1].toUpperCase()}
                                                     <ChevronDown className={`w-4 h-4 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
                                                 </button>
                                                 {isQualityOpen && (
