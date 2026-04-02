@@ -891,18 +891,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
                                                         <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
                                                             {/* Resolution + Price */}
-                                                            {(['1k', '2k', '4k'] as const).map(res => {
+                                                            {(['05k', '1k', '2k', '4k'] as const).map(res => {
                                                                 const q = `nb2-${res}` as GenerationQuality;
-                                                                const COSTS: Record<string, number> = { 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
+                                                                const COSTS: Record<string, number> = { 'nb2-05k': 0.05, 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
                                                                 const cost = COSTS[q];
                                                                 const isActive = qualityMode === q;
+                                                                const label = res === '05k' ? '0.5K' : res.toUpperCase();
                                                                 return (
                                                                     <button
                                                                         key={res}
                                                                         onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
                                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${isActive ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
                                                                     >
-                                                                        {res.toUpperCase()}
+                                                                        {label}
                                                                         <span className="text-[11px] text-zinc-400">{`${cost.toFixed(2)} €`}</span>
                                                                     </button>
                                                                 );
