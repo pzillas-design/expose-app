@@ -151,7 +151,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_prompt_text',
-        description: 'Write a prompt for image generation or editing. Write in the user\'s language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.',
+        description: 'Write a prompt for image generation or editing. ALWAYS call this together with create_variables — never call create_variables without also calling set_prompt_text. Write in the user\'s language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.',
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -204,7 +204,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'create_variables',
-        description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
+        description: 'Create variable controls so the user can explore creative directions. ALWAYS call set_prompt_text first in the same turn — never call create_variables without a prompt. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
         parameters: {
             type: Type.OBJECT,
             properties: {
