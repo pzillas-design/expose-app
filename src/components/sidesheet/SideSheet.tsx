@@ -284,18 +284,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     useEffect(() => {
         if (!selectedImage) return;
         if (selectedImage.id !== lastSelectedIdRef.current) {
-            // Children (parentId set) store the full request for "Mehr" replay but should
-            // start with a clean SideSheet — template/variables are not shown for them.
             const isChild = !!selectedImage.parentId;
-            setPrompt(selectedImage.userDraftPrompt || '');
-            setActiveTemplateId(isChild ? null : (selectedImage.activeTemplateId || null));
-            // In multi-select: keep current controlValues so the user's variable selection
-            // survives entering batch mode. Only reset for children or single-image navigation.
             if (isChild) {
-                setControlValues({});
+                // Generated child image: keep current prompt + variables visible so the user
+                // can see what was applied and re-use it. Don't reset anything.
             } else if (!isMulti) {
+                // Single-select, non-child: load this image's saved state.
+                setPrompt(selectedImage.userDraftPrompt || '');
+                setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});
             }
+            // Multi-select: keep current values so variable selection survives batch mode.
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id, isMulti]);
