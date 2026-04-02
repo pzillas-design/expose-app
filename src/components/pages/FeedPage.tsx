@@ -51,9 +51,11 @@ interface FeedGridItemProps {
     daysRemaining?: number | null;
     /** Current UI language for tooltip text */
     currentLang?: 'de' | 'en';
+    /** True when this image is the source/original in a stack view */
+    isSource?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en' }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
     const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
     const isGen = !!img.isGenerating;
@@ -184,6 +186,13 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                             )}
+                        </div>
+                    )}
+
+                    {/* Source image badge */}
+                    {isSource && (
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center z-20 bg-white/80 dark:bg-zinc-800/80 shadow-sm pointer-events-none">
+                            <Upload className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />
                         </div>
                     )}
 
@@ -666,6 +675,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
+                                                isSource={!!effectiveGroupId && !img.parentId && !img.isGenerating}
                                             />
                                         );
                                     })}
