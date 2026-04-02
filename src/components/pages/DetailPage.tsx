@@ -695,7 +695,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         </Tooltip>
                                     )}
                                     {!isSideSheetVisible && !showBlob && (
-                                        <Tooltip text={t('open_editing_panel')}>
+                                        <Tooltip text={t('open_editing_panel')} shortcut="E">
                                             <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
                                                 {t('nav_edit')}
                                             </button>
