@@ -8,6 +8,7 @@ type TranslationFunction = (key: string) => string;
 const footerLinks = (t: TranslationFunction) => [
     { label: t('footer_photos') || 'Gallery', to: '/' },
     { label: t('footer_about') || 'About', to: '/about' },
+    { label: t('footer_blog') || 'Journal', to: '/blog' },
     { label: t('footer_legal') || 'Legal', to: '/impressum' }
 ];
 

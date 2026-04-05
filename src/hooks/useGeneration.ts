@@ -99,20 +99,6 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
         return t('error_invalid_prompt');
     }
 
-    // Kie.ai API errors — Fallback with raw detail for other Kie errors
-    if (
-        msg.includes("kie task failed:") ||
-        msg.includes("kie createtask") ||
-        msg.includes("kie recordinfo") ||
-        msg.includes("kie task complete") ||
-        msg.includes("kie result download") ||
-        msg.includes("image generation failed on kie") ||
-        msg.startsWith("kie.ai error:")
-    ) {
-        const cleaned = errorMsg.replace(/^kie\.ai error:\s*/i, '').replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
-        return `${t('error_generation_failed')}: ${cleaned}`;
-    }
-
     // Fallback — include raw message for debuggability
     return `${t('error_generation_failed')}: ${errorMsg.substring(0, 120)}`;
 };
@@ -229,6 +215,8 @@ export const useGeneration = ({
     const jobCompleteCallbacks = React.useRef<Record<string, () => void>>({});
     // Source image ID that was active when each generation was started — used to guard auto-navigate
     const generationSourceIds = React.useRef<Record<string, string | null>>({});
+    // One-shot retry functions per jobId — called automatically on timeout, then cleared
+    const pendingRetryFns = React.useRef<Record<string, (() => void) | null>>({});
 
     /**
      * Returns true if we should auto-navigate to the finished image:
@@ -252,13 +240,17 @@ export const useGeneration = ({
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
-                // Timeout: Edge Function likely died (status 546) — clean up stuck job
-                showToast(translateError('timeout', t), 'error');
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                // Timeout: Edge Function likely died — try once automatically, then give up
+                const retryFn = pendingRetryFns.current[jobId];
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError('timeout', t), 'error');
+                }
                 return;
             }
 
@@ -323,6 +315,9 @@ export const useGeneration = ({
                     })
                 })));
 
+                        // Job succeeded — clear any pending retry fn
+                delete pendingRetryFns.current[jobId];
+
                 // Increment total image count in settings
                 onImageSaved?.();
                 onGenerationComplete?.(jobId);
@@ -344,13 +339,17 @@ export const useGeneration = ({
 
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";
-                const translated = translateError(jobError, t);
-                showToast(translated, "error");
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                const isTransient = jobError.toLowerCase().includes('timeout') || jobError.includes('520');
+                const retryFn = isTransient ? pendingRetryFns.current[jobId] : null;
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError(jobError, t), "error");
+                }
                 return;
             }
 
@@ -358,9 +357,8 @@ export const useGeneration = ({
             // We wait longer than the Edge Function's own background limit so the webhook
             // still has a chance to fire for slow Pro·4K jobs before we declare failure.
             if (jobData?.status === 'processing' && attempts >= 72) {
-                // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
+                // Mark failed in DB — credit refund happens server-side via pg_cron
                 try {
-                    // Mark job as failed — credit refund happens server-side via pg_cron
                     const { data: job } = await supabase
                         .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
                     const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
@@ -368,14 +366,18 @@ export const useGeneration = ({
                         .from('generation_jobs')
                         .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
                         .eq('id', jobId);
-                } catch { /* non-critical — job cleanup, best-effort */ }
+                } catch { /* non-critical */ }
 
-                showToast(translateError('timeout', t), 'error');
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                const retryFn = pendingRetryFns.current[jobId];
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError('timeout', t), 'error');
+                }
                 return;
             }
 
@@ -681,6 +683,11 @@ export const useGeneration = ({
             }
         };
 
+        // Register one-shot retry for transient failures (timeout / 520)
+        pendingRetryFns.current[newId] = () => {
+            void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId);
+        };
+
         processGenerationAsync();
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
@@ -809,6 +816,11 @@ export const useGeneration = ({
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
+        };
+
+        // Register one-shot retry for transient failures (timeout / 520)
+        pendingRetryFns.current[newId] = () => {
+            void performNewGeneration(prompt, modelId, ratio, attachments);
         };
 
         processNewSync();

@@ -215,7 +215,8 @@ const toolDeclarations: FunctionDeclaration[] = [
                         type: Type.OBJECT,
                         properties: {
                             label: { type: Type.STRING, description: 'Variable label, e.g. "Farbe" or "Stil"' },
-                            options: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Option values, e.g. ["Rot", "Blau", "Gold"]' }
+                            options: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Option values, e.g. ["Rot", "Blau", "Gold"]' },
+                            selected: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Optional: option values to pre-select when creating this control, e.g. ["Blau"]. Use to set a recommended starting point.' }
                         },
                         required: ['label', 'options']
                     }
@@ -488,8 +489,8 @@ export function useGeminiLiveVoice({
         () => toolDeclarations
             .filter(tool => enabledToolNames.has(tool.name || ''))
             .map(tool => {
-                const override = config.tools.find(t => t.name === tool.name)?.description;
-                return override ? { ...tool, description: override } : tool;
+                const dbDesc = config.tools.find(t => t.name === tool.name)?.description;
+                return { ...tool, description: dbDesc ?? '' };
             }),
         [enabledToolNames, config.tools]
     );

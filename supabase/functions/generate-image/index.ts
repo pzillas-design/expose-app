@@ -502,7 +502,17 @@ Deno.serve(async (req) => {
                 }
                 const providerLatencyMs = Date.now() - providerStartTime;
 
-                const generatedImage = extractGeneratedImage(geminiResponse);
+                let generatedImage = extractGeneratedImage(geminiResponse);
+                if (!generatedImage) {
+                    // Auto-retry once on MALFORMED_FUNCTION_CALL — transient Gemini flakiness
+                    const candidate0 = geminiResponse?.candidates?.[0];
+                    if (candidate0?.finishReason === 'MALFORMED_FUNCTION_CALL') {
+                        logInfo('Gemini Retry', 'MALFORMED_FUNCTION_CALL — retrying once...');
+                        updateStage('gemini_retry');
+                        geminiResponse = await callGeminiWithTimeout();
+                        generatedImage = extractGeneratedImage(geminiResponse);
+                    }
+                }
                 if (!generatedImage) {
                     // Extract rejection reason from response for better error messages
                     const candidate = geminiResponse?.candidates?.[0];

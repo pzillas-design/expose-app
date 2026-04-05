@@ -167,7 +167,20 @@ export interface AdminJob {
 export interface VoiceAdminToolConfig {
   name: string;
   enabled: boolean;
-  description?: string; // custom override sent to the API; falls back to DEFAULT_TOOL_DESCRIPTIONS
+  description?: string; // description sent to the API — admin panel is the sole source of truth
+}
+
+export interface PromptAlternative {
+  id: string;
+  label: string; // e.g. "Standard", "Kurz", "B"
+  text: string;
+}
+
+export interface PromptBlock {
+  id: string;
+  label: string;       // e.g. "ANTWORTEN", "KREATIV"
+  activeId: string | null; // ID of active alternative — null = block disabled
+  alternatives: PromptAlternative[];
 }
 
 export interface VoiceAdminConfig {
@@ -178,6 +191,7 @@ export interface VoiceAdminConfig {
   outputTranscriptionEnabled: boolean;
   visualContextEnabled: boolean;
   systemPrompt: string;
+  systemPromptBlocks?: PromptBlock[]; // structured blocks — assembled into systemPrompt on save
   greeting: string;
   tools: VoiceAdminToolConfig[];
   temperature?: number;

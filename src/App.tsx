@@ -20,6 +20,8 @@ import { CreatePage } from '@/components/pages/CreatePage';
 // Lazy loaded pages
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
+const BlogPage = React.lazy(() => import('@/components/pages/BlogPage').then(m => ({ default: m.BlogPage })));
+const BlogPostPage = React.lazy(() => import('@/components/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const SettingsModal = React.lazy(() => import('@/components/settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTemplatePage').then(m => ({ default: m.SharedTemplatePage })));
 const HeroPlayground = React.lazy(() => import('@/components/pages/HeroPlayground').then(m => ({ default: m.HeroPlayground })));
@@ -30,6 +32,8 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    // React 19 ships no .d.ts — declare props explicitly so TS finds it
+    declare props: { children: React.ReactNode };
     state = { hasError: false };
     static getDerivedStateFromError(): { hasError: boolean } { return { hasError: true }; }
     componentDidCatch(error: Error) { console.error('[SettingsModal] render error:', error); }
@@ -175,6 +179,12 @@ export function App() {
         // Sync Detail view from URL
         if (!location.pathname.startsWith('/image/')) {
             if (state.activeId && !isNavigatingProgrammatically.current) {
+                // On /create: if a new image was just created, navigate to it
+                if (location.pathname === '/create' && allImages.some(i => i.id === state.activeId)) {
+                    isNavigatingProgrammatically.current = true;
+                    navigate(`/image/${state.activeId}`);
+                    return;
+                }
                 actions.handleSelection(null, false, false);
             }
             return;
@@ -753,7 +763,7 @@ export function App() {
                 ? { ok: true, message: state.currentLang === 'de' ? `Format ${ratio} ausgewählt.` : `Selected ${ratio} ratio.` }
                 : { ok: false, message: state.currentLang === 'de' ? 'Format konnte nicht gesetzt werden.' : 'Could not set aspect ratio.' };
         },
-        createVariables: async (controls: Array<{ label: string; options: string[] }>) => {
+        createVariables: async (controls: Array<{ label: string; options: string[]; selected?: string[] }>) => {
             if (!controls || controls.length === 0) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
             }
@@ -877,14 +887,28 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? `Preset "${preset.title}" angewendet${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` : `Applied preset "${preset.title}"${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` };
         },
         goToSourceImage: async () => {
-            if (!location.pathname.startsWith('/image/')) {
+            const isInDetail = location.pathname.startsWith('/image/');
+            const isInStack = location.pathname.startsWith('/stack/');
+
+            if (!isInDetail && !isInStack) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
             }
-            const currentId = location.pathname.split('/').pop();
-            const currentImg = currentId ? allImages.find(i => i.id === currentId) : null;
+
+            const pathId = location.pathname.split('/').pop();
+
+            // From stack view: find the root (no parentId) image in the stack's row
+            if (isInStack) {
+                const row = state.rows.find((r: any) => r.id === pathId);
+                const rootImg = row?.items.find((i: any) => !i.parentId) || row?.items[0];
+                if (!rootImg) return { ok: false, message: state.currentLang === 'de' ? 'Quellbild nicht gefunden.' : 'Source image not found.' };
+                navigate(`/image/${rootImg.id}`);
+                return { ok: true, message: state.currentLang === 'de' ? `Zum Quellbild "${rootImg.title || 'Original'}" gewechselt.` : `Switched to source image "${rootImg.title || 'Original'}".` };
+            }
+
+            // From detail view: walk up the parent chain
+            const currentImg = pathId ? allImages.find(i => i.id === pathId) : null;
             if (!currentImg) return { ok: false, message: state.currentLang === 'de' ? 'Bild nicht gefunden.' : 'Image not found.' };
 
-            // Walk up the parent chain to find the root source image
             let sourceImg = currentImg;
             let depth = 0;
             while ((sourceImg as any).parentId && depth < 10) {
@@ -898,7 +922,7 @@ export function App() {
                 return { ok: false, message: state.currentLang === 'de' ? 'Das ist bereits das Quellbild.' : 'This is already the source image.' };
             }
 
-            handleSelectImage(sourceImg.id);
+            navigate(`/image/${sourceImg.id}`);
             return { ok: true, message: state.currentLang === 'de' ? `Zum Quellbild "${sourceImg.title || 'Original'}" gewechselt.` : `Switched to source image "${sourceImg.title || 'Original'}".` };
         }
     });
@@ -1339,6 +1363,9 @@ export function App() {
                                 />
                             </AdminRoute>
                         } />
+
+                        <Route path="/blog" element={<BlogPage t={t} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
+                        <Route path="/blog/:slug" element={<BlogPostPage t={t} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
 
                         <Route path="/impressum" element={<ImpressumPage
                             user={user}

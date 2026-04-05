@@ -1,17 +1,19 @@
 import React from 'react';
-import { Check, Loader2, MessageSquareText, Settings2, Sparkles, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
+import { Check, Loader2, MessageSquareText, Settings2, Navigation, PenTool, Upload, Monitor } from 'lucide-react';
 import { AdminViewHeader } from './AdminViewHeader';
-import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics } from '@/types';
+import { TranslationFunction, VoiceAdminConfig, VoiceDiagnostics, PromptBlock } from '@/types';
 import { Input } from '@/components/ui/DesignSystem';
 import {
     DEFAULT_GREETING,
     DEFAULT_SYSTEM_PROMPT,
-    DEFAULT_TOOL_DESCRIPTIONS,
+    DEFAULT_SYSTEM_PROMPT_BLOCKS,
     DEFAULT_VOICE_MODEL,
     DEFAULT_VOICE_NAME,
     GEMINI_LIVE_VOICES,
+    assembleSystemPrompt,
     updateVoiceAdminConfig,
 } from '@/services/voiceAdminService';
+import { PromptBlocksTable } from './PromptBlocksTable';
 
 interface AdminVoiceViewProps {
     t: TranslationFunction;
@@ -27,7 +29,7 @@ type SectionId = 'general' | 'prompt' | 'tools-nav' | 'tools-edit' | 'tools-crea
 
 const NAV_ITEMS: Array<{ id: SectionId; label: string; icon: React.ReactNode; group?: string }> = [
     { id: 'general', label: 'Allgemein', icon: <Settings2 className="w-4 h-4" /> },
-    { id: 'prompt', label: 'Prompt & Begrüßung', icon: <MessageSquareText className="w-4 h-4" /> },
+    { id: 'prompt', label: 'System Prompt', icon: <MessageSquareText className="w-4 h-4" /> },
     { id: 'tools-nav', label: 'Navigation', icon: <Navigation className="w-4 h-4" />, group: 'Tools' },
     { id: 'tools-edit', label: 'Bearbeitung', icon: <PenTool className="w-4 h-4" />, group: 'Tools' },
     { id: 'tools-create', label: 'Erstellen & Upload', icon: <Upload className="w-4 h-4" />, group: 'Tools' },
@@ -121,7 +123,7 @@ const ToolCard: React.FC<{
     tool: VoiceAdminConfig['tools'][0];
     onDescChange: (desc: string) => void;
 }> = ({ tool, onDescChange }) => {
-    const desc = tool.description ?? DEFAULT_TOOL_DESCRIPTIONS[tool.name] ?? '';
+    const desc = tool.description ?? '';
     const params = TOOL_PARAMS[tool.name];
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -210,78 +212,112 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
         switch (activeSection) {
             case 'general':
                 return (
-                    <div>
-                        <p className="text-sm text-zinc-400 mb-6 leading-relaxed">Grundeinstellungen für den Voice-Assistenten — Modell, Stimme und Verhalten.</p>
-                        <div className="space-y-1">
-                            <SettingRow label="Voice aktivieren" hint="Zeigt den Mikrofon-Button in der App">
-                                <Toggle checked={config.enabled} onChange={() => updateConfig(c => ({ ...c, enabled: !c.enabled }))} />
-                            </SettingRow>
-                            <SettingRow label="Modell">
-                                <Input value={config.model} onChange={(e) => updateConfig(c => ({ ...c, model: e.target.value }))} placeholder={DEFAULT_VOICE_MODEL} className="w-48 text-right text-xs" />
-                            </SettingRow>
-                            <SettingRow label="Stimme">
-                                <select
-                                    value={config.voiceName}
-                                    onChange={(e) => updateConfig(c => ({ ...c, voiceName: e.target.value }))}
-                                    className="w-40 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm"
-                                >
-                                    {GEMINI_LIVE_VOICES.map(v => <option key={v} value={v}>{v}</option>)}
-                                    {!GEMINI_LIVE_VOICES.includes(config.voiceName as any) && <option value={config.voiceName}>{config.voiceName}</option>}
-                                </select>
-                            </SettingRow>
-                            <SettingRow label="Temperature" hint="Höher = kreativer">
-                                <div className="flex items-center gap-3">
-                                    <input type="range" min={0} max={2} step={0.1} value={config.temperature ?? 1.1} onChange={(e) => updateConfig(c => ({ ...c, temperature: parseFloat(e.target.value) }))} className="w-28 accent-orange-500" />
-                                    <span className="text-xs text-zinc-500 tabular-nums w-7 text-right">{config.temperature ?? 1.1}</span>
+                    <div className="max-w-lg space-y-10">
+
+                        {/* ── Modell ── */}
+                        <div className="space-y-5">
+                            <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Modell</div>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm text-zinc-500 dark:text-zinc-400">Modell-ID</label>
+                                    <Input
+                                        value={config.model}
+                                        onChange={(e) => updateConfig(c => ({ ...c, model: e.target.value }))}
+                                        placeholder={DEFAULT_VOICE_MODEL}
+                                        className="w-full text-sm font-mono"
+                                    />
                                 </div>
-                            </SettingRow>
-                            <SettingRow label="Thinking Level" hint="Wie gründlich die AI nachdenkt">
-                                <select
-                                    value={config.thinkingLevel ?? 'minimal'}
-                                    onChange={(e) => updateConfig(c => ({ ...c, thinkingLevel: e.target.value as any }))}
-                                    className="w-32 h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm"
-                                >
-                                    <option value="none">None</option>
-                                    <option value="minimal">Minimal</option>
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high">High</option>
-                                </select>
-                            </SettingRow>
-                            <SettingRow label="Nutzer-Transkript" hint="Gesprochenen Text mitloggen">
-                                <Toggle checked={config.inputTranscriptionEnabled} onChange={() => updateConfig(c => ({ ...c, inputTranscriptionEnabled: !c.inputTranscriptionEnabled }))} />
-                            </SettingRow>
-                            <SettingRow label="KI-Antworttext" hint="KI-Antworten transkribieren">
-                                <Toggle checked={config.outputTranscriptionEnabled} onChange={() => updateConfig(c => ({ ...c, outputTranscriptionEnabled: !c.outputTranscriptionEnabled }))} />
-                            </SettingRow>
-                            <SettingRow label="Bilder senden" hint="Thumbnails an die KI senden">
-                                <Toggle checked={config.visualContextEnabled} onChange={() => updateConfig(c => ({ ...c, visualContextEnabled: !c.visualContextEnabled }))} />
-                            </SettingRow>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm text-zinc-500 dark:text-zinc-400">Stimme</label>
+                                    <select
+                                        value={config.voiceName}
+                                        onChange={(e) => updateConfig(c => ({ ...c, voiceName: e.target.value }))}
+                                        className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm text-zinc-700 dark:text-zinc-200"
+                                    >
+                                        {GEMINI_LIVE_VOICES.map(v => <option key={v} value={v}>{v}</option>)}
+                                        {!GEMINI_LIVE_VOICES.includes(config.voiceName as any) && <option value={config.voiceName}>{config.voiceName}</option>}
+                                    </select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm text-zinc-500 dark:text-zinc-400">Thinking Level</label>
+                                    <select
+                                        value={config.thinkingLevel ?? 'minimal'}
+                                        onChange={(e) => updateConfig(c => ({ ...c, thinkingLevel: e.target.value as any }))}
+                                        className="w-full h-9 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 text-sm text-zinc-700 dark:text-zinc-200"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="minimal">Minimal</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                    <p className="text-[11px] text-zinc-400">Höher = gründlicher, aber langsamer</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm text-zinc-500 dark:text-zinc-400">Temperature</label>
+                                        <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">{config.temperature ?? 1.1}</span>
+                                    </div>
+                                    <input
+                                        type="range" min={0} max={2} step={0.1}
+                                        value={config.temperature ?? 1.1}
+                                        onChange={(e) => updateConfig(c => ({ ...c, temperature: parseFloat(e.target.value) }))}
+                                        className="w-full accent-blue-500"
+                                    />
+                                    <div className="flex justify-between text-[10px] text-zinc-300 dark:text-zinc-600">
+                                        <span>Präzise</span><span>Kreativ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── Verhalten ── */}
+                        <div className="space-y-5">
+                            <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Verhalten</div>
+                            <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                                {([
+                                    { label: 'Voice aktivieren', hint: 'Mikrofon-Button in der App anzeigen', key: 'enabled' },
+                                    { label: 'Nutzer-Transkript', hint: 'Gesprochenen Text mitloggen', key: 'inputTranscriptionEnabled' },
+                                    { label: 'KI-Antworttext', hint: 'KI-Antworten transkribieren', key: 'outputTranscriptionEnabled' },
+                                    { label: 'Bilder senden', hint: 'Thumbnails an die KI übermitteln', key: 'visualContextEnabled' },
+                                ] as const).map(({ label, hint, key }) => (
+                                    <div key={key} className="flex items-center justify-between py-3.5 gap-6">
+                                        <div>
+                                            <div className="text-sm text-zinc-700 dark:text-zinc-200">{label}</div>
+                                            <div className="text-[12px] text-zinc-400 mt-0.5">{hint}</div>
+                                        </div>
+                                        <Toggle checked={!!config[key]} onChange={() => updateConfig(c => ({ ...c, [key]: !c[key] }))} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ── Begrüßung ── */}
+                        <div className="space-y-3">
+                            <div className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Begrüßung</div>
+                            <AutoGrowTextarea
+                                value={config.greeting}
+                                onChange={(v) => updateConfig(c => ({ ...c, greeting: v }))}
+                                placeholder={DEFAULT_GREETING}
+                            />
+                            <p className="text-[11px] text-zinc-400">Wird beim Session-Start gesendet. Die AI variiert den Wortlaut leicht.</p>
                         </div>
                     </div>
                 );
 
-            case 'prompt':
+            case 'prompt': {
+                const blocks: PromptBlock[] = config.systemPromptBlocks ?? DEFAULT_SYSTEM_PROMPT_BLOCKS;
+                const handleBlocksChange = (updated: PromptBlock[]) => {
+                    updateConfig(c => ({
+                        ...c,
+                        systemPromptBlocks: updated,
+                        systemPrompt: assembleSystemPrompt(updated),
+                    }));
+                };
                 return (
-                    <div>
-                        <p className="text-sm text-zinc-400 mb-8 leading-relaxed">Persönlichkeit und Verhalten der AI. Sprache wird automatisch erkannt — ein Prompt deckt DE und EN ab.</p>
-                        <div className="space-y-10">
-                            <label className="block space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">System Prompt</span>
-                                </div>
-                                <AutoGrowTextarea value={config.systemPrompt} onChange={(v) => updateConfig(c => ({ ...c, systemPrompt: v }))} placeholder={DEFAULT_SYSTEM_PROMPT} />
-                            </label>
-                            <label className="block space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-base font-medium text-zinc-700 dark:text-zinc-200">Begrüßung</span>
-                                </div>
-                                <AutoGrowTextarea value={config.greeting} onChange={(v) => updateConfig(c => ({ ...c, greeting: v }))} placeholder={DEFAULT_GREETING} />
-                                <p className="text-[13px] text-zinc-400">Die AI variiert den Wortlaut bei jedem Session-Start leicht.</p>
-                            </label>
-                        </div>
-                    </div>
+                    <PromptBlocksTable blocks={blocks} onChange={handleBlocksChange} />
                 );
+            }
 
             default: {
                 if (!isToolSection) return null;
@@ -356,12 +392,27 @@ export const AdminVoiceView: React.FC<AdminVoiceViewProps> = ({ t, config, diagn
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 overflow-y-auto">
-                    <div className="max-w-3xl px-6 md:px-10 py-6 md:py-10">
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
-                            {NAV_ITEMS.find(n => n.id === activeSection)?.label}
-                        </h2>
-                        {renderContent()}
-                    </div>
+                    {activeSection === 'prompt' ? (
+                        /* Prompt section: full-width, no max-w constraint */
+                        <div className="flex flex-col min-h-full">
+                            <div className="px-6 md:px-8 pt-6 md:pt-8 pb-4">
+                                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                                    {NAV_ITEMS.find(n => n.id === 'prompt')?.label}
+                                </h2>
+                                <p className="text-sm text-zinc-400 leading-relaxed">Persönlichkeit und Verhalten der AI. Sprache wird automatisch erkannt — ein Prompt deckt DE und EN ab.</p>
+                            </div>
+                            <div className="flex-1 border-t border-zinc-100 dark:border-zinc-800">
+                                {renderContent()}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={`px-6 md:px-10 py-6 md:py-10 ${activeSection === 'general' ? '' : 'max-w-3xl'}`}>
+                            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
+                                {NAV_ITEMS.find(n => n.id === activeSection)?.label}
+                            </h2>
+                            {renderContent()}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

@@ -153,7 +153,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Voice-created variables: listen for custom events from the voice assistant
     useEffect(() => {
         const handleSetVariables = (e: Event) => {
-            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
+            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[]; selected?: string[] }> };
             if (!controls?.length) return;
 
             // Build a map of old label → { controlId, selectedValues } so we can preserve selections
@@ -166,24 +166,32 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 }
             });
 
+            const now = Date.now();
             const presetControls: PresetControl[] = controls.map((c, ci) => ({
-                id: `voice-${ci}-${Date.now()}`,
+                id: `voice-${ci}-${now}`,
                 label: c.label,
                 options: c.options.map((opt, oi) => ({
-                    id: `voice-opt-${ci}-${oi}-${Date.now()}`,
+                    id: `voice-opt-${ci}-${oi}-${now}`,
                     label: opt,
                     value: opt
                 }))
             }));
 
-            // Carry over selections for labels that still exist with matching option values
+            // Carry over old user selections first; fall back to AI pre-selection for new labels
             const newValues: Record<string, string[]> = {};
-            presetControls.forEach(ctrl => {
+            presetControls.forEach((ctrl, ci) => {
+                const validOptions = new Set(ctrl.options.map(o => o.value));
                 const old = oldLabelMap.get(ctrl.label.toLowerCase());
                 if (old) {
-                    const validOptions = new Set(ctrl.options.map(o => o.value));
+                    // Preserve existing user selection
                     const kept = old.values.filter(v => validOptions.has(v));
-                    if (kept.length) newValues[ctrl.id] = kept;
+                    if (kept.length) { newValues[ctrl.id] = kept; return; }
+                }
+                // Apply AI pre-selection for this control
+                const preSelected = controls[ci].selected;
+                if (preSelected?.length) {
+                    const valid = preSelected.filter(v => validOptions.has(v));
+                    if (valid.length) newValues[ctrl.id] = valid;
                 }
             });
 
@@ -543,7 +551,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     });
 
     const handleInspirationComplete = (base64: string) => {
-        if (!selectedImage) return;
+        if (!selectedImage) {
+            // Create mode — no image yet, delegate to external handler
+            if (props.onAddReference) {
+                fetch(base64).then(r => r.blob()).then(blob => {
+                    const file = new File([blob], 'reference.png', { type: 'image/png' });
+                    props.onAddReference!(file);
+                });
+            }
+            setIsInspirationOpen(false);
+            return;
+        }
         const currentAnns = selectedImage.annotations || [];
         if (viewingRefAnn) {
             updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: base64 } : a));
@@ -562,7 +580,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         (e.nativeEvent as any).__sideSheetHandled = true;
         onGlobalDragLeave();
         setIsSideZoneActive(false);
-        if (!selectedImage) return;
+        if (!selectedImage && !props.onAddReference) return;
         const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
             const reader = new FileReader();
