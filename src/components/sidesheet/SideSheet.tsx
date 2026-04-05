@@ -56,6 +56,8 @@ interface SideSheetProps {
     onInteractionStart: () => void;
     onInteractionEnd: () => void;
     onAddReference?: (file: File, annotationId?: string) => void;
+    createReferenceFiles?: string[];
+    onRemoveCreateReference?: (idx: number) => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     qualityMode: GenerationQuality;
@@ -690,7 +692,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         />
                                     </div>
 
-                                    {/* Reference images tray */}
+                                    {/* Reference images tray — edit mode */}
                                     {referenceAnns.length > 0 && (
                                         <div className="flex flex-wrap gap-2 pt-1">
                                             {referenceAnns.map(ann => (
@@ -702,6 +704,26 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                                        className="absolute top-1 right-1 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Reference images tray — create mode */}
+                                    {!selectedImage && props.createReferenceFiles && props.createReferenceFiles.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-1">
+                                            {props.createReferenceFiles.map((src, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="group relative w-[88px] h-[88px] rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                                                >
+                                                    <img src={src} className="w-full h-full object-cover" alt="ref" />
+                                                    <button
+                                                        onClick={() => props.onRemoveCreateReference?.(idx)}
                                                         className="absolute top-1 right-1 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
                                                         <X className="w-4 h-4" />
@@ -845,9 +867,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
                                                     >
                                                         <Camera className="w-4 h-4" />
-                                                        {referenceAnns.length > 0 && (
+                                                        {(referenceAnns.length + (props.createReferenceFiles?.length ?? 0)) > 0 && (
                                                             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-                                                                {referenceAnns.length}
+                                                                {referenceAnns.length + (props.createReferenceFiles?.length ?? 0)}
                                                             </span>
                                                         )}
                                                     </button>
@@ -859,7 +881,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             ? 'Lade ein Referenzbild hoch, an dem sich die KI orientieren soll.'
                                                             : 'Upload a reference image the AI can use as guidance.'}
                                                         placement="auto"
-                                                        enabled={hasPromptText && referenceAnns.length === 0}
+                                                        enabled={hasPromptText && referenceAnns.length === 0 && (props.createReferenceFiles?.length ?? 0) === 0}
                                                     />
                                                 )}
                                             </div>

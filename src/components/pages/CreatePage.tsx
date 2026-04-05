@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 
@@ -154,22 +153,6 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                             ))}
                         </div>
 
-                        {/* Reference image thumbnails */}
-                        {referenceFiles.length > 0 && !isGenerating && (
-                            <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 flex-wrap z-10">
-                                {referenceFiles.map((src, idx) => (
-                                    <div key={idx} className="relative group w-10 h-10 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                                        <img src={src} className="w-full h-full object-cover" alt="" />
-                                        <button
-                                            onClick={() => handleRemoveReference(idx)}
-                                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                        >
-                                            <X className="w-3 h-3 text-white" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -221,6 +204,8 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     onUpdateImageTitle={actions.updateProfile}
                     userProfile={state.userProfile}
                     onAddReference={handleAddReference}
+                    createReferenceFiles={referenceFiles}
+                    onRemoveCreateReference={handleRemoveReference}
                 />
             </aside>
         </div>
