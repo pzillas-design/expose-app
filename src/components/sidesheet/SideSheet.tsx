@@ -10,6 +10,7 @@ import {
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
 import { generateId } from '@/utils/ids';
+import { compressImage } from '@/utils/imageUtils';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -552,7 +553,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         return () => document.removeEventListener('paste-reference-image', handler);
     });
 
-    const handleInspirationComplete = (base64: string) => {
+    const handleInspirationComplete = async (base64: string) => {
         if (!selectedImage) {
             // Create mode — no image yet, delegate to external handler
             if (props.onAddReference) {
@@ -564,11 +565,25 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             setIsInspirationOpen(false);
             return;
         }
+
+        // Compress to max 1024px / 0.8 quality so the payload stays well under
+        // Supabase's 6 MB edge-function body limit (raw iPhone photos are 7-13 MB).
+        let compressed = base64;
+        try {
+            const blob = await compressImage(base64, 1024, 0.8);
+            compressed = await new Promise<string>((res, rej) => {
+                const r = new FileReader();
+                r.onload = ev => res(ev.target?.result as string);
+                r.onerror = rej;
+                r.readAsDataURL(blob);
+            });
+        } catch { /* fallback to original if compression fails */ }
+
         const currentAnns = selectedImage.annotations || [];
         if (viewingRefAnn) {
-            updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: base64 } : a));
+            updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: compressed } : a));
         } else {
-            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: base64, createdAt: Date.now() };
+            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: compressed, createdAt: Date.now() };
             updateAnnotationsWithHistory([...currentAnns, newRef]);
         }
         setViewingRefAnn(null);
