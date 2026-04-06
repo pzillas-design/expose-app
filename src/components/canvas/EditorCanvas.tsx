@@ -1,5 +1,6 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { AnnotationObject, TranslationFunction } from '@/types';
 import { X, Check, Pen, Trash, RotateCw } from 'lucide-react';
 import { Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
@@ -417,7 +418,17 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
         if (dragState) {
-            if (!dragState.isMoved) setActiveMaskId(dragState.id);
+            if (!dragState.isMoved) {
+                // On touch: use flushSync so the input renders immediately within the
+                // same gesture context, then focus it — avoids needing a second tap.
+                const isTouch = 'changedTouches' in e;
+                if (isTouch) {
+                    flushSync(() => setActiveMaskId(dragState.id));
+                    (document.querySelector('.annotation-ui input') as HTMLInputElement | null)?.focus();
+                } else {
+                    setActiveMaskId(dragState.id);
+                }
+            }
             setDragState(null);
             onInteractionEnd?.();
             return;
