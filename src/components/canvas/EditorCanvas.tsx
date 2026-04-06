@@ -210,14 +210,18 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         }
     }, [annW, annH, renderCanvas]);
 
-    // Prevent page scroll while dragging a chip/shape on touch — React's synthetic
-    // touchmove is passive by default so preventDefault() there is ignored.
+    // Ref-based drag flag — updated synchronously so the touchmove listener
+    // below can check it without waiting for a React re-render cycle.
+    const isDraggingRef = useRef(false);
+
+    // Register the non-passive touchmove listener ONCE on mount.
+    // Using a useEffect with dragState as dep would add it too late (after render),
+    // by which time the first touchmove has already fired and scrolled the page.
     useEffect(() => {
-        if (!dragState) return;
-        const prevent = (e: TouchEvent) => e.preventDefault();
+        const prevent = (e: TouchEvent) => { if (isDraggingRef.current) e.preventDefault(); };
         document.addEventListener('touchmove', prevent, { passive: false });
         return () => document.removeEventListener('touchmove', prevent);
-    }, [!!dragState]);
+    }, []);
 
     // Returns coordinates in normalized annotation space (annW × annH)
     const getCoordinates = (clientX: number, clientY: number) => {
@@ -419,6 +423,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
         if (dragState) {
+            isDraggingRef.current = false;
             if (!dragState.isMoved) {
                 // On touch: use flushSync so the input renders immediately within the
                 // same gesture context, then focus it — avoids needing a second tap.
@@ -445,6 +450,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const startDrag = (e: React.MouseEvent | React.TouchEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
         e.stopPropagation(); e.preventDefault();
+        isDraggingRef.current = true; // synchronously enable scroll-lock before first touchmove
         onInteractionStart?.();
         const clientX = 'touches' in e ? (e as any).touches[0].clientX : (e as any).clientX;
         const clientY = 'touches' in e ? (e as any).touches[0].clientY : (e as any).clientY;
