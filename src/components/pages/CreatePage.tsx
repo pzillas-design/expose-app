@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
+import { compressImage } from '@/utils/imageUtils';
 
 const ASPECT_RATIOS = [
     { label: '16:9', value: '16:9' },
@@ -90,9 +91,23 @@ export const CreatePage: React.FC<CreatePageProps> = ({
 
     const handleAddReference = useCallback((file: File) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             if (typeof e.target?.result === 'string') {
-                setReferenceFiles(prev => [...prev, e.target!.result as string]);
+                // Compress to max 1024px / 0.8 quality so the payload stays
+                // well under Supabase's 6 MB edge-function body limit.
+                try {
+                    const blob = await compressImage(e.target.result as string, 1024, 0.8);
+                    const compressed = await new Promise<string>((res, rej) => {
+                        const r = new FileReader();
+                        r.onload = ev => res(ev.target?.result as string);
+                        r.onerror = rej;
+                        r.readAsDataURL(blob);
+                    });
+                    setReferenceFiles(prev => [...prev, compressed]);
+                } catch {
+                    // fallback: use raw data URL if compression fails
+                    setReferenceFiles(prev => [...prev, e.target!.result as string]);
+                }
             }
         };
         reader.readAsDataURL(file);
