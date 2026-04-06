@@ -104,9 +104,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     useEffect(() => {
         if (currentActiveId) {
+            // Desktop: small delay is fine. Touch uses flushSync path instead.
             setTimeout(() => {
-                const activeInput = document.querySelector('.annotation-ui input') as HTMLInputElement;
-                if (activeInput) activeInput.focus();
+                const el = document.querySelector('.annotation-ui [contenteditable]') as HTMLElement | null;
+                if (el && document.activeElement !== el) el.focus();
             }, 50);
         }
     }, [currentActiveId]);
@@ -424,7 +425,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                 const isTouch = 'changedTouches' in e;
                 if (isTouch) {
                     flushSync(() => setActiveMaskId(dragState.id));
-                    (document.querySelector('.annotation-ui input') as HTMLInputElement | null)?.focus();
+                    (document.querySelector('.annotation-ui [contenteditable]') as HTMLElement | null)?.focus();
                 } else {
                     setActiveMaskId(dragState.id);
                 }
@@ -742,12 +743,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                     <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
                                                 </div>
                                             )}
-                                            <input
-                                                value={ann.text || ''}
-                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                                placeholder="Text eingeben"
-                                                className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
+                                            <div
+                                                ref={(el) => {
+                                                    // Sync external text changes without resetting cursor
+                                                    if (el && document.activeElement !== el && el.textContent !== (ann.text || '')) {
+                                                        el.textContent = ann.text || '';
+                                                    }
+                                                }}
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                role="textbox"
+                                                data-placeholder="Text eingeben"
+                                                onInput={(e) => updateAnnotation(ann.id, { text: e.currentTarget.textContent || '' })}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setActiveMaskId(null); } e.stopPropagation(); }}
+                                                className={`chip-editable bg-transparent outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] max-w-[160px] text-zinc-900 dark:text-zinc-100 mr-1.5 break-words`}
                                                 onMouseDown={(e) => e.stopPropagation()}
                                                 onTouchStart={(e) => e.stopPropagation()}
                                             />

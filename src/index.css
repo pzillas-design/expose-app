@@ -50,6 +50,16 @@ html.dark {
   background-color: #09090b;
 }
 
+/* Chip contenteditable placeholder */
+.chip-editable:empty::before {
+  content: attr(data-placeholder);
+  color: #a1a1aa; /* zinc-400 */
+  pointer-events: none;
+}
+.dark .chip-editable:empty::before {
+  color: #52525b; /* zinc-600 */
+}
+
 :root {
   --grid-dot: transparent;
 }

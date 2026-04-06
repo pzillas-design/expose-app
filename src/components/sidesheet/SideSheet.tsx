@@ -688,6 +688,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             onChange={e => handlePromptChange(e.target.value)}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
+                                            autoComplete="off"
+                                            autoCorrect="off"
+                                            autoCapitalize="off"
+                                            spellCheck={false}
                                             className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none min-h-[140px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
