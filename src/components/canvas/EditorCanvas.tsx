@@ -208,6 +208,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         }
     }, [annW, annH, renderCanvas]);
 
+    // Prevent page scroll while dragging a chip/shape on touch — React's synthetic
+    // touchmove is passive by default so preventDefault() there is ignored.
+    useEffect(() => {
+        if (!dragState) return;
+        const prevent = (e: TouchEvent) => e.preventDefault();
+        document.addEventListener('touchmove', prevent, { passive: false });
+        return () => document.removeEventListener('touchmove', prevent);
+    }, [!!dragState]);
+
     // Returns coordinates in normalized annotation space (annW × annH)
     const getCoordinates = (clientX: number, clientY: number) => {
         if (!canvasRef.current) return { x: 0, y: 0 };
