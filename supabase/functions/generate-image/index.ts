@@ -258,12 +258,7 @@ Deno.serve(async (req) => {
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
         console.log(`[DEBUG] Request Type: ${requestType}`);
         console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
-        console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
-        if (sourceImage) {
-            console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
-            console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
-            console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
-        }
+        console.log(`[DEBUG] Source Image present: ${!!sourceImage}, refs: ${payloadReferences?.length ?? 0}`);
 
         // Check credits and profile
         const cost = COSTS[qualityMode] || 0;

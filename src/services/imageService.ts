@@ -240,6 +240,18 @@ export const imageService = {
             }
         } catch { /* localStorage unavailable */ }
 
+        // Strip annotations from sourceImage before sending — reference image base64
+        // data is already in payload.references; sending it again in sourceImage.annotations
+        // would triple the payload size and cause OOM in the Deno edge function.
+        const sourceImageForEdge = sourceImage ? {
+            ...sourceImage,
+            annotations: (sourceImage.annotations || []).map(ann =>
+                ann.type === 'reference_image'
+                    ? { ...ann, referenceImage: undefined, _tempSrc: undefined }
+                    : ann
+            )
+        } : sourceImage;
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
             ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
             body: {
@@ -247,11 +259,11 @@ export const imageService = {
                 qualityMode,
                 newId,
                 modelName,
-                attachments,
+                // attachments intentionally omitted — reference images are already in payload.references
                 aspectRatio,
                 targetTitle,
                 activeTemplateId: activeTemplateId || undefined,
-                sourceImage,
+                sourceImage: sourceImageForEdge,
                 groupParentId: groupParentId || undefined,
                 // Pass the storage path so the edge function can download the image
                 // directly from Supabase Storage (faster & more reliable than fetching signed URL)
