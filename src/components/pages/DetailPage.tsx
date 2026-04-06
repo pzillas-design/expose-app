@@ -658,15 +658,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-                {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
+            <main className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+                {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
-                    className="md:flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
-                    style={isMobile
+                    className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
+                    style={isMobile && state.sideSheetMode !== 'brush'
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
-                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width) + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
-                                : `${window.innerWidth + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
+                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width)}px`
+                                : `${window.innerWidth}px`
                         }
                         : undefined
                     }
@@ -810,8 +810,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         </div>{/* closes sizing wrapper */}
                     </div>{/* closes image container */}
 
-                    {/* Bottom Area: Fixed space so canvas never jumps */}
-                    <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
+                    {/* Bottom Area: Fixed space so canvas never jumps (desktop only in brush mode; mobile uses fixed toolbar) */}
+                    <div className={`${state.sideSheetMode === 'brush' && !isMobile ? 'h-20' : state.sideSheetMode !== 'brush' ? 'h-0' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div
                             ref={thumbStripRef}
@@ -861,8 +861,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Annotations Toolbar */}
-                        {state.sideSheetMode === 'brush' && <div className="absolute bottom-6 left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        {/* Annotations Toolbar — fixed bottom on mobile, absolute on desktop */}
+                        {state.sideSheetMode === 'brush' && <div className={`${isMobile ? 'fixed bottom-6' : 'absolute bottom-6'} left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150`}>
                             {/* Secondary Row: Contextual Sub-Menu */}
                             <div className="w-full flex justify-center pointer-events-none">
                                 {subMenu === 'text' && (

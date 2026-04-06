@@ -422,7 +422,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         onInteractionEnd?.();
     };
 
-    const startDrag = (e: React.MouseEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
+    const startDrag = (e: React.MouseEvent | React.TouchEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
         e.stopPropagation(); e.preventDefault();
         onInteractionStart?.();
         const clientX = 'touches' in e ? (e as any).touches[0].clientX : (e as any).clientX;
@@ -491,11 +491,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
                                         strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
@@ -503,7 +500,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         {points.map((p, idx) => (
                                             <div key={idx} className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                                 style={{ left: `${(p.x / annW) * 100}%`, top: `${(p.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                                onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
+                                                onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)}
+                                                onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                             style={{ left: `${(center.x / annW) * 100}%`, top: `${(center.y / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
@@ -529,21 +527,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke="transparent"
                                         strokeWidth="20"
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
                                     <>
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p0.x / annW) * 100}%`, top: `${(p0.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)}
+                                            onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p1.x / annW) * 100}%`, top: `${(p1.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)}
+                                            onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                             style={{ left: `${(centerX / annW) * 100}%`, top: `${(centerY / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
@@ -579,11 +576,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
                                         strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
@@ -604,6 +598,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                     transform: 'translate(-50%, -50%)'
                                                 }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, h.mode as any, ann)}
+                                                onTouchStart={(e) => startDrag(e, ann.id, h.mode as any, ann)}
                                             />
                                         ))}
 
@@ -694,17 +689,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke="transparent"
                                         strokeWidth={Math.max(20, (ann as any).strokeWidth || 40)}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
                                     <button className="annotation-ui absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                         style={{ left: `${maskCenterPct?.left ?? leftPct}%`, top: `${maskCenterPct?.top ?? topPct}%`, transform: 'translate(-50%, -50%)' }}
                                         onMouseDown={(e) => e.stopPropagation()}
+                                        onTouchStart={(e) => e.stopPropagation()}
                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                         <Trash className="w-4 h-4" />
                                     </button>
@@ -717,6 +710,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                 className={`absolute annotation-ui ${isActiveItem ? 'z-[60]' : 'z-20'}`}
                                 style={{ left: `${leftPct}%`, top: `${topPct}%` }}
                                 onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                                onTouchStart={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
                             >
                                 <div style={{ transform: finalTransform }} className={`${dragState?.id === ann.id ? '' : 'transition-transform duration-200'}`}>
                                     {isActiveItem ? (
@@ -735,10 +729,12 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 placeholder="Text eingeben"
                                                 className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
                                                 onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
                                             />
                                             <Tooltip text="Save">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }}
                                                     className={OVERLAY_STYLES.SaveBtn}
                                                 >
@@ -749,10 +745,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     ) : (
                                         <div
                                             className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move hover:scale-105 group/chip`}
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                startDrag(e, ann.id, 'move', ann);
-                                            }}
+                                            onMouseDown={(e) => { e.stopPropagation(); startDrag(e, ann.id, 'move', ann); }}
+                                            onTouchStart={(e) => { e.stopPropagation(); startDrag(e, ann.id, 'move', ann); }}
                                         >
                                             <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
                                             <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
@@ -767,13 +761,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             <div className="flex items-center gap-0.5">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
-                                                    className={`${OVERLAY_STYLES.ActionBtn} opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
+                                                    className={`${OVERLAY_STYLES.ActionBtn} hidden md:flex opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
                                                 >
                                                     <Pen className="w-3 h-3" />
                                                 </button>
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); deleteAnnotation(ann.id); }}
                                                     onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                                     className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}
                                                 >
