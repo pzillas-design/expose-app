@@ -19,11 +19,16 @@ export const usePresets = (userId?: string) => {
         }
     }, [userId]);
 
-    const saveTemplate = useCallback(async (template: any) => {
+    const saveTemplate = useCallback(async (templateOrArray: any) => {
         try {
-            const savedTemplate = await adminService.updateGlobalPreset(template, userId);
+            // ManagePresetsModal passes an array; handle both array and single object
+            const templates = Array.isArray(templateOrArray) ? templateOrArray : [templateOrArray];
+            let lastSaved: any = null;
+            for (const template of templates) {
+                lastSaved = await adminService.updateGlobalPreset(template, userId);
+            }
             await fetchTemplates();
-            return savedTemplate;
+            return lastSaved;
         } catch (error) {
             console.error('Failed to save template:', error);
             throw error;

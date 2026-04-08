@@ -464,12 +464,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
 
     return (
-        <div ref={containerRef} className="absolute inset-0 z-10 w-full h-full touch-none" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+        <div ref={containerRef} className={`absolute inset-0 z-10 w-full h-full touch-none ${activeTab === 'none' ? 'pointer-events-none' : ''}`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
             <canvas
                 ref={canvasRef}
                 className={`
- absolute inset-0 w-full h-full 
+ absolute inset-0 w-full h-full
  ${activeTab === 'brush' && maskTool === 'brush' ? 'touch-none cursor-none' : 'cursor-default'}
+ ${activeTab === 'none' ? 'pointer-events-none' : ''}
  `}
             />
 

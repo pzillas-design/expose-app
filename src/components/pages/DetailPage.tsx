@@ -779,7 +779,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             setLoadedImageId(img.id);
                                             setWaitingForGeneratedLoad(null);
                                         }}
-                                        className={`absolute inset-0 w-full h-full transition-opacity duration-200 ease-out ${isMainLoaded && !showBlob ? 'opacity-100' : 'opacity-0'}`}
+                                        className={`absolute inset-0 w-full h-full transition-opacity duration-200 ease-out select-none ${isMainLoaded && !showBlob ? 'opacity-100' : 'opacity-0'}`}
                                         style={{ objectFit: 'contain' }}
                                     />
 
