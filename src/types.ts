@@ -147,6 +147,7 @@ export interface AdminUser {
   totalSpent: number;
   joinedAt: number;
   lastActiveAt: number;
+  stripeCustomerId?: string;
 }
 
 export interface AdminJob {

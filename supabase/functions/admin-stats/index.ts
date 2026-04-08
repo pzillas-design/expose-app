@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
 
     try {
         let startDate: Date | null = null
+        let stripeCustomerId: string | null = null
         if (req.method !== 'GET') {
             try {
                 const body = await req.json()
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
                     const parsed = new Date(body.startDate)
                     if (!Number.isNaN(parsed.getTime())) startDate = parsed
                 }
+                if (body?.stripeCustomerId) stripeCustomerId = body.stripeCustomerId
             } catch {
                 // ignore invalid optional body
             }
@@ -50,13 +52,40 @@ Deno.serve(async (req) => {
             .single()
         if (profile?.role !== 'admin') throw new Error('Forbidden')
 
+        // If stripeCustomerId provided — return payments for that customer only
+        if (stripeCustomerId) {
+            const customerPayments: any[] = []
+            let hasMore = true
+            let startingAfter: string | undefined
+            while (hasMore) {
+                const params: any = { limit: 100, customer: stripeCustomerId }
+                if (startingAfter) params.starting_after = startingAfter
+                const result = await stripe.paymentIntents.list(params)
+                customerPayments.push(...result.data)
+                hasMore = result.has_more
+                if (result.data.length > 0) startingAfter = result.data[result.data.length - 1].id
+            }
+            const payments = customerPayments
+                .filter(pi => pi.status === 'succeeded')
+                .map(pi => ({
+                    id: pi.id,
+                    amount: pi.amount_received / 100,
+                    currency: pi.currency,
+                    created: pi.created,
+                    metadata: pi.metadata,
+                }))
+            return new Response(JSON.stringify({ payments }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            })
+        }
+
         // Fetch all succeeded payment intents from Stripe
         let allPayments: any[] = []
         let hasMore = true
         let startingAfter: string | undefined
 
         while (hasMore) {
-            const params: any = { limit: 100, 'expand[]': ['data.charges'] }
+            const params: any = { limit: 100 }
             if (startingAfter) params.starting_after = startingAfter
 
             const result = await stripe.paymentIntents.list(params)
@@ -75,7 +104,7 @@ Deno.serve(async (req) => {
         const totalRevenueCents = succeeded.reduce((sum, pi) => sum + pi.amount_received, 0)
         const totalRevenue = totalRevenueCents / 100
 
-        // Group by month (last 6 months)
+        // Group by month
         const monthlyRevenue: Record<string, number> = {}
         succeeded.forEach(pi => {
             const d = new Date(pi.created * 1000)

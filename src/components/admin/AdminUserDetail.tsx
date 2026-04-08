@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Shield, Clock, Lock, ArrowRight, Trash, Plus, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Shield, Clock, Lock, ArrowRight, Trash, Plus, Loader2, CreditCard, RotateCcw, ExternalLink } from 'lucide-react';
 import { AdminUser, TranslationFunction } from '@/types';
 import { Typo, IconButton, Button, Input, SectionHeader } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -21,9 +21,21 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
  const [creditAmount, setCreditAmount] = useState('');
  const [isResetting, setIsResetting] = useState(false);
  const [isAddingBalance, setIsAddingBalance] = useState(false);
+ const [payments, setPayments] = useState<any[]>([]);
+ const [loadingPayments, setLoadingPayments] = useState(false);
+ const [refundingId, setRefundingId] = useState<string | null>(null);
 
  const { showToast } = useToast();
  const { confirm, prompt } = useItemDialog();
+
+ useEffect(() => {
+     if (!user.stripeCustomerId) return;
+     setLoadingPayments(true);
+     adminService.getStripePayments(user.stripeCustomerId)
+         .then(setPayments)
+         .catch(() => setPayments([]))
+         .finally(() => setLoadingPayments(false));
+ }, [user.stripeCustomerId]);
 
  const handleAddCredits = async () => {
  const result = await prompt({
@@ -53,6 +65,26 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
  if (confirmed) {
  onDeleteUser(user.id);
  }
+ };
+
+ const handleRefund = async (paymentIntentId: string, amountEur: number) => {
+     const confirmed = await confirm({
+         title: `Refund ${amountEur.toFixed(2)} €?`,
+         description: `Payment Intent: ${paymentIntentId}`,
+         confirmLabel: 'Refund',
+         variant: 'danger',
+     });
+     if (!confirmed) return;
+     setRefundingId(paymentIntentId);
+     try {
+         await adminService.createStripeRefund(paymentIntentId);
+         showToast(`Refund von ${amountEur.toFixed(2)} € ausgelöst`, 'success');
+         setPayments(prev => prev.filter(p => p.id !== paymentIntentId));
+     } catch (e: any) {
+         showToast(e.message || 'Refund fehlgeschlagen', 'error');
+     } finally {
+         setRefundingId(null);
+     }
  };
 
  const handleResetPassword = async () => {
@@ -139,6 +171,48 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
  </div>
  </div>
  </div>
+
+ {/* Stripe Payments */}
+ {user.stripeCustomerId && (
+     <div>
+         <SectionHeader>
+             <span className="flex items-center gap-2">
+                 <CreditCard className="w-3.5 h-3.5" />
+                 Stripe
+                 <a
+                     href={`https://dashboard.stripe.com/customers/${user.stripeCustomerId}`}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                 >
+                     <ExternalLink className="w-3 h-3" />
+                 </a>
+             </span>
+         </SectionHeader>
+         <div className="space-y-2">
+             {loadingPayments ? (
+                 <div className="flex justify-center py-4"><Loader2 className="w-4 h-4 animate-spin text-zinc-400" /></div>
+             ) : payments.length === 0 ? (
+                 <p className="text-xs text-zinc-400 px-1">Keine Zahlungen gefunden</p>
+             ) : payments.map(p => (
+                 <div key={p.id} className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                     <div>
+                         <div className="text-sm font-mono font-medium">{p.amount.toFixed(2)} €</div>
+                         <div className="text-xs text-zinc-400">{new Date(p.created * 1000).toLocaleDateString('de-DE')}</div>
+                     </div>
+                     <button
+                         onClick={() => handleRefund(p.id, p.amount)}
+                         disabled={refundingId === p.id}
+                         className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-red-500 transition-colors disabled:opacity-50"
+                     >
+                         {refundingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                         Refund
+                     </button>
+                 </div>
+             ))}
+         </div>
+     </div>
+ )}
 
  {/* Account Settings */}
  <div>

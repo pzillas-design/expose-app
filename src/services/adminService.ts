@@ -24,6 +24,7 @@ export const adminService = {
             totalSpent: user.total_spent || 0.0,
             joinedAt: new Date(user.created_at).getTime(),
             lastActiveAt: user.last_active_at ? new Date(user.last_active_at).getTime() : 0,
+            stripeCustomerId: user.stripe_customer_id || null,
         }));
     },
 
@@ -48,6 +49,34 @@ export const adminService = {
             console.error('AdminService: Profile update failed!', error.message, error.details, error.hint);
             throw error;
         }
+    },
+
+    /**
+     * Get Stripe payment history for a customer
+     */
+    async getStripePayments(stripeCustomerId: string): Promise<any[]> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Not authenticated');
+        const res = await supabase.functions.invoke('admin-stats', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { stripeCustomerId },
+        });
+        if (res.error) throw new Error(res.error.message);
+        return res.data?.payments || [];
+    },
+
+    /**
+     * Issue a Stripe refund for a payment intent
+     */
+    async createStripeRefund(paymentIntentId: string, amountCents?: number): Promise<void> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Not authenticated');
+        const res = await supabase.functions.invoke('admin-refund', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { paymentIntentId, amountCents },
+        });
+        if (res.error) throw new Error(res.error.message);
+        if (res.data?.error) throw new Error(res.data.error);
     },
 
     /**
