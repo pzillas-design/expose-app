@@ -720,7 +720,7 @@ export const useNanoController = () => {
         handleCreateNew,
         recordPresetUsage,
         refreshTemplates,
-        savePreset: saveTemplate,
+        saveTemplate,
         refreshImageCount,
         setGridColumns,
         handleLoadMore,
