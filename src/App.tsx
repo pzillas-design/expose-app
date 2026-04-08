@@ -20,6 +20,7 @@ import { CreatePage } from '@/components/pages/CreatePage';
 // Lazy loaded pages
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
+const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const BlogPage = React.lazy(() => import('@/components/pages/BlogPage').then(m => ({ default: m.BlogPage })));
 const BlogPostPage = React.lazy(() => import('@/components/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const SettingsModal = React.lazy(() => import('@/components/settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
@@ -960,7 +961,7 @@ export function App() {
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
-    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum');
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact');
     
     // Pages that should have an expandable Hero header
     const expandableRoutes = ['/', '/about', '/impressum'];
@@ -1368,6 +1369,14 @@ export function App() {
                         <Route path="/blog/:slug" element={<BlogPostPage t={t} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
 
                         <Route path="/impressum" element={<ImpressumPage
+                            user={user}
+                            userProfile={userProfile}
+                            credits={credits}
+                            t={t}
+                            onCreateNew={() => setIsCreationModalOpen(true)}
+                            onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
+                        />} />
+                        <Route path="/contact" element={<ContactPage
                             user={user}
                             userProfile={userProfile}
                             credits={credits}

@@ -146,7 +146,7 @@ export const generateImage = async (
                 contents: [{ parts }],
                 config: {
                     systemInstruction,
-                    responseModalities: ['TEXT', 'IMAGE'],
+                    responseModalities: ['IMAGE'],
                     ...generationConfig
                 }
             });

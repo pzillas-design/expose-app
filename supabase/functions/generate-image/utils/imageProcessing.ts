@@ -5,10 +5,12 @@ import { encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
  */
 
 /**
- * Converts an HTTP URL to base64 string
+ * Converts an HTTP URL to base64 string.
+ * 30s timeout to prevent silent hangs in the background task.
  */
 export const urlToBase64 = async (url: string): Promise<string> => {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
     const arrayBuffer = await response.arrayBuffer();
     return encodeBase64(new Uint8Array(arrayBuffer));
 };

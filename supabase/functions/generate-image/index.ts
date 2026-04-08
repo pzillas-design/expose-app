@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
+import { decodeBase64, encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
@@ -247,7 +247,8 @@ Deno.serve(async (req) => {
             // Legacy/Fallback fields
             sourceImage,
             groupParentId,
-            attachments: legacyAttachments
+            attachments: legacyAttachments,
+            sourceStoragePath,  // internal storage path — preferred over signed URL fetch
         } = payload;
 
         // Early content validation — prevents credit deduction for empty requests
@@ -317,9 +318,20 @@ Deno.serve(async (req) => {
                 // Prepare source image (base64)
                 updateStage('prepare_source');
                 let finalSourceBase64 = null;
-                const sourceToProcess = payloadOriginalImage || sourceImage?.src;
-                if (sourceToProcess) {
-                    finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+                if (sourceStoragePath) {
+                    // Direct admin storage download — no HTTP, no signed URL expiry, no timeout risk
+                    const { data: storageBlob, error: storageErr } = await supabaseAdmin.storage
+                        .from('user-content')
+                        .download(sourceStoragePath);
+                    if (storageErr) throw new Error(`Storage download failed: ${storageErr.message}`);
+                    const arrayBuffer = await storageBlob.arrayBuffer();
+                    finalSourceBase64 = encodeBase64(new Uint8Array(arrayBuffer));
+                } else {
+                    // Fallback: HTTP fetch for images without a storage path
+                    const sourceToProcess = payloadOriginalImage || sourceImage?.src;
+                    if (sourceToProcess) {
+                        finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+                    }
                 }
 
                 const isNb2Mode = qualityMode.startsWith('nb2-');
