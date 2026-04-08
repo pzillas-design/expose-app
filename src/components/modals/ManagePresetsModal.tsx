@@ -301,11 +301,11 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
 
         if (currentLang === 'de') {
             if (promptDe.trim()) {
-                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, user_id: activeTemplate?.user_id, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             }
         } else {
             if (promptEn.trim()) {
-                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, user_id: activeTemplate?.user_id, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
 
