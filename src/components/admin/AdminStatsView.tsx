@@ -93,8 +93,12 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     costEur: totalVoiceMinutes * VOICE_USD_PER_MIN * USD_TO_EUR,
                 });
                 if (session?.access_token) {
+                    // Only fetch last 90 days by default for speed
+                    const defaultStart = new Date();
+                    defaultStart.setDate(defaultStart.getDate() - 90);
                     const res = await supabase.functions.invoke('admin-stats', {
                         headers: { Authorization: `Bearer ${session.access_token}` },
+                        body: { startDate: defaultStart.toISOString() },
                     });
                     if (!res.error && res.data) {
                         setStripeRevenue(res.data.totalRevenue ?? 0);
