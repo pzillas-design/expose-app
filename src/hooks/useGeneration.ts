@@ -236,6 +236,7 @@ export const useGeneration = ({
 
         let attempts = 0;
         const maxAttempts = 90; // 7.5 minutes at 5s interval — covers worst-case Pro·4K (2-5 min)
+        let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
             attempts++;
@@ -330,12 +331,18 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2. Check if job failed
+            // 2. Check if job failed or retrying
             const { data: jobData } = await supabase
                 .from('generation_jobs')
-                .select('status, error')
+                .select('status, error, request_payload')
                 .eq('id', jobId)
                 .maybeSingle();
+
+            // Show yellow warning toast once when Google AI is retrying due to overload
+            if (!googleOverloadWarningShown && (jobData?.request_payload as any)?.current_stage === 'gemini_retry_503') {
+                googleOverloadWarningShown = true;
+                showToast(t('warning_google_overload'), 'info');
+            }
 
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";

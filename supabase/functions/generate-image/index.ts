@@ -488,7 +488,8 @@ Deno.serve(async (req) => {
                         generationConfig,
                         !!finalSourceBase64,
                         hasMask,
-                        hasRefs
+                        hasRefs,
+                        () => updateStage('gemini_retry_503')
                     ),
                     new Promise<never>((_, reject) =>
                         setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS)

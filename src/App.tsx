@@ -208,13 +208,9 @@ export function App() {
     }, [location.pathname, state.activeId, actions, expandedGroupId]);
 
 
-    // Close SideSheet when navigating to a generating image via generation (not user arrow/thumb clicks)
+    // Reset user navigation ref when active image changes
     useEffect(() => {
         if (!state.activeId) return;
-        const targetImg = allImages.find(i => i.id === state.activeId);
-        if (targetImg?.isGenerating && !isUserNavigationRef.current) {
-            setDetailSideSheetVisible(false);
-        }
         isUserNavigationRef.current = false;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.activeId]);

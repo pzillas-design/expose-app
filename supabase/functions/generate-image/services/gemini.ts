@@ -130,16 +130,19 @@ export const generateImage = async (
     generationConfig: any,
     hasSource: boolean,
     hasMask: boolean,
-    hasRefs: boolean
+    hasRefs: boolean,
+    onRetry?: () => void
 ) => {
     const ai = new GoogleGenAI({ apiKey });
     const systemInstruction = getSystemInstruction(hasSource, hasMask, hasRefs);
 
     console.log('[DEBUG] System Instruction:', systemInstruction);
 
-    // Retry for transient errors
+    // Exponential backoff retry for transient errors (Google recommendation)
+    // Attempts: 3 total. Delays: 5s, 10s, 20s + up to 3s jitter each
     let lastError: any;
-    for (let i = 0; i < 2; i++) {
+    const MAX_ATTEMPTS = 3;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
         try {
             const response = await ai.models.generateContent({
                 model: modelName,
@@ -155,9 +158,13 @@ export const generateImage = async (
         } catch (err: any) {
             lastError = err;
             const status = err.status || (err.message?.match(/\[(\d+)\]/)?.[1]);
-            if (status === '500' || status === '503' || status === '429' || err.message?.includes('fetch failed')) {
-                console.warn(`Gemini API transient error (${status}), retrying ${i + 1}/2...`);
-                await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+            const isTransient = status === '500' || status === '503' || status === '429' || status === '504' || err.message?.includes('fetch failed');
+            if (isTransient && i < MAX_ATTEMPTS - 1) {
+                const baseDelay = 5000 * Math.pow(2, i); // 5s, 10s, 20s
+                const jitter = Math.random() * 3000;     // 0–3s jitter
+                console.warn(`Gemini API transient error (${status}), retry ${i + 1}/${MAX_ATTEMPTS - 1} after ${Math.round((baseDelay + jitter) / 1000)}s...`);
+                onRetry?.();
+                await new Promise(resolve => setTimeout(resolve, baseDelay + jitter));
                 continue;
             }
             throw err;
