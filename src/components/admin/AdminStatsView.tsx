@@ -37,7 +37,6 @@ const TIME_RANGES: { id: TimeRange; label: string }[] = [
     { id: 'jahr', label: 'Jahr' },
 ];
 
-const STRIPE_REVENUE_START = new Date('2026-03-27T00:00:00+01:00');
 
 const getResolutionBucket = (job: any): ResolutionBucket => {
     const value = String(job.imageSize || job.qualityMode || job.model || '').toLowerCase();
@@ -96,7 +95,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 if (session?.access_token) {
                     const res = await supabase.functions.invoke('admin-stats', {
                         headers: { Authorization: `Bearer ${session.access_token}` },
-                        body: { startDate: STRIPE_REVENUE_START.toISOString() }
                     });
                     if (!res.error && res.data) {
                         setStripeRevenue(res.data.totalRevenue ?? 0);
