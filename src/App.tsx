@@ -957,7 +957,7 @@ export function App() {
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
-    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact');
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact' || location.pathname === '/blog' || location.pathname.startsWith('/blog/'));
     
     // Pages that should have an expandable Hero header
     const expandableRoutes = ['/', '/about', '/impressum'];

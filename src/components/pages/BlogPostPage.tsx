@@ -101,7 +101,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
                         className="flex items-center gap-2 text-white/60 hover:text-white text-sm transition-colors duration-200 mb-10 group"
                     >
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
-                        Journal
+                        Blog
                     </button>
 
                     {/* Meta */}
