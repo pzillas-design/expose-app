@@ -721,6 +721,7 @@ export const useNanoController = () => {
         recordPresetUsage,
         refreshTemplates,
         saveTemplate,
+        deleteTemplate,
         refreshImageCount,
         setGridColumns,
         handleLoadMore,
