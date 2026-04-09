@@ -449,6 +449,19 @@ export function useGeminiLiveVoice({
     const getAppContextRef = useRef(getAppContext);
     useEffect(() => { getAppContextRef.current = getAppContext; });
 
+    // Always-fresh ref to getVisualContext — prevents syncVisualContext from
+    // recreating on every navigation (location.pathname changes getVoiceVisualContext
+    // in App.tsx, which would cascade through syncVisualContext → visual sync effect).
+    const getVisualContextRef = useRef(getVisualContext);
+    useEffect(() => { getVisualContextRef.current = getVisualContext; });
+
+    // Always-fresh refs for callbacks used inside syncVisualContext.
+    // Keeps syncVisualContext stable even when these logging callbacks change.
+    const onToolCallRef = useRef(onToolCall);
+    useEffect(() => { onToolCallRef.current = onToolCall; });
+    const onVisualContextChangeRef = useRef(onVisualContextChange);
+    useEffect(() => { onVisualContextChangeRef.current = onVisualContextChange; });
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -630,10 +643,10 @@ export function useGeminiLiveVoice({
         // Block for 5s after any tool batch completes.
         if (Date.now() < syncLockedUntilRef.current) return;
 
-        const visualContext = getVisualContext();
+        const visualContext = getVisualContextRef.current();
         if (!visualContext || visualContext.contextKey === lastVisualContextKeyRef.current) return;
         lastVisualContextKeyRef.current = visualContext.contextKey;
-        onVisualContextChange?.(visualContext.summary, visualContext.frames.length);
+        onVisualContextChangeRef.current?.(visualContext.summary, visualContext.frames.length);
 
         try {
             const isDetailWithFrame = visualContext.frames.length > 0;
@@ -660,7 +673,7 @@ export function useGeminiLiveVoice({
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
-            onToolCall?.({
+            onToolCallRef.current?.({
                 id: `visual-sync-${Date.now()}`,
                 sessionId: sessionIdRef.current,
                 name: '📷 visual_context_synced',
@@ -671,7 +684,7 @@ export function useGeminiLiveVoice({
             });
         } catch (syncError) {
             console.error('[voice] visual context sync failed', syncError);
-            onToolCall?.({
+            onToolCallRef.current?.({
                 id: `visual-sync-err-${Date.now()}`,
                 sessionId: sessionIdRef.current,
                 name: '📷 visual_context_synced',
@@ -681,7 +694,7 @@ export function useGeminiLiveVoice({
                 timestamp: Date.now(),
             });
         }
-    }, [config.visualContextEnabled, getVisualContext, onToolCall, onVisualContextChange]);
+    }, [config.visualContextEnabled]);
 
     // --- Tool execution ---
 
@@ -1022,7 +1035,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    generationConfig: { temperature: config.temperature ?? 1.1 },
+                    temperature: config.temperature ?? 1.1,
                     ...(config.thinkingLevel && config.thinkingLevel !== 'none' ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } as any } : {}),
                     systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
@@ -1046,9 +1059,20 @@ export function useGeminiLiveVoice({
                     },
                     onclose: (e: CloseEvent) => {
                         console.log('[voice] session closed', JSON.stringify({ code: e?.code, reason: e?.reason, wasClean: e?.wasClean }));
+                        // Capture state BEFORE stop() clears it — used to detect premature close
+                        const closedWhileStarting = stateRef.current === 'starting' || stateRef.current === 'greeting';
                         sessionRef.current = null;
                         // Always run full cleanup so mic stream is released
                         stop();
+                        // If session closed before fully connecting, surface an error so the
+                        // user sees a retry button instead of the assistant silently disappearing.
+                        if (closedWhileStarting) {
+                            const reason = e?.reason || (e?.code ? `Code ${e.code}` : '');
+                            setError(lang === 'de'
+                                ? `Verbindung fehlgeschlagen${reason ? ` (${reason})` : ''} — bitte erneut versuchen`
+                                : `Connection failed${reason ? ` (${reason})` : ''} — please try again`);
+                            setState('error');
+                        }
                     }
                 }
             });
@@ -1098,7 +1122,6 @@ export function useGeminiLiveVoice({
         showToast,
         startMicrophone,
         stop,
-        syncVisualContext
     ]);
 
     // Animated level for speaking/listening states

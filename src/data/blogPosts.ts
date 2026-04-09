@@ -132,7 +132,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'Visual prompting means using brushes, shapes, and annotations drawn on top of your source image to communicate intent. Instead of describing a location in words, you mark it. Instead of hoping the AI understands "the left window", you paint over it. The combination of your visual annotation and your text prompt gives the model far more information to work with.',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/41.jpg', caption: 'Paint directly on the image to define exactly what should change.' },
+                { type: 'image', src: '/home/1 creation reimagined/41.jpg', alt: 'Paint directly on the image to define exactly what should change.' },
                 { type: 'h2', text: 'The Three Core Annotation Types' },
                 { type: 'h3', text: '1. Freehand Mask' },
                 {
@@ -149,7 +149,8 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: "Reference stamps let you paste a reference image directly onto the canvas and position it where the AI should draw inspiration. Want to match the marble texture from a material swatch? Stamp it on the floor you want to change. The AI uses the visual reference to guide its output far more accurately than any text description could.",
                 },
-                { type: 'image', src: '/home/1 creation reimagined/42.jpg', caption: 'A reference stamp positions source material where the AI should focus.' },
+                { type: 'image', src: '/home/1 creation reimagined/42.jpg', alt: 'A reference stamp positions source material where the AI should focus.' },
+                { type: 'image', src: '/blog/variablen.jpeg', alt: 'Style, audience and light variables for precise generation control.' },
                 { type: 'h2', text: 'Combining Annotations with Prompts' },
                 {
                     type: 'p',
@@ -190,7 +191,7 @@ export const BLOG_POSTS: BlogPost[] = [
         date: 'April 1, 2026',
         readTime: 3,
         coverGradient: 'from-stone-950 via-zinc-900 to-neutral-950',
-        coverImage: '/home/1 creation reimagined/12.jpeg',
+        coverImage: '/blog/ref-cover.jpeg',
         en: {
             title: 'Reference Images: Copy Any Style Without Describing It',
             excerpt: "AI images often look generic. Reference images fix that — feed the AI real-world examples and get results that actually match your vision, faster.",
@@ -204,7 +205,6 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'Upload your main image and tap Inspiration. Here you add up to 5 reference images — photos, screenshots, anything. The AI automatically recognises which is your main image and which serve as style references. A short note in the prompt is enough: "Use the lighting mood of the reference."',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/31.jpg', caption: 'Main image + Inspiration panel open.' },
                 { type: 'h2', text: '2. Direct Upload' },
                 {
                     type: 'p',
@@ -219,7 +219,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'exposé has a direct shortcut built in: tap Inspiration → Pinterest link. That opens Pinterest straight in your browser. When you find something you like:',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/32.jpg', caption: 'The Pinterest shortcut inside the Inspiration panel.' },
+                { type: 'image', src: '/blog/ref-pinterest.jpeg', alt: 'The Pinterest shortcut inside the Inspiration panel.' },
                 {
                     type: 'ul',
                     items: [
@@ -233,7 +233,6 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: "The AI reads the whole reference image. If you only want it to pick up on one thing — a colour mood, a specific texture — crop the reference first. Tap the crop icon and cut it down to just the relevant detail. Less noise, sharper result.",
                 },
-                { type: 'image', src: '/home/1 creation reimagined/33.jpg', caption: 'Full reference vs. cropped detail — less noise, more precise output.' },
                 { type: 'h2', text: '5. Combine Image + Text' },
                 {
                     type: 'p',
@@ -259,7 +258,6 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'Lade dein Hauptbild hoch und tippe auf Inspiration. Hier fügst du bis zu 5 Referenzbilder hinzu — Fotos, Screenshots, alles. Die AI erkennt automatisch, welches dein Hauptbild ist und welche als Style-Vorlage gelten. Ein kurzer Hinweis im Prompt reicht: „Nutze die Lichtstimmung der Referenz."',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/31.jpg', caption: 'Hauptbild + Inspiration-Panel geöffnet.' },
                 { type: 'h2', text: '2. Direkter Upload' },
                 {
                     type: 'p',
@@ -274,7 +272,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'In Exposé gibt es dafür einen direkten Shortcut: Tippe auf Inspiration → Pinterest-Link. Das öffnet Pinterest direkt im Browser. Wenn du etwas gefunden hast:',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/32.jpg', caption: 'Der Pinterest-Shortcut im Inspiration-Panel.' },
+                { type: 'image', src: '/blog/ref-pinterest.jpeg', caption: 'Der Pinterest-Shortcut im Inspiration-Panel.' },
                 {
                     type: 'ul',
                     items: [
@@ -288,7 +286,6 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: 'Die AI liest das gesamte Referenzbild. Wenn du nur ein bestimmtes Detail übertragen willst — eine Farbstimmung, eine Textur — schneide das Bild vorher zu. Crop-Icon am Referenzbild anklicken, auf das Wesentliche zuschneiden. Weniger Rauschen, präziseres Ergebnis.',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/33.jpg', caption: 'Ganzes Referenzbild vs. gecropptes Detail — weniger Rauschen, präziseres Ergebnis.' },
                 { type: 'h2', text: '5. Bild + Text kombinieren' },
                 {
                     type: 'p',

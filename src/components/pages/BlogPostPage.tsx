@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Clock, ArrowRight } from 'lucide-react';
+import { Clock, ChevronRight } from 'lucide-react';
 import { BLOG_POSTS, ContentBlock, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
+import { Button } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
 
 const POST_IMAGES = [
@@ -64,11 +65,11 @@ const renderBlock = (block: ContentBlock, idx: number) => {
             );
         case 'tip':
             return (
-                <div key={idx} className="my-7 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-6 py-5">
-                    <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">
+                <div key={idx} className="my-7 rounded-xl border border-orange-200 dark:border-orange-900/50 bg-orange-50 dark:bg-orange-950/30 px-6 py-5">
+                    <p className="text-xs font-semibold text-orange-500 dark:text-orange-400 mb-2">
                         {block.label ?? 'Tip'}
                     </p>
-                    <p className="text-zinc-600 dark:text-zinc-300 text-sm leading-relaxed">
+                    <p className="text-zinc-700 dark:text-zinc-300 text-sm leading-relaxed">
                         {block.text}
                     </p>
                 </div>
@@ -78,14 +79,9 @@ const renderBlock = (block: ContentBlock, idx: number) => {
                 <div key={idx} className="my-8 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800">
                     <img
                         src={block.src}
-                        alt={block.alt ?? ''}
-                        className="w-full object-cover aspect-[16/9]"
+                        alt={block.alt ?? block.caption ?? ''}
+                        className="w-full object-cover"
                     />
-                    {block.caption && (
-                        <p className="px-4 py-2.5 text-[11px] text-zinc-400 dark:text-zinc-500 text-center">
-                            {block.caption}
-                        </p>
-                    )}
                 </div>
             );
         default:
@@ -134,9 +130,9 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
             </div>
 
             {/* Title block */}
-            <div className="w-full max-w-2xl mx-auto px-5 sm:px-8 pt-10 pb-8 border-b border-zinc-100 dark:border-zinc-800">
+            <div className="w-full max-w-3xl mx-auto px-5 sm:px-8 pt-10 pb-8 border-b border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center gap-4 mb-5">
-                    <span className="text-[10px] font-medium tracking-widest uppercase text-zinc-400">
+                    <span className="text-[11px] font-medium text-zinc-400">
                         {post.category}
                     </span>
                     <span className="text-zinc-200 dark:text-zinc-700">·</span>
@@ -156,7 +152,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
             </div>
 
             {/* Article body */}
-            <main className="flex-1 w-full max-w-2xl mx-auto px-5 sm:px-8 pt-10 pb-20">
+            <main className="flex-1 w-full max-w-3xl mx-auto px-5 sm:px-8 pt-10 pb-20">
                 {content.length > 0 ? (
                     content.map((block, idx) => renderBlock(block, idx))
                 ) : (
@@ -165,44 +161,41 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
             </main>
 
             {/* CTA Banner */}
-            <div className="w-full border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
-                <div className="max-w-2xl mx-auto px-5 sm:px-8 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                    <div>
-                        <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-2">
-                            Try it yourself
-                        </p>
-                        <h3 className="text-base font-semibold text-zinc-900 dark:text-white">
-                            Ready to generate your first image?
-                        </h3>
-                        <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-                            Start free — no credit card required.
-                        </p>
-                    </div>
-                    <button
+            <div className="relative w-full overflow-hidden bg-zinc-950 dark:bg-zinc-950 border-t border-zinc-800">
+                {/* Orange gradient blobs */}
+                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-64 h-64 bg-orange-500/15 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-64 h-64 bg-red-600/15 rounded-full blur-[100px] pointer-events-none" />
+
+                <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 py-16 flex flex-col items-center text-center gap-8">
+                    <h3 className="text-2xl sm:text-4xl font-kumbh font-bold tracking-tighter text-white leading-tight">
+                        ready to try it yourself?
+                    </h3>
+                    <Button
                         onClick={() => navigate('/')}
-                        className="shrink-0 flex items-center gap-2 px-5 h-10 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-medium rounded-full hover:bg-zinc-700 dark:hover:bg-zinc-100 transition-colors duration-200"
+                        variant="primary-mono"
+                        size="l"
+                        icon={<ChevronRight />}
+                        iconPosition="right"
                     >
-                        Open exposé <ArrowRight className="w-4 h-4" />
-                    </button>
+                        open exposé
+                    </Button>
                 </div>
             </div>
 
-            {/* Next article */}
+            {/* Next article — compact */}
             {nextPost && nextPost.slug !== post.slug && (
                 <div
                     onClick={() => navigate(`/blog/${nextPost.slug}`)}
                     className="group cursor-pointer w-full border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
                 >
-                    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="max-w-3xl mx-auto px-5 sm:px-8 py-5 flex items-center justify-between gap-4">
                         <div>
-                            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-1.5">
-                                Next article
-                            </p>
+                            <p className="text-[11px] text-zinc-400 mb-0.5">Next</p>
                             <h3 className="text-sm font-medium text-zinc-900 dark:text-white group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
                                 {nextTranslation?.title}
                             </h3>
                         </div>
-                        <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-all duration-200 shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-all duration-200 shrink-0" />
                     </div>
                 </div>
             )}
