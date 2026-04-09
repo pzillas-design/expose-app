@@ -56,9 +56,9 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
                     </p>
                 </div>
 
-                <div className="flex items-center justify-end mt-10">
+                <div className="flex items-center justify-start mt-10">
                     <div className="w-9 h-9 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400 dark:text-zinc-500 group-hover:bg-zinc-900 group-hover:border-zinc-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:border-white dark:group-hover:text-zinc-900 transition-all duration-200">
-                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+                        <ChevronRight className="w-4 h-4" />
                     </div>
                 </div>
             </div>
