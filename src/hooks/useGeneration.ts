@@ -28,6 +28,8 @@ interface UseGenerationProps {
     onImageSaved?: () => void;
     /** Called when a generation completes successfully — used to mark image as unseen in feed */
     onGenerationComplete?: (id: string) => void;
+    /** Called when generation is attempted without a logged-in user — opens sign-in modal */
+    onSignIn?: () => void;
 }
 
 const COSTS: Record<string, number> = {
@@ -201,7 +203,7 @@ if (typeof window !== 'undefined') {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete
+    qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete, onSignIn
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
@@ -451,6 +453,12 @@ export const useGeneration = ({
         groupParentId?: string
     ) => {
         if (!sourceImage) return;
+
+        // Guard: must be logged in — open sign-in modal instead of showing error toast
+        if (!user && !isAuthDisabled) {
+            onSignIn?.();
+            return;
+        }
 
         // Guard: validate that there's enough input to produce a meaningful generation
         const hasPrompt = !!prompt?.trim();

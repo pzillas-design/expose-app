@@ -355,6 +355,7 @@ export const useNanoController = () => {
         qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
         onGenerationComplete: handleGenerationComplete,
+        onSignIn: () => { setAuthModalMode('signin'); setIsAuthModalOpen(true); },
     });
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle } = usePersistence({
@@ -368,7 +369,8 @@ export const useNanoController = () => {
 
     const handleDeleteImage = useCallback(async (id: string, skipConfirm = false, onBeforeDelete?: () => void): Promise<boolean> => {
         if (!user) {
-            showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
+            setAuthModalMode('signin');
+            setIsAuthModalOpen(true);
             return false;
         }
 
