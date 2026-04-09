@@ -186,8 +186,10 @@ export const AdminErrorsView: React.FC = () => {
                                             {log.source}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-xs text-zinc-500 max-w-[11rem] truncate">
-                                        {log.user_email ?? (log.user_id ? log.user_id.slice(0, 8) + '…' : '—')}
+                                    <td className="px-4 py-3 max-w-[13rem] truncate">
+                                        <span className="text-xs font-medium text-zinc-900 dark:text-white">
+                                            {log.user_email ?? (log.user_id ? log.user_id.slice(0, 8) + '…' : '—')}
+                                        </span>
                                     </td>
                                     <td className="px-4 py-3 text-xs text-zinc-400 max-w-[9rem]">
                                         {log.context && <div className="font-mono truncate">{log.context}</div>}
