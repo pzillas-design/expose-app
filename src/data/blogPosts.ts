@@ -239,89 +239,79 @@ export const BLOG_POSTS: BlogPost[] = [
     {
         slug: 'reference-images-style-matching',
         title: 'Reference Images: Copy Any Style Without Describing It',
-        excerpt: "Stop guessing how to put a style into words. With reference images, you show the AI exactly what you're going for — and it matches it.",
+        excerpt: "You have a clear vision for a look but can't find the words? With Inspiration in exposé, you copy any style with a single image — no prompt writing required.",
         category: 'Guide',
         date: 'April 1, 2026',
-        readTime: 5,
+        readTime: 3,
         coverGradient: 'from-stone-950 via-zinc-900 to-neutral-950',
         coverImage: '/home/1 creation reimagined/12.jpeg',
         content: [
             {
                 type: 'p',
-                text: "\"Warm, mid-century modern, with a Californian feel\" — even a skilled art director struggles to translate that into consistent AI output with text alone. The problem is that visual style is visual. It lives in proportions, material combinations, lighting quality, color grading. Words approximate it. Images capture it.",
+                text: 'Du hast eine genaue Vorstellung von einem Look, aber dir fehlen die Worte, um ihn zu beschreiben? In Exposé ist das kein Problem. Mit der „Inspiration"-Funktion kopierst du jeden Style einfach per Bildreferenz. Kein langes Tippen, keine komplizierten Prompts – nur deine Bilder und die AI.',
             },
             {
                 type: 'h2',
-                text: 'How Reference Images Work in exposé',
+                text: '1. Inspiration finden & hochladen',
             },
             {
                 type: 'p',
-                text: "Upload one or more reference images alongside your source photo and prompt. The AI analyzes the reference for style, texture, color palette, and mood — and applies those qualities to the edit or generation. You don't have to describe the style at all if the reference already shows it.",
-            },
-            {
-                type: 'image',
-                src: '/home/1 creation reimagined/31.jpg',
-                caption: 'Reference image (left) guides the style of the generated edit (right).',
-            },
-            {
-                type: 'h2',
-                text: 'What References Are Good For',
+                text: 'In Exposé kannst du bis zu 5 Referenzbilder gleichzeitig nutzen, um der AI die Richtung vorzugeben. Du hast zwei Wege:',
             },
             {
                 type: 'ul',
                 items: [
-                    'Matching a specific furniture or material brand\'s visual language',
-                    'Replicating a staging style from a previous project a client loved',
-                    'Applying a mood board\'s color palette to a new space',
-                    'Maintaining visual consistency across a multi-property portfolio',
-                    'Translating inspiration from Pinterest or design magazines into actual staging',
+                    'Direkter Upload: Klicke auf den Button und lade Fotos direkt von deinem Computer oder Smartphone hoch.',
+                    'Der Pinterest-Shortcut: Klicke auf den „Inspiration"-Button. Es öffnet sich ein Fenster mit einem Link direkt zu Pinterest.',
+                ],
+            },
+            {
+                type: 'image',
+                src: '/home/1 creation reimagined/31.jpg',
+                caption: 'Der Inspiration-Button öffnet direkt einen Pinterest-Link.',
+            },
+            {
+                type: 'p',
+                text: 'Recherchiere dort nach Texturen, Farben oder Lichtstimmungen. Wenn dir etwas gefällt:',
+            },
+            {
+                type: 'ul',
+                items: [
+                    'Am PC: Rechtsklick auf das Bild → „Bild kopieren".',
+                    'Am Handy: Screenshot machen.',
+                    'In Exposé: Einfach Command+V (bzw. Strg+V) drücken oder die Datei hochladen. Die App erkennt das Bild sofort.',
                 ],
             },
             {
                 type: 'h2',
-                text: 'Choosing the Right Reference',
+                text: '2. Pro-Tipp: Fokus durch Croppen',
             },
             {
                 type: 'p',
-                text: "Not every image makes a good reference. The model responds most strongly to references that clearly show the style element you care about — a full room shot for overall mood, a close-up for material texture, or a color swatch for palette. Avoid references that are ambiguous or contain too many competing styles.",
-            },
-            {
-                type: 'tip',
-                text: "Use 2–3 tightly focused references rather than one complex scene. A material close-up + a room layout + a lighting reference will give the model clearer signals than a single busy mood board.",
-            },
-            {
-                type: 'h2',
-                text: 'Combining References with Masks',
-            },
-            {
-                type: 'p',
-                text: "The most powerful workflow: mask the specific area you want to change, then provide a reference for what it should look like. Mask the floor + reference a herringbone oak parquet = precise, style-matched output without writing a word about wood species, plank width, or finish.",
+                text: 'Die AI soll nicht das ganze Bild kopieren, sondern nur ein bestimmtes Detail? Dann nutze das Crop-Tool. Klicke auf das Zuschneiden-Icon am Referenzbild und schneide es so zu, dass nur das Merkmal zu sehen ist, das dir wichtig ist – z. B. nur eine Farbkombination oder ein spezifisches Muster. So weiß die AI exakt, worauf sie achten soll.',
             },
             {
                 type: 'image',
                 src: '/home/1 creation reimagined/32.jpg',
-                caption: 'Masking + reference image: precise control over where and what style is applied.',
+                caption: 'Ganzes Referenzbild vs. gecropptes Detail — weniger Rauschen, präziseres Ergebnis.',
             },
             {
                 type: 'h2',
-                text: 'Reference Stamps on the Canvas',
+                text: '3. Mix & Match: Bild + Text',
             },
             {
                 type: 'p',
-                text: "exposé's canvas tools include reference stamps — you can paste a reference directly onto the source image and position it where you want the AI to focus. Stamp a tile sample on the bathroom wall you want to restyle. The model treats the stamp as a spatial instruction: apply this, here.",
-            },
-            {
-                type: 'h2',
-                text: 'Practical Example: Portfolio Consistency',
-            },
-            {
-                type: 'p',
-                text: "A real estate agency staging multiple units in the same building wants a consistent brand look across all listings. With text prompts alone, each generation drifts. With a saved reference image from the first approved staging, every subsequent room can be generated with the same visual anchor — same furniture weight, same warm lighting, same neutral palette.",
+                text: 'Exposé erkennt automatisch, welches dein Hauptbild ist und welche Bilder als Inspiration dienen. Beschreibe der AI trotzdem kurz in ein paar Worten, was du vorhast – z. B. „Nutze die Lichtstimmung der Referenz für mein Porträt". Die Kombination aus visueller Referenz und kurzem Text gibt dir die maximale Kontrolle über das Ergebnis.',
             },
             {
                 type: 'tip',
-                label: 'Pro tip',
-                text: "Save your best-performing generated images as references for future projects. Over time you build a personal style library that makes every new job faster and more consistent.",
+                label: 'Pro-Tipp',
+                text: 'Speichere deine besten generierten Bilder als Referenzen für zukünftige Projekte. So baust du dir mit der Zeit eine persönliche Style-Bibliothek auf.',
+            },
+            {
+                type: 'image',
+                src: '/home/1 creation reimagined/33.jpg',
+                caption: 'Hauptbild + Referenz + kurzer Prompt = maximale Kontrolle über den Look.',
             },
         ],
     },
