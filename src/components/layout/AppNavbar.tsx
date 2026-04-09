@@ -215,6 +215,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
     const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz'].includes(currentPath);
+    const isBlogPost = /^\/blog\/.+/.test(currentPath);
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -282,7 +283,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <div className="flex items-center gap-1">
-            {isSpecialPage ? (
+            {isBlogPost ? (
+                <RoundIconButton
+                    icon={<ChevronLeft className="w-5 h-5" />}
+                    onClick={() => window.history.back()}
+                    variant="ghost"
+                    tooltip="Blog"
+                />
+            ) : isSpecialPage ? (
                 <RoundIconButton
                     icon={<LayoutGrid className="w-5 h-5" />}
                     onClick={user ? (onBack || (() => window.location.href = '/')) : onSignIn}
@@ -491,7 +499,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <>
-            {isPublic ? (
+            {isBlogPost ? (
+                !user ? (
+                    <button
+                        onClick={onSignIn}
+                        className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
+                    >
+                        {t('nav_start') || 'Start'}
+                    </button>
+                ) : null
+            ) : isPublic ? (
                 <div className="flex items-center gap-3">
                     <Button
                         onClick={onStartApp}

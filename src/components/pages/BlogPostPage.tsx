@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clock, ArrowRight } from 'lucide-react';
+import { Clock, ArrowRight } from 'lucide-react';
 import { BLOG_POSTS, ContentBlock } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
@@ -124,16 +124,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
                     alt={post.title}
                     className="absolute inset-0 w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
-
-                {/* Back button overlaid */}
-                <button
-                    onClick={() => navigate('/blog')}
-                    className="absolute top-5 left-5 sm:top-7 sm:left-8 flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors duration-200 group bg-black/20 hover:bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full"
-                >
-                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform duration-200" />
-                    Blog
-                </button>
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30" />
             </div>
 
             {/* Title block */}
