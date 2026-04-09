@@ -118,21 +118,26 @@ export const BLOG_POSTS: BlogPost[] = [
         date: 'March 28, 2026',
         readTime: 5,
         coverGradient: 'from-indigo-950 via-violet-950 to-slate-950',
-        coverImage: '/home/1 creation reimagined/4.jpeg',
+        coverImage: '/blog/vp-cover.jpeg',
         en: {
-            title: "You're the Art Director Now. The AI Does the Rest.",
-            excerpt: "What used to take hours in Photoshop now takes seconds. You sketch the intent — the AI handles the execution.",
+            title: "Visual Prompting: Become the Art Director, the AI Does the Rest.",
+            excerpt: "Instead of editing every pixel yourself, you sketch the intent — the AI handles the execution.",
             content: [
                 {
                     type: 'p',
-                    text: "For a long time, editing an image meant doing everything yourself. Select the right pixels, mask the edges, clone the background, adjust levels — one detail at a time, layer by layer. Today something fundamental has shifted. You no longer need to execute every change manually. You just need to communicate clearly what should happen and where. That's the role of an art director. And with visual prompting, anyone can step into it.",
+                    text: "Traditional image editing: selecting, masking, retouching — years of experience, a lot of time. New AI models like Google's Nano Banana 2 now operate at the level of an experienced retoucher, and beyond. Scary? Visual prompting makes you the director of that capability — you show where and what, the AI executes. That keeps you in creative control and lets you determine the outcome.",
                 },
                 { type: 'h2', text: 'Annotation Mode' },
                 {
                     type: 'p',
                     text: "Exposé has a dedicated mode for this: Annotation Mode. Instead of describing everything in text — and hoping the AI interprets it correctly — you draw directly on the image. Mark the area, name the change, and let the model handle the rest. The annotation is sent as a separate layer alongside your original image, giving the AI precise spatial context it couldn't get from a text prompt alone.",
                 },
-                { type: 'image', src: '/home/1 creation reimagined/41.jpg', alt: 'Drawing annotations directly on the image in Annotation Mode.' },
+                { type: 'image', src: '/blog/vp-sticker.jpeg', alt: 'Sticker panel with pre-made annotation stamps.' },
+                {
+                    type: 'tip',
+                    label: 'Tip',
+                    text: "Use stickers for things you annotate regularly. Exposé comes with a set of pre-made stickers — and you can extend the list with your own.",
+                },
                 { type: 'h2', text: 'The Tools' },
                 {
                     type: 'p',
@@ -148,39 +153,29 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 {
                     type: 'p',
-                    text: "Each tool has its strengths. Text chips are the fastest way to name something precisely. Shapes let you sketch a rough spatial concept in seconds. The brush gives you freehand control for irregular areas. What makes Exposé's approach powerful is that you can mix them freely in the same annotation.",
-                },
-                { type: 'h2', text: 'Combine Them' },
-                {
-                    type: 'p',
                     text: 'Say you want to add a wardrobe to a corner of the room. Draw a rectangle where it should go — just the rough outline, enough to indicate size and position. Then place a text chip on top: "wardrobe". The AI receives both: the spatial hint from the shape and the semantic context from the label. That combination is far more reliable than either input alone.',
-                },
-                {
-                    type: 'p',
-                    text: 'The same logic applies to more complex changes. Brush over a wall, place a text chip saying "exposed concrete", and add a reference stamp of the texture you have in mind. Each annotation layer adds more signal. More signal means fewer failed generations.',
-                },
-                { type: 'image', src: '/home/1 creation reimagined/42.jpg', alt: 'Shapes, text chips and brush strokes combined in a single annotation.' },
-                {
-                    type: 'tip',
-                    label: 'Tip',
-                    text: "Use stickers for things you annotate regularly. Exposé comes with a curated set of pre-made stickers — and you can extend the list with your own. One tap to place, no typing needed. Build a set that matches your workflow and your annotations become much faster.",
                 },
             ],
         },
         de: {
-            title: 'Du bist der Art Director. Die AI macht den Rest.',
-            excerpt: 'Was früher Stunden in Photoshop gedauert hat, geht heute in Sekunden. Du skizzierst die Intention — die AI übernimmt die Ausführung.',
+            title: 'Visual Prompting: Werde zum Art Director, die AI macht den Rest.',
+            excerpt: 'Statt jeden Pixel selbst zu setzen, skizzierst du die Intention — die AI übernimmt die Ausführung.',
             content: [
                 {
                     type: 'p',
-                    text: 'Lange Zeit bedeutete Bildbearbeitung: alles selbst machen. Die richtigen Pixel auswählen, Kanten maskieren, Hintergrund klonen, Ebene für Ebene. Heute hat sich etwas Grundlegendes verändert. Du musst nicht mehr jede Änderung manuell ausführen. Du musst nur klar kommunizieren, was passieren soll — und wo. Das ist die Rolle eines Art Directors. Und mit Visual Prompting kann das jeder.',
+                    text: 'Klassische Bildbearbeitung bedeutet: auswählen, maskieren, retuschieren — viel Erfahrung, viel Zeit. Neue KI-Modelle wie Googles Nano Banana 2 arbeiten inzwischen auf dem Niveau eines erfahrenen Bildbearbeiters, und darüber hinaus. Beängstigend, oder? Visuelles Prompting macht dich zum Regisseur dieser Fähigkeit — du zeigst wo und was, die AI führt aus. Damit behältst du die kreative Oberhand und bestimmst das Ergebnis.',
                 },
                 { type: 'h2', text: 'Der Anmerkungsmodus' },
                 {
                     type: 'p',
                     text: 'Exposé hat dafür einen eigenen Modus: den Anmerkungsmodus. Statt alles in Text zu beschreiben — und darauf zu hoffen, dass die AI es richtig interpretiert — zeichnest du direkt auf das Bild. Markiere den Bereich, benenne die Änderung, und lass das Modell den Rest übernehmen. Die Anmerkung wird als eigener Layer gemeinsam mit deinem Originalbild an die AI gesendet und gibt ihr räumlichen Kontext, den ein Text-Prompt allein nie liefern könnte.',
                 },
-                { type: 'image', src: '/home/1 creation reimagined/41.jpg', alt: 'Anmerkungen direkt auf dem Bild im Anmerkungsmodus.' },
+                { type: 'image', src: '/blog/vp-sticker.jpeg', alt: 'Das Sticker-Panel mit vorgefertigten Anmerkungsstempeln.' },
+                {
+                    type: 'tip',
+                    label: 'Tipp',
+                    text: 'Nutze Sticker für Dinge, die du regelmäßig annotierst. Exposé kommt mit einer Auswahl an fertigen Stickern — und du kannst die Liste mit eigenen erweitern.',
+                },
                 { type: 'h2', text: 'Die Werkzeuge' },
                 {
                     type: 'p',
@@ -196,22 +191,121 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 {
                     type: 'p',
-                    text: 'Jedes Werkzeug hat seine Stärken. Textchips sind der schnellste Weg, etwas präzise zu benennen. Formen lassen dich ein räumliches Konzept in Sekunden skizzieren. Der Pinsel gibt dir freie Kontrolle für unregelmäßige Bereiche. Was den Ansatz von Exposé stark macht: Du kannst alle drei in derselben Anmerkung frei kombinieren.',
-                },
-                { type: 'h2', text: 'Kombinieren' },
-                {
-                    type: 'p',
                     text: 'Angenommen, du möchtest einen Schrank in eine Ecke des Raumes setzen. Zeichne ein Rechteck dorthin — nur den groben Umriss, genug um Größe und Position anzudeuten. Dann platziere einen Textchip darauf: „Schrank". Die AI erhält beides: den räumlichen Hinweis durch die Form und den semantischen Kontext durch das Label. Diese Kombination ist deutlich zuverlässiger als jede Eingabe allein.',
                 },
+            ],
+        },
+    },
+    {
+        slug: 'variables-presets',
+        category: 'Guide',
+        date: 'March 20, 2026',
+        readTime: 4,
+        coverGradient: 'from-violet-950 via-indigo-950 to-slate-950',
+        coverImage: '/blog/variables-cover.jpg',
+        en: {
+            title: 'Variables: Set It Up Once, Generate Forever.',
+            excerpt: "Stop rewriting the same prompt. Build a template once, define your options — and generate new assets with a few clicks.",
+            content: [
                 {
                     type: 'p',
-                    text: 'Dasselbe Prinzip gilt für komplexere Änderungen. Male über eine Wand, platziere einen Textchip „Sichtbeton" und füge einen Referenz-Stempel mit der gewünschten Textur hinzu. Jede Annotationsebene liefert mehr Signal. Mehr Signal bedeutet weniger fehlgeschlagene Generierungen.',
+                    text: "Most creative workflows have a rhythm: same type of image, same visual direction, slightly different each time. A new product shot, another social post, a fresh variant for a campaign. Without structure, you end up rewriting the same prompt over and over — tweaking a word here, adjusting a detail there. Variables solve this. You build the prompt once as a template, divide it into topics, and define your own options for each. From then on, generating a new asset is a matter of selecting, not typing.",
                 },
-                { type: 'image', src: '/home/1 creation reimagined/42.jpg', alt: 'Formen, Textchips und Pinselstriche kombiniert in einer Anmerkung.' },
+                { type: 'h2', text: 'How It Works' },
+                {
+                    type: 'p',
+                    text: "Open the Variables panel and start building your template. A variable is a named category — Style, Mood, Audience, Light — with a list of options you define. Write them comma-separated: the model reads each option as a distinct direction. When you generate, you pick one option per variable and the app assembles your prompt automatically. Change one variable, generate again — new result, same visual logic.",
+                },
+                { type: 'image', src: '/blog/variablen.jpeg', alt: 'The Variables panel with custom categories and options.' },
+                { type: 'h2', text: 'What You Can Define' },
+                {
+                    type: 'p',
+                    text: "Variables work best when they reflect how you actually think about your images. Some ideas to get started:",
+                },
+                {
+                    type: 'ul',
+                    items: [
+                        'Style — minimalist, editorial, warm lifestyle, dark luxury, soft Scandinavian',
+                        'Mood / Atmosphere — energetic, calm, melancholic, festive, clinical',
+                        'Target audience — Gen Z, young professionals, families, luxury buyers',
+                        'Persona — name, age, background, visual archetype of the person in the image',
+                        'Color palette — muted earth tones, neon accents, monochrome, pastels',
+                        'Composition — wide shot, close-up, top-down, rule of thirds, centered portrait',
+                        'Lighting — golden hour, studio soft box, dramatic side light, flat daylight',
+                        'Setting / Location — urban rooftop, cozy interior, minimal white studio, nature',
+                    ],
+                },
+                {
+                    type: 'p',
+                    text: "The more deliberately you define your variables, the more consistent — and reusable — your creative output becomes. Think of it as codifying your taste.",
+                },
+                { type: 'h2', text: 'Why It Works' },
+                {
+                    type: 'p',
+                    text: "Modern image models like Nano Banana 2 don't need exhaustive prompts to produce great results. Short, structured input often outperforms long, freeform descriptions. Variables take advantage of that: each option is a precise signal, and the combination of several precise signals gives the model exactly the context it needs.",
+                },
+                { type: 'h2', text: 'Visual Identity at Scale' },
+                {
+                    type: 'p',
+                    text: "Once your preset is dialed in, every asset you generate from it shares the same visual DNA. Same style logic, same color range, same compositional thinking — regardless of how many variants you create. That consistency is hard to achieve with freeform prompting. Variables make it the default.",
+                },
+                {
+                    type: 'tip',
+                    label: 'Tip',
+                    text: "When you're happy with your preset, share it. Tap the share button and Exposé generates a link you can send to colleagues or collaborators. They open it, get your exact template, and can start generating consistent assets immediately — no briefing needed.",
+                },
+            ],
+        },
+        de: {
+            title: 'Variablen: Einmal aufsetzen, immer wieder nutzen.',
+            excerpt: 'Hör auf, denselben Prompt immer neu zu schreiben. Bau einmal eine Vorlage, definiere deine Optionen — und generiere neue Assets mit wenigen Klicks.',
+            content: [
+                {
+                    type: 'p',
+                    text: 'Die meisten kreativen Workflows haben einen Rhythmus: gleiche Art Bild, gleiche visuelle Richtung, jedes Mal leicht anders. Ein neues Produktbild, ein weiterer Social Post, eine frische Variante für eine Kampagne. Ohne Struktur schreibst du denselben Prompt immer wieder neu — ein Wort hier, ein Detail dort. Variablen lösen das. Du baust den Prompt einmal als Vorlage, teilst ihn in Themen ein und definierst für jedes Thema eigene Optionen. Ab dann ist ein neuer Asset eine Frage von Auswählen, nicht Tippen.',
+                },
+                { type: 'h2', text: 'So funktioniert es' },
+                {
+                    type: 'p',
+                    text: 'Öffne das Variablen-Panel und baue deine Vorlage. Eine Variable ist eine benannte Kategorie — Stil, Stimmung, Zielgruppe, Licht — mit einer Liste von Optionen, die du selbst festlegst. Schreib sie kommagetrennt: das Modell liest jede Option als eigene Richtung. Beim Generieren wählst du pro Variable eine Option, die App fügt deinen Prompt automatisch zusammen. Andere Variable, neues Ergebnis — gleiche visuelle Logik.',
+                },
+                { type: 'image', src: '/blog/variablen.jpeg', alt: 'Das Variablen-Panel mit eigenen Kategorien und Optionen.' },
+                { type: 'h2', text: 'Was du definieren kannst' },
+                {
+                    type: 'p',
+                    text: 'Variablen funktionieren am besten, wenn sie widerspiegeln, wie du selbst über deine Bilder denkst. Ein paar Ideen zum Einstieg:',
+                },
+                {
+                    type: 'ul',
+                    items: [
+                        'Stil — minimalistisch, editorial, warmes Lifestyle, Dark Luxury, weiches Skandinavisch',
+                        'Stimmung / Atmosphäre — energetisch, ruhig, melancholisch, festlich, klinisch',
+                        'Zielgruppe — Gen Z, junge Berufstätige, Familien, Luxuskäufer',
+                        'Persona — Name, Alter, Hintergrund, visueller Archetyp der abgebildeten Person',
+                        'Farbpalette — gedeckte Erdtöne, Neon-Akzente, Monochrom, Pastelltöne',
+                        'Bildgestaltung — Weitwinkel, Nahaufnahme, Vogelperspektive, Drittel-Regel, zentriertes Portrait',
+                        'Licht — goldene Stunde, Studio-Softbox, dramatisches Seitenlicht, gleichmäßiges Tageslicht',
+                        'Setting / Ort — urbanes Rooftop, gemütliches Interieur, minimales weißes Studio, Natur',
+                    ],
+                },
+                {
+                    type: 'p',
+                    text: 'Je bewusster du deine Variablen definierst, desto konsistenter — und wiederverwendbarer — wird dein kreativer Output. Betrachte es als das Festhalten deines eigenen Geschmacks.',
+                },
+                { type: 'h2', text: 'Warum es funktioniert' },
+                {
+                    type: 'p',
+                    text: 'Moderne Bildmodelle wie Nano Banana 2 brauchen keine ausufernden Prompts für gute Ergebnisse. Kurzer, strukturierter Input schlägt lange Freitextbeschreibungen oft. Variablen nutzen das aus: jede Option ist ein präzises Signal, und die Kombination mehrerer präziser Signale gibt dem Modell genau den Kontext, den es braucht.',
+                },
+                { type: 'h2', text: 'Visuelle Identität im Maßstab' },
+                {
+                    type: 'p',
+                    text: 'Sobald dein Preset stimmt, teilen alle Assets, die du daraus generierst, dieselbe visuelle DNA. Gleiche Stillogik, gleiche Farbrange, gleiches kompositorisches Denken — egal wie viele Varianten du erstellst. Diese Konsistenz ist mit freiem Prompting schwer zu erreichen. Variablen machen sie zur Grundeinstellung.',
+                },
                 {
                     type: 'tip',
                     label: 'Tipp',
-                    text: 'Nutze Sticker für Dinge, die du regelmäßig annotierst. Exposé kommt mit einer kuratierten Auswahl an fertigen Stickern — und du kannst die Liste mit eigenen erweitern. Ein Tipp zum Platzieren, kein Tippen nötig. Bau dir ein Set, das zu deinem Workflow passt, und deine Anmerkungen werden deutlich schneller.',
+                    text: 'Wenn du mit deinem Preset zufrieden bist, teile es. Tippe auf den Teilen-Button und Exposé erstellt einen Link, den du an Kollegen oder Mitstreiter senden kannst. Sie öffnen ihn, erhalten deine exakte Vorlage und können sofort konsistente Assets generieren — kein Briefing nötig.',
                 },
             ],
         },
@@ -234,19 +328,11 @@ export const BLOG_POSTS: BlogPost[] = [
                 { type: 'h2', text: 'How It Works' },
                 {
                     type: 'p',
-                    text: 'Start by uploading an image you want to edit. You\'ll see the prompt box — and below it a row of buttons: Annotations, Inspiration, and more. Tap Inspiration and a panel opens with your options:',
-                },
-                {
-                    type: 'ul',
-                    items: [
-                        'Upload from your computer or phone',
-                        'Drag & drop an image directly',
-                        'Paste with Command+V straight from your clipboard',
-                    ],
+                    text: 'Start by uploading an image you want to edit. You\'ll see the prompt box — and below it a row of buttons: Annotations, Inspiration, and more. Tap Inspiration and a panel opens: upload an image from your computer or paste one directly with Command+V.',
                 },
                 {
                     type: 'p',
-                    text: 'You can pull something from your own gallery, a screenshot you saved, or anything you find online. The AI reads the image and uses it as a stylistic anchor for your generation.',
+                    text: 'You can use something from your own gallery, a saved screenshot, or anything you find online. The AI reads the image and uses it as a stylistic anchor for your generation.',
                 },
                 { type: 'h2', text: 'Find Ideas on Pinterest' },
                 {
@@ -285,15 +371,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 { type: 'h2', text: 'So funktioniert\'s' },
                 {
                     type: 'p',
-                    text: 'Lade zuerst ein Bild hoch, das du bearbeiten möchtest. Du siehst die Prompt-Box — und darunter ein paar Buttons: Anmerkungen, Inspiration und mehr. Tippe auf Inspiration und ein Panel öffnet sich mit deinen Optionen:',
-                },
-                {
-                    type: 'ul',
-                    items: [
-                        'Vom Computer oder Handy hochladen',
-                        'Bild per Drag & Drop einfügen',
-                        'Mit Command+V direkt aus der Zwischenablage einfügen',
-                    ],
+                    text: 'Lade zuerst ein Bild hoch, das du bearbeiten möchtest. Du siehst die Prompt-Box — und darunter ein paar Buttons: Anmerkungen, Inspiration und mehr. Tippe auf Inspiration und ein Panel öffnet sich: du kannst ein Bild vom Computer hochladen oder mit Command+V direkt aus der Zwischenablage einfügen.',
                 },
                 {
                     type: 'p',
