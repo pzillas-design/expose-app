@@ -961,7 +961,9 @@ export function App() {
     
     // Pages that should have an expandable Hero header
     const expandableRoutes = ['/', '/about', '/impressum'];
-    const isExpandableRoute = expandableRoutes.includes(location.pathname);
+    const isExpandableRoute = expandableRoutes.includes(location.pathname)
+        || location.pathname === '/blog'
+        || location.pathname.startsWith('/blog/');
 
     const outerContainerClasses = isAppLayout
         ? "h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
