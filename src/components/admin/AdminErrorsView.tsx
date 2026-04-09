@@ -7,19 +7,19 @@ import { Button } from '@/components/ui/DesignSystem';
 interface ErrorLog {
     id: string;
     user_id: string | null;
+    user_email: string | null;
     message: string;
     context: string | null;
     url: string | null;
     source: string;
     created_at: string;
-    // joined from profiles
-    email?: string | null;
 }
 
 const SOURCE_COLORS: Record<string, string> = {
     toast: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     silent: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     'edge-function': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    'job-failed': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 };
 
 const PAGE_SIZE = 100;
@@ -36,20 +36,12 @@ export const AdminErrorsView: React.FC = () => {
         try {
             const { data, error } = await supabase
                 .from('error_logs')
-                .select(`
-                    id, user_id, message, context, url, source, created_at,
-                    profiles:user_id ( email )
-                `)
+                .select('id, user_id, user_email, message, context, url, source, created_at')
                 .order('created_at', { ascending: false })
                 .limit(PAGE_SIZE);
 
             if (error) throw error;
-
-            const mapped = (data ?? []).map((row: any) => ({
-                ...row,
-                email: row.profiles?.email ?? null,
-            }));
-            setLogs(mapped);
+            setLogs(data ?? []);
         } catch (e) {
             console.error('Failed to fetch error logs:', e);
         } finally {
@@ -80,7 +72,7 @@ export const AdminErrorsView: React.FC = () => {
         const q = search.toLowerCase();
         return (
             log.message.toLowerCase().includes(q) ||
-            (log.email ?? '').toLowerCase().includes(q) ||
+            (log.user_email ?? '').toLowerCase().includes(q) ||
             (log.context ?? '').toLowerCase().includes(q) ||
             (log.url ?? '').toLowerCase().includes(q)
         );
@@ -195,7 +187,7 @@ export const AdminErrorsView: React.FC = () => {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-xs text-zinc-500 max-w-[11rem] truncate">
-                                        {log.email ?? (log.user_id ? log.user_id.slice(0, 8) + '…' : '—')}
+                                        {log.user_email ?? (log.user_id ? log.user_id.slice(0, 8) + '…' : '—')}
                                     </td>
                                     <td className="px-4 py-3 text-xs text-zinc-400 max-w-[9rem]">
                                         {log.context && <div className="font-mono truncate">{log.context}</div>}

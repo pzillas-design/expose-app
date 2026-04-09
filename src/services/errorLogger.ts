@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-export type ErrorSource = 'toast' | 'silent' | 'edge-function';
+export type ErrorSource = 'toast' | 'silent' | 'edge-function' | 'job-failed';
 
 interface LogErrorOptions {
     context?: string;   // e.g. "handleGenerate", "loadImages"
@@ -20,7 +20,8 @@ export async function logError(message: string, options: LogErrorOptions = {}): 
 
         await supabase.from('error_logs').insert({
             user_id: session.user.id,
-            message: String(message).slice(0, 1000), // cap length
+            user_email: session.user.email ?? null,
+            message: String(message).slice(0, 1000),
             context: options.context ?? null,
             url: typeof window !== 'undefined' ? window.location.pathname : null,
             source: options.source ?? 'toast',
