@@ -110,7 +110,6 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                             <thead className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
                                 <tr>
                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_user_email')}</th>
-                                    <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">Name</th>
                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_role_label')}</th>
                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-left">{t('admin_last_online')}</th>
                                     <th className="px-5 py-3 text-xs font-medium text-zinc-400 text-right">{t('admin_balance')}</th>
@@ -125,11 +124,11 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         onClick={() => setSelectedUser(u)}
                                         className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-5 py-3.5 font-medium text-black dark:text-white">
-                                            {u.email || getUserIdentifier(u)}
-                                        </td>
-                                        <td className="px-5 py-3.5 text-zinc-500 text-sm">
-                                            {u.name && u.name !== 'New User' ? u.name : '—'}
+                                        <td className="px-5 py-3.5">
+                                            <div className="font-medium text-black dark:text-white">{u.email || getUserIdentifier(u)}</div>
+                                            {u.name && u.name !== 'New User' && u.name !== 'User' && (
+                                                <div className="text-xs text-zinc-400 mt-0.5">{u.name}</div>
+                                            )}
                                         </td>
                                         <td className="px-5 py-3.5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>
