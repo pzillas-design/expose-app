@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Clock } from 'lucide-react';
-import { BLOG_POSTS, BlogPost } from '@/data/blogPosts';
+import { BLOG_POSTS, BlogPost, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 
 interface BlogPageProps {
     t: TranslationFunction;
     onSignIn?: () => void;
+    lang?: string;
 }
 
 const POST_IMAGES = [
@@ -18,9 +19,10 @@ const POST_IMAGES = [
     '/home/1 creation reimagined/6.jpeg',
 ];
 
-const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) => {
+const PostCard: React.FC<{ post: BlogPost; index: number; lang: string }> = ({ post, index, lang }) => {
     const navigate = useNavigate();
     const coverImage = post.coverImage ?? POST_IMAGES[index % POST_IMAGES.length];
+    const { title, excerpt } = getTranslation(post, lang);
 
     return (
         <article
@@ -31,7 +33,7 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
             <div className="aspect-[4/3] lg:aspect-auto lg:min-h-[380px] relative overflow-hidden rounded-2xl lg:rounded-r-none">
                 <img
                     src={coverImage}
-                    alt={post.title}
+                    alt={title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
@@ -40,7 +42,6 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
             {/* Content */}
             <div className="flex flex-col justify-between p-8 lg:p-12 bg-zinc-50 dark:bg-zinc-900 rounded-2xl lg:rounded-l-none">
                 <div className="flex flex-col gap-4">
-                    {/* Date on top */}
                     <span className="text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-3">
                         <span>{post.date}</span>
                         <span className="flex items-center gap-1">
@@ -49,10 +50,10 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
                         </span>
                     </span>
                     <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-white leading-[1.1]">
-                        {post.title}
+                        {title}
                     </h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-base leading-relaxed max-w-lg">
-                        {post.excerpt}
+                        {excerpt}
                     </p>
                 </div>
 
@@ -66,7 +67,7 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
     );
 };
 
-export const BlogPage: React.FC<BlogPageProps> = ({ t }) => {
+export const BlogPage: React.FC<BlogPageProps> = ({ t, lang = 'en' }) => {
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
 
@@ -82,7 +83,7 @@ export const BlogPage: React.FC<BlogPageProps> = ({ t }) => {
                 {/* Cards */}
                 <div className="flex flex-col gap-6">
                     {BLOG_POSTS.map((post, idx) => (
-                        <PostCard key={post.slug} post={post} index={idx} />
+                        <PostCard key={post.slug} post={post} index={idx} lang={lang} />
                     ))}
                 </div>
             </main>

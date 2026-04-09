@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Clock, ArrowRight } from 'lucide-react';
-import { BLOG_POSTS, ContentBlock } from '@/data/blogPosts';
+import { BLOG_POSTS, ContentBlock, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 
@@ -17,6 +17,7 @@ const POST_IMAGES = [
 interface BlogPostPageProps {
     t: TranslationFunction;
     onSignIn?: () => void;
+    lang?: string;
 }
 
 const renderBlock = (block: ContentBlock, idx: number) => {
@@ -92,7 +93,7 @@ const renderBlock = (block: ContentBlock, idx: number) => {
     }
 };
 
-export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
+export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 'en' }) => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
 
@@ -100,6 +101,8 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
     const post = BLOG_POSTS[postIndex];
     const nextPost = BLOG_POSTS[postIndex + 1] ?? BLOG_POSTS[0];
     const heroImage = post?.coverImage ?? POST_IMAGES[postIndex % POST_IMAGES.length];
+    const { title, excerpt, content } = post ? getTranslation(post, lang) : { title: '', excerpt: '', content: [] };
+    const nextTranslation = nextPost ? getTranslation(nextPost, lang) : null;
 
     if (!post) {
         return (
@@ -124,7 +127,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
             <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[60vh] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                 <img
                     src={heroImage}
-                    alt={post.title}
+                    alt={title}
                     className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/30" />
@@ -145,17 +148,17 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
                     <span className="text-[11px] text-zinc-400">{post.date}</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-white leading-[1.2]">
-                    {post.title}
+                    {title}
                 </h1>
                 <p className="mt-4 text-zinc-500 dark:text-zinc-400 text-base leading-relaxed">
-                    {post.excerpt}
+                    {excerpt}
                 </p>
             </div>
 
             {/* Article body */}
             <main className="flex-1 w-full max-w-2xl mx-auto px-5 sm:px-8 pt-10 pb-20">
-                {post.content.length > 0 ? (
-                    post.content.map((block, idx) => renderBlock(block, idx))
+                {content.length > 0 ? (
+                    content.map((block, idx) => renderBlock(block, idx))
                 ) : (
                     <p className="text-zinc-400 text-sm italic">This article is coming soon.</p>
                 )}
@@ -196,7 +199,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
                                 Next article
                             </p>
                             <h3 className="text-sm font-medium text-zinc-900 dark:text-white group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
-                                {nextPost.title}
+                                {nextTranslation?.title}
                             </h3>
                         </div>
                         <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-all duration-200 shrink-0" />

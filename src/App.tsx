@@ -1363,8 +1363,8 @@ export function App() {
                             </AdminRoute>
                         } />
 
-                        <Route path="/blog" element={<BlogPage t={t} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
-                        <Route path="/blog/:slug" element={<BlogPostPage t={t} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
+                        <Route path="/blog" element={<BlogPage t={t} lang={state.currentLang} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
+                        <Route path="/blog/:slug" element={<BlogPostPage t={t} lang={state.currentLang} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
 
                         <Route path="/impressum" element={<ImpressumPage
                             user={user}
