@@ -36,9 +36,28 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
 
     const handleCopyPrompt = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (image.generationPrompt) {
-            navigator.clipboard.writeText(image.generationPrompt);
+        const text = image.generationPrompt;
+        if (!text) return;
+
+        const fallback = () => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); } catch (_) { /* ignore */ }
+            document.body.removeChild(ta);
             showToast(t('copied_to_clipboard') || 'Kopiert', 'success');
+        };
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text)
+                .then(() => showToast(t('copied_to_clipboard') || 'Kopiert', 'success'))
+                .catch(fallback);
+        } else {
+            fallback();
         }
     };
 
@@ -146,7 +165,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                             <span className={`${labelClass} self-start pt-0.5`}>{t('prompt') || 'Prompt'}</span>
                             <Tooltip text={currentLang === 'de' ? 'Kopieren' : 'Copy'} side="top">
                                 <span
-                                    className={`${valueClass} leading-relaxed break-words whitespace-pre-wrap line-clamp-4 cursor-pointer`}
+                                    className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap cursor-pointer text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors duration-150"
                                     onClick={handleCopyPrompt}
                                 >
                                     {image.generationPrompt}

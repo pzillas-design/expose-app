@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Clock, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { BLOG_POSTS, ContentBlock, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { Button } from '@/components/ui/DesignSystem';
@@ -95,10 +95,8 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
 
     const postIndex = BLOG_POSTS.findIndex(p => p.slug === slug);
     const post = BLOG_POSTS[postIndex];
-    const nextPost = BLOG_POSTS[postIndex + 1] ?? BLOG_POSTS[0];
     const heroImage = post?.coverImage ?? POST_IMAGES[postIndex % POST_IMAGES.length];
     const { title, excerpt, content } = post ? getTranslation(post, lang) : { title: '', excerpt: '', content: [] };
-    const nextTranslation = nextPost ? getTranslation(nextPost, lang) : null;
 
     if (!post) {
         return (
@@ -131,17 +129,11 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
 
             {/* Title block */}
             <div className="w-full max-w-3xl mx-auto px-5 sm:px-8 pt-10 pb-8 border-b border-zinc-100 dark:border-zinc-800">
-                <div className="flex items-center gap-4 mb-5">
-                    <span className="text-[11px] font-medium text-zinc-400">
+                <div className="flex items-center gap-3 mb-5">
+                    <span className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 dark:text-zinc-400">
                         {post.category}
                     </span>
-                    <span className="text-zinc-200 dark:text-zinc-700">·</span>
-                    <span className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                        <Clock className="w-3 h-3" />
-                        {post.readTime} min read
-                    </span>
-                    <span className="text-zinc-200 dark:text-zinc-700">·</span>
-                    <span className="text-[11px] text-zinc-400">{post.date}</span>
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{post.date}</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-white leading-[1.2]">
                     {title}
@@ -161,12 +153,12 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
             </main>
 
             {/* CTA Banner */}
-            <div className="relative w-full overflow-hidden bg-zinc-950 dark:bg-zinc-950 border-t border-zinc-800">
+            <div className="relative w-full overflow-hidden bg-zinc-950 dark:bg-zinc-950">
                 {/* Orange gradient blobs */}
                 <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-64 h-64 bg-orange-500/15 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-64 h-64 bg-red-600/15 rounded-full blur-[100px] pointer-events-none" />
 
-                <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 py-16 flex flex-col items-center text-center gap-8">
+                <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 py-24 sm:py-32 flex flex-col items-center text-center gap-8">
                     <h3 className="text-2xl sm:text-4xl font-kumbh font-bold tracking-tighter text-white leading-tight">
                         ready to try it yourself?
                     </h3>
@@ -181,24 +173,6 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
                     </Button>
                 </div>
             </div>
-
-            {/* Next article — compact */}
-            {nextPost && nextPost.slug !== post.slug && (
-                <div
-                    onClick={() => navigate(`/blog/${nextPost.slug}`)}
-                    className="group cursor-pointer w-full border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-                >
-                    <div className="max-w-3xl mx-auto px-5 sm:px-8 py-5 flex items-center justify-between gap-4">
-                        <div>
-                            <p className="text-[11px] text-zinc-400 mb-0.5">Next</p>
-                            <h3 className="text-sm font-medium text-zinc-900 dark:text-white group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
-                                {nextTranslation?.title}
-                            </h3>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 group-hover:text-zinc-900 dark:group-hover:text-white transition-all duration-200 shrink-0" />
-                    </div>
-                </div>
-            )}
 
             <GlobalFooter t={t} />
         </div>

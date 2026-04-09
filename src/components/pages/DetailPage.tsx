@@ -934,7 +934,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         />
                                         <Tooltip text={t('clear_all_brush') || 'Pinselstriche löschen'} side="top">
                                             <button
-                                                onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'path') || [])}
+                                                onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'mask_path') || [])}
                                                 className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
                                             >
                                                 <Trash className="w-4 h-4" />

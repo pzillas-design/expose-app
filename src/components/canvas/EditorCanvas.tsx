@@ -131,6 +131,27 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     // Normalized brush size (in annotation space) captured at stroke start
     const brushSizeNormalizedRef = useRef<number>(20);
 
+    // Global mouseup/touchend: commit or discard stroke when pointer released outside canvas
+    const isDrawingRef = useRef(false);
+    useEffect(() => {
+        const handleGlobalUp = () => {
+            if (!isDrawingRef.current) return;
+            isDrawingRef.current = false;
+            setIsDrawing(false);
+            if (currentPathRef.current.length > 1) {
+                onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSizeNormalizedRef.current, color: '#fff', text: '', createdAt: Date.now() }]);
+            }
+            currentPathRef.current = [];
+            onInteractionEnd?.();
+        };
+        window.addEventListener('mouseup', handleGlobalUp);
+        window.addEventListener('touchend', handleGlobalUp);
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalUp);
+            window.removeEventListener('touchend', handleGlobalUp);
+        };
+    }, [annotations, onChange, onInteractionEnd]);
+
     const renderCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
@@ -262,6 +283,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             }
 
             setIsDrawing(true);
+            isDrawingRef.current = true;
             currentPathRef.current = [{ x, y }];
             setActiveMaskId(null);
         }
@@ -441,6 +463,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         }
         if (!isDrawing) return;
         setIsDrawing(false);
+        isDrawingRef.current = false;
         if (currentPathRef.current.length > 1) {
             onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSizeNormalizedRef.current, color: '#fff', text: '', createdAt: Date.now() }]);
         }
