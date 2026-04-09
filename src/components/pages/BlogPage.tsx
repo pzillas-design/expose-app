@@ -1,13 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock, Sun, Moon } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import { BLOG_POSTS, BlogPost } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
-import { Logo } from '@/components/ui/Logo';
 import { TranslationFunction } from '@/types';
-import { useConfig } from '@/hooks/useConfig';
 
-// Images from the about/home page
+interface BlogPageProps {
+    t: TranslationFunction;
+    onSignIn?: () => void;
+}
+
 const POST_IMAGES = [
     '/home/1 creation reimagined/3.jpeg',
     '/home/1 creation reimagined/4.jpeg',
@@ -15,11 +17,6 @@ const POST_IMAGES = [
     '/home/1 creation reimagined/12.jpeg',
     '/home/1 creation reimagined/6.jpeg',
 ];
-
-interface BlogPageProps {
-    t: TranslationFunction;
-    onSignIn?: () => void;
-}
 
 const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) => {
     const navigate = useNavigate();
@@ -80,65 +77,9 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
     );
 };
 
-export const BlogPage: React.FC<BlogPageProps> = ({ t, onSignIn }) => {
-    const navigate = useNavigate();
-    const { themeMode, setThemeMode } = useConfig();
-
-    const isDark = themeMode === 'dark' ||
-        (themeMode === 'auto' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    const toggleTheme = () => setThemeMode(isDark ? 'light' : 'dark');
-
+export const BlogPage: React.FC<BlogPageProps> = ({ t }) => {
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
-
-            {/* ── Navbar ─────────────────────────────────────────── */}
-            <header className="sticky top-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800/60">
-                <div className="max-w-6xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between gap-4">
-
-                    {/* Logo */}
-                    <button onClick={() => navigate('/about')} className="flex items-center gap-2 shrink-0">
-                        <Logo className="w-5 h-5" />
-                        <span className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">exposé</span>
-                    </button>
-
-                    {/* Nav links */}
-                    <nav className="hidden sm:flex items-center gap-1">
-                        {[
-                            { label: 'About', path: '/about' },
-                            { label: 'Blog', path: '/blog' },
-                        ].map(({ label, path }) => (
-                            <button
-                                key={path}
-                                onClick={() => navigate(path)}
-                                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                                    path === '/blog'
-                                        ? 'text-zinc-900 dark:text-white font-medium'
-                                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </nav>
-
-                    {/* Right actions */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={toggleTheme}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        >
-                            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                        </button>
-                        <button
-                            onClick={onSignIn}
-                            className="hidden sm:flex px-3 py-1.5 rounded-lg text-sm font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 transition-colors"
-                        >
-                            Start
-                        </button>
-                    </div>
-                </div>
-            </header>
 
             {/* ── Content ────────────────────────────────────────── */}
             <main className="flex-1 w-full max-w-6xl mx-auto px-5 sm:px-8 pt-14 sm:pt-20 pb-20">
