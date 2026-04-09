@@ -117,8 +117,11 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn }) => {
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
 
+            {/* Space for expanded hero navbar (88px mobile / 148px desktop) */}
+            <div className="h-[88px] md:h-[148px] shrink-0" />
+
             {/* Hero image — full width, tall */}
-            <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[65vh] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+            <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[60vh] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                 <img
                     src={heroImage}
                     alt={post.title}

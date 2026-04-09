@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock } from 'lucide-react';
+import { ChevronRight, Clock } from 'lucide-react';
 import { BLOG_POSTS, BlogPost } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
@@ -25,51 +25,40 @@ const PostCard: React.FC<{ post: BlogPost; index: number }> = ({ post, index }) 
     return (
         <article
             onClick={() => navigate(`/blog/${post.slug}`)}
-            className="group cursor-pointer grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all duration-300 shadow-sm hover:shadow-md dark:shadow-none"
+            className="group cursor-pointer grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] rounded-2xl overflow-hidden transition-all duration-300"
         >
             {/* Cover */}
-            <div className={`bg-gradient-to-br ${post.coverGradient} aspect-[4/3] lg:aspect-auto lg:min-h-[380px] relative overflow-hidden`}>
+            <div className="aspect-[4/3] lg:aspect-auto lg:min-h-[380px] relative overflow-hidden rounded-2xl lg:rounded-r-none">
                 <img
                     src={coverImage}
                     alt={post.title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                {/* subtle dark overlay for readability */}
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
-                {/* Index number */}
-                <span className="absolute bottom-5 left-6 text-[80px] leading-none font-bold text-white/20 select-none">
-                    {String(index + 1).padStart(2, '0')}
-                </span>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col justify-between p-8 lg:p-12 bg-zinc-50 dark:bg-zinc-900">
-                <div className="flex flex-col gap-5">
-                    <span className="text-xs font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-500">
-                        {post.category}
+            <div className="flex flex-col justify-between p-8 lg:p-12 bg-zinc-50 dark:bg-zinc-900 rounded-2xl lg:rounded-l-none">
+                <div className="flex flex-col gap-4">
+                    {/* Date on top */}
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500 flex items-center gap-3">
+                        <span>{post.date}</span>
+                        <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {post.readTime} min
+                        </span>
                     </span>
                     <h2 className="text-3xl lg:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-white leading-[1.1]">
-                        <span className="relative inline">
-                            {post.title}
-                            <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-zinc-900 dark:bg-white group-hover:w-full transition-all duration-500 ease-[cubic-bezier(0.8,0,0.2,1)]" />
-                        </span>
+                        {post.title}
                     </h2>
                     <p className="text-zinc-500 dark:text-zinc-400 text-base leading-relaxed max-w-lg">
                         {post.excerpt}
                     </p>
                 </div>
 
-                <div className="flex items-center justify-between mt-10">
-                    <div className="flex items-center gap-5 text-xs text-zinc-400 dark:text-zinc-600">
-                        <span>{post.date}</span>
-                        <span className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3" />
-                            {post.readTime} min
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors duration-200">
-                        Read
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+                <div className="flex items-center justify-end mt-10">
+                    <div className="w-9 h-9 rounded-full border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-400 dark:text-zinc-500 group-hover:bg-zinc-900 group-hover:border-zinc-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:border-white dark:group-hover:text-zinc-900 transition-all duration-200">
+                        <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                     </div>
                 </div>
             </div>
@@ -81,11 +70,10 @@ export const BlogPage: React.FC<BlogPageProps> = ({ t }) => {
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
 
-            {/* ── Content ────────────────────────────────────────── */}
-            <main className="flex-1 w-full max-w-6xl mx-auto px-5 sm:px-8 pt-14 sm:pt-20 pb-20">
+            <main className="flex-1 w-full max-w-6xl mx-auto px-5 sm:px-8 pt-28 sm:pt-40 pb-20">
 
-                {/* Header */}
-                <div className="mb-14 border-b border-zinc-200 dark:border-zinc-800 pb-10">
+                {/* Heading */}
+                <div className="mb-14">
                     <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-zinc-900 dark:text-white">
                         Blog
                     </h1>

@@ -214,7 +214,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isCreate = mode === 'create';
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
-    const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz'].includes(currentPath);
+    const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz', '/blog'].includes(currentPath);
     const isBlogPost = /^\/blog\/.+/.test(currentPath);
 
     const balanceDisplay = user && displayCredits !== null && (
