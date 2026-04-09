@@ -499,16 +499,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <>
-            {isBlogPost ? (
-                !user ? (
-                    <button
-                        onClick={onSignIn}
-                        className="px-4 h-8 text-[12px] font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 transition-all"
-                    >
-                        {t('nav_start') || 'Start'}
-                    </button>
-                ) : null
-            ) : isPublic ? (
+            {isPublic ? (
                 <div className="flex items-center gap-3">
                     <Button
                         onClick={onStartApp}
@@ -622,7 +613,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             <div
                                 className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}
                             >
-                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                     Blog
                                 </span>
                             </div>
@@ -642,7 +633,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                     }`}
                             >
-                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                     {t('nav_gallery') || 'Galerie'}
                                 </span>
                             </div>
@@ -662,7 +653,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                     }`}
                             >
-                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                     {t('nav_gallery') || 'Galerie'}
                                 </span>
                             </div>
@@ -684,7 +675,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                             }`}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                             {t('nav_upload') || 'Hochladen'}
                                         </span>
                                     </div>
@@ -703,7 +694,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                             }`}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                             {t('nav_create') || 'Generieren'}
                                         </span>
                                     </div>
@@ -743,16 +734,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 {/* RIGHT: System Actions / Login */}
                 <div className="flex-1 basis-0 grow flex items-center justify-end pointer-events-auto min-w-0">
                     <div className="flex items-center gap-1.5">
-                        {isBlogPost ? (
-                            !user ? (
-                                <button
-                                    onClick={onSignIn}
-                                    className={`px-5 transition-all duration-300 font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-full hover:opacity-90 ${isScrolled ? 'h-8 text-[12px]' : 'h-10 text-[13px]'}`}
-                                >
-                                    {t('nav_start') || 'Start'}
-                                </button>
-                            ) : null
-                        ) : isPublic ? (
+                        {isPublic ? (
                             <>
                                 <Button
                                     onClick={onStartApp}
@@ -810,7 +792,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                                 }`}
                                         >
-                                            <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                                 {t('nav_menu') || 'Menü'}
                                             </span>
                                         </div>
