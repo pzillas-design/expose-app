@@ -146,13 +146,14 @@ export const adminService = {
                 .select('id, full_name, email')
                 .in('id', userIds)
                 .then(({ data: profiles }) => {
-                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = { name: p.full_name || p.email || 'Unknown', email: p.email || null }; });
                 }) : Promise.resolve(),
         ]);
 
         return (data || []).map(job => ({
             id: job.id,
-            userName: profilesMap[job.user_id] || job.user_name || 'Unknown',
+            userName: profilesMap[job.user_id]?.name || job.user_name || 'Unknown',
+            userEmail: profilesMap[job.user_id]?.email || job.user_email || null,
             type: job.type || 'Generation',
             model: job.model || 'unknown',
             qualityMode: job.quality_mode || job.model || 'unknown',
@@ -201,10 +202,10 @@ export const adminService = {
         }
 
         const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))];
-        const profilesMap: Record<string, string> = {};
+        const profilesMap: Record<string, { name: string; email: string | null }> = {};
         if (userIds.length > 0) {
             const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
-            if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+            if (profiles) profiles.forEach(p => { profilesMap[p.id] = { name: p.full_name || p.email || 'Unknown', email: p.email || null }; });
         }
 
         return Array.from(sessionMap.entries())
@@ -224,7 +225,8 @@ export const adminService = {
                     id: `voice-${sessionId}`,
                     _type: 'voice' as const,
                     sessionId,
-                    userName: profilesMap[userId] || 'Unknown',
+                    userName: profilesMap[userId]?.name || 'Unknown',
+                    userEmail: profilesMap[userId]?.email || null,
                     createdAt: startedAt,
                     durationMs: endedAt - startedAt,
                     messageCount: transcripts.length,
