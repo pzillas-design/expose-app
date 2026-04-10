@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
+import { Loader2, ArrowUpRight, ArrowDownRight, TrendingUp, Users, UserCheck, AlertTriangle, Activity } from 'lucide-react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Bar, Legend, Line, ComposedChart
@@ -67,23 +67,32 @@ const calculateEstimatedGoogleCostEur = (job: any): number => {
 
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs, setJobs] = useState<any[]>([]);
+    const [profiles, setProfiles] = useState<any[]>([]);
     const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
     const [stripePaymentCount, setStripePaymentCount] = useState(0);
     const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
     const [voiceStats, setVoiceStats] = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
     const [loading, setLoading] = useState(true);
     const [timeRange, setTimeRange] = useState<TimeRange>('tag');
+    const [engagementTimeRange, setEngagementTimeRange] = useState<TimeRange>('tag');
+    const [visibleEngagementLines, setVisibleEngagementLines] = useState({
+        newUsers: true,
+        completedJobs: true,
+        failedJobs: true,
+    });
 
     useEffect(() => {
         const fetchAll = async () => {
             setLoading(true);
             try {
-                const [jobsData, voiceSessions, { data: { session } }] = await Promise.all([
+                const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
                     adminService.getJobs(),
                     adminService.getVoiceSessions(200),
+                    supabase.from('profiles').select('id, created_at'),
                     supabase.auth.getSession()
                 ]);
                 setJobs(jobsData);
+                setProfiles(profilesResult.data || []);
                 // Calculate voice costs: Gemini Live ~$0.043/min audio (blended input+output)
                 const VOICE_USD_PER_MIN = 0.043;
                 const totalVoiceMinutes = voiceSessions.reduce((sum: number, s: any) => sum + (s.durationMs || 0) / 60000, 0);
@@ -124,11 +133,30 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     }, []);
 
     const completedJobs = jobs.filter(j => j.status === 'completed');
+    const failedJobs = jobs.filter(j => j.status === 'failed');
     const googleAiCost = completedJobs.reduce((acc, j) => acc + calculateEstimatedGoogleCostEur(j), 0);
     const totalAiCost = googleAiCost + voiceStats.costEur;
     const profit = stripeRevenue != null ? stripeRevenue - totalAiCost : null;
     const margin = stripeRevenue != null && stripeRevenue > 0 && profit != null
         ? (profit / stripeRevenue) * 100 : null;
+
+    // Nutzer & Aktivierung stats
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const start7d = startOfToday - 6 * 86400000;
+    const start30d = startOfToday - 29 * 86400000;
+
+    const newSignupsToday = profiles.filter(p => new Date(p.created_at).getTime() >= startOfToday).length;
+    const newSignups7d = profiles.filter(p => new Date(p.created_at).getTime() >= start7d).length;
+    const newSignups30d = profiles.filter(p => new Date(p.created_at).getTime() >= start30d).length;
+
+    const uniqueUsersWithJobs = new Set(completedJobs.map(j => j.userEmail || j.userName)).size;
+    const activationRate = profiles.length > 0 ? (uniqueUsersWithJobs / profiles.length) * 100 : 0;
+
+    const errorRate = jobs.length > 0 ? (failedJobs.length / jobs.length) * 100 : 0;
+
+    const uniqueUsersTotal = new Set(jobs.map(j => j.userEmail || j.userName)).size;
+    const avgGenerationsPerUser = uniqueUsersTotal > 0 ? completedJobs.length / uniqueUsersTotal : 0;
 
     const chartData = useMemo(() => {
         const buckets: Record<string, any> = {};
@@ -195,6 +223,83 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
         return Object.values(buckets);
     }, [completedJobs, stripeMonthly, timeRange]);
+
+    const engagementChartData = useMemo(() => {
+        const buckets: Record<string, any> = {};
+        const now = new Date();
+
+        const makeKey = (d: Date): string => {
+            if (engagementTimeRange === 'tag') {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            } else if (engagementTimeRange === 'woche') {
+                return isoWeekKey(d);
+            } else if (engagementTimeRange === 'monat') {
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            } else {
+                return String(d.getFullYear());
+            }
+        };
+
+        const makeLabel = (d: Date): string => {
+            if (engagementTimeRange === 'tag') {
+                return d.toLocaleString('de-DE', { day: '2-digit', month: 'short' });
+            } else if (engagementTimeRange === 'woche') {
+                return `KW${isoWeekNum(d)}`;
+            } else if (engagementTimeRange === 'monat') {
+                return d.toLocaleString('de-DE', { month: 'short' });
+            } else {
+                return String(d.getFullYear());
+            }
+        };
+
+        if (engagementTimeRange === 'tag') {
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i);
+                const key = makeKey(d);
+                buckets[key] = { _label: makeLabel(d), _newUsers: 0, _completedJobs: 0, _failedJobs: 0 };
+            }
+        } else if (engagementTimeRange === 'woche') {
+            for (let i = 9; i >= 0; i--) {
+                const d = new Date(now);
+                d.setDate(d.getDate() - i * 7);
+                const key = makeKey(d);
+                buckets[key] = { _label: makeLabel(d), _newUsers: 0, _completedJobs: 0, _failedJobs: 0 };
+            }
+        } else if (engagementTimeRange === 'monat') {
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = makeKey(d);
+                buckets[key] = { _label: makeLabel(d), _newUsers: 0, _completedJobs: 0, _failedJobs: 0 };
+            }
+        } else {
+            for (let i = 2; i >= 0; i--) {
+                const d = new Date(now.getFullYear() - i, 0, 1);
+                const key = makeKey(d);
+                buckets[key] = { _label: makeLabel(d), _newUsers: 0, _completedJobs: 0, _failedJobs: 0 };
+            }
+        }
+
+        profiles.forEach(p => {
+            const key = makeKey(new Date(p.created_at));
+            if (!buckets[key]) return;
+            buckets[key]._newUsers = (buckets[key]._newUsers || 0) + 1;
+        });
+
+        completedJobs.forEach(job => {
+            const key = makeKey(new Date(job.createdAt));
+            if (!buckets[key]) return;
+            buckets[key]._completedJobs = (buckets[key]._completedJobs || 0) + 1;
+        });
+
+        failedJobs.forEach(job => {
+            const key = makeKey(new Date(job.createdAt));
+            if (!buckets[key]) return;
+            buckets[key]._failedJobs = (buckets[key]._failedJobs || 0) + 1;
+        });
+
+        return Object.values(buckets);
+    }, [profiles, completedJobs, failedJobs, engagementTimeRange]);
 
     const resolutionKeys = useMemo(() => {
         const found = new Set(completedJobs.map(getResolutionBucket));
@@ -459,6 +564,154 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* ── Nutzer & Aktivierung ── */}
+                <div className="pt-2">
+                    <div className="mb-4">
+                        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Nutzer & Aktivierung</h2>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Anmeldungen, Aktivierungsrate und Fehlerquote</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        <StatCard
+                            label="Neue Anmeldungen"
+                            value={String(newSignups30d)}
+                            sub={`Heute ${newSignupsToday} · 7 Tage ${newSignups7d}`}
+                            icon={<Users className="w-4 h-4 text-blue-500" />}
+                            iconBg="bg-blue-50 dark:bg-blue-900/20"
+                            valueColor="text-blue-600 dark:text-blue-400"
+                        />
+                        <StatCard
+                            label="Aktivierungsrate"
+                            value={`${activationRate.toFixed(1)}%`}
+                            sub={`${uniqueUsersWithJobs} von ${profiles.length} Nutzern`}
+                            icon={<UserCheck className="w-4 h-4 text-emerald-500" />}
+                            iconBg="bg-emerald-50 dark:bg-emerald-900/20"
+                            valueColor="text-emerald-600 dark:text-emerald-400"
+                        />
+                        <StatCard
+                            label="Fehlerrate"
+                            value={`${errorRate.toFixed(1)}%`}
+                            sub={`${failedJobs.length} Fehler · ${jobs.length} Jobs gesamt`}
+                            icon={<AlertTriangle className="w-4 h-4 text-red-500" />}
+                            iconBg="bg-red-50 dark:bg-red-900/20"
+                            valueColor={errorRate > 10 ? 'text-red-500' : 'text-zinc-900 dark:text-zinc-100'}
+                        />
+                        <StatCard
+                            label="Ø Generierungen/User"
+                            value={avgGenerationsPerUser.toFixed(1)}
+                            sub={`${completedJobs.length} Abschlüsse · ${uniqueUsersTotal} Nutzer`}
+                            icon={<Activity className="w-4 h-4 text-orange-500" />}
+                            iconBg="bg-orange-50 dark:bg-orange-900/20"
+                            valueColor="text-zinc-900 dark:text-zinc-100"
+                        />
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="text-sm font-bold">Aktivitätsverlauf</h3>
+                            <p className="text-[10px] text-zinc-400 mt-0.5">Neue Nutzer, Generierungen und Fehler im Zeitverlauf</p>
+                        </div>
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+                            {TIME_RANGES.map(tr => (
+                                <button
+                                    key={tr.id}
+                                    onClick={() => setEngagementTimeRange(tr.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                                        engagementTimeRange === tr.id
+                                            ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                                    }`}
+                                >
+                                    {tr.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 mb-5">
+                        {[
+                            { key: 'newUsers' as const, label: 'Neue Nutzer', color: '#3b82f6' },
+                            { key: 'completedJobs' as const, label: 'Generierungen', color: '#f97316' },
+                            { key: 'failedJobs' as const, label: 'Fehler', color: '#ef4444' },
+                        ].map(({ key, label, color }) => (
+                            <button
+                                key={key}
+                                onClick={() => setVisibleEngagementLines(prev => ({ ...prev, [key]: !prev[key] }))}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${
+                                    visibleEngagementLines[key]
+                                        ? 'border-transparent text-white'
+                                        : 'border-zinc-200 dark:border-zinc-700 text-zinc-400 bg-transparent'
+                                }`}
+                                style={visibleEngagementLines[key] ? { backgroundColor: color } : {}}
+                            >
+                                <span
+                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: visibleEngagementLines[key] ? '#fff' : color }}
+                                />
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={engagementChartData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
+                                <XAxis dataKey="_label" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
+                                <YAxis axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                    allowDecimals={false} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
+                                    formatter={(value: any, name: string) => {
+                                        const labels: Record<string, string> = {
+                                            _newUsers: 'Neue Nutzer',
+                                            _completedJobs: 'Generierungen',
+                                            _failedJobs: 'Fehler',
+                                        };
+                                        return [value, labels[name] ?? name];
+                                    }}
+                                />
+                                {visibleEngagementLines.newUsers && (
+                                    <Line
+                                        type="monotone"
+                                        dataKey="_newUsers"
+                                        stroke="#3b82f6"
+                                        strokeWidth={2.5}
+                                        connectNulls
+                                        dot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                )}
+                                {visibleEngagementLines.completedJobs && (
+                                    <Line
+                                        type="monotone"
+                                        dataKey="_completedJobs"
+                                        stroke="#f97316"
+                                        strokeWidth={2.5}
+                                        connectNulls
+                                        dot={{ r: 4, fill: '#f97316', stroke: '#fff', strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#f97316', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                )}
+                                {visibleEngagementLines.failedJobs && (
+                                    <Line
+                                        type="monotone"
+                                        dataKey="_failedJobs"
+                                        stroke="#ef4444"
+                                        strokeWidth={2.5}
+                                        connectNulls
+                                        dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                )}
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
