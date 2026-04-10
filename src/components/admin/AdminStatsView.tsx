@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, TrendingUp } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Line, ComposedChart,
@@ -155,14 +155,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [voiceTotals,   setVoiceTotals]   = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
     const [loading,       setLoading]       = useState(true);
     const [timeRange,     setTimeRange]     = useState<TimeRange>('7d');
-    const [visible,       setVisible]       = useState({
-        totalUsers: true,
-        generierungen: true,
-        revenue: true,
-        profit: true,
-    });
-    const toggle = (key: string) => setVisible(p => ({ ...p, [key]: !p[key as keyof typeof p] } as any));
-    const toggleKpi = (key: keyof typeof visible) => setVisible(p => ({ ...p, [key]: !p[key] }));
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -299,40 +291,15 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
 
-                {/* ── 1. PRIMARY KPI GRID ────────────────────────────────── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                    <MetricCard
-                        label="Nutzer gesamt"
-                        value={String(profiles.length)}
-                        subValue={`Heute +${newSignupsToday} · 7T +${newSignups7d}`}
-                        color="#3b82f6"
-                        checked={visible.totalUsers}
-                        onToggle={() => toggle('totalUsers')}
-                    />
-                    <MetricCard
-                        label="Generierungen"
-                        value={String(completedJobs.length)}
-                        subValue={`${uniqueUsersTotal} aktive Nutzer`}
-                        color="#f97316"
-                        checked={visible.generierungen}
-                        onToggle={() => toggle('generierungen')}
-                    />
-                    <MetricCard
-                        label="Einnahmen (90 Tage)"
-                        value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)}€` : '—'}
-                        subValue={`${stripePayCnt} Zahlungen`}
-                        color="#10b981"
-                        checked={visible.revenue}
-                        onToggle={() => toggle('revenue')}
-                    />
-                    <MetricCard
-                        label="Gewinn"
-                        value={profit != null ? `${profit.toFixed(0)}€` : '—'}
-                        subValue={margin != null ? `Marge ${margin.toFixed(0)}%` : '—'}
-                        color="#059669"
-                        checked={visible.profit}
-                        onToggle={() => toggle('profit')}
-                    />
+                {/* ── 1. KPI OVERVIEW CARD ────────────────────────────────── */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm">
+                    <SectionLabel>Überblick</SectionLabel>
+                    <div className="mt-6 space-y-4">
+                        <EfficiencyRow label="Nutzer gesamt"       value={String(profiles.length)}                                           sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
+                        <EfficiencyRow label="Generierungen"       value={String(completedJobs.length)}                                      sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
+                        <EfficiencyRow label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}     sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
+                        <EfficiencyRow label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                   sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
+                    </div>
                 </div>
 
                 {/* ── 2. MAIN CHART SECTION ────────────────────────────────── */}
@@ -340,14 +307,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Hauptmetriken</h3>
-                            <p className="text-xs text-zinc-400 mt-1">
-                                {[
-                                    visible.totalUsers && 'Nutzer',
-                                    visible.generierungen && 'Generierungen',
-                                    visible.revenue && 'Einnahmen',
-                                    visible.profit && 'Gewinn'
-                                ].filter(Boolean).join(' · ') || 'Wähle Metriken oben aus'}
-                            </p>
+                            <p className="text-xs text-zinc-400 mt-1">Nutzer · Generierungen · Einnahmen · Gewinn</p>
                         </div>
 
                         <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl self-start">
@@ -372,11 +332,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} dy={10} />
                                 <YAxis yAxisId="left" axisLine={false} tickLine={false}
                                     tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} />
-                                {(visible.revenue || visible.profit) && (
-                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
-                                        tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                        tickFormatter={v => `${Number(v).toFixed(0)}€`} />
-                                )}
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                    tickCount={2}
+                                    tickFormatter={v => `${Number(v).toFixed(0)}€`} />
                                 <Tooltip
                                     cursor={{ stroke: '#f4f4f5', strokeWidth: 2 }}
                                     contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '11px', padding: '12px' }}
@@ -388,10 +347,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                         return [value, name];
                                     }}
                                 />
-                                {visible.totalUsers && <Line yAxisId="left" type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#3b82f6', stroke:'#fff', strokeWidth:3 }} />}
-                                {visible.generierungen && <Line yAxisId="left" type="monotone" dataKey="_totalJobs" stroke="#f97316" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#f97316', stroke:'#fff', strokeWidth:3 }} />}
-                                {visible.revenue && <Line yAxisId="right" type="monotone" dataKey="_revenue" stroke="#10b981" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#10b981', stroke:'#fff', strokeWidth:3 }} />}
-                                {visible.profit && <Line yAxisId="right" type="monotone" dataKey="_profit" stroke="#059669" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#059669', stroke:'#fff', strokeWidth:3 }} />}
+                                <Line yAxisId="left"  type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#3b82f6', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="left"  type="monotone" dataKey="_totalJobs"  stroke="#f97316" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#f97316', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="right" type="monotone" dataKey="_revenue"    stroke="#10b981" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#10b981', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="right" type="monotone" dataKey="_profit"     stroke="#059669" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#059669', stroke:'#fff', strokeWidth:3 }} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
@@ -418,6 +377,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <div className="h-[180px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} tickFormatter={v => `${v}%`} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
                                         formatter={(v: any, n: string) => n === '_activationRate' ? [`${v}%`, 'Aktivierung'] : [`${v}%`, 'Fehler']}
@@ -438,6 +400,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <div className="h-[180px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={32} tickFormatter={v => `${Number(v).toFixed(2)}€`} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
                                         formatter={(v: any) => [`${Number(v).toFixed(2)}€`, 'AI Kosten']}
@@ -461,13 +426,14 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <div className="h-[180px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
                                         formatter={(v: any, n: string) => n === '_totalUsers' ? [v, 'Gesamt'] : [v, 'Aktiviert']}
                                     />
-                                    {/* Calculated activated users for trend - we don't have this explicitly in buckets but we can use activationRate * totalUsers */}
                                     <Line type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2} dot={false} opacity={0.3} />
-                                    {/* Approximation of activated trend via existing data */}
                                     <Line type="monotone" dataKey={(d: any) => Math.round((d._activationRate || 0) * (d._totalUsers || 0) / 100)} stroke="#10b981" strokeWidth={2.5} dot={false} />
                                 </ComposedChart>
                             </ResponsiveContainer>
@@ -504,12 +470,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </div>
                     </div>
 
-                    <div className="bg-zinc-900 dark:bg-zinc-800/50 rounded-[2rem] p-6 flex flex-col justify-center items-center text-center">
-                        <TrendingUp className="w-8 h-8 text-emerald-500 mb-3" />
-                        <h4 className="text-white font-bold text-sm tracking-tight">System Status: OK</h4>
-                        <p className="text-[10px] text-zinc-500 mt-1">Alle Schnittstellen antworten <br/> innerhalb der Latenz-SLA.</p>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -522,37 +482,6 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-zinc-400">{children}</p>
 );
 
-const MetricCard: React.FC<{
-    label: string; value: string; subValue: string; color: string; checked: boolean; onToggle: () => void;
-}> = ({ label, value, subValue, color, checked, onToggle }) => (
-    <button
-        onClick={onToggle}
-        className={`relative flex flex-col text-left p-6 md:p-8 rounded-[2rem] transition-all duration-300 active:scale-[0.98] border shadow-sm ${
-            checked
-                ? 'bg-white dark:bg-zinc-900 border-transparent'
-                : 'bg-zinc-100/50 dark:bg-zinc-900/30 border-transparent opacity-80'
-        }`}
-    >
-        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-400 mb-4">{label}</span>
-        <span className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-2 font-mono tracking-tighter">
-            {value}
-        </span>
-        <span className="text-[10px] text-zinc-500 font-medium">
-            {subValue}
-        </span>
-
-        {/* Selected Indicator */}
-        <div className={`absolute top-6 right-6 w-3 h-3 rounded-full transition-all duration-300 ${
-            checked ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-        }`} style={{ backgroundColor: color }} />
-
-        {/* Backdrop Glow */}
-        {checked && (
-            <div className="absolute inset-0 rounded-[2rem] pointer-events-none transition-opacity opacity-[0.03]"
-                 style={{ backgroundColor: color }} />
-        )}
-    </button>
-);
 
 const EfficiencyRow: React.FC<{ label: string; value: string; sub: string; color?: string }> = ({ label, value, sub, color }) => (
     <div className="flex items-center justify-between">
