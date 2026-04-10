@@ -35,10 +35,6 @@ const TIME_RANGES: { id: TimeRange; label: string }[] = [
     { id: 'monat', label: 'Monat' },
     { id: 'jahr', label: 'Jahr' },
 ];
-const FINANCE_TIME_RANGES: { id: TimeRange; label: string }[] = [
-    { id: 'monat', label: 'Monat' },
-    { id: 'jahr', label: 'Jahr' },
-];
 
 const getResolutionBucket = (job: any): ResolutionBucket => {
     const value = String(job.imageSize || job.qualityMode || job.model || '').toLowerCase();
@@ -124,8 +120,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [loading, setLoading] = useState(true);
 
     const [activityRange, setActivityRange] = useState<TimeRange>('tag');
-    const [financeRange, setFinanceRange] = useState<TimeRange>('monat');
-    const [visibleActivity, setVisibleActivity] = useState({ generierungen: true, newUsers: true, failedJobs: false });
+    const [visibleActivity, setVisibleActivity] = useState({ generierungen: true, newUsers: true, failedJobs: false, revenue: false, aiCost: false });
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -198,6 +193,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             if (!buckets[key]) return;
             const res = getResolutionBucket(job);
             buckets[key][res] = (buckets[key][res] || 0) + 1;
+            buckets[key]._aiCost = (buckets[key]._aiCost || 0) + calculateEstimatedGoogleCostEur(job);
         });
         failedJobs.forEach(job => {
             const key = makeBucketKey(new Date(job.createdAt), activityRange);
@@ -207,27 +203,19 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             const key = makeBucketKey(new Date(p.created_at), activityRange);
             if (buckets[key]) buckets[key]._newUsers = (buckets[key]._newUsers || 0) + 1;
         });
+        // Revenue only available on monat/jahr
+        if (activityRange === 'monat' || activityRange === 'jahr') {
+            Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
+                if (activityRange === 'monat') {
+                    if (buckets[monthKey]) buckets[monthKey]._revenue = (buckets[monthKey]._revenue || 0) + rev;
+                } else {
+                    const year = monthKey.split('-')[0];
+                    if (buckets[year]) buckets[year]._revenue = (buckets[year]._revenue || 0) + rev;
+                }
+            });
+        }
         return Object.values(buckets);
-    }, [completedJobs, failedJobs, profiles, activityRange]);
-
-    // ── Finance chart data ────────────────────────────────────────────────────
-    const financeData = useMemo(() => {
-        const buckets = seedBuckets(financeRange, now);
-        completedJobs.forEach(job => {
-            const key = makeBucketKey(new Date(job.createdAt), financeRange);
-            if (!buckets[key]) return;
-            buckets[key]._aiCost = (buckets[key]._aiCost || 0) + calculateEstimatedGoogleCostEur(job);
-        });
-        Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
-            if (financeRange === 'monat') {
-                if (buckets[monthKey]) buckets[monthKey]._revenue = (buckets[monthKey]._revenue || 0) + rev;
-            } else {
-                const year = monthKey.split('-')[0];
-                if (buckets[year]) buckets[year]._revenue = (buckets[year]._revenue || 0) + rev;
-            }
-        });
-        return Object.values(buckets);
-    }, [completedJobs, stripeMonthly, financeRange]);
+    }, [completedJobs, failedJobs, profiles, stripeMonthly, activityRange]);
 
     // ── Top users ─────────────────────────────────────────────────────────────
     const topUsers = useMemo(() => {
@@ -285,36 +273,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             trendColor={profit != null && profit >= 0 ? 'emerald' : 'red'} />
                     </div>
 
-                    {/* Finance chart: Einnahmen vs. Kosten */}
-                    <ChartCard
-                        title="Einnahmen vs. Kosten"
-                        timeRange={financeRange}
-                        onTimeRange={setFinanceRange}
-                        timeRanges={FINANCE_TIME_RANGES}
-                    >
-                        <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={financeData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                                <XAxis dataKey="_label" axisLine={false} tickLine={false}
-                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
-                                <YAxis axisLine={false} tickLine={false}
-                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                    tickFormatter={v => `${Number(v).toFixed(0)} €`} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
-                                    formatter={(value: any, name: string) => {
-                                        if (name === '_revenue') return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
-                                        if (name === '_aiCost') return [`${Number(value).toFixed(2)} €`, 'Kosten'];
-                                        return [value, name];
-                                    }}
-                                />
-                                <Bar dataKey="_revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={28} name="_revenue" />
-                                <Line type="monotone" dataKey="_aiCost" stroke="#ef4444" strokeWidth={2.5} connectNulls
-                                    dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
-                                    activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
-                            </ComposedChart>
-                        </ResponsiveContainer>
-                    </ChartCard>
                 </section>
 
                 {/* ══ AKTIVITÄT ════════════════════════════════════════════ */}
@@ -337,7 +295,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             trendColor={errorRate > 10 ? 'red' : 'emerald'} trendInvert />
                     </div>
 
-                    {/* Activity chart: Generierungen (stacked 1K/2K/4K) + optionale Linien */}
+                    {/* Activity chart */}
                     <ChartCard
                         title="Verlauf"
                         timeRange={activityRange}
@@ -347,6 +305,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             { key: 'generierungen', label: 'Generierungen', color: '#f97316' },
                             { key: 'newUsers',      label: 'Neue Nutzer',   color: '#3b82f6' },
                             { key: 'failedJobs',    label: 'Fehler',        color: '#ef4444' },
+                            { key: 'revenue',       label: 'Einnahmen',     color: '#10b981' },
+                            { key: 'aiCost',        label: 'Kosten',        color: '#a855f7' },
                         ]}
                         visibleToggles={visibleActivity}
                         onToggle={key => setVisibleActivity(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))}
@@ -356,30 +316,47 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
                                 <XAxis dataKey="_label" axisLine={false} tickLine={false}
                                     tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
-                                <YAxis axisLine={false} tickLine={false}
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false}
                                     tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} />
+                                {(visibleActivity.revenue || visibleActivity.aiCost) && (
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
+                                        tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                        tickFormatter={v => `${Number(v).toFixed(0)}€`} />
+                                )}
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
                                     formatter={(value: any, name: string) => {
                                         if (name === '_newUsers') return [value, 'Neue Nutzer'];
                                         if (name === '_failedJobs') return [value, 'Fehler'];
+                                        if (name === '_revenue') return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
+                                        if (name === '_aiCost') return [`${Number(value).toFixed(2)} €`, 'Kosten'];
                                         return [value, RESOLUTION_INFO[name as ResolutionBucket]?.label ?? name];
                                     }}
                                 />
                                 {visibleActivity.generierungen && resolutionKeys.map((res, i) => (
-                                    <Bar key={res} dataKey={res} stackId="gen"
+                                    <Bar key={res} yAxisId="left" dataKey={res} stackId="gen"
                                         fill={RESOLUTION_INFO[res].color}
                                         radius={i === resolutionKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
                                 ))}
                                 {visibleActivity.newUsers && (
-                                    <Line type="monotone" dataKey="_newUsers" stroke="#3b82f6" strokeWidth={2.5} connectNulls
+                                    <Line yAxisId="left" type="monotone" dataKey="_newUsers" stroke="#3b82f6" strokeWidth={2.5} connectNulls
                                         dot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
                                         activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
                                 )}
                                 {visibleActivity.failedJobs && (
-                                    <Line type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} connectNulls
+                                    <Line yAxisId="left" type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} connectNulls
                                         dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
                                         activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+                                )}
+                                {visibleActivity.revenue && (
+                                    <Line yAxisId="right" type="monotone" dataKey="_revenue" stroke="#10b981" strokeWidth={2.5} connectNulls
+                                        dot={{ r: 4, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
+                                )}
+                                {visibleActivity.aiCost && (
+                                    <Line yAxisId="right" type="monotone" dataKey="_aiCost" stroke="#a855f7" strokeWidth={2.5} connectNulls
+                                        dot={{ r: 4, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }} />
                                 )}
                             </ComposedChart>
                         </ResponsiveContainer>
