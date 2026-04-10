@@ -35,33 +35,33 @@ export const BlobBackground: React.FC<{ className?: string }> = ({ className }) 
             style={{ animation: 'blob-fadein 1s ease-out both' }}
         >
             <style>{BLOB_KEYFRAMES}</style>
-            {/* Warm orange blob */}
+            {/* Zinc blob 1 */}
             <div
                 className="absolute rounded-full"
                 style={{
                     width: '60%', height: '60%',
                     top: '20%', left: '10%',
-                    background: 'radial-gradient(circle, rgba(234,88,12,0.15) 0%, rgba(234,88,12,0) 70%)',
+                    background: 'radial-gradient(circle, rgba(161,161,170,0.14) 0%, rgba(161,161,170,0) 70%)',
                     animation: 'blob-drift-1 8s ease-in-out infinite',
                 }}
             />
-            {/* Zinc grey blob */}
+            {/* Zinc blob 2 */}
             <div
                 className="absolute rounded-full"
                 style={{
                     width: '55%', height: '55%',
                     top: '30%', right: '5%',
-                    background: 'radial-gradient(circle, rgba(161,161,170,0.12) 0%, rgba(161,161,170,0) 70%)',
+                    background: 'radial-gradient(circle, rgba(161,161,170,0.10) 0%, rgba(161,161,170,0) 70%)',
                     animation: 'blob-drift-2 10s ease-in-out infinite',
                 }}
             />
-            {/* Amber accent blob */}
+            {/* Zinc blob 3 */}
             <div
                 className="absolute rounded-full"
                 style={{
                     width: '45%', height: '45%',
                     bottom: '15%', left: '25%',
-                    background: 'radial-gradient(circle, rgba(251,146,60,0.12) 0%, rgba(251,146,60,0) 70%)',
+                    background: 'radial-gradient(circle, rgba(161,161,170,0.10) 0%, rgba(161,161,170,0) 70%)',
                     animation: 'blob-drift-3 12s ease-in-out infinite',
                 }}
             />

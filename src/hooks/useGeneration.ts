@@ -253,8 +253,8 @@ export const useGeneration = ({
 
         // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
         // Other modes: shorter timeouts are fine.
-        const stuckAttempts = is4K ? 45 : 18;   // 225s vs 90s
-        const maxAttempts   = is4K ? 55 : 24;   // 275s vs 120s absolute ceiling
+        const stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s  (-20%)
+        const maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling (-20%)
 
         let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job

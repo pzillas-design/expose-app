@@ -151,6 +151,12 @@ html:not(.dark) {
   }
 }
 
+/* Slow ghost shimmer with pause — used on generating thumbnails */
+@keyframes shimmer-ghost {
+  0%, 35%  { transform: translateX(-150%); }
+  75%, 100% { transform: translateX(250%); }
+}
+
 @keyframes loading-bar {
   0% {
     transform: translateX(-100%);

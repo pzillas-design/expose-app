@@ -3,7 +3,6 @@ import { CanvasImage, AnnotationObject, TranslationFunction } from '@/types';
 import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
-import { BlobBackground } from '@/components/ui/BlobBackground';
 import { downloadImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { storageService, THUMB_OPTIONS } from '@/services/storageService';
@@ -356,7 +355,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
             <div
                 className={`relative h-full w-full overflow-hidden ${Theme.Colors.PanelBg} ${(isActive || isMarked) ? 'ring-1 ring-black dark:ring-white burst-in' : ''}`}
             >
-                {/* Loading Skeleton — hidden when generating (BlobBackground takes over) */}
+                {/* Loading Skeleton — hidden when image ready or generating (ghost shimmer takes over) */}
                 <div
                     className={`absolute inset-0 transition-opacity duration-200 ${(isImageReady || image.isGenerating) ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 >
@@ -412,7 +411,12 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                 {/* Halo animation while generating — also brief "finishing" flash at 100% */}
                 {(image.isGenerating || isFinishing) && (
                     <>
-                        {image.isGenerating && <BlobBackground className="z-30" />}
+                        {/* Grey ghost shimmer while generating — neutral, no orange */}
+                {image.isGenerating && (
+                    <div className="absolute inset-0 z-30 overflow-hidden bg-zinc-900/8 dark:bg-zinc-100/5">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 dark:via-white/10 to-transparent skew-x-12 animate-[shimmer-ghost_4s_ease-in-out_infinite]" />
+                    </div>
+                )}
                         <GenerationProgressBar
                             startTime={image.generationStartTime}
                             estimatedDuration={image.estimatedDuration}
