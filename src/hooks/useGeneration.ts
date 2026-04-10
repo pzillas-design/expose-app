@@ -237,7 +237,7 @@ export const useGeneration = ({
         attachedJobIds.current.add(jobId);
 
         let attempts = 0;
-        const maxAttempts = 90; // 7.5 minutes at 5s interval — covers worst-case Pro·4K (2-5 min)
+        const maxAttempts = 24; // 2 min absolute timeout at 5s interval
         let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
@@ -362,10 +362,8 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2b. Detect stuck "processing" jobs — only after 6 min (72×5s)
-            // We wait longer than the Edge Function's own background limit so the webhook
-            // still has a chance to fire for slow Pro·4K jobs before we declare failure.
-            if (jobData?.status === 'processing' && attempts >= 72) {
+            // 2b. Detect stuck "processing" jobs — after 1 min (12×5s)
+            if (jobData?.status === 'processing' && attempts >= 12) {
                 // Mark failed in DB — credit refund happens server-side via pg_cron
                 try {
                     const { data: job } = await supabase
@@ -450,7 +448,8 @@ export const useGeneration = ({
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>,
-        groupParentId?: string
+        groupParentId?: string,
+        _autoRetryCount = 0
     ) => {
         if (!sourceImage) return;
 
@@ -698,16 +697,18 @@ export const useGeneration = ({
             }
         };
 
-        // Register one-shot retry for transient failures (timeout / 520)
-        pendingRetryFns.current[newId] = () => {
-            void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId);
-        };
+        // Register one-shot retry for transient failures (timeout / 520) — max 3 auto-retries
+        if (_autoRetryCount < 3) {
+            pendingRetryFns.current[newId] = () => {
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, _autoRetryCount + 1);
+            };
+        }
 
         processGenerationAsync();
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
-    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
+    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = [], _autoRetryCount = 0) => {
         const cost = COSTS[modelId] || 0;
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
@@ -833,10 +834,12 @@ export const useGeneration = ({
             }
         };
 
-        // Register one-shot retry for transient failures (timeout / 520)
-        pendingRetryFns.current[newId] = () => {
-            void performNewGeneration(prompt, modelId, ratio, attachments);
-        };
+        // Register one-shot retry for transient failures (timeout / 520) — max 3 auto-retries
+        if (_autoRetryCount < 3) {
+            pendingRetryFns.current[newId] = () => {
+                void performNewGeneration(prompt, modelId, ratio, attachments, _autoRetryCount + 1);
+            };
+        }
 
         processNewSync();
     }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);
