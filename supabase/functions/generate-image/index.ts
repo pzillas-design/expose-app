@@ -299,15 +299,19 @@ Deno.serve(async (req) => {
         // Response is returned immediately below so the client is never left waiting.
         // EdgeRuntime.waitUntil keeps the function alive up to 5 minutes after response.
         EdgeRuntime.waitUntil((async () => {
+            const taskStartMs = Date.now();
             let bgStage = 'init';
+            let concurrentCount = 0;
             let apiRequestPayload: any = {}; // hoisted — updateStage can reference it from first call
-            // Fire-and-forget stage tracker — writes current_stage to request_payload so
-            // the admin/client can see where a killed background task got stuck.
+            // Fire-and-forget stage tracker — writes current_stage + elapsed to request_payload.
             const updateStage = (stage: string, extra?: Record<string, any>) => {
                 bgStage = stage;
+                const elapsedMs = Date.now() - taskStartMs;
+                logInfo('Stage', `→ ${stage} (elapsed: ${elapsedMs}ms, job: ${newId})`);
                 const payload = { ...apiRequestPayload };
                 payload.current_stage = stage;
                 payload.stage_updated_at = new Date().toISOString();
+                payload.stage_elapsed_ms = elapsedMs;
                 if (extra) Object.assign(payload, extra);
                 supabaseAdmin.from('generation_jobs')
                     .update({ request_payload: payload })
@@ -315,14 +319,29 @@ Deno.serve(async (req) => {
                     .then(() => {});
             };
             try {
+                // Mark as init immediately so 'unknown' stage never appears in failed jobs
+                updateStage('init');
+
+                // Count concurrent jobs early for diagnostics
+                const { count: _cc } = await supabaseAdmin
+                    .from('generation_jobs')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'processing');
+                concurrentCount = _cc || 0;
+                logInfo('BG Task Start', `job=${newId} quality=${qualityMode} user=${user.id} concurrent=${concurrentCount}`);
+
                 // Prepare source image (base64)
                 updateStage('prepare_source');
                 let finalSourceBase64 = null;
                 if (sourceStoragePath) {
-                    // Direct admin storage download — no HTTP, no signed URL expiry, no timeout risk
-                    const { data: storageBlob, error: storageErr } = await supabaseAdmin.storage
-                        .from('user-content')
-                        .download(sourceStoragePath);
+                    // Direct admin storage download with 20s timeout
+                    const STORAGE_TIMEOUT_MS = 20_000;
+                    const { data: storageBlob, error: storageErr } = await Promise.race([
+                        supabaseAdmin.storage.from('user-content').download(sourceStoragePath),
+                        new Promise<never>((_, reject) =>
+                            setTimeout(() => reject(new Error(`Storage download timed out after ${STORAGE_TIMEOUT_MS / 1000}s`)), STORAGE_TIMEOUT_MS)
+                        )
+                    ]);
                     if (storageErr) throw new Error(`Storage download failed: ${storageErr.message}`);
                     const arrayBuffer = await storageBlob.arrayBuffer();
                     finalSourceBase64 = encodeBase64(new Uint8Array(arrayBuffer));
@@ -575,7 +594,18 @@ Deno.serve(async (req) => {
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
-                logError('Background Task', errorMsg, { jobId: newId, failureStage: bgStage });
+                const elapsedMs = Date.now() - taskStartMs;
+                logError('Background Task', errorMsg, { jobId: newId, failureStage: bgStage, elapsedMs, qualityMode, concurrentCount });
+
+                // Write structured error to error_logs for debugging
+                supabaseAdmin.from('error_logs').insert({
+                    user_id: user.id,
+                    user_email: user.email,
+                    message: `[${bgStage}] ${errorMsg}`,
+                    context: JSON.stringify({ jobId: newId, stage: bgStage, elapsedMs, qualityMode, concurrentCount }),
+                    source: 'edge-function',
+                    url: newId,
+                }).then(() => {});
 
                 // Refund credits on background failure
                 if (refundData) {

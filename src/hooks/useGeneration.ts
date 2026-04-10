@@ -249,7 +249,7 @@ export const useGeneration = ({
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 if (retryFn) {
-                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    showToast(t('toast_auto_retry'), 'success');
                     retryFn();
                 } else {
                     showToast(translateError('timeout', t), 'error');
@@ -354,7 +354,7 @@ export const useGeneration = ({
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 if (retryFn) {
-                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    showToast(t('toast_auto_retry'), 'success');
                     retryFn();
                 } else {
                     showToast(translateError(jobError, t), "error");
@@ -380,7 +380,7 @@ export const useGeneration = ({
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 if (retryFn) {
-                    showToast('Generation-Timeout — automatischer Neuversuch…', 'success');
+                    showToast(t('toast_auto_retry'), 'success');
                     retryFn();
                 } else {
                     showToast(translateError('timeout', t), 'error');
