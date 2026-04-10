@@ -2,6 +2,7 @@ import React, { useEffect, Suspense, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
+import { useModalStack } from '@/components/ui/ModalStack';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
@@ -79,6 +80,7 @@ export function App() {
     // Track whether last image selection was from a user action (arrows/thumbs) vs programmatic (generation)
     const isUserNavigationRef = React.useRef(false);
 
+    const { closeTop: closeTopModal } = useModalStack();
     const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
     const [isDetailExiting, setIsDetailExiting] = React.useState(false);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
@@ -692,21 +694,8 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
         },
         goBack: async () => {
-            // Priority 1: Close any open modal first
-            if (isSettingsModalOpen) {
-                setIsSettingsModalOpen(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geschlossen.' : 'Settings closed.' };
-            }
-            if (isCreditsModalOpen) {
-                setIsCreditsModalOpen(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
-            }
-            if (isCreationModalOpen) {
-                setIsCreationModalOpen(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
-            }
-            if (isAuthModalOpen) {
-                setIsAuthModalOpen(false);
+            // Priority 1: Close topmost modal if any is open
+            if (closeTopModal()) {
                 return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
             }
 

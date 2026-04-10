@@ -250,7 +250,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                     if (file) { loadImage(file); return; }
 
                     // 2. DataTransfer item (same-browser tab drag)
-                    const imageItem = Array.from(e.dataTransfer.items).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+                    const imageItem = Array.from(e.dataTransfer.items as unknown as DataTransferItem[]).find(i => i.kind === 'file' && i.type.startsWith('image/'));
                     if (imageItem) {
                         const f = imageItem.getAsFile();
                         if (f) { loadImage(f); return; }
