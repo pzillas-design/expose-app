@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Bar, Line, ComposedChart
@@ -55,6 +55,8 @@ const calculateEstimatedGoogleCostEur = (job: any): number => {
     return (inputUsd + outputUsd) * USD_TO_EUR;
 };
 
+const EXCLUDED_EMAILS = ['pzillas@gmail.com'];
+
 type VisibleSeries = {
     generierungen: boolean;
     newUsers: boolean;
@@ -87,16 +89,19 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
                     adminService.getJobs(),
                     adminService.getVoiceSessions(200),
-                    supabase.from('profiles').select('id, created_at'),
+                    supabase.from('profiles').select('id, created_at, email'),
                     supabase.auth.getSession()
                 ]);
-                setJobs(jobsData);
-                setProfiles(profilesResult.data || []);
+                const filteredJobs = jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail));
+                const filteredVoice = voiceSessions.filter((s: any) => !EXCLUDED_EMAILS.includes(s.userEmail));
+                setJobs(filteredJobs);
+                const filteredProfiles = (profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email));
+                setProfiles(filteredProfiles);
 
                 const VOICE_USD_PER_MIN = 0.043;
-                const totalVoiceMinutes = voiceSessions.reduce((sum: number, s: any) => sum + (s.durationMs || 0) / 60000, 0);
+                const totalVoiceMinutes = filteredVoice.reduce((sum: number, s: any) => sum + (s.durationMs || 0) / 60000, 0);
                 setVoiceStats({
-                    sessionCount: voiceSessions.length,
+                    sessionCount: filteredVoice.length,
                     totalMinutes: totalVoiceMinutes,
                     costEur: totalVoiceMinutes * VOICE_USD_PER_MIN * USD_TO_EUR,
                 });
@@ -300,44 +305,83 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             <AdminViewHeader title="Statistiken" />
             <div className="px-6 md:px-8 py-6 space-y-6">
 
-                {/* ── Kompakte Kennzahlen-Liste ── */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
-                    <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-
-                        {/* Finanzen */}
-                        <StatRow label="Einnahmen"
+                {/* ── Kennzahlen ── */}
+                <div className="space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 px-1">Finanzen</p>
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        <StatTile
+                            label="Einnahmen"
                             value={stripeRevenue != null ? `${stripeRevenue.toFixed(2)} €` : '—'}
                             sub={`${stripePaymentCount} Zahlungen`}
-                            valueColor="text-emerald-600 dark:text-emerald-400" />
-                        <StatRow label="AI-Kosten (Bilder)"
+                            valueColor="text-emerald-600 dark:text-emerald-400"
+                            trend={stripeRevenue != null && stripeRevenue > 0 ? 'up' : 'neutral'}
+                            trendColor="emerald"
+                        />
+                        <StatTile
+                            label="Kosten Bilder"
                             value={`${googleAiCost.toFixed(2)} €`}
                             sub={`${completedJobs.length} Generierungen`}
-                            valueColor="text-red-500" />
-                        <StatRow label="AI-Kosten (Voice)"
+                            valueColor="text-red-500"
+                            trend="neutral"
+                        />
+                        <StatTile
+                            label="Kosten Voice"
                             value={`${voiceStats.costEur.toFixed(2)} €`}
                             sub={`${voiceStats.sessionCount} Sessions · ${Math.round(voiceStats.totalMinutes)} Min.`}
-                            valueColor="text-orange-500" />
-                        <StatRow label="Gewinn"
+                            valueColor="text-orange-500"
+                            trend="neutral"
+                        />
+                        <StatTile
+                            label="Gewinn"
                             value={profit != null ? `${profit.toFixed(2)} €` : '—'}
                             sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'}
                             valueColor={profit != null && profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}
-                            bold />
+                            trend={profit != null ? (profit >= 0 ? 'up' : 'down') : 'neutral'}
+                            trendColor={profit != null && profit >= 0 ? 'emerald' : 'red'}
+                        />
+                    </div>
 
-                        {/* Nutzer */}
-                        <StatRow label="Nutzer gesamt" value={String(profiles.length)} sub="" />
-                        <StatRow label="Aktivierungsrate"
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 px-1 pt-2">Nutzer</p>
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        <StatTile
+                            label="Nutzer gesamt"
+                            value={String(profiles.length)}
+                            sub={`${uniqueUsersWithJobs} aktiv`}
+                            trend="neutral"
+                        />
+                        <StatTile
+                            label="Aktivierungsrate"
                             value={`${activationRate.toFixed(1)} %`}
-                            sub={`${uniqueUsersWithJobs} von ${profiles.length} haben generiert`} />
-                        <StatRow label="Neue Nutzer"
+                            sub={`${uniqueUsersWithJobs} von ${profiles.length}`}
+                            trend={activationRate >= 20 ? 'up' : 'down'}
+                            trendColor={activationRate >= 20 ? 'emerald' : 'zinc'}
+                        />
+                        <StatTile
+                            label="Neue Nutzer heute"
                             value={String(newSignupsToday)}
-                            sub={`Heute · 7 T: ${newSignups7d} · 30 T: ${newSignups30d}`} />
-                        <StatRow label="Ø Generierungen / Nutzer"
+                            sub={`7 T: ${newSignups7d} · 30 T: ${newSignups30d}`}
+                            trend={newSignupsToday >= Math.round(newSignups7d / 7) ? 'up' : 'down'}
+                            trendColor={newSignupsToday >= Math.round(newSignups7d / 7) ? 'emerald' : 'zinc'}
+                        />
+                        <StatTile
+                            label="Ø Gen. / Nutzer"
                             value={avgGenerationsPerUser.toFixed(1)}
-                            sub={`${completedJobs.length} Abschlüsse · ${uniqueUsersTotal} aktive Nutzer`} />
-                        <StatRow label="Fehlerrate"
+                            sub={`${completedJobs.length} Jobs · ${uniqueUsersTotal} Nutzer`}
+                            trend={avgGenerationsPerUser >= 3 ? 'up' : 'neutral'}
+                            trendColor="emerald"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                        <StatTile
+                            label="Fehlerrate"
                             value={`${errorRate.toFixed(1)} %`}
-                            sub={`${failedJobs.length} Fehler · ${jobs.length} Jobs gesamt`}
-                            valueColor={errorRate > 10 ? 'text-red-500' : undefined} />
+                            sub={`${failedJobs.length} Fehler · ${jobs.length} Jobs`}
+                            valueColor={errorRate > 10 ? 'text-red-500' : errorRate > 5 ? 'text-orange-500' : undefined}
+                            trend={errorRate > 10 ? 'up' : errorRate < 3 ? 'down' : 'neutral'}
+                            trendColor={errorRate > 10 ? 'red' : 'emerald'}
+                            trendInvert
+                        />
                     </div>
                 </div>
 
@@ -580,20 +624,38 @@ function isoWeekKey(d: Date): string {
     return `${year}-W${String(weekNo).padStart(2, '0')}`;
 }
 
-// ── StatRow ─────────────────────────────────────────────────────────────────
-const StatRow = ({ label, value, sub, valueColor, bold }: {
-    label: string; value: string; sub: string;
-    valueColor?: string; bold?: boolean;
-}) => (
-    <div className={`flex items-center justify-between px-6 py-3.5 ${bold ? 'bg-zinc-50/50 dark:bg-zinc-800/30' : ''}`}>
-        <span className={`text-sm ${bold ? 'font-semibold text-zinc-700 dark:text-zinc-300' : 'text-zinc-500'}`}>
-            {label}
-        </span>
-        <div className="flex items-baseline gap-3 text-right">
-            {sub && <span className="text-[11px] text-zinc-400">{sub}</span>}
-            <span className={`text-sm font-bold font-mono ${valueColor ?? 'text-zinc-900 dark:text-zinc-100'}`}>
+// ── StatTile ─────────────────────────────────────────────────────────────────
+type TrendDir = 'up' | 'down' | 'neutral';
+type TrendColor = 'emerald' | 'red' | 'zinc' | undefined;
+
+const TREND_COLORS: Record<NonNullable<TrendColor>, string> = {
+    emerald: 'text-emerald-500',
+    red: 'text-red-500',
+    zinc: 'text-zinc-400',
+};
+
+const StatTile = ({ label, value, sub, valueColor, trend = 'neutral', trendColor, trendInvert }: {
+    label: string; value: string; sub?: string;
+    valueColor?: string; trend?: TrendDir; trendColor?: TrendColor; trendInvert?: boolean;
+}) => {
+    const effectiveTrend = trendInvert
+        ? (trend === 'up' ? 'down' : trend === 'down' ? 'up' : 'neutral')
+        : trend;
+    const colorClass = trendColor ? TREND_COLORS[trendColor] : 'text-zinc-400';
+    const TrendIcon = effectiveTrend === 'up' ? TrendingUp : effectiveTrend === 'down' ? TrendingDown : Minus;
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-medium text-zinc-400 leading-none">{label}</span>
+                {trend !== 'neutral' && (
+                    <TrendIcon className={`w-3.5 h-3.5 shrink-0 ${colorClass}`} />
+                )}
+            </div>
+            <div className={`text-xl font-bold font-mono tracking-tight leading-none ${valueColor ?? 'text-zinc-900 dark:text-zinc-100'}`}>
                 {value}
-            </span>
+            </div>
+            {sub && <div className="text-[10px] text-zinc-400 leading-tight">{sub}</div>}
         </div>
-    </div>
-);
+    );
+};
