@@ -252,6 +252,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
     const isInteracting = useRef(false);
     const lastSelectedIdRef = useRef<string | null>(null);
+    // Always-current ref to selectedImage — prevents stale closure in useImperativeHandle callbacks
+    const selectedImageRef = useRef(selectedImage);
+    useEffect(() => { selectedImageRef.current = selectedImage; }, [selectedImage]);
     const { confirm } = useItemDialog();
 
     // Inspiration / Reference Image
@@ -375,9 +378,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useImperativeHandle(ref, () => ({
         handleInteractionStart: () => { isInteracting.current = true; onInteractionStartExt?.(); },
         handleInteractionEnd: () => {
-            if (!selectedImage || !isInteracting.current) return;
+            // Use ref instead of closure — selectedImage may be stale if a chip was deleted
+            // during the interaction (e.g. brush stroke + chip delete race)
+            const current = selectedImageRef.current;
+            if (!current || !isInteracting.current) return;
             isInteracting.current = false;
-            updateAnnotationsWithHistory(selectedImage.annotations || [], true);
+            updateAnnotationsWithHistory(current.annotations || [], true);
             onInteractionEndExt?.();
         }
     }));

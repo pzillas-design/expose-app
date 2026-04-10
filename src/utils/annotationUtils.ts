@@ -163,8 +163,9 @@ export async function generateAnnotationImage(
             const scaledX = ann.x * scaleX;
             const scaledY = ann.y * scaleY;
 
-            // Draw Emoji if exists
-            if (ann.emoji) {
+            // Draw Emoji only when there is no text label — text takes priority.
+            // If both are set, only the text chip is rendered to avoid double markers.
+            if (ann.emoji && !ann.text) {
                 ctx.font = `${(ann.width || 48) * scaleX}px serif`; // Scale emoji size
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
@@ -174,7 +175,7 @@ export async function generateAnnotationImage(
             // Draw text label with white text on red background
             if (ann.text) {
                 const fontSize = 20 * scaleX; // Scale font size
-                const textY = scaledY + (ann.emoji ? 30 * scaleY : 0); // Scale offset
+                const textY = scaledY; // always at stamp center when emoji suppressed
 
                 ctx.font = `bold ${fontSize}px sans-serif`;
                 ctx.textAlign = 'center';
