@@ -784,7 +784,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 suppressContentEditableWarning
                                                 role="textbox"
                                                 data-placeholder="Text eingeben"
-                                                onInput={(e) => updateAnnotation(ann.id, { text: e.currentTarget.textContent || '' })}
+                                                onInput={(e) => updateAnnotation(ann.id, { text: e.currentTarget.textContent || '', emoji: undefined })}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setActiveMaskId(null); } e.stopPropagation(); }}
                                                 className={`chip-editable bg-transparent outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] max-w-[160px] text-zinc-900 dark:text-zinc-100 mr-1.5 break-words`}
                                                 onMouseDown={(e) => e.stopPropagation()}
