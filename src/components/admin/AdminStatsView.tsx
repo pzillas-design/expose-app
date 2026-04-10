@@ -304,7 +304,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1700px] mx-auto w-full">
 
-                {/* ── 1. 6-BOX GRID (Überblick + 5 modules) ───────────────── */}
+                {/* ── 1. 6-BOX GRID ────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
 
                     {/* Box 1: Überblick */}
@@ -318,100 +318,84 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </div>
                     </div>
 
-                    {/* Module A: Stability & Conversion */}
+                    {/* Box 2: Conversion — Wie viele Nutzer haben tatsächlich generiert? */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <SectionLabel>Stabilität & Conversion</SectionLabel>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-[#8b5cf6]" />
-                                    <span className="text-[10px] text-zinc-500 font-bold font-mono">{activationRate.toFixed(0)}%</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-[#ef4444]" />
-                                    <span className="text-[10px] text-zinc-500 font-bold font-mono">{errorRate.toFixed(1)}%</span>
-                                </div>
-                            </div>
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Conversion</SectionLabel>
+                            <MiniLegend items={[{ color: '#8b5cf6', label: '% Nutzer mit mind. 1 Bild' }]} />
                         </div>
-                        <div className="h-[180px] w-full mt-auto">
+                        <p className="text-[10px] text-zinc-400 mb-5">Anteil registrierter Nutzer, die mindestens einmal generiert haben</p>
+                        <div className="h-[200px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
                                     <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} tickFormatter={v => `${v}%`} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any, n: string) => n === '_activationRate' ? [`${v}%`, 'Aktivierung'] : [`${v}%`, 'Fehler']}
-                                    />
-                                    <Line type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={2.5} dot={false} />
-                                    <Line type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} dot={false} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={30} tickFormatter={v => `${v}%`} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any) => [`${v}%`, 'Aktivierungsrate']} />
+                                    <Line type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* Module B: AI Investment */}
+                    {/* Box 3: Fehlerrate — Wie stabil läuft die Generierung? */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <SectionLabel>AI Investment (Flow)</SectionLabel>
-                            <span className="text-[10px] text-zinc-500 font-bold font-mono">Gesamt: {totalAiCost.toFixed(2)}€</span>
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Fehlerrate</SectionLabel>
+                            <MiniLegend items={[{ color: '#ef4444', label: 'Fehlgeschlagene Jobs' }]} />
                         </div>
-                        <div className="h-[180px] w-full mt-auto">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={32} tickFormatter={v => `${Number(v).toFixed(2)}€`} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any) => [`${Number(v).toFixed(2)}€`, 'AI Kosten']}
-                                    />
-                                    <Line type="monotone" dataKey="_aiCost" stroke="#a855f7" strokeWidth={2.5} dot={false} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Module C: Activation Trend */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
-                            <SectionLabel>Nutzer-Wachstum Trend</SectionLabel>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-emerald-500 font-bold font-mono">{uniqueUsersWithJobs}</span>
-                                <span className="text-[10px] text-zinc-300 font-bold font-mono">/</span>
-                                <span className="text-[10px] text-zinc-500 font-bold font-mono">{profiles.length}</span>
-                            </div>
-                        </div>
-                        <div className="h-[180px] w-full mt-auto">
+                        <p className="text-[10px] text-zinc-400 mb-5">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
+                        <div className="h-[200px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
                                     <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any, n: string) => n === '_totalUsers' ? [v, 'Gesamt'] : [v, 'Aktiviert']}
-                                    />
-                                    <Line type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2} dot={false} opacity={0.3} />
-                                    <Line type="monotone" dataKey={(d: any) => Math.round((d._activationRate || 0) * (d._totalUsers || 0) / 100)} stroke="#10b981" strokeWidth={2.5} dot={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any) => [v, 'Fehler']} />
+                                    <Line type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
 
-                    {/* ── Additional Metrics Row ───────────────────────────── */}
+                    {/* Box 4: Nutzer-Wachstum */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <SectionLabel>Top Nutzer (Aktivität)</SectionLabel>
-                        <div className="mt-4 space-y-3">
-                            {topUsers.slice(0, 5).map(user => (
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Nutzer-Wachstum</SectionLabel>
+                            <MiniLegend items={[{ color: '#3b82f6', label: 'Registriert' }, { color: '#10b981', label: 'Aktiv (haben generiert)' }]} />
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mb-5">Kumulierte Registrierungen vs. Nutzer die mindestens 1× generiert haben</p>
+                        <div className="h-[200px] w-full mt-auto">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any, n: string) => [v, n === '_totalUsers' ? 'Registriert' : 'Aktiv']} />
+                                    <Line type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2} dot={false} opacity={0.4} />
+                                    <Line type="monotone" dataKey={(d: any) => Math.round((d._activationRate || 0) * (d._totalUsers || 0) / 100)} stroke="#10b981" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Box 5: Top Nutzer */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <SectionLabel>Aktivste Nutzer</SectionLabel>
+                        <p className="text-[10px] text-zinc-400 mt-1 mb-5">Nutzer mit den meisten abgeschlossenen Generierungen</p>
+                        <div className="space-y-3">
+                            {topUsers.slice(0, 9).map(user => (
                                 <div key={user.name} className="flex flex-col gap-1">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
-                                        <span className="text-[10px] font-mono font-bold text-zinc-400 shrink-0">{user.count}</span>
+                                        <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
+                                        <span className="text-[10px] font-mono font-bold text-zinc-400 shrink-0">{user.count}×</span>
                                     </div>
-                                    <div className="h-1 rounded-full bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden">
+                                    <div className="h-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                                         <div className="h-full rounded-full bg-gradient-to-r from-zinc-400 to-zinc-600"
-                                            style={{ width: maxUserCount > 0 ? `${(user.count/maxUserCount)*100}%` : '0%' }} />
+                                            style={{ width: maxUserCount > 0 ? `${(user.count / maxUserCount) * 100}%` : '0%' }} />
                                     </div>
                                 </div>
                             ))}
@@ -422,9 +406,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <div>
                             <SectionLabel>Dienste & Effizienz</SectionLabel>
                             <div className="mt-6 space-y-4">
-                                <EfficiencyRow label="Voice Kosten" value={`${voiceTotals.costEur.toFixed(2)}€`} sub="ElevenLabs / Google" />
-                                <EfficiencyRow label="Ø Bilder / Nutzer" value={avgGen.toFixed(1)} sub="Inkl. 4K" />
-                                <EfficiencyRow label="Aktive Jobs" value={String(jobs.filter(j => j.status === 'processing').length)} sub="In Bearbeitung" />
+                                <EfficiencyRow label="Voice Kosten" value={`${voiceTotals.costEur.toFixed(2)} €`} sub="ElevenLabs / Google Gemini Live" />
+                                <EfficiencyRow label="Ø Bilder / Nutzer" value={avgGen.toFixed(1)} sub="Durchschnittliche Nutzungstiefe inkl. 4K" />
                             </div>
                         </div>
                     </div>
@@ -525,6 +508,17 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-400">{children}</p>
+);
+
+const MiniLegend: React.FC<{ items: { color: string; label: string }[] }> = ({ items }) => (
+    <div className="flex items-center gap-3 flex-wrap">
+        {items.map(item => (
+            <div key={item.label} className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                <span className="text-[10px] text-zinc-500 font-medium">{item.label}</span>
+            </div>
+        ))}
+    </div>
 );
 
 
