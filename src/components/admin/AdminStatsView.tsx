@@ -14,8 +14,13 @@ interface AdminStatsViewProps {
 }
 
 type TimeRange = 'tag' | 'woche' | 'monat' | 'jahr';
-type ResolutionBucket = '1K' | '2K' | '4K' | 'Other';
-type SeriesKey = 'generierungen' | 'newUsers' | 'failedJobs' | 'revenue' | 'aiCost';
+type ResolutionBucket = '0.5K' | '1K' | '2K' | '4K' | 'Other';
+type SeriesKey =
+    | 'totalUsers' | 'activationRate'
+    | 'generierungen'
+    | 'res05K' | 'res1K' | 'res2K' | 'res4K'
+    | 'voiceSessions' | 'failedJobs'
+    | 'revenue' | 'aiCost' | 'profit';
 
 const USD_TO_EUR = 0.92;
 const GOOGLE_INPUT_TEXT_IMAGE_USD_PER_M = 0.5;
@@ -23,34 +28,48 @@ const GOOGLE_OUTPUT_IMAGE_USD_PER_M = 60;
 const EXCLUDED_EMAILS = ['pzillas@gmail.com'];
 
 const RESOLUTION_INFO: Record<ResolutionBucket, { label: string; color: string; fallbackUsd: number }> = {
-    '1K': { label: '1K', color: '#eab308', fallbackUsd: 0.067 },
-    '2K': { label: '2K', color: '#f97316', fallbackUsd: 0.101 },
-    '4K': { label: '4K', color: '#ef4444', fallbackUsd: 0.151 },
-    'Other': { label: 'Other', color: '#71717a', fallbackUsd: 0 },
+    '0.5K': { label: '0.5K', color: '#a3a3a3', fallbackUsd: 0.04 },
+    '1K':   { label: '1K',   color: '#eab308', fallbackUsd: 0.067 },
+    '2K':   { label: '2K',   color: '#f97316', fallbackUsd: 0.101 },
+    '4K':   { label: '4K',   color: '#ef4444', fallbackUsd: 0.151 },
+    'Other':{ label: 'Other',color: '#71717a', fallbackUsd: 0 },
 };
-const RESOLUTION_ORDER: ResolutionBucket[] = ['1K', '2K', '4K', 'Other'];
+const RESOLUTION_ORDER: ResolutionBucket[] = ['0.5K', '1K', '2K', '4K', 'Other'];
 
-const TIME_RANGES: { id: TimeRange; label: string }[] = [
-    { id: 'tag', label: 'Tag' },
-    { id: 'woche', label: 'Woche' },
-    { id: 'monat', label: 'Monat' },
-    { id: 'jahr', label: 'Jahr' },
-];
+// Resolution → SeriesKey mapping
+const RES_TO_SERIES: Partial<Record<ResolutionBucket, SeriesKey>> = {
+    '0.5K': 'res05K', '1K': 'res1K', '2K': 'res2K', '4K': 'res4K',
+};
+// SeriesKey → dataKey in chart
+const SERIES_DATAKEY: Partial<Record<SeriesKey, string>> = {
+    res05K: '0.5K', res1K: '1K', res2K: '2K', res4K: '4K',
+    totalUsers: '_totalUsers', activationRate: '_activationRate',
+    voiceSessions: '_voiceSessions', failedJobs: '_failedJobs',
+    revenue: '_revenue', aiCost: '_aiCost', profit: '_profit',
+};
 
-// Series that can appear in the chart
-const SERIES_CONFIG: { key: SeriesKey; label: string; color: string; axis: 'left' | 'right'; note?: string }[] = [
-    { key: 'generierungen', label: 'Generierungen', color: '#f97316', axis: 'left' },
-    { key: 'newUsers',      label: 'Neue Nutzer',   color: '#3b82f6', axis: 'left' },
-    { key: 'failedJobs',    label: 'Fehler',        color: '#ef4444', axis: 'left' },
-    { key: 'revenue',       label: 'Einnahmen',     color: '#10b981', axis: 'right', note: 'Monat/Jahr' },
-    { key: 'aiCost',        label: 'AI-Kosten',     color: '#a855f7', axis: 'right' },
+type SeriesConfig = { key: SeriesKey; label: string; color: string; axis: 'left' | 'right'; note?: string; type: 'bar' | 'line' };
+const SERIES_CONFIG: SeriesConfig[] = [
+    { key: 'totalUsers',     label: 'Nutzer gesamt',    color: '#3b82f6', axis: 'left',  type: 'line' },
+    { key: 'activationRate', label: 'Aktivierungsrate', color: '#8b5cf6', axis: 'right', type: 'line', note: '%' },
+    { key: 'generierungen',  label: 'Generierungen',    color: '#f97316', axis: 'left',  type: 'bar' },
+    { key: 'res4K',          label: '4K',               color: '#ef4444', axis: 'left',  type: 'bar' },
+    { key: 'res2K',          label: '2K',               color: '#f97316', axis: 'left',  type: 'bar' },
+    { key: 'res1K',          label: '1K',               color: '#eab308', axis: 'left',  type: 'bar' },
+    { key: 'res05K',         label: '0.5K',             color: '#a3a3a3', axis: 'left',  type: 'bar' },
+    { key: 'voiceSessions',  label: 'Voice Sessions',   color: '#06b6d4', axis: 'left',  type: 'bar' },
+    { key: 'failedJobs',     label: 'Fehler',           color: '#dc2626', axis: 'left',  type: 'line' },
+    { key: 'revenue',        label: 'Einnahmen',        color: '#10b981', axis: 'right', type: 'line', note: 'Monat/Jahr' },
+    { key: 'aiCost',         label: 'AI-Kosten',        color: '#a855f7', axis: 'right', type: 'line' },
+    { key: 'profit',         label: 'Gewinn',           color: '#059669', axis: 'right', type: 'line', note: 'Monat/Jahr' },
 ];
 
 const getResolutionBucket = (job: any): ResolutionBucket => {
     const value = String(job.imageSize || job.qualityMode || job.model || '').toLowerCase();
-    if (value.includes('4k')) return '4K';
-    if (value.includes('2k')) return '2K';
-    if (value.includes('1k')) return '1K';
+    if (value.includes('4k'))  return '4K';
+    if (value.includes('2k'))  return '2K';
+    if (value.includes('1k'))  return '1K';
+    if (value.includes('0.5') || value.includes('05k') || value.includes('sd') || value.includes('512')) return '0.5K';
     return 'Other';
 };
 
@@ -82,13 +101,13 @@ function isoWeekKey(d: Date): string {
     return `${year}-W${String(weekNo).padStart(2, '0')}`;
 }
 function makeBucketKey(d: Date, range: TimeRange): string {
-    if (range === 'tag') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (range === 'tag')   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     if (range === 'woche') return isoWeekKey(d);
-    if (range === 'monat') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (range === 'monat') return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     return String(d.getFullYear());
 }
 function makeBucketLabel(d: Date, range: TimeRange): string {
-    if (range === 'tag') return d.toLocaleString('de-DE', { day: '2-digit', month: 'short' });
+    if (range === 'tag')   return d.toLocaleString('de-DE', { day: '2-digit', month: 'short' });
     if (range === 'woche') return `KW${isoWeekNum(d)}`;
     if (range === 'monat') return d.toLocaleString('de-DE', { month: 'short' });
     return String(d.getFullYear());
@@ -96,34 +115,39 @@ function makeBucketLabel(d: Date, range: TimeRange): string {
 function seedBuckets(range: TimeRange, now: Date): Record<string, any> {
     const b: Record<string, any> = {};
     if (range === 'tag') {
-        for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i); b[makeBucketKey(d, range)] = { _label: makeBucketLabel(d, range) }; }
+        for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
     } else if (range === 'woche') {
-        for (let i = 9; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i * 7); b[makeBucketKey(d, range)] = { _label: makeBucketLabel(d, range) }; }
+        for (let i = 9; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i*7); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
     } else if (range === 'monat') {
-        for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); b[makeBucketKey(d, range)] = { _label: makeBucketLabel(d, range) }; }
+        for (let i = 5; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth()-i, 1); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
     } else {
-        for (let i = 2; i >= 0; i--) { const d = new Date(now.getFullYear() - i, 0, 1); b[makeBucketKey(d, range)] = { _label: makeBucketLabel(d, range) }; }
+        for (let i = 2; i >= 0; i--) { const d = new Date(now.getFullYear()-i, 0, 1); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
     }
     return b;
 }
 
+const TIME_RANGES: { id: TimeRange; label: string }[] = [
+    { id: 'tag', label: 'Tag' }, { id: 'woche', label: 'Woche' },
+    { id: 'monat', label: 'Monat' }, { id: 'jahr', label: 'Jahr' },
+];
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
-    const [jobs, setJobs] = useState<any[]>([]);
-    const [profiles, setProfiles] = useState<any[]>([]);
-    const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
-    const [stripePaymentCount, setStripePaymentCount] = useState(0);
-    const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
-    const [voiceStats, setVoiceStats] = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
-    const [loading, setLoading] = useState(true);
-
-    const [timeRange, setTimeRange] = useState<TimeRange>('tag');
-    const [visible, setVisible] = useState<Record<SeriesKey, boolean>>({
+    const [jobs,           setJobs]           = useState<any[]>([]);
+    const [profiles,       setProfiles]       = useState<any[]>([]);
+    const [rawVoice,       setRawVoice]       = useState<any[]>([]);
+    const [stripeRevenue,  setStripeRevenue]  = useState<number | null>(null);
+    const [stripePayCount, setStripePayCount] = useState(0);
+    const [stripeMonthly,  setStripeMonthly]  = useState<Record<string, number>>({});
+    const [voiceTotals,    setVoiceTotals]    = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
+    const [loading,        setLoading]        = useState(true);
+    const [timeRange,      setTimeRange]      = useState<TimeRange>('tag');
+    const [visible,        setVisible]        = useState<Record<SeriesKey, boolean>>({
+        totalUsers: true, activationRate: false,
         generierungen: true,
-        newUsers: true,
-        failedJobs: false,
-        revenue: false,
-        aiCost: false,
+        res4K: false, res2K: false, res1K: false, res05K: false,
+        voiceSessions: false, failedJobs: false,
+        revenue: false, aiCost: false, profit: false,
     });
 
     const toggle = (key: SeriesKey) => setVisible(prev => ({ ...prev, [key]: !prev[key] }));
@@ -134,17 +158,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             try {
                 const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
                     adminService.getJobs(),
-                    adminService.getVoiceSessions(200),
+                    adminService.getVoiceSessions(500),
                     supabase.from('profiles').select('id, created_at, email'),
                     supabase.auth.getSession()
                 ]);
-                setJobs(jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail)));
-                setProfiles((profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email)));
-
+                const filteredJobs  = jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail));
                 const filteredVoice = voiceSessions.filter((s: any) => !EXCLUDED_EMAILS.includes(s.userEmail));
+                const filteredProfs = (profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email));
+                setJobs(filteredJobs);
+                setProfiles(filteredProfs);
+                setRawVoice(filteredVoice);
+
                 const VOICE_USD_PER_MIN = 0.043;
                 const mins = filteredVoice.reduce((s: number, v: any) => s + (v.durationMs || 0) / 60000, 0);
-                setVoiceStats({ sessionCount: filteredVoice.length, totalMinutes: mins, costEur: mins * VOICE_USD_PER_MIN * USD_TO_EUR });
+                setVoiceTotals({ sessionCount: filteredVoice.length, totalMinutes: mins, costEur: mins * VOICE_USD_PER_MIN * USD_TO_EUR });
 
                 if (session?.access_token) {
                     const start = new Date(); start.setDate(start.getDate() - 90);
@@ -154,10 +181,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     });
                     if (!res.error && res.data) {
                         setStripeRevenue(res.data.totalRevenue ?? 0);
-                        setStripePaymentCount(res.data.paymentCount ?? 0);
+                        setStripePayCount(res.data.paymentCount ?? 0);
                         setStripeMonthly(res.data.monthlyRevenue ?? {});
-                    } else { setStripeRevenue(0); setStripePaymentCount(0); setStripeMonthly({}); }
-                } else { setStripeRevenue(0); setStripePaymentCount(0); setStripeMonthly({}); }
+                    } else { setStripeRevenue(0); setStripePayCount(0); setStripeMonthly({}); }
+                } else { setStripeRevenue(0); setStripePayCount(0); setStripeMonthly({}); }
             } catch (e) {
                 console.error('AdminStatsView fetch error:', e);
             } finally { setLoading(false); }
@@ -169,7 +196,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const completedJobs = jobs.filter(j => j.status === 'completed');
     const failedJobs    = jobs.filter(j => j.status === 'failed');
     const googleAiCost  = completedJobs.reduce((acc, j) => acc + calculateEstimatedGoogleCostEur(j), 0);
-    const totalAiCost   = googleAiCost + voiceStats.costEur;
+    const totalAiCost   = googleAiCost + voiceTotals.costEur;
     const profit        = stripeRevenue != null ? stripeRevenue - totalAiCost : null;
     const margin        = stripeRevenue != null && stripeRevenue > 0 && profit != null ? (profit / stripeRevenue) * 100 : null;
 
@@ -185,29 +212,57 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const uniqueUsersTotal    = new Set(jobs.map(j => j.userEmail || j.userName)).size;
     const avgGen              = uniqueUsersTotal > 0 ? completedJobs.length / uniqueUsersTotal : 0;
 
-    const resolutionKeys = useMemo(() => {
-        const found = new Set(completedJobs.map(getResolutionBucket));
-        return RESOLUTION_ORDER.filter(k => found.has(k) && k !== 'Other');
+    // Resolution counts for sidebar display
+    const resCounts = useMemo(() => {
+        const counts: Partial<Record<ResolutionBucket, number>> = {};
+        completedJobs.forEach(j => { const r = getResolutionBucket(j); counts[r] = (counts[r] || 0) + 1; });
+        return counts;
     }, [completedJobs]);
 
     // ── Chart data ────────────────────────────────────────────────────────────
     const chartData = useMemo(() => {
         const buckets = seedBuckets(timeRange, now);
+        const keys = Object.keys(buckets);
+
+        // First job per user (for activation rate)
+        const firstJobTs = new Map<string, number>();
+        completedJobs.forEach(job => {
+            const uid = job.userEmail || job.userName;
+            const ts = new Date(job.createdAt).getTime();
+            if (!firstJobTs.has(uid) || firstJobTs.get(uid)! > ts) firstJobTs.set(uid, ts);
+        });
+
+        // Resolution counts + AI cost + total jobs per bucket
         completedJobs.forEach(job => {
             const key = makeBucketKey(new Date(job.createdAt), timeRange);
             if (!buckets[key]) return;
             const res = getResolutionBucket(job);
             buckets[key][res] = (buckets[key][res] || 0) + 1;
+            buckets[key]._totalJobs = (buckets[key]._totalJobs || 0) + 1;
             buckets[key]._aiCost = (buckets[key]._aiCost || 0) + calculateEstimatedGoogleCostEur(job);
         });
+
+        // Failed jobs
         failedJobs.forEach(job => {
             const key = makeBucketKey(new Date(job.createdAt), timeRange);
             if (buckets[key]) buckets[key]._failedJobs = (buckets[key]._failedJobs || 0) + 1;
         });
+
+        // New users per bucket (for cumulative sum)
         profiles.forEach(p => {
             const key = makeBucketKey(new Date(p.created_at), timeRange);
-            if (buckets[key]) buckets[key]._newUsers = (buckets[key]._newUsers || 0) + 1;
+            if (buckets[key]) buckets[key]._newInPeriod = (buckets[key]._newInPeriod || 0) + 1;
         });
+
+        // Voice sessions per bucket
+        rawVoice.forEach(s => {
+            const ts = s.startedAt || s.createdAt || s.started_at;
+            if (!ts) return;
+            const key = makeBucketKey(new Date(ts), timeRange);
+            if (buckets[key]) buckets[key]._voiceSessions = (buckets[key]._voiceSessions || 0) + 1;
+        });
+
+        // Revenue (only for monat/jahr)
         if (timeRange === 'monat' || timeRange === 'jahr') {
             Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
                 if (timeRange === 'monat') {
@@ -218,8 +273,42 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 }
             });
         }
+
+        // Post-process: cumulative totalUsers + activation rate
+        // We need to count profiles and activated users UP TO each bucket's start date
+        // For the displayed window, compute running sums over the bucket keys in order
+        let cumulativeUsers = 0;
+        let cumulativeActivated = 0;
+
+        // Count profiles/activations BEFORE the window starts
+        const firstBucketStart = keys.length > 0 ? getBucketStartTs(keys[0], timeRange) : 0;
+        profiles.forEach(p => {
+            if (new Date(p.created_at).getTime() < firstBucketStart) cumulativeUsers++;
+        });
+        firstJobTs.forEach((ts, uid) => {
+            if (ts < firstBucketStart) cumulativeActivated++;
+        });
+
+        keys.forEach(key => {
+            cumulativeUsers     += buckets[key]._newInPeriod || 0;
+            // Count users whose first job falls in this bucket
+            const bucketStart = getBucketStartTs(key, timeRange);
+            const bucketEnd   = getBucketEndTs(key, timeRange);
+            firstJobTs.forEach(ts => {
+                if (ts >= bucketStart && ts < bucketEnd) cumulativeActivated++;
+            });
+            buckets[key]._totalUsers     = cumulativeUsers;
+            buckets[key]._activationRate = cumulativeUsers > 0
+                ? Math.round((cumulativeActivated / cumulativeUsers) * 100)
+                : 0;
+            // Profit
+            if (buckets[key]._revenue != null && buckets[key]._aiCost != null) {
+                buckets[key]._profit = buckets[key]._revenue - buckets[key]._aiCost;
+            }
+        });
+
         return Object.values(buckets);
-    }, [completedJobs, failedJobs, profiles, stripeMonthly, timeRange]);
+    }, [completedJobs, failedJobs, profiles, rawVoice, stripeMonthly, timeRange]);
 
     // ── Top users ─────────────────────────────────────────────────────────────
     const topUsers = useMemo(() => {
@@ -233,12 +322,17 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     }, [completedJobs]);
     const maxUserCount = Math.max(...topUsers.map(u => u.count), 0);
 
-    const showRightAxis = visible.revenue || visible.aiCost;
+    const showRightAxis = visible.revenue || visible.aiCost || visible.activationRate || visible.profit;
 
     const activationDonut = [
-        { name: 'Aktiviert',  value: uniqueUsersWithJobs,                               color: '#10b981' },
+        { name: 'Aktiviert',  value: uniqueUsersWithJobs,                                color: '#10b981' },
         { name: 'Noch nicht', value: Math.max(0, profiles.length - uniqueUsersWithJobs), color: '#e4e4e7' },
     ];
+
+    // Which bars exist in data
+    const existingResKeys: ResolutionBucket[] = ['4K', '2K', '1K', '0.5K'].filter(
+        r => completedJobs.some(j => getResolutionBucket(j) === r)
+    ) as ResolutionBucket[];
 
     if (loading) return (
         <div className="h-full flex items-center justify-center">
@@ -250,17 +344,16 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         <div className="flex flex-col h-full">
             <AdminViewHeader title="Statistiken" />
 
-            {/* ── 1/3 + 2/3 layout ── */}
             <div className="flex flex-1 min-h-0 overflow-hidden">
 
-                {/* ── LEFT: Metrics list ─────────────────────────────────── */}
+                {/* ── LEFT: Metrics list ────────────────────────────────── */}
                 <aside className="w-72 shrink-0 border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto">
                     <div className="p-4 space-y-6">
 
-                        {/* Chart-able series */}
+                        {/* Chart series */}
                         <div>
                             <ListSectionLabel>Im Graphen</ListSectionLabel>
-                            <div className="space-y-1 mt-2">
+                            <div className="space-y-0.5 mt-2">
                                 {SERIES_CONFIG.map(s => (
                                     <SeriesRow
                                         key={s.key}
@@ -269,47 +362,32 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                         checked={visible[s.key]}
                                         onToggle={() => toggle(s.key)}
                                         note={s.note}
-                                        value={
-                                            s.key === 'generierungen' ? String(completedJobs.length) :
-                                            s.key === 'newUsers'      ? `${newSignups30d} (30T)` :
-                                            s.key === 'failedJobs'    ? String(failedJobs.length) :
-                                            s.key === 'revenue'       ? (stripeRevenue != null ? `${stripeRevenue.toFixed(2)} €` : '—') :
-                                            s.key === 'aiCost'        ? `${googleAiCost.toFixed(2)} €` : '—'
-                                        }
-                                        sub={
-                                            s.key === 'generierungen' ? `${uniqueUsersTotal} aktive Nutzer` :
-                                            s.key === 'newUsers'      ? `Heute ${newSignupsToday} · 7T ${newSignups7d}` :
-                                            s.key === 'failedJobs'    ? `${errorRate.toFixed(1)} % Fehlerrate` :
-                                            s.key === 'revenue'       ? `${stripePaymentCount} Zahlungen` :
-                                            s.key === 'aiCost'        ? `${completedJobs.length} Generierungen` : ''
-                                        }
+                                        value={seriesCurrentValue(s.key, {
+                                            completedJobs, failedJobs, profiles, rawVoice,
+                                            stripeRevenue, voiceTotals, googleAiCost, profit,
+                                            activationRate, newSignups30d, resCounts,
+                                        })}
+                                        sub={seriesSubValue(s.key, {
+                                            uniqueUsersTotal, stripePayCount, newSignupsToday, newSignups7d,
+                                            errorRate, voiceTotals, newSignups30d,
+                                        })}
                                     />
                                 ))}
                             </div>
                         </div>
 
-                        {/* Display-only metrics */}
+                        {/* Display-only */}
                         <div>
                             <ListSectionLabel>Kennzahlen</ListSectionLabel>
-                            <div className="space-y-px mt-2">
-                                <DisplayRow label="Gewinn"
-                                    value={profit != null ? `${profit.toFixed(2)} €` : '—'}
-                                    sub={margin != null ? `Marge ${margin.toFixed(0)} %` : undefined}
-                                    trend={profit != null ? (profit >= 0 ? 'up' : 'down') : undefined}
-                                    trendColor={profit != null ? (profit >= 0 ? '#10b981' : '#ef4444') : undefined} />
+                            <div className="mt-2 space-y-px">
                                 <DisplayRow label="Kosten Voice"
-                                    value={`${voiceStats.costEur.toFixed(2)} €`}
-                                    sub={`${voiceStats.sessionCount} Sessions · ${Math.round(voiceStats.totalMinutes)} Min.`} />
-                                <DisplayRow label="Nutzer gesamt"
-                                    value={String(profiles.length)}
-                                    sub={`${uniqueUsersWithJobs} haben generiert`} />
-                                <DisplayRow label="Aktivierungsrate"
-                                    value={`${activationRate.toFixed(1)} %`}
-                                    sub={`${uniqueUsersWithJobs} von ${profiles.length}`}
-                                    trend={activationRate >= 20 ? 'up' : 'down'}
-                                    trendColor={activationRate >= 20 ? '#10b981' : '#a1a1aa'} />
-                                <DisplayRow label="Ø Gen. / Nutzer"
-                                    value={avgGen.toFixed(1)} />
+                                    value={`${voiceTotals.costEur.toFixed(2)} €`}
+                                    sub={`${voiceTotals.sessionCount} Sessions · ${Math.round(voiceTotals.totalMinutes)} Min.`} />
+                                <DisplayRow label="Ø Gen. / Nutzer" value={avgGen.toFixed(1)} />
+                                <DisplayRow label="Fehlerrate"
+                                    value={`${errorRate.toFixed(1)} %`}
+                                    trend={errorRate > 10 ? 'up' : errorRate < 3 ? 'down' : undefined}
+                                    trendColor={errorRate > 10 ? '#ef4444' : '#10b981'} />
                             </div>
                         </div>
 
@@ -338,7 +416,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     </span>
                                     <span className="flex items-center gap-1.5 text-[10px] text-zinc-400">
                                         <span className="w-2 h-2 rounded-full bg-zinc-200 inline-block" />
-                                        Noch nicht ({Math.max(0, profiles.length - uniqueUsersWithJobs)})
+                                        ({Math.max(0, profiles.length - uniqueUsersWithJobs)})
                                     </span>
                                 </div>
                             </div>
@@ -366,11 +444,10 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     </div>
                 </aside>
 
-                {/* ── RIGHT: Chart ───────────────────────────────────────── */}
+                {/* ── RIGHT: Chart ─────────────────────────────────────── */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
                     <div className="p-6 flex flex-col gap-4 h-full">
 
-                        {/* Time range */}
                         <div className="flex items-center justify-between">
                             <p className="text-xs text-zinc-400">
                                 {SERIES_CONFIG.filter(s => visible[s.key]).map(s => s.label).join(' · ') || 'Nichts ausgewählt'}
@@ -389,10 +466,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             </div>
                         </div>
 
-                        {/* Chart */}
                         <div className="flex-1 min-h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData} barSize={timeRange === 'tag' ? 14 : timeRange === 'woche' ? 22 : 32}>
+                                <ComposedChart data={chartData} barSize={timeRange === 'tag' ? 12 : timeRange === 'woche' ? 20 : 28}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
                                     <XAxis dataKey="_label" axisLine={false} tickLine={false}
                                         tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
@@ -401,32 +477,71 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                     {showRightAxis && (
                                         <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
                                             tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                            tickFormatter={v => `${Number(v).toFixed(0)}€`} />
+                                            tickFormatter={v => {
+                                                if (visible.activationRate && !visible.revenue && !visible.aiCost && !visible.profit) return `${v}%`;
+                                                return `${Number(v).toFixed(0)}€`;
+                                            }} />
                                     )}
                                     <Tooltip
                                         contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
                                         formatter={(value: any, name: string) => {
-                                            if (name === '_newUsers')   return [value, 'Neue Nutzer'];
-                                            if (name === '_failedJobs') return [value, 'Fehler'];
-                                            if (name === '_revenue')    return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
-                                            if (name === '_aiCost')     return [`${Number(value).toFixed(2)} €`, 'AI-Kosten'];
-                                            return [value, RESOLUTION_INFO[name as ResolutionBucket]?.label ?? name];
+                                            const s = SERIES_CONFIG.find(s => SERIES_DATAKEY[s.key] === name || s.key.replace('res', '').replace('0', '0.') === name);
+                                            if (name === '_totalJobs')      return [value, 'Generierungen'];
+                                            if (name === '_totalUsers')     return [value, 'Nutzer gesamt'];
+                                            if (name === '_activationRate') return [`${value} %`, 'Aktivierungsrate'];
+                                            if (name === '_voiceSessions')  return [value, 'Voice Sessions'];
+                                            if (name === '_failedJobs')     return [value, 'Fehler'];
+                                            if (name === '_revenue')        return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
+                                            if (name === '_aiCost')         return [`${Number(value).toFixed(2)} €`, 'AI-Kosten'];
+                                            if (name === '_profit')         return [`${Number(value).toFixed(2)} €`, 'Gewinn'];
+                                            if (RESOLUTION_INFO[name as ResolutionBucket]) return [value, RESOLUTION_INFO[name as ResolutionBucket].label];
+                                            return [value, name];
                                         }}
                                     />
-                                    {visible.generierungen && resolutionKeys.map((res, i) => (
-                                        <Bar key={res} yAxisId="left" dataKey={res} stackId="gen"
-                                            fill={RESOLUTION_INFO[res].color}
-                                            radius={i === resolutionKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
-                                    ))}
-                                    {visible.newUsers && (
-                                        <Line yAxisId="left" type="monotone" dataKey="_newUsers" stroke="#3b82f6" strokeWidth={2.5} connectNulls
+
+                                    {/* Generierungen gesamt (single bar, no subdivision) */}
+                                    {visible.generierungen && (
+                                        <Bar yAxisId="left" dataKey="_totalJobs" stackId="total"
+                                            fill="#f97316" radius={[4, 4, 0, 0]} />
+                                    )}
+
+                                    {/* Resolution bars — individual, separately toggleable */}
+                                    {existingResKeys.map((res, i) => {
+                                        const seriesKey = RES_TO_SERIES[res];
+                                        if (!seriesKey || !visible[seriesKey]) return null;
+                                        const isTop = existingResKeys.filter(r => {
+                                            const sk = RES_TO_SERIES[r]; return sk && visible[sk];
+                                        }).slice(-1)[0] === res;
+                                        return (
+                                            <Bar key={res} yAxisId="left" dataKey={res} stackId="gen"
+                                                fill={RESOLUTION_INFO[res].color}
+                                                radius={isTop ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                                        );
+                                    })}
+
+                                    {/* Voice bars */}
+                                    {visible.voiceSessions && (
+                                        <Bar yAxisId="left" dataKey="_voiceSessions" stackId="voice"
+                                            fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                                    )}
+
+                                    {/* Lines — left axis */}
+                                    {visible.totalUsers && (
+                                        <Line yAxisId="left" type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2.5} connectNulls
                                             dot={{ r: 3, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
                                             activeDot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
                                     )}
                                     {visible.failedJobs && (
-                                        <Line yAxisId="left" type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} connectNulls
-                                            dot={{ r: 3, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
-                                            activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+                                        <Line yAxisId="left" type="monotone" dataKey="_failedJobs" stroke="#dc2626" strokeWidth={2.5} connectNulls
+                                            dot={{ r: 3, fill: '#dc2626', stroke: '#fff', strokeWidth: 2 }}
+                                            activeDot={{ r: 5, fill: '#dc2626', stroke: '#fff', strokeWidth: 2 }} />
+                                    )}
+
+                                    {/* Lines — right axis */}
+                                    {visible.activationRate && (
+                                        <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={2.5} connectNulls
+                                            dot={{ r: 3, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }}
+                                            activeDot={{ r: 5, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }} />
                                     )}
                                     {visible.revenue && (
                                         <Line yAxisId="right" type="monotone" dataKey="_revenue" stroke="#10b981" strokeWidth={2.5} connectNulls
@@ -438,10 +553,14 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                             dot={{ r: 3, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }}
                                             activeDot={{ r: 5, fill: '#a855f7', stroke: '#fff', strokeWidth: 2 }} />
                                     )}
+                                    {visible.profit && (
+                                        <Line yAxisId="right" type="monotone" dataKey="_profit" stroke="#059669" strokeWidth={2.5} connectNulls
+                                            dot={{ r: 3, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
+                                            activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }} />
+                                    )}
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
-
                     </div>
                 </main>
 
@@ -450,8 +569,61 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 };
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Bucket timestamp helpers ───────────────────────────────────────────────────
+function getBucketStartTs(key: string, range: TimeRange): number {
+    if (range === 'tag') return new Date(key).getTime();
+    if (range === 'woche') {
+        const [year, week] = key.split('-W').map(Number);
+        const jan1 = new Date(Date.UTC(year, 0, 1));
+        return jan1.getTime() + (week - 1) * 7 * 86400000;
+    }
+    if (range === 'monat') return new Date(key + '-01').getTime();
+    return new Date(key + '-01-01').getTime();
+}
+function getBucketEndTs(key: string, range: TimeRange): number {
+    if (range === 'tag')   return getBucketStartTs(key, range) + 86400000;
+    if (range === 'woche') return getBucketStartTs(key, range) + 7 * 86400000;
+    if (range === 'monat') {
+        const [y, m] = key.split('-').map(Number);
+        return new Date(y, m, 1).getTime(); // first day of next month
+    }
+    return new Date(Number(key) + 1, 0, 1).getTime();
+}
 
+// ── Sidebar value helpers ─────────────────────────────────────────────────────
+function seriesCurrentValue(key: SeriesKey, d: any): string {
+    switch (key) {
+        case 'totalUsers':     return String(d.profiles.length);
+        case 'activationRate': return `${d.activationRate.toFixed(1)} %`;
+        case 'generierungen':  return String(d.completedJobs.length);
+        case 'res4K':          return String(d.resCounts['4K'] || 0);
+        case 'res2K':          return String(d.resCounts['2K'] || 0);
+        case 'res1K':          return String(d.resCounts['1K'] || 0);
+        case 'res05K':         return String(d.resCounts['0.5K'] || 0);
+        case 'voiceSessions':  return String(d.voiceTotals.sessionCount);
+        case 'failedJobs':     return String(d.failedJobs.length);
+        case 'revenue':        return d.stripeRevenue != null ? `${d.stripeRevenue.toFixed(2)} €` : '—';
+        case 'aiCost':         return `${d.googleAiCost.toFixed(2)} €`;
+        case 'profit':         return d.profit != null ? `${d.profit.toFixed(2)} €` : '—';
+        default:               return '—';
+    }
+}
+function seriesSubValue(key: SeriesKey, d: any): string | undefined {
+    switch (key) {
+        case 'generierungen':  return `${d.uniqueUsersTotal} aktive Nutzer`;
+        case 'totalUsers':     return `Heute +${d.newSignupsToday} · 7T +${d.newSignups7d}`;
+        case 'activationRate': return `haben mind. 1x generiert`;
+        case 'res4K': case 'res2K': case 'res1K': case 'res05K': return 'Generierungen';
+        case 'voiceSessions':  return `${Math.round(d.voiceTotals.totalMinutes)} Min.`;
+        case 'failedJobs':     return `${d.errorRate.toFixed(1)} % Fehlerrate`;
+        case 'revenue':        return `${d.stripePayCount} Zahlungen`;
+        case 'aiCost':         return undefined;
+        case 'profit':         return undefined;
+        default: return undefined;
+    }
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
 const ListSectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-1">{children}</p>
 );
@@ -460,22 +632,14 @@ const SeriesRow: React.FC<{
     color: string; label: string; checked: boolean; onToggle: () => void;
     value: string; sub?: string; note?: string;
 }> = ({ color, label, checked, onToggle, value, sub, note }) => (
-    <button
-        onClick={onToggle}
+    <button onClick={onToggle}
         className={`w-full flex items-start gap-2.5 px-2 py-2 rounded-lg text-left transition-colors ${
             checked ? 'bg-zinc-50 dark:bg-zinc-800/60' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/40'
-        }`}
-    >
-        {/* Checkbox */}
+        }`}>
         <div className="mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border transition-all"
-            style={checked
-                ? { backgroundColor: color, borderColor: color }
-                : { backgroundColor: 'transparent', borderColor: '#d4d4d8' }
-            }>
+            style={checked ? { backgroundColor: color, borderColor: color } : { borderColor: '#d4d4d8' }}>
             {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
         </div>
-
-        {/* Content */}
         <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
                 <span className={`text-xs font-semibold leading-none ${checked ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500'}`}>
@@ -483,7 +647,7 @@ const SeriesRow: React.FC<{
                 </span>
                 {note && <span className="text-[9px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded-full">{note}</span>}
             </div>
-            <div className={`text-sm font-bold font-mono mt-0.5 leading-none`} style={{ color: checked ? color : '#a1a1aa' }}>
+            <div className="text-sm font-bold font-mono mt-0.5 leading-none" style={{ color: checked ? color : '#a1a1aa' }}>
                 {value}
             </div>
             {sub && <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{sub}</div>}
@@ -492,8 +656,7 @@ const SeriesRow: React.FC<{
 );
 
 const DisplayRow: React.FC<{
-    label: string; value: string; sub?: string;
-    trend?: 'up' | 'down'; trendColor?: string;
+    label: string; value: string; sub?: string; trend?: 'up' | 'down'; trendColor?: string;
 }> = ({ label, value, sub, trend, trendColor }) => (
     <div className="flex items-center justify-between px-2 py-2">
         <div className="min-w-0">
@@ -501,11 +664,9 @@ const DisplayRow: React.FC<{
             {sub && <div className="text-[10px] text-zinc-400 leading-tight">{sub}</div>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-            {trend && (
-                trend === 'up'
-                    ? <TrendingUp className="w-3 h-3" style={{ color: trendColor }} />
-                    : <TrendingDown className="w-3 h-3" style={{ color: trendColor }} />
-            )}
+            {trend && (trend === 'up'
+                ? <TrendingUp className="w-3 h-3" style={{ color: trendColor }} />
+                : <TrendingDown className="w-3 h-3" style={{ color: trendColor }} />)}
             <span className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-100">{value}</span>
         </div>
     </div>
