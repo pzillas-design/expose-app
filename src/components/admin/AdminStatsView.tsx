@@ -291,73 +291,19 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
 
-                {/* ── 1. KPI OVERVIEW CARD ────────────────────────────────── */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm">
-                    <SectionLabel>Überblick</SectionLabel>
-                    <div className="mt-6 space-y-4">
-                        <EfficiencyRow label="Nutzer gesamt"       value={String(profiles.length)}                                           sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
-                        <EfficiencyRow label="Generierungen"       value={String(completedJobs.length)}                                      sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
-                        <EfficiencyRow label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}     sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
-                        <EfficiencyRow label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                   sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
-                    </div>
-                </div>
+                {/* ── 1. 6-BOX GRID (Überblick + 5 modules) ───────────────── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
 
-                {/* ── 2. MAIN CHART SECTION ────────────────────────────────── */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                        <div>
-                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Hauptmetriken</h3>
-                            <p className="text-xs text-zinc-400 mt-1">Nutzer · Generierungen · Einnahmen · Gewinn</p>
-                        </div>
-
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl self-start">
-                            {TIME_RANGES.map(tr => (
-                                <button key={tr.id} onClick={() => setTimeRange(tr.id)}
-                                    className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${
-                                        timeRange === tr.id
-                                            ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-                                    }`}>
-                                    {tr.label}
-                                </button>
-                            ))}
+                    {/* Box 1: Überblick */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
+                        <SectionLabel>Überblick</SectionLabel>
+                        <div className="mt-6 space-y-4">
+                            <EfficiencyRow dot="#3b82f6" label="Nutzer gesamt"       value={String(profiles.length)}                                        sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
+                            <EfficiencyRow dot="#f97316" label="Generierungen"       value={String(completedJobs.length)}                                   sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
+                            <EfficiencyRow dot="#10b981" label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}  sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
+                            <EfficiencyRow dot="#059669" label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
                         </div>
                     </div>
-
-                    <div className="h-[300px] md:h-[400px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                <XAxis dataKey="_label" axisLine={false} tickLine={false}
-                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} dy={10} />
-                                <YAxis yAxisId="left" axisLine={false} tickLine={false}
-                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} />
-                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
-                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                    tickCount={2}
-                                    tickFormatter={v => `${Number(v).toFixed(0)}€`} />
-                                <Tooltip
-                                    cursor={{ stroke: '#f4f4f5', strokeWidth: 2 }}
-                                    contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '11px', padding: '12px' }}
-                                    formatter={(value: any, name: string) => {
-                                        if (name === '_totalJobs')      return [value, 'Generierungen'];
-                                        if (name === '_totalUsers')     return [value, 'Nutzer gesamt'];
-                                        if (name === '_revenue')        return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
-                                        if (name === '_profit')         return [`${Number(value).toFixed(2)} €`, 'Gewinn'];
-                                        return [value, name];
-                                    }}
-                                />
-                                <Line yAxisId="left"  type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#3b82f6', stroke:'#fff', strokeWidth:3 }} />
-                                <Line yAxisId="left"  type="monotone" dataKey="_totalJobs"  stroke="#f97316" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#f97316', stroke:'#fff', strokeWidth:3 }} />
-                                <Line yAxisId="right" type="monotone" dataKey="_revenue"    stroke="#10b981" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#10b981', stroke:'#fff', strokeWidth:3 }} />
-                                <Line yAxisId="right" type="monotone" dataKey="_profit"     stroke="#059669" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#059669', stroke:'#fff', strokeWidth:3 }} />
-                            </ComposedChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* ── 3. SPECIALIZED MINI MODULES GRID ─────────────────────── */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
 
                     {/* Module A: Stability & Conversion */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
@@ -471,6 +417,74 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     </div>
 
                 </div>
+
+                {/* ── 2. MAIN CHART ────────────────────────────────────────── */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm mb-12">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Hauptmetriken</h3>
+                            <div className="flex items-center gap-3 mt-2">
+                                {[
+                                    { label: 'Nutzer',       color: '#3b82f6' },
+                                    { label: 'Generierungen',color: '#f97316' },
+                                    { label: 'Einnahmen',    color: '#10b981' },
+                                    { label: 'Gewinn',       color: '#059669' },
+                                    { label: 'Ausgaben',     color: '#a855f7' },
+                                ].map(s => (
+                                    <div key={s.label} className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                                        <span className="text-[10px] text-zinc-400 font-medium">{s.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl self-start">
+                            {TIME_RANGES.map(tr => (
+                                <button key={tr.id} onClick={() => setTimeRange(tr.id)}
+                                    className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${
+                                        timeRange === tr.id
+                                            ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                                    }`}>
+                                    {tr.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="h-[300px] md:h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                <XAxis dataKey="_label" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} dy={10} />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} tickCount={4} />
+                                <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} tickCount={4}
+                                    tickFormatter={v => `${Number(v).toFixed(0)}€`} />
+                                <Tooltip
+                                    cursor={{ stroke: '#f4f4f5', strokeWidth: 2 }}
+                                    contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '11px', padding: '12px' }}
+                                    formatter={(value: any, name: string) => {
+                                        if (name === '_totalJobs')  return [value, 'Generierungen'];
+                                        if (name === '_totalUsers') return [value, 'Nutzer gesamt'];
+                                        if (name === '_revenue')    return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
+                                        if (name === '_profit')     return [`${Number(value).toFixed(2)} €`, 'Gewinn'];
+                                        if (name === '_aiCost')     return [`${Number(value).toFixed(2)} €`, 'Ausgaben'];
+                                        return [value, name];
+                                    }}
+                                />
+                                <Line yAxisId="left"  type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#3b82f6', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="left"  type="monotone" dataKey="_totalJobs"  stroke="#f97316" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#f97316', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="right" type="monotone" dataKey="_revenue"    stroke="#10b981" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#10b981', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="right" type="monotone" dataKey="_profit"     stroke="#059669" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#059669', stroke:'#fff', strokeWidth:3 }} />
+                                <Line yAxisId="right" type="monotone" dataKey="_aiCost"     stroke="#a855f7" strokeWidth={2} strokeDasharray="4 3" connectNulls dot={false} activeDot={{ r:5, fill:'#a855f7', stroke:'#fff', strokeWidth:3 }} />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
@@ -483,13 +497,16 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 
-const EfficiencyRow: React.FC<{ label: string; value: string; sub: string; color?: string }> = ({ label, value, sub, color }) => (
-    <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">{label}</span>
-            <span className="text-[9px] text-zinc-400 uppercase tracking-wider">{sub}</span>
+const EfficiencyRow: React.FC<{ label: string; value: string; sub: string; color?: string; dot?: string }> = ({ label, value, sub, color, dot }) => (
+    <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+            {dot && <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: dot }} />}
+            <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">{label}</span>
+                <span className="text-[9px] text-zinc-400 uppercase tracking-wider truncate">{sub}</span>
+            </div>
         </div>
-        <span className="text-base font-bold font-mono tracking-tighter" style={{ color: color || 'inherit' }}>{value}</span>
+        <span className="text-base font-bold font-mono tracking-tighter shrink-0" style={{ color: color || 'inherit' }}>{value}</span>
     </div>
 );
 
