@@ -163,15 +163,7 @@ export async function generateAnnotationImage(
             const scaledX = ann.x * scaleX;
             const scaledY = ann.y * scaleY;
 
-            // Draw Emoji only when there is no text label — text takes priority.
-            // If both are set, only the text chip is rendered to avoid double markers.
-            if (ann.emoji && !ann.text) {
-                ctx.font = `${(ann.width || 48) * scaleX}px serif`; // Scale emoji size
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(ann.emoji, scaledX, scaledY);
-            }
-
+            // Emojis are UI-only — never rendered into the annotation image.
             // Draw text label with white text on red background
             if (ann.text) {
                 const fontSize = 20 * scaleX; // Scale font size
