@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, TrendingUp, TrendingDown, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Bar, Line, ComposedChart, PieChart, Pie, Cell,
@@ -145,6 +145,7 @@ const calculateEstimatedGoogleCostEur = (job: any): number => {
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [jobs,          setJobs]          = useState<any[]>([]);
     const [profiles,      setProfiles]      = useState<any[]>([]);
@@ -160,7 +161,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         generierungen: true,
         res4K: false, res2K: false, res1K: false, res05K: false,
         voiceSessions: false, failedJobs: false,
-        revenue: false, aiCost: false, profit: false,
+        revenue: true, aiCost: false, profit: true,
     });
     const toggle = (key: SeriesKey) => setVisible(p => ({ ...p, [key]: !p[key] }));
 
@@ -296,7 +297,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
     const activationDonut = [
         { value: uniqueUsersWithJobs,                                color: '#10b981' },
-        { value: Math.max(0, profiles.length - uniqueUsersWithJobs), color: '#e4e4e7' },
+        { value: Math.max(0, profiles.length - uniqueUsersWithJobs), color: '#3f3f46' }, // Zinc-700 for dark mode feel
     ];
 
     if (loading) return (
@@ -306,255 +307,258 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     );
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950/20 overflow-y-auto">
             <AdminViewHeader title="Statistiken" />
 
-            <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* ── Main Content Container ──────────────────────────── */}
+            <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
 
-                {/* ── LEFT SIDEBAR ──────────────────────────────────────── */}
-                <aside className="w-96 shrink-0 border-r border-zinc-100 dark:border-zinc-800 overflow-y-auto flex flex-col gap-6 p-5">
+                {/* ── KPI Grid ───────────────────────────────────────── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <MetricCard
+                        label="Nutzer gesamt"
+                        value={String(profiles.length)}
+                        subValue={`Heute +${newSignupsToday} · 7T +${newSignups7d}`}
+                        color="#3b82f6"
+                        checked={visible.totalUsers}
+                        onToggle={() => toggle('totalUsers')}
+                    />
+                    <MetricCard
+                        label="Generierungen"
+                        value={String(completedJobs.length)}
+                        subValue={`${uniqueUsersTotal} aktive Nutzer`}
+                        color="#f97316"
+                        checked={visible.generierungen}
+                        onToggle={() => toggle('generierungen')}
+                    />
+                    <MetricCard
+                        label="Einnahmen (90 Tage)"
+                        value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)}€` : '—'}
+                        subValue={`${stripePayCnt} Zahlungen`}
+                        color="#10b981"
+                        checked={visible.revenue}
+                        onToggle={() => toggle('revenue')}
+                    />
+                    <MetricCard
+                        label="Gewinn"
+                        value={profit != null ? `${profit.toFixed(0)}€` : '—'}
+                        subValue={margin != null ? `Marge ${margin.toFixed(0)}%` : '—'}
+                        color="#059669"
+                        checked={visible.profit}
+                        onToggle={() => toggle('profit')}
+                    />
+                </div>
 
-                    {/* Chart series */}
-                    <div>
-                        <ListSectionLabel>Im Graphen</ListSectionLabel>
-                        <div className="mt-2 space-y-1">
-                            {SERIES_CONFIG.map(s => (
-                                <SeriesRow
-                                    key={s.key}
-                                    color={s.color}
-                                    label={s.label}
-                                    note={s.note}
-                                    checked={visible[s.key]}
-                                    onToggle={() => toggle(s.key)}
-                                    value={
-                                        s.key === 'totalUsers'     ? String(profiles.length) :
-                                        s.key === 'activationRate' ? `${activationRate.toFixed(1)} %` :
-                                        s.key === 'generierungen'  ? String(completedJobs.length) :
-                                        s.key === 'res4K'          ? String(resCounts['4K']   || 0) :
-                                        s.key === 'res2K'          ? String(resCounts['2K']   || 0) :
-                                        s.key === 'res1K'          ? String(resCounts['1K']   || 0) :
-                                        s.key === 'res05K'         ? String(resCounts['0.5K'] || 0) :
-                                        s.key === 'voiceSessions'  ? String(voiceTotals.sessionCount) :
-                                        s.key === 'failedJobs'     ? String(failedJobs.length) :
-                                        s.key === 'revenue'        ? (stripeRevenue != null ? `${stripeRevenue.toFixed(2)} €` : '—') :
-                                        s.key === 'aiCost'         ? `${googleAiCost.toFixed(2)} €` :
-                                        s.key === 'profit'         ? (profit != null ? `${profit.toFixed(2)} €` : '—') : '—'
-                                    }
-                                    sub={
-                                        s.key === 'totalUsers'     ? `Heute +${newSignupsToday} · 7T +${newSignups7d}` :
-                                        s.key === 'activationRate' ? `${uniqueUsersWithJobs} von ${profiles.length} haben generiert` :
-                                        s.key === 'generierungen'  ? `${uniqueUsersTotal} aktive Nutzer` :
-                                        s.key === 'voiceSessions'  ? `${Math.round(voiceTotals.totalMinutes)} Min.` :
-                                        s.key === 'failedJobs'     ? `${errorRate.toFixed(1)} % Fehlerrate` :
-                                        s.key === 'revenue'        ? `${stripePayCnt} Zahlungen` :
-                                        s.key === 'profit'         ? (margin != null ? `Marge ${margin.toFixed(0)} %` : undefined) :
-                                        undefined
-                                    }
-                                />
+                {/* ── Chart Section ───────────────────────────────────── */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Trend Analyse</h3>
+                            <p className="text-xs text-zinc-400 mt-1">
+                                {SERIES_CONFIG.filter(s => visible[s.key]).map(s => s.label).join(' · ') || 'Wähle Metriken oben aus'}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-2xl self-start">
+                            {TIME_RANGES.map(tr => (
+                                <button key={tr.id} onClick={() => setTimeRange(tr.id)}
+                                    className={`px-4 py-2 rounded-xl text-[11px] font-bold transition-all ${
+                                        timeRange === tr.id
+                                            ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                                            : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+                                    }`}>
+                                    {tr.label}
+                                </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Display-only metrics */}
-                    <div>
-                        <ListSectionLabel>Kennzahlen</ListSectionLabel>
-                        <div className="mt-2 space-y-px">
-                            <DisplayRow label="Kosten Voice" value={`${voiceTotals.costEur.toFixed(2)} €`}
-                                sub={`${voiceTotals.sessionCount} Sessions · ${Math.round(voiceTotals.totalMinutes)} Min.`} />
-                            <DisplayRow label="Ø Gen. / Nutzer" value={avgGen.toFixed(1)} />
-                            <DisplayRow label="Fehlerrate" value={`${errorRate.toFixed(1)} %`}
-                                trend={errorRate > 10 ? 'up' : errorRate < 3 ? 'down' : undefined}
-                                trendColor={errorRate > 10 ? '#ef4444' : '#10b981'} />
-                        </div>
+                    <div className="h-[350px] md:h-[450px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData} barSize={timeRange === '7d' ? 32 : timeRange === '14d' ? 20 : 12}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                <XAxis dataKey="_label" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} dy={10} />
+                                <YAxis yAxisId="left" axisLine={false} tickLine={false}
+                                    tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} />
+                                {showRightAxis && (
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
+                                        tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
+                                        tickFormatter={v => (visible.activationRate && !visible.revenue && !visible.aiCost && !visible.profit) ? `${v}%` : `${Number(v).toFixed(0)}€`} />
+                                )}
+                                <Tooltip
+                                    cursor={{ stroke: '#f4f4f5', strokeWidth: 2 }}
+                                    contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontSize: '11px', padding: '12px' }}
+                                    formatter={(value: any, name: string) => {
+                                        if (name === '_totalJobs')      return [value, 'Generierungen'];
+                                        if (name === '_totalUsers')     return [value, 'Nutzer gesamt'];
+                                        if (name === '_activationRate') return [`${value} %`, 'Aktivierungsrate'];
+                                        if (name === '_voiceSessions')  return [value, 'Voice Sessions'];
+                                        if (name === '_failedJobs')     return [value, 'Fehler'];
+                                        if (name === '_revenue')        return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
+                                        if (name === '_aiCost')         return [`${Number(value).toFixed(2)} €`, 'AI-Kosten'];
+                                        if (name === '_profit')         return [`${Number(value).toFixed(2)} €`, 'Gewinn'];
+                                        if (RESOLUTION_INFO[name as ResolutionBucket]) return [value, RESOLUTION_INFO[name as ResolutionBucket].label];
+                                        return [value, name];
+                                    }}
+                                />
+                                {visible.generierungen && <Bar yAxisId="left" dataKey="_totalJobs" stackId="total" fill="#f97316" radius={[6,6,0,0]} opacity={0.8} />}
+                                {existingResKeys.map((res) => {
+                                    const sk = RES_TO_SERIES[res];
+                                    if (!sk || !visible[sk]) return null;
+                                    const visibleResKeys = existingResKeys.filter(r => { const s = RES_TO_SERIES[r]; return s && visible[s]; });
+                                    const isTop = visibleResKeys[visibleResKeys.length-1] === res;
+                                    return <Bar key={res} yAxisId="left" dataKey={res} stackId="res" fill={RESOLUTION_INFO[res].color} radius={isTop ? [6,6,0,0] : [0,0,0,0]} />;
+                                })}
+                                {visible.voiceSessions && <Bar yAxisId="left" dataKey="_voiceSessions" stackId="voice" fill="#06b6d4" radius={[6,6,0,0]} />}
+                                {visible.totalUsers && <Line yAxisId="left" type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#3b82f6', stroke:'#fff', strokeWidth:3 }} />}
+                                {visible.failedJobs && <Line yAxisId="left" type="monotone" dataKey="_failedJobs" stroke="#dc2626" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#dc2626', stroke:'#fff', strokeWidth:3 }} />}
+                                {visible.activationRate && <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#8b5cf6', stroke:'#fff', strokeWidth:3 }} />}
+                                {visible.revenue  && <Line yAxisId="right" type="monotone" dataKey="_revenue"  stroke="#10b981" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#10b981', stroke:'#fff', strokeWidth:3 }} />}
+                                {visible.aiCost   && <Line yAxisId="right" type="monotone" dataKey="_aiCost"   stroke="#a855f7" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#a855f7', stroke:'#fff', strokeWidth:3 }} />}
+                                {visible.profit   && <Line yAxisId="right" type="monotone" dataKey="_profit"   stroke="#059669" strokeWidth={3} connectNulls dot={false} activeDot={{ r:6, fill:'#059669', stroke:'#fff', strokeWidth:3 }} />}
+                            </ComposedChart>
+                        </ResponsiveContainer>
                     </div>
+                </div>
 
-                    {/* Activation donut */}
-                    <div>
-                        <ListSectionLabel>Aktivierung</ListSectionLabel>
-                        <div className="flex items-center gap-4 mt-3">
+                {/* ── Toggle Grid for secondary metrics ───────────────── */}
+                <div className="flex flex-wrap gap-2">
+                    {SERIES_CONFIG.filter(s => !['totalUsers', 'generierungen', 'revenue', 'profit'].includes(s.key)).map(s => (
+                        <button key={s.key} onClick={() => toggle(s.key)}
+                            className={`px-4 py-2 rounded-full text-[11px] font-bold transition-all border flex items-center gap-2 ${
+                                visible[s.key]
+                                    ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 border-transparent shadow-md'
+                                    : 'bg-white dark:bg-zinc-800 text-zinc-500 border-zinc-100 dark:border-zinc-700 hover:border-zinc-300'
+                            }`}>
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                            {s.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── Secondary Stats Grid ───────────────────────────── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
+
+                    {/* Activation Card */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col items-center">
+                        <SectionLabel>Nutzer-Aktivierung</SectionLabel>
+                        <div className="flex items-center gap-8 mt-6">
                             <div className="relative shrink-0">
-                                <PieChart width={96} height={96}>
-                                    <Pie data={activationDonut} cx={43} cy={43} innerRadius={30} outerRadius={44}
+                                <PieChart width={120} height={120}>
+                                    <Pie data={activationDonut} cx={60} cy={60} innerRadius={42} outerRadius={58}
                                         dataKey="value" startAngle={90} endAngle={-270} strokeWidth={0}>
                                         {activationDonut.map((e, i) => <Cell key={i} fill={e.color} />)}
                                     </Pie>
                                 </PieChart>
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <span className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-100">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span className="text-xl font-bold font-mono text-zinc-900 dark:text-zinc-100">
                                         {activationRate.toFixed(0)}%
                                     </span>
                                 </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">Aktiviert</span>
-                                    <span className="text-xs font-bold font-mono ml-auto">{uniqueUsersWithJobs}</span>
+                            <div className="space-y-4">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Aktiviert</span>
+                                    <span className="text-lg font-bold font-mono text-emerald-500">{uniqueUsersWithJobs}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-zinc-300 shrink-0" />
-                                    <span className="text-xs text-zinc-400">Noch nicht</span>
-                                    <span className="text-xs font-bold font-mono ml-auto text-zinc-400">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Noch nicht</span>
+                                    <span className="text-lg font-bold font-mono text-zinc-400">
                                         {Math.max(0, profiles.length - uniqueUsersWithJobs)}
                                     </span>
-                                </div>
-                                <div className="flex items-center gap-2 pt-0.5 border-t border-zinc-100 dark:border-zinc-800">
-                                    <span className="text-xs text-zinc-400">Gesamt</span>
-                                    <span className="text-xs font-bold font-mono ml-auto">{profiles.length}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Top users */}
-                    <div>
-                        <ListSectionLabel>Top Nutzer</ListSectionLabel>
-                        <div className="mt-2 space-y-1.5">
+                    {/* Top Users Card */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <SectionLabel>Top Nutzer</SectionLabel>
+                        <div className="mt-6 space-y-4">
                             {topUsers.map(user => (
-                                <div key={user.name} className="flex items-center gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
-                                            <span className="text-xs font-mono text-zinc-400 shrink-0">{user.count}</span>
-                                        </div>
-                                        <div className="h-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                                            <div className="h-full rounded-full bg-zinc-400"
-                                                style={{ width: maxUserCount > 0 ? `${(user.count/maxUserCount)*100}%` : '0%' }} />
-                                        </div>
+                                <div key={user.name} className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
+                                        <span className="text-xs font-mono font-bold text-zinc-400 shrink-0">{user.count}</span>
+                                    </div>
+                                    <div className="h-1.5 rounded-full bg-zinc-50 dark:bg-zinc-800/50 overflow-hidden">
+                                        <div className="h-full rounded-full bg-gradient-to-r from-zinc-400 to-zinc-600"
+                                            style={{ width: maxUserCount > 0 ? `${(user.count/maxUserCount)*100}%` : '0%' }} />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                </aside>
-
-                {/* ── RIGHT: Chart ─────────────────────────────────────── */}
-                <main className="flex-1 min-w-0 overflow-y-auto flex flex-col">
-                    <div className="p-6 flex flex-col gap-4">
-
-                        {/* Header row */}
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs text-zinc-400 truncate max-w-sm">
-                                {SERIES_CONFIG.filter(s => visible[s.key]).map(s => s.label).join(' · ') || 'Nichts ausgewählt'}
-                            </p>
-                            <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl shrink-0">
-                                {TIME_RANGES.map(tr => (
-                                    <button key={tr.id} onClick={() => setTimeRange(tr.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                                            timeRange === tr.id
-                                                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                                                : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-                                        }`}>
-                                        {tr.label}
-                                    </button>
-                                ))}
+                    {/* Efficiency Card */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <SectionLabel>Effizienz & Fehler</SectionLabel>
+                            <div className="mt-8 space-y-6">
+                                <EfficiencyRow label="Ø Gen. / Nutzer" value={avgGen.toFixed(1)} sub="Credits Nutzung" />
+                                <EfficiencyRow label="Fehlerrate" value={`${errorRate.toFixed(1)}%`}
+                                    color={errorRate > 10 ? '#ef4444' : '#10b981'}
+                                    sub={`${failedJobs.length} gescheitert`} />
+                                <EfficiencyRow label="KI Kosten (Ges.)" value={`${totalAiCost.toFixed(2)}€`} sub="Google & Voice" />
                             </div>
                         </div>
-
-                        {/* Chart — fixed height, not stretching */}
-                        <div className="h-[480px] xl:h-[560px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData} barSize={timeRange === '7d' ? 28 : timeRange === '14d' ? 18 : timeRange === '30d' ? 10 : 20}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false}
-                                        tick={{ fontSize: 10, fontWeight: 700, fill: '#a1a1aa' }} />
-                                    <YAxis yAxisId="left" axisLine={false} tickLine={false}
-                                        tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }} allowDecimals={false} />
-                                    {showRightAxis && (
-                                        <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false}
-                                            tick={{ fontSize: 9, fontWeight: 700, fill: '#a1a1aa' }}
-                                            tickFormatter={v => (visible.activationRate && !visible.revenue && !visible.aiCost && !visible.profit) ? `${v}%` : `${Number(v).toFixed(0)}€`} />
-                                    )}
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#fff', border: '1px solid #f1f1f1', borderRadius: '10px', fontSize: '11px' }}
-                                        formatter={(value: any, name: string) => {
-                                            if (name === '_totalJobs')      return [value, 'Generierungen'];
-                                            if (name === '_totalUsers')     return [value, 'Nutzer gesamt'];
-                                            if (name === '_activationRate') return [`${value} %`, 'Aktivierungsrate'];
-                                            if (name === '_voiceSessions')  return [value, 'Voice Sessions'];
-                                            if (name === '_failedJobs')     return [value, 'Fehler'];
-                                            if (name === '_revenue')        return [`${Number(value).toFixed(2)} €`, 'Einnahmen'];
-                                            if (name === '_aiCost')         return [`${Number(value).toFixed(2)} €`, 'AI-Kosten'];
-                                            if (name === '_profit')         return [`${Number(value).toFixed(2)} €`, 'Gewinn'];
-                                            if (RESOLUTION_INFO[name as ResolutionBucket]) return [value, RESOLUTION_INFO[name as ResolutionBucket].label];
-                                            return [value, name];
-                                        }}
-                                    />
-                                    {visible.generierungen && <Bar yAxisId="left" dataKey="_totalJobs" stackId="total" fill="#f97316" radius={[4,4,0,0]} />}
-                                    {existingResKeys.map((res) => {
-                                        const sk = RES_TO_SERIES[res];
-                                        if (!sk || !visible[sk]) return null;
-                                        const visibleResKeys = existingResKeys.filter(r => { const s = RES_TO_SERIES[r]; return s && visible[s]; });
-                                        const isTop = visibleResKeys[visibleResKeys.length-1] === res;
-                                        return <Bar key={res} yAxisId="left" dataKey={res} stackId="res" fill={RESOLUTION_INFO[res].color} radius={isTop ? [4,4,0,0] : [0,0,0,0]} />;
-                                    })}
-                                    {visible.voiceSessions && <Bar yAxisId="left" dataKey="_voiceSessions" stackId="voice" fill="#06b6d4" radius={[4,4,0,0]} />}
-                                    {visible.totalUsers && <Line yAxisId="left" type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#3b82f6', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#3b82f6', stroke:'#fff', strokeWidth:2 }} />}
-                                    {visible.failedJobs && <Line yAxisId="left" type="monotone" dataKey="_failedJobs" stroke="#dc2626" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#dc2626', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#dc2626', stroke:'#fff', strokeWidth:2 }} />}
-                                    {visible.activationRate && <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#8b5cf6', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#8b5cf6', stroke:'#fff', strokeWidth:2 }} />}
-                                    {visible.revenue  && <Line yAxisId="right" type="monotone" dataKey="_revenue"  stroke="#10b981" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#10b981', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#10b981', stroke:'#fff', strokeWidth:2 }} />}
-                                    {visible.aiCost   && <Line yAxisId="right" type="monotone" dataKey="_aiCost"   stroke="#a855f7" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#a855f7', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#a855f7', stroke:'#fff', strokeWidth:2 }} />}
-                                    {visible.profit   && <Line yAxisId="right" type="monotone" dataKey="_profit"   stroke="#059669" strokeWidth={2.5} connectNulls dot={{ r:3, fill:'#059669', stroke:'#fff', strokeWidth:2 }} activeDot={{ r:5, fill:'#059669', stroke:'#fff', strokeWidth:2 }} />}
-                                </ComposedChart>
-                            </ResponsiveContainer>
+                        <div className="mt-6 pt-4 border-t border-zinc-50 dark:border-zinc-800 text-[10px] text-zinc-400 italic">
+                            Alle Kosten basieren auf geschätzten API-Token Verbrauchen.
                         </div>
-
                     </div>
-                </main>
 
+                </div>
             </div>
         </div>
     );
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
-const ListSectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">{children}</p>
+
+const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-400">{children}</p>
 );
 
-const SeriesRow: React.FC<{
-    color: string; label: string; note?: string;
-    checked: boolean; onToggle: () => void;
-    value: string; sub?: string;
-}> = ({ color, label, note, checked, onToggle, value, sub }) => (
-    <button onClick={onToggle}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:brightness-95"
-        style={{ backgroundColor: checked ? `${color}18` : '#f4f4f580' }}>
-        {/* Color dot */}
-        <span className="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
-            style={{ backgroundColor: color, opacity: checked ? 1 : 0.3 }} />
-        {/* Label + sub */}
-        <div className="flex-1 min-w-0 text-left">
-            <div className="flex items-center gap-1.5 leading-none">
-                <span className={`text-xs font-semibold ${checked ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500'}`}>{label}</span>
-                {note && <span className="text-[9px] text-zinc-400 bg-zinc-200/60 dark:bg-zinc-700/60 px-1.5 py-0.5 rounded-full">{note}</span>}
-            </div>
-            {sub && <div className="text-[10px] text-zinc-400 mt-0.5 leading-tight truncate">{sub}</div>}
-        </div>
-        {/* Value */}
-        <span className="text-sm font-bold font-mono shrink-0 transition-colors"
-            style={{ color: checked ? color : '#a1a1aa' }}>{value}</span>
-        {/* Checkbox */}
-        <div className="w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-all"
-            style={checked ? { backgroundColor: color, borderColor: color } : { borderColor: '#d4d4d8' }}>
-            {checked && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-        </div>
+const MetricCard: React.FC<{
+    label: string; value: string; subValue: string; color: string; checked: boolean; onToggle: () => void;
+}> = ({ label, value, subValue, color, checked, onToggle }) => (
+    <button
+        onClick={onToggle}
+        className={`relative flex flex-col text-left p-6 md:p-8 rounded-[2rem] transition-all duration-300 active:scale-[0.98] border shadow-sm ${
+            checked
+                ? 'bg-white dark:bg-zinc-900 border-transparent'
+                : 'bg-zinc-100/50 dark:bg-zinc-900/30 border-transparent opacity-80'
+        }`}
+    >
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-zinc-400 mb-4">{label}</span>
+        <span className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-2 font-mono tracking-tighter">
+            {value}
+        </span>
+        <span className="text-xs text-zinc-500 font-medium">
+            {subValue}
+        </span>
+
+        {/* Selected Indicator */}
+        <div className={`absolute top-6 right-6 w-3 h-3 rounded-full transition-all duration-300 ${
+            checked ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+        }`} style={{ backgroundColor: color }} />
+
+        {/* Backdrop Glow */}
+        {checked && (
+            <div className="absolute inset-0 rounded-[2rem] pointer-events-none transition-opacity opacity-[0.03]"
+                 style={{ backgroundColor: color }} />
+        )}
     </button>
 );
 
-const DisplayRow: React.FC<{
-    label: string; value: string; sub?: string; trend?: 'up' | 'down'; trendColor?: string;
-}> = ({ label, value, sub, trend, trendColor }) => (
-    <div className="flex items-center justify-between px-3 py-2">
-        <div>
-            <div className="text-[10px] text-zinc-400">{label}</div>
-            {sub && <div className="text-[10px] text-zinc-400 leading-tight">{sub}</div>}
+const EfficiencyRow: React.FC<{ label: string; value: string; sub: string; color?: string }> = ({ label, value, sub, color }) => (
+    <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{label}</span>
+            <span className="text-[10px] text-zinc-400">{sub}</span>
         </div>
-        <div className="flex items-center gap-1">
-            {trend === 'up'   && <TrendingUp   className="w-3 h-3" style={{ color: trendColor }} />}
-            {trend === 'down' && <TrendingDown className="w-3 h-3" style={{ color: trendColor }} />}
-            <span className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-100">{value}</span>
-        </div>
+        <span className="text-lg font-bold font-mono tracking-tighter" style={{ color: color || 'inherit' }}>{value}</span>
     </div>
 );
+
