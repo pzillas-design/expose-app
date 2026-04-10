@@ -253,7 +253,11 @@ export const imageService = {
         } : sourceImage;
 
         const { data, error } = await supabase.functions.invoke('generate-image', {
-            ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
+            headers: {
+                // Pin to Frankfurt so Edge Function and DB/Storage are co-located
+                'x-sb-edge-region': 'eu-central-1',
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
             body: {
                 ...payload,
                 qualityMode,

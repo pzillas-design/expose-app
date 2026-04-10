@@ -322,13 +322,31 @@ Deno.serve(async (req) => {
                 // Mark as init immediately so 'unknown' stage never appears in failed jobs
                 updateStage('init');
 
-                // Count concurrent jobs early for diagnostics
+                // Count concurrent jobs early for diagnostics + admission control
                 const { count: _cc } = await supabaseAdmin
                     .from('generation_jobs')
                     .select('*', { count: 'exact', head: true })
                     .eq('status', 'processing');
                 concurrentCount = _cc || 0;
                 logInfo('BG Task Start', `job=${newId} quality=${qualityMode} user=${user.id} concurrent=${concurrentCount}`);
+
+                // Admission control: max 5 concurrent nb2-4k jobs to prevent overload cascade
+                if (qualityMode === 'nb2-4k') {
+                    const { count: concurrent4k } = await supabaseAdmin
+                        .from('generation_jobs')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('status', 'processing')
+                        .eq('quality_mode', 'nb2-4k');
+                    if ((concurrent4k || 0) > 5) {
+                        throw new Error('Server busy — too many concurrent 4K jobs, please try again in a moment');
+                    }
+                }
+
+                // Persist concurrent_jobs count on the job row for later correlation
+                supabaseAdmin.from('generation_jobs')
+                    .update({ concurrent_jobs: concurrentCount })
+                    .eq('id', newId)
+                    .then(() => {});
 
                 // Prepare source image (base64)
                 updateStage('prepare_source');
