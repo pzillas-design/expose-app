@@ -35,7 +35,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, t }) => {
  <div className="w-full lg:w-72 flex flex-col gap-1 p-2">
  {renderItem('users', t('admin_users'), <Users />)}
  {renderItem('jobs', t('admin_jobs'), <Activity />)}
- {renderItem('stats', 'Token & Kosten', <BarChart3 />)}
+ {renderItem('stats', 'Statistiken', <BarChart3 />)}
  {renderItem('presets', t('admin_presets'), <Layers />)}
  {renderItem('stamps', t('admin_objects'), <Box />)}
  {renderItem('voice', 'Sprach-Assistent', <Mic />)}
