@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
 
@@ -47,6 +47,19 @@ export const Modal: React.FC<ModalProps> = ({
     footer,
     className = '',
 }) => {
+    // ESC closes this modal — capture phase so topmost modal wins
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handler, { capture: true });
+        return () => document.removeEventListener('keydown', handler, { capture: true });
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (

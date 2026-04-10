@@ -692,10 +692,22 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
         },
         goBack: async () => {
-            // Priority 1: Close settings modal if open
+            // Priority 1: Close any open modal first
             if (isSettingsModalOpen) {
                 setIsSettingsModalOpen(false);
                 return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geschlossen.' : 'Settings closed.' };
+            }
+            if (isCreditsModalOpen) {
+                setIsCreditsModalOpen(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
+            }
+            if (isCreationModalOpen) {
+                setIsCreationModalOpen(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
+            }
+            if (isAuthModalOpen) {
+                setIsAuthModalOpen(false);
+                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
             }
 
             // Priority 2: Close annotation mode if active
