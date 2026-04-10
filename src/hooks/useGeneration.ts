@@ -237,7 +237,7 @@ export const useGeneration = ({
         attachedJobIds.current.add(jobId);
 
         let attempts = 0;
-        const maxAttempts = 24; // 2 min absolute timeout at 5s interval
+        const maxAttempts = 10; // 50s absolute timeout at 5s interval
         let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
@@ -362,8 +362,8 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2b. Detect stuck "processing" jobs — after 1 min (12×5s)
-            if (jobData?.status === 'processing' && attempts >= 12) {
+            // 2b. Detect stuck "processing" jobs — after 20s (4×5s)
+            if (jobData?.status === 'processing' && attempts >= 4) {
                 // Mark failed in DB — credit refund happens server-side via pg_cron
                 try {
                     const { data: job } = await supabase
