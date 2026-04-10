@@ -232,18 +232,26 @@ export const useGeneration = ({
         return current === sourceId || current === newId;
     };
 
-    const pollForJob = useCallback(async (jobId: string) => {
+    const pollForJob = useCallback(async (jobId: string, quality?: string) => {
         if (attachedJobIds.current.has(jobId)) return;
         attachedJobIds.current.add(jobId);
 
+        // Quality from param, or fall back to jobTimingRef (set at job creation)
+        const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
+        const is4K = resolvedQuality === 'nb2-4k';
+
+        // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
+        // Other modes: shorter timeouts are fine.
+        const stuckAttempts = is4K ? 45 : 18;   // 225s vs 90s
+        const maxAttempts   = is4K ? 55 : 24;   // 275s vs 120s absolute ceiling
+
         let attempts = 0;
-        const maxAttempts = 10; // 50s absolute timeout at 5s interval
         let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
-                // Timeout: Edge Function likely died — try once automatically, then give up
+                // Absolute ceiling reached — stop polling client-side
                 const retryFn = pendingRetryFns.current[jobId];
                 delete pendingRetryFns.current[jobId];
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
@@ -362,18 +370,22 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2b. Detect stuck "processing" jobs — after 20s (4×5s)
-            if (jobData?.status === 'processing' && attempts >= 4) {
-                // Mark failed in DB — credit refund happens server-side via pg_cron
-                try {
-                    const { data: job } = await supabase
-                        .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
-                    const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
-                    await supabase
-                        .from('generation_jobs')
-                        .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
-                        .eq('id', jobId);
-                } catch { /* non-critical */ }
+            // 2b. Detect stuck "processing" jobs
+            if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
+                // For nb2-4k: server owns the job state — never write failed from client.
+                // The Edge Function has up to 200s, and pg_cron handles refunds after 8 min.
+                // For other modes: write failed so the cron + UI stay consistent.
+                if (!is4K) {
+                    try {
+                        const { data: job } = await supabase
+                            .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
+                        const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
+                        await supabase
+                            .from('generation_jobs')
+                            .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
+                            .eq('id', jobId);
+                    } catch { /* non-critical */ }
+                }
 
                 const retryFn = pendingRetryFns.current[jobId];
                 delete pendingRetryFns.current[jobId];
@@ -430,13 +442,14 @@ export const useGeneration = ({
             .filter(i => i.isGenerating && !!i.generationStartTime)
             .map(i => i.id);
 
-        generatingIds.forEach(id => {
-            if (!attachedJobIds.current.has(id)) {
-                // Ensure auto-navigation works for jobs resumed after reload
-                navigateOnCompleteIds.current.add(id);
-                pollForJob(id);
-            }
-        });
+        rows.flatMap(r => r.items)
+            .filter(i => i.isGenerating && !!i.generationStartTime)
+            .forEach(item => {
+                if (!attachedJobIds.current.has(item.id)) {
+                    navigateOnCompleteIds.current.add(item.id);
+                    pollForJob(item.id, item.quality as string | undefined);
+                }
+            });
     }, [rows, pollForJob]);
 
     const performGeneration = useCallback(async (
