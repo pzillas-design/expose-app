@@ -39,6 +39,17 @@ const COSTS: Record<string, number> = {
     'nb2-4k': 0.40,
 };
 
+// Automatic quality downgrade chain — tried once after all retries are exhausted
+const QUALITY_FALLBACK: Record<string, string> = {
+    'nb2-4k': 'nb2-2k',
+    'nb2-2k': 'nb2-1k',
+    'nb2-1k': 'nb2-05k',
+};
+
+const QUALITY_LABEL: Record<string, string> = {
+    'nb2-4k': '4K', 'nb2-2k': '2K', 'nb2-1k': '1K', 'nb2-05k': '0.5K',
+};
+
 const ESTIMATED_DURATIONS: Record<string, number> = {
     'nb2-05k': 10000,  // ~10s fastest option
     'nb2-1k': 18000,   // ~18s observed average
@@ -462,7 +473,8 @@ export const useGeneration = ({
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>,
         groupParentId?: string,
-        _autoRetryCount = 0
+        _autoRetryCount = 0,
+        _qualityOverride?: string
     ) => {
         if (!sourceImage) return;
 
@@ -499,7 +511,8 @@ export const useGeneration = ({
             }
         }
 
-        const cost = COSTS[qualityMode];
+        const effectiveQuality = _qualityOverride ?? qualityMode;
+        const cost = COSTS[effectiveQuality];
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
@@ -523,7 +536,7 @@ export const useGeneration = ({
         const currentAnnotations = sourceImage.annotations || [];
         const currentRefs = currentAnnotations.filter(a => a.type === 'reference_image');
         const estimateKey = buildEstimateKey({
-            qualityMode,
+            qualityMode: effectiveQuality,
             requestType: 'edit',
             hasSourceImage: true,
             hasMask: currentAnnotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)),
@@ -531,7 +544,7 @@ export const useGeneration = ({
         });
 
         // 2. CONCURRENCY & DURATION — simple hardcoded values per quality
-        const estimatedDuration = ESTIMATED_DURATIONS[qualityMode] || 25000;
+        const estimatedDuration = ESTIMATED_DURATIONS[effectiveQuality] || 25000;
 
         // 3. SHOW PLACEHOLDER IMMEDIATELY
         const placeholder: CanvasImage = {
@@ -553,7 +566,7 @@ export const useGeneration = ({
             userDraftPrompt: '',
             activeTemplateId: activeTemplateId,
             variableValues: variableValues,
-            quality: qualityMode,
+            quality: effectiveQuality as GenerationQuality,
             estimatedDuration,
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -568,7 +581,7 @@ export const useGeneration = ({
         });
 
         // Track start time so pollForJob can record actual duration
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode, estimateKey };
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: effectiveQuality, estimateKey };
 
         // Record which image was active when generate was pressed — used to guard auto-navigate
         generationSourceIds.current[newId] = activeIdRef.current;
@@ -710,10 +723,20 @@ export const useGeneration = ({
             }
         };
 
-        // Register one-shot retry for transient failures (timeout / 520) — max 3 auto-retries
+        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
+        const fallbackQuality = QUALITY_FALLBACK[effectiveQuality];
         if (_autoRetryCount < 3) {
+            // Same quality retry
             pendingRetryFns.current[newId] = () => {
-                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, _autoRetryCount + 1);
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, _autoRetryCount + 1, _qualityOverride);
+            };
+        } else if (fallbackQuality && !_qualityOverride) {
+            // All same-quality retries exhausted → try once with lower quality
+            pendingRetryFns.current[newId] = () => {
+                const fromLabel = QUALITY_LABEL[effectiveQuality] || effectiveQuality;
+                const toLabel = QUALITY_LABEL[fallbackQuality] || fallbackQuality;
+                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, 0, fallbackQuality);
             };
         }
 
@@ -721,8 +744,9 @@ export const useGeneration = ({
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
-    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = [], _autoRetryCount = 0) => {
-        const cost = COSTS[modelId] || 0;
+    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = [], _autoRetryCount = 0, _qualityOverride?: string) => {
+        const effectiveModelId = _qualityOverride ?? modelId;
+        const cost = COSTS[effectiveModelId] || 0;
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
@@ -847,10 +871,18 @@ export const useGeneration = ({
             }
         };
 
-        // Register one-shot retry for transient failures (timeout / 520) — max 3 auto-retries
+        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
+        const fallbackModelId = QUALITY_FALLBACK[effectiveModelId];
         if (_autoRetryCount < 3) {
             pendingRetryFns.current[newId] = () => {
-                void performNewGeneration(prompt, modelId, ratio, attachments, _autoRetryCount + 1);
+                void performNewGeneration(prompt, modelId, ratio, attachments, _autoRetryCount + 1, _qualityOverride);
+            };
+        } else if (fallbackModelId && !_qualityOverride) {
+            pendingRetryFns.current[newId] = () => {
+                const fromLabel = QUALITY_LABEL[effectiveModelId] || effectiveModelId;
+                const toLabel = QUALITY_LABEL[fallbackModelId] || fallbackModelId;
+                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
+                void performNewGeneration(prompt, modelId, ratio, attachments, 0, fallbackModelId);
             };
         }
 
