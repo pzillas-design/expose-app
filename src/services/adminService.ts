@@ -115,7 +115,7 @@ export const adminService = {
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
             .from('generation_jobs')
-            .select('*')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_payload, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, webhook_data, downloaded_at')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
@@ -189,7 +189,7 @@ export const adminService = {
             .from('voice_logs')
             .select('session_id, user_id, kind, tool_name, tool_status, source, text, ts')
             .order('ts', { ascending: false })
-            .limit(500);
+            .limit(limit);
 
         if (error) throw error;
         if (!data?.length) return [];

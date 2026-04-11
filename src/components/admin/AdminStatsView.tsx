@@ -174,8 +174,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             setLoading(true);
             try {
                 const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
-                    adminService.getJobs(),
-                    adminService.getVoiceSessions(500),
+                    adminService.getJobs(1, 1000),
+                    adminService.getVoiceSessions(200),
                     supabase.from('profiles').select('id, created_at, email'),
                     supabase.auth.getSession()
                 ]);
