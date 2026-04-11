@@ -115,7 +115,7 @@ export const adminService = {
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
             .from('generation_jobs')
-            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_payload, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, webhook_data, downloaded_at')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
@@ -163,7 +163,7 @@ export const adminService = {
             cost: job.cost || 0,
             createdAt: new Date(job.created_at).getTime(),
             resultImage: imagesMap[job.id] || null,  // Attach result image if available
-            requestPayload: job.request_payload || null,  // Attach API request for debugging
+            requestPayload: null,  // Loaded on-demand via getJobDetail()
             requestType: job.request_type || null,
             hasSourceImage: job.has_source_image ?? null,
             hasMask: job.has_mask ?? null,
@@ -174,9 +174,25 @@ export const adminService = {
             tokensPrompt: job.tokens_prompt ?? null,
             tokensCompletion: job.tokens_completion ?? null,
             tokensTotal: job.tokens_total ?? null,
-            webhookData: job.webhook_data || null,
+            webhookData: null,  // Loaded on-demand via getJobDetail()
             downloadedAt: job.downloaded_at || null
         }));
+    },
+
+    /**
+     * Fetch the heavy JSONB fields for a single job (loaded on-demand when opening detail view).
+     */
+    async getJobDetail(jobId: string): Promise<{ requestPayload: any; webhookData: any } | null> {
+        const { data, error } = await supabase
+            .from('generation_jobs')
+            .select('request_payload, webhook_data')
+            .eq('id', jobId)
+            .single();
+        if (error || !data) return null;
+        return {
+            requestPayload: data.request_payload || null,
+            webhookData: data.webhook_data || null,
+        };
     },
 
     /**
