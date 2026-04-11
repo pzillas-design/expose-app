@@ -178,6 +178,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                 style={{ width: isMobile ? undefined : `${sidebarWidth}px` }}
             >
                 <SideSheet
+                    key="create"
                     width={isMobile ? '100%' : `${sidebarWidth}px`}
                     disableMobileSheet={isMobile}
                     selectedImage={null}

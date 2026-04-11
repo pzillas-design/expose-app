@@ -573,7 +573,23 @@ export const useNanoController = () => {
                 );
                 return;
             }
-            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
+            // If selected image is a child in a stack, find the stack root so the new
+            // generation stays grouped under the same parent (mirrors handleGenerateMore logic).
+            let generateGroupParentId: string | undefined;
+            if (selectedImage.parentId) {
+                let root: CanvasImage = selectedImage;
+                let depth = 0;
+                while (root.parentId && depth < 50) {
+                    const parent = allImages.find(p => p.id === root.parentId);
+                    if (!parent) break;
+                    root = parent;
+                    depth++;
+                }
+                if (root.id !== selectedImage.id) {
+                    generateGroupParentId = root.id;
+                }
+            }
+            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues, undefined, generateGroupParentId);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang]);
 

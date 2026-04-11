@@ -118,7 +118,7 @@ export const useAutoSave = (
                             activeTemplateId: img.activeTemplateId,
                             variableValues: img.variableValues
                         },
-                        parent_id: img.parentId || null,
+                        ...(img.parentId !== undefined ? { parent_id: img.parentId } : {}),
                         created_at: new Date(img.createdAt || Date.now()).toISOString(),
                         updated_at: new Date().toISOString()
                     };
@@ -185,7 +185,7 @@ export const useAutoSave = (
                                 activeTemplateId: img.activeTemplateId,
                                 variableValues: img.variableValues
                             },
-                            parent_id: img.parentId || null,
+                            ...(img.parentId !== undefined ? { parent_id: img.parentId } : {}),
                             created_at: new Date(img.createdAt || Date.now()).toISOString(),
                             updated_at: new Date().toISOString()
                         };

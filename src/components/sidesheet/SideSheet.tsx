@@ -74,6 +74,7 @@ interface SideSheetProps {
     userProfile: any;
     width?: string;
     disableMobileSheet?: boolean;
+    initialPrompt?: string;
 }
 
 // ─── Helper: Eyebrow Label ────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const isGlobalDragOver = props.isGlobalDragOver ?? props.isDragOver ?? false;
 
     // ── State ──
-    const [prompt, setPrompt] = useState('');
+    const [prompt, setPrompt] = useState(() => props.initialPrompt ?? selectedImage?.userDraftPrompt ?? '');
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
@@ -309,6 +310,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 setControlValues(selectedImage.variableValues || {});
             }
             // Multi-select: keep current values so variable selection survives batch mode.
+            // Always reset modal/UI state that must not bleed between images.
+            setIsInspirationOpen(false);
+            setViewingRefAnn(null);
+            setInspirationInitialSrc(null);
+            setHiddenControlIds([]);
+            setLabelOverrides({});
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id, isMulti]);

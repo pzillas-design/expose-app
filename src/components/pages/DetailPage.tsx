@@ -1013,6 +1013,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     )}
 
                     <SideSheet
+                        key={state.selectedImage?.id ?? 'no-selection'}
                         width={isMobile ? '100%' : `${sidebarWidth}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
@@ -1054,6 +1055,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onSaveRecentPrompt={actions.recordPresetUsage}
                         onUpdateImageTitle={actions.updateProfile}
                         userProfile={state.userProfile}
+                        initialPrompt={
+                            state.selectedImage?.parentId
+                                ? imageMap.get(state.selectedImage.parentId)?.userDraftPrompt ?? ''
+                                : state.selectedImage?.userDraftPrompt ?? ''
+                        }
                     />
                 </aside>
             </main >

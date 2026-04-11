@@ -388,7 +388,7 @@ export const imageService = {
             height: logicalHeight,
             realWidth: genWidth,
             realHeight: genHeight,
-            parentId: result.parent_id || (sourceImage.id !== newId ? sourceImage.id : sourceImage.parentId)
+            parentId: (result.parent_id ?? result.parentId) ?? (sourceImage.parentId ?? sourceImage.id)
         };
     },
 

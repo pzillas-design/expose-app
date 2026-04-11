@@ -663,10 +663,14 @@ Deno.serve(async (req) => {
         })());
 
         // Respond immediately — client will poll generation_jobs for completion
+        // Include parent_id so the client can set up parentId on the placeholder image
+        // without waiting for the DB record to be written.
+        const responseParentId = payload?.groupParentId || payload?.sourceImage?.id || null;
         return new Response(JSON.stringify({
             success: true,
             jobId: newId,
-            status: 'processing'
+            status: 'processing',
+            parent_id: responseParentId
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,
