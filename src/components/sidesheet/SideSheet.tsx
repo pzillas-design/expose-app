@@ -956,7 +956,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
                                                         <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
-                                                            <p className="px-2 pt-0.5 pb-1.5 text-[10px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Resolution</p>
+                                                            <p className="px-2 pt-0.5 pb-1.5 text-[10px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">Resolution</p>
                                                             {/* Resolution + Price */}
                                                             {(['05k', '1k', '2k', '4k'] as const).map(res => {
                                                                 const q = `nb2-${res}` as GenerationQuality;
