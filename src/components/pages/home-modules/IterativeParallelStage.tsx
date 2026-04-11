@@ -144,7 +144,7 @@ export const IterativeParallelStage: React.FC<IterativeParallelStageProps> = ({ 
                     <h2 className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-kumbh font-semibold tracking-tighter mb-4 lg:mb-8 leading-[1.2] lg:leading-[1.2] lowercase text-zinc-900 dark:text-white">
                         {lang === 'de' ? (
                             <>
-                                iterativ und parallel
+                                iterativ und parallel{' '}
                                 <br className="hidden lg:block" />
                                 arbeiten
                             </>
