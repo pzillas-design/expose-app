@@ -4,6 +4,7 @@ import { suppressCreditToast } from '@/services/creditToastGuard';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
+import { compressImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
@@ -623,11 +624,27 @@ export const useGeneration = ({
                     instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
                 }));
 
+                // Compress source image client-side (4K max, 70% JPEG) before sending to edge
+                // function — eliminates the prepare_source Storage download + timeout entirely.
+                let originalImageForRequest = sourceImage.src;
+                if (sourceImage.src) {
+                    try {
+                        const blob = await compressImage(sourceImage.src, 3840, 0.7);
+                        originalImageForRequest = await new Promise<string>(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (err) {
+                        console.warn('[useGeneration] Client compress failed, using URL fallback:', err);
+                    }
+                }
+
                 const structuredRequest: StructuredGenerationRequest = {
                     type: 'edit',
                     prompt: prompt,
                     variables: variableValues || {},
-                    originalImage: sourceImage.src,
+                    originalImage: originalImageForRequest,
                     annotationImage: annotationImageBase64,
                     references: structuredRefs
                 };

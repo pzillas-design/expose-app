@@ -267,9 +267,10 @@ export const imageService = {
                 activeTemplateId: activeTemplateId || undefined,
                 sourceImage: sourceImageForEdge,
                 groupParentId: groupParentId || undefined,
-                // Pass the storage path so the edge function can download the image
-                // directly from Supabase Storage (faster & more reliable than fetching signed URL)
-                sourceStoragePath: sourceImage?.storage_path || undefined,
+                // sourceStoragePath intentionally omitted — source image is now compressed
+                // client-side (4K / 70% JPEG) and sent directly as base64 in payload.originalImage.
+                // This eliminates the prepare_source Storage download and its 20s timeout.
+                sourceStoragePath: undefined,
                 // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
                 provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
             }
