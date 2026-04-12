@@ -91,7 +91,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     items: [
                         'Embrace empty space: the tidier the room, the less room the AI has to make mistakes.',
                         'Stay away from edges: place furniture centrally. The AI tends to completely reinterpret objects cropped at the frame edges when the perspective changes.',
-                        'Similar angles or exact opposites work best (front and back of the same space).',
+                        "And if you're short on time: one perfectly staged photo stands out more than ten half-baked angles.",
                     ],
                 },
                 { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Staged bedroom from the first angle.' },
@@ -156,20 +156,16 @@ export const BLOG_POSTS: BlogPost[] = [
                     items: [
                         'Mut zur Lücke: Je aufgeräumter der Raum, desto weniger Interpretationsspielraum hat die KI für Fehler.',
                         'Raus aus den Ecken: Platziere Möbel eher zentral im Bild. Die KI neigt dazu, angeschnittene Objekte an den Bildrändern bei Perspektivwechseln völlig neu zu interpretieren.',
-                        'Dramaturgie: Am besten funktionieren ähnliche Winkel oder exakt gegenüberliegende Ansichten (Front- und Rückansicht).',
+                        'Und wenn die Zeit knapp ist: Ein perfekt gestagtes Foto sticht mehr hervor als zehn halbgare Blickwinkel.',
                     ],
                 },
-                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Gestagtes Schlafzimmer aus dem ersten Blickwinkel.' },
-                { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Dasselbe Staging aus dem entgegengesetzten Winkel — konsistente Möbel, Stil und Layout.' },
                 { type: 'h2', text: 'Ein Blick in die Zukunft' },
                 {
                     type: 'p',
                     text: "Wir bewegen uns auf eine Ära von World Models zu, die Räume wirklich dreidimensional begreifen. Bis dahin ist die Arbeit mit der KI ein iterativer Prozess – ein Dialog zwischen deiner kreativen Vision und der Rechenpower des Modells.",
                 },
-                {
-                    type: 'p',
-                    text: "Und wenn die Zeit knapp ist: Ein perfekt gestagtes Foto sticht mehr hervor als zehn halbgare Blickwinkel.",
-                },
+                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Gestagtes Schlafzimmer aus dem ersten Blickwinkel.' },
+                { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Dasselbe Staging aus dem entgegengesetzten Winkel — konsistente Möbel, Stil und Layout.' },
             ],
         },
     },

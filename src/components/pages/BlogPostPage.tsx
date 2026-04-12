@@ -189,7 +189,7 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
                     </h3>
                     <Button
                         onClick={() => navigate('/')}
-                        variant="primary-mono"
+                        variant="white"
                         size="l"
                         icon={<ChevronRight />}
                         iconPosition="right"
