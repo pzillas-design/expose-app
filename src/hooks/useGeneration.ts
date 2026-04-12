@@ -473,7 +473,7 @@ export const useGeneration = ({
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>,
-        groupParentId?: string,
+        isRepeat?: boolean,
         _autoRetryCount = 0,
         _qualityOverride?: string
     ) => {
@@ -560,6 +560,7 @@ export const useGeneration = ({
             src: sourceImage.src,
             annotations: [], // Generated results start blank — reference images stay on the source image
             parentId: sourceImage.id,
+            folderId: sourceImage.folderId ?? sourceImage.id, // Inherit stack root — never changes
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
             // userDraftPrompt stores the user-facing prompt so SideSheet can display it when revisiting.
@@ -664,14 +665,14 @@ export const useGeneration = ({
                         status: 'processing',
                         cost: cost,
                         prompt_preview: prompt,
-                        parent_id: groupParentId ?? sourceImage.id,
+                        parent_id: sourceImage.id,
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
                             referenceImagesCount: refs.length,
                             batchSize,
                             isMultiEdit: batchSize > 1,
-                            isRepeat: !!groupParentId,
+                            isRepeat: !!isRepeat,
                             variables: variableValues || {},
                         }
                     }).then(() => {});
@@ -686,8 +687,7 @@ export const useGeneration = ({
                     targetVersion: newVersion,
                     targetTitle: placeholder.title,
                     activeTemplateId: activeTemplateId,
-                    groupParentId,
-                    isRepeat: !!groupParentId,
+                    isRepeat: !!isRepeat,
                 });
 
                 if (finalImage) {
@@ -750,7 +750,7 @@ export const useGeneration = ({
         if (_autoRetryCount < 3) {
             // Same quality retry
             pendingRetryFns.current[newId] = () => {
-                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, _autoRetryCount + 1, _qualityOverride);
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, _autoRetryCount + 1, _qualityOverride);
             };
         } else if (fallbackQuality && !_qualityOverride) {
             // All same-quality retries exhausted → try once with lower quality
@@ -758,7 +758,7 @@ export const useGeneration = ({
                 const fromLabel = QUALITY_LABEL[effectiveQuality] || effectiveQuality;
                 const toLabel = QUALITY_LABEL[fallbackQuality] || fallbackQuality;
                 showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
-                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, groupParentId, 0, fallbackQuality);
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, 0, fallbackQuality);
             };
         }
 

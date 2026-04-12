@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { BLOG_POSTS, BlogPost, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { TranslationFunction } from '@/types';
 
 interface BlogPageProps {
@@ -80,6 +81,12 @@ export const BlogPage: React.FC<BlogPageProps> = ({ t, lang = 'en' }) => {
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+            <PageSEO
+                title="Blog"
+                description="Guides, tutorials and use cases for AI image creation with exposé — visual prompting, staging, product photography and more."
+                canonical="https://expose.ae/blog"
+                ogType="website"
+            />
 
             <main className="flex-1 w-full max-w-6xl mx-auto px-5 sm:px-8 pt-24 sm:pt-40 pb-20">
 

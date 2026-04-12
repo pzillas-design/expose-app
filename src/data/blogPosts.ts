@@ -17,6 +17,7 @@ export interface BlogPost {
     slug: string;
     category: string;
     date: string;
+    isoDate: string;
     readTime: number;
     coverGradient: string;
     coverImage?: string;
@@ -33,9 +34,154 @@ export function getTranslation(post: BlogPost, lang: string): BlogPostTranslatio
 
 export const BLOG_POSTS: BlogPost[] = [
     {
+        slug: 'one-room-multiple-angles',
+        category: 'Guide',
+        date: 'April 12, 2026',
+        isoDate: '2026-04-12',
+        readTime: 5,
+        coverGradient: 'from-stone-950 via-neutral-900 to-zinc-950',
+        coverImage: '/blog/multi6-result.jpg',
+        featured: true,
+        en: {
+            title: 'One Room, Multiple Angles. How to Keep the AI Consistent.',
+            excerpt: "Staging one photo is easy. Keeping furniture, style, and layout consistent across different perspectives — that's where most workflows fall apart. Here's the approach that works.",
+            content: [
+                {
+                    type: 'p',
+                    text: "AI staging works beautifully on a single image. The challenge starts when you have multiple photos of the same room and you want the staged versions to match. Same sofa, same table, same TV on the same wall. Current AI models have no memory between generations — without a strategy, every image ends up with its own interpretation. This guide shows how to work around that.",
+                },
+                { type: 'h2', text: 'Step 1 — Start with the Best Overview' },
+                {
+                    type: 'p',
+                    text: "Pick the photo that shows the most of the room: widest angle, clearest floor plan, most positions visible at once. This is your anchor — you define the staging concept here, everything else follows.",
+                },
+                { type: 'image', src: '/blog/multi1-homestaging.jpeg', alt: 'Staging the overview image with room type, style, and audience settings in exposé.' },
+                {
+                    type: 'p',
+                    text: "Stage it with your style, room type, and target audience. The more specific the prompt, the more coherent the result across all angles.",
+                },
+                {
+                    type: 'tip',
+                    label: 'Pro tip',
+                    text: "Use 0.5K while exploring — switch to higher resolution only once you have a result you like.",
+                },
+                { type: 'h2', text: 'Step 2 — Use the Staged Result as Inspiration' },
+                {
+                    type: 'p',
+                    text: "Happy with the result? Download it or copy it. Open the next angle of the room and add that staged image as Inspiration. In your prompt, name the perspective shift explicitly — something like: \"Add home staging similar to the reference image, but photographed from the opposite side.\"",
+                },
+                { type: 'image', src: '/blog/multi3-add-inspiration.jpeg', alt: 'Adding the staged first image as inspiration when working on the second angle in exposé.' },
+                { type: 'h2', text: 'Step 3 — Annotate the Furniture Layout' },
+                {
+                    type: 'p',
+                    text: "For complex layouts or tricky angles, annotations make a big difference. Switch to Annotation Mode and mark where each piece belongs in this view.",
+                },
+                { type: 'image', src: '/blog/multi4-annotate.jpeg', alt: 'Annotation mode with rectangle shapes and text labels marking sofa, table, and TV placement.' },
+                {
+                    type: 'ul',
+                    items: [
+                        'Simple layouts: text stickers ("Sofa", "Table", "TV") at the right positions are often enough.',
+                        'Complex layouts: use the brush to trace rough furniture outlines — more precision, fewer errors.',
+                    ],
+                },
+                {
+                    type: 'tip',
+                    label: 'Pro tip',
+                    text: 'Use the More function to generate a batch of variants at once — consistency is easier to find when you have options.',
+                },
+                { type: 'h2', text: 'What Works Best' },
+                {
+                    type: 'ul',
+                    items: [
+                        'Less is more — a simple room with fewer pieces gives the AI less to get wrong.',
+                        'Very similar angles, or diametrically opposite views (front and back of the same space).',
+                        'Open-plan rooms where the full layout is visible in the overview shot.',
+                    ],
+                },
+                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Final staged result: the second angle of the room, consistent with the reference staging.' },
+                {
+                    type: 'p',
+                    text: "It's not a perfect workflow — but it's the best one available right now.",
+                },
+                {
+                    type: 'p',
+                    text: "Current models are image models — they don't model the world, they model pixels. Consistent multi-perspective staging requires understanding that a sofa exists in 3D, not just in a frame. Until then, this workflow is your best approximation of something a future model will do in one shot. And if you're short on time: one great staged photo beats four inconsistent ones.",
+                },
+            ],
+        },
+        de: {
+            title: 'Ein Raum, mehrere Blickwinkel. So bleibt die AI konsistent.',
+            excerpt: 'Ein Foto zu stagen ist einfach. Die Konsistenz über verschiedene Perspektiven hinweg zu halten — da scheitern die meisten Workflows. Hier ist der Ansatz, der funktioniert.',
+            content: [
+                {
+                    type: 'p',
+                    text: "AI-Staging funktioniert wunderbar bei einem einzelnen Bild. Die Herausforderung beginnt, wenn du mehrere Fotos desselben Raumes hast und die gestagten Versionen tatsächlich zusammenpassen sollen. Gleiches Sofa, gleicher Tisch, gleicher Fernseher. Aktuelle KI-Modelle haben kein Gedächtnis zwischen Generierungen — ohne Strategie erfindet die AI bei jedem Bild ihren eigenen Raum. So geht es besser.",
+                },
+                { type: 'h2', text: 'Schritt 1 — Mit dem besten Überblick starten' },
+                {
+                    type: 'p',
+                    text: "Wähle das Foto, das am meisten vom Raum zeigt: weitester Winkel, klarster Grundriss. Das ist dein Ankerbild — du definierst hier das Staging-Konzept, alles andere folgt daraus.",
+                },
+                { type: 'image', src: '/blog/multi1-homestaging.jpeg', alt: 'Das Übersichtsbild wird mit Raumtyp, Stil und Zielgruppe in exposé gestagert.' },
+                {
+                    type: 'p',
+                    text: "Stage es mit deinem Stil, Raumtyp und Zielgruppe. Je spezifischer der Prompt, desto kohärenter das Ergebnis über alle Winkel hinweg.",
+                },
+                {
+                    type: 'tip',
+                    label: 'Pro-Tipp',
+                    text: "Bleib bei 0,5K, solange du noch die Richtung suchst — höhere Auflösung erst wenn das Konzept steht.",
+                },
+                { type: 'h2', text: 'Schritt 2 — Das gestagte Bild als Inspiration verwenden' },
+                {
+                    type: 'p',
+                    text: 'Zufrieden? Lade das Bild herunter oder kopiere es. Öffne den nächsten Winkel und füge das gestagte Bild als Inspiration hinzu. Im Prompt den Perspektivwechsel explizit benennen — zum Beispiel: \u201eAdd home staging similar to the reference image, but photographed from the opposite side.\u201c',
+                },
+                { type: 'image', src: '/blog/multi3-add-inspiration.jpeg', alt: 'Das erste gestagte Bild wird als Inspiration für den zweiten Blickwinkel in exposé hinzugefügt.' },
+                { type: 'h2', text: 'Schritt 3 — Das Möbel-Layout annotieren' },
+                {
+                    type: 'p',
+                    text: "Bei komplexen Grundrissen oder schwierigen Winkeln machen Annotationen das Ergebnis deutlich zuverlässiger. Wechsle in den Anmerkungsmodus und markiere, wo jedes Möbelstück hingehört.",
+                },
+                { type: 'image', src: '/blog/multi4-annotate.jpeg', alt: 'Anmerkungsmodus mit Rechteck-Formen und Beschriftungen für Sofa, Tisch und TV-Platzierung.' },
+                {
+                    type: 'ul',
+                    items: [
+                        'Einfache Layouts: Textchips reichen oft — „Sofa", „Tisch", „TV" an die richtigen Positionen.',
+                        'Komplexe Layouts: Pinsel für grobe Möbelumrisse — mehr Präzision, weniger Fehler.',
+                    ],
+                },
+                {
+                    type: 'tip',
+                    label: 'Pro-Tipp',
+                    text: 'Nutze die Mehr-Funktion für einen Batch — Konsistenz findet sich leichter, wenn du Optionen hast.',
+                },
+                { type: 'h2', text: 'Was am besten funktioniert' },
+                {
+                    type: 'ul',
+                    items: [
+                        'Weniger ist mehr — ein aufgeräumter Raum mit wenig Möbeln bietet der AI weniger Fehlerquellen.',
+                        'Sehr ähnliche Winkel oder diametral entgegengesetzte Ansichten (Vorder- und Rückseite).',
+                        'Offene Grundrisse, wo das gesamte Layout im Übersichtsbild sichtbar ist.',
+                    ],
+                },
+                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Finales Staging-Ergebnis: der zweite Blickwinkel des Raumes, konsistent mit dem Referenz-Staging.' },
+                {
+                    type: 'p',
+                    text: "Kein perfekter Workflow — aber der beste, den es gerade gibt.",
+                },
+                {
+                    type: 'p',
+                    text: "Aktuelle Modelle sind Bildmodelle — sie modellieren keine Welt, sondern Pixel. Konsistentes Multi-Perspektiven-Staging erfordert das Verständnis, dass ein Sofa in 3D existiert, nicht nur in einem Bildausschnitt. Das sind Trainingsdaten, die es kaum gibt. Bis World Models diesen Sprung schaffen, ist dieser Workflow die beste Annäherung an etwas, das ein zukünftiges Modell in einem einzigen Schritt lösen wird. Und wenn die Zeit knapp ist: ein richtig gutes gestagtes Foto schlägt vier halbgar konsistente.",
+                },
+            ],
+        },
+    },
+    {
         slug: 'real-estate-staging-ai',
         category: 'Tutorial',
         date: 'April 4, 2026',
+        isoDate: '2026-04-04',
         readTime: 6,
         coverGradient: 'from-amber-950 via-orange-950 to-stone-950',
         coverImage: '/home/1 creation reimagined/3.jpeg',
@@ -116,6 +262,7 @@ export const BLOG_POSTS: BlogPost[] = [
         slug: 'visual-prompting-guide',
         category: 'Guide',
         date: 'March 28, 2026',
+        isoDate: '2026-03-28',
         readTime: 5,
         coverGradient: 'from-indigo-950 via-violet-950 to-slate-950',
         coverImage: '/blog/vp-cover.jpeg',
@@ -200,6 +347,7 @@ export const BLOG_POSTS: BlogPost[] = [
         slug: 'variables-presets',
         category: 'Guide',
         date: 'March 20, 2026',
+        isoDate: '2026-03-20',
         readTime: 4,
         coverGradient: 'from-violet-950 via-indigo-950 to-slate-950',
         coverImage: '/blog/variables-cover.jpg',
@@ -314,6 +462,7 @@ export const BLOG_POSTS: BlogPost[] = [
         slug: 'reference-images-style-matching',
         category: 'Guide',
         date: 'April 1, 2026',
+        isoDate: '2026-04-01',
         readTime: 3,
         coverGradient: 'from-stone-950 via-zinc-900 to-neutral-950',
         coverImage: '/blog/ref-cover.jpeg',
@@ -404,6 +553,7 @@ export const BLOG_POSTS: BlogPost[] = [
         slug: 'renovation-visualization',
         category: 'Use Case',
         date: 'March 22, 2026',
+        isoDate: '2026-03-22',
         readTime: 6,
         coverGradient: 'from-slate-950 via-zinc-900 to-stone-950',
         coverImage: '/home/1 creation reimagined/6.jpeg',
@@ -472,6 +622,7 @@ export const BLOG_POSTS: BlogPost[] = [
         slug: 'product-photography-ai',
         category: 'Use Case',
         date: 'March 15, 2026',
+        isoDate: '2026-03-15',
         readTime: 5,
         coverGradient: 'from-emerald-950 via-teal-950 to-cyan-950',
         coverImage: '/home/1 creation reimagined/2.jpeg',

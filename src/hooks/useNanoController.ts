@@ -573,23 +573,7 @@ export const useNanoController = () => {
                 );
                 return;
             }
-            // If selected image is a child in a stack, find the stack root so the new
-            // generation stays grouped under the same parent (mirrors handleGenerateMore logic).
-            let generateGroupParentId: string | undefined;
-            if (selectedImage.parentId) {
-                let root: CanvasImage = selectedImage;
-                let depth = 0;
-                while (root.parentId && depth < 50) {
-                    const parent = allImages.find(p => p.id === root.parentId);
-                    if (!parent) break;
-                    root = parent;
-                    depth++;
-                }
-                if (root.id !== selectedImage.id) {
-                    generateGroupParentId = root.id;
-                }
-            }
-            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues, undefined, generateGroupParentId);
+            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues, undefined, !!selectedImage.parentId);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang]);
 
@@ -601,18 +585,6 @@ export const useNanoController = () => {
             img = idOrImg;
         }
         if (!img) return;
-
-        // Walk the full ancestry chain to find the root original for grouping.
-        // We use img as the actual source for the API (preserves annotations/edits),
-        // but store groupParentId = root.id so the result lands in the original source's stack.
-        let root: CanvasImage = img;
-        let depth = 0;
-        while (root.parentId && depth < 50) {
-            const parent = allImages.find(p => p.id === root.parentId);
-            if (!parent) break;
-            root = parent;
-            depth++;
-        }
 
         // Full request body is stored on the image (generationPrompt + variableValues + activeTemplateId).
         // "Mehr" simply replays it. userDraftPrompt is '' for children (clean SideSheet), so fall back to generationPrompt.
@@ -627,18 +599,16 @@ export const useNanoController = () => {
             return;
         }
 
-        // Use directParent as-is — this is identical to the user navigating back to
-        // the parent and pressing Generate manually: same source image, same annotations
-        // (including any mask/shapes that were used to produce img), same prompt.
-        // Do NOT override directParent.annotations with img.annotations — img only
-        // carries reference_images (stripped from parent during placeholder creation),
-        // so overriding would silently drop the mask that was used to produce img.
-        const groupParentId = root.id !== img.id ? root.id : undefined;
+        // Use directParent as the source — this is identical to navigating back to the parent
+        // and pressing Generate manually: same source image (with its mask/shapes/annotations),
+        // same prompt. Stack grouping is handled by folder_id (inherited from source), so no
+        // groupParentId root-walking is needed anymore.
         const directParent = img.parentId
             ? (allImages.find(p => p.id === img.parentId) ?? img)
             : img;
-        performGeneration(directParent, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
-    }, [allImages, performGeneration]);
+        // isRepeat=true so Gemini's implicit input caching is busted with a variation ID
+        performGeneration(directParent, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, true);
+    }, [allImages, performGeneration, showToast, currentLang]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         performNewGeneration(prompt, model, ratio, attachments);

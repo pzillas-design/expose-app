@@ -54,6 +54,7 @@ export const imageService = {
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
+            folder_id: image.folderId ?? image.id,
             annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
             generation_params: {
                 quality: image.quality,
@@ -225,8 +226,8 @@ export const imageService = {
         targetTitle?: string;
         aspectRatio?: string;
         activeTemplateId?: string;
-        groupParentId?: string;
         isRepeat?: boolean;
+        groupParentId?: string; // @deprecated — kept for call-site compatibility during migration
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -268,7 +269,8 @@ export const imageService = {
                 targetTitle,
                 activeTemplateId: activeTemplateId || undefined,
                 sourceImage: sourceImageForEdge,
-                groupParentId: groupParentId || undefined,
+                // folder_id of source so edge function can propagate it to the generated image
+                sourceFolderId: sourceImage?.folderId ?? sourceImage?.id ?? undefined,
                 // Pass storage_path when available so the edge function downloads original
                 // bytes directly (no JPEG recompression loss). Falls back to base64 in
                 // payload.originalImage for blob URLs / images without a storage path.
@@ -393,7 +395,8 @@ export const imageService = {
             height: logicalHeight,
             realWidth: genWidth,
             realHeight: genHeight,
-            parentId: (result.parent_id ?? result.parentId) ?? (sourceImage.parentId ?? sourceImage.id)
+            parentId: (result.parent_id ?? result.parentId) ?? (sourceImage.parentId ?? sourceImage.id),
+            folderId: result.folder_id || (sourceImage.folderId ?? sourceImage.id)
         };
     },
 
@@ -454,6 +457,7 @@ export const imageService = {
             userDraftPrompt: record.user_draft_prompt || '',
             annotations: resolvedAnns,
             parentId: record.parent_id,
+            folderId: record.folder_id || record.parent_id || record.id,
             quality: record.generation_params?.quality || 'nb2-2k',
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
@@ -600,6 +604,9 @@ export const imageService = {
             const baseName = parentBaseName || 'Generation';
             const startTime = new Date(job.created_at).getTime();
 
+            // Inherit folder_id from parent so skeleton lands in the right stack row
+            const parentFolderId = (parent as CanvasImage)?.folderId || (parent as any)?.folder_id || job.parent_id || job.id;
+
             const skeleton: CanvasImage = {
                 id: job.id,
                 src: parent?.src || '', // Use parent image as placeholder if available
@@ -612,6 +619,7 @@ export const imageService = {
                 isGenerating: true,
                 generationStartTime: startTime,
                 parentId: job.parent_id, // Map persistent lineage from DB
+                folderId: parentFolderId,
                 generationPrompt: job.prompt,
                 quality: job.model as any,
                 createdAt: startTime,
@@ -622,31 +630,14 @@ export const imageService = {
             loadedImages.push(skeleton);
         });
 
-        // 4. Group into Rows by Root Ancestry
+        // 4. Group into Rows by folder_id (explicit, immutable stack root).
+        // Falls back to img.id for images without folder_id (pre-migration data).
         const rows: ImageRow[] = [];
         const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        const getRootId = (img: CanvasImage): string => {
-            let current = img;
-            let depth = 0;
-            // Trace back to the oldest parent available in the current set
-            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            // If the oldest visible one has a parentId, that missing parent is our "virtual" root.
-            // This ensures all siblings of the same missing parent stay in the same row.
-            return current.parentId || current.id;
-        };
-
         loadedImages.forEach(img => {
-            // Group strictly by root ancestry (parent_id chain).
-            // If the root is not in the loaded set (deleted parent), each orphan
-            // stands alone — never merge by baseName which causes false groupings
-            // when unrelated images share a filename or prompt snippet.
-            const groupId = getRootId(img);
-
+            const groupId = img.folderId ?? img.id;
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
         });
@@ -741,23 +732,13 @@ export const imageService = {
 
         const loadedImages = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
 
-        // Group into rows
+        // Group into rows by folder_id (immutable stack root).
         const rows: ImageRow[] = [];
         const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        const getRootId = (img: CanvasImage): string => {
-            let current = img;
-            let depth = 0;
-            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            return current.parentId || current.id;
-        };
-
         loadedImages.forEach(img => {
-            const groupId = getRootId(img);
+            const groupId = img.folderId ?? img.id;
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
         });

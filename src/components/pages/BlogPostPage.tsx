@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { BLOG_POSTS, ContentBlock, getTranslation } from '@/data/blogPosts';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { Button } from '@/components/ui/DesignSystem';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { TranslationFunction } from '@/types';
 
 const POST_IMAGES = [
@@ -113,6 +114,29 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+            <PageSEO
+                title={title}
+                description={excerpt}
+                canonical={`https://expose.ae/blog/${post.slug}`}
+                ogImage={heroImage}
+                ogType="article"
+                publishedTime={post.isoDate}
+                jsonLd={{
+                    "@context": "https://schema.org",
+                    "@type": "Article",
+                    "headline": title,
+                    "description": excerpt,
+                    "image": heroImage.startsWith('http') ? heroImage : `https://expose.ae${heroImage}`,
+                    "datePublished": post.isoDate,
+                    "author": { "@type": "Organization", "name": "exposé" },
+                    "publisher": {
+                        "@type": "Organization",
+                        "name": "exposé",
+                        "url": "https://expose.ae"
+                    },
+                    "url": `https://expose.ae/blog/${post.slug}`
+                }}
+            />
 
             {/* Space for expanded hero navbar (88px mobile / 148px desktop) */}
             <div className="h-[88px] md:h-[148px] shrink-0" />

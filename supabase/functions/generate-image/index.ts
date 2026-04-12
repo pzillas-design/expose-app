@@ -157,6 +157,7 @@ const saveGeminiResult = async (
         version: currentVersion,
         prompt: prompt,
         parent_id: (requestType === 'edit' || parentId) ? (parentId || sourceId || null) : null,
+        folder_id: sourceFolderId ?? sourceId ?? jobId,
         annotations: annotations || '[]',
         generation_params: {
             quality: qualityMode,
@@ -247,6 +248,7 @@ Deno.serve(async (req) => {
             // Legacy/Fallback fields
             sourceImage,
             groupParentId,
+            sourceFolderId,     // folder_id of source image — propagated to generated result
             attachments: legacyAttachments,
             sourceStoragePath,  // internal storage path — preferred over signed URL fetch
             isRepeat,           // true when user presses "More" / repeat generation

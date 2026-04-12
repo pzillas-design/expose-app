@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { App } from './App';
 
 // After a new deploy, old lazy-loaded chunk filenames no longer exist on the
@@ -32,6 +33,7 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
+    <HelmetProvider>
     <BrowserRouter>
       <ToastProvider>
         <ModalStackProvider>
@@ -43,5 +45,6 @@ root.render(
         </ModalStackProvider>
       </ToastProvider>
     </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>
 );

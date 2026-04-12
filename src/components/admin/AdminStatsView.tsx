@@ -158,7 +158,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [visible,       setVisible]       = useState({
         totalUsers:    true,
         generierungen: true,
-        res05k:        false,
+        res05k:        true,
         res1k:         false,
         res2k:         false,
         res4k:         false,

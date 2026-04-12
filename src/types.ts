@@ -44,6 +44,7 @@ export interface CanvasImage {
   originalSrc?: string;
 
   parentId?: string;
+  folderId?: string; // Immutable root of the stack — shared by all variants
   generationPrompt?: string;
   userDraftPrompt?: string;
   activeTemplateId?: string; // Currently active preset template ID
