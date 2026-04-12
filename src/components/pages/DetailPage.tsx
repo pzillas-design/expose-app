@@ -9,6 +9,7 @@ import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
+import { useToast } from '@/components/ui/Toast';
 
 /* ── Circular progress for thumb strip generating placeholders ── */
 const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
@@ -181,6 +182,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     state, actions, t
 }) => {
     const isMobile = useMobile();
+    const { showToast } = useToast();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
     // Track previous loaded image src so it stays visible during navigation flicker
@@ -252,6 +254,32 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         suppressEntryAnimRef.current = true;
         onSelectImage(id);
     }, [onSelectImage]);
+
+    // Right-click on detail image → copy to clipboard
+    const handleImageContextMenu = useCallback(async (e: React.MouseEvent<HTMLImageElement>) => {
+        e.preventDefault();
+        const imgEl = e.currentTarget;
+        if (!imgEl.complete || !imgEl.naturalWidth) return;
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgEl.naturalWidth;
+            canvas.height = imgEl.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.drawImage(imgEl, 0, 0);
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    showToast('Bild kopiert', 'success', 2500);
+                } catch {
+                    showToast('Kopieren fehlgeschlagen', 'error');
+                }
+            }, 'image/png');
+        } catch (err) {
+            console.error('[DetailPage] Context menu copy failed:', err);
+        }
+    }, [showToast]);
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
@@ -766,6 +794,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         alt={img.title}
                                         crossOrigin="anonymous"
                                         draggable={true}
+                                        onContextMenu={handleImageContextMenu}
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });

@@ -627,11 +627,17 @@ export const useNanoController = () => {
             return;
         }
 
-        // Use img itself as the API source — the user pressed "More" on this specific image
-        // and expects a new variation of it, not of its parent.
+        // Use the direct parent as the source — "More" should repeat the same source→result
+        // relationship as the image being repeated (e.g. pressing More on C re-runs B→C).
         // groupParentId keeps the result grouped under the root stack.
         const groupParentId = root.id !== img.id ? root.id : undefined;
-        performGeneration(img, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
+        const directParent = img.parentId
+            ? (allImages.find(p => p.id === img.parentId) ?? img)
+            : img;
+        const sourceForApi = directParent.id !== img.id
+            ? { ...directParent, annotations: img.annotations || [] }
+            : img;
+        performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
     }, [allImages, performGeneration]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {

@@ -559,12 +559,11 @@ export const useGeneration = ({
             thumbSrc: sourceImage.thumbSrc,
             src: sourceImage.src,
             annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
-            parentId: groupParentId ?? sourceImage.id,
+            parentId: sourceImage.id,
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
-            // userDraftPrompt is intentionally empty — SideSheet shows clean for children.
-            // variableValues/activeTemplateId are kept for replay but not displayed (SideSheet init guards).
-            userDraftPrompt: '',
+            // userDraftPrompt stores the user-facing prompt so SideSheet can display it when revisiting.
+            userDraftPrompt: draftPrompt || '',
             activeTemplateId: activeTemplateId,
             variableValues: variableValues,
             quality: effectiveQuality as GenerationQuality,

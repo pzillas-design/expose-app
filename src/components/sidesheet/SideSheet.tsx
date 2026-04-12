@@ -299,12 +299,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     useEffect(() => {
         if (!selectedImage) return;
         if (selectedImage.id !== lastSelectedIdRef.current) {
-            const isChild = !!selectedImage.parentId;
-            if (isChild) {
-                // Generated child image: keep current prompt + variables visible so the user
-                // can see what was applied and re-use it. Don't reset anything.
-            } else if (!isMulti) {
-                // Single-select, non-child: load this image's saved state.
+            if (!isMulti) {
+                // Load this image's saved state (both child and non-child images store their settings).
+                // Children store draftPrompt/variableValues/activeTemplateId from generation time,
+                // so the SideSheet correctly shows what was applied when revisiting a generated image.
                 setPrompt(selectedImage.userDraftPrompt || '');
                 setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});

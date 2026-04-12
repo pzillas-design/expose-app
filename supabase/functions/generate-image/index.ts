@@ -472,7 +472,7 @@ Deno.serve(async (req) => {
                     targetTitle,
                     userId: user.id,
                     userEmail: user.email,
-                    parentId: groupParentId || sourceImage?.id || null,
+                    parentId: sourceImage?.id || null,
                     sourceWidth: sourceImage?.width,
                     sourceHeight: sourceImage?.height,
                     sourceRealWidth: sourceImage?.realWidth || sourceImage?.width,
@@ -665,7 +665,7 @@ Deno.serve(async (req) => {
         // Respond immediately — client will poll generation_jobs for completion
         // Include parent_id so the client can set up parentId on the placeholder image
         // without waiting for the DB record to be written.
-        const responseParentId = payload?.groupParentId || payload?.sourceImage?.id || null;
+        const responseParentId = payload?.sourceImage?.id || null;
         return new Response(JSON.stringify({
             success: true,
             jobId: newId,
