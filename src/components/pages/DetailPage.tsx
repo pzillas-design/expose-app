@@ -255,13 +255,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(id);
     }, [onSelectImage]);
 
-    // Right-click on detail image → copy original JPEG bytes to clipboard (no re-encoding)
-    const handleImageContextMenu = useCallback(async (e: React.MouseEvent<HTMLImageElement>) => {
+    // Right-click on detail image → copy original JPEG bytes to clipboard (no re-encoding).
+    // Uses current image src from state so this works when triggered from any overlay element.
+    const handleImageContextMenu = useCallback(async (e: React.MouseEvent) => {
         e.preventDefault();
-        const imgEl = e.currentTarget;
-        if (!imgEl.src) return;
+        const currentImg = imgRef.current;
+        const src = currentImg?.src;
+        if (!src) return;
         try {
-            const resp = await fetch(imgEl.src);
+            const resp = await fetch(src);
             const blob = await resp.blob();
             // Use the actual mime type from the server (image/jpeg for our images)
             const mimeType = blob.type || 'image/jpeg';
@@ -270,12 +272,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 showToast('Bild kopiert', 'success', 2500);
             } catch {
                 // Fallback: some browsers only support image/png in ClipboardItem — convert via canvas
+                const domImg = document.getElementById(`detail-img-${currentImg?.id}`) as HTMLImageElement | null;
+                if (!domImg) return;
                 const canvas = document.createElement('canvas');
-                canvas.width = imgEl.naturalWidth;
-                canvas.height = imgEl.naturalHeight;
+                canvas.width = domImg.naturalWidth;
+                canvas.height = domImg.naturalHeight;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
-                ctx.drawImage(imgEl, 0, 0);
+                ctx.drawImage(domImg, 0, 0);
                 canvas.toBlob(async (pngBlob) => {
                     if (!pngBlob) return;
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
@@ -831,7 +835,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onContextMenu={handleImageContextMenu}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}
