@@ -1,8 +1,8 @@
 import React from 'react';
 
 const STATS = [
-    { value: '1,600+', label: 'images created' },
-    { value: '100+', label: 'designers & creatives' },
+    { value: '1,643', label: 'images generated' },
+    { value: '104', label: 'designers & creatives' },
     { value: '0.5 K – 4 K', label: 'resolution range' },
 ];
 
