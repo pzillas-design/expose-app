@@ -607,9 +607,12 @@ export const imageService = {
             // Inherit folder_id from parent so skeleton lands in the right stack row
             const parentFolderId = (parent as CanvasImage)?.folderId || (parent as any)?.folder_id || job.parent_id || job.id;
 
+            // Prefer the resolved CanvasImage (has signed thumbSrc) over raw DB record
+            const parentCanvasImg = loadedImages.find(img => img.id === job.parent_id);
             const skeleton: CanvasImage = {
                 id: job.id,
-                src: parent?.src || '', // Use parent image as placeholder if available
+                src: parentCanvasImg?.src || (parent as any)?.src || '',
+                thumbSrc: parentCanvasImg?.thumbSrc || parentCanvasImg?.src || undefined,
                 storage_path: '',
                 width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
                 height: 512,
