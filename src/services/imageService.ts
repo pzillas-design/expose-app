@@ -212,6 +212,7 @@ export const imageService = {
         aspectRatio,
         activeTemplateId,
         groupParentId,
+        isRepeat,
         sourceImage // Passed for local dimension calculation fallback
     }: {
         payload: any; // StructuredGenerationRequest
@@ -225,6 +226,7 @@ export const imageService = {
         aspectRatio?: string;
         activeTemplateId?: string;
         groupParentId?: string;
+        isRepeat?: boolean;
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -267,10 +269,13 @@ export const imageService = {
                 activeTemplateId: activeTemplateId || undefined,
                 sourceImage: sourceImageForEdge,
                 groupParentId: groupParentId || undefined,
-                // sourceStoragePath intentionally omitted — source image is now compressed
-                // client-side (4K / 70% JPEG) and sent directly as base64 in payload.originalImage.
-                // This eliminates the prepare_source Storage download and its 20s timeout.
-                sourceStoragePath: undefined,
+                // Pass storage_path when available so the edge function downloads original
+                // bytes directly (no JPEG recompression loss). Falls back to base64 in
+                // payload.originalImage for blob URLs / images without a storage path.
+                sourceStoragePath: sourceImage?.storage_path || undefined,
+                // Tell edge function this is a repeat so it appends a variation ID to break
+                // Gemini's implicit input caching and encourage diverse outputs.
+                isRepeat: isRepeat || undefined,
                 // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
                 provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
             }

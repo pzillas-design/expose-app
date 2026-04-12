@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
         // New Structured Payload extraction
         const {
             type: requestType,
-            prompt,
+            prompt: rawPrompt,
             variables,
             originalImage: payloadOriginalImage,
             annotationImage: payloadAnnotationImage,
@@ -249,7 +249,14 @@ Deno.serve(async (req) => {
             groupParentId,
             attachments: legacyAttachments,
             sourceStoragePath,  // internal storage path — preferred over signed URL fetch
+            isRepeat,           // true when user presses "More" / repeat generation
         } = payload;
+
+        // For repeat/"More" generations: append a random variation ID so Gemini's implicit
+        // input caching doesn't anchor the model to the same output. Without this, identical
+        // prompt + source image hits the cache and produces very similar results every time.
+        const varId = Math.random().toString(36).slice(2, 7).toUpperCase();
+        const prompt = isRepeat ? `${rawPrompt} [v:${varId}]` : rawPrompt;
 
         // Early content validation — prevents credit deduction for empty requests
         if (!prompt?.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {

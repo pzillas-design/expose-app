@@ -623,10 +623,14 @@ export const useGeneration = ({
                     instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
                 }));
 
-                // Compress source image client-side (4K max, 70% JPEG) before sending to edge
-                // function — eliminates the prepare_source Storage download + timeout entirely.
-                let originalImageForRequest = sourceImage.src;
-                if (sourceImage.src) {
+                // If the source image is already stored in our storage (has storage_path),
+                // skip client-side compression entirely — the edge function downloads the
+                // original bytes via admin storage, which avoids JPEG recompression quality
+                // loss (especially important for cascaded "More" generations).
+                // For fresh uploads / blob URLs, fall back to client-side compression.
+                const useStoragePath = !!(sourceImage.storage_path && !sourceImage.src?.startsWith('blob:'));
+                let originalImageForRequest: string | undefined;
+                if (!useStoragePath && sourceImage.src) {
                     try {
                         const blob = await compressImage(sourceImage.src, 3840, 0.7);
                         originalImageForRequest = await new Promise<string>(resolve => {
@@ -636,6 +640,7 @@ export const useGeneration = ({
                         });
                     } catch (err) {
                         console.warn('[useGeneration] Client compress failed, using URL fallback:', err);
+                        originalImageForRequest = sourceImage.src;
                     }
                 }
 
@@ -682,6 +687,7 @@ export const useGeneration = ({
                     targetTitle: placeholder.title,
                     activeTemplateId: activeTemplateId,
                     groupParentId,
+                    isRepeat: !!groupParentId,
                 });
 
                 if (finalImage) {
