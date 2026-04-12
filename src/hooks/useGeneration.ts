@@ -558,7 +558,7 @@ export const useGeneration = ({
             maskSrc: undefined,
             thumbSrc: sourceImage.thumbSrc,
             src: sourceImage.src,
-            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
+            annotations: [], // Generated results start blank — reference images stay on the source image
             parentId: sourceImage.id,
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
