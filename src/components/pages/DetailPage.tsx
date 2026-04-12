@@ -446,12 +446,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
 
+    // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
+    // Reserve this many pixels at the bottom so the image scales to fit above them.
+    const BRUSH_BOTTOM_RESERVE = 192;
+
     const updateDisplayBox = useCallback(() => {
         const viewport = imageViewportRef.current;
         if (!viewport || imgNaturalDims.width <= 0 || imgNaturalDims.height <= 0) return;
 
         const viewportWidth = viewport.clientWidth;
-        const viewportHeight = viewport.clientHeight;
+        const reservedBottom = state.sideSheetMode === 'brush' ? BRUSH_BOTTOM_RESERVE : 0;
+        const viewportHeight = viewport.clientHeight - reservedBottom;
         if (viewportWidth <= 0 || viewportHeight <= 0) return;
 
         const scale = Math.min(
@@ -463,7 +468,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             width: Math.max(1, Math.round(imgNaturalDims.width * scale)),
             height: Math.max(1, Math.round(imgNaturalDims.height * scale))
         });
-    }, [imgNaturalDims.height, imgNaturalDims.width]);
+    }, [imgNaturalDims.height, imgNaturalDims.width, state.sideSheetMode]);
 
     useEffect(() => {
         updateDisplayBox();
@@ -747,8 +752,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         )}
 
-                        {/* Sizing wrapper: image and annotations share the exact same fitted box */}
-                        <div ref={imageViewportRef} className="absolute inset-0 flex items-center justify-center">
+                        {/* Sizing wrapper: image and annotations share the exact same fitted box.
+                            In brush mode a paddingBottom reserves space for the floating toolbars
+                            so the image scales to fit above them and the bottom edge stays reachable. */}
+                        <div
+                            ref={imageViewportRef}
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
+                        >
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
                                     className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}

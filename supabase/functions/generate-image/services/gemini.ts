@@ -16,7 +16,7 @@ export const getSystemInstruction = (hasSource: boolean, hasMask: boolean, hasRe
     }
 
     if (hasMask && hasRefs) {
-        return "The first image is the ORIGINAL — it is the subject to be edited; preserve its exact architecture, spatial layout, and perspective. The second image shows red annotations marking the specific areas to change. All remaining images are REFERENCE IMAGES only — they provide visual style or content inspiration but must never replace the original as the base. Apply the changes described by the prompt at the annotated locations, using the references as visual guidance. Do not render the red markings in the output.";
+        return "The first image is the ORIGINAL — it is the primary subject to be edited; preserve its composition, proportions, and perspective exactly. The second image marks specific areas to change with red annotations. All remaining images are REFERENCE IMAGES only — visual inspiration for style or content, never a replacement for the original. Apply the changes at the annotated areas, draw on the references for guidance, and do not render the red markings in the output.";
     }
 
     if (hasMask) {
@@ -24,7 +24,7 @@ export const getSystemInstruction = (hasSource: boolean, hasMask: boolean, hasRe
     }
 
     if (hasRefs) {
-        return "The first image is the ORIGINAL — it is the primary subject to be edited. You must preserve its exact architecture, spatial layout, room structure, and perspective in the output. All subsequent images are REFERENCE IMAGES only — they are style and content inspiration and must never be used as the base or subject of the output. Edit the original image according to the prompt, drawing on the references for visual guidance.";
+        return "The first image is the ORIGINAL — it is the primary subject to be edited. Preserve its composition, proportions, and perspective exactly in the output. All subsequent images are REFERENCE IMAGES only — they supply visual style or content inspiration and must never replace the original as the output base. Apply the prompt to the original image, drawing on the references for visual guidance.";
     }
 
     return "Edit the original image based on the prompt. Maintain the overall style and perspective.";
