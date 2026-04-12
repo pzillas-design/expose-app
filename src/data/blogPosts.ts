@@ -96,15 +96,6 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Staged bedroom from the first angle.' },
                 { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Same staging from the opposite angle — consistent furniture, style, and layout.' },
-                { type: 'h2', text: 'A Look Ahead' },
-                {
-                    type: 'p',
-                    text: "We're moving toward an era of world models that will genuinely understand space in three dimensions. Until then, working with AI is an iterative process — a dialogue between your creative vision and the model's compute.",
-                },
-                {
-                    type: 'p',
-                    text: "And if you're short on time: one perfectly staged photo stands out more than ten half-baked angles.",
-                },
             ],
         },
         de: {
