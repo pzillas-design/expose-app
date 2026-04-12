@@ -50,7 +50,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: "That AI staging looks impressive on a single photo is no longer a secret. The challenge starts when you have multiple shots of the same room and want the staged versions to actually match. Same sofa, same table, same TV. Current AI models have no memory between generations. Here's the workflow that gets them in line.",
                 },
-                { type: 'h2', text: '1 — Start with the Best Overview' },
+                { type: 'h2', text: '1. Start with the Best Overview' },
                 {
                     type: 'p',
                     text: "Always begin with the shot that shows the most of the room. A wide angle or a clearly readable floor plan works as your visual foundation. This image is your anchor — where you establish the style, materials, and atmosphere that will carry through every subsequent perspective.",
@@ -61,7 +61,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     label: 'Tip',
                     text: "Use 0.5K resolution while experimenting with different styles. Only switch to high-res once the concept is locked in.",
                 },
-                { type: 'h2', text: '2 — Use the Staged Result as Inspiration' },
+                { type: 'h2', text: '2. Use the Staged Result as Inspiration' },
                 {
                     type: 'p',
                     text: "Got your perfect anchor image? Great. Now it's about transferring that knowledge to the next angle. Instead of letting the AI guess, feed it the finished staging of the first image as Inspiration.",
@@ -71,7 +71,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     text: 'In your prompt, help the model understand the perspective shift. Be explicit: "Add home staging that matches the reference image, but photograph the room from the opposite side."',
                 },
                 { type: 'image', src: '/blog/multi3-add-inspiration.jpeg', alt: 'Adding the staged first image as inspiration when working on the second angle in exposé.' },
-                { type: 'h2', text: '3 — Annotate the Furniture Layout' },
+                { type: 'h2', text: '3. Annotate the Furniture Layout' },
                 {
                     type: 'p',
                     text: "For irregular rooms or complex furniture arrangements, a visual reference alone sometimes isn't enough. That's where annotations come in. Switch to Annotation Mode and roughly mark where the sofa, dining table, or sideboard should sit in the new view. This combination of spatial guidance and the visual style from your anchor image is the most reliable path to a coherent result.",
@@ -115,7 +115,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'p',
                     text: "Dass KI-Staging auf einem einzelnen Foto beeindruckt, ist kein Geheimnis mehr. Die Herausforderung beginnt, wenn du mehrere Fotos desselben Raumes hast und die gestagten Versionen tatsächlich zusammenpassen sollen. Gleiches Sofa, gleicher Tisch, gleicher Fernseher. Aktuelle KI-Modelle haben kein Gedächtnis zwischen Generierungen. Wir zeigen dir den Workflow, mit dem du die KI zur Ordnung rufst.",
                 },
-                { type: 'h2', text: '1 — Mit dem besten Überblick starten' },
+                { type: 'h2', text: '1. Mit dem besten Überblick starten' },
                 {
                     type: 'p',
                     text: "Beginne immer mit der Aufnahme, die den maximalen Raumüberblick bietet. Ein weiter Winkel oder ein klar erkennbarer Grundriss dienen hier als visuelle Basis. Dieses Bild ist dein Anker – hier legst du den Stil, die Materialien und die Atmosphäre fest, die sich später durch alle weiteren Perspektiven ziehen werden.",
@@ -126,7 +126,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     label: 'Tipp',
                     text: "Nutze die 0.5K-Auflösung, während du mit verschiedenen Stilen experimentierst. Erst wenn das Konzept steht, schaltest du für das finale Ergebnis auf High-Res um.",
                 },
-                { type: 'h2', text: '2 — Das gestagte Bild als Inspiration verwenden' },
+                { type: 'h2', text: '2. Das gestagte Bild als Inspiration verwenden' },
                 {
                     type: 'p',
                     text: "Hast du dein perfektes Ankerbild generiert? Wunderbar. Jetzt geht es darum, dieses Wissen auf den nächsten Blickwinkel zu übertragen. Anstatt die KI raten zu lassen, gibst du ihr das fertige Staging des ersten Bildes als Inspiration mit.",
@@ -136,7 +136,7 @@ export const BLOG_POSTS: BlogPost[] = [
                     text: 'Im Prompt hilfst du dem Modell zusätzlich, den Perspektivwechsel zu verstehen. Formuliere es explizit: \u201eFüge Home Staging hinzu, das dem Referenzbild entspricht, aber fotografiere den Raum von der gegenüberliegenden Seite.\u201c',
                 },
                 { type: 'image', src: '/blog/multi3-add-inspiration.jpeg', alt: 'Das erste gestagte Bild wird als Inspiration für den zweiten Blickwinkel in exposé hinzugefügt.' },
-                { type: 'h2', text: '3 — Das Möbel-Layout annotieren' },
+                { type: 'h2', text: '3. Das Möbel-Layout annotieren' },
                 {
                     type: 'p',
                     text: "Bei verwinkelten Räumen oder komplexen Möbel-Arrangements reicht ein visueller Hinweis manchmal nicht aus. Hier kommen die Annotationen ins Spiel. Wechsle in den Anmerkungsmodus und markiere grob, wo Sofa, Esstisch oder Sideboard im neuen Blickwinkel stehen sollen. Diese Kombination aus räumlicher Vorgabe und dem visuellen Stil deines Ankerbildes ist die sicherste Methode für ein stimmiges Ergebnis.",
