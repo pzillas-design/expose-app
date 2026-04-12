@@ -16,7 +16,7 @@ export const getSystemInstruction = (hasSource: boolean, hasMask: boolean, hasRe
     }
 
     if (hasMask && hasRefs) {
-        return "Image 1 is the original. Image 2 shows red annotations marking where and what to change. Reference images provide visual guidance. Apply changes at the annotated locations using references as style guide. Do not render the red markings in the output. Maintain original style and perspective.";
+        return "The first image is the ORIGINAL — it is the subject to be edited; preserve its exact architecture, spatial layout, and perspective. The second image shows red annotations marking the specific areas to change. All remaining images are REFERENCE IMAGES only — they provide visual style or content inspiration but must never replace the original as the base. Apply the changes described by the prompt at the annotated locations, using the references as visual guidance. Do not render the red markings in the output.";
     }
 
     if (hasMask) {
@@ -24,7 +24,7 @@ export const getSystemInstruction = (hasSource: boolean, hasMask: boolean, hasRe
     }
 
     if (hasRefs) {
-        return "Edit the original image based on the prompt. Use the reference images as visual guidance for style and content. Maintain the original aspect ratio and perspective.";
+        return "The first image is the ORIGINAL — it is the primary subject to be edited. You must preserve its exact architecture, spatial layout, room structure, and perspective in the output. All subsequent images are REFERENCE IMAGES only — they are style and content inspiration and must never be used as the base or subject of the output. Edit the original image according to the prompt, drawing on the references for visual guidance.";
     }
 
     return "Edit the original image based on the prompt. Maintain the overall style and perspective.";
@@ -62,7 +62,7 @@ export const prepareParts = async (
                 data: sourceBase64
             }
         });
-        parts.push({ text: "Original Image" });
+        parts.push({ text: "ORIGINAL IMAGE (primary subject — preserve its layout, structure, and perspective)" });
     }
 
     // 4. Annotation Image
@@ -101,7 +101,10 @@ export const prepareParts = async (
                     }
                 });
 
-                parts.push({ text: ref.instruction || "Reference Image" });
+                const refLabel = ref.instruction
+                    ? `REFERENCE IMAGE (style/content guidance only — do not use as base): ${ref.instruction}`
+                    : "REFERENCE IMAGE (style/content guidance only — do not use as base)";
+                parts.push({ text: refLabel });
                 allRefs.push(ref.src);
             } catch (err) {
                 console.warn(`Failed to process reference image ${i}:`, err);
