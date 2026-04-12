@@ -106,11 +106,11 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     ))}
                 </SidebarAccordion>
             ) : (
-                <div className="flex items-center justify-start gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-4 px-4">
+                <div className="flex items-center justify-start gap-2 w-full overflow-x-auto no-scrollbar pointer-events-auto py-2 px-3">
                     {/* Edit Stickers Button */}
                     <button
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsModalOpen(true); }}
-                        className="shrink-0 h-10 w-10 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] flex items-center justify-center transition-all group"
+                        className="shrink-0 h-10 w-10 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 shadow flex items-center justify-center transition-all group"
                         title={t('edit_stickers_btn')}
                     >
                         <Ellipsis className="w-4 h-4 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300" />
@@ -119,7 +119,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                     {/* Free Text Chip */}
                     <button
                         onClick={() => onAddText?.()}
-                        className="shrink-0 h-10 px-4 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] group"
+                        className="shrink-0 h-10 px-4 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all shadow group"
                     >
                         <Type className="w-4 h-4 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors" />
                         <span className="text-sm font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-200">{t('text') || 'Text'}</span>
@@ -131,7 +131,7 @@ export const ObjectsTab: React.FC<ObjectsTabProps> = ({
                             key={`${item.id}-${idx}`}
                             onClick={() => onAddObject?.(item.label, item.id, item.icon)}
                             onContextMenu={(e) => { e.preventDefault(); handleOpenMenu(e, item.catId, item.id); }}
-                            className="shrink-0 h-10 px-4 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] group"
+                            className="shrink-0 h-10 px-4 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-all shadow group"
                         >
                             {item.icon && <span className="text-xl leading-none group-hover:scale-110 transition-transform">{item.icon}</span>}
                             <span className="text-sm font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-200">{item.label}</span>

@@ -448,7 +448,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
     // Reserve this many pixels at the bottom so the image scales to fit above them.
-    const BRUSH_BOTTOM_RESERVE = 192;
+    const BRUSH_BOTTOM_RESERVE = 176;
 
     const updateDisplayBox = useCallback(() => {
         const viewport = imageViewportRef.current;
