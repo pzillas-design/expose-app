@@ -1,30 +1,20 @@
 import React from 'react';
 
 /**
- * BlobBackground — Simple CSS-only animated background for generation placeholders.
- * Three soft gradient circles drift slowly to show activity.
- * Replaces the complex canvas-based renderer.
+ * BlobBackground — Diagonal swoosh lines sweep across the placeholder
+ * to indicate generation activity. Clean, minimal, non-distracting.
  */
 
-const BLOB_KEYFRAMES = `
-@keyframes blob-drift-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(8%, -6%) scale(1.05); }
-  66% { transform: translate(-5%, 8%) scale(0.95); }
+const SWIPE_KEYFRAMES = `
+@keyframes swipe-across {
+  0%   { transform: translateX(-160%) skewX(-20deg); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(260%) skewX(-20deg); opacity: 0; }
 }
-@keyframes blob-drift-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-7%, 5%) scale(0.95); }
-  66% { transform: translate(6%, -4%) scale(1.05); }
-}
-@keyframes blob-drift-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(5%, 7%) scale(1.03); }
-  66% { transform: translate(-8%, -5%) scale(0.97); }
-}
-@keyframes blob-fadein {
+@keyframes swoosh-fadein {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 `;
 
@@ -32,39 +22,60 @@ export const BlobBackground: React.FC<{ className?: string }> = ({ className }) 
     return (
         <div
             className={`absolute inset-0 overflow-hidden${className ? ` ${className}` : ''}`}
-            style={{ animation: 'blob-fadein 1s ease-out both' }}
+            style={{ animation: 'swoosh-fadein 0.6s ease-out both' }}
         >
-            <style>{BLOB_KEYFRAMES}</style>
-            {/* Zinc blob 1 */}
+            <style>{SWIPE_KEYFRAMES}</style>
+
+            {/* Line 1 — primary */}
             <div
-                className="absolute rounded-full"
+                className="absolute inset-y-0"
                 style={{
-                    width: '60%', height: '60%',
-                    top: '20%', left: '10%',
-                    background: 'radial-gradient(circle, rgba(161,161,170,0.14) 0%, rgba(161,161,170,0) 70%)',
-                    animation: 'blob-drift-1 8s ease-in-out infinite',
+                    left: 0, right: 0,
+                    animation: 'swipe-across 2.4s ease-in-out infinite',
+                    animationDelay: '0s',
                 }}
-            />
-            {/* Zinc blob 2 */}
+            >
+                <div style={{
+                    position: 'absolute',
+                    top: 0, bottom: 0,
+                    left: '48%', width: '4%',
+                    background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.10) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.10) 70%, transparent 100%)',
+                }} />
+            </div>
+
+            {/* Line 2 — slightly offset, thinner */}
             <div
-                className="absolute rounded-full"
+                className="absolute inset-y-0"
                 style={{
-                    width: '55%', height: '55%',
-                    top: '30%', right: '5%',
-                    background: 'radial-gradient(circle, rgba(161,161,170,0.10) 0%, rgba(161,161,170,0) 70%)',
-                    animation: 'blob-drift-2 10s ease-in-out infinite',
+                    left: 0, right: 0,
+                    animation: 'swipe-across 2.4s ease-in-out infinite',
+                    animationDelay: '0.18s',
                 }}
-            />
-            {/* Zinc blob 3 */}
+            >
+                <div style={{
+                    position: 'absolute',
+                    top: 0, bottom: 0,
+                    left: '50%', width: '2%',
+                    background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 70%, transparent 100%)',
+                }} />
+            </div>
+
+            {/* Repeat with longer delay */}
             <div
-                className="absolute rounded-full"
+                className="absolute inset-y-0"
                 style={{
-                    width: '45%', height: '45%',
-                    bottom: '15%', left: '25%',
-                    background: 'radial-gradient(circle, rgba(161,161,170,0.10) 0%, rgba(161,161,170,0) 70%)',
-                    animation: 'blob-drift-3 12s ease-in-out infinite',
+                    left: 0, right: 0,
+                    animation: 'swipe-across 2.4s ease-in-out infinite',
+                    animationDelay: '1.4s',
                 }}
-            />
+            >
+                <div style={{
+                    position: 'absolute',
+                    top: 0, bottom: 0,
+                    left: '48%', width: '4%',
+                    background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.08) 70%, transparent 100%)',
+                }} />
+            </div>
         </div>
     );
 };
