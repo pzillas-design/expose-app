@@ -1,10 +1,10 @@
 import React from 'react';
 
 const TIERS = [
-    { res: '0.5 K', credits: 1, label: 'Quick draft' },
-    { res: '1 K',   credits: 2, label: 'Standard' },
-    { res: '2 K',   credits: 4, label: 'High quality' },
-    { res: '4 K',   credits: 8, label: 'Full resolution' },
+    { res: '0.5 K', price: '0.05 €', label: 'Quick draft' },
+    { res: '1 K',   price: '0.10 €', label: 'Standard' },
+    { res: '2 K',   price: '0.20 €', label: 'High quality' },
+    { res: '4 K',   price: '0.40 €', label: 'Full resolution' },
 ];
 
 const BULLETS = [
@@ -41,7 +41,7 @@ export const PricingSection: React.FC = () => (
             <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">
                 {TIERS.map((tier, i) => (
                     <div key={i} className="flex items-center justify-between py-4">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-5">
                             <span className="font-kumbh font-semibold text-zinc-900 dark:text-white w-10">
                                 {tier.res}
                             </span>
@@ -49,16 +49,9 @@ export const PricingSection: React.FC = () => (
                                 {tier.label}
                             </span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="flex gap-1">
-                                {Array.from({ length: tier.credits }).map((_, j) => (
-                                    <span key={j} className="w-1.5 h-1.5 rounded-full bg-orange-400 dark:bg-orange-500" />
-                                ))}
-                            </div>
-                            <span className="text-sm text-zinc-400 dark:text-zinc-500 tabular-nums w-10 text-right">
-                                {tier.credits} cr.
-                            </span>
-                        </div>
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
+                            {tier.price}
+                        </span>
                     </div>
                 ))}
             </div>
