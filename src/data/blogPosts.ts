@@ -40,7 +40,7 @@ export const BLOG_POSTS: BlogPost[] = [
         isoDate: '2026-04-12',
         readTime: 5,
         coverGradient: 'from-stone-950 via-neutral-900 to-zinc-950',
-        coverImage: '/blog/multi6-result.jpg',
+        coverImage: '/blog/multi-cover.jpg',
         featured: true,
         en: {
             title: 'One Room, Multiple Angles. How to Keep the AI Consistent.',
@@ -78,13 +78,6 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 { type: 'image', src: '/blog/multi4-annotate.jpeg', alt: 'Annotation mode with rectangle shapes and text labels marking sofa, table, and TV placement.' },
                 {
-                    type: 'ul',
-                    items: [
-                        'Simple layouts: text stickers ("Sofa", "Table", "TV") at the right positions are often enough.',
-                        'Complex layouts: use the brush to trace rough furniture outlines — more precision, fewer errors.',
-                    ],
-                },
-                {
                     type: 'tip',
                     label: 'Pro tip',
                     text: 'Use the More function to generate a batch of variants at once — consistency is easier to find when you have options.',
@@ -94,11 +87,13 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'ul',
                     items: [
                         'Less is more — a simple room with fewer pieces gives the AI less to get wrong.',
+                        'Keep furniture away from the edges. AI models stubbornly resist showing cropped furniture — pieces placed centrally in the room translate far better across perspectives.',
                         'Very similar angles, or diametrically opposite views (front and back of the same space).',
                         'Open-plan rooms where the full layout is visible in the overview shot.',
                     ],
                 },
-                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Final staged result: the second angle of the room, consistent with the reference staging.' },
+                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Staged bedroom from the first angle.' },
+                { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Same staging from the opposite angle — consistent furniture, style, and layout.' },
                 {
                     type: 'p',
                     text: "It's not a perfect workflow — but it's the best one available right now.",
@@ -145,13 +140,6 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 { type: 'image', src: '/blog/multi4-annotate.jpeg', alt: 'Anmerkungsmodus mit Rechteck-Formen und Beschriftungen für Sofa, Tisch und TV-Platzierung.' },
                 {
-                    type: 'ul',
-                    items: [
-                        'Einfache Layouts: Textchips reichen oft — „Sofa", „Tisch", „TV" an die richtigen Positionen.',
-                        'Komplexe Layouts: Pinsel für grobe Möbelumrisse — mehr Präzision, weniger Fehler.',
-                    ],
-                },
-                {
                     type: 'tip',
                     label: 'Pro-Tipp',
                     text: 'Nutze die Mehr-Funktion für einen Batch — Konsistenz findet sich leichter, wenn du Optionen hast.',
@@ -161,11 +149,13 @@ export const BLOG_POSTS: BlogPost[] = [
                     type: 'ul',
                     items: [
                         'Weniger ist mehr — ein aufgeräumter Raum mit wenig Möbeln bietet der AI weniger Fehlerquellen.',
+                        'Möbel mittig platzieren, nicht an den Rändern. Die AI weigert sich hartnäckig, angeschnittene Möbel zu zeigen — Stücke, die zentral im Raum stehen, übertragen sich deutlich besser auf andere Perspektiven.',
                         'Sehr ähnliche Winkel oder diametral entgegengesetzte Ansichten (Vorder- und Rückseite).',
                         'Offene Grundrisse, wo das gesamte Layout im Übersichtsbild sichtbar ist.',
                     ],
                 },
-                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Finales Staging-Ergebnis: der zweite Blickwinkel des Raumes, konsistent mit dem Referenz-Staging.' },
+                { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Gestagtes Schlafzimmer aus dem ersten Blickwinkel.' },
+                { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Dasselbe Staging aus dem entgegengesetzten Winkel — konsistente Möbel, Stil und Layout.' },
                 {
                     type: 'p',
                     text: "Kein perfekter Workflow — aber der beste, den es gerade gibt.",
