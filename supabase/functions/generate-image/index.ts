@@ -80,7 +80,7 @@ const saveGeminiResult = async (
         requestType, qualityMode, finalModelName, prompt, targetTitle,
         userId, userEmail, parentId, sourceWidth, sourceHeight,
         sourceRealWidth, sourceRealHeight, sourceBaseName, sourceVersion, sourceId,
-        annotations, apiRequestPayload, generationStartTime,
+        sourceFolderId, annotations, apiRequestPayload, generationStartTime,
         activeTemplateId, variableValues
     } = webhookData;
 
@@ -489,6 +489,7 @@ Deno.serve(async (req) => {
                     sourceBaseName: sourceImage?.baseName || sourceImage?.title,
                     sourceVersion: sourceImage?.version,
                     sourceId: sourceImage?.id || null,
+                    sourceFolderId: sourceFolderId ?? sourceImage?.folderId ?? sourceImage?.id ?? null,
                     annotations: (resolvedReferences.length > 0) ? JSON.stringify(resolvedReferences.map((r: any) => ({
                         id: crypto.randomUUID(),
                         type: 'reference_image',

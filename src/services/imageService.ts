@@ -480,7 +480,7 @@ export const imageService = {
         // 1. Get Completed Images & Active Jobs in parallel
         const imgsQuery = supabase
             .from('images')
-            .select('*', { count: 'exact' })
+            .select('*', { count: 'estimated' })
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
@@ -814,7 +814,7 @@ export const imageService = {
     async countUserImages(userId: string): Promise<number> {
         const { count, error } = await supabase
             .from('images')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'estimated', head: true })
             .eq('user_id', userId);
         if (error) {
             console.error('[imageService] countUserImages error:', error);
