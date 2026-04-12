@@ -627,18 +627,11 @@ export const useNanoController = () => {
             return;
         }
 
-        // Use the DIRECT parent as the API source (the image that was the input when img was
-        // originally generated). For a direct child of root this is the same as root; for
-        // grandchildren it's the intermediate child — matching what the AI originally saw.
+        // Use img itself as the API source — the user pressed "More" on this specific image
+        // and expects a new variation of it, not of its parent.
         // groupParentId keeps the result grouped under the root stack.
         const groupParentId = root.id !== img.id ? root.id : undefined;
-        const directParent = img.parentId
-            ? (allImages.find(p => p.id === img.parentId) ?? img)
-            : img;
-        const sourceForApi = directParent.id !== img.id
-            ? { ...directParent, annotations: img.annotations || [] }
-            : img;
-        performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
+        performGeneration(img, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
     }, [allImages, performGeneration]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
