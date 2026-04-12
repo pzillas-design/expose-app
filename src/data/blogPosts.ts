@@ -100,7 +100,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 {
                     type: 'p',
-                    text: "Current models are image models — they don't model the world, they model pixels. Consistent multi-perspective staging requires understanding that a sofa exists in 3D, not just in a frame. Until then, this workflow is your best approximation of something a future model will do in one shot. And if you're short on time: one great staged photo beats four inconsistent ones.",
+                    text: "Current models have a surprisingly good spatial understanding — but it's inferred from millions of 2D photos, not a true model of the world. They can read perspective, depth, and geometry, but genuinely grasping a room in 3D and thinking consistently across viewpoints is a different level. World models will make that leap. Until then, iteration is part of the workflow. And if you're short on time: one great staged photo beats four inconsistent ones.",
                 },
             ],
         },
@@ -162,7 +162,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 },
                 {
                     type: 'p',
-                    text: "Aktuelle Modelle sind Bildmodelle — sie modellieren keine Welt, sondern Pixel. Konsistentes Multi-Perspektiven-Staging erfordert das Verständnis, dass ein Sofa in 3D existiert, nicht nur in einem Bildausschnitt. Das sind Trainingsdaten, die es kaum gibt. Bis World Models diesen Sprung schaffen, ist dieser Workflow die beste Annäherung an etwas, das ein zukünftiges Modell in einem einzigen Schritt lösen wird. Und wenn die Zeit knapp ist: ein richtig gutes gestagtes Foto schlägt vier halbgar konsistente.",
+                    text: "Aktuelle Bildmodelle haben ein erstaunlich gutes räumliches Verständnis — aber es ist aus Millionen von 2D-Fotos erschlossen, kein echtes Modell der Welt. Sie können Perspektive, Tiefe und Geometrie lesen, aber einen Raum wirklich in 3D zu begreifen und konsistent über Blickwinkel hinweg zu denken — das ist eine andere Stufe. World Models werden diesen Sprung schaffen. Bis dahin ist Iteration Teil des Workflows. Und wer keine Zeit hat: ein richtig gutes gestagtes Bild schlägt vier inkonsistente immer.",
                 },
             ],
         },
