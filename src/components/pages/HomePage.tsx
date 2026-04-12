@@ -42,7 +42,7 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 <PricingSection />
 
                 {/* Testimonials */}
-                <TestimonialsSection />
+                <TestimonialsSection lang={lang} />
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
                 <section className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 pt-20 pb-20 overflow-hidden">
