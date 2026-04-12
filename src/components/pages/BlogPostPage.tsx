@@ -178,12 +178,13 @@ export const BlogPostPage: React.FC<BlogPostPageProps> = ({ t, onSignIn, lang = 
 
             {/* CTA Banner */}
             <div className="relative w-full overflow-hidden bg-zinc-950 dark:bg-zinc-950">
-                {/* Orange gradient blobs */}
-                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-64 h-64 bg-orange-500/15 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-64 h-64 bg-red-600/15 rounded-full blur-[100px] pointer-events-none" />
+                {/* Orange glow */}
+                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/20 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-72 h-72 bg-orange-400/15 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-72 h-72 bg-amber-500/15 rounded-full blur-[100px] pointer-events-none" />
 
                 <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 py-24 sm:py-32 flex flex-col items-center text-center gap-8">
-                    <h3 className="text-2xl sm:text-4xl font-kumbh font-bold tracking-tighter text-white leading-tight">
+                    <h3 className="text-4xl sm:text-6xl md:text-7xl font-kumbh font-semibold tracking-tighter text-white leading-tight">
                         ready to try it yourself?
                     </h3>
                     <Button
