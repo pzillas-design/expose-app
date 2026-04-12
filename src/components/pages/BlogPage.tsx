@@ -37,7 +37,6 @@ const PostCard: React.FC<{ post: BlogPost; index: number; lang: string }> = ({ p
                     alt={title}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300" />
             </div>
 
             {/* Content */}
