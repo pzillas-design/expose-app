@@ -753,8 +753,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {showBlob && (() => {
                                         const parentImg = img.parentId ? imageMap.get(img.parentId) : null;
                                         const parentLoadSrc = parentImg?.thumbSrc || parentImg?.src;
-                                        // Fallback: use the placeholder's own thumbSrc (copied from source during creation)
-                                        const blurSrc = parentLoadSrc || img.thumbSrc;
+                                        // Fallback chain: parent thumb → parent src → own thumbSrc → own src (blob ok, better than bubbles)
+                                        const blurSrc = parentLoadSrc || img.thumbSrc || (img.src && !img.src.startsWith('blob:empty') ? img.src : undefined);
                                         if (blurSrc) {
                                             return (
                                                 <div className="absolute inset-0 overflow-hidden">
