@@ -156,13 +156,8 @@ export const BLOG_POSTS: BlogPost[] = [
                     items: [
                         'Mut zur Lücke: Je aufgeräumter der Raum, desto weniger Interpretationsspielraum hat die KI für Fehler.',
                         'Raus aus den Ecken: Platziere Möbel eher zentral im Bild. Die KI neigt dazu, angeschnittene Objekte an den Bildrändern bei Perspektivwechseln völlig neu zu interpretieren.',
-                        'Und wenn die Zeit knapp ist: Ein perfekt gestagtes Foto sticht mehr hervor als zehn halbgare Blickwinkel.',
+                        'Und wenn die Zeit knapp ist: Ein perfekt gestagtes Foto sticht mehr hervor als zehn halbgare Blickwinkel. ;-)',
                     ],
-                },
-                { type: 'h2', text: 'Ein Blick in die Zukunft' },
-                {
-                    type: 'p',
-                    text: "Wir bewegen uns auf eine Ära von World Models zu, die Räume wirklich dreidimensional begreifen. Bis dahin ist die Arbeit mit der KI ein iterativer Prozess – ein Dialog zwischen deiner kreativen Vision und der Rechenpower des Modells.",
                 },
                 { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Gestagtes Schlafzimmer aus dem ersten Blickwinkel.' },
                 { type: 'image', src: '/blog/multi5-result2.jpg', alt: 'Dasselbe Staging aus dem entgegengesetzten Winkel — konsistente Möbel, Stil und Layout.' },
