@@ -255,42 +255,22 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(id);
     }, [onSelectImage]);
 
-    // Right-click on detail image → copy original JPEG bytes to clipboard (no re-encoding).
-    // Uses current image src from state so this works when triggered from any overlay element.
-    const handleImageContextMenu = useCallback(async (e: React.MouseEvent) => {
+    // Right-click on the canvas overlay (brush mode) → re-dispatch contextmenu to the
+    // underlying <img> so the native browser menu ("Copy Image", "Save As…") appears.
+    const handleOverlayContextMenu = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         const currentImg = imgRef.current;
-        const src = currentImg?.src;
-        if (!src) return;
-        try {
-            const resp = await fetch(src);
-            const blob = await resp.blob();
-            // Use the actual mime type from the server (image/jpeg for our images)
-            const mimeType = blob.type || 'image/jpeg';
-            try {
-                await navigator.clipboard.write([new ClipboardItem({ [mimeType]: blob })]);
-                showToast('Bild kopiert', 'success', 2500);
-            } catch {
-                // Fallback: some browsers only support image/png in ClipboardItem — convert via canvas
-                const domImg = document.getElementById(`detail-img-${currentImg?.id}`) as HTMLImageElement | null;
-                if (!domImg) return;
-                const canvas = document.createElement('canvas');
-                canvas.width = domImg.naturalWidth;
-                canvas.height = domImg.naturalHeight;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                ctx.drawImage(domImg, 0, 0);
-                canvas.toBlob(async (pngBlob) => {
-                    if (!pngBlob) return;
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-                    showToast('Bild kopiert', 'success', 2500);
-                }, 'image/png');
-            }
-        } catch (err) {
-            console.error('[DetailPage] Context menu copy failed:', err);
-            showToast('Kopieren fehlgeschlagen', 'error');
-        }
-    }, [showToast]);
+        if (!currentImg) return;
+        const domImg = document.getElementById(`detail-img-${currentImg.id}`);
+        if (!domImg) return;
+        // Synthetic contextmenu on the real <img> — browser shows native "Copy Image" menu
+        domImg.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            clientX: e.clientX,
+            clientY: e.clientY,
+        }));
+    }, []);
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
@@ -816,7 +796,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         alt={img.title}
                                         crossOrigin="anonymous"
                                         draggable={true}
-                                        onContextMenu={handleImageContextMenu}
                                         onLoad={(e) => {
                                             const imgEl = e.target as HTMLImageElement;
                                             setImgNaturalDims({ width: imgEl.naturalWidth, height: imgEl.naturalHeight });
@@ -835,7 +814,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onContextMenu={handleImageContextMenu}>
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onContextMenu={handleOverlayContextMenu}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}
