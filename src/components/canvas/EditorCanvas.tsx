@@ -758,10 +758,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                         {showChip && (
                             <div
-                                className={`absolute annotation-ui ${isActiveItem ? 'z-[60]' : 'z-20'}`}
+                                className={`absolute annotation-ui pointer-events-auto ${isActiveItem ? 'z-[60]' : 'z-20'}`}
                                 style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                                onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
-                                onTouchStart={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                                onMouseDown={(e) => (isActive && ann.type === 'stamp') && startDrag(e, ann.id, 'move', ann)}
+                                onTouchStart={(e) => (isActive && ann.type === 'stamp') && startDrag(e, ann.id, 'move', ann)}
                             >
                                 <div style={{ transform: finalTransform }} className={`${dragState?.id === ann.id ? '' : 'transition-transform duration-200'}`}>
                                     {isActiveItem ? (
@@ -821,7 +821,14 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     onTouchStart={(e) => e.stopPropagation()}
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!isActive) {
+                                                            // Enter brush mode first, then activate this stamp for editing
+                                                            onEditStart?.('brush');
+                                                        }
+                                                        setActiveMaskId(ann.id);
+                                                    }}
                                                     className={`${OVERLAY_STYLES.ActionBtn} hidden md:flex opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
                                                 >
                                                     <Pen className="w-3 h-3" />
