@@ -255,29 +255,36 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(id);
     }, [onSelectImage]);
 
-    // Right-click on detail image → copy to clipboard
+    // Right-click on detail image → copy original JPEG bytes to clipboard (no re-encoding)
     const handleImageContextMenu = useCallback(async (e: React.MouseEvent<HTMLImageElement>) => {
         e.preventDefault();
         const imgEl = e.currentTarget;
-        if (!imgEl.complete || !imgEl.naturalWidth) return;
+        if (!imgEl.src) return;
         try {
-            const canvas = document.createElement('canvas');
-            canvas.width = imgEl.naturalWidth;
-            canvas.height = imgEl.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.drawImage(imgEl, 0, 0);
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                try {
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            const resp = await fetch(imgEl.src);
+            const blob = await resp.blob();
+            // Use the actual mime type from the server (image/jpeg for our images)
+            const mimeType = blob.type || 'image/jpeg';
+            try {
+                await navigator.clipboard.write([new ClipboardItem({ [mimeType]: blob })]);
+                showToast('Bild kopiert', 'success', 2500);
+            } catch {
+                // Fallback: some browsers only support image/png in ClipboardItem — convert via canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = imgEl.naturalWidth;
+                canvas.height = imgEl.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                ctx.drawImage(imgEl, 0, 0);
+                canvas.toBlob(async (pngBlob) => {
+                    if (!pngBlob) return;
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
                     showToast('Bild kopiert', 'success', 2500);
-                } catch {
-                    showToast('Kopieren fehlgeschlagen', 'error');
-                }
-            }, 'image/png');
+                }, 'image/png');
+            }
         } catch (err) {
             console.error('[DetailPage] Context menu copy failed:', err);
+            showToast('Kopieren fehlgeschlagen', 'error');
         }
     }, [showToast]);
 
