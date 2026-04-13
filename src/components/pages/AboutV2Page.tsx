@@ -776,10 +776,11 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             </section>
 
             {/* 7. MANIFESTO */}
-            <div className="relative w-full overflow-hidden bg-white dark:bg-zinc-950 px-5 sm:px-8 py-24 sm:py-32">
-                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/40 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-72 h-72 bg-orange-400/30 rounded-full blur-[100px] pointer-events-none" />
-                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-72 h-72 bg-amber-500/30 rounded-full blur-[100px] pointer-events-none" />
+            <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-100 px-5 sm:px-8 py-24 sm:py-32">
+                <div className="absolute inset-0 overflow-hidden">
+                    <img src="/home/v2/hero-new-5.png" className="absolute inset-0 w-full h-full object-cover scale-110"
+                         style={{ filter: 'blur(48px)', opacity: 0.18 }} aria-hidden />
+                </div>
                 <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-8">
                     <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-snug text-4xl sm:text-5xl lg:text-6xl">
                         <p className="text-zinc-900 dark:text-white">
