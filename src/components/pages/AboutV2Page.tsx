@@ -777,23 +777,22 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
 
             {/* 7. MANIFESTO */}
             <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 px-5 sm:px-8 py-24 sm:py-32">
-                <div className="absolute inset-0 overflow-hidden">
-                    <img src="/home/v2/hero-new-5.png" className="absolute inset-0 w-full h-full object-cover scale-110"
-                         style={{ filter: 'blur(48px)', opacity: 0.18 }} aria-hidden />
-                </div>
+                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -left-20 w-64 h-64 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-[90px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-12">
                     <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-normal text-4xl sm:text-5xl lg:text-6xl">
                         <p className="text-zinc-900 dark:text-white">
                             {de
-                                ? 'ki beherrscht optik, physik und komposition auf einem level, das bisher elite-studios vorbehalten war.'
+                                ? 'ki versteht licht, raum und komposition — auf einem niveau, das früher nur den besten studios der welt möglich war.'
                                 : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
                         </p>
                         <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                            {de ? 'diese macht liegt nun in deinen händen.' : 'this power is now yours.'}
+                            {de ? 'diese kraft gehört jetzt dir.' : 'this power is now yours.'}
                         </p>
                         <p className="text-zinc-900 dark:text-white">
                             {de
-                                ? <>übertreffe den professionellen standard. alles was du brauchst, liegt direkt in deinen fingerspitzen. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>
+                                ? <>leg den profi-standard in den schatten. alles was du brauchst, hast du in der hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>
                                 : <>surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>}
                         </p>
                     </div>
