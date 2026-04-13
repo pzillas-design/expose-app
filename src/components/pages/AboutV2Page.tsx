@@ -13,6 +13,73 @@ interface AboutV2PageProps {
     onGetStarted: () => void;
 }
 
+// ── Card Wall ──────────────────────────────────────────────
+const CARDS = [
+    // USPs
+    { type: 'usp', size: 'tall',   en: 'Iterate visually.',         de: 'Visuell iterieren.',         sub_en: 'Draw on the image. Tell the AI exactly where.',       sub_de: 'Direkt aufs Bild zeichnen. Der KI genau zeigen, wo.' },
+    { type: 'usp', size: 'normal', en: 'Run 12 at once.',           de: '12 auf einmal.',              sub_en: 'Parallel generation — pick the best, keep going.',     sub_de: 'Parallel generieren — das Beste auswählen, weitermachen.' },
+    { type: 'usp', size: 'normal', en: 'Set it once.',              de: 'Einmal aufsetzen.',           sub_en: 'Variables and presets keep every output on-brand.',    sub_de: 'Variables und Presets halten jedes Bild on-brand.' },
+    { type: 'usp', size: 'wide',   en: 'Pay per image.',            de: 'Pro Bild bezahlen.',          sub_en: 'No subscription. Credits never expire. From 0.05 €.',  sub_de: 'Kein Abo. Credits verfallen nicht. Ab 0,05 €.' },
+    { type: 'usp', size: 'normal', en: 'Voice control.',            de: 'Voice Control.',              sub_en: 'Just describe what you see. The AI listens.',          sub_de: 'Einfach beschreiben. Die KI hört zu.' },
+    { type: 'usp', size: 'normal', en: '0.5 K → 4 K.',             de: '0,5 K → 4 K.',               sub_en: 'Draft fast. Export sharp.',                            sub_de: 'Schnell skizzieren. Scharf exportieren.' },
+    // Testimonials
+    { type: 'quote', size: 'wide',   en: 'What used to take hours takes minutes.',           de: 'Was früher Stunden dauerte, dauert jetzt Minuten.',         author: 'Agentur Donnerkeil', role: 'Creative Agency' },
+    { type: 'quote', size: 'normal', en: 'I direct the AI exactly where I want it.',         de: 'Ich dirigiere die KI genau dorthin, wo ich sie haben will.', author: 'Sarah Chen',          role: 'Interior Photographer' },
+    { type: 'quote', size: 'normal', en: 'Variables alone saves our team hours every week.', de: 'Variables spart unserem Team täglich Stunden.',              author: 'Marc Dubois',         role: 'Creative Director' },
+];
+
+const CardWall: React.FC<{ de: boolean }> = ({ de }) => (
+    <section className="min-h-screen flex items-center py-20 px-5 sm:px-10 lg:px-16 bg-zinc-950 overflow-hidden">
+        <div className="w-full max-w-6xl mx-auto">
+            <p className="text-sm text-zinc-500 mb-8 sm:mb-12">why exposé</p>
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
+                {CARDS.map((card, i) => (
+                    <div
+                        key={i}
+                        className={`
+                            break-inside-avoid mb-3 sm:mb-4 rounded-2xl p-6 sm:p-7
+                            relative overflow-hidden group cursor-default
+                            ${card.type === 'quote'
+                                ? 'bg-zinc-900 border border-zinc-800'
+                                : 'bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50'
+                            }
+                        `}
+                        style={{
+                            boxShadow: '0 1px 0 0 rgba(255,255,255,0.06) inset, 0 -1px 0 0 rgba(0,0,0,0.4) inset, 0 8px 32px rgba(0,0,0,0.4)',
+                        }}
+                    >
+                        {/* Glossy top highlight */}
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                        {/* Subtle inner glow on hover */}
+                        <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+
+                        {card.type === 'quote' ? (
+                            <div className="flex flex-col gap-4 relative z-10">
+                                <p className="text-xl sm:text-2xl font-kumbh font-semibold tracking-tight text-white leading-snug">
+                                    "{de ? card.de : card.en}"
+                                </p>
+                                <div className="flex flex-col gap-0.5 pt-2 border-t border-zinc-800">
+                                    <span className="text-sm font-medium text-zinc-300">{card.author}</span>
+                                    <span className="text-xs text-zinc-600">{card.role}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 relative z-10">
+                                <h3 className="text-2xl sm:text-3xl font-kumbh font-bold tracking-tight text-white leading-tight">
+                                    {de ? card.de : card.en}
+                                </h3>
+                                <p className="text-sm text-zinc-400 leading-relaxed">
+                                    {de ? card.sub_de : card.sub_en}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    </section>
+);
+
 const HERO_IMGS = [
     { src: '/home/v2/v2-hero-1.png', cls: 'col-span-2 row-span-2' },
     { src: '/home/v2/v2-hero-2.png', cls: 'col-span-1 row-span-1' },
@@ -95,6 +162,9 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     }
                 </p>
             </section>
+
+            {/* ── 2b. CARD WALL ── */}
+            <CardWall de={de} />
 
             {/* ── 3. PARALLEL GENERATION ── */}
             <section className={`${snap} flex flex-col justify-center px-5 sm:px-10 lg:px-16 py-16 gap-10`}>
