@@ -49,12 +49,14 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 <div className="flex flex-col gap-6 lg:w-2/5 shrink-0">
                     <span className="text-sm text-orange-500 font-medium">exposé</span>
                     <h1 className="text-6xl sm:text-7xl xl:text-[5.5rem] font-kumbh font-bold tracking-tighter leading-[0.92] lowercase">
-                        {de ? <>KI-Kreation.<br />Ohne<br />Kompromisse.</> : <>AI creation.<br />Without<br />limits.</>}
+                        {de
+                            ? <>Ein Prompt<br />reicht nie.</>
+                            : <>One prompt<br />is never<br />enough.</>}
                     </h1>
                     <p className="text-sm text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed">
                         {de
-                            ? 'Ein Workspace für Designer, die mehr als einen Prompt brauchen.'
-                            : 'A workspace for designers who need more than just a prompt.'}
+                            ? 'Iteriere visuell, starte Batches, verfeinere per Voice — alles in einem Workspace.'
+                            : 'Iterate visually, run batches, refine with voice — all in one workspace.'}
                     </p>
                     <div className="flex items-center gap-5">
                         <Button variant="primary" size="l" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
