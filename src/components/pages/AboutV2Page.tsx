@@ -531,6 +531,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
+            <style>{`@media (min-width: 640px) { .verb-slide { top: 12% !important; height: 62% !important; } }`}</style>
             {/* Image slides — flush with page grid (px-5 sm:px-8 lg:px-12) */}
             {VERB_SCENES.map((s, i) => {
                 const isActive = active === i;
@@ -540,9 +541,9 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
 
                 return (
                     <div key={i}
-                        className="absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 rounded-2xl overflow-hidden"
+                        className="absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 rounded-2xl overflow-hidden verb-slide"
                         style={{
-                            top: '8%', height: '72%', zIndex: 0,
+                            top: '16.67%', height: '50%', zIndex: 0,
                             opacity: isActive ? 1 : 0,
                             transform: `translateX(${xOffset}px) scale(${scale})`,
                             transition: isActive
@@ -671,7 +672,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                             ))}
                         </ul>
                     </div>
-                    <Button variant="primary" size="m" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
+                    <Button variant="primary" size="xl" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
                         {de ? 'Kostenlos starten' : 'Get started free'}
                     </Button>
                 </div>
