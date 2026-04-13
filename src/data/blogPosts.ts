@@ -120,7 +120,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 { type: 'h2', text: '2. Das gestagte Bild als Inspiration verwenden' },
                 {
                     type: 'p',
-                    text: "Hast du dein perfektes Ankerbild generiert? Wunderbar. Jetzt geht es darum, dieses Wissen auf den nächsten Blickwinkel zu übertragen. Anstatt die KI raten zu lassen, gibst du ihr das fertige Staging des ersten Bildes als Inspiration mit.",
+                    text: "Hast du dein perfektes Ankerbild generiert? Jetzt überträgst du dieses Wissen auf den nächsten Blickwinkel. Anstatt die KI raten zu lassen, gibst du ihr das fertige Staging des ersten Bildes als Inspiration mit — tippe dazu auf das Kamera-Icon und füge es direkt als Referenz hinzu.",
                 },
                 {
                     type: 'p',
@@ -130,7 +130,7 @@ export const BLOG_POSTS: BlogPost[] = [
                 { type: 'h2', text: '3. Das Möbel-Layout annotieren' },
                 {
                     type: 'p',
-                    text: "Bei verwinkelten Räumen oder komplexen Möbel-Arrangements reicht ein visueller Hinweis manchmal nicht aus. Hier kommen die Annotationen ins Spiel. Wechsle in den Anmerkungsmodus und markiere grob, wo Sofa, Esstisch oder Sideboard im neuen Blickwinkel stehen sollen. Diese Kombination aus räumlicher Vorgabe und dem visuellen Stil deines Ankerbildes ist die sicherste Methode für ein stimmiges Ergebnis.",
+                    text: "Bei komplexen Arrangements reicht ein visuelles Referenzbild manchmal nicht aus. Wechsle in den Anmerkungsmodus und markiere grob, wo Sofa, Esstisch oder Sideboard im neuen Blickwinkel stehen sollen — die sicherste Methode für ein stimmiges Ergebnis.",
                 },
                 { type: 'image', src: '/blog/multi4-annotate.jpeg', alt: 'Anmerkungsmodus mit Rechteck-Formen und Beschriftungen für Sofa, Tisch und TV-Platzierung.' },
                 {
@@ -148,6 +148,7 @@ export const BLOG_POSTS: BlogPost[] = [
                         'Mut zur Lücke: Je aufgeräumter der Raum, desto weniger Interpretationsspielraum hat die KI für Fehler.',
                         'Raus aus den Ecken: Platziere Möbel eher zentral im Bild. Die KI neigt dazu, angeschnittene Objekte an den Bildrändern bei Perspektivwechseln völlig neu zu interpretieren.',
                         'Und wenn die Zeit knapp ist: Ein perfekt gestagtes Foto sticht mehr hervor als zehn halbgare Blickwinkel. ;-)',
+                        'Du möchtest noch mehr Kontrolle? Für echte 3D-Geometrie, Licht und Materialien lohnt sich spezialisierte Software — wie <a href="https://www.applydesign.io/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">ApplyDesign</a>.',
                     ],
                 },
                 { type: 'image', src: '/blog/multi6-result.jpg', alt: 'Gestagtes Schlafzimmer aus dem ersten Blickwinkel.' },
