@@ -787,12 +787,12 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                                 ? 'willkommen in der ära der ästhetik.'
                                 : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
                         </p>
-                        <p className="text-zinc-900 dark:text-white">
+                        <p className={de ? 'text-zinc-900 dark:text-white' : 'bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent'}>
                             {de
                                 ? 'die kraft der form, farbe und komposition, einst ein privileg, gehört sie nun uns allen.'
                                 : 'this power is now yours.'}
                         </p>
-                        <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                        <p className={de ? 'bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent' : 'text-zinc-900 dark:text-white'}>
                             {de
                                 ? <>alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>
                                 : <>surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>}
