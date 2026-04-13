@@ -49,7 +49,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 <div className="flex flex-col gap-6 lg:w-2/5 shrink-0">
                     <span className="text-sm text-orange-500 font-medium">exposé</span>
                     <h1 className="text-6xl sm:text-7xl xl:text-[5.5rem] font-kumbh font-bold tracking-tighter leading-[0.92] lowercase">
-                        <>One prompt<br />is never<br />enough.</>}
+                        One prompt<br />is never<br />enough.
                     </h1>
                     <p className="text-sm text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed">
                         {de
