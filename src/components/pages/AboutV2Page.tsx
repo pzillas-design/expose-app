@@ -122,7 +122,7 @@ function useCardWallReveal() {
 // ── Marquee card ──────────────────────────────────────────
 const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number }> = ({ card, de, h, w }) => {
     const isOrange = card.accent === 'orange';
-    const width = w ?? ((card.type === 'usp' && card.img) ? 300 : 220);
+    const width = w ?? ((card.type === 'usp' && card.img) ? 420 : 300);
 
     return (
         <div
@@ -204,10 +204,10 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
             {/* Always: 2 animated marquee rows */}
             <div className="flex flex-col gap-3">
                 <div className="mq-anim" style={{ animation: 'mq-left 80s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
-                    {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={220} />)}
+                    {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={330} />)}
                 </div>
                 <div className="mq-anim" style={{ animation: 'mq-left 60s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
-                    {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={160} />)}
+                    {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={240} />)}
                 </div>
             </div>
         </section>
@@ -712,8 +712,8 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     {/* Stats row above videos */}
                     <div className="flex flex-row gap-0 divide-x divide-zinc-100 dark:divide-zinc-800/60">
                         {[
-                            { value: '1,643', label: de ? 'Bilder generiert' : 'images generated' },
-                            { value: '104',   label: de ? 'Kreative' : 'creatives' },
+                            { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
+                            { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
                             { value: '4 K',   label: de ? 'Max. Auflösung' : 'max resolution' },
                         ].map((s, i) => (
                             <div key={i} className="flex flex-col gap-0.5 px-5 sm:px-8 first:pl-0 last:pr-0">
@@ -800,6 +800,22 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     </div>
                 </div>
             </section>
+
+            {/* CTA BANNER */}
+            <div className="relative w-full overflow-hidden bg-white dark:bg-zinc-950">
+                {/* Orange glow */}
+                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/40 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-72 h-72 bg-orange-400/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-72 h-72 bg-amber-500/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 py-24 sm:py-32 flex flex-col items-center text-center gap-8">
+                    <h3 className="text-4xl sm:text-6xl md:text-7xl font-kumbh font-semibold tracking-tighter text-zinc-900 dark:text-white leading-tight">
+                        {de ? 'bereit es selbst auszuprobieren?' : 'ready to try it yourself?'}
+                    </h3>
+                    <Button variant="primary" size="l" onClick={onGetStarted} icon={<ChevronRight className="w-5 h-5" />} iconPosition="right">
+                        {de ? 'exposé öffnen' : 'open exposé'}
+                    </Button>
+                </div>
+            </div>
 
             {/* FOOTER */}
             <GlobalFooter t={t} />
