@@ -776,7 +776,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             </section>
 
             {/* 7. MANIFESTO */}
-            <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 px-5 sm:px-8 py-24 sm:py-32">
+            <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 px-5 sm:px-8 py-32 sm:py-48">
                 <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -left-20 w-64 h-64 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
