@@ -801,7 +801,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                             </p>
                         </>)}
                     </div>
-                    <Button variant="primary" size="xl" onClick={onGetStarted} icon={<ChevronRight className="w-5 h-5" />} iconPosition="right">
+                    <Button variant="primary" size="xl" onClick={onGetStarted} icon={<ChevronRight className="w-5 h-5" />} iconPosition="right" className="mt-12">
                         {de ? 'exposé öffnen' : 'open exposé'}
                     </Button>
                 </div>
