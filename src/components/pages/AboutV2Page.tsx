@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
-import { AppNavbar } from '@/components/layout/AppNavbar';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 
 interface AboutV2PageProps {
@@ -28,17 +27,8 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
     user, userProfile, credits, t, lang, onSignIn, onGetStarted,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [heroProgress, setHeroProgress] = useState(0);
     const [imgsIn, setImgsIn] = useState(false);
     const de = lang === 'de';
-
-    useEffect(() => {
-        const el = containerRef.current;
-        if (!el) return;
-        const onScroll = () => setHeroProgress(Math.min(el.scrollTop / (window.innerHeight * 0.5), 1));
-        el.addEventListener('scroll', onScroll, { passive: true });
-        return () => el.removeEventListener('scroll', onScroll);
-    }, []);
 
     useEffect(() => {
         const id = setTimeout(() => setImgsIn(true), 80);
@@ -53,14 +43,6 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             className="h-screen overflow-y-scroll bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-orange-500 selection:text-white"
             style={{ scrollSnapType: 'y mandatory' }}
         >
-            <AppNavbar
-                user={user} userProfile={userProfile} credits={credits || 0}
-                t={t} lang={lang}
-                onCreate={() => { window.location.href = '/'; }}
-                onSignIn={onSignIn}
-                heroProgress={heroProgress}
-            />
-
             {/* ── 1. HERO ── */}
             <section className={`${snap} flex flex-col lg:flex-row items-center px-5 sm:px-10 lg:px-16 pt-24 pb-10 gap-8 lg:gap-12`}>
                 {/* Text */}
