@@ -776,7 +776,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             </section>
 
             {/* 7. MANIFESTO */}
-            <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-100 px-5 sm:px-8 py-24 sm:py-32">
+            <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 px-5 sm:px-8 py-24 sm:py-32">
                 <div className="absolute inset-0 overflow-hidden">
                     <img src="/home/v2/hero-new-5.png" className="absolute inset-0 w-full h-full object-cover scale-110"
                          style={{ filter: 'blur(48px)', opacity: 0.18 }} aria-hidden />
