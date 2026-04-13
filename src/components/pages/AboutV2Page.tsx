@@ -75,7 +75,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                             key={i}
                             className={`${img.cls} rounded-xl sm:rounded-2xl overflow-hidden`}
                             style={{
-                                clipPath: imgsIn ? 'inset(0% 0% 0% 0% round 12px)' : 'inset(0% 50% 0% 50% round 12px)',
+                                clipPath: imgsIn ? 'inset(0% 0% 0% 0% round 12px)' : 'inset(50% 0% 50% 0% round 12px)',
                                 transition: `clip-path 0.55s cubic-bezier(0.22, 1, 0.36, 1)`,
                                 transitionDelay: `${i * 40}ms`,
                             }}
