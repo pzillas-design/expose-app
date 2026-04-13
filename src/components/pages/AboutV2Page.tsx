@@ -237,7 +237,9 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             </section>
 
             {/* ── 2b. CARD WALL ── */}
-            <CardWall de={de} />
+            <div className="snap-start">
+                <CardWall de={de} />
+            </div>
 
             {/* ── HOOK ── */}
             <section className={`${snap} flex items-center justify-center bg-zinc-950 px-5 sm:px-10 border-t border-white/5`}>
