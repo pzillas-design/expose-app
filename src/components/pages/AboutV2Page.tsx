@@ -526,11 +526,11 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 <SlotChip key={i} options={opts} tick={slotTick} delayMs={i * 110} />
             ))}
         </div>,
-        <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-2.5 whitespace-nowrap">
-            <span className="text-xs text-white/40">1K</span>
-            <ArrowRight className="w-3 h-3 text-white/25 shrink-0" />
-            <span className="text-xs text-white font-semibold tracking-wide">4 K</span>
-            <div className="w-14 h-0.5 bg-white/10 rounded-full overflow-hidden ml-1">
+        <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 whitespace-nowrap">
+            <span className="text-xs lg:text-sm text-white/40">1K</span>
+            <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4 text-white/25 shrink-0" />
+            <span className="text-xs lg:text-sm text-white font-semibold tracking-wide">4 K</span>
+            <div className="w-14 lg:w-20 h-0.5 bg-white/10 rounded-full overflow-hidden ml-1">
                 <div className="h-full bg-orange-500 rounded-full" style={{ width: active === 3 ? '100%' : '0%', transition: 'width 2.4s ease' }} />
             </div>
         </div>,
@@ -679,15 +679,15 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                                 ? 'exposé verwandelt jeden Raum in professionelle Fotos. Mit KI, in Sekunden.'
                                 : 'exposé turns any space into professional listing photos. With AI, in seconds.'}
                         </p>
-                        <ul className="flex flex-wrap gap-x-5 gap-y-1">
+                        <ul className="flex flex-wrap items-center gap-y-1">
                             {[
-                                { label: de ? 'Kein Abo' : 'No subscription', dot: false },
-                                { label: de ? '5 € Startguthaben' : '€5 starter credits', dot: true },
-                                { label: de ? '4K Auflösung' : '4K resolution', dot: true },
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300">
-                                    {item.dot && <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />}
-                                    {item.label}
+                                de ? 'Kein Abo' : 'No subscription',
+                                de ? '5 € Startguthaben' : '€5 starter credits',
+                                de ? '4K Auflösung' : '4K resolution',
+                            ].map((label, i) => (
+                                <li key={i} className="flex items-center text-sm text-zinc-600 dark:text-zinc-300">
+                                    {i > 0 && <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0 mx-3" />}
+                                    {label}
                                 </li>
                             ))}
                         </ul>
